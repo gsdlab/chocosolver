@@ -79,6 +79,10 @@ public class ChocoSolver {
         }
 
         i.invokeFunction("solution", s);
+        
+        while((System.in.read()) != -1 && s.nextSolution()) {
+            i.invokeFunction("solution", s);
+        }
     }
 
     public static String readAll(File in) throws IOException {
