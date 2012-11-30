@@ -1,12 +1,14 @@
 package org.clafer;
 
+import choco.cp.solver.search.integer.branching.AssignVar;
 import javax.script.ScriptEngine;
 import choco.kernel.solver.Solver;
 import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
+import choco.cp.solver.search.integer.valiterator.IncreasingDomain;
 import choco.cp.solver.search.set.AssignSetVar;
+import choco.cp.solver.search.set.MinDomSet;
 import choco.cp.solver.search.set.MinEnv;
-import choco.cp.solver.search.set.RandomSetVarSelector;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.set.SetVariable;
 import java.io.File;
@@ -16,6 +18,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import javax.script.ScriptEngineManager;
 import static choco.Choco.*;
+import choco.cp.solver.search.integer.varselector.MostConstrained;
+import choco.kernel.common.logging.ChocoLogging;
 import java.io.Reader;
 import javax.script.Invocable;
 import javax.script.ScriptException;
@@ -27,22 +31,26 @@ import javax.script.ScriptException;
 public class ChocoSolver {
 
     public static void main(String[] args) throws IOException, NoSuchMethodException {
-        if(args.length == 0) {
-            System.out.println("Expected an 1 argument.");
-        }
         try {
-            run(new File(args[0]));
+            if (args.length == 0) {
+                System.out.println("Expected at least one argument.");
+            }
+            if(args.length == 1) {
+                run(false, new File(args[0]));
+            } else {
+                run(Boolean.parseBoolean(args[0]), new File(args[1]));
+            }
         } catch (ScriptException e) {
             System.err.println(e.getMessage());
         }
     }
 
-    public static void run(File in) throws IOException, ScriptException, NoSuchMethodException {
+    public static void run(boolean all, File in) throws IOException, ScriptException, NoSuchMethodException {
 
         Model m = new CPModel();
         Solver s = new CPSolver();
-
-        SetVariable root = makeSetVar("root", 1, 1);
+        
+        SetVariable root = constant(new int[]{0});
         m.addConstraint(eqCard(root, 1));
         SetVariable[] __root = new SetVariable[]{root};
 
@@ -64,23 +72,26 @@ public class ChocoSolver {
 
         engine.put(ScriptEngine.FILENAME, "header.js");
         engine.eval(header);
-        engine.put(ScriptEngine.FILENAME, "script.js");
+        engine.put(ScriptEngine.FILENAME, in.getName());
         engine.eval(script);
 
-        // ChocoLogging.toVerbose();
-
+//        ChocoLogging.toVerbose();
+//        ChocoLogging.toSearch();
         s.read(m);
 
-        s.addGoal(new AssignSetVar(new RandomSetVarSelector(s), new MinEnv()));
+        s.addGoal(new AssignSetVar(new MinDomSet(s), new MinEnv()));
+        s.addGoal(new AssignVar(new MostConstrained(s), new IncreasingDomain()));
 
+        System.out.println("Solving");
         if (!Boolean.TRUE.equals(s.solve())) {
             System.err.println("No solution.");
             return;
         }
-
+        s.checkSolution();
         i.invokeFunction("solution", s);
-        
-        while((System.in.read()) != -1 && s.nextSolution()) {
+        System.out.println(s.solutionToString());
+
+        while (all && (System.in.read()) != -1 && s.nextSolution()) {
             i.invokeFunction("solution", s);
         }
     }
