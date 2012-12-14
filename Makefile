@@ -1,6 +1,6 @@
 all:
 	mvn install
-	mvn dependency:copy-dependencies
+	mvn assembly:single
 
 clean:
 	mvn clean
