@@ -1,0 +1,16 @@
+abstract Animal
+    Head
+        Eye 2
+        Ear 2
+        Mouth
+    Age -> integer
+    Torso
+    Leg 4
+        Feet
+        
+Cat : Animal 4
+    Whiskers 6
+Rhino : Animal 3
+    Horn
+Elephant : Animal 2
+    Trunk
