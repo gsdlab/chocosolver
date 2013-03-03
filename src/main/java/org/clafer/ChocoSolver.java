@@ -1,15 +1,15 @@
 package org.clafer;
 
-import choco.cp.solver.search.integer.valiterator.IncreasingDomain;
-import choco.cp.solver.search.integer.varselector.MostConstrained;
-import choco.cp.solver.search.set.MinDomSet;
 import choco.Options;
-import choco.cp.solver.search.integer.branching.AssignVar;
 import javax.script.ScriptEngine;
 import choco.kernel.solver.Solver;
 import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
+import choco.cp.solver.search.integer.branching.AssignVar;
+import choco.cp.solver.search.integer.valiterator.IncreasingDomain;
+import choco.cp.solver.search.integer.varselector.MinDomain;
 import choco.cp.solver.search.set.AssignSetVar;
+import choco.cp.solver.search.set.MaxDomSet;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.set.SetVariable;
 import java.io.File;
@@ -20,7 +20,10 @@ import java.io.InputStreamReader;
 import javax.script.ScriptEngineManager;
 import static choco.Choco.*;
 import choco.cp.solver.search.set.MinEnv;
+import choco.kernel.common.logging.ChocoLogging;
+import choco.kernel.common.logging.Verbosity;
 import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.solver.Configuration;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.set.SetVar;
 import java.io.Reader;
@@ -50,13 +53,14 @@ public class ChocoSolver {
             System.err.println(e.getMessage());
         }
     }
+    static boolean obj = true;
 
     public static void run(boolean all, File in) throws IOException, ScriptException, NoSuchMethodException {
+        long start = System.currentTimeMillis();
         Model m = new CPModel();
         m.setDefaultExpressionDecomposition(false);
 
         CPSolver s = new CPSolver();
-
         SetVariable root = constant(new int[]{0});
         m.addConstraint(eqCard(root, 1));
         SetVariable[] __root = new SetVariable[]{root};
@@ -82,20 +86,44 @@ public class ChocoSolver {
         engine.put(ScriptEngine.FILENAME, in.getName());
         engine.eval(script);
 
-//        ChocoLogging.setVerbosity(Verbosity.FINEST);
+        ChocoLogging.setVerbosity(Verbosity.SOLUTION);
+        s.getConfiguration().putInt(Configuration.LOGGING_MAX_DEPTH, 300000);
+
         s.read(m);
-        
-        s.addGoal(new AssignSetVar(new MinDomSet(s), new MinEnv()));
-        s.addGoal(new AssignVar(new MostConstrained(s), new IncreasingDomain()));
-        
+
+        s.addGoal(new AssignSetVar(new MaxDomSet(s), new MinEnv()));
+        s.addGoal(new AssignVar(new MinDomain(s), new IncreasingDomain()));
+//        s.addGoal(new AssignSetVar(new RandomSetVarSelector(s), new RandomSetValSelector()));
+//        s.addGoal(new AssignVar(new RandomIntVarSelector(s), new RandomIntValSelector()));
+
+//        for (IntDomainVar sv : s.getIntDecisionVars()) {
+//            if (sv.getName().startsWith("Y_opp")) {
+//                System.out.println(sv + " : " + sv.getDomain());
+//            }
+//        }
         System.out.println("Solving");
-        if (!Boolean.TRUE.equals(s.solve())) {
+        Boolean result = obj ? s.minimize(false) : s.solve();
+
+        long end = System.currentTimeMillis() - start;
+        
+        
+//        i.invokeFunction("solution", s);
+//        System.out.println(s.solutionToString());
+        if (!Boolean.TRUE.equals(result)) {
             System.err.println("No solution.");
             return;
         }
-        s.checkSolution();
+//        do {
         i.invokeFunction("solution", s);
         System.out.println(s.solutionToString());
+//            for (IntDomainVar sv : s.getIntDecisionVars()) {
+//                if (sv.getName().startsWith("Y_opp")) {
+//                    System.out.println(sv + " : " + sv.getDomain());
+//                }
+//            }
+//        } while (s.nextSolution());
+
+        System.out.println("\n\n\n" + end + "\n\n\n");
 
         while (all && (System.in.read()) != -1 && s.nextSolution()) {
             i.invokeFunction("solution", s);

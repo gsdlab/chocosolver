@@ -16,35 +16,57 @@ function set (name, low, high, decision) {
     return Choco.makeSetVar(name, low, high, [Options.V_ENUM]);
 }
 
-function setArray (name, dimension, low, high) {
-    if (typeof name === "undefined") alert("setArray: name is undefined");
-    if (typeof dimension === "undefined") alert("setArray: dimension is undefined");
-    if (typeof low === "undefined") alert("setArray: low is undefined");
-    if (typeof high === "undefined") alert("setArray: high is undefined");
-
-    return Choco.makeSetVarArray(name, dimension, low, high, [Options.V_ENUM]);
-}
-
-function intArray (name, dimension, low, high, decision) {
+function setArray (name, dimension, low, high, options) {
     if (typeof name === "undefined") alert("intArray: name is undefined");
     if (typeof dimension === "undefined") alert("intArray: dimension is undefined");
 
     if (typeof low === "undefined") alert("intArray: low is undefined");
     if (typeof high === "undefined") alert("intArray: high is undefined");
 
-    if (decision) {
-        return Choco.makeIntVarArray(name, dimension, low, high, [Options.V_ENUM, Options.V_NO_DECISION]);
+    if (!options) options = {};
+
+    if (options.lowCard && options.highCard) {
+        var lowCard = options.lowCard;
+        var highCard = options.highCard;
+        var sets = [];
+        for (var i = 0; i < dimension; i++) {
+            sets.push(
+                set(name + "#" + i,
+                    Math.min(i * lowCard + low, high),
+                    Math.min((i + 1) * highCard + low, high),
+                    options
+                ));
+        }
+        return sets;
+    }
+
+    return Choco.makeSetVarArray(name, dimension, low, high, [Options.V_ENUM]);
+}
+
+function intArray (name, dimension, low, high, options) {
+    if (typeof name === "undefined") alert("intArray: name is undefined");
+    if (typeof dimension === "undefined") alert("intArray: dimension is undefined");
+
+    if (typeof low === "undefined") alert("intArray: low is undefined");
+    if (typeof high === "undefined") alert("intArray: high is undefined");
+
+    if (!options) options = {};
+    
+    if (!options.enum && (options.bound || high - low > 100)) {
+        return Choco.makeIntVarArray(name, dimension, low, high, [Options.V_BOUND]);
     }
     return Choco.makeIntVarArray(name, dimension, low, high, [Options.V_ENUM]);
 }
 
-function int (name, low, high, decision) {
+function int (name, low, high, options) {
     if (typeof name === "undefined") alert("int: name is undefined");
     if (typeof low === "undefined") alert("int: low is undefined");
     if (typeof high === "undefined") alert("int: high is undefined");
 
-    if (decision) {
-        return Choco.makeIntVar(name, low, high, [Options.V_ENUM, Options.V_NO_DECISION]);
+    if (!options) options = {};
+
+    if (!options.enum && (options.bound || high - low > 100)) {
+        return Choco.makeIntVar(name, low, high, [Options.V_BOUND]);
     }
     return Choco.makeIntVar(name, low, high, [Options.V_ENUM]);
 }
@@ -54,17 +76,40 @@ function bool (name) {
     return Choco.makeBooleanVar(name, []);
 }
 
-var eq = Choco.eq;
+var _eq = Choco.eq;
+function eq (arg1, arg2) {
+    if(typeof arg1 === "undefined") alert("eq: arg1 is undefined");
+    if(typeof arg2 === "undefined") alert("eq: arg2 is undefined");
+    var cond = arg1.condition.concat(arg2.condition);
+    cond.push(_eq(arg1.variable, arg2.variable));
+    return and(cond);
+}
+function eqFixed(arg1, arg2) {
+    if (typeof arg1 === "undefined") alert("eqFixed: arg1 is undefined");
+    if (typeof arg2 === "undefined") alert("eqFixed: arg2 is undefined");
+
+    var eqs = arg1.condition.concat(arg2.condition);
+    
+    if(arg1.numvars === arg2.numvars) {
+        for(var i = 0; i < arg1.numvars; i++) {
+            eqs.push(Choco.eq(arg1.variables[i], arg2.variables[i]));
+        }
+
+        return and(eqs);
+    }
+    return FALSE;
+}
 function between (low, int, high) {
     if (low === high) {
-        return eq(int, low);
+        return Choco.eq(int, low);
     } else if (high === Number.POSITIVE_INFINITY) {
-        return geq(int, low);
+        return Choco.geq(int, low);
     }
-    return and([geq(int, low), leq(int, high)]);
+    return and([Choco.geq(int, low), Choco.leq(int, high)]);
 }
 var neq = Choco.neq;
 var and = Choco["and(choco.kernel.model.constraints.Constraint[])"];
+var _and = Choco["and(choco.kernel.model.constraints.Constraint[])"];
 var or = Choco["or(choco.kernel.model.constraints.Constraint[])"];
 var plus = Choco.plus;
 var minus = Choco.minus;
@@ -72,68 +117,87 @@ var sum = Choco.sum;
 
 var joinChildCount = 0;
 
+function cardVar(expr) {
+    return constraint(expr.variable.getCard(), expr.condition);
+}
+
 // Optimized for parents with many children each.
 function joinChild (expr, scope, child, childScope) {
+    var cond = expr.condition.slice();
     var childSets = []
     for (var i = 0; i < scope; i++) {
         joinChildCount++;
         var childSet = set("__joinChildInter" + joinChildCount, 0, childScope - 1);
         childSets.push(childSet);
         
-        addConstraint(ifThenElse(member(i, expr), eq(childSet, child[i]), eq(childSet, emptySet)));
+        cond.push(ifThenElse(Choco.member(i, expr.variable), Choco.eq(childSet, child[i]), Choco.eq(childSet, emptySet)));
     }
     
     joinChildCount++;
     var s = set("__joinChild" + joinChildCount, 0, childScope - 1);
 
-    addConstraint(setUnion(childSets, s));
-    return s;
+    cond.push(setUnion(childSets, s));
+    return constraint(s, cond);
 }
 
 var joinParentCount = 0;
 
 // Optimized for children with small scopes.
 function joinParent (expr, scope, parent, parentScope) {
+    var cond = expr.condition.slice();
     var parentSets = []
     for (var i = 0; i < scope; i++) {
         joinParentCount++;
         var parentSet = set("__joinParentInter" + joinParentCount, 0, parentScope - 1);
         var par = int("__joinParentInterPar" + joinParentCount, 0, parentScope - 1);
         parentSets.push(parentSet);
-        addConstraint(leqCard(parentSet, 1));
-        addConstraint(ifThenElse(member(i, expr), and([nth(constantInt(i), parent, par), member(par, parentSet)]), eq(parentSet, emptySet)));
+        cond.push(leqCard(parentSet, 1));
+
+        cond.push(implies(Choco.member(i, expr.variable), _and([Choco.nth(constantInt(i), parent, par), Choco.member(par, parentSet)])));
+        cond.push(implies(notMember(i, expr.variable), Choco.eq(parentSet, emptySet)));
     }
     
     joinParentCount++;
     var s = set("__joinParent" + joinParentCount, 0, parentScope - 1);
 
     addConstraint(setUnion(parentSets, s));
-    return s;
+    return constraint(s, cond);
 }
 
 var joinRefCount = 0;
 
-function joinRefFixed (expr, scope, ref, refLow, refHigh, card) {
-    joinRefCount++;
-    var elems = int("@__joinRefFixedElems" + joinRefCount, card, 0, scope - 1);
-    var refd  = int("@__joinRefFixedRefd" + joinRefCount, card, refLow, refHigh);
-    var result = set("@__joinRefFixed" + joinRefCount, refLow, refHigh);
-    
-    addConstraint(member(expr, elem));
-    //addConstraint(allDifferent(elems));
-    
-    //for(var i = 0; i < card; i++) {
-    addConstraint(nth(elem, ref, refd));
-    //}
-    //addConstraint(member(result, refd));
-    //addConstraint(eqCard(result, 1));
+function constraint(v, c) {
+    return {variable : v, condition : c}
+}
 
-    //return result;
-    return refd;
+function fixedConstraint(v, c) {
+    if (typeof v.length === "undefined") alert ("fixedConstraint: v.length is undefined");
+    if (typeof c.length === "undefined") alert ("fixedConstraint: c.length is undefined");
+    return {variables : v, condition : c, numvars : v.length}
+}
+
+function joinRefFixed (expr, scope, ref, refLow, refHigh) {
+    joinRefCount++;
+    var card = expr.numvars;
+    var refd  = intArray("@__joinRefFixedRefd" + joinRefCount, card, refLow, refHigh);
+
+    var n = expr.condition;
+    for (var i = 0; i < card; i++) {
+        n.push(nth(expr.variables[i], ref, refd[i]));
+    }
+    addConstraint(implies(notMember(__this, curClafer), _and(refd.map(function(x) { return _eq(x, 0);}))));
+
+    return fixedConstraint(refd, n);
 }
 
 // Optimized for references with VERY large domains (ie. integers).
 function joinRef (expr, scope, ref, refLow, refHigh) {
+    if (typeof expr === "undefined") alert ("joinRef: expr is undefined");
+    if (typeof scope === "undefined") alert ("joinRef: scope is undefined");
+    if (typeof ref === "undefined") alert ("joinRef: ref is undefined");
+    if (typeof refLow === "undefined") alert ("joinRef: refLow is undefined");
+    if (typeof refHigh === "undefined") alert ("joinRef: refHigh is undefined");
+
     var refSets = []
     for (var i = 0; i < scope; i++) {
         joinRefCount++;
@@ -141,7 +205,9 @@ function joinRef (expr, scope, ref, refLow, refHigh) {
         addConstraint(leqCard(refSet, 1));
         refSets.push(refSet);
         
-        addConstraint(ifThenElse(member(i, expr), member(ref[i], refSet), eq(refSet, emptySet)));
+        addConstraint(ifThenElse(member(i, expr),
+            Choco.member(ref[i], refSet),
+            Choco.eq(refSet, emptySet)));
     }
     
     joinRefCount++;
@@ -151,10 +217,24 @@ function joinRef (expr, scope, ref, refLow, refHigh) {
     return s;
 }
 
+function setToFixed(expr, low, high, card) {
+    switch (card) {
+        case 0: throw new IllegalArguementException();
+        case 1:
+            var iv = int(name("setToFixed"), low, high);
+            addConstraint(implies(notMember(__this, curClafer), _eq(iv, 0)));
+            return fixedConstraint([iv], [member(expr, iv)]);
+        default:
+            var ivs = intArray(name("setToFixed"), card, low, high);
+            addConstraint(implies(notMember(__this, curClafer), _and(ivs.map(function(x) { return _eq(x, 0);}))));
+            return fixedConstraint(ivs, [member(expr, ivs)]);
+    }
+}
+
 var varCounter = 0;
 function name(n) {
     varCounter++;
-    return n + "#" + varCounter;
+    return n + varCounter;
 }
 
 function enumerate(list, num) {
@@ -205,7 +285,7 @@ function quantify(pred, quant, sizeLow, sizeHigh, low, high, bodyFun, disj, numV
             }
 
             if(enums.length > 0) {
-                tests.push(implies(eqCard(quant, i),
+                tests.push(Choco.implies(eqCard(quant, i),
                         and(
                             [allDifferents(subelems), members(quant, subelems), pred(enums.map(bodyFun))])
                         ));
@@ -234,7 +314,7 @@ function setUnion (sets, union) {
         case 0:
             throw new IllegalArgumentException();
         case 1:
-            return eq(sets[0], union);
+            return Choco.eq(sets[0], union);
         default:
             return Choco.setUnion(sets, union);
     }
@@ -261,7 +341,7 @@ var not = Choco.not;
 var implies = Choco.implies;
 function ifThenElse(a, b, c) {
     // The standard Choco.ifThenElse seems to be broken :(
-    return and([implies(a, b), implies(not(a), c)]);
+    return and([Choco.implies(a, b), Choco.implies(not(a), c)]);
 }
 var ifOnlyIf = Choco.ifOnlyIf;
 // Due to bug, this less than optimal function is needed :(
@@ -274,6 +354,17 @@ var nth = Choco.nth;
 var geqCard = Choco.geqCard;
 var leqCard = Choco.leqCard;
 var eqCard = Choco.eqCard;
+
+function seqCard (arg, v) {
+    var cond = arg.condition.slice();
+    cond.push(eqCard(arg.variable, v));
+    return and(cond);
+}
+function sgeqCard (arg, v) {
+    var cond = arg.condition.slice();
+    cond.push(geqCard(arg.variable, v));
+    return and(cond);
+}
 function betweenCard (low, set, high) {
     if (low === high) {
         return eqCard(set, low);
@@ -306,6 +397,9 @@ function addConstraint(c) {
 function addVariable(v) {
     m.addVariable(v);
 }
+function addObjectiveVariable(v) {
+    m.addVariable([Options.V_OBJECTIVE], v);
+}
 function addVariables(vs) {
     m.addVariables(vs);
 }
@@ -329,8 +423,8 @@ function uniqueRef(parent, parentScope, ref) {
     for(var diff1 = 0; diff1 < scope; diff1++) {
         var refdiff = [];
         for(var diff2 = diff1 + 1; diff2 < scope; diff2++) {
-            var test = and([eq(parent[diff1], __this), eq(parent[diff2], __this)])
-            refdiff.push(implies(test, neq(ref[diff1], ref[diff2])));
+            var test = and([Choco.eq(parent[diff1], __this), Choco.eq(parent[diff2], __this)])
+            refdiff.push(Choco.implies(test, Choco.neq(ref[diff1], ref[diff2])));
         }
         if(refdiff.length > 0) {
             fulldiff = fulldiff.concat(refdiff);
@@ -364,8 +458,13 @@ function offset(base, off) {
     return s;
 }
 
-var constant = Choco.constant;
+function constant(i) {
+    return constraint(Choco.constant(i), []);
+}
 var constantInt = Choco["constant(int)"];
+function constantIntFixed(i) {
+    return fixedConstraint([constantInt(i)], []);
+}
 var among = Choco.among;
 var increasingNValue = Choco.increasingNValue;
 
@@ -385,7 +484,7 @@ function sumSet(s, low, high) {
     var result = int("sumSet" + sumCount, lowSumB, uppSumB);
     var elems  = intArray("sumSetElems" + sumCount, high, s.getLowB(), s.getUppB());
 
-    var imp = implies;
+    var imp = Choco.implies;
     if (low == high) {
         imp = constf;
     }
@@ -428,13 +527,16 @@ function range (low, high){
 
 var singletonCounter = 0;
 
-// TODO: deprecate when optimized fix-size sets are implemented
-function singleton(val) {
+function singleton(expr) {
+    var val = expr.variable;
+    var cond = expr.condition.slice();
+
     singletonCounter++;
     var sv = set("__singleton__" + val.getName() + "_" + singletonCounter, val.getLowB(), val.getUppB(), true);
-    addConstraint(eqCard(sv, 1));
-    addConstraint(member(val, sv));
-    return sv;
+    
+    addConstraint(Choco.eqCard(sv, 1));
+    addConstraint(Choco.member(val, sv));
+    return constraint(sv, cond);
 }
 
 function singletonExpr(expr) {
