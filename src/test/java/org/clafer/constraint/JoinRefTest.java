@@ -5,13 +5,11 @@ import static org.clafer.constraint.JoinRefManager.*;
 import choco.Choco;
 import choco.Options;
 import choco.cp.model.CPModel;
-import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Solver;
 import gnu.trove.TIntHashSet;
-import java.util.Arrays;
 import java.util.Random;
 import org.clafer.Util;
 import org.junit.Test;
@@ -36,7 +34,7 @@ public class JoinRefTest extends ConstraintTest {
         assertEquals(set.size(), $to.length);
     }
 
-//    @Test
+    @Test
     public void testJoinRef() {
         Random rand = new Random();
         for (int rr = 0; rr < 10; rr++) {
@@ -57,32 +55,29 @@ public class JoinRefTest extends ConstraintTest {
 
     @Test
     public void testJoinLargeDomain() {
-        ChocoLogging.toSearch();
-
         Random rand = new Random();
         Model m = new CPModel();
 
         SetVariable take = Choco.makeSetVar("take", 0, rand.nextInt(10));
-        IntegerVariable[] refs = Choco.makeIntVarArray("ref", 1 + rand.nextInt(10), 0, rand.nextInt(1000000), Options.V_BOUND);
-        SetVariable to = Choco.makeSetVar("to", 0, rand.nextInt(1000), Options.V_NO_DECISION);
+        IntegerVariable[] refs = Choco.makeIntVarArray("ref", 1 + rand.nextInt(10), 0, 1000000, Options.V_ENUM);
+        SetVariable to = Choco.makeSetVar("to", 0, 1000000, Options.V_NO_DECISION);
 
         m.addConstraint(joinRef(take, refs, to));
 
         Solver solver = solveOnce(m);
-
-        System.out.println("solved");
-//            checkCorrectness(solver, take, refs, to);
+        checkCorrectness(solver, take, refs, to);
     }
-//    @Test
-//    public void quickTest() {
-//        Model m = new CPModel();
-//
-//        SetVariable take = Choco.makeSetVar("take", 0, 4);
-//        IntegerVariable[] refs = Choco.makeIntVarArray("ref", 3, 0, 4);
-//        SetVariable to = Choco.makeSetVar("to", 0, 4);
-//
-//        m.addConstraint(joinRef(take, refs, to));
-//
-//        assertEquals(1000, quickCheckModel(m, 10));
-//    }
+
+    @Test
+    public void quickTest() {
+        Model m = new CPModel();
+
+        SetVariable take = Choco.makeSetVar("take", 0, 4);
+        IntegerVariable[] refs = Choco.makeIntVarArray("ref", 3, 0, 4);
+        SetVariable to = Choco.makeSetVar("to", 0, 4);
+
+        m.addConstraint(joinRef(take, refs, to));
+
+        assertEquals(1000, quickCheckModel(m, 10));
+    }
 }

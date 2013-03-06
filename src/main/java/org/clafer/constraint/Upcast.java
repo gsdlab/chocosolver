@@ -9,6 +9,7 @@ import choco.kernel.solver.variables.Var;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.set.SetDomain;
 import choco.kernel.solver.variables.set.SetVar;
+import java.util.Arrays;
 import org.clafer.Util;
 
 /**
@@ -57,74 +58,72 @@ public class Upcast extends AbstractMixedSetIntSConstraint {
         return SetVarEvent.REMENV_MASK + SetVarEvent.ADDKER_MASK;
     }
 
-    @Override
-    public void awakeOnKer(int varIdx, int x) throws ContradictionException {
-        if (isFromVar(varIdx)) {
-            pickToKer();
-            pruneFromEnv();
-        } else {
-            pickFromKer();
-            pruneToEnv();
-        }
-        pruneOffset();
-        
-        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
-        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
-        assert from.getEnveloppeInf() <= to.getEnveloppeInf();
-        assert from.getEnveloppeSup() <= to.getEnveloppeSup();
-    }
-
-    
-    @Override
-    public void awakeOnEnv(int varIdx, int x) throws ContradictionException {
-        if (isFromVar(varIdx)) {
-            pruneToEnv();
-        } else {
-            pruneFromEnv();
-        }
-        pruneOffset();
-        
-        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
-        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
-        assert from.getEnveloppeInf() <= to.getEnveloppeInf();
-        assert from.getEnveloppeSup() <= to.getEnveloppeSup();
-    }
-
-    @Override
-    public void awakeOnInst(int varIdx) throws ContradictionException {
-        if(isFromCardVar(varIdx)) {
-            to.getCard().instantiate(from.getCard().getVal(), this, false);
-        } else if(isToCardVar(varIdx)) {
-            from.getCard().instantiate(to.getCard().getVal(), this, false);
-        }
-        
-        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
-        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
-        assert from.getEnveloppeInf() <= to.getEnveloppeInf();
-        assert from.getEnveloppeSup() <= to.getEnveloppeSup();
-    }
-
-    @Override
-    public void awakeOnRem(int varIdx, int val) throws ContradictionException {
-        if (isOffsetVar(varIdx)) {
-            pickFromKer();
-            pickToKer();
-            pruneFromEnv();
-            pruneToEnv();
-        } else if (isFromCardVar(varIdx)) {
-            to.getCard().removeVal(val, this, false);
-        } else if (isToCardVar(varIdx)) {
-            from.getCard().removeVal(val, this, false);
-        } else {
-            awakeOnEnv(varIdx, val);
-        }
-        
-        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
-        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
-        assert from.getEnveloppeInf() <= to.getEnveloppeInf();
-        assert from.getEnveloppeSup() <= to.getEnveloppeSup();
-    }
-
+//    @Override
+//    public void awakeOnKer(int varIdx, int x) throws ContradictionException {
+//        if (isFromVar(varIdx)) {
+//            pickToKer();
+//            pruneFromEnv();
+//        } else {
+//            pickFromKer();
+//            pruneToEnv();
+//        }
+//        pruneOffset();
+//        
+//        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
+//        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
+//        assert from.getEnveloppeInf() <= to.getEnveloppeInf();
+//        assert from.getEnveloppeSup() <= to.getEnveloppeSup();
+//    }
+//
+//    
+//    @Override
+//    public void awakeOnEnv(int varIdx, int x) throws ContradictionException {
+//        if (isFromVar(varIdx)) {
+//            pruneToEnv();
+//        } else {
+//            pruneFromEnv();
+//        }
+//        pruneOffset();
+//        
+//        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
+//        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
+//        assert from.getEnveloppeInf() <= to.getEnveloppeInf();
+//        assert from.getEnveloppeSup() <= to.getEnveloppeSup();
+//    }
+//    @Override
+//    public void awakeOnInst(int varIdx) throws ContradictionException {
+//        if (isFromCardVar(varIdx)) {
+//            to.getCard().instantiate(from.getCard().getVal(), this, false);
+//        } else if (isToCardVar(varIdx)) {
+//            from.getCard().instantiate(to.getCard().getVal(), this, false);
+//        }
+//
+//        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize() : from.getKernelDomainSize() + ">" + to.getEnveloppeDomainSize();
+//        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize() : to.getKernelDomainSize() + ">" + from.getEnveloppeDomainSize();
+//        assert from.getEnveloppeInf() <= to.getEnveloppeInf() : from.getEnveloppeInf() + ">" + to.getEnveloppeInf() + " : " + to.pretty();
+//        assert from.getEnveloppeSup() <= to.getEnveloppeSup() : from.getEnveloppeSup() + ">" + to.getEnveloppeSup() + " : " + to.pretty();
+//    }
+//
+//    @Override
+//    public void awakeOnRem(int varIdx, int val) throws ContradictionException {
+//        if (isOffsetVar(varIdx)) {
+//            pickFromKer();
+//            pickToKer();
+//            pruneFromEnv();
+//            pruneToEnv();
+//        } else if (isFromCardVar(varIdx)) {
+//            to.getCard().removeVal(val, this, false);
+//        } else if (isToCardVar(varIdx)) {
+//            from.getCard().removeVal(val, this, false);
+//        } else {
+//            awakeOnEnv(varIdx, val);
+//        }
+//        
+//        assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
+//        assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
+//        assert from.getEnveloppeInf() <= to.getEnveloppeInf();
+//        assert from.getEnveloppeSup() <= to.getEnveloppeSup();
+//    }
     @Override
     public void awake() throws ContradictionException {
         offset.updateInf(0, this, false);
@@ -137,9 +136,9 @@ public class Upcast extends AbstractMixedSetIntSConstraint {
         Util.subsetOf(this, to.getCard(), from.getCard());
         pickFromKer();
         pickToKer();
+        pruneOffset();
         pruneFromEnv();
         pruneToEnv();
-        pruneOffset();
 
         assert from.getKernelDomainSize() <= to.getEnveloppeDomainSize();
         assert to.getKernelDomainSize() <= from.getEnveloppeDomainSize();
@@ -152,21 +151,21 @@ public class Upcast extends AbstractMixedSetIntSConstraint {
             int diff = to.getEnveloppeSup() - from.getEnveloppeInf();
             offset.updateSup(diff, this, false);
         }
-        if(to.getKernelDomainSize() > 0) {
+        if (to.getKernelDomainSize() > 0) {
             int diff = to.getKernelSup() - from.getEnveloppeSup();
-            if(diff > 0) {
+            if (diff > 0) {
                 offset.updateInf(diff, this, false);
             }
         }
-        if(from.getKernelDomainSize() > 0) {
+        if (from.getKernelDomainSize() > 0) {
             int diff = to.getEnveloppeInf() - from.getKernelInf();
-            if(diff > 0) {
+            if (diff > 0) {
                 offset.updateInf(diff, this, false);
             }
         }
 
-        int[] fromKer = Util.iterateKer(from.getDomain());
-        int[] toKer = Util.iterateKer(to.getDomain());
+        int[] fromKer = Util.iterateKer(from);
+        int[] toKer = Util.iterateKer(to);
 
         DisposableIntIterator it = offset.getDomain().getIterator();
         try {
@@ -263,12 +262,10 @@ public class Upcast extends AbstractMixedSetIntSConstraint {
         }
         return true;
     }
-    int c = 0;
 
     private void pruneFromEnv() throws ContradictionException {
         int[] ker = kerArrayPlusEmpty(from.getDomain());
-        int[] off = Util.iterateDomain(offset.getDomain());
-        c++;
+        int[] off = Util.iterateDomain(offset);
         DisposableIntIterator it = from.getDomain().getEnveloppeIterator();
         try {
             while (it.hasNext()) {
@@ -287,8 +284,7 @@ public class Upcast extends AbstractMixedSetIntSConstraint {
 
     private void pruneToEnv() throws ContradictionException {
         int[] ker = kerArrayPlusEmpty(to.getDomain());
-        int[] off = Util.iterateDomain(offset.getDomain());
-        c++;
+        int[] off = Util.iterateDomain(offset);
         DisposableIntIterator it = to.getDomain().getEnveloppeIterator();
         try {
             while (it.hasNext()) {

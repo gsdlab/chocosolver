@@ -8,11 +8,8 @@ import choco.cp.solver.search.integer.branching.AssignVar;
 import choco.cp.solver.search.integer.valiterator.IncreasingDomain;
 import choco.cp.solver.search.integer.varselector.MinDomain;
 import choco.cp.solver.search.set.AssignSetVar;
-import choco.cp.solver.search.set.MaxDomSet;
 import choco.cp.solver.search.set.MinDomSet;
 import choco.cp.solver.search.set.MinEnv;
-import choco.cp.solver.search.set.MostConstrainedSet;
-import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.common.util.tools.VariableUtils;
 import choco.kernel.model.Model;
 import choco.kernel.model.ModelException;
@@ -21,14 +18,10 @@ import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.Variable;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
-import choco.kernel.solver.Configuration;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.SConstraint;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.clafer.Util;
 
 /**
@@ -85,11 +78,8 @@ public class JoinRefManager extends MixedConstraintManager {
     }
 
     public static void main(String[] args) {
-        // Nodes: 143
-        // Backtracks: 787
 //        ChocoLogging.toSearch();
 
-        // Creation of the model
         Model m = new CPModel();
         SetVariable take = makeSetVar("take", 0, 4);
         IntegerVariable[] i = makeIntVarArray("ref", 3, 0, 4);
@@ -120,6 +110,8 @@ public class JoinRefManager extends MixedConstraintManager {
         //#1000 solutions 422 Time (ms), 2475 Nodes, 3714 Backtracks, 0 Restarts - 
         //#1000 solutions 408 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
         //#1000 solutions 362 Time (ms), 1818 Nodes, 2112 Backtracks, 0 Restarts -
+//        #1000 solutions 201 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
+//        #1000 solutions 417 Time (ms), 1811 Nodes, 2097 Backtracks, 0 Restarts - 
 //        Set ans = new HashSet();
 //
 //        int c = 0;

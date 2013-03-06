@@ -5,7 +5,8 @@ import choco.kernel.model.Model;
 import static org.clafer.Exprs.*;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Solver;
-import org.clafer.UniqRefManager;
+import org.clafer.constraint.UniqRefManager;
+import org.clafer.constraint.ZeroOutManager;
 
 /**
  *
@@ -16,17 +17,18 @@ public class RefClafer extends Clafer {
     private final IntegerVariable[] refs;
 
     public RefClafer(Model model, int low, int high, ConcreteClafer parent) {
+        this(model, low, high, parent, false);
+    }
+
+    public RefClafer(Model model, int low, int high, ConcreteClafer parent, boolean unique) {
         super(parent.getName() + "@Ref");
 
         this.refs = intArray(getName(), parent.getScope(), low, high);
 
-        for (int i = 0; i < refs.length; i++) {
-            model.addConstraint(Choco.implies(Choco.notMember(i, parent.getSet()),
-                    Choco.eq(refs[i], 0)));
-        }
-
-        if (parent.getCard().getHigh() > 1) {
+        if (unique && parent.getCard().getHigh() > 1) {
             model.addConstraint(UniqRefManager.uniqRef(parent.getParentPointers(), refs));
+        } else {
+            model.addConstraint(ZeroOutManager.zeroOut(parent.getParentPointers(), refs));
         }
 
         parent.addChild(this);

@@ -4,14 +4,10 @@ import choco.cp.solver.variables.integer.IntVarEvent;
 import choco.cp.solver.variables.set.SetVarEvent;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.solver.ContradictionException;
-import choco.kernel.solver.Solver;
-import choco.kernel.solver.constraints.AbstractSConstraint;
 import choco.kernel.solver.constraints.set.AbstractLargeSetIntSConstraint;
-import choco.kernel.solver.variables.Var;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.set.SetVar;
 import gnu.trove.TIntHashSet;
-import java.util.Arrays;
 import org.clafer.Check;
 import org.clafer.Util;
 
@@ -23,6 +19,7 @@ import org.clafer.Util;
  * TODO: Can perform poorly when branching on integers before sets.
  * For example, if all refs take on distinct values and |take|=4 and
  * |to|=1 then it does not know that it is infeasible and stop early.
+ * Builtin setUnion suffers from the same problem.
  */
 public class JoinRef extends AbstractLargeSetIntSConstraint {
 
@@ -37,27 +34,27 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
         this.to = to;
     }
 
-    private boolean isTake(int idx) {
+    boolean isTake(int idx) {
         return idx == 0;
     }
 
-    private boolean isTo(int idx) {
+    boolean isTo(int idx) {
         return idx == 1;
     }
 
-    private boolean isTakeCard(int idx) {
+    boolean isTakeCard(int idx) {
         return idx == 2;
     }
 
-    private boolean isToCard(int idx) {
+    boolean isToCard(int idx) {
         return idx == 3;
     }
 
-    private boolean isRefsVar(int idx) {
+    boolean isRefsVar(int idx) {
         return idx >= 4;
     }
 
-    private int getRefsVarIndex(int idx) {
+    int getRefsVarIndex(int idx) {
         return idx - 4;
     }
 
@@ -93,7 +90,7 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
 //            pruneRefs();
 //        }
 //    }
-
+//
 //    @Override
 //    public void awakeOnInst(int varIdx) throws ContradictionException {
 //        if (isRefsVar(varIdx)) {
@@ -103,6 +100,9 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
 //                to.addToKernel(refs[idx].getVal(), this, false);
 //            }
 //            maxSameAsRef(idx);
+//            checkEntailed();
+//        } else if (isTake(varIdx)) {
+//            checkEntailed();
 //        }
 //    }
 //
@@ -119,6 +119,7 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
 ////            if (take.isInDomainEnveloppe(y) && !canTakeRefsHaveValue(v)) {
 ////                to.remFromEnveloppe(v, this, false);
 ////            }
+//            // TODO:
 //            propagate();
 //        }
 //    }
@@ -140,7 +141,6 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
 //        }
 //        return false;
 //    }
-
     @Override
     public void awake() throws ContradictionException {
         DisposableIntIterator it = take.getDomain().getEnveloppeIterator();
@@ -159,16 +159,49 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
 
     @Override
     public void propagate() throws ContradictionException {
-        System.out.println("prop");
-//        pruneTo();
-//        if (!toEnvEqualsToKern()) {
-//            pickTo();
-//        }
-//        take.getCard().updateInf(to.getCard().getInf(), this, false);
-//        to.getCard().updateSup(take.getCard().getSup(), this, false);
-//        pruneRefs();
-//        maxSameAsRefs();
-//        pruneTake();
+        pruneTo();
+        if (!toEnvEqualsToKern()) {
+            pickTo();
+        }
+//        TODO
+//        can be tighter depending on ref overlap
+        take.getCard().updateInf(to.getCard().getInf(), this, false);
+        to.getCard().updateSup(take.getCard().getSup(), this, false);
+        pruneRefs();
+        maxSameAsRefs();
+        pruneTake();
+        checkEntailed();
+    }
+
+    /**
+     *
+     */
+    private void checkEntailed() throws ContradictionException {
+        if (take.isInstantiated() && allRefsInstantiated()) {
+            TIntHashSet ans = new TIntHashSet(take.getKernelDomainSize());
+            for (int x : take.getValue()) {
+                if (x >= 0 && x < refs.length) {
+                    int xto = refs[x].getVal();
+                    ans.add(xto);
+                }
+            }
+            to.instantiate(ans.toArray(), this, false);
+        }
+    }
+
+    private boolean allRefsInstantiated() {
+        DisposableIntIterator it = take.getDomain().getKernelIterator();
+
+        try {
+            while (it.hasNext()) {
+                if (!refs[it.next()].isInstantiated()) {
+                    return false;
+                }
+            }
+        } finally {
+            it.dispose();
+        }
+        return true;
     }
 
     private void maxSameAsRefs() throws ContradictionException {
@@ -224,7 +257,7 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
      */
     private boolean toEnvEqualsToKern() throws ContradictionException {
         if (to.getKernelDomainSize() + sameRefs() >= take.getEnveloppeDomainSize()) {
-            to.instantiate(Util.iterateKer(to.getDomain()), this, false);
+            to.instantiate(Util.iterateKer(to), this, false);
             return true;
         }
         return false;
@@ -274,7 +307,7 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
     // to env (small)
     // refs dom
     private void pruneTo() throws ContradictionException {
-        int[] pt = Util.iterateEnv(take.getDomain());
+        int[] pt = Util.iterateEnv(take);
         DisposableIntIterator it = to.getDomain().getEnveloppeIterator();
         try {
             while (it.hasNext()) {
@@ -292,7 +325,7 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
     // TODO: Can be less conservative for "small" domains.
     private void pruneTake() throws ContradictionException {
         for (int i = 0; i < refs.length; i++) {
-            if (!Util.approxIntersects(refs[i], to)) {
+            if (!Util.intersects(refs[i], to)) {
                 take.remFromEnveloppe(i, this, false);
             }
         }
@@ -334,13 +367,7 @@ public class JoinRef extends AbstractLargeSetIntSConstraint {
                 }
             }
         }
-//        return ans.size() == to.getValue().length;
-        return true;
-    }
-
-    @Override
-    public AbstractSConstraint<Var> opposite(Solver solver) {
-        return super.opposite(solver);
+        return ans.size() == to.getValue().length;
     }
 
     @Override

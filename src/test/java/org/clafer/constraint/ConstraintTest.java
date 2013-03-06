@@ -1,7 +1,6 @@
 package org.clafer.constraint;
 
 import choco.cp.solver.search.integer.branching.AssignVar;
-import choco.cp.solver.search.integer.valiterator.IncreasingDomain;
 import choco.cp.solver.search.integer.valselector.RandomIntValSelector;
 import choco.cp.solver.search.integer.varselector.MinDomain;
 import choco.cp.solver.search.integer.varselector.RandomIntVarSelector;
@@ -13,6 +12,7 @@ import choco.cp.solver.search.set.RandomSetVarSelector;
 import static org.junit.Assert.*;
 import choco.kernel.model.Model;
 import choco.kernel.solver.Solver;
+import java.util.Random;
 import org.clafer.Util;
 import org.clafer.Util.Solution;
 import org.clafer.Util.SolutionTest;
@@ -22,6 +22,12 @@ import org.clafer.Util.SolutionTest;
  * @author jimmy
  */
 public abstract class ConstraintTest {
+
+    private final Random rand = new Random();
+
+    public int nextInt(int n) {
+        return rand.nextInt(n);
+    }
 
     public static Solver newSolver(Model m) {
         return Util.newSolver(m);
@@ -59,7 +65,11 @@ public abstract class ConstraintTest {
     }
 
     public int quickCheckModel(Model model, int repeat) {
-        SolutionTest test = Util.testSolutions(model, repeat);
+        return quickCheckModel(model, repeat, true);
+    }
+
+    public int quickCheckModel(Model model, int repeat, boolean is) {
+        SolutionTest test = Util.testSolutions(model, repeat, is);
 
         assertTrue("Custom solution not equal to default solution: "
                 + test.getDefaultSolution().getSolutions().size() + "/" + test.getCustomSolution().getSolutions().size() + ".",

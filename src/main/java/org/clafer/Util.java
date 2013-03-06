@@ -19,7 +19,6 @@ import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.SConstraint;
 import choco.kernel.solver.variables.integer.IntDomain;
 import choco.kernel.solver.variables.integer.IntDomainVar;
-import choco.kernel.solver.variables.set.SetDomain;
 import choco.kernel.solver.variables.set.SetSubDomain;
 import choco.kernel.solver.variables.set.SetVar;
 import gnu.trove.TIntArrayList;
@@ -30,12 +29,41 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.clafer.collection.IntIterator;
 
 /**
  *
  * @author jimmy
  */
 public class Util {
+
+    // http://stackoverflow.com/questions/8095045/java-array-order-reversing
+    public static void reverse(int[] a, int to) {
+        for (int j = 0; j < to / 2; j++) {
+            int temp = a[j];
+            a[j] = a[to - j - 1];
+            a[to - j - 1] = temp;
+        }
+    }
+
+    public static int[] domainSizes(IntDomainVar... vars) {
+        int[] sizes = new int[vars.length];
+        for (int i = 0; i < vars.length; i++) {
+            sizes[i] = vars[i].getDomainSize();
+        }
+        return sizes;
+    }
+
+    public static int maximum(int[] is) {
+        if (is.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        int max = is[0];
+        for (int i = 1; i < is.length; i++) {
+            max = Math.max(max, is[i]);
+        }
+        return max;
+    }
 
     public static boolean in(int item, int[] array) {
         for (int a : array) {
@@ -80,40 +108,83 @@ public class Util {
         return r;
     }
 
+    public static int sumAndDispose(DisposableIntIterator it) {
+        int sum = 0;
+        try {
+            while (it.hasNext()) {
+                sum += it.next();
+            }
+        } finally {
+            it.dispose();
+        }
+        return sum;
+    }
+
+    public static int sum(int[] is) {
+        int sum = 0;
+        for (int i : is) {
+            sum += i;
+        }
+        return sum;
+    }
+
     public static <T> T[] combine(T[] first, T[] second) {
         T[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
         return result;
     }
 
-    // Optimize by taking size
-    public static int[] iterateDomain(IntDomain dom) {
-        DisposableIntIterator it = dom.getIterator();
+    public static int[] iterateDomain(IntDomainVar var) {
+        int[] a = new int[var.getDomainSize()];
+        DisposableIntIterator it = var.getDomain().getIterator();
         try {
-            return iterate(it);
+            for (int i = 0; i < a.length; i++) {
+                assert it.hasNext();
+                a[i] = it.next();
+            }
+            assert !it.hasNext();
         } finally {
             it.dispose();
         }
+        return a;
     }
 
-    // Optimize by taking size
-    public static int[] iterateKer(SetDomain dom) {
-        DisposableIntIterator it = dom.getKernelIterator();
+    public static int[] iterateKer(SetVar var) {
+        int[] a = new int[var.getKernelDomainSize()];
+        DisposableIntIterator it = var.getDomain().getKernelIterator();
         try {
-            return iterate(it);
+            for (int i = 0; i < a.length; i++) {
+                assert it.hasNext();
+                a[i] = it.next();
+            }
+            assert !it.hasNext();
         } finally {
             it.dispose();
         }
+        return a;
     }
 
-    // Optimize by taking size
-    public static int[] iterateEnv(SetDomain dom) {
-        DisposableIntIterator it = dom.getEnveloppeIterator();
+    public static int[] iterateEnv(SetVar var) {
+        int[] a = new int[var.getEnveloppeDomainSize()];
+        DisposableIntIterator it = var.getDomain().getEnveloppeIterator();
         try {
-            return iterate(it);
+            for (int i = 0; i < a.length; i++) {
+                assert it.hasNext();
+                a[i] = it.next();
+            }
+            assert !it.hasNext();
         } finally {
             it.dispose();
         }
+        return a;
+    }
+
+    public static int[] iterate(IntIterator it) {
+        TIntArrayList i = new TIntArrayList();
+        while (it.hasNext()) {
+            i.add(it.next());
+        }
+        return i.toNativeArray();
     }
 
     public static int[] iterate(DisposableIntIterator it) {
@@ -124,10 +195,28 @@ public class Util {
         return i.toNativeArray();
     }
 
+    public static int[] iterateAndDispose(DisposableIntIterator it) {
+        try {
+            return iterate(it);
+        } finally {
+            it.dispose();
+        }
+    }
+
     public static int[] getVals(IntDomainVar... vars) {
+        Check.noNulls(vars);
         int[] vals = new int[vars.length];
         for (int i = 0; i < vars.length; i++) {
             vals[i] = vars[i].getVal();
+        }
+        return vals;
+    }
+
+    public static int[][] getVals(SetVar... vars) {
+        Check.noNulls(vars);
+        int[][] vals = new int[vars.length][];
+        for (int i = 0; i < vars.length; i++) {
+            vals[i] = vars[i].getValue();
         }
         return vals;
     }
@@ -162,6 +251,21 @@ public class Util {
         }
     }
 
+    public static void envSubsetOf(SConstraint cause, SetVar sub, IntDomainVar sup) throws ContradictionException {
+        DisposableIntIterator it = sub.getDomain().getEnveloppeIterator();
+        try {
+            while (it.hasNext()) {
+                int x = it.next();
+
+                if (!sup.canBeInstantiatedTo(x)) {
+                    sub.remFromEnveloppe(x, cause, false);
+                }
+            }
+        } finally {
+            it.dispose();
+        }
+    }
+
     public static void envSubsetOf(SConstraint cause, SetVar sub, SetVar sup) throws ContradictionException {
         DisposableIntIterator it = sub.getDomain().getEnveloppeIterator();
         try {
@@ -183,6 +287,22 @@ public class Util {
             while (it.hasNext()) {
                 sup.addToKernel(it.next(), cause, false);
             }
+        } finally {
+            it.dispose();
+        }
+    }
+
+    public static TIntHashSet enumerate(DisposableIntIterator it) {
+        TIntHashSet i = new TIntHashSet();
+        while (it.hasNext()) {
+            i.add(it.next());
+        }
+        return i;
+    }
+
+    public static TIntHashSet enumerateAndDispose(DisposableIntIterator it) {
+        try {
+            return enumerate(it);
         } finally {
             it.dispose();
         }
@@ -270,6 +390,18 @@ public class Util {
         return new Solution(solutions, "#" + solver.getSolutionCount() + " solutions " + solver.runtimeStatistics());
     }
 
+    public static Solution oneSolution(Model model) {
+        return oneSolution(newSolver(model));
+    }
+
+    public static Solution oneSolution(Solver solver) {
+        if (solver.solve()) {
+            assert solver.checkSolution();
+            return new Solution(Collections.singleton(solver.solutionToString()), solver.runtimeStatistics());
+        }
+        throw new IllegalStateException();
+    }
+
     public static Solver newSolver(Model m) {
         Solver solver = new CPSolver();
         solver.read(m);
@@ -277,11 +409,7 @@ public class Util {
         return solver;
     }
 
-    public static SolutionTest testSolutions(Model m) {
-        return testSolutions(m, 1);
-    }
-
-    public static SolutionTest testSolutions(Model m, int repeat) {
+    public static SolutionTest testSolutions(Model m, int repeat, boolean is) {
         Check.notNull(m);
         if (repeat < 1) {
             throw new IllegalArgumentException();
@@ -305,7 +433,7 @@ public class Util {
         }
 
         List<Solution> randomISSolutions = new ArrayList<Solution>();
-        for (int i = 0; i < repeat; i++) {
+        for (int i = 0; i < repeat && is; i++) {
             Solver randomISSolver = newSolver(m);
             randomISSolver.addGoal(new AssignVar(new RandomIntVarSelector(randomISSolver), new RandomIntValSelector()));
             randomISSolver.addGoal(new AssignSetVar(new RandomSetVarSelector(randomISSolver), new RandomSetValSelector()));
@@ -373,7 +501,7 @@ public class Util {
             return randomISSolutions;
         }
     }
-    
+
     public static void main(String[] args) throws Exception {
         String[] s = new String[]{"abc", "def", "ghi"};
         System.out.println(Arrays.toString(cons("456", s)));
