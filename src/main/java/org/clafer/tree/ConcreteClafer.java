@@ -11,7 +11,8 @@ import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Solver;
-import java.util.Objects;
+import java.io.IOException;
+import org.clafer.Check;
 import org.clafer.Exprs;
 
 /**
@@ -24,6 +25,7 @@ public class ConcreteClafer extends AtomicClafer {
     private final SetVariable[] childSet;
     private final IntegerVariable[] parentPointers;
     private final AbstractClafer sup;
+    private final AtomicClafer parent;
 
     public ConcreteClafer(Model model, String name, int scope, Card card, AtomicClafer parent) {
         this(model, name, scope, card, parent, null);
@@ -33,7 +35,8 @@ public class ConcreteClafer extends AtomicClafer {
             AtomicClafer parent, AbstractClafer sup) {
         super(name, scope, setVar(name, 0, scope - 1));
 
-        this.card = card;
+        this.card = Check.notNull(card);
+        this.parent = Check.notNull(parent);
         this.sup = sup;
 
         this.childSet = skipCards(name + "@Child", parent.getScope(), 0, scope - 1, card);
@@ -45,13 +48,14 @@ public class ConcreteClafer extends AtomicClafer {
         model.addConstraint(Choco.increasingNValue(num, parentPointers));
 
         // TODO: ifthenelse
-        if (card.isBounded()) {
-            for (int i = 0; i < childSet.length; i++) {
+        for (int i = 0; i < childSet.length; i++) {
+            if (card.isBounded()) {
                 model.addConstraint(Choco.implies(Choco.member(i, parent.getSet()),
                         Exprs._betweenCard(childSet[i], card.getLow(), card.getHigh())));
-                model.addConstraint(Choco.implies(Choco.notMember(i, parent.getSet()),
-                        Choco.eqCard(childSet[i], 0)));
             }
+            model.addConstraint(Choco.implies(Choco.notMember(i, parent.getSet()),
+                    Choco.eqCard(childSet[i], 0)));
+
         }
 
         parent.addChild(this);
@@ -62,6 +66,14 @@ public class ConcreteClafer extends AtomicClafer {
 
     public Card getCard() {
         return card;
+    }
+
+    public AtomicClafer getParent() {
+        return parent;
+    }
+
+    public SetVariable[] getChildSet() {
+        return childSet;
     }
 
     public IntegerVariable[] getParentPointers() {
@@ -90,12 +102,13 @@ public class ConcreteClafer extends AtomicClafer {
     }
 
     @Override
-    protected void print(Solver solver, String indent, int parent) {
+    protected void print(Solver solver, String indent, int parent, Appendable output)
+            throws IOException {
         int[] nums = solver.getVar(childSet[parent]).getValue();
         for (int num : nums) {
-            System.out.println(indent + getName() + num);
-            for (Clafer child : getChildren()) {
-                child.print(solver, indent + "  ", num);
+            output.append(indent + getName() + num).append('\n');
+            for (Clafer child : getRefAndChildren()) {
+                child.print(solver, indent + "  ", num, output);
             }
         }
     }

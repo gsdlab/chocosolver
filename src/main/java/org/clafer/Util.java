@@ -13,11 +13,11 @@ import choco.cp.solver.search.set.RandomSetValSelector;
 import choco.cp.solver.search.set.RandomSetVarSelector;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.model.Model;
+import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
 import choco.kernel.solver.constraints.SConstraint;
-import choco.kernel.solver.variables.integer.IntDomain;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.set.SetSubDomain;
 import choco.kernel.solver.variables.set.SetVar;
@@ -29,7 +29,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import org.clafer.collection.IntIterator;
+import org.clafer.tree.AtomicClafer;
+import org.clafer.tree.ConcreteClafer;
+import org.clafer.tree.Expr;
+import org.clafer.tree.IntExpr;
+import org.clafer.tree.SetExpr;
 
 /**
  *
@@ -44,6 +51,27 @@ public class Util {
             a[j] = a[to - j - 1];
             a[to - j - 1] = temp;
         }
+    }
+
+    public static IntegerVariable[][] transpose(IntegerVariable[][] a) {
+        Check.noNulls(a);
+        if (a.length == 0) {
+            return new IntegerVariable[][]{};
+        }
+        int wide = a[0].length;
+        for (IntegerVariable[] b : a) {
+            Check.noNulls(b);
+            if (b.length != wide) {
+                throw new IllegalArgumentException();
+            }
+        }
+        IntegerVariable[][] z = new IntegerVariable[wide][a.length];
+        for(int i = 0; i < a.length; i++) {
+            for(int j = 0; j < wide; j++) {
+                z[j][i] = a[i][j];
+            }
+        }
+        return z;
     }
 
     public static int[] domainSizes(IntDomainVar... vars) {
@@ -74,9 +102,17 @@ public class Util {
         return false;
     }
 
-    public static <T> List<T> cons(T item, List<T> list) {
-        List<T> r = new ArrayList<T>(list);
-        r.add(item);
+    public static <T> List<T> cons(T head, List<? extends T> tail) {
+        List<T> r = new ArrayList<T>(tail.size() + 1);
+        r.add(head);
+        r.addAll(tail);
+        return r;
+    }
+
+    public static <T> List<T> cons(List<? extends T> head, T tail) {
+        List<T> r = new ArrayList<T>(head.size() + 1);
+        r.addAll(head);
+        r.add(tail);
         return r;
     }
 
@@ -373,6 +409,26 @@ public class Util {
         return false;
     }
 
+    public static List<ConcreteClafer> filterConcrete(List<AtomicClafer> clafers) {
+        List<ConcreteClafer> concretes = new ArrayList<ConcreteClafer>();
+        for (AtomicClafer clafer : clafers) {
+            if (clafer instanceof ConcreteClafer) {
+                concretes.add((ConcreteClafer) clafer);
+            }
+        }
+        return concretes;
+    }
+
+    public static List<ConcreteClafer> filterInexactCard(List<ConcreteClafer> clafers) {
+        List<ConcreteClafer> inexact = new ArrayList<ConcreteClafer>();
+        for (ConcreteClafer clafer : clafers) {
+            if (!clafer.getCard().isExact()) {
+                inexact.add(clafer);
+            }
+        }
+        return inexact;
+    }
+
     public static Solution allSolutions(Model model) {
         return allSolutions(newSolver(model));
     }
@@ -502,9 +558,37 @@ public class Util {
         }
     }
 
+    public static void a(Expr a) {
+        System.out.println("Expr");
+
+    }
+
+    public static void a(SetExpr a) {
+        System.out.println("SetExpr");
+
+    }
+
+    public static void a(IntExpr a) {
+        System.out.println("IntExpr");
+    }
+
+    public static Expr b() {
+        return new SetExpr(null, null);
+    }
+
     public static void main(String[] args) throws Exception {
-        String[] s = new String[]{"abc", "def", "ghi"};
-        System.out.println(Arrays.toString(cons("456", s)));
-        System.out.println(Arrays.toString(cons("123", cons("456", s))));
+        long start = System.currentTimeMillis();
+        ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
+        if (engine == null) {
+            throw new IllegalStateException("Missing javascript engine.");
+        }
+
+        System.out.println(System.currentTimeMillis() - start);
+        engine.eval("importClass(Packages.org.clafer.Util);\n"
+                + "Util.a(Util.b());");
+//                + "importClass(Packages.org.clafer.func.Func);\n"
+//                + "var impl = { apply: function (a) { return 'Hello, World!' + a; }};\n"
+//                + "Util.k(new Func(impl));");
+        System.out.println(System.currentTimeMillis() - start);
     }
 }

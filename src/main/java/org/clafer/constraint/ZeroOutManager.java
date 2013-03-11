@@ -3,6 +3,7 @@ package org.clafer.constraint;
 import static choco.Choco.*;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.model.variables.set.SetVariable;
 
 /**
  *
@@ -11,20 +12,13 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 public class ZeroOutManager {
 
     /**
-     * x_i = z => y_i = 0
+     * x not in s => i[x] = 0
      */
-    public static Constraint zeroOut(IntegerVariable[] x, IntegerVariable[] y, int z) {
-        if (x.length != y.length) {
-            throw new IllegalArgumentException();
-        }
-        Constraint[] cs = new Constraint[x.length];
-        for (int i = 0; i < x.length; i++) {
-            cs[i] = implies(eq(x[i], z), neq(y[i], z));
+    public static Constraint zeroOut(SetVariable s, IntegerVariable[] i) {
+        Constraint[] cs = new Constraint[i.length];
+        for (int x = 0; x < i.length; x++) {
+            cs[x] = implies(notMember(x, s), eq(i[x], 0));
         }
         return and(cs);
-    }
-
-    public static Constraint zeroOut(IntegerVariable[] parents, IntegerVariable[] refs) {
-        return zeroOut(parents, refs, parents[0].getUppB());
     }
 }

@@ -1,7 +1,9 @@
 package org.clafer.tree;
 
+import choco.kernel.model.Model;
 import java.util.List;
 import choco.kernel.solver.Solver;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.clafer.Check;
@@ -20,13 +22,14 @@ public class AbstractClafer extends AtomicClafer {
     }
 
     @Override
-    protected void print(Solver solver, String indent, int parent) {
-        for (Clafer child : getChildren()) {
-            child.print(solver, indent + "  ", parent);
+    protected void print(Solver solver, String indent, int parent, Appendable output)
+            throws IOException {
+        for (Clafer child : getRefAndChildren()) {
+            child.print(solver, indent + "  ", parent, output);
         }
     }
 
-    public void addSubclafer(AtomicClafer sub) {
+    void addSubclafer(AtomicClafer sub) {
         subs.add(Check.notNull(sub));
     }
 

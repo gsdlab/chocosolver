@@ -8,7 +8,15 @@ public class Check {
 
     public static <T> T[] noNulls(T... ts) {
         Check.notNull(ts);
-        for(T t : ts) {
+        for (T t : ts) {
+            Check.notNull(t);
+        }
+        return ts;
+    }
+
+    public static <T extends Iterable<?>> T noNulls(T ts) {
+        Check.notNull(ts);
+        for (Object t : ts) {
             Check.notNull(t);
         }
         return ts;

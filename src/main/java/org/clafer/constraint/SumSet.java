@@ -247,41 +247,41 @@ public class SumSet extends AbstractBinSetIntSConstraint {
             for (; i < maxC /*&& mini.hasNext()*/; i++) {
                 int val = mini.next();
                 if (val > 0) {
-                    System.out.println(min);
-                    DisposableIntIterator itt = v1.getDomain().getEnveloppeIterator();
-                    try {
-                        while (itt.hasNext()) {
-                            int vall = itt.next();
-
-                            if (vall + min > v0.getSup()) {
-                                v1.remFromEnveloppe(vall, this, false);
-                            }
-                        }
-                    } finally {
-                        itt.dispose();
-                    }
+//                    System.out.println(min);
+//                    DisposableIntIterator itt = v1.getDomain().getEnveloppeIterator();
+//                    try {
+//                        while (itt.hasNext()) {
+//                            int vall = itt.next();
+//
+//                            if (vall + min > v0.getSup()) {
+//                                v1.remFromEnveloppe(vall, this, false);
+//                            }
+//                        }
+//                    } finally {
+//                        itt.dispose();
+//                    }
                     break;
                 }
                 min += val;
             }
-            if (mini.hasNext()) {
-                int val = mini.next();
-                if (val > 0) {
-                    System.out.println(min);
-                    DisposableIntIterator itt = v1.getDomain().getEnveloppeIterator();
-                    try {
-                        while (itt.hasNext()) {
-                            int vall = itt.next();
-
-                            if (vall + min > v0.getSup()) {
-                                v1.remFromEnveloppe(vall, this, false);
-                            }
-                        }
-                    } finally {
-                        itt.dispose();
-                    }
-                }
-            }
+//            if (mini.hasNext()) {
+//                int val = mini.next();
+//                if (val > 0) {
+//                    System.out.println(min);
+//                    DisposableIntIterator itt = v1.getDomain().getEnveloppeIterator();
+//                    try {
+//                        while (itt.hasNext()) {
+//                            int vall = itt.next();
+//
+//                            if (vall + min > v0.getSup()) {
+//                                v1.remFromEnveloppe(vall, this, false);
+//                            }
+//                        }
+//                    } finally {
+//                        itt.dispose();
+//                    }
+//                }
+//            }
 
             v0.updateInf(min, this, false);
         }

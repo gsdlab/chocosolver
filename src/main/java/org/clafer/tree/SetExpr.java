@@ -1,7 +1,6 @@
 package org.clafer.tree;
 
 import choco.kernel.model.constraints.Constraint;
-import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import java.util.Collections;
 import java.util.List;
@@ -13,21 +12,21 @@ import org.clafer.Check;
  */
 public class SetExpr extends Expr {
 
+    private final AtomicClafer type;
     private final SetVariable value;
 
-    public SetExpr(SetVariable value,
-            List<Constraint> constraints,
-            List<SetVariable> setVars,
-            List<IntegerVariable> intVars) {
-        super(constraints, setVars, intVars);
-        this.value = Check.notNull(value);
+    public SetExpr(AtomicClafer type, SetVariable value, List<Constraint> constraints) {
+        super(constraints);
+        this.type = type;
+        this.value = value;
     }
 
-    public SetExpr(SetVariable value) {
-        this(value,
-                Collections.<Constraint>emptyList(),
-                Collections.<SetVariable>emptyList(),
-                Collections.<IntegerVariable>emptyList());
+    public SetExpr(AtomicClafer type, SetVariable value) {
+        this(type, value, Collections.<Constraint>emptyList());
+    }
+
+    public AtomicClafer getType() {
+        return type;
     }
 
     public SetVariable getValue() {
