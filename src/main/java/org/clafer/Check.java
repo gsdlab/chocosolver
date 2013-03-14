@@ -22,6 +22,13 @@ public class Check {
         return ts;
     }
 
+    public static <T> T notNull(String message, T t) {
+        if (t == null) {
+            throw new NullPointerException(message);
+        }
+        return t;
+    }
+
     public static <T> T notNull(T t) {
         if (t == null) {
             throw new NullPointerException();

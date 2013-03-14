@@ -38,6 +38,13 @@ public abstract class Clafer {
         return scope - 1;
     }
 
+    /**
+     * Only "one use", do not build on multiple models.
+     * 
+     * @param model 
+     */
+    public abstract void build(Model model);
+
     protected abstract void print(Solver solver, String indent, int parent, Appendable output)
             throws IOException;
 }

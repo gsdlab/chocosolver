@@ -17,7 +17,7 @@ import java.util.Random;
  */
 public class UpcastTest extends ConstraintTest {
 
-    @Test
+    @Test(timeout = 60000)
     public void testUpcast() {
         Random rand = new Random();
         Model m = new CPModel();
@@ -41,7 +41,7 @@ public class UpcastTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSmall() {
         Model m = new CPModel();
         SetVariable from = Choco.makeSetVar("from", new int[]{0});
@@ -64,7 +64,7 @@ public class UpcastTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void quickTest() {
         Model m = new CPModel();
 

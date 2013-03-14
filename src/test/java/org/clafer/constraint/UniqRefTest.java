@@ -34,7 +34,7 @@ public class UniqRefTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testUniqRef() {
         Random rand = new Random();
         for (int rr = 0; rr < 10; rr++) {
@@ -60,7 +60,7 @@ public class UniqRefTest extends ConstraintTest {
      * back tracking on refs, causing poor performance. Noticable when
      * using uniqRefPrim.
      */
-    @Test
+    @Test(timeout = 60000)
     public void testManyParentSmallDomainRefs() {
         Model m = new CPModel();
 
@@ -76,7 +76,7 @@ public class UniqRefTest extends ConstraintTest {
     /**
      * Similar to testManyParentSmallDomainRefs but force refs to branch first.
      */
-    @Test
+    @Test(timeout = 60000)
     public void testManyRefsSmallDomainParents() {
         Model m = new CPModel();
 
@@ -91,7 +91,7 @@ public class UniqRefTest extends ConstraintTest {
         checkCorrectness(solver, parents, refs);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void quickTest() {
         Model m = new CPModel();
 

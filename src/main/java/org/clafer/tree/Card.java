@@ -6,19 +6,16 @@ package org.clafer.tree;
  */
 public class Card {
 
+    private static final int UNBOUNDED_HIGH = Integer.MAX_VALUE;
     private final int low;
-    private final Integer high;
+    private final int high;
 
     public Card() {
         this(0);
     }
 
     public Card(int low) {
-        if (low < 0) {
-            throw new IllegalArgumentException();
-        }
-        this.low = low;
-        this.high = null;
+        this(low, UNBOUNDED_HIGH);
     }
 
     public Card(int low, int high) {
@@ -49,18 +46,32 @@ public class Card {
     }
 
     public boolean hasHigh() {
-        return high != null;
+        return high != UNBOUNDED_HIGH;
     }
 
     public int getHigh() {
-        return hasHigh() ? high.intValue() : Integer.MAX_VALUE;
+        return high;
+    }
+
+    public Card add(Card addend) {
+        if (hasHigh() && addend.hasHigh()) {
+            return new Card(low + addend.low, high + addend.high);
+        }
+        return new Card(low + addend.low);
+    }
+
+    public Card mult(Card factor) {
+        if (hasHigh() && factor.hasHigh()) {
+            return new Card(low * factor.low, high * high);
+        }
+        return new Card(low * factor.low);
     }
 
     @Override
     public String toString() {
-        if (hasHigh()) {
+        if (!hasHigh()) {
             return hasLow() ? low + "..*" : "*";
         }
-        return isExact() ? Integer.toString(low) : low + ".." + getHigh();
+        return isExact() ? Integer.toString(low) : low + ".." + high;
     }
 }

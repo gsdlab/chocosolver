@@ -25,13 +25,8 @@ public class SumSetTest extends ConstraintTest {
         assertEquals($sum, Util.sum($set));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSumSetFixedCardinality() {
-//        int bc = 0;
-//        int no = 0;
-//        for (int r = 0; r < 1000; r++) {
-//            System.out.println(r);
-        ChocoLogging.toSearch();
         Model m = new CPModel();
 
         SetVariable set = Choco.makeSetVar("set", 0, nextInt(1000));
@@ -61,7 +56,7 @@ public class SumSetTest extends ConstraintTest {
 //        System.out.println(no);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSumSetFixedSum() {
         Model m = new CPModel();
 
@@ -77,7 +72,7 @@ public class SumSetTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSumSet() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Model m = new CPModel();
@@ -94,7 +89,7 @@ public class SumSetTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void quickTest() {
         Model m = new CPModel();
 

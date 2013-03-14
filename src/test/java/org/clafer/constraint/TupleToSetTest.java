@@ -27,7 +27,7 @@ public class TupleToSetTest extends ConstraintTest {
         assertEquals(new TIntHashSet($tuple), new TIntHashSet($set));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testTupleToSet() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Model m = new CPModel();
@@ -48,7 +48,7 @@ public class TupleToSetTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void largeDomainTest() {
         Model m = new CPModel();
 
@@ -60,8 +60,8 @@ public class TupleToSetTest extends ConstraintTest {
         Solver solver = solveOnce(m);
         checkCorrectness(solver, tuple, set);
     }
-    
-    @Test
+
+    @Test(timeout = 60000)
     public void quickTest() {
         Model m = new CPModel();
 

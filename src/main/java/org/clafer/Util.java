@@ -13,7 +13,11 @@ import choco.cp.solver.search.set.RandomSetValSelector;
 import choco.cp.solver.search.set.RandomSetVarSelector;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.model.Model;
+import choco.kernel.model.variables.VariableType;
+import choco.kernel.model.variables.integer.IntegerConstantVariable;
 import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.model.variables.set.SetConstantVariable;
+import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.Solver;
@@ -29,8 +33,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import org.clafer.collection.IntIterator;
 import org.clafer.tree.AtomicClafer;
 import org.clafer.tree.ConcreteClafer;
@@ -43,6 +45,33 @@ import org.clafer.tree.SetExpr;
  * @author jimmy
  */
 public class Util {
+
+    /**
+     * 
+     * @param variable
+     * @return The integer value if variable is a constant, null otherwise.
+     */
+    public static Integer getConstant(IntegerVariable variable) {
+        if (variable.getVariableType().equals(VariableType.CONSTANT_INTEGER)) {
+            return ((IntegerConstantVariable) variable).getValue();
+        }
+        if (variable.isConstant()) {
+            return variable.getLowB();
+        }
+        return null;
+    }
+
+    /**
+     * 
+     * @param variable
+     * @return The integer values if variable is a constant, null otherwise.
+     */
+    public static int[] getConstant(SetVariable variable) {
+        if (variable.getVariableType().equals(VariableType.CONSTANT_SET)) {
+            return ((SetConstantVariable) variable).getValues();
+        }
+        return null;
+    }
 
     // http://stackoverflow.com/questions/8095045/java-array-order-reversing
     public static void reverse(int[] a, int to) {
@@ -66,8 +95,8 @@ public class Util {
             }
         }
         IntegerVariable[][] z = new IntegerVariable[wide][a.length];
-        for(int i = 0; i < a.length; i++) {
-            for(int j = 0; j < wide; j++) {
+        for (int i = 0; i < a.length; i++) {
+            for (int j = 0; j < wide; j++) {
                 z[j][i] = a[i][j];
             }
         }
@@ -502,6 +531,8 @@ public class Util {
                 customSolution,
                 randomSISolutions.toArray(new Solution[randomSISolutions.size()]),
                 randomISSolutions.toArray(new Solution[randomISSolutions.size()]));
+
+
     }
 
     public static class Solution {
@@ -577,18 +608,18 @@ public class Util {
     }
 
     public static void main(String[] args) throws Exception {
-        long start = System.currentTimeMillis();
-        ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
-        if (engine == null) {
-            throw new IllegalStateException("Missing javascript engine.");
-        }
-
-        System.out.println(System.currentTimeMillis() - start);
-        engine.eval("importClass(Packages.org.clafer.Util);\n"
-                + "Util.a(Util.b());");
-//                + "importClass(Packages.org.clafer.func.Func);\n"
-//                + "var impl = { apply: function (a) { return 'Hello, World!' + a; }};\n"
-//                + "Util.k(new Func(impl));");
-        System.out.println(System.currentTimeMillis() - start);
+//        long start = System.currentTimeMillis();
+//        ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
+//        if (engine == null) {
+//            throw new IllegalStateException("Missing javascript engine.");
+//        }
+//
+//        System.out.println(System.currentTimeMillis() - start);
+//        engine.eval("importClass(Packages.org.clafer.Util);\n"
+//                + "Util.a(Util.b());");
+////                + "importClass(Packages.org.clafer.func.Func);\n"
+////                + "var impl = { apply: function (a) { return 'Hello, World!' + a; }};\n"
+////                + "Util.k(new Func(impl));");
+//        System.out.println(System.currentTimeMillis() - start);
     }
 }

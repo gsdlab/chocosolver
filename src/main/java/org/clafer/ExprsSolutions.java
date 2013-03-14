@@ -1,6 +1,8 @@
 package org.clafer;
 
+import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
+import choco.kernel.model.Model;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.Solver;
 import java.io.IOException;
@@ -17,36 +19,40 @@ public class ExprsSolutions implements Iterator<String> {
     private final Solver solver;
     private final RootClafer root;
     private boolean hasNext = false;
-    private boolean first = true;
     private boolean end = false;
 
     public ExprsSolutions(Exprs exprs) {
         Check.notNull(exprs);
 
+        Model model = new CPModel();
+        exprs.getRoot().build(model);
+
         solver = new CPSolver();
-        solver.read(exprs.getModel());
+        solver.read(model);
         solver.getConfiguration().putInt(Configuration.LOGGING_MAX_DEPTH, 300000);
 
         root = exprs.getRoot();
+
+        hasNext = solver.solve();
+        end = !hasNext;
     }
 
     @Override
     public boolean hasNext() {
-        if(hasNext) {
+        if (hasNext) {
             return true;
         }
-        if(end) {
+        if (end) {
             return false;
         }
-        hasNext = first ? solver.solve() : solver.nextSolution();
+        hasNext = solver.nextSolution();
         end = !hasNext;
-        first = false;
         return hasNext;
     }
 
     @Override
     public String next() {
-        if(!hasNext()) {
+        if (!hasNext()) {
             throw new NoSuchElementException();
         }
         hasNext = false;
@@ -57,6 +63,18 @@ public class ExprsSolutions implements Iterator<String> {
             throw new RuntimeException("StringBuilder should not throw IO exceptions!", e);
         }
         return result.toString();
+    }
+
+    public String getRuntimeStatistics() {
+        return solver.runtimeStatistics();
+    }
+
+    public String getSolutionToString() {
+        return solver.solutionToString();
+    }
+
+    public int getSolutionCount() {
+        return solver.getSolutionCount();
     }
 
     @Override

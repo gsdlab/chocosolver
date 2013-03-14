@@ -4,16 +4,16 @@ import org.clafer.func.MinFunc;
 import org.clafer.func.LinearFunc;
 import org.clafer.func.IntFunc;
 import org.clafer.func.ConstFunc;
-import static org.clafer.Exprs.*;
 import static org.clafer.Util.*;
-import choco.Choco;
+import static choco.Choco.*;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Solver;
 import java.io.IOException;
 import org.clafer.Check;
-import org.clafer.Exprs;
+import org.clafer.ChocoUtil;
+import org.clafer.constraint.BoolChannelManager;
 
 /**
  *
@@ -27,36 +27,20 @@ public class ConcreteClafer extends AtomicClafer {
     private final AbstractClafer sup;
     private final AtomicClafer parent;
 
-    public ConcreteClafer(Model model, String name, int scope, Card card, AtomicClafer parent) {
-        this(model, name, scope, card, parent, null);
+    public ConcreteClafer(String name, int scope, Card card, AtomicClafer parent) {
+        this(name, scope, card, parent, null);
     }
 
-    public ConcreteClafer(Model model, String name, int scope, Card card,
+    public ConcreteClafer(String name, int scope, Card card,
             AtomicClafer parent, AbstractClafer sup) {
-        super(name, scope, setVar(name, 0, scope - 1));
+        super(name, scope, makeSetVar(name, 0, scope - 1), makeBooleanVarArray(name + "@Membership", scope));
 
         this.card = Check.notNull(card);
         this.parent = Check.notNull(parent);
         this.sup = sup;
 
         this.childSet = skipCards(name + "@Child", parent.getScope(), 0, scope - 1, card);
-        model.addConstraint(Choco.setUnion(childSet, getSet()));
-        this.parentPointers = intArray(name + "@Parent", scope, 0, parent.getScope());
-        SetVariable unused = setVar(name + "@Unused", 0, scope - 1);
-        model.addConstraint(Choco.inverseSet(parentPointers, cons(childSet, unused)));
-        IntegerVariable num = intVar(name + "@Num", 0, parent.getScope() + 1 /*, Options.V_NO_DECISION*/);
-        model.addConstraint(Choco.increasingNValue(num, parentPointers));
-
-        // TODO: ifthenelse
-        for (int i = 0; i < childSet.length; i++) {
-            if (card.isBounded()) {
-                model.addConstraint(Choco.implies(Choco.member(i, parent.getSet()),
-                        Exprs._betweenCard(childSet[i], card.getLow(), card.getHigh())));
-            }
-            model.addConstraint(Choco.implies(Choco.notMember(i, parent.getSet()),
-                    Choco.eqCard(childSet[i], 0)));
-
-        }
+        this.parentPointers = makeIntVarArray(name + "@Parent", scope, 0, parent.getScope());
 
         parent.addChild(this);
         if (sup != null) {
@@ -94,11 +78,41 @@ public class ConcreteClafer extends AtomicClafer {
         SetVariable[] skip = new SetVariable[dimension];
         for (int i = 0; i < dimension; i++) {
             skip[i] =
-                    setVar(name + "#" + i,
+                    makeSetVar(name + "#" + i,
                     lowFunc.apply(i),
                     highFunc.apply(i));
         }
         return skip;
+    }
+
+    @Override
+    protected void optimize(Model model, Card parentCard) {
+        globalCard = card.mult(parentCard);
+        for (AtomicClafer child : getChildren()) {
+            child.optimize(model, globalCard);
+        }
+    }
+
+    @Override
+    public void build(Model model) {
+        model.addConstraint(setUnion(childSet, getSet()));
+        model.addConstraint(BoolChannelManager.boolChannel(getMembership(), getSet()));
+        SetVariable unused = makeSetVar(getName() + "@Unused", 0, getScope() - 1);
+        model.addConstraint(inverseSet(parentPointers, cons(childSet, unused)));
+        IntegerVariable num = makeIntVar(getName() + "@Num", 0, parent.getScope() + 1 /*, Options.V_NO_DECISION*/);
+        model.addConstraint(increasingNValue(num, parentPointers));
+
+        // TODO: ifthenelse
+        for (int i = 0; i < childSet.length; i++) {
+            if (card.isBounded()) {
+                model.addConstraint(implies(eq(parent.getMembership()[i], 1),
+                        ChocoUtil.betweenCard(childSet[i], card.getLow(), card.getHigh())));
+            }
+            model.addConstraint(implies(eq(parent.getMembership()[i], 0),
+                    eqCard(childSet[i], 0)));
+
+        }
+        super.build(model);
     }
 
     @Override

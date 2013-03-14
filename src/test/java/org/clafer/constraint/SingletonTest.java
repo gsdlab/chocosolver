@@ -23,7 +23,7 @@ public class SingletonTest extends ConstraintTest {
         assertEquals($i, $s[0]);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSingleton() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Model m = new CPModel();
@@ -40,7 +40,7 @@ public class SingletonTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void quickTest() {
         Model m = new CPModel();
 

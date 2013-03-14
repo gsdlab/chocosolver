@@ -32,7 +32,7 @@ public class JoinTest extends ConstraintTest {
         assertEquals(set.size(), $to.length);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testJoin() {
         for (int rr = 0; rr < 10; rr++) {
             Model m = new CPModel();
@@ -49,7 +49,7 @@ public class JoinTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void quickCheck() {
         Model m = new CPModel();
         SetVariable take = Choco.makeSetVar("take", 0, 2);

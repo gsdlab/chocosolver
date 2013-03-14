@@ -3,7 +3,10 @@ package org.clafer.constraint;
 import choco.cp.solver.variables.integer.IntVarEvent;
 import choco.cp.solver.variables.set.SetVarEvent;
 import choco.kernel.solver.ContradictionException;
+import choco.kernel.solver.Solver;
+import choco.kernel.solver.constraints.AbstractSConstraint;
 import choco.kernel.solver.constraints.set.AbstractBinSetIntSConstraint;
+import choco.kernel.solver.variables.Var;
 import choco.kernel.solver.variables.integer.IntDomainVar;
 import choco.kernel.solver.variables.set.SetVar;
 import org.clafer.Util;
@@ -80,5 +83,10 @@ public final class Singleton extends AbstractBinSetIntSConstraint {
     @Override
     public String pretty() {
         return v0.pretty() + " = sum(" + v1.pretty() + ")";
+    }
+
+    @Override
+    public AbstractSConstraint<Var> opposite(Solver solver) {
+        return super.opposite(solver);
     }
 }

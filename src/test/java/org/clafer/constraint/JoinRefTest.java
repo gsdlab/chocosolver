@@ -34,7 +34,7 @@ public class JoinRefTest extends ConstraintTest {
         assertEquals(set.size(), $to.length);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testJoinRef() {
         Random rand = new Random();
         for (int rr = 0; rr < 10; rr++) {
@@ -53,7 +53,7 @@ public class JoinRefTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testJoinLargeDomain() {
         Random rand = new Random();
         Model m = new CPModel();
@@ -68,7 +68,7 @@ public class JoinRefTest extends ConstraintTest {
         checkCorrectness(solver, take, refs, to);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void quickTest() {
         Model m = new CPModel();
 
