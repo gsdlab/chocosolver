@@ -47,6 +47,18 @@ public class BoolSlideManager extends IntConstraintManager {
             throw new IllegalArgumentException();
         }
 
+        Integer constant = Util.getConstant(offset);
+        if (constant != null) {
+            if (constant > slide.length - base.length) {
+                return Choco.FALSE;
+            }
+            Constraint[] constraints = new Constraint[base.length];
+            for (int i = 0; i < constraints.length; i++) {
+                constraints[i] = Choco.eq(base[i], slide[i + constant]);
+            }
+            return Choco.and(constraints);
+        }
+
         return new ComponentConstraint(
                 BoolSlideManager.class,
                 base.length,
@@ -67,7 +79,7 @@ public class BoolSlideManager extends IntConstraintManager {
         solver.addGoal(new AssignVar(new MinDomain(solver), new IncreasingDomain()));
         solver.addGoal(new AssignSetVar(new MinDomSet(solver), new MinEnv()));
         System.out.println(Util.allSolutions(solver).getStatistics());
-        
+
         // #192 solutions 5 Time (ms), 387 Nodes, 392 Backtracks, 0 Restarts - 
         // #192 solutions 1 Time (ms), 387 Nodes, 389 Backtracks, 0 Restarts - 
     }

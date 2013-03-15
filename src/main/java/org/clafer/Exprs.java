@@ -21,10 +21,8 @@ import java.util.List;
 import java.util.Set;
 import org.clafer.constraint.SingletonManager;
 import org.clafer.tree.AbstractClafer;
-import org.clafer.tree.ClaferConstraint;
+import org.clafer.tree.ClaferModel;
 import org.clafer.tree.IntClafer;
-import org.clafer.tree.IntConstraint;
-import org.clafer.tree.SetConstraint;
 
 /**
  * Best way to use this class is with a Javascript engine since it has dynamic dispatch.
@@ -34,123 +32,53 @@ import org.clafer.tree.SetConstraint;
  */
 public class Exprs implements Iterable<String> {
 
-    private final IntClafer intClafer;
-    private final RootClafer root;
+    private final ClaferModel claferModel;
 
     public Exprs(int bitwidth) {
-        // TODO: needed?
-        // model.setDefaultExpressionDecomposition(false);
-        intClafer = new IntClafer(bitwidth);
-        root = new RootClafer();
+        this.claferModel = new ClaferModel(bitwidth);
     }
 
     @Override
     public ExprsSolutions iterator() {
-        return new ExprsSolutions(this);
+        return new ExprsSolutions(claferModel);
+    }
+
+    public ConcreteClafer newTopClafer(String name, int scope, Card card) {
+        return claferModel.newTopClafer(name, scope, card);
+    }
+
+    public AbstractClafer newAbstractClafer(String name, int scope) {
+        return claferModel.newAbstractClafer(name, scope);
     }
 
     public RootClafer getRoot() {
-        return root;
+        return claferModel.getRoot();
     }
 
-    public ConcreteClafer newConcreteClafer(String name, int scope, Card card) {
-        return new ConcreteClafer(name, scope, card, root);
-    }
-
-    public ConcreteClafer newConcreteClafer(String name, int scope, Card card, AbstractClafer sup) {
-        return new ConcreteClafer(name, scope, card, root, sup);
-    }
-
-    public ConcreteClafer newConcreteClafer(String name, int scope, Card card, AtomicClafer parent) {
-        return new ConcreteClafer(name, scope, card, parent);
-    }
-
-    public ConcreteClafer newConcreteClafer(String name, int scope, Card card, AtomicClafer parent, AbstractClafer sup) {
-        return new ConcreteClafer(name, scope, card, parent, sup);
-    }
-
-    /**
-     * Create a new reference with bag semantics, ie. can reference
-     * the same value under the same parent.
-     */
-    public RefClafer newRefBag(AtomicClafer type, ConcreteClafer parent) {
-        return new RefClafer(type, parent, false);
-    }
-
-    /**
-     * Create a new reference with set semantics, ie. cannot reference
-     * the same value under the same parent.
-     */
-    public RefClafer newRefSet(AtomicClafer type, ConcreteClafer parent) {
-        return new RefClafer(type, parent, true);
-    }
-
-    /**
-     * Create a new reference to integers with bag semantics, ie. can reference
-     * the same value under the same parent.
-     */
-    public RefClafer newIntRefBag(ConcreteClafer parent) {
-        return new RefClafer(intClafer, parent, false);
-    }
-
-    /**
-     * Create a new reference to integers with set semantics, ie. cannot reference
-     * the same value under the same parent.
-     */
-    public RefClafer newIntRefSet(ConcreteClafer parent) {
-        return new RefClafer(intClafer, parent, true);
+    public IntClafer getIntType() {
+        return claferModel.getIntClafer();
     }
 
 //    public static void main(String[] args) {
 //        long start = System.currentTimeMillis();
 //        final Exprs e = new Exprs(3);
-//        final ConcreteClafer person = e.newConcreteClafer("person", 2, new Card(2));
-//        final ConcreteClafer hand = e.newConcreteClafer("hand", 2, new Card(0), person);
-//        final ConcreteClafer claw = e.newConcreteClafer("claw", 2, new Card(0), person);
+//        final ConcreteClafer person = e.newTopClafer("person", 6, new Card(2));
+//        final ConcreteClafer hand = person.addChildClafer("hand", 6, new Card(0));
+//        final ConcreteClafer claw = person.addChildClafer("claw", 6, new Card(0));
 //
-//        final ClaferConstraint handClawDisjoint = new ClaferConstraint(hand,
+//        hand.addConstraint(
 //                new SetConstraint() {
 //
 //                    @Override
 //                    public BoolExpr apply(SetExpr thisHand) {
-//                        return none(e.join(e.joinParent(thisHand), claw));
-//                    }
-//                });
-//
-//        Set<String> ans = new HashSet<String>();
-//
-//        int c = 0;
-//        for (String s : e) {
-//            c++;
-//            System.out.println(s);
-//            if (!ans.add(s)) {
-//                throw new Error();
-//            }
-//        }
-//        // 40 solutions
-//        System.out.println(c);
-//
-//        System.out.println(System.currentTimeMillis() - start);
-//    }
-//    public static void main(String[] args) {
-//        long start = System.currentTimeMillis();
-//        final Exprs e = new Exprs(3);
-//        final ConcreteClafer age = e.newConcreteClafer("age", 3, new Card(2));
-//        final RefClafer ageRef = e.newIntRefBag(age);
-//
-//        final ClaferConstraint ageConstraint = new ClaferConstraint(age,
-//                new SetConstraint() {
-//
-//                    @Override
-//                    public BoolExpr apply(SetExpr thisHand) {
-//                        return e.eq(e.joinRef(thisHand), e.constantInt(3));
+//                        return e.none(e.join(e.joinParent(thisHand), claw));
 //                    }
 //                },
 //                new IntConstraint() {
 //
 //                    @Override
 //                    public BoolExpr apply(IntExpr thisHand) {
-//                        return e.eq(e.joinRef(thisHand), e.constantInt(3));
+//                        return e.none(e.join(e.joinParent(thisHand), claw));
 //                    }
 //                });
 //
@@ -159,15 +87,19 @@ public class Exprs implements Iterable<String> {
 //        ExprsSolutions iter = e.iterator();
 //        while (iter.hasNext()) {
 //            String s = iter.next();
-//            System.out.println(iter.getRuntimeStatistics());
-//            System.out.println(iter.getSolutionToString());
-//
-//            System.out.println(s);
+////            System.out.println(iter.getRuntimeStatistics());
+////            System.out.println(iter.getSolutionToString());
+////
+////            System.out.println(s);
 //            if (!ans.add(s)) {
 //                throw new Error();
 //            }
 //        }
-//        // 9 Time (ms), 4 Nodes, 4 Backtracks, 0 Restarts - 
+//        // 9419 Time (ms), 7594 Nodes, 11498 Backtracks, 0 Restarts - 
+//        // 1845
+//        // SelectN on memebership
+//        // 10058 Time (ms), 5742 Nodes, 7794 Backtracks, 0 Restarts - 
+//        // 1845
 //        System.out.println(iter.getRuntimeStatistics());
 //        System.out.println(iter.getSolutionCount());
 //        System.out.println(System.currentTimeMillis() - start);
@@ -175,40 +107,26 @@ public class Exprs implements Iterable<String> {
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
         final Exprs e = new Exprs(3);
-        final ConcreteClafer person = e.newConcreteClafer("person", 6, new Card(3));
-        final ConcreteClafer hand = e.newConcreteClafer("hand", 12, new Card(2), person);
-        final RefClafer age = e.newIntRefBag(person);
-
-        new ClaferConstraint(person,
-                new SetConstraint() {
-
-                    @Override
-                    public BoolExpr apply(SetExpr thisPerson) {
-                        return e.eq(e.joinRef(thisPerson), e.constantInt(2));
-                    }
-                },
-                new IntConstraint() {
-
-                    @Override
-                    public BoolExpr apply(IntExpr thisPerson) {
-                        return e.eq(e.joinRef(thisPerson), e.constantInt(2));
-                    }
-                });
+        final AbstractClafer animal = e.newAbstractClafer("animal", 2);
+        final ConcreteClafer person = e.newTopClafer("person", 2, new Card(2)).extending(animal);
+        final ConcreteClafer hand = person.addChildClafer("hand", 2, new Card(0));
+        final ConcreteClafer claw = person.addChildClafer("claw", 2, new Card(0));
 
         Set<String> ans = new HashSet<String>();
 
         ExprsSolutions iter = e.iterator();
         while (iter.hasNext()) {
             String s = iter.next();
-            System.out.println(iter.getRuntimeStatistics());
-            System.out.println(iter.getSolutionToString());
-
+//            System.out.println(iter.getRuntimeStatistics());
+//            System.out.println(iter.getSolutionToString());
+//
             System.out.println(s);
             if (!ans.add(s)) {
                 throw new Error();
             }
         }
-        // 401 Time (ms), 179 Nodes, 278 Backtracks, 0 Restarts - 
+        // 13 Time (ms), 45 Nodes, 50 Backtracks, 0 Restarts - 
+        // 20
         System.out.println(iter.getRuntimeStatistics());
         System.out.println(iter.getSolutionCount());
         System.out.println(System.currentTimeMillis() - start);
@@ -228,7 +146,7 @@ public class Exprs implements Iterable<String> {
     }
 
     public IntExpr constantInt(int value) {
-        return new IntExpr(intClafer, Choco.constant(value));
+        return new IntExpr(getIntType(), Choco.constant(value));
     }
 
     public SetExpr constantSet(AtomicClafer type, int... values) {
@@ -236,7 +154,7 @@ public class Exprs implements Iterable<String> {
     }
 
     public SetExpr constantIntSet(int... values) {
-        return constantSet(intClafer, values);
+        return constantSet(getIntType(), values);
     }
 
     public BoolExpr none(SetExpr sv) {
@@ -404,6 +322,18 @@ public class Exprs implements Iterable<String> {
     }
 
     public BoolExpr eq(IntExpr e1, IntExpr e2) {
+        Integer c1 = Util.getConstant(e1.getValue());
+        Integer c2 = Util.getConstant(e2.getValue());
+        if (c1 != null) {
+            return new BoolExpr(
+                    Choco.eq(c1.intValue(), e2.getValue()),
+                    concatConstraints(e1, e2));
+        }
+        if (c2 != null) {
+            return new BoolExpr(
+                    Choco.eq(e1.getValue(), c2.intValue()),
+                    concatConstraints(e1, e2));
+        }
         return new BoolExpr(
                 Choco.eq(e1.getValue(), e2.getValue()),
                 concatConstraints(e1, e2));

@@ -8,7 +8,7 @@ import choco.kernel.solver.Solver;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import org.clafer.tree.RootClafer;
+import org.clafer.tree.ClaferModel;
 
 /**
  *
@@ -16,22 +16,21 @@ import org.clafer.tree.RootClafer;
  */
 public class ExprsSolutions implements Iterator<String> {
 
+    private final ClaferModel claferModel;
     private final Solver solver;
-    private final RootClafer root;
     private boolean hasNext = false;
     private boolean end = false;
 
-    public ExprsSolutions(Exprs exprs) {
-        Check.notNull(exprs);
+    public ExprsSolutions(ClaferModel claferModel) {
+        this.claferModel = Check.notNull(claferModel);
 
         Model model = new CPModel();
-        exprs.getRoot().build(model);
+        claferModel.build(model);
 
         solver = new CPSolver();
         solver.read(model);
         solver.getConfiguration().putInt(Configuration.LOGGING_MAX_DEPTH, 300000);
 
-        root = exprs.getRoot();
 
         hasNext = solver.solve();
         end = !hasNext;
@@ -58,7 +57,7 @@ public class ExprsSolutions implements Iterator<String> {
         hasNext = false;
         StringBuilder result = new StringBuilder();
         try {
-            root.print(solver, result);
+            claferModel.print(solver, result);
         } catch (IOException e) {
             throw new RuntimeException("StringBuilder should not throw IO exceptions!", e);
         }

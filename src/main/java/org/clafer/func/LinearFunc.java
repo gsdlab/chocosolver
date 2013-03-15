@@ -4,7 +4,7 @@ package org.clafer.func;
  *
  * @author jimmy
  */
-public class LinearFunc implements IntFunc {
+public class LinearFunc implements Func<Integer, Integer> {
 
     private final int m, b;
 
@@ -14,7 +14,7 @@ public class LinearFunc implements IntFunc {
     }
 
     @Override
-    public int apply(int arg) {
+    public Integer apply(Integer arg) {
         return m * arg + b;
     }
 }

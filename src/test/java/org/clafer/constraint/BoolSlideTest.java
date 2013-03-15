@@ -2,9 +2,11 @@ package org.clafer.constraint;
 
 import choco.Choco;
 import choco.cp.model.CPModel;
+import choco.cp.solver.CPSolver;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Solver;
+import java.util.Arrays;
 import org.clafer.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -35,9 +37,12 @@ public class BoolSlideTest extends ConstraintTest {
             IntegerVariable[] slide = Choco.makeBooleanVarArray("i", nextInt(100) + base.length);
             IntegerVariable offset = Choco.makeIntVar("i", 0, nextInt(slide.length - base.length + 1));
 
+            m.addVariables(base);
+            m.addVariables(slide);
+            m.addVariable(offset);
             m.addConstraint(BoolSlideManager.boolSlide(base, slide, offset));
 
-            for (int restart = 0; restart < 10; restart++) {
+            for (int restart = 0; restart < 2; restart++) {
                 Solver solver = solveRandomly(m);
                 checkCorrectness(solver, base, slide, offset);
             }

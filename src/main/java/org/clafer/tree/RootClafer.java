@@ -5,6 +5,7 @@ import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Solver;
 import java.io.IOException;
+import org.clafer.tree.analysis.Analysis;
 
 /**
  *
@@ -30,16 +31,7 @@ public class RootClafer extends AtomicClafer {
     }
 
     @Override
-    protected void optimize(Model model, Card parentCard) {
-        globalCard = new Card(1, 1);
-        for (AtomicClafer child : getChildren()) {
-            child.optimize(model, globalCard);
-        }
-    }
-
-    @Override
-    public void build(Model model) {
-        optimize(model, null);
-        super.build(model);
+    public void build(Model model, Analysis analysis) {
+        // Do nothing
     }
 }

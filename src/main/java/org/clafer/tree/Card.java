@@ -30,7 +30,7 @@ public class Card {
     }
 
     public boolean isExact() {
-        return hasHigh() && getLow() == getHigh();
+        return getLow() == getHigh();
     }
 
     public boolean isBounded() {

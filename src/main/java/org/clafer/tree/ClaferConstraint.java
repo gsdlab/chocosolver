@@ -5,6 +5,7 @@ import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.set.SetVariable;
 import org.clafer.Check;
+import org.clafer.tree.analysis.Analysis;
 
 /**
  *
@@ -38,21 +39,15 @@ public class ClaferConstraint {
         this.clafer = Check.notNull(clafer);
         this.setConstraint = Check.notNull(setConstraint);
         this.intConstraint = intConstraint;
-
-        clafer.addConstraint(this);
     }
 
-    public void build(Model model, ThisFactory thisFactory) {
-        Card globalCard = clafer.globalCard;
-        if (globalCard == null) {
-            throw new IllegalStateException("Clafer has not discovered it's global card yet");
-        }
+    public void build(Model model, ThisFactory thisFactory, Analysis analysis) {
+        Card globalCard = analysis.getGlobalCard(clafer);
         SetVariable s = clafer.getSet();
         int id = s.getLowB();
         if (intConstraint != null) {
             for (; id < globalCard.getLow(); id++) {
                 // We know these ids exist so always optimize.
-                System.out.println("opt!");
                 addCondition(model, intConstraint.apply(thisFactory.newIntThis(id)));
             }
         }
@@ -63,7 +58,6 @@ public class ClaferConstraint {
                     // No global constraints means everything goes on the
                     // right hand side of the implies so optimize!
                     && cond.getConstraints().isEmpty()) {
-                System.out.println("no globals!");
                 addCondition(model, id, cond);
             } else {
                 addCondition(model, id, setConstraint.apply(thisFactory.newSetThis(id)));
@@ -90,14 +84,14 @@ public class ClaferConstraint {
     }
 
     private void addCondition(Model model, BoolExpr cond) {
-        model.addConstraint(and(cond.getValue()));
+        model.addConstraint(cond.getValue());
         for (Constraint condConstraint : cond.getConstraints()) {
             model.addConstraint(condConstraint);
         }
     }
 
     private void addCondition(Model model, int id, BoolExpr cond) {
-        model.addConstraint(implies(eq(clafer.getMembership()[id], 1), and(cond.getValue())));
+        model.addConstraint(implies(eq(clafer.getMembership()[id], 1), cond.getValue()));
         for (Constraint condConstraint : cond.getConstraints()) {
             model.addConstraint(condConstraint);
         }

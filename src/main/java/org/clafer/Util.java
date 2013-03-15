@@ -36,9 +36,6 @@ import java.util.Set;
 import org.clafer.collection.IntIterator;
 import org.clafer.tree.AtomicClafer;
 import org.clafer.tree.ConcreteClafer;
-import org.clafer.tree.Expr;
-import org.clafer.tree.IntExpr;
-import org.clafer.tree.SetExpr;
 
 /**
  *
@@ -77,6 +74,18 @@ public class Util {
     public static void reverse(int[] a, int to) {
         for (int j = 0; j < to / 2; j++) {
             int temp = a[j];
+            a[j] = a[to - j - 1];
+            a[to - j - 1] = temp;
+        }
+    }
+
+    public static <T> void reverse(T[] a) {
+        reverse(a, a.length);
+    }
+
+    public static <T> void reverse(T[] a, int to) {
+        for (int j = 0; j < to / 2; j++) {
+            T temp = a[j];
             a[j] = a[to - j - 1];
             a[to - j - 1] = temp;
         }
@@ -587,39 +596,5 @@ public class Util {
         public Solution[] getRandomISSolutions() {
             return randomISSolutions;
         }
-    }
-
-    public static void a(Expr a) {
-        System.out.println("Expr");
-
-    }
-
-    public static void a(SetExpr a) {
-        System.out.println("SetExpr");
-
-    }
-
-    public static void a(IntExpr a) {
-        System.out.println("IntExpr");
-    }
-
-    public static Expr b() {
-        return new SetExpr(null, null);
-    }
-
-    public static void main(String[] args) throws Exception {
-//        long start = System.currentTimeMillis();
-//        ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
-//        if (engine == null) {
-//            throw new IllegalStateException("Missing javascript engine.");
-//        }
-//
-//        System.out.println(System.currentTimeMillis() - start);
-//        engine.eval("importClass(Packages.org.clafer.Util);\n"
-//                + "Util.a(Util.b());");
-////                + "importClass(Packages.org.clafer.func.Func);\n"
-////                + "var impl = { apply: function (a) { return 'Hello, World!' + a; }};\n"
-////                + "Util.k(new Func(impl));");
-//        System.out.println(System.currentTimeMillis() - start);
     }
 }

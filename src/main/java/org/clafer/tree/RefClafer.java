@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.clafer.Check;
 import org.clafer.constraint.UniqRefManager;
 import org.clafer.constraint.ZeroOutManager;
+import org.clafer.tree.analysis.Analysis;
 
 /**
  *
@@ -27,8 +28,6 @@ public class RefClafer extends Clafer {
         this.parent = parent;
         this.unique = unique;
         this.refs = makeIntVarArray(getName(), parent.getScope(), type.getScopeLow(), type.getScopeHigh());
-
-        parent.setRef(this);
     }
 
     public AtomicClafer getType() {
@@ -50,7 +49,7 @@ public class RefClafer extends Clafer {
     }
 
     @Override
-    public void build(Model model) {
+    protected void build(Model model, Analysis analysis) {
         // If cardinality is one, then it is already unique even without an explicit constraint.
         if (unique
                 && parent instanceof ConcreteClafer

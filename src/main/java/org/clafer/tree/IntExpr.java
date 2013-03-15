@@ -1,8 +1,6 @@
 package org.clafer.tree;
 
 import choco.kernel.model.constraints.Constraint;
-import choco.kernel.model.variables.VariableType;
-import choco.kernel.model.variables.integer.IntegerConstantVariable;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import java.util.Collections;
 import java.util.List;

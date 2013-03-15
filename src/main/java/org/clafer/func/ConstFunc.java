@@ -4,16 +4,16 @@ package org.clafer.func;
  *
  * @author jimmy
  */
-public class ConstFunc implements IntFunc {
+public class ConstFunc<A, B> implements Func<A, B> {
 
-    private final int value;
+    private final B value;
 
-    public ConstFunc(int value) {
+    public ConstFunc(B value) {
         this.value = value;
     }
 
     @Override
-    public int apply(int arg) {
+    public B apply(A arg) {
         return value;
     }
 }

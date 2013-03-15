@@ -1,18 +1,18 @@
 package org.clafer.tree;
 
-import choco.Choco;
 import static choco.Choco.*;
-import choco.Options;
+import static org.clafer.ChocoUtil.*;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import org.clafer.Check;
 import org.clafer.Util;
 import org.clafer.collection.Pair;
+import org.clafer.func.FP;
+import org.clafer.tree.analysis.Analysis;
 
 /**
  *
@@ -22,10 +22,10 @@ public abstract class AtomicClafer extends Clafer {
 
     private final SetVariable set;
     private final IntegerVariable[] membership;
-    private final List<AtomicClafer> children = new ArrayList<AtomicClafer>();
+    private final List<ConcreteClafer> children = new ArrayList<ConcreteClafer>();
     private final List<ClaferConstraint> constraints = new ArrayList<ClaferConstraint>();
+    private AbstractClafer superClafer = null;
     private RefClafer ref = null;
-    protected Card globalCard;
 
     public AtomicClafer(String name, int scope, SetVariable set, IntegerVariable[] membership) {
         super(name, scope);
@@ -41,11 +41,13 @@ public abstract class AtomicClafer extends Clafer {
         return membership;
     }
 
-    void addChild(AtomicClafer child) {
-        children.add(Check.notNull(child));
+    public ConcreteClafer addChildClafer(String name, int scope, Card card) {
+        ConcreteClafer child = new ConcreteClafer(name, scope, card, this);
+        children.add(child);
+        return child;
     }
 
-    public boolean hasChild(AtomicClafer child) {
+    public boolean hasChild(ConcreteClafer child) {
         return children.contains(child);
     }
 
@@ -53,12 +55,16 @@ public abstract class AtomicClafer extends Clafer {
         return !children.isEmpty();
     }
 
-    public List<AtomicClafer> getChildren() {
+    public List<ConcreteClafer> getChildren() {
         return Collections.unmodifiableList(children);
     }
 
-    public void addConstraint(ClaferConstraint constraint) {
-        constraints.add(Check.notNull(constraint));
+    public void addConstraint(SetConstraint setConstraint) {
+        constraints.add(new ClaferConstraint(this, setConstraint));
+    }
+
+    public void addConstraint(SetConstraint setConstraint, IntConstraint intConstraint) {
+        constraints.add(new ClaferConstraint(this, setConstraint, intConstraint));
     }
 
     public boolean hasConstraints() {
@@ -69,19 +75,55 @@ public abstract class AtomicClafer extends Clafer {
         return Collections.unmodifiableList(constraints);
     }
 
+    /**
+     * @param superClafer - this clafer extends superClafer
+     * @return this clafer
+     */
+    public AtomicClafer extending(AbstractClafer superClafer) {
+        if (hasSuperClafer()) {
+            throw new IllegalArgumentException(getName() + " already has a super clafer");
+        }
+        superClafer.addSubclafer(this);
+        this.superClafer = Check.notNull(superClafer);
+        return this;
+    }
+
+    public boolean hasSuperClafer() {
+        return superClafer != null;
+    }
+
+    public AbstractClafer getSuperClafer() {
+        return superClafer;
+    }
+
+    /**
+     * Create a new reference with bag semantics, ie. can reference
+     * the same value under the same parent.
+     */
+    public void refTo(AtomicClafer type) {
+        if (hasRef()) {
+            throw new IllegalStateException(getName() + " already has a reference");
+        }
+        ref = new RefClafer(type, this, false);
+    }
+
+    /**
+     * Create a new reference with set semantics, ie. cannot reference
+     * the same value under the same parent.
+     */
+    public void refToUnique(AtomicClafer type) {
+        if (hasRef()) {
+            throw new IllegalStateException(getName() + " already has a reference");
+        }
+        ref = new RefClafer(type, this, true);
+    }
+
     public boolean hasRef() {
         return ref != null;
     }
 
     public RefClafer getRef() {
         return ref;
-    }
-
-    void setRef(RefClafer ref) {
-        if (hasRef()) {
-            throw new IllegalStateException(getName() + " already has a reference");
-        }
-        this.ref = Check.notNull(ref);
     }
 
     /**
@@ -91,18 +133,6 @@ public abstract class AtomicClafer extends Clafer {
         return hasRef()
                 ? Util.cons(ref, children)
                 : Collections.<Clafer>unmodifiableList(children);
-    }
-
-    /**
-     * @return the children, children's children, children's children's children, etc.
-     */
-    public List<AtomicClafer> getNestedChildren() {
-        List<AtomicClafer> nested = new ArrayList<AtomicClafer>();
-        for (AtomicClafer child : getChildren()) {
-            nested.add(child);
-            nested.addAll(child.getNestedChildren());
-        }
-        return nested;
     }
 
     private void breakSymmetry(Model model) {
@@ -174,32 +204,25 @@ public abstract class AtomicClafer extends Clafer {
         }
         // Children with exact cards will always contribute the same score hence it
         // is a waste of computation time to include them in the scoring constraints.
-        List<ConcreteClafer> inexactChildren = Util.filterInexactCard(Util.filterConcrete(getChildren()));
+        List<ConcreteClafer> inexactChildren = Util.filterInexactCard(getChildren());
         switch (inexactChildren.size()) {
             case 0:
                 // Already sorted (since no cards with inexact bounds).
                 break;
             case 1:
                 ConcreteClafer child = (ConcreteClafer) inexactChildren.get(0);
-                IntegerVariable[] reverseCard = reverseCards(child.getChildSet());
-                model.addConstraint(increasingSum(reverseCard, child.getSet().getCard()));
+                model.addConstraint(decreasingSum(
+                        FP.mapped(child.getChildSet(), FP.getCard),
+                        child.getSet().getCard()));
                 break;
             default:
-                Pair<IntegerVariable[], Integer> pair = reverseCardsAndScale(model, inexactChildren);
-                IntegerVariable[] reverseScaledCards = pair.getFst();
+                Pair<IntegerVariable[], Integer> pair = scale(model, inexactChildren);
+                IntegerVariable[] scaledCards = pair.getFst();
                 int scale = pair.getSnd();
-                model.addConstraint(increasingSum(reverseScaledCards,
-                        makeIntVar("increasingSumCard" + getName(), 0, scale)));
+                model.addConstraint(decreasingSum(scaledCards,
+                        makeIntVar("decreasingSumCard" + getName(), 0, scale)));
                 break;
         }
-    }
-
-    private static IntegerVariable[] reverseCards(SetVariable... childSet) {
-        IntegerVariable[] reverseCards = new IntegerVariable[childSet.length];
-        for (int i = 0; i < reverseCards.length; i++) {
-            reverseCards[i] = childSet[childSet.length - i - 1].getCard();
-        }
-        return reverseCards;
     }
 
     private static boolean sameChildSetLength(List<ConcreteClafer> clafers) {
@@ -214,8 +237,9 @@ public abstract class AtomicClafer extends Clafer {
         return true;
     }
 
-    private Pair<IntegerVariable[], Integer> reverseCardsAndScale(Model model, List<ConcreteClafer> clafers) {
-        assert sameChildSetLength(clafers);
+    private Pair<IntegerVariable[], Integer> scale(Model model, List<ConcreteClafer> clafers) {
+        // same $ clafers <$> (length . getChildSet)
+        assert FP.same(FP.mapped(clafers, FP.compose(FP.<SetVariable>length(), FP.getChildSet)));
 
         // Give clafers earlier in the list higher scales
         Collections.reverse(clafers);
@@ -229,7 +253,7 @@ public abstract class AtomicClafer extends Clafer {
          */
         for (int i = 0; i < clafers.size(); i++) {
             ConcreteClafer clafer = clafers.get(i);
-            cards[i] = reverseCards(clafer.getChildSet());
+            cards[i] = FP.mapped(clafer.getChildSet(), FP.getCard);
         }
         cards = Util.transpose(cards);
 
@@ -254,69 +278,8 @@ public abstract class AtomicClafer extends Clafer {
         return new Pair(scaledCards, (int) scale);
     }
 
-    /**
-     * Rearrange and optimize data structures before the actually building the final
-     * Choco model.
-     * 
-     * @param parentCard - The global cardinality of the parent clafer
-     */
-    protected abstract void optimize(Model model, Card parentCard);
-
     @Override
-    public void build(Model model) {
+    public void build(Model model, Analysis analysis) {
         breakSymmetry(model);
-        if (hasRef()) {
-            getRef().build(model);
-        }
-        for (AtomicClafer clafer : getChildren()) {
-            clafer.build(model);
-        }
-        ThisFactory thisFactory = new CacheThisFactory(model);
-        for (ClaferConstraint constraint : constraints) {
-            constraint.build(model, thisFactory);
-        }
-    }
-
-    /**
-     * Creating SetVariables for "this" has a cost since it requires a constraints.
-     * The idea is to not create SetVariables unless they are needed, and reuse them
-     * if they are needed mutiple times.
-     */
-    private class CacheThisFactory implements ThisFactory {
-
-        private final Model model;
-        private final int offset = getScopeLow();
-        private final SetExpr[] cache = new SetExpr[getScopeHigh() - getScopeLow() + 1];
-
-        public CacheThisFactory(Model model) {
-            this.model = model;
-        }
-
-        private void checkId(int id) {
-            if (id < getScopeLow() || id > getScopeHigh()) {
-                throw new IllegalArgumentException(id + " is outside the scope of " + getName());
-            }
-        }
-
-        @Override
-        public IntExpr newIntThis(int id) {
-            checkId(id);
-            return new IntExpr(AtomicClafer.this, constant(id));
-        }
-
-        @Override
-        public SetExpr newSetThis(int id) {
-            checkId(id);
-            int index = id - offset;
-            if (cache[index] == null) {
-                SetVariable s = getSet();
-                SetVariable thisV = makeSetVar("constraintUnder" + getName() + id, id, id, Options.V_NO_DECISION);
-                // TODO: if then else
-                model.addConstraint(implies(member(id, s), eq(thisV, constant(new int[]{id}))));
-                model.addConstraint(implies(notMember(id, s), eq(thisV, emptySet())));
-                cache[index] = new SetExpr(AtomicClafer.this, thisV);
-            }
-            return cache[index];
-        }
     }
 }
