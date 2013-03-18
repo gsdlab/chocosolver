@@ -15,6 +15,7 @@ import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.VariableType;
 import choco.kernel.model.variables.integer.IntegerConstantVariable;
+import choco.kernel.model.variables.integer.IntegerExpressionVariable;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetConstantVariable;
 import choco.kernel.model.variables.set.SetVariable;
@@ -54,6 +55,16 @@ public class Util {
         }
         if (variable.isConstant()) {
             return variable.getLowB();
+        }
+        return null;
+    }
+
+    public static Integer getConstant(IntegerExpressionVariable variable) {
+        if (variable instanceof IntegerVariable) {
+            return getConstant((IntegerVariable) variable);
+        }
+        if (variable.getVariableType().equals(VariableType.CONSTANT_INTEGER)) {
+            return ((IntegerConstantVariable) variable).getValue();
         }
         return null;
     }
@@ -311,14 +322,24 @@ public class Util {
     }
 
     public static void subsetOf(SConstraint cause, IntDomainVar sub, SetSubDomain sup) throws ContradictionException {
+        int left = Integer.MIN_VALUE;
+        int right = left;
         DisposableIntIterator it = sub.getDomain().getIterator();
         try {
             while (it.hasNext()) {
                 int x = it.next();
-
                 if (!sup.contains(x)) {
-                    sub.removeVal(x, cause, false);
+                    if (x == right + 1) {
+                        right = x;
+                    } else {
+                        sub.removeInterval(left, right, cause, false);
+                        left = x;
+                        right = x;
+                    }
                 }
+            }
+            if (left != right) {
+                sub.removeInterval(left, right, cause, false);
             }
         } finally {
             it.dispose();

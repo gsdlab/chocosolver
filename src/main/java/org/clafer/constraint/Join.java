@@ -4,13 +4,13 @@ import choco.cp.solver.variables.set.SetVarEvent;
 import choco.kernel.common.util.iterators.DisposableIntIterator;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.constraints.set.AbstractLargeSetSConstraint;
-import choco.kernel.solver.variables.integer.IntDomain;
 import choco.kernel.solver.variables.set.SetVar;
 import gnu.trove.TIntHashSet;
 import org.clafer.Util;
 
 /**
- * Assumption: Children are disjoint!
+ * Assumption: Children are disjoint! Does not enforce this, since in the context
+ * of Clafer, it's already enforced elsewhere.
  * 
  * @author jimmy
  */
@@ -21,13 +21,13 @@ public class Join extends AbstractLargeSetSConstraint {
     private final SetVar to;
 
     public Join(SetVar take, SetVar[] children, SetVar to) {
-        super(buildArray(take, children, to));
+        super(buildArray(take, to, children));
         this.take = take;
         this.children = children;
         this.to = to;
     }
 
-    private static SetVar[] buildArray(SetVar take, SetVar[] children, SetVar to) {
+    private static SetVar[] buildArray(SetVar take, SetVar to, SetVar[] children) {
         SetVar[] array = new SetVar[children.length + 2];
         array[0] = take;
         array[1] = to;
@@ -43,13 +43,17 @@ public class Join extends AbstractLargeSetSConstraint {
         return varIdx == 1;
     }
 
+    private boolean isChild(int varIdx) {
+        return varIdx >= 2;
+    }
+
     private int getChildVarIndex(int varIdx) {
         return varIdx - 2;
     }
 
     @Override
     public int getFilteredEventMask(int idx) {
-        return SetVarEvent.ADDKER_MASK + SetVarEvent.REMENV_MASK;
+        return SetVarEvent.ADDKER_MASK + SetVarEvent.REMENV_MASK + SetVarEvent.INSTSET_MASK;
     }
 
     @Override
@@ -68,127 +72,151 @@ public class Join extends AbstractLargeSetSConstraint {
         propagate();
     }
 
-//    @Override
-//    public void awakeOnKer(int varIdx, int x) throws ContradictionException {
-//        if (isTake(varIdx)) {
-//            // pick to
-//            Util.kerSubsetOf(this, children[x], to);
-//            Util.envSubsetOf(this, children[x], to);
-//        } else if (isTo(varIdx)) {
-//            instanciateIfLastOccurence(x);
-//        } else {
-//            propagate();
-//            int c = getChildVarIndex(varIdx);
-//            // prune disjoint children
-//            for (int i = 0; i < children.length; i++) {
-//                if (i != c) {
-//                    children[i].remFromEnveloppe(x, this, false);
-//                }
-//            }
-//            // pick to
-//            if (take.isInDomainKernel(c)) {
-//                to.addToKernel(x, this, false);
-//            }
-//        }
-//    }
-//    @Override
-//    public void awakeOnEnv(int varIdx, int x) throws ContradictionException {
-//        if (isTake(varIdx)) {
-//            pruneTo();
-//        } else if (isTo(varIdx)) {
-//            // pick to
-//            DisposableIntIterator it = take.getDomain().getKernelIterator();
+    @Override
+    public void awakeOnEnvRemovals(int idx, DisposableIntIterator deltaDomain) throws ContradictionException {
+        if (isTake(idx)) {
+            pruneTo();
+            pickTake();
+        } else if (isTo(idx)) {
+            while (deltaDomain.hasNext()) {
+                int val = deltaDomain.next();
+                // prune children
+                DisposableIntIterator it = take.getDomain().getKernelIterator();
+                try {
+                    while (it.hasNext()) {
+                        children[it.next()].remFromEnveloppe(val, this, false);
+                    }
+                } finally {
+                    it.dispose();
+                }
+            }
+        } else {
+            assert isChild(idx);
+            while (deltaDomain.hasNext()) {
+                int val = deltaDomain.next();
+                if (to.isInDomainEnveloppe(val)) {
+                    // prune to
+                    // pick take
+                    DisposableIntIterator it = take.getDomain().getEnveloppeIterator();
+                    int child = -1;
+                    try {
+                        while (it.hasNext()) {
+                            int y = it.next();
+                            if (children[y].isInDomainEnveloppe(val)) {
+                                if (child != -1 || !to.isInDomainKernel(val)) {
+                                    // Found a second child.
+                                    // Or found a child but can't pick take.
+                                    return;
+                                }
+                                child = y;
+                            }
+                        }
+                    } finally {
+                        it.dispose();
+                    }
+                    if (child == -1) {
+                        // prune to
+                        to.remFromEnveloppe(val, this, false);
+                    } else {
+                        // pick take
+                        take.addToKernel(child, this, false);
+                        Util.kerSubsetOf(this, children[child], to);
+                        children[child].addToKernel(val, this, false);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void awakeOnkerAdditions(int idx, DisposableIntIterator deltaDomain) throws ContradictionException {
+        if (isTake(idx)) {
+            while (deltaDomain.hasNext()) {
+                int val = deltaDomain.next();
+                pruneChildren(val);
+                pickTo(val);
+            }
+        } else if (isTo(idx)) {
+            while (deltaDomain.hasNext()) {
+                pickTake(deltaDomain.next());
+            }
+        } else {
+            assert isChild(idx);
+            // pick to
+            if (take.isInDomainKernel(getChildVarIndex(idx))) {
+                while (deltaDomain.hasNext()) {
+                    to.addToKernel(deltaDomain.next(), this, false);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void awakeOnInst(int varIdx) throws ContradictionException {
+        if (!isTo(varIdx)) {
+            assert isTake(varIdx) || isChild(varIdx);
+            checkEntailed();
+        }
+    }
+
+    @Override
+    public void propagate() throws ContradictionException {
+        // forall{i in ker(take)} children[i] subsetof to
+        pruneChildren();
+        // env(to) subsetof union{i in env(take)} env(children[i])
+        pruneTo();
+        pickTake();
+        // forall{i in ker(take)} ker(to) subsetof ker(children[i])
+        pickTo();
+        checkEntailed();
+    }
+
+//    private void pruneDisjointChildren() throws ContradictionException {
+//        for (int i = 0; i < children.length; i++) {
+//            DisposableIntIterator it = children[i].getDomain().getKernelIterator();
 //            try {
 //                while (it.hasNext()) {
-//                    int y = it.next();
-//
-//                    children[y].remFromEnveloppe(x, this, false);
+//                    int x = it.next();
+//                    for (int j = 0; j < children.length; j++) {
+//                        if (i != j) {
+//                            children[j].remFromEnveloppe(x, this, false);
+//                        }
+//                    }
 //                }
 //            } finally {
 //                it.dispose();
 //            }
-//        } else {
-//            int c = getChildVarIndex(varIdx);
-//            if (take.isInDomainKernel(c)) {
-//                if (to.isInDomainKernel(x)) {
-//                    instanciateIfLastOccurence(x);
-//                }
-//                // pick to
-//                removeIfNoOccurence(x);
-//            }
 //        }
 //    }
-//
-//    private void removeIfNoOccurence(int x) throws ContradictionException {
-//        DisposableIntIterator it = take.getDomain().getKernelIterator();
-//        try {
-//            while (it.hasNext()) {
-//                int y = it.next();
-//
-//                if (children[y].isInDomainEnveloppe(x)) {
-//                    return;
-//                }
-//            }
-//        } finally {
-//            it.dispose();
-//        }
-//        to.remFromEnveloppe(x, this, false);
-//    }
-//    @Override
-//    public void awakeOnInst(int varIdx) throws ContradictionException {
-//        // Do nothing
-//    }
-    @Override
-    public void propagate() throws ContradictionException {
-        pruneDisjointChildren();
-        pruneChildren();
-        instanciateLastOccurences();
-        pruneTo();
-        pickTo();
-    }
-
     private void pruneChildren() throws ContradictionException {
         DisposableIntIterator it = take.getDomain().getKernelIterator();
         try {
             while (it.hasNext()) {
-                Util.envSubsetOf(this, children[it.next()], to);
+                pruneChildren(it.next());
             }
         } finally {
             it.dispose();
         }
     }
 
-    private void pruneDisjointChildren() throws ContradictionException {
-        for (int i = 0; i < children.length; i++) {
-            DisposableIntIterator it = children[i].getDomain().getKernelIterator();
-            try {
-                while (it.hasNext()) {
-                    int x = it.next();
-                    for (int j = 0; j < children.length; j++) {
-                        if (i != j) {
-                            children[j].remFromEnveloppe(x, this, false);
-                        }
-                    }
-                }
-            } finally {
-                it.dispose();
-            }
-        }
+    private void pruneChildren(int takeVal) throws ContradictionException {
+        assert take.isInDomainKernel(takeVal);
+        Util.envSubsetOf(this, children[takeVal], to);
     }
 
-    private void instanciateLastOccurences() throws ContradictionException {
+    private void pickTake() throws ContradictionException {
         DisposableIntIterator it = to.getDomain().getKernelIterator();
         try {
             while (it.hasNext()) {
-                instanciateIfLastOccurence(it.next());
+                pickTake(it.next());
             }
         } finally {
             it.dispose();
         }
     }
 
-    private void instanciateIfLastOccurence(int x) throws ContradictionException {
-        assert to.isInDomainKernel(x);
+    private void pickTake(int toVal) throws ContradictionException {
+        assert to.isInDomainKernel(toVal);
 
         DisposableIntIterator it = take.getDomain().getEnveloppeIterator();
 
@@ -197,7 +225,7 @@ public class Join extends AbstractLargeSetSConstraint {
         try {
             while (it.hasNext()) {
                 int y = it.next();
-                if (children[y].isInDomainEnveloppe(x)) {
+                if (children[y].isInDomainEnveloppe(toVal)) {
                     if (child != -1) {
                         // Found a second child.
                         return;
@@ -210,7 +238,8 @@ public class Join extends AbstractLargeSetSConstraint {
         }
         if (child != -1) {
             take.addToKernel(child, this, false);
-            children[child].addToKernel(x, this, false);
+            Util.kerSubsetOf(this, children[child], to);
+            children[child].addToKernel(toVal, this, false);
         }
     }
 
@@ -237,12 +266,46 @@ public class Join extends AbstractLargeSetSConstraint {
         DisposableIntIterator it = take.getDomain().getKernelIterator();
         try {
             while (it.hasNext()) {
-                Util.kerSubsetOf(this, children[it.next()], to);
+                pickTo(it.next());
             }
         } finally {
             it.dispose();
         }
+    }
 
+    private void pickTo(int takeVal) throws ContradictionException {
+        assert take.isInDomainKernel(takeVal);
+        Util.kerSubsetOf(this, children[takeVal], to);
+    }
+
+    private void checkEntailed() throws ContradictionException {
+        if (take.isInstantiated() && allChildrenInstantiated()) {
+            TIntHashSet $to = new TIntHashSet();
+            DisposableIntIterator it = take.getDomain().getKernelIterator();
+            try {
+                while (it.hasNext()) {
+                    Util.enumerateEnv($to, children[it.next()]);
+                }
+            } finally {
+                it.dispose();
+            }
+            to.instantiate($to.toArray(), this, false);
+            setEntailed();
+        }
+    }
+
+    private boolean allChildrenInstantiated() {
+        DisposableIntIterator it = take.getDomain().getEnveloppeIterator();
+        try {
+            while (it.hasNext()) {
+                if (!children[it.next()].isInstantiated()) {
+                    return false;
+                }
+            }
+        } finally {
+            it.dispose();
+        }
+        return true;
     }
 
     @Override

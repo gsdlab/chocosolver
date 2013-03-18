@@ -5,6 +5,7 @@ import choco.kernel.solver.Solver;
 import java.io.IOException;
 import org.clafer.Check;
 import org.clafer.tree.analysis.Analysis;
+import sun.org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -13,30 +14,13 @@ import org.clafer.tree.analysis.Analysis;
 public abstract class Clafer {
 
     private final String name;
-    private final int scope;
 
-    public Clafer(String name, int scope) {
+    public Clafer(String name) {
         this.name = Check.notNull(name);
-        if (scope < 1) {
-            throw new IllegalArgumentException("Scope has to be positive, received \"" + scope + "\"");
-        }
-        this.scope = scope;
     }
 
     public String getName() {
         return name;
-    }
-
-    public int getScope() {
-        return scope;
-    }
-
-    public int getScopeLow() {
-        return 0;
-    }
-
-    public int getScopeHigh() {
-        return scope - 1;
     }
 
     /**

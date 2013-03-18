@@ -12,28 +12,22 @@ import org.clafer.tree.analysis.Analysis;
  */
 public class IntClafer extends AtomicClafer {
 
-    private final int bitwidth;
+    private final int low, high;
 
-    public IntClafer(int bitwidth) {
-        super("int", 1 << checkBitwidth(bitwidth), Choco.emptySet(), new IntegerVariable[0]);
-        this.bitwidth = bitwidth;
-    }
-
-    private static int checkBitwidth(int bitwidth) {
-        if (bitwidth < 1 || bitwidth > 30) {
-            throw new IllegalArgumentException("Bitwidth has to be in [1,30], received \"" + bitwidth + "\"");
-        }
-        return bitwidth;
+    public IntClafer(int low, int high) {
+        super("int", high - low + 1, Choco.emptySet(), new IntegerVariable[0]);
+        this.low = low;
+        this.high = high;
     }
 
     @Override
     public int getScopeLow() {
-        return -(1 << (bitwidth - 1));
+        return low;
     }
 
     @Override
     public int getScopeHigh() {
-        return (1 << (bitwidth - 1)) - 1;
+        return high;
     }
 
     @Override
@@ -47,17 +41,17 @@ public class IntClafer extends AtomicClafer {
     }
 
     @Override
-    public void refTo(AtomicClafer type) {
+    public RefClafer refTo(AtomicClafer type) {
         throw new UnsupportedOperationException("Cannot add ref under the primitive int clafer");
     }
 
     @Override
-    public void refToUnique(AtomicClafer type) {
+    public RefClafer refToUnique(AtomicClafer type) {
         throw new UnsupportedOperationException("Cannot add ref under the primitive int clafer");
     }
 
     @Override
-    public ConcreteClafer addChildClafer(String name, int scope, Card card) {
+    public ConcreteClafer addChild(String name, int scope, Card card) {
         throw new UnsupportedOperationException("Cannot add children under the primitive int clafer");
     }
 

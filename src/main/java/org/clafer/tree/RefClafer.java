@@ -1,5 +1,6 @@
 package org.clafer.tree;
 
+import choco.Options;
 import static choco.Choco.*;
 import choco.kernel.model.Model;
 import choco.kernel.model.variables.integer.IntegerVariable;
@@ -22,12 +23,12 @@ public class RefClafer extends Clafer {
     private final IntegerVariable[] refs;
 
     public RefClafer(AtomicClafer type, AtomicClafer parent, boolean unique) {
-        super(Check.notNull("parent cannot be null", parent).getName() + "@Ref",
-                Check.notNull("type cannot be null", type).getScope());
+        super(Check.notNull("parent cannot be null", parent).getName() + "@Ref");
         this.type = type;
         this.parent = parent;
         this.unique = unique;
-        this.refs = makeIntVarArray(getName(), parent.getScope(), type.getScopeLow(), type.getScopeHigh());
+        String option = type instanceof IntClafer && type.getScope() > 100 ? Options.V_BOUND : Options.V_ENUM;
+        this.refs = makeIntVarArray(getName(), parent.getScope(), type.getScopeLow(), type.getScopeHigh(), option);
     }
 
     public AtomicClafer getType() {
@@ -38,18 +39,17 @@ public class RefClafer extends Clafer {
         return refs;
     }
 
-    @Override
     public int getScopeLow() {
         return type.getScopeLow();
     }
 
-    @Override
     public int getScopeHigh() {
         return type.getScopeHigh();
     }
 
     @Override
     protected void build(Model model, Analysis analysis) {
+        // TODO: Abstract refs
         // If cardinality is one, then it is already unique even without an explicit constraint.
         if (unique
                 && parent instanceof ConcreteClafer
@@ -58,13 +58,20 @@ public class RefClafer extends Clafer {
         } else {
             // Zeroes out any refs that belong to a dead parents to remove bad isomorphisms.
             // The uniqRef constraint does this also as a side effect.
-            model.addConstraint(ZeroOutManager.zeroOut(parent.getSet(), refs));
+            model.addConstraint(ZeroOutManager.zeroOut(parent.getMembership(), refs));
         }
     }
 
     @Override
     protected void print(Solver solver, String indent, int parent, Appendable output)
             throws IOException {
-        output.append(indent + "ref = " + solver.getVar(refs[parent]).getVal()).append('\n');
+        int val = solver.getVar(refs[parent]).getVal();
+        output.append(indent).append("ref = ");
+        if (type instanceof IntClafer) {
+            output.append(Integer.toString(val));
+        } else {
+            output.append(type.getName() + val);
+        }
+        output.append('\n');
     }
 }

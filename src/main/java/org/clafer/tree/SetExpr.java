@@ -17,8 +17,8 @@ public class SetExpr extends Expr {
 
     public SetExpr(AtomicClafer type, SetVariable value, List<Constraint> constraints) {
         super(constraints);
-        this.type = type;
-        this.value = value;
+        this.type = Check.notNull(type);
+        this.value = Check.notNull(value);
     }
 
     public SetExpr(AtomicClafer type, SetVariable value) {
@@ -39,5 +39,9 @@ public class SetExpr extends Expr {
 
     public int getLowB() {
         return value.getLowB();
+    }
+    
+    public SetExpr withType(AtomicClafer newType) {
+        return new SetExpr(newType, value, getConstraints());
     }
 }

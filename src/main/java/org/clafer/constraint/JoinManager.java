@@ -53,6 +53,7 @@ public class JoinManager extends SetConstraintManager {
         SetVariable to = Choco.makeSetVar("to", 0, 4);
 
         m.addConstraint(join(take, children, to));
+        m.addConstraint(Choco.setDisjoint(children));
 
         System.out.println(Util.allSolutions(m).getStatistics());
 
@@ -72,5 +73,8 @@ public class JoinManager extends SetConstraintManager {
         // Prune children
         // #8192 solutions 1201 Time (ms), 16383 Nodes, 16382 Backtracks, 0 Restarts - 
         // #8192 solutions 1025 Time (ms), 33575 Nodes, 52628 Backtracks, 0 Restarts - 
+        // Pick take also picks to
+        // #8192 solutions 1602 Time (ms), 16383 Nodes, 16382 Backtracks, 0 Restarts - 
+        // #8192 solutions 1295 Time (ms), 33511 Nodes, 52500 Backtracks, 0 Restarts - 
     }
 }

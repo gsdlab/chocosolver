@@ -12,14 +12,16 @@ import org.clafer.tree.Card;
 import org.clafer.tree.ConcreteClafer;
 import org.clafer.constraint.JoinRefManager;
 import choco.Choco;
+import choco.Options;
 import choco.kernel.model.constraints.Constraint;
+import choco.kernel.model.variables.integer.IntegerExpressionVariable;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import org.clafer.collection.IntPair;
 import org.clafer.constraint.SingletonManager;
+import org.clafer.constraint.UpcastManager;
 import org.clafer.tree.AbstractClafer;
 import org.clafer.tree.ClaferModel;
 import org.clafer.tree.IntClafer;
@@ -34,13 +36,17 @@ public class Exprs implements Iterable<String> {
 
     private final ClaferModel claferModel;
 
-    public Exprs(int bitwidth) {
-        this.claferModel = new ClaferModel(bitwidth);
+    public Exprs() {
+        this(-16, 16);
+    }
+
+    public Exprs(int low, int high) {
+        this.claferModel = new ClaferModel(low, high);
     }
 
     @Override
     public ExprsSolutions iterator() {
-        return new ExprsSolutions(claferModel);
+        return new ExprsSolutions(claferModel, ovar);
     }
 
     public ConcreteClafer newTopClafer(String name, int scope, Card card) {
@@ -58,7 +64,6 @@ public class Exprs implements Iterable<String> {
     public IntClafer getIntType() {
         return claferModel.getIntClafer();
     }
-
 //    public static void main(String[] args) {
 //        long start = System.currentTimeMillis();
 //        final Exprs e = new Exprs(3);
@@ -100,45 +105,29 @@ public class Exprs implements Iterable<String> {
 //        // SelectN on memebership
 //        // 10058 Time (ms), 5742 Nodes, 7794 Backtracks, 0 Restarts - 
 //        // 1845
+//        // Increasing
+//        // 2202 Time (ms), 5715 Nodes, 7740 Backtracks, 0 Restarts - 
+//        // 1845
+//        // Concrete clafer cardinality propogate
+//        // 2411 Time (ms), 5713 Nodes, 7736 Backtracks, 0 Restarts - 
+//        // 1845
 //        System.out.println(iter.getRuntimeStatistics());
 //        System.out.println(iter.getSolutionCount());
 //        System.out.println(System.currentTimeMillis() - start);
 //    }
-    public static void main(String[] args) {
-        long start = System.currentTimeMillis();
-        final Exprs e = new Exprs(3);
-        final AbstractClafer animal = e.newAbstractClafer("animal", 2);
-        final ConcreteClafer person = e.newTopClafer("person", 2, new Card(2)).extending(animal);
-        final ConcreteClafer hand = person.addChildClafer("hand", 2, new Card(0));
-        final ConcreteClafer claw = person.addChildClafer("claw", 2, new Card(0));
-
-        Set<String> ans = new HashSet<String>();
-
-        ExprsSolutions iter = e.iterator();
-        while (iter.hasNext()) {
-            String s = iter.next();
-//            System.out.println(iter.getRuntimeStatistics());
-//            System.out.println(iter.getSolutionToString());
-//
-            System.out.println(s);
-            if (!ans.add(s)) {
-                throw new Error();
-            }
-        }
-        // 13 Time (ms), 45 Nodes, 50 Backtracks, 0 Restarts - 
-        // 20
-        System.out.println(iter.getRuntimeStatistics());
-        System.out.println(iter.getSolutionCount());
-        System.out.println(System.currentTimeMillis() - start);
-    }
     private int num = 0;
+    private IntegerExpressionVariable ovar;
 
     public SetVariable numSetVar(String name, int low, int high, String... options) {
         return Choco.makeSetVar(Check.notNull(name) + (num++), low, high, options);
     }
 
-    public IntegerVariable numIntVar(String name, int low, int high) {
-        return Choco.makeIntVar(Check.notNull(name) + (num++), low, high);
+    public IntegerVariable numIntVar(String name, int low, int high, String... options) {
+        return Choco.makeIntVar(Check.notNull(name) + (num++), low, high, options);
+    }
+
+    public void objective(RefClafer ref) {
+        ovar = ChocoUtil.sum(ref.getRefs());
     }
 
     public IntExpr constant(AtomicClafer type, int value) {
@@ -163,6 +152,14 @@ public class Exprs implements Iterable<String> {
 
     public BoolExpr some(SetExpr sv) {
         return new BoolExpr(Choco.geqCard(sv.getValue(), 1), sv.getConstraints());
+    }
+
+    public IntExpr size(IntExpr iv) {
+        return constantInt(1);
+    }
+
+    public IntExpr size(SetExpr sv) {
+        return new IntExpr(getIntType(), sv.getValue().getCard(), sv.getConstraints());
     }
 
     public SetExpr intToSet(IntExpr iv) {
@@ -192,7 +189,7 @@ public class Exprs implements Iterable<String> {
             return new IntExpr(ref.getType(), ref.getRefs()[constant], take.getConstraints());
         }
 
-        IntegerVariable to = numIntVar("joinRef", ref.getScopeLow(), ref.getScopeHigh());
+        IntegerVariable to = numIntVar("joinRef", ref.getScopeLow(), ref.getScopeHigh(), Options.V_NO_DECISION);
 
         List<Constraint> constraints = Util.cons(
                 take.getConstraints(),
@@ -213,7 +210,7 @@ public class Exprs implements Iterable<String> {
         }
         RefClafer ref = type.getRef();
 
-        SetVariable to = numSetVar("joinRef", ref.getScopeLow(), ref.getScopeHigh());
+        SetVariable to = numSetVar("joinRef", ref.getScopeLow(), ref.getScopeHigh(), Options.V_NO_DECISION);
 
         List<Constraint> constraints = Util.cons(
                 take.getConstraints(),
@@ -240,7 +237,7 @@ public class Exprs implements Iterable<String> {
             return new IntExpr(parent, cType.getParentPointers()[constant], take.getConstraints());
         }
 
-        IntegerVariable to = numIntVar("joinParent", parent.getScopeLow(), parent.getScopeHigh());
+        IntegerVariable to = numIntVar("joinParent", parent.getScopeLow(), parent.getScopeHigh(), Options.V_NO_DECISION);
 
         List<Constraint> constraints = Util.cons(
                 take.getConstraints(),
@@ -262,7 +259,7 @@ public class Exprs implements Iterable<String> {
         ConcreteClafer cType = (ConcreteClafer) type;
         AtomicClafer parent = cType.getParent();
 
-        SetVariable to = numSetVar("joinParent", parent.getScopeLow(), parent.getScopeHigh());
+        SetVariable to = numSetVar("joinParent", parent.getScopeLow(), parent.getScopeHigh(), Options.V_NO_DECISION);
 
         List<Constraint> constraints = Util.cons(
                 take.getConstraints(),
@@ -283,7 +280,11 @@ public class Exprs implements Iterable<String> {
             throw new IllegalArgumentException("Cannot join " + take.getType().getName() + "." + children.getName());
         }
 
-        // TODO: Optimize for fixed cards
+        Integer constant = take.getConstant();
+        if (constant != null) {
+            return new SetExpr(children, children.getChildSet()[constant], take.getConstraints());
+        }
+
         return join(intToSet(take), children);
     }
 
@@ -299,14 +300,11 @@ public class Exprs implements Iterable<String> {
             throw new IllegalArgumentException("Cannot join " + take.getType().getName() + "." + children.getName());
         }
 
-        int low = Choco.MAX_UPPER_BOUND;
-        int high = Choco.MIN_LOWER_BOUND;
-        for (SetVariable child : children.getChildSet()) {
-            high = Math.max(high, child.getUppB());
-            low = Math.min(low, child.getLowB());
-        }
+        IntPair lowHigh = minMax(take.getLowB(), take.getUppB(), children.getChildSet());
+        int low = lowHigh.getFst();
+        int high = lowHigh.getSnd();
 
-        SetVariable to = numSetVar("join", low, high);
+        SetVariable to = numSetVar("join", low, high, Options.V_NO_DECISION);
 
         List<Constraint> constraints = Util.cons(
                 take.getConstraints(),
@@ -315,13 +313,107 @@ public class Exprs implements Iterable<String> {
         return new SetExpr(children, to, constraints);
     }
 
+    private IntPair minMax(int low, int high, SetVariable... svs) {
+        if (low > high) {
+            throw new IllegalArgumentException();
+        }
+        if (high >= svs.length) {
+            throw new IllegalArgumentException();
+        }
+        int min = svs[low].getLowB();
+        int max = svs[low].getUppB();
+        for (int i = low + 1; i <= high; i++) {
+            min = Math.min(min, svs[i].getLowB());
+            max = Math.max(max, svs[i].getUppB());
+        }
+        return new IntPair(min, max);
+    }
+
+    public IntExpr upcastTo(IntExpr e, AbstractClafer targetType) {
+        int offset = 0;
+        AtomicClafer sub = e.getType();
+        while (!sub.equals(targetType)) {
+            if (!sub.hasSuperClafer()) {
+                throw new IllegalArgumentException("Cannot upcast " + e.getType().getName() + " to " + targetType.getName());
+            }
+            AbstractClafer sup = sub.getSuperClafer();
+            offset += sup.getUpcastOffset(sub);
+            sub = sup;
+        }
+        return upcast(e, offset, targetType);
+    }
+
+    public SetExpr upcastTo(SetExpr e, AbstractClafer targetType) {
+        int offset = 0;
+        AtomicClafer sub = e.getType();
+        while (!sub.equals(targetType)) {
+            if (!sub.hasSuperClafer()) {
+                throw new IllegalArgumentException("Cannot upcast " + e.getType().getName() + " to " + targetType.getName());
+            }
+            AbstractClafer sup = sub.getSuperClafer();
+            offset += sup.getUpcastOffset(sub);
+            sub = sup;
+        }
+        return upcast(e, offset, targetType);
+    }
+
+    public IntExpr upcast(IntExpr e) {
+        AtomicClafer type = e.getType();
+        if (!type.hasSuperClafer()) {
+            throw new IllegalArgumentException("Cannot upcast " + e.getType().getName() + " because it does not extend");
+        }
+        int offset = type.getSuperClafer().getUpcastOffset(type);
+        return upcast(e, offset, type.getSuperClafer());
+    }
+
+    public SetExpr upcast(SetExpr e) {
+        AtomicClafer type = e.getType();
+        if (!type.hasSuperClafer()) {
+            throw new IllegalArgumentException("Cannot upcast " + type.getName() + " because it does not extend");
+        }
+        int offset = type.getSuperClafer().getUpcastOffset(type);
+        return upcast(e, offset, type.getSuperClafer());
+    }
+
+    private IntExpr upcast(IntExpr e, int offset, AtomicClafer targetType) {
+        if (offset == 0) {
+            return e.withType(targetType);
+        }
+        IntegerExpressionVariable sum = ChocoUtil.plus(e.getValue(), offset);
+        IntegerVariable to;
+        if (sum instanceof IntegerVariable) {
+            to = (IntegerVariable) sum;
+        } else {
+            to = numIntVar("to", sum.getLowB(), sum.getUppB());
+        }
+        return new IntExpr(targetType, to, e.getConstraints());
+    }
+
+    private SetExpr upcast(SetExpr e, int offset, AtomicClafer targetType) {
+        if (offset == 0) {
+            return e.withType(targetType);
+        }
+        SetVariable from = e.getValue();
+        SetVariable to = numSetVar("upcast", from.getLowB() + offset, from.getUppB() + offset);
+        List<Constraint> constraints = Util.cons(
+                e.getConstraints(),
+                UpcastManager.upcast(from, to, offset));
+        return new SetExpr(targetType, to, constraints);
+    }
+
     public BoolExpr eq(SetExpr e1, SetExpr e2) {
+        if (!e1.getType().equals(e2.getType())) {
+            throw new IllegalArgumentException("Cannot perform " + e1.getType().getName() + " = " + e2.getType());
+        }
         return new BoolExpr(
                 Choco.eq(e1.getValue(), e2.getValue()),
                 concatConstraints(e1, e2));
     }
 
     public BoolExpr eq(IntExpr e1, IntExpr e2) {
+        if (!e1.getType().equals(e2.getType())) {
+            throw new IllegalArgumentException("Cannot perform " + e1.getType().getName() + " = " + e2.getType());
+        }
         Integer c1 = Util.getConstant(e1.getValue());
         Integer c2 = Util.getConstant(e2.getValue());
         if (c1 != null) {
@@ -340,6 +432,9 @@ public class Exprs implements Iterable<String> {
     }
 
     public BoolExpr eq(SetExpr e1, IntExpr e2) {
+        if (!e1.getType().equals(e2.getType())) {
+            throw new IllegalArgumentException("Cannot perform " + e1.getType().getName() + " = " + e2.getType());
+        }
         // TODO: use singleton but we need a "not singleton" constraint for opposite
         return new BoolExpr(
                 Choco.and(Choco.eqCard(e1.getValue(), 1), Choco.member(e2.getValue(), e1.getValue())),
@@ -348,6 +443,9 @@ public class Exprs implements Iterable<String> {
     }
 
     public BoolExpr eq(IntExpr e1, SetExpr e2) {
+        if (!e1.getType().equals(e2.getType())) {
+            throw new IllegalArgumentException("Cannot perform " + e1.getType().getName() + " = " + e2.getType());
+        }
         return eq(e2, e1);
     }
 

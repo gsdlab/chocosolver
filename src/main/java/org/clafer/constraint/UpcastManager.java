@@ -10,6 +10,7 @@ import choco.cp.solver.search.integer.varselector.MinDomain;
 import choco.cp.solver.search.set.AssignSetVar;
 import choco.cp.solver.search.set.MinDomSet;
 import choco.cp.solver.search.set.MinEnv;
+import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.model.Model;
 import choco.kernel.model.ModelException;
 import choco.kernel.model.constraints.ComponentConstraint;
@@ -31,26 +32,27 @@ public class UpcastManager extends MixedConstraintManager {
     @Override
     public SConstraint makeConstraint(Solver solver, Variable[] vars, Object params, List<String> options) {
         if (solver instanceof CPSolver) {
-            return new Upcast(
-                    solver.getVar((SetVariable) vars[0]),
-                    solver.getVar((IntegerVariable) vars[1]),
-                    solver.getVar((SetVariable) vars[2]));
+            if (params instanceof Integer) {
+                return new Upcast(
+                        solver.getVar((SetVariable) vars[0]),
+                        solver.getVar((SetVariable) vars[1]),
+                        (Integer) params);
+            }
         }
         throw new ModelException("Could not found a constraint manager in " + this.getClass() + " !");
     }
 
-    public static Constraint upcast(SetVariable from, IntegerVariable offset, SetVariable to) {
-        return new ComponentConstraint(UpcastManager.class, null, new Variable[]{from, offset, to});
+    public static Constraint upcast(SetVariable from, SetVariable to, int offset) {
+        return new ComponentConstraint(UpcastManager.class, offset, new Variable[]{from, to});
     }
 
     public static void main(String[] args) {
         Model m = new CPModel();
 
         SetVariable from = Choco.makeSetVar("from", 0, 10);
-        IntegerVariable offset = Choco.makeIntVar("offset", 0, 10);
         SetVariable to = Choco.makeSetVar("to", 0, 10);
 
-        m.addConstraint(upcast(from, offset, to));
+        m.addConstraint(upcast(from, to, 3));
 
         System.out.println(Util.allSolutions(m).getStatistics());
 
@@ -58,8 +60,9 @@ public class UpcastManager extends MixedConstraintManager {
         solver.addGoal(new AssignVar(new MinDomain(solver), new IncreasingDomain()));
         solver.addGoal(new AssignSetVar(new MinDomSet(solver), new MinEnv()));
         System.out.println(Util.allSolutions(solver).getStatistics());
-        
-        // #4094 solutions 3004 Time (ms), 8178 Nodes, 8177 Backtracks, 0 Restarts - 
-        // #4094 solutions 1008 Time (ms), 8123 Nodes, 8122 Backtracks, 0 Restarts - 
+
+        // 2^[0..7|
+        // #256 solutions 8 Time (ms), 511 Nodes, 510 Backtracks, 0 Restarts - 
+        // #256 solutions 28 Time (ms), 504 Nodes, 503 Backtracks, 0 Restarts - 
     }
 }

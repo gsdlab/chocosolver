@@ -1,8 +1,12 @@
 package org.clafer;
 
+import choco.Choco;
+import choco.Options;
 import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
 import choco.kernel.model.Model;
+import choco.kernel.model.variables.integer.IntegerExpressionVariable;
+import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.solver.Configuration;
 import choco.kernel.solver.Solver;
 import java.io.IOException;
@@ -21,18 +25,27 @@ public class ExprsSolutions implements Iterator<String> {
     private boolean hasNext = false;
     private boolean end = false;
 
-    public ExprsSolutions(ClaferModel claferModel) {
+    public ExprsSolutions(ClaferModel claferModel, IntegerExpressionVariable ovar) {
         this.claferModel = Check.notNull(claferModel);
 
         Model model = new CPModel();
         claferModel.build(model);
 
+        if (ovar != null) {
+            if (ovar instanceof IntegerVariable) {
+                model.addVariable(Options.V_OBJECTIVE, (IntegerVariable) ovar);
+            } else {
+                IntegerVariable ivar = Choco.makeIntVar("__objective", ovar.getLowB(), ovar.getUppB(),
+                        Options.V_BOUND, Options.V_NO_DECISION, Options.V_OBJECTIVE);
+                model.addConstraint(Choco.eq(ivar, ovar));
+            }
+        }
+
         solver = new CPSolver();
         solver.read(model);
         solver.getConfiguration().putInt(Configuration.LOGGING_MAX_DEPTH, 300000);
 
-
-        hasNext = solver.solve();
+        hasNext = ovar == null ? solver.solve() : solver.minimize(false);
         end = !hasNext;
     }
 
@@ -65,7 +78,7 @@ public class ExprsSolutions implements Iterator<String> {
     }
 
     public String getRuntimeStatistics() {
-        return solver.runtimeStatistics();
+        return "Solution #" + getSolutionCount() + " - " + solver.runtimeStatistics();
     }
 
     public String getSolutionToString() {

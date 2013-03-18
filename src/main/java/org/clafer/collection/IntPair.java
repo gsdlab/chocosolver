@@ -20,4 +20,9 @@ public class IntPair {
     public int getSnd() {
         return snd;
     }
+
+    @Override
+    public String toString() {
+        return "{" + fst + ", " + snd + ")";
+    }
 }

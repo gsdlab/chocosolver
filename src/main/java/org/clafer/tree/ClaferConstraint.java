@@ -53,15 +53,15 @@ public class ClaferConstraint {
         }
         for (; id <= s.getUppB(); id++) {
             BoolExpr cond = null;
-            if (intConstraint != null
-                    && (cond = intConstraint.apply(thisFactory.newIntThis(id))) != null
-                    // No global constraints means everything goes on the
-                    // right hand side of the implies so optimize!
-                    && cond.getConstraints().isEmpty()) {
-                addCondition(model, id, cond);
-            } else {
+//            if (intConstraint != null
+//                    && (cond = intConstraint.apply(thisFactory.newIntThis(id))) != null
+//                    // No global constraints means everything goes on the
+//                    // right hand side of the implies so optimize!
+//                    && cond.getConstraints().isEmpty()) {
+//                addCondition(model, id, cond);
+//            } else {
                 addCondition(model, id, setConstraint.apply(thisFactory.newSetThis(id)));
-            }
+//            }
             // TODO VERY IMPORTANT: We can also optimize cases like this:
             // this.ref = 3
             // 

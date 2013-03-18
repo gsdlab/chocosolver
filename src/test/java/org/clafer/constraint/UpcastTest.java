@@ -6,7 +6,6 @@ import static org.clafer.constraint.UpcastManager.*;
 import choco.Choco;
 import choco.cp.model.CPModel;
 import choco.kernel.model.Model;
-import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Solver;
 import java.util.Random;
@@ -22,21 +21,20 @@ public class UpcastTest extends ConstraintTest {
         Random rand = new Random();
         Model m = new CPModel();
         SetVariable from = Choco.makeSetVar("from", 0, rand.nextInt(50));
-        IntegerVariable offset = Choco.makeIntVar("offset", 0, rand.nextInt(50));
-        SetVariable to = Choco.makeSetVar("to", 0, rand.nextInt(50));
+        SetVariable to = Choco.makeSetVar("to", 0, from.getUppB() + rand.nextInt(50));
+        int offset = rand.nextInt(to.getUppB() - from.getUppB() + 1);
 
-        m.addConstraint(upcast(from, offset, to));
+        m.addConstraint(upcast(from, to, offset));
 
         for (int repeat = 0; repeat < 100; repeat++) {
             Solver solver = solveRandomly(m);
 
             int[] $from = solver.getVar(from).getValue();
-            int $offset = solver.getVar(offset).getVal();
             int[] $to = solver.getVar(to).getValue();
 
             assertEquals($from.length, $to.length);
             for (int i = 0; i < $from.length; i++) {
-                assertEquals($from[i] + $offset, $to[i]);
+                assertEquals($from[i] + offset, $to[i]);
             }
         }
     }
@@ -45,21 +43,20 @@ public class UpcastTest extends ConstraintTest {
     public void testSmall() {
         Model m = new CPModel();
         SetVariable from = Choco.makeSetVar("from", new int[]{0});
-        IntegerVariable offset = Choco.makeIntVar("offset", new int[]{0, 1});
         SetVariable to = Choco.makeSetVar("to", new int[]{0, 1});
+        int offset = 1;
 
-        m.addConstraint(upcast(from, offset, to));
+        m.addConstraint(upcast(from, to, offset));
 
         for (int repeat = 0; repeat < 100; repeat++) {
             Solver solver = solveRandomly(m);
 
             int[] $from = solver.getVar(from).getValue();
-            int $offset = solver.getVar(offset).getVal();
             int[] $to = solver.getVar(to).getValue();
 
             assertEquals($from.length, $to.length);
             for (int i = 0; i < $from.length; i++) {
-                assertEquals($from[i] + $offset, $to[i]);
+                assertEquals($from[i] + offset, $to[i]);
             }
         }
     }
@@ -69,11 +66,11 @@ public class UpcastTest extends ConstraintTest {
         Model m = new CPModel();
 
         SetVariable from = Choco.makeSetVar("from", 0, 5);
-        IntegerVariable offset = Choco.makeIntVar("offset", 0, 5);
         SetVariable to = Choco.makeSetVar("to", 0, 5);
+        int offset = 3;
 
-        m.addConstraint(upcast(from, offset, to));
+        m.addConstraint(upcast(from, to, offset));
 
-        assertEquals(126, quickCheckModel(m, 10));
+        assertEquals(8, quickCheckModel(m, 10));
     }
 }

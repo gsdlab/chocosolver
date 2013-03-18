@@ -1,37 +1,18 @@
 package org.clafer;
 
-import choco.Options;
+import choco.kernel.common.logging.ChocoLogging;
 import javax.script.ScriptEngine;
-import choco.kernel.solver.Solver;
-import choco.cp.model.CPModel;
-import choco.cp.solver.CPSolver;
-import choco.cp.solver.search.integer.branching.AssignVar;
-import choco.cp.solver.search.integer.valiterator.IncreasingDomain;
-import choco.cp.solver.search.integer.varselector.MinDomain;
-import choco.cp.solver.search.set.AssignSetVar;
-import choco.cp.solver.search.set.MaxDomSet;
-import choco.kernel.model.Model;
-import choco.kernel.model.variables.set.SetVariable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import javax.script.ScriptEngineManager;
-import static choco.Choco.*;
-import choco.cp.solver.search.set.MinEnv;
-import choco.kernel.common.logging.ChocoLogging;
-import choco.kernel.common.logging.Verbosity;
-import choco.kernel.model.variables.integer.IntegerVariable;
-import choco.kernel.solver.Configuration;
-import choco.kernel.solver.variables.integer.IntDomainVar;
-import choco.kernel.solver.variables.set.SetVar;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import javax.script.Invocable;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.security.PrivilegedActionException;
 import javax.script.ScriptException;
+import sun.org.mozilla.javascript.RhinoException;
 
 /**
  *
@@ -39,131 +20,66 @@ import javax.script.ScriptException;
  */
 public class ChocoSolver {
 
-    public static void main(String[] args) throws IOException, NoSuchMethodException {
+    public static void main(String[] args) throws Throwable {
         try {
-            if (args.length == 0) {
-                System.out.println("Expected at least one argument.");
+            try {
+                try {
+                    run();
+                } catch (UndeclaredThrowableException e) {
+                    try {
+                        throw e.getCause();
+                    } catch (PrivilegedActionException ex) {
+                        throw ex.getCause();
+                    }
+                }
+            } catch (ScriptException e) {
+                throw e.getCause();
             }
-            if (args.length == 1) {
-                run(false, new File(args[0]));
-            } else {
-                run(Boolean.parseBoolean(args[0]), new File(args[1]));
-            }
-        } catch (ScriptException e) {
+        } catch (RhinoException e) {
             System.err.println(e.getMessage());
         }
     }
-    static boolean obj = true;
 
-    public static void run(boolean all, File in) throws IOException, ScriptException, NoSuchMethodException {
-        long start = System.currentTimeMillis();
-        Model m = new CPModel();
-        m.setDefaultExpressionDecomposition(false);
-
-        CPSolver s = new CPSolver();
-        SetVariable root = constant(new int[]{0});
-        m.addConstraint(eqCard(root, 1));
-        SetVariable[] __root = new SetVariable[]{root};
-
+    public static void run() throws IOException, ScriptException, NoSuchMethodException {
         ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
         if (engine == null) {
             throw new IllegalStateException("Missing javascript engine.");
         }
 
-        String header = readAll(ChocoSolver.class.getResourceAsStream("header.js"));
-        String script = readAll(in);
-
-        /**/
-        engine.put("m", m);
-        engine.put("s", s);
-        engine.put("root", root);
-        engine.put("__root", __root);
-
-        Invocable i = (Invocable) engine;
-
         engine.put(ScriptEngine.FILENAME, "header.js");
-        engine.eval(header);
-        engine.put(ScriptEngine.FILENAME, in.getName());
-        engine.eval(script);
+        engine.eval(readAll(ChocoSolver.class.getResourceAsStream("header.js")));
+        engine.put(ScriptEngine.FILENAME, "Test.js");
+        engine.eval(readAll(new File("/home/jimmy/Programming/clafer/Test.js")));
 
-        ChocoLogging.setVerbosity(Verbosity.SOLUTION);
-        s.getConfiguration().putInt(Configuration.LOGGING_MAX_DEPTH, 300000);
-
-        s.read(m);
-
-        s.addGoal(new AssignSetVar(new MaxDomSet(s), new MinEnv()));
-        s.addGoal(new AssignVar(new MinDomain(s), new IncreasingDomain()));
-//        s.addGoal(new AssignSetVar(new RandomSetVarSelector(s), new RandomSetValSelector()));
-//        s.addGoal(new AssignVar(new RandomIntVarSelector(s), new RandomIntValSelector()));
-
-//        for (IntDomainVar sv : s.getIntDecisionVars()) {
-//            if (sv.getName().startsWith("Y_opp")) {
-//                System.out.println(sv + " : " + sv.getDomain());
-//            }
-//        }
-        System.out.println("Solving");
-        Boolean result = obj ? s.minimize(false) : s.solve();
-
-        long end = System.currentTimeMillis() - start;
-        
-        
-//        i.invokeFunction("solution", s);
-//        System.out.println(s.solutionToString());
-        if (!Boolean.TRUE.equals(result)) {
-            System.err.println("No solution.");
-            return;
+        Object __clafer__choco__exprs = engine.get("__clafer__choco__exprs");
+        boolean __clafer__choco__solution = (Boolean) engine.get("__clafer__choco__solution");
+        boolean __clafer__choco__statistics = (Boolean) engine.get("__clafer__choco__statistics");
+        boolean __clafer__choco__branching = (Boolean) engine.get("__clafer__choco__branching");
+        int __clafer__choco__solve = ((Double) engine.get("__clafer__choco__solve")).intValue();
+        if (__clafer__choco__solve <= 0) {
+            __clafer__choco__solve = Integer.MAX_VALUE;
         }
-//        do {
-        i.invokeFunction("solution", s);
-        System.out.println(s.solutionToString());
-//            for (IntDomainVar sv : s.getIntDecisionVars()) {
-//                if (sv.getName().startsWith("Y_opp")) {
-//                    System.out.println(sv + " : " + sv.getDomain());
-//                }
-//            }
-//        } while (s.nextSolution());
 
-        System.out.println("\n\n\n" + end + "\n\n\n");
-
-        while (all && (System.in.read()) != -1 && s.nextSolution()) {
-            i.invokeFunction("solution", s);
-        }
-    }
-
-    public static SetVar[] getDecisionSetVars(Model m, Solver s) {
-        List<SetVar> svs = new ArrayList<SetVar>();
-        Iterator<SetVariable> st = m.getSetVarIterator();
-        while (st.hasNext()) {
-            SetVariable sv = st.next();
-            if (!sv.getOptions().contains(Options.V_NO_DECISION)) {
-                svs.add(s.getVar(sv));
+        if (__clafer__choco__exprs instanceof Exprs) {
+            if (__clafer__choco__branching) {
+                ChocoLogging.toSearch();
+            } else if(__clafer__choco__statistics) {
+                ChocoLogging.toVerbose();
             }
-        }
-        return svs.toArray(new SetVar[svs.size()]);
-    }
 
-    public static IntDomainVar[] getDecisionIntVariables(Model m, Solver s) {
-        List<IntDomainVar> ivs = new ArrayList<IntDomainVar>();
-        Iterator<IntegerVariable> it = m.getIntVarIterator();
-        while (it.hasNext()) {
-            IntegerVariable iv = it.next();
-            if (!iv.getOptions().contains(Options.V_NO_DECISION)) {
-                ivs.add(s.getVar(iv));
-            } else {
-                System.out.println("NOP:" + iv);
+            Exprs expr = (Exprs) __clafer__choco__exprs;
+
+            ExprsSolutions iter = expr.iterator();
+            while (__clafer__choco__solve > 0 && iter.hasNext()) {
+                String instance = iter.next();
+                if (__clafer__choco__solution) {
+                    System.out.println(instance);
+                }
+                __clafer__choco__solve--;
             }
-        }
-        return ivs.toArray(new IntDomainVar[ivs.size()]);
-    }
-
-    public static void printAllVariables(Model m) {
-        Iterator<IntegerVariable> it = m.getIntVarIterator();
-        while (it.hasNext()) {
-            System.out.println(it.next());
-        }
-        Iterator<SetVariable> st = m.getSetVarIterator();
-        while (st.hasNext()) {
-            System.out.println(st.next());
+            if (__clafer__choco__statistics) {
+                System.out.println(iter.getRuntimeStatistics());
+            }
         }
     }
 

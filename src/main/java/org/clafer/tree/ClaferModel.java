@@ -23,9 +23,9 @@ public class ClaferModel {
     private final IntClafer intClafer;
     private final List<AbstractClafer> abstractClafers = new ArrayList<AbstractClafer>();
 
-    public ClaferModel(int bitwidth) {
+    public ClaferModel(int low, int high) {
         root = new RootClafer();
-        intClafer = new IntClafer(bitwidth);
+        intClafer = new IntClafer(low, high);
     }
 
     public RootClafer getRoot() {
@@ -41,7 +41,7 @@ public class ClaferModel {
     }
 
     public ConcreteClafer newTopClafer(String name, int scope, Card card) {
-        return root.addChildClafer(name, scope, card);
+        return root.addChild(name, scope, card);
     }
 
     public AbstractClafer newAbstractClafer(String name, int scope) {
@@ -52,10 +52,9 @@ public class ClaferModel {
 
     public void build(Model model) {
         Analysis analysis = Analysis.analyze(this);
-
         List<AtomicClafer> atomicClafers = new ArrayList<AtomicClafer>();
 
-        for (AtomicClafer start : Util.cons(root, abstractClafers)) {
+        for (AtomicClafer start : Util.cons(abstractClafers, root)) {
             for (Clafer clafer : TreeUtil.getAllNestedClafers(start)) {
                 clafer.build(model, analysis);
                 if (clafer instanceof AtomicClafer) {

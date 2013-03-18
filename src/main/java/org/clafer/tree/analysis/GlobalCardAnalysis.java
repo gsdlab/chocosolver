@@ -32,11 +32,11 @@ public class GlobalCardAnalysis {
                     public int compare(AbstractClafer o1, AbstractClafer o2) {
                         Integer depth1 = depths.get(o1);
                         if (depth1 == null) {
-                            throw new IllegalArgumentException(depth1 + " depth not analyzed yet");
+                            throw new IllegalArgumentException(o1 + " depth not analyzed yet");
                         }
                         Integer depth2 = depths.get(o2);
                         if (depth2 == null) {
-                            throw new IllegalArgumentException(depth2 + " depth not analyzed yet");
+                            throw new IllegalArgumentException(o2 + " depth not analyzed yet");
                         }
                         int $depth1 = depth1.intValue();
                         int $depth2 = depth2.intValue();
@@ -58,6 +58,7 @@ public class GlobalCardAnalysis {
         for (AtomicClafer sub : clafer.getSubs()) {
             Card subGlobalCard = globalCards.get(sub);
             if (subGlobalCard == null) {
+                // TODO: this is possible if a child of an abstract extends the abstract
                 throw new IllegalArgumentException(sub.getName() + " does not have it's global card analyzed yet");
             }
             globalCard = globalCard.add(subGlobalCard);

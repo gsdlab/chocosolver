@@ -20,10 +20,10 @@ public class Card {
 
     public Card(int low, int high) {
         if (low < 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("low(" + low + ") < 0");
         }
         if (high < low) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("high(" + high + ") > low(" + low + ")");
         }
         this.low = low;
         this.high = high;
@@ -62,7 +62,7 @@ public class Card {
 
     public Card mult(Card factor) {
         if (hasHigh() && factor.hasHigh()) {
-            return new Card(low * factor.low, high * high);
+            return new Card(low * factor.low, high * factor.high);
         }
         return new Card(low * factor.low);
     }

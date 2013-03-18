@@ -13,10 +13,10 @@ public class TypeHierarchyDepthAnalysis {
 
     public static Map<AbstractClafer, Integer> analyze(ClaferModel model) {
         Map<AbstractClafer, Integer> depths = new HashMap<AbstractClafer, Integer>();
-        for (AbstractClafer clafer : model.getAbstractClafers()) {
-            int depth;
-            for (depth = 0; clafer.hasSuperClafer(); depth++) {
-                clafer = clafer.getSuperClafer();
+        for (final AbstractClafer clafer : model.getAbstractClafers()) {
+            int depth = 0;
+            for (AbstractClafer sup = clafer; sup.hasSuperClafer(); sup = sup.getSuperClafer()) {
+                depth++;
             }
             depths.put(clafer, depth);
         }

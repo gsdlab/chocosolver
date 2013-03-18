@@ -32,7 +32,7 @@ public class JoinTest extends ConstraintTest {
         assertEquals(set.size(), $to.length);
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testJoin() {
         for (int rr = 0; rr < 10; rr++) {
             Model m = new CPModel();
@@ -41,6 +41,9 @@ public class JoinTest extends ConstraintTest {
             SetVariable to = Choco.makeSetVar("to", 0, nextInt(10));
 
             m.addConstraint(JoinManager.join(take, children, to));
+            if (children.length > 1) {
+                m.addConstraint(Choco.setDisjoint(children));
+            }
 
             for (int repeat = 0; repeat < 10; repeat++) {
                 Solver s = solveRandomly(m, false);
@@ -49,7 +52,7 @@ public class JoinTest extends ConstraintTest {
         }
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void quickCheck() {
         Model m = new CPModel();
         SetVariable take = Choco.makeSetVar("take", 0, 2);
@@ -57,6 +60,9 @@ public class JoinTest extends ConstraintTest {
         SetVariable to = Choco.makeSetVar("to", 0, 4);
 
         m.addConstraint(JoinManager.join(take, children, to));
+        if (children.length > 1) {
+            m.addConstraint(Choco.setDisjoint(children));
+        }
 
         assertEquals(8192, quickCheckModel(m, 10, false));
     }

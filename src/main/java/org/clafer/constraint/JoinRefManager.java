@@ -96,40 +96,25 @@ public class JoinRefManager extends MixedConstraintManager {
         System.out.println(Util.allSolutions(m).getStatistics());
 
         Solver solver = Util.newSolver(m);
-//        #4094 solutions 3004 Time (ms), 8178 Nodes, 8177 Backtracks, 0 Restarts - 
-//        #4094 solutions 1008 Time (ms), 8123 Nodes, 8122 Backtracks, 0 Restarts - 
         solver.addGoal(new AssignVar(new MinDomain(solver), new IncreasingDomain()));
         solver.addGoal(new AssignSetVar(new MinDomSet(solver), new MinEnv()));
         System.out.println(Util.allSolutions(solver).getStatistics());
 
         // #1000 solutions 201 Time (ms), 2045 Nodes, 4559 Backtracks, 0 Restarts - 
         // #1000 solutions 846 Time (ms), 3250 Nodes, 5312 Backtracks, 0 Restarts - 
-        //#1000 solutions 201 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
-        //#1000 solutions 613 Time (ms), 3250 Nodes, 5264 Backtracks, 0 Restarts - 
-        //#1000 solutions 216 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
-        //#1000 solutions 422 Time (ms), 2475 Nodes, 3714 Backtracks, 0 Restarts - 
-        //#1000 solutions 408 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
-        //#1000 solutions 362 Time (ms), 1818 Nodes, 2112 Backtracks, 0 Restarts -
-//        #1000 solutions 201 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
-//        #1000 solutions 417 Time (ms), 1811 Nodes, 2097 Backtracks, 0 Restarts - 
-//        Set ans = new HashSet();
-//
-//        int c = 0;
-//        if (so.solve()) {
-//            do {
-//                System.out.println("------------\n");
-//                System.out.println("     take:" + Arrays.toString(so.getVar(take).getValue())
-//                        + " to:" + Arrays.toString(so.getVar(to).getValue()));
-//                for (int x = 0; x < i.length; x++) {
-//                    System.out.println("     ref" + x + ":" + so.getVar(i[x]).getVal());
-//            } while (so.nextSolution());
-//        }
-        //- Solution #1,000 found. 6811 Time (ms), 4119 Nodes, 14917 Backtracks, 0 Restarts.
-        //- Solution #1,000 found. 14445 Time (ms), 4089 Nodes, 14377 Backtracks, 0 Restarts.
-        //- Solution #1,000 found. 2603 Time (ms), 2045 Nodes, 4553 Backtracks, 0 Restarts.
-        //- Solution #1,000 found. 2208 Time (ms), 2045 Nodes, 4553 Backtracks, 0 Restarts.
-        // #1000 solutions 201 Time (ms), 2045 Nodes, 4559 Backtracks, 0 Restarts - 
-        // #1000 solutions 846 Time (ms), 3250 Nodes, 5312 Backtracks, 0 Restarts - 
-//        System.out.println("solutions# " + c);
+        // #1000 solutions 201 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
+        // #1000 solutions 613 Time (ms), 3250 Nodes, 5264 Backtracks, 0 Restarts - 
+        // #1000 solutions 216 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
+        // #1000 solutions 422 Time (ms), 2475 Nodes, 3714 Backtracks, 0 Restarts - 
+        // #1000 solutions 408 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
+        // #1000 solutions 362 Time (ms), 1818 Nodes, 2112 Backtracks, 0 Restarts -
+        // #1000 solutions 201 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
+        // #1000 solutions 417 Time (ms), 1811 Nodes, 2097 Backtracks, 0 Restarts - 
+        // Add "sameRefs" to card propogation.
+        // #1000 solutions 207 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
+        // #1000 solutions 337 Time (ms), 1806 Nodes, 2079 Backtracks, 0 Restarts - 
+        // max same ref with cards instead of ker and env
+        // #1000 solutions 201 Time (ms), 1431 Nodes, 1430 Backtracks, 0 Restarts - 
+        // #1000 solutions 328 Time (ms), 1806 Nodes, 2052 Backtracks, 0 Restarts - 
     }
 }

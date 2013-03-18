@@ -4,6 +4,7 @@ import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import java.util.Collections;
 import java.util.List;
+import org.clafer.Check;
 import org.clafer.Util;
 
 /**
@@ -17,8 +18,8 @@ public class IntExpr extends Expr {
 
     public IntExpr(AtomicClafer type, IntegerVariable value, List<Constraint> constraints) {
         super(constraints);
-        this.type = type;
-        this.value = value;
+        this.type = Check.notNull(type);
+        this.value = Check.notNull(value);
     }
 
     public IntExpr(AtomicClafer type, IntegerVariable value) {
@@ -43,5 +44,9 @@ public class IntExpr extends Expr {
 
     public Integer getConstant() {
         return Util.getConstant(value);
+    }
+    
+    public IntExpr withType(AtomicClafer newType) {
+        return new IntExpr(newType, value, getConstraints());
     }
 }

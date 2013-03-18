@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import org.clafer.tree.AtomicClafer;
 import org.clafer.tree.ConcreteClafer;
 
 /**
@@ -21,6 +22,22 @@ public class FP {
                 @Override
                 public IntegerVariable apply(SetVariable param) {
                     return param.getCard();
+                }
+            };
+    public static final Func<AtomicClafer, Integer> getScope =
+            new Func<AtomicClafer, Integer>() {
+
+                @Override
+                public Integer apply(AtomicClafer param) {
+                    return param.getScope();
+                }
+            };
+    public static final Func<ConcreteClafer, SetVariable> getSet =
+            new Func<ConcreteClafer, SetVariable>() {
+
+                @Override
+                public SetVariable apply(ConcreteClafer param) {
+                    return param.getSet();
                 }
             };
     public static final Func<ConcreteClafer, SetVariable[]> getChildSet =
@@ -40,6 +57,14 @@ public class FP {
                 return param.length;
             }
         };
+    }
+
+    public static int sum(List<Integer> is) {
+        int sum = 0;
+        for (Integer i : is) {
+            sum += i.intValue();
+        }
+        return sum;
     }
 
     public static <A, B, C> Func<A, C> compose(final Func<B, C> f1, final Func<A, B> f2) {
@@ -74,7 +99,7 @@ public class FP {
         return true;
     }
 
-    public static <A, B> List<B> mapped(List<A> as, Func<A, B> f) {
+    public static <A, B> List<B> mapped(List<? extends A> as, Func<A, B> f) {
         List<B> bs = new ArrayList<B>(as.size());
         for (A a : as) {
             bs.add(f.apply(a));

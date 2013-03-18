@@ -4,7 +4,6 @@ import choco.cp.solver.variables.integer.IntVarEvent;
 import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.constraints.integer.AbstractLargeIntSConstraint;
 import choco.kernel.solver.variables.integer.IntDomainVar;
-import java.util.Arrays;
 import org.clafer.Util;
 
 /**
