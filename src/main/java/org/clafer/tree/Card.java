@@ -1,7 +1,8 @@
 package org.clafer.tree;
 
 /**
- *
+ * Immutable.
+ * 
  * @author jimmy
  */
 public class Card {
@@ -11,7 +12,7 @@ public class Card {
     private final int high;
 
     public Card() {
-        this(0);
+        this(0, UNBOUNDED_HIGH);
     }
 
     public Card(int low) {
@@ -22,6 +23,9 @@ public class Card {
         if (low < 0) {
             throw new IllegalArgumentException("low(" + low + ") < 0");
         }
+        if (high == 0) {
+            throw new IllegalArgumentException("high(" + high + ") = 0");
+        }
         if (high < low) {
             throw new IllegalArgumentException("high(" + high + ") > low(" + low + ")");
         }
@@ -30,7 +34,7 @@ public class Card {
     }
 
     public boolean isExact() {
-        return getLow() == getHigh();
+        return low == high;
     }
 
     public boolean isBounded() {
@@ -65,6 +69,20 @@ public class Card {
             return new Card(low * factor.low, high * factor.high);
         }
         return new Card(low * factor.low);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Card) {
+            Card other = (Card) obj;
+            return low == other.low && high == other.high;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return low ^ high;
     }
 
     @Override

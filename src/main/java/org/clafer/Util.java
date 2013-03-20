@@ -31,6 +31,7 @@ import gnu.trove.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -81,6 +82,54 @@ public class Util {
         return null;
     }
 
+    /**
+     * @param low - inclusive
+     * @param high - exclusive
+     */
+    public static int[] range(int low, int high) {
+        if (low > high) {
+            throw new IllegalArgumentException();
+        }
+        int[] range = new int[high - low];
+        for (int i = 0; i < range.length; i++) {
+            range[i] = low + i;
+        }
+        return range;
+    }
+
+    /**
+     * @return - The set difference
+     */
+    public static int[] difference(int[] s1, int[] s2) {
+        TIntArrayList diff = new TIntArrayList();
+        for (int s : s1) {
+            if (!in(s, s2)) {
+                diff.add(s);
+            }
+        }
+        return diff.toNativeArray();
+    }
+
+    /**
+     * @return - The position of all the trues
+     */
+    public static int[] trues(boolean[] bs) {
+        int count = 0;
+        for (boolean b : bs) {
+            if (b) {
+                count++;
+            }
+        }
+        int[] trues = new int[count];
+        count = 0;
+        for (int i = 0; i < bs.length && count < trues.length; i++) {
+            if (bs[i]) {
+                trues[count++] = i;
+            }
+        }
+        return trues;
+    }
+
     // http://stackoverflow.com/questions/8095045/java-array-order-reversing
     public static void reverse(int[] a, int to) {
         for (int j = 0; j < to / 2; j++) {
@@ -100,6 +149,12 @@ public class Util {
             a[j] = a[to - j - 1];
             a[to - j - 1] = temp;
         }
+    }
+
+    public static <T> List<T> sorted(List<T> list, Comparator<? super T> c) {
+        List<T> sorted = new ArrayList<T>(list);
+        Collections.sort(sorted, c);
+        return sorted;
     }
 
     public static IntegerVariable[][] transpose(IntegerVariable[][] a) {
@@ -145,6 +200,15 @@ public class Util {
     public static boolean in(int item, int[] array) {
         for (int a : array) {
             if (a == item) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static <T> boolean in(T item, T[] array) {
+        for (T a : array) {
+            if (a.equals(item)) {
                 return true;
             }
         }

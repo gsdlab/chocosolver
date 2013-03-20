@@ -4,7 +4,6 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.clafer.tree.AtomicClafer;
@@ -118,19 +117,5 @@ public class FP {
             bs[i] = f.apply(as[i]);
         }
         return bs;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(
-                Arrays.toString(
-                mapped(
-                new String[]{"abc", "d", "ef"},
-                new Func<String, Integer>() {
-
-                    @Override
-                    public Integer apply(String param) {
-                        return param.length();
-                    }
-                })));
     }
 }

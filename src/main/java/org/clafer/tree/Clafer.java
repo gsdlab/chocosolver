@@ -5,7 +5,6 @@ import choco.kernel.solver.Solver;
 import java.io.IOException;
 import org.clafer.Check;
 import org.clafer.tree.analysis.Analysis;
-import sun.org.mozilla.javascript.ScriptableObject;
 
 /**
  *

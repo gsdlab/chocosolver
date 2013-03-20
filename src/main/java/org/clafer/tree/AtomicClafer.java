@@ -76,15 +76,6 @@ public abstract class AtomicClafer extends Clafer {
         return Collections.unmodifiableList(children);
     }
 
-    public void jsFunction_method(int a) {
-        System.out.println("asdasD" + a);
-    }
-
-    public int jsFunction_method() {
-        System.out.println("from java method");
-        return 2;
-    }
-
     public void addConstraint(SetConstraint setConstraint) {
         constraints.add(new ClaferConstraint(this, setConstraint));
     }

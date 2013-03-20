@@ -150,6 +150,7 @@ public class AbstractClafer extends AtomicClafer {
 
         for (AtomicClafer sub : subs) {
             model.addConstraint(BoolSlideManager.boolSlide(sub.getMembership(), getMembership(), offset));
+            // TODO: not needed?
             model.addConstraint(SelectNManager.selectN(
                     Arrays.copyOfRange(getMembership(), offset, offset + sub.getScope()),
                     sub.getSet().getCard()));
@@ -162,26 +163,5 @@ public class AbstractClafer extends AtomicClafer {
     @Override
     public String toString() {
         return "abstract " + getName();
-    }
-
-    /**
-     * Compare the gap of global cards
-     */
-    private static class GlobalCardGapComparator implements Comparator<AtomicClafer> {
-
-        private final Analysis analysis;
-
-        public GlobalCardGapComparator(Analysis analysis) {
-            this.analysis = analysis;
-        }
-
-        @Override
-        public int compare(AtomicClafer o1, AtomicClafer o2) {
-            Card card1 = analysis.getGlobalCard(o1);
-            Card card2 = analysis.getGlobalCard(o2);
-            int diff1 = card1.getHigh() - card1.getLow();
-            int diff2 = card2.getHigh() - card2.getLow();
-            return (diff1 < diff2) ? -1 : ((diff1 == diff2) ? 0 : 1);
-        }
     }
 }

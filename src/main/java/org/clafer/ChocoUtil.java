@@ -5,7 +5,11 @@ import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
+import choco.kernel.model.variables.VariableType;
+import choco.kernel.model.variables.integer.IntegerConstantVariable;
 import choco.kernel.model.variables.integer.IntegerExpressionVariable;
+import choco.kernel.model.variables.integer.IntegerVariable;
+import choco.kernel.model.variables.set.SetConstantVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Solver;
 import java.util.ArrayList;
@@ -32,16 +36,49 @@ public class ChocoUtil {
         }
     }
 
-    public static IntegerExpressionVariable plus(IntegerExpressionVariable t, int v) {
-        if (v == 0) {
-            return t;
+    /**
+     * @return The integer value if variable is a constant, null otherwise.
+     */
+    public static Integer getConstant(IntegerVariable variable) {
+        if (variable.getVariableType().equals(VariableType.CONSTANT_INTEGER)) {
+            return ((IntegerConstantVariable) variable).getValue();
         }
-        Integer constant = Util.getConstant(t);
-        if (constant != null) {
-            return Choco.constant(constant + v);
+        if (variable.isConstant()) {
+            return variable.getLowB();
         }
-        return Choco.plus(t, v);
+        return null;
     }
+
+    public static Integer getConstant(IntegerExpressionVariable variable) {
+        if (variable instanceof IntegerVariable) {
+            return getConstant((IntegerVariable) variable);
+        }
+        if (variable.getVariableType().equals(VariableType.CONSTANT_INTEGER)) {
+            return ((IntegerConstantVariable) variable).getValue();
+        }
+        return null;
+    }
+
+    /**
+     * @return The integer values if variable is a constant, null otherwise.
+     */
+    public static int[] getConstant(SetVariable variable) {
+        if (variable.getVariableType().equals(VariableType.CONSTANT_SET)) {
+            return ((SetConstantVariable) variable).getValues();
+        }
+        return null;
+    }
+
+//    public static IntegerExpressionVariable plus(IntegerExpressionVariable t, int v) {
+//        if (v == 0) {
+//            return t;
+//        }
+//        Integer constant = Util.getConstant(t);
+//        if (constant != null) {
+//            return Choco.constant(constant + v);
+//        }
+//        return Choco.plus(t, v);
+//    }
 
     public static Constraint betweenCard(IntegerExpressionVariable setCard, Card card) {
         return betweenCard(setCard, card.getLow(), card.getHigh());

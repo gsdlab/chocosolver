@@ -87,6 +87,7 @@ public class ConcreteClafer extends AtomicClafer {
                 card.hasLow()
                 ? new MinFunc(new LinearFunc(card.getLow(), low), high)
                 : new ConstFunc(low);
+        System.out.println(lowFunc.apply(0));
         Func<Integer, Integer> highFunc =
                 card.hasHigh()
                 ? new MinFunc(new LinearFunc(card.getHigh(), low + card.getHigh() - 1), high)

@@ -13,12 +13,14 @@ import org.clafer.tree.ConcreteClafer;
 import org.clafer.constraint.JoinRefManager;
 import choco.Choco;
 import choco.Options;
+import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.model.constraints.Constraint;
 import choco.kernel.model.variables.integer.IntegerExpressionVariable;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import java.util.ArrayList;
 import java.util.List;
+import org.clafer.ast.AstConcreteClafer;
 import org.clafer.collection.IntPair;
 import org.clafer.constraint.SingletonManager;
 import org.clafer.constraint.UpcastManager;
@@ -34,6 +36,18 @@ import org.clafer.tree.IntClafer;
  */
 public class Exprs implements Iterable<String> {
 
+    public static void main(String[] args) {
+        Exprs e = new Exprs();
+        AbstractClafer person = e.newAbstractClafer("person", 4);
+        ConcreteClafer name = person.addChild("name", 4, new Card(1, 1));
+
+        ConcreteClafer jim = e.newTopClafer("jim", 3, new Card(2, 3)).extending(person);
+        ConcreteClafer jam = e.newTopClafer("jam", 1, new Card(1, 1)).extending(person);
+
+        ChocoLogging.toSolution();
+        for (String s : e) {
+        }
+    }
     private final ClaferModel claferModel;
 
     public Exprs() {
@@ -379,7 +393,7 @@ public class Exprs implements Iterable<String> {
         if (offset == 0) {
             return e.withType(targetType);
         }
-        IntegerExpressionVariable sum = ChocoUtil.plus(e.getValue(), offset);
+        IntegerExpressionVariable sum = Choco.plus(e.getValue(), offset);
         IntegerVariable to;
         if (sum instanceof IntegerVariable) {
             to = (IntegerVariable) sum;
