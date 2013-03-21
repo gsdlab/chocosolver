@@ -42,8 +42,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.clafer.collection.IntIterator;
-import org.clafer.tree.AtomicClafer;
-import org.clafer.tree.ConcreteClafer;
 
 /**
  *
@@ -559,26 +557,6 @@ public class Util {
             result.append(buffer, 0, l);
         }
         return result.toString();
-    }
-
-    public static List<ConcreteClafer> filterConcrete(List<AtomicClafer> clafers) {
-        List<ConcreteClafer> concretes = new ArrayList<ConcreteClafer>();
-        for (AtomicClafer clafer : clafers) {
-            if (clafer instanceof ConcreteClafer) {
-                concretes.add((ConcreteClafer) clafer);
-            }
-        }
-        return concretes;
-    }
-
-    public static List<ConcreteClafer> filterInexactCard(List<ConcreteClafer> clafers) {
-        List<ConcreteClafer> inexact = new ArrayList<ConcreteClafer>();
-        for (ConcreteClafer clafer : clafers) {
-            if (!clafer.getCard().isExact()) {
-                inexact.add(clafer);
-            }
-        }
-        return inexact;
     }
 
     public static Solution allSolutions(Model model) {

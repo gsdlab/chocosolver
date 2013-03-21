@@ -1,4 +1,4 @@
-package org.clafer.tree;
+package org.clafer.ast;
 
 /**
  * Immutable.

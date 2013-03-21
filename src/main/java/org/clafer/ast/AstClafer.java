@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import org.clafer.Check;
-import org.clafer.tree.Card;
 
 /**
  *

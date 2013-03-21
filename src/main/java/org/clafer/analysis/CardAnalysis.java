@@ -5,7 +5,7 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.tree.Card;
+import org.clafer.ast.Card;
 
 /**
  * Rewrites the model replacing unbounded high cardinalities with bounded effecitive

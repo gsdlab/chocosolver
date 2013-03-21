@@ -4,7 +4,7 @@ import choco.kernel.solver.ContradictionException;
 import choco.kernel.solver.constraints.set.AbstractLargeSetSConstraint;
 import choco.kernel.solver.variables.set.SetVar;
 import org.clafer.Check;
-import org.clafer.tree.Card;
+import org.clafer.ast.Card;
 
 /**
  *

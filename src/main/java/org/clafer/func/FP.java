@@ -6,8 +6,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.clafer.tree.AtomicClafer;
-import org.clafer.tree.ConcreteClafer;
 
 /**
  *
@@ -21,30 +19,6 @@ public class FP {
                 @Override
                 public IntegerVariable apply(SetVariable param) {
                     return param.getCard();
-                }
-            };
-    public static final Func<AtomicClafer, Integer> getScope =
-            new Func<AtomicClafer, Integer>() {
-
-                @Override
-                public Integer apply(AtomicClafer param) {
-                    return param.getScope();
-                }
-            };
-    public static final Func<ConcreteClafer, SetVariable> getSet =
-            new Func<ConcreteClafer, SetVariable>() {
-
-                @Override
-                public SetVariable apply(ConcreteClafer param) {
-                    return param.getSet();
-                }
-            };
-    public static final Func<ConcreteClafer, SetVariable[]> getChildSet =
-            new Func<ConcreteClafer, SetVariable[]>() {
-
-                @Override
-                public SetVariable[] apply(ConcreteClafer param) {
-                    return param.getChildSet();
                 }
             };
 

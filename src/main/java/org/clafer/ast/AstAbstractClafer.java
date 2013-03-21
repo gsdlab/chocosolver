@@ -2,7 +2,6 @@ package org.clafer.ast;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.clafer.tree.Card;
 
 /**
  *

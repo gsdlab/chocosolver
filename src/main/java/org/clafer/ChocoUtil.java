@@ -14,7 +14,7 @@ import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Solver;
 import java.util.ArrayList;
 import java.util.List;
-import org.clafer.tree.Card;
+import org.clafer.ast.Card;
 
 /**
  * Extends choco.Choco

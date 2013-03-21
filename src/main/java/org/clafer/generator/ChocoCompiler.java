@@ -59,7 +59,7 @@ import org.clafer.constraint.UpcastManager;
 import org.clafer.constraint.ZeroOutManager;
 import org.clafer.func.FP;
 import org.clafer.func.Func;
-import org.clafer.tree.Card;
+import org.clafer.ast.Card;
 
 /**
  *
