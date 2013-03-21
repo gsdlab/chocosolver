@@ -4,11 +4,11 @@ package org.clafer.ast;
  *
  * @author jimmy
  */
-public class AstConstant implements AstExpression {
+public class AstConstantInt implements AstExpression {
 
     private final int value;
 
-    public AstConstant(int value) {
+    AstConstantInt(int value) {
         this.value = value;
     }
 

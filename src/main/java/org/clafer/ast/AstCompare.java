@@ -12,7 +12,7 @@ public class AstCompare implements AstBoolExpression {
     private final Op op;
     private final AstExpression right;
 
-    public AstCompare(AstExpression left, Op op, AstExpression right) {
+    AstCompare(AstExpression left, Op op, AstExpression right) {
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);

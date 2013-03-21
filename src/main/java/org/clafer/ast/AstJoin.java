@@ -11,7 +11,7 @@ public class AstJoin implements AstSetExpression {
     private final AstSetExpression left;
     private final AstConcreteClafer right;
 
-    public AstJoin(AstSetExpression left, AstConcreteClafer right) {
+    AstJoin(AstSetExpression left, AstConcreteClafer right) {
         if (!right.hasParent()) {
             throw new IllegalArgumentException();
         }

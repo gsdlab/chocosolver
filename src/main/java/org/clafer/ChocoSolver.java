@@ -1,18 +1,14 @@
 package org.clafer;
 
-import choco.kernel.common.logging.ChocoLogging;
+import choco.cp.solver.CPSolver;
+import choco.kernel.solver.Solver;
 import javax.script.ScriptEngine;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import javax.script.ScriptEngineManager;
-import java.io.Reader;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.security.PrivilegedActionException;
 import javax.script.ScriptException;
-import sun.org.mozilla.javascript.RhinoException;
+import org.clafer.generator.ChocoCompiler;
+import org.clafer.generator.Printer;
 
 /**
  *
@@ -20,24 +16,8 @@ import sun.org.mozilla.javascript.RhinoException;
  */
 public class ChocoSolver {
 
-    public static void main(String[] args) throws Throwable {
-        try {
-            try {
-                try {
-                    run();
-                } catch (UndeclaredThrowableException e) {
-                    try {
-                        throw e.getCause();
-                    } catch (PrivilegedActionException ex) {
-                        throw ex.getCause();
-                    }
-                }
-            } catch (ScriptException e) {
-                throw e.getCause();
-            }
-        } catch (RhinoException e) {
-            System.err.println(e.getMessage());
-        }
+    public static void main(String[] args) throws Exception {
+        run();
     }
 
     public static void run() throws IOException, ScriptException, NoSuchMethodException {
@@ -46,66 +26,34 @@ public class ChocoSolver {
             throw new IllegalStateException("Missing javascript engine.");
         }
 
+        RhinoContext context = new RhinoContext();
+        engine.put("rc", context);
+
+        long start = System.currentTimeMillis();
         engine.put(ScriptEngine.FILENAME, "header.js");
-        engine.eval(readAll(ChocoSolver.class.getResourceAsStream("header.js")));
+        engine.eval(Util.readAll(ChocoSolver.class.getResourceAsStream("header.js")));
         engine.put(ScriptEngine.FILENAME, "Test.js");
-        engine.eval(readAll(new File("/home/jimmy/Programming/clafer/Test.js")));
+        engine.eval(Util.readAll(new File("/home/jimmy/Programming/clafer/Test.js")));
+        System.out.println(System.currentTimeMillis() - start);
 
-        Object __clafer__choco__exprs = engine.get("__clafer__choco__exprs");
-        boolean __clafer__choco__solution = (Boolean) engine.get("__clafer__choco__solution");
-        boolean __clafer__choco__statistics = (Boolean) engine.get("__clafer__choco__statistics");
-        boolean __clafer__choco__branching = (Boolean) engine.get("__clafer__choco__branching");
-        int __clafer__choco__solve = ((Double) engine.get("__clafer__choco__solve")).intValue();
-        if (__clafer__choco__solve <= 0) {
-            __clafer__choco__solve = Integer.MAX_VALUE;
-        }
+        ChocoCompiler compiler = ChocoCompiler.compiler(context.getModel(), context.getScope());
+        System.out.println(System.currentTimeMillis() - start);
+        Solver solver = new CPSolver();
 
-        if (__clafer__choco__exprs instanceof Exprs) {
-            if (__clafer__choco__branching) {
-                ChocoLogging.toSearch();
-            } else if(__clafer__choco__statistics) {
-                ChocoLogging.toVerbose();
-            }
-
-            Exprs expr = (Exprs) __clafer__choco__exprs;
-
-            ExprsSolutions iter = expr.iterator();
-            while (__clafer__choco__solve > 0 && iter.hasNext()) {
-                String instance = iter.next();
-                if (__clafer__choco__solution) {
-                    System.out.println(instance);
-                }
-                __clafer__choco__solve--;
-            }
-            if (__clafer__choco__statistics) {
-                System.out.println(iter.getRuntimeStatistics());
-            }
-        }
+        Printer printer = compiler.compileTo(solver);
+        System.out.println(System.currentTimeMillis() - start);
+//        int c = 0;
+//        if (solver.solve()) {
+//            do {
+//                c++;
+//                System.out.println(printer.printToString());
+//                System.out.println(solver.runtimeStatistics());
+//                if (c == 10) {
+//                    break;
+//                }
+//            } while (solver.nextSolution());
+//        }
     }
-
-    public static String readAll(File in) throws IOException {
-        Reader reader = new FileReader(in);
-        try {
-            return readAll(reader);
-        } finally {
-            reader.close();
-        }
-    }
-
-    public static String readAll(InputStream in) throws IOException {
-        return readAll(new InputStreamReader(in));
-    }
-
-    public static String readAll(Reader in) throws IOException {
-        StringBuilder result = new StringBuilder();
-        char[] buffer = new char[1024];
-        int l;
-        while ((l = in.read(buffer)) != -1) {
-            result.append(buffer, 0, l);
-        }
-        return result.toString();
-    }
-    
 //    - Solution #1 found. 4843 Time (ms), 76 Nodes, 0 Backtracks, 0 Restarts.
 //- Search completed
 //  Solutions: 1
@@ -213,7 +161,6 @@ public class ChocoSolver {
 //- Solution #98 found. 6664 Time (ms), 267 Nodes, 191 Backtracks, 0 Restarts.
 //- Solution #99 found. 6664 Time (ms), 269 Nodes, 193 Backtracks, 0 Restarts.
 //- Solution #100 found. 6664 Time (ms), 270 Nodes, 194 Backtracks, 0 Restarts.
-    
 //- Solution #1 found. Upper-bound: 2147483647, 5408 Time (ms), 76 Nodes, 0 Backtracks, 0 Restarts.
 //- Solution #2 found. Upper-bound: -134, 5408 Time (ms), 77 Nodes, 1 Backtracks, 0 Restarts.
 //- Solution #3 found. Upper-bound: -136, 5408 Time (ms), 79 Nodes, 3 Backtracks, 0 Restarts.
@@ -222,5 +169,4 @@ public class ChocoSolver {
 //- Partial Search - Upper-bound: -145, 71069 Time (ms), 10000 Nodes, 19854 Backtracks, 0 Restarts.
 //- Partial Search - Upper-bound: -145, 115710 Time (ms), 15000 Nodes, 29854 Backtracks, 0 Restarts.
 //- Partial Search - Upper-bound: -145, 167344 Time (ms), 20000 Nodes, 39852 Backtracks, 0 Restarts.
-
 }

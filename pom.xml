@@ -29,13 +29,13 @@
         </dependency>
     </dependencies>
     
-    <repositories>
+<!--    <repositories>
         <repository>
             <id>choco</id>
             <name>Choco Repository</name>
             <url>http://www.emn.fr/z-info/choco-repo/mvn/repository/</url>
         </repository>
-    </repositories>
+    </repositories>-->
     
     <build>
         <plugins>        

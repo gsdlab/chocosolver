@@ -28,6 +28,12 @@ import choco.kernel.solver.variables.set.SetSubDomain;
 import choco.kernel.solver.variables.set.SetVar;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntHashSet;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -530,6 +536,29 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static String readAll(File in) throws IOException {
+        Reader reader = new FileReader(in);
+        try {
+            return readAll(reader);
+        } finally {
+            reader.close();
+        }
+    }
+
+    public static String readAll(InputStream in) throws IOException {
+        return readAll(new InputStreamReader(in));
+    }
+
+    public static String readAll(Reader in) throws IOException {
+        StringBuilder result = new StringBuilder();
+        char[] buffer = new char[1024];
+        int l;
+        while ((l = in.read(buffer)) != -1) {
+            result.append(buffer, 0, l);
+        }
+        return result.toString();
     }
 
     public static List<ConcreteClafer> filterConcrete(List<AtomicClafer> clafers) {

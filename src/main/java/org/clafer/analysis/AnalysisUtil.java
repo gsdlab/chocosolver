@@ -2,6 +2,7 @@ package org.clafer.analysis;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.clafer.Check;
@@ -25,30 +26,40 @@ public class AnalysisUtil {
         return t;
     }
 
+    public static Map<String, AstClafer> getClafersMap(AstModel model) {
+        List<AstClafer> clafers = getClafers(model);
+        Map<String, AstClafer> map = new HashMap<String, AstClafer>();
+        for (AstClafer clafer : clafers) {
+            map.put(clafer.getName(), clafer);
+        }
+        assert map.size() == clafers.size();
+        return map;
+    }
+
     public static List<AstClafer> getClafers(AstModel model) {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
-        for(AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
+        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             getNestedClafers(abstractClafer, clafers);
         }
-        for(AstConcreteClafer topClafer : model.getTopClafers()) {
+        for (AstConcreteClafer topClafer : model.getTopClafers()) {
             getNestedClafers(topClafer, clafers);
         }
         return clafers;
     }
-    
+
     public static List<AstClafer> getNestedClafers(AstClafer clafer) {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
         getNestedClafers(clafer, clafers);
         return clafers;
     }
-    
+
     private static void getNestedClafers(AstClafer clafer, List<AstClafer> clafers) {
         clafers.add(clafer);
-        for(AstClafer child : clafer.getChildren()) {
+        for (AstClafer child : clafer.getChildren()) {
             getNestedClafers(child, clafers);
         }
     }
-    
+
     public static AstAbstractClafer[] getSupers(final AstClafer clafer) {
         int count = 0;
         AstAbstractClafer sup = clafer.getSuperClafer();

@@ -2,6 +2,7 @@ package org.clafer.generator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 import org.clafer.Check;
 
@@ -29,6 +30,7 @@ abstract class LazyCompiler<A, C> implements SolutionMap<A, C> {
         C c = cache.get(a);
         if (c == null) {
             if (lock) {
+                System.out.println(a);
                 // No more changes.
                 throw new CompilerException(getClass() + " is locked");
             }
@@ -40,6 +42,15 @@ abstract class LazyCompiler<A, C> implements SolutionMap<A, C> {
     }
 
     abstract C compile(A a);
+
+    final void finish() {
+        for (Entry<A, C> entry : cache.entrySet()) {
+            finish(entry.getKey(), entry.getValue());
+        }
+    }
+
+    void finish(A a, C c) {
+    }
 
     void unlock() {
         lock = false;

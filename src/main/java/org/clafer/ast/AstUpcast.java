@@ -11,7 +11,7 @@ public class AstUpcast implements AstSetExpression {
     private final AstSetExpression base;
     private final AstAbstractClafer target;
 
-    public AstUpcast(AstSetExpression base, AstAbstractClafer target) {
+    AstUpcast(AstSetExpression base, AstAbstractClafer target) {
         this.base = Check.notNull(base);
         this.target = Check.notNull(target);
     }

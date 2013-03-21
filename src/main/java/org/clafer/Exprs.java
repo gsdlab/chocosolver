@@ -20,7 +20,6 @@ import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import java.util.ArrayList;
 import java.util.List;
-import org.clafer.ast.AstConcreteClafer;
 import org.clafer.collection.IntPair;
 import org.clafer.constraint.SingletonManager;
 import org.clafer.constraint.UpcastManager;

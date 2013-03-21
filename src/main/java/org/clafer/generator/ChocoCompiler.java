@@ -6,8 +6,10 @@ import static choco.Choco.*;
 import choco.Options;
 import choco.cp.model.CPModel;
 import choco.cp.solver.CPSolver;
+import choco.kernel.common.logging.ChocoLogging;
 import choco.kernel.model.Model;
 import choco.kernel.model.constraints.Constraint;
+import choco.kernel.model.variables.integer.IntegerExpressionVariable;
 import choco.kernel.model.variables.integer.IntegerVariable;
 import choco.kernel.model.variables.set.SetVariable;
 import choco.kernel.solver.Solver;
@@ -21,20 +23,25 @@ import java.util.Map;
 import org.clafer.Check;
 import org.clafer.ChocoUtil;
 import org.clafer.Scope;
+import org.clafer.ScopeBuilder;
 import org.clafer.Util;
 import org.clafer.analysis.Analysis;
 import org.clafer.analysis.FormatAnalysis.Format;
+import org.clafer.ast.Ast;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpression;
+import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstConstantInt;
 import org.clafer.ast.AstExpressionVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
+import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstNone;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
@@ -58,27 +65,50 @@ import org.clafer.tree.Card;
  *
  * @author jimmy
  */
-public class Compiler {
+public class ChocoCompiler {
 
     public static void main(String[] args) {
-        AstModel m = new AstModel();
-        AstAbstractClafer person = m.addAbstractClafer("person");
-        AstConcreteClafer name = person.addChild("name").withCard(1, 1);
-
+//        AstModel m = new AstModel();
+//        AstAbstractClafer person = m.addAbstractClafer("person");
+//        AstConcreteClafer name = person.addChild("name").withCard(1, 1);
+//
 //        AstClafer jim = m.addTopClafer("Jimmy").withCard(2, 3).extending(person);
-        AstClafer jam = m.addTopClafer("James").withCard(1, 1).extending(person);
-        AstClafer jak = m.addTopClafer("Jake").withCard(1, 1).extending(person);
-        name.refTo(AstIntClafer.Singleton);
-        jak.addConstraint(new AstCompare(new AstJoinRef(new AstJoin(new AstThis(), name)), AstCompare.Op.Equal, new AstConstant(3)));
+//        AstClafer jam = m.addTopClafer("James").withCard(1, 1).extending(person);
+//        AstClafer jak = m.addTopClafer("Jake").withCard(1, 1).extending(person);
+//
+//        Map<AstClafer, Integer> scopes = new HashMap<AstClafer, Integer>();
+//        scopes.put(jim, 100);
+//        scopes.put(jam, 100);
+//        scopes.put(name, 100);
+//        AstModel m = Ast.newModel();
+//        AstAbstractClafer person = m.addAbstractClafer("person");
+//        AstConcreteClafer name = person.addChild("name").withCard(1, 1);
+////        name.refTo(AstIntClafer.Singleton);
+//
+//        AstConcreteClafer jim = m.addTopClafer("Jimmy").withCard(2, 3).extending(person);
+////        jim.addConstraint(new AstCompare(new AstJoinRef(new AstJoin(new AstThis(), name)), AstCompare.Op.Equal, new AstConstant(3)));
+//        AstConcreteClafer food = jim.addChild("food").withCard(1, 1).withGroupCard(1, 1);
+//        food.addChild("Hamburger");
+//        food.addChild("Milk");
+//        food.addChild("Salad");
+//
+//        Map<AstClafer, Integer> scopes = new HashMap<AstClafer, Integer>();
+//        scopes.put(jim, 100);
+//        scopes.put(name, 100);
+//        scopes.put(food, 100);
+        AstModel m = Ast.newModel();
+
+        AstConcreteClafer jim = m.addTopClafer("Jimmy").withCard(1, 1);
+//        jim.addConstraint(new AstCompare(new AstJoinRef(new AstJoin(new AstThis(), name)), AstCompare.Op.Equal, new AstConstant(3)));
+        AstConcreteClafer food = jim.addChild("food").withCard(2, 3);
+        food.addChild("Hamburger").withCard(2, 3);
+        food.addChild("Milk").withCard(2, 3);
 
         Map<AstClafer, Integer> scopes = new HashMap<AstClafer, Integer>();
-//        scopes.put(jim, 100);
-        scopes.put(jam, 100);
-        scopes.put(name, 100);
 
-        Compiler c = new Compiler(m, new Scope(scopes, 1));
+        ChocoCompiler c = new ChocoCompiler(m, new Scope(scopes, 100));
         c.compile();
-
+        ChocoLogging.toSearch();
         {
             Iterator<SetVariable> iter = c.model.getSetVarIterator();
             while (iter.hasNext()) {
@@ -101,14 +131,30 @@ public class Compiler {
 
         System.out.println(s.runtimeStatistics());
     }
-    private final int intLow = 0, intHigh = 10;
     private final Analysis analysis;
     private final AstModel ast;
+    private final Scope scope;
     private final Model model = new CPModel();
 
-    Compiler(AstModel ast, Scope scope) {
+    ChocoCompiler(AstModel ast, ScopeBuilder scope) {
+        this(ast, scope.toScope());
+    }
+
+    ChocoCompiler(AstModel ast, Scope scope) {
         this.analysis = Analysis.analyze(ast, scope);
         this.ast = ast;
+        this.scope = scope;
+    }
+
+    public static ChocoCompiler compiler(AstModel ast, Scope scope) {
+        ChocoCompiler compiler = new ChocoCompiler(ast, scope);
+        compiler.compile();
+        return compiler;
+    }
+
+    public Printer compileTo(Solver solver) {
+        solver.read(model);
+        return newPrinter(solver);
     }
 
     Printer newPrinter(Solver solver) {
@@ -128,6 +174,9 @@ public class Compiler {
         for (LazyCompiler<?, ?> compiler : compilers) {
             compiler.lock();
         }
+        for (LazyCompiler<?, ?> compiler : compilers) {
+            compiler.finish();
+        }
     }
 
     void compile(AstConcreteClafer clafer) {
@@ -136,136 +185,153 @@ public class Compiler {
             // Break symmetry
             switch (getFormat(clafer)) {
                 case LowGroup:
+                    // TODO: Don't do this if membership hasn't been created?
                     // Although this constraint is redundant, it lowers the number of backtracks.
                     model.addConstraint(SelectNManager.selectN(membership.get(clafer), setCard.get(clafer)));
+
+                    /**
+                     * What is this optimization?
+                     * 
+                     * Force the lower number atoms to choose lower number parents. For example consider
+                     * the following clafer model:
+                     * 
+                     *   Person 2
+                     *     Hand 2
+                     * 
+                     * The constraint forbids the case where Hand0 belongs to Person1 and Hand1 belongs
+                     * to Person0. Otherwise, the children can swap around creating many isomorphic
+                     * solutions.
+                     */
+                    model.addConstraint(IncreasingManager.increasing(parentPointers.get(clafer)));
+
+                    /**
+                     * What is this optimization?
+                     * 
+                     * This optimization is to remove isomorphic solutions due to swapping of children.
+                     * 
+                     * Consider the following Clafer model.
+                     * 
+                     *   Diner 2
+                     *     Burger 1..*
+                     * 
+                     * Let the scope be {Diner=2, Food=3}. What this says is that we have 2 Diners and 3
+                     * Burgers but each Diner gets at least one serving. Logically, there are two solutions:
+                     * 
+                     *   1. Each Diner gets 1 Burger each (the last Burger is unused)
+                     *   2. One Diner gets 2 Burgers and the other Diner gets 1 Burger
+                     * 
+                     * There are two unique solutions, other isomorphic solutions may arise from the solver,
+                     * but ideally we want to eliminate the isomorphic duplicates. For example, here are
+                     * two isomorphic instances that will arrise with symmetry breaking:
+                     * 
+                     *   Diner0
+                     *     Burger0
+                     *     Burger1
+                     *   Diner1
+                     *     Burger2
+                     * 
+                     *  
+                     *   Diner0
+                     *     Burger0
+                     *   Diner1
+                     *     Burger1
+                     *     Burger2
+                     * 
+                     * We add the constraint |Diner0.Burger| >= |Diner1.Burger| to break the symmetry.
+                     * This is how it works when Diner only has one type as a child. This optimization
+                     * generalizes to multi-children. For example, consider the Clafer model:
+                     * 
+                     *   Diner 2
+                     *     Burger 1..*
+                     *     Drink 1..*
+                     * 
+                     * Let the scope be {Diner=2, Food=3, Drink=4}. First we'll see a wrong generalization.
+                     * Adding the two constraints DO NOT WORK:
+                     * 
+                     *   1. |Diner0.Burger| >= |Diner1.Burger|
+                     *   2. |Diner0.Drink| >= |Diner1.Drink|
+                     * 
+                     * The two constraints above DO NOT WORK because it rules out the case where one Diner has
+                     * more Burgers but the other Diner has more drinks. Instead, we want tuple comparison like
+                     * the following constraint (tuple comparision as implemented in Haskell, ie. compare the
+                     * first indices, then use the second index to break ties, then use the third index to break
+                     * the next tie, etc.):
+                     * 
+                     *   (|Diner0.Burger|, |Diner0.Drink|) >= (|Diner1.Burger|, |Diner1.Drink|)
+                     * 
+                     * However, Choco does not implement tuple comparision but it's we can simulate it with
+                     * the equation constraint since the size of the sets are bounded.
+                     * 
+                     *   5 * |Diner0.Burger| + 1 * |Diner0.Drink| >= 5 * |Diner1.Burger| + 1 * |Diner1.Drink|
+                     * 
+                     * The "5" is coefficient comes from the fact that scope(Drink) = 4.
+                     */
+                    List<Term> terms = new ArrayList<Term>();
+                    for (AstConcreteClafer child : clafer.getChildren()) {
+                        // Children with exact cards will always contribute the same score hence it
+                        // is a waste of computation time to include them in the scoring constraints.
+                        if (!child.getCard().isExact()) {
+                            terms.add(new Term(child));
+                        }
+                    }
+                    AstClafer sup = clafer;
+                    int offset = 0;
+                    while (sup.hasSuperClafer()) {
+                        offset += getOffset(sup.getSuperClafer(), sup);
+                        for (AstConcreteClafer child : sup.getSuperClafer().getChildren()) {
+                            if (!child.getCard().isExact()) {
+                                terms.add(new Term(child, offset, offset + getScope(clafer)));
+                            }
+                        }
+                        sup = sup.getSuperClafer();
+                    }
+                    if (terms.isEmpty()) {
+                        // Already sorted (since no cards with inexact bounds).
+                        break;
+                    }
+                    /*
+                     * What is this optimization?
+                     *
+                     * Reversing is so that earlier children have higher scores. Not necessary,
+                     * but the solutions will have instances that are similar closer together.
+                     * Technically not an optimization.
+                     */
+                    Collections.reverse(terms);
+                    model.addConstraint(IncreasingManager.decreasing(score(clafer, model, terms)));
                     break;
                 case ParentGroup:
                     throw new UnsupportedOperationException();
             }
-            /**
-             * What is this optimization?
-             * 
-             * Force the lower number atoms to choose lower number parents. For example consider
-             * the following clafer model:
-             * 
-             *   Person 2
-             *     Hand 2
-             * 
-             * The constraint forbids the case where Hand0 belongs to Person1 and Hand1 belongs
-             * to Person0. Otherwise, the children can swap around creating many isomorphic
-             * solutions.
-             */
-            model.addConstraint(IncreasingManager.increasing(parentPointers.get(clafer)));
-
-            /**
-             * What is this optimization?
-             * 
-             * This optimization is to remove isomorphic solutions due to swapping of children.
-             * 
-             * Consider the following Clafer model.
-             * 
-             *   Diner 2
-             *     Burger 1..*
-             * 
-             * Let the scope be {Diner=2, Food=3}. What this says is that we have 2 Diners and 3
-             * Burgers but each Diner gets at least one serving. Logically, there are two solutions:
-             * 
-             *   1. Each Diner gets 1 Burger each (the last Burger is unused)
-             *   2. One Diner gets 2 Burgers and the other Diner gets 1 Burger
-             * 
-             * There are two unique solutions, other isomorphic solutions may arise from the solver,
-             * but ideally we want to eliminate the isomorphic duplicates. For example, here are
-             * two isomorphic instances that will arrise with symmetry breaking:
-             * 
-             *   Diner0
-             *     Burger0
-             *     Burger1
-             *   Diner1
-             *     Burger2
-             * 
-             *  
-             *   Diner0
-             *     Burger0
-             *   Diner1
-             *     Burger1
-             *     Burger2
-             * 
-             * We add the constraint |Diner0.Burger| >= |Diner1.Burger| to break the symmetry.
-             * This is how it works when Diner only has one type as a child. This optimization
-             * generalizes to multi-children. For example, consider the Clafer model:
-             * 
-             *   Diner 2
-             *     Burger 1..*
-             *     Drink 1..*
-             * 
-             * Let the scope be {Diner=2, Food=3, Drink=4}. First we'll see a wrong generalization.
-             * Adding the two constraints DO NOT WORK:
-             * 
-             *   1. |Diner0.Burger| >= |Diner1.Burger|
-             *   2. |Diner0.Drink| >= |Diner1.Drink|
-             * 
-             * The two constraints above DO NOT WORK because it rules out the case where one Diner has
-             * more Burgers but the other Diner has more drinks. Instead, we want tuple comparison like
-             * the following constraint (tuple comparision as implemented in Haskell, ie. compare the
-             * first indices, then use the second index to break ties, then use the third index to break
-             * the next tie, etc.):
-             * 
-             *   (|Diner0.Burger|, |Diner0.Drink|) >= (|Diner1.Burger|, |Diner1.Drink|)
-             * 
-             * However, Choco does not implement tuple comparision but it's we can simulate it with
-             * the equation constraint since the size of the sets are bounded.
-             * 
-             *   5 * |Diner0.Burger| + 1 * |Diner0.Drink| >= 5 * |Diner1.Burger| + 1 * |Diner1.Drink|
-             * 
-             * The "5" is coefficient comes from the fact that scope(Drink) = 4.
-             */
-            List<Term> terms = new ArrayList<Term>();
-            for (AstConcreteClafer child : clafer.getChildren()) {
-                // Children with exact cards will always contribute the same score hence it
-                // is a waste of computation time to include them in the scoring constraints.
-                if (!child.getCard().isExact()) {
-                    terms.add(new Term(child));
-                }
-            }
-            AstClafer sup = clafer;
-            int offset = 0;
-            while (sup.hasSuperClafer()) {
-                offset += getOffset(sup.getSuperClafer(), sup);
-                for (AstConcreteClafer child : sup.getSuperClafer().getChildren()) {
-                    if (!child.getCard().isExact()) {
-                        terms.add(new Term(child, offset, offset + getScope(clafer)));
-                    }
-                }
-                sup = sup.getSuperClafer();
-            }
-            if (terms.isEmpty()) {
-                // Already sorted (since no cards with inexact bounds).
-                return;
-            }
-            /*
-             * What is this optimization?
-             *
-             * Reversing is so that earlier children have higher scores. Not necessary,
-             * but the solutions will have instances that are similar closer together.
-             * Technically not an optimization.
-             */
-            Collections.reverse(terms);
-            model.addConstraint(IncreasingManager.decreasing(score(clafer, model, terms)));
         }
-        if (clafer.hasRef()) {
-            compile(clafer.getRef());
-        }
-        for (AstConcreteClafer child : clafer.getChildren()) {
-            compile(child);
-        }
-        for (AstBoolExpression constraint : clafer.getConstraints()) {
-            compile(clafer, constraint);
-        }
+        compile((AstClafer) clafer);
     }
 
-    void compile(AstAbstractClafer clafer) {
+    void compile(AstClafer clafer) {
         if (clafer.hasRef()) {
             compile(clafer.getRef());
+        }
+        if (clafer.hasGroupCard()
+                && clafer.getGroupCard().isBounded()
+                && clafer.hasChildren()) {
+            // build group card
+            int claferScope = getScope(clafer);
+            Card groupCard = clafer.getGroupCard();
+            boolean[] partialSolution = getPartialSolution(clafer);
+            for (int i = 0; i < claferScope; i++) {
+                IntegerVariable[] cards = new IntegerVariable[clafer.getChildren().size()];
+                for (int j = 0; j < cards.length; j++) {
+                    cards[j] = childrenSet.get(clafer.getChildren().get(j))[i].getCard();
+                }
+                IntegerExpressionVariable cardSum = ChocoUtil.sum(cards);
+
+                if (partialSolution[i] || !groupCard.hasLow()) {
+                    model.addConstraint(ChocoUtil.betweenCard(cardSum, groupCard));
+                } else {
+                    model.addConstraint(Choco.implies(
+                            Choco.eq(membership.get(clafer)[i], 1),
+                            ChocoUtil.betweenCard(cardSum, groupCard)));
+                }
+            }
         }
         for (AstConcreteClafer child : clafer.getChildren()) {
             compile(child);
@@ -311,6 +377,18 @@ public class Compiler {
 
         @Override
         SetVariable compile(AstClafer a) {
+            if (a instanceof AstConcreteClafer) {
+                AstConcreteClafer c = (AstConcreteClafer) a;
+                SetVariable[] children = childrenSet.get(c);
+                if (!c.hasParent() || getScope(c.getParent()) == 1) {
+                    return children[0];
+                }
+                SetVariable sv = makeSetVar(a.getName(), 0, getScope(a) - 1);
+                // Because they are disjoint
+                model.addConstraint(eq(ChocoUtil.sum(FP.mapped(children, FP.getCard)), sv.getCard()));
+                model.addConstraint(setUnion(children, sv));
+                return sv;
+            }
             SetVariable sv = makeSetVar(a.getName(), 0, getScope(a) - 1);
             model.addVariable(sv);
             return sv;
@@ -364,23 +442,13 @@ public class Compiler {
 
         @Override
         SetVariable[] compile(AstConcreteClafer a) {
-            if (!a.hasParent() || getScope(a.getParent()) == 1) {
-                SetVariable sv = set.get(a);
-                Card card = a.getCard();
-                if (card.isBounded()) {
-                    model.addConstraint(ChocoUtil.betweenCard(sv, card));
-                }
-                return new SetVariable[]{sv};
-            }
             SetVariable[] svs = skipCards(a);
-            // Because they are disjoint
-            model.addConstraint(eq(ChocoUtil.sum(FP.mapped(svs, FP.getCard)), setCard.get(a)));
-            model.addConstraint(setUnion(svs, set.get(a)));
-
+            // Variables are added in the order that is most cooperative with symmetry breaking.
+            model.addVariables(svs);
             Card card = a.getCard();
-            boolean[] partialSolution = getPartialSolution(a);
-            for (int i = 0; i < partialSolution.length; i++) {
-                if (partialSolution[i]) {
+            boolean[] partialParentSolution = a.hasParent() ? getPartialSolution(a.getParent()) : new boolean[]{true};
+            for (int i = 0; i < partialParentSolution.length; i++) {
+                if (partialParentSolution[i]) {
                     if (card.isBounded()) {
                         model.addConstraint(ChocoUtil.betweenCard(svs[i], card));
                     }
@@ -398,6 +466,15 @@ public class Compiler {
             model.addConstraint(SetLexManager.setLex(svs, card));
 
             return svs;
+        }
+
+        @Override
+        void finish(AstConcreteClafer a, SetVariable[] c) {
+            // If parentPointers then already disjoint because of inverse set constraint.
+            // Otherwise, enforce it.
+            if (a.hasParent() && getScope(a.getParent()) > 1 && !parentPointers.has(a)) {
+                model.addConstraint(setDisjoint(c));
+            }
         }
     };
     /**
@@ -505,8 +582,8 @@ public class Compiler {
         }
 
         @Override
-        public VarExpr visit(AstConstant ast, Void a) {
-            return new IntVarExpr(AstIntClafer.Singleton, constant(ast.getValue()));
+        public VarExpr visit(AstConstantInt ast, Void a) {
+            return new IntVarExpr(Ast.IntType, constant(ast.getValue()));
         }
 
         @Override
@@ -540,6 +617,47 @@ public class Compiler {
                 return new SetVarExpr(right, childrenSet.get(right)[constant]);
             }
             return visitJoin(intToSet(left), right);
+        }
+
+        @Override
+        public VarExpr visit(AstJoinParent ast, Void a) {
+            VarExpr children = ast.getChildren().accept(this, a);
+            if (children instanceof SetVarExpr) {
+                return visitJoinParent((SetVarExpr) children);
+            } else if (children instanceof IntVarExpr) {
+                return visitJoinParent((IntVarExpr) children);
+            }
+            throw new CompilerException();
+        }
+
+        VarExpr visitJoinParent(SetVarExpr children) {
+            SetVariable take = children.getValue();
+            AstConcreteClafer childrenType = (AstConcreteClafer) children.getType();
+            AstClafer parentType = childrenType.getParent();
+
+            SetVariable to = numSetVar("joinParent", getScopeLow(parentType), getScopeHigh(parentType), Options.V_NO_DECISION);
+
+            addGlobalConstraint(JoinRefManager.joinRef(take, parentPointers.get(childrenType), to));
+
+            return new SetVarExpr(parentType, to);
+        }
+
+        VarExpr visitJoinParent(IntVarExpr children) {
+            IntegerVariable take = children.getValue();
+            AstConcreteClafer childrenType = (AstConcreteClafer) children.getType();
+            AstClafer parentType = childrenType.getParent();
+
+            IntegerVariable[] parentVars = parentPointers.get(childrenType);
+
+            Integer constant = getConstant(children.getValue());
+            if (constant != null) {
+                return new IntVarExpr(parentType, parentVars[constant]);
+            }
+
+            IntegerVariable to = numIntVar("joinParent", getScopeLow(parentType), getScopeHigh(parentType), Options.V_NO_DECISION);
+            addGlobalConstraint(Choco.nth(take, parentVars, to));
+
+            return new IntVarExpr(parentType, to);
         }
 
         @Override
@@ -583,6 +701,15 @@ public class Compiler {
             addGlobalConstraint(Choco.nth(take, refVars, to));
 
             return new IntVarExpr(targetType, to);
+        }
+
+        @Override
+        public VarExpr visit(AstCard ast, Void a) {
+            VarExpr set = ast.getSet().accept(this, a);
+            if (set instanceof SetVarExpr) {
+                return new IntVarExpr(Ast.IntType, ((SetVarExpr) set).getValue().getCard());
+            }
+            return new IntVarExpr(Ast.IntType, constant(1));
         }
 
         @Override
@@ -657,17 +784,23 @@ public class Compiler {
             addGlobalConstraint(eq(to, plus(from, offset)));
             return new IntVarExpr(target, to);
         }
+
+        @Override
+        public VarExpr visit(AstNone ast, Void a) {
+            SetVarExpr set = (SetVarExpr) ast.getSet().accept(this, a);
+            return new BoolVarExpr(eq(set.getValue(), emptySet()));
+        }
     }
 
     /*************************
      * Convenience functions.
      *************************/
     int getScopeLow(AstClafer clafer) {
-        return clafer instanceof AstIntClafer ? intLow : 0;
+        return clafer instanceof AstIntClafer ? scope.getIntLow() : 0;
     }
 
     int getScopeHigh(AstClafer clafer) {
-        return clafer instanceof AstIntClafer ? intHigh : getScope(clafer) - 1;
+        return clafer instanceof AstIntClafer ? scope.getIntHigh() : getScope(clafer) - 1;
     }
 
     public int getScope(AstClafer clafer) {
@@ -710,8 +843,8 @@ public class Compiler {
         if (from > to) {
             throw new IllegalArgumentException();
         }
-        if (to >= svs.length) {
-            throw new IllegalArgumentException();
+        if (to > svs.length) {
+            throw new IllegalArgumentException(to + ">=" + svs.length);
         }
         int min = svs[from].getLowB();
         int max = svs[from].getUppB();
@@ -727,13 +860,13 @@ public class Compiler {
         boolean[] partialParentSolution = clafer.hasParent() ? getPartialSolution(clafer.getParent()) : new boolean[]{true};
         assert parentScope == partialParentSolution.length;
 
-        int scope = getScope(clafer);
+        int claferScope = getScope(clafer);
         Card card = clafer.getCard();
         assert card.hasHigh();
 
         int low = 0;
         int high = card.getHigh();
-        int max = scope - 1;
+        int max = claferScope - 1;
 
         SetVariable[] skip = new SetVariable[parentScope];
         for (int i = 0; i < skip.length; i++) {

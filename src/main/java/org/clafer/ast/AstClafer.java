@@ -2,6 +2,7 @@ package org.clafer.ast;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -72,6 +73,10 @@ public class AstClafer {
         return this;
     }
 
+    public boolean hasGroupCard() {
+        return groupCard != null;
+    }
+
     public Card getGroupCard() {
         return groupCard;
     }
@@ -125,20 +130,5 @@ public class AstClafer {
         this.constraints.clear();
         this.constraints.addAll(constraints);
         return this;
-    }
-
-    public static void main(String[] args) throws Exception {
-        ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
-        if (engine == null) {
-            throw new IllegalStateException("Missing javascript engine.");
-        }
-        sun.org.mozilla.javascript.NativeObject a;
-        Object person = engine.eval("person={firstname:\"John\",lastname:\"Doe\",age:50,eyecolor:\"blue\"};");
-
-        Map<?, ?> map = (Map<?, ?>) person;
-        for (Entry<?, ?> e : map.entrySet()) {
-            System.out.println(e.getKey() + " : " + e.getValue());
-            System.out.println(e.getKey().getClass() + " : " + e.getValue().getClass());
-        }
     }
 }

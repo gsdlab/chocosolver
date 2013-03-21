@@ -13,14 +13,9 @@ public class AstModel {
     private final List<AstAbstractClafer> abstractClafers;
     private final List<AstConcreteClafer> topClafers;
 
-    public AstModel() {
+    AstModel() {
         this.abstractClafers = new ArrayList<AstAbstractClafer>();
         this.topClafers = new ArrayList<AstConcreteClafer>();
-    }
-
-    public AstModel(List<AstAbstractClafer> abstractClafers, List<AstConcreteClafer> topClafers) {
-        this.abstractClafers = new ArrayList<AstAbstractClafer>(abstractClafers);
-        this.topClafers = new ArrayList<AstConcreteClafer>(topClafers);
     }
 
     public List<AstAbstractClafer> getAbstractClafers() {

@@ -47,6 +47,7 @@ public class Analysis {
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
         Map<AstClafer, Card> globalCards = GlobalCardAnalysis.analyze(model, scope, depths);
         Scope optimizedScope = ScopeAnalysis.analyze(model, scope, globalCards);
+
         CardAnalysis.analyze(model, globalCards);
         Map<AstClafer, Format> formats = FormatAnalysis.analyze(model, optimizedScope);
 

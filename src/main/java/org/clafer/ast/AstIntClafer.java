@@ -7,7 +7,7 @@ package org.clafer.ast;
 public class AstIntClafer extends AstClafer {
 
     public static final AstIntClafer Singleton = new AstIntClafer();
-    
+
     private AstIntClafer() {
         super("int");
     }

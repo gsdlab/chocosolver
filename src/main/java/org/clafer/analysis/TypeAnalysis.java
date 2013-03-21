@@ -5,19 +5,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.clafer.Check;
+import static org.clafer.ast.Ast.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpression;
-import org.clafer.ast.AstBoolClafer;
+import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstConstantInt;
 import org.clafer.ast.AstExpression;
 import org.clafer.ast.AstExpressionVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
+import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstNone;
 import org.clafer.ast.AstSetExpression;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
@@ -65,8 +68,8 @@ public class TypeAnalysis {
         }
 
         @Override
-        public TypedExpression visit(AstConstant ast, Void a) {
-            return put(AstIntClafer.Singleton, ast);
+        public TypedExpression visit(AstConstantInt ast, Void a) {
+            return put(IntType, ast);
         }
 
         @Override
@@ -79,15 +82,30 @@ public class TypeAnalysis {
             if (rightType.hasParent()) {
                 AstClafer joinType = rightType.getParent();
                 if (leftType.equals(joinType)) {
-                    return put(rightType, new AstJoin(left, rightType));
+                    return put(rightType, join(left, rightType));
                 }
                 if (AnalysisUtil.isAssignable(leftType, joinType)) {
-                    AstUpcast upcast = new AstUpcast(left, (AstAbstractClafer) joinType);
+                    AstUpcast upcast = upcast(left, (AstAbstractClafer) joinType);
                     put(joinType, upcast);
-                    return put(rightType, new AstJoin(upcast, rightType));
+                    return put(rightType, join(upcast, rightType));
                 }
             }
             throw new AnalysisException("Cannot join " + leftType.getName() + "." + rightType.getName());
+        }
+
+        @Override
+        public TypedExpression visit(AstJoinParent ast, Void a) {
+            TypedExpression $children = ast.getChildren().accept(this, a);
+            AstClafer childrenType = $children.getType();
+            AstSetExpression children = (AstSetExpression) $children.getExpression();
+            if (!(childrenType instanceof AstConcreteClafer)) {
+                throw new AnalysisException("Cannot join " + childrenType.getName() + ".parent");
+            }
+            AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
+            if (!concreteChildrenType.hasParent()) {
+                throw new AnalysisException("Cannot join " + childrenType.getName() + ".parent");
+            }
+            return put(concreteChildrenType.getParent(), joinParent(children));
         }
 
         @Override
@@ -98,7 +116,13 @@ public class TypeAnalysis {
             if (!derefType.hasRef()) {
                 throw new AnalysisException("Cannot join " + derefType.getName() + ".ref");
             }
-            return put(derefType.getRef().getTargetType(), new AstJoinRef(deref));
+            return put(derefType.getRef().getTargetType(), joinRef(deref));
+        }
+
+        @Override
+        public TypedExpression visit(AstCard ast, Void a) {
+            TypedExpression $set = ast.getSet().accept(this, a);
+            return put(IntType, card((AstSetExpression) $set.getExpression()));
         }
 
         @Override
@@ -115,7 +139,7 @@ public class TypeAnalysis {
                     if (!AnalysisUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
                         throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
                     }
-                    return put(AstBoolClafer.Singleton, new AstCompare(left, ast.getOp(), right));
+                    return put(BoolType, compare(left, ast.getOp(), right));
                 case LessThan:
                 case LessThanEqual:
                 case GreaterThan:
@@ -123,7 +147,7 @@ public class TypeAnalysis {
                     if (!(leftType instanceof AstIntClafer) || !(rightType instanceof AstIntClafer)) {
                         throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
                     }
-                    return put(AstBoolClafer.Singleton, new AstCompare(left, ast.getOp(), right));
+                    return put(BoolType, compare(left, ast.getOp(), right));
                 default:
                     throw new AnalysisException("Unknown op " + ast.getOp());
             }
@@ -138,7 +162,13 @@ public class TypeAnalysis {
             if (!AnalysisUtil.isAssignable(fromType, to)) {
                 throw new AnalysisException("Cannot upcast from " + fromType + " to " + to);
             }
-            return put(to, new AstUpcast(from, to));
+            return put(to, upcast(from, to));
+        }
+
+        @Override
+        public TypedExpression visit(AstNone ast, Void a) {
+            TypedExpression $set = ast.getSet().accept(this, a);
+            return put(BoolType, none((AstSetExpression) $set.getExpression()));
         }
     }
 

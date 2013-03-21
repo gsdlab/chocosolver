@@ -10,7 +10,7 @@ public class AstJoinRef implements AstSetExpression {
 
     private final AstSetExpression deref;
 
-    public AstJoinRef(AstSetExpression deref) {
+    AstJoinRef(AstSetExpression deref) {
         this.deref = Check.notNull(deref);
     }
 
