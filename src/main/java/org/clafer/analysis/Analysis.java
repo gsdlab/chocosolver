@@ -5,6 +5,7 @@ import org.clafer.Check;
 import org.clafer.Scope;
 import org.clafer.analysis.AbstractOffsetAnalysis.Offsets;
 import org.clafer.analysis.FormatAnalysis.Format;
+import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstExpression;
@@ -22,7 +23,7 @@ public class Analysis {
     private final Scope scope;
     private final Map<AstClafer, Format> formats;
     private final Map<AstAbstractClafer, Offsets> offsets;
-    private final Map<AstClafer, boolean[]> partialSolutions;
+    private final Map<AstClafer, PartialSolution> partialSolutions;
     private final Map<AstExpression, AstClafer> types;
 
     private Analysis(Map<AstAbstractClafer, Integer> depths,
@@ -30,7 +31,7 @@ public class Analysis {
             Scope scope,
             Map<AstClafer, Format> formats,
             Map<AstAbstractClafer, Offsets> offsets,
-            Map<AstClafer, boolean[]> partialSolutions,
+            Map<AstClafer, PartialSolution> partialSolutions,
             Map<AstExpression, AstClafer> types) {
         this.depths = depths;
         this.globalCards = globalCards;
@@ -52,7 +53,7 @@ public class Analysis {
         Map<AstClafer, Format> formats = FormatAnalysis.analyze(model, optimizedScope);
 
         Map<AstAbstractClafer, Offsets> offsets = AbstractOffsetAnalysis.analyze(model, globalCards);
-        Map<AstClafer, boolean[]> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, depths, offsets);
+        Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, depths, offsets);
         Map<AstExpression, AstClafer> types = TypeAnalysis.analyze(model);
         return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, types);
     }
@@ -77,10 +78,7 @@ public class Analysis {
         return AnalysisUtil.notNull("Cannot find offset analysis for " + sup, offsets.get(sup)).getOffset(sub);
     }
 
-    /**
-     * @return - bs[i] = true <=> i in clafe. bs[i] = false implies unknown.
-     */
-    public boolean[] getPartialSolution(AstClafer clafer) {
+    public PartialSolution getPartialSolution(AstClafer clafer) {
         return AnalysisUtil.notNull("Cannot find partial solution analysis for " + clafer, partialSolutions.get(clafer));
     }
 }

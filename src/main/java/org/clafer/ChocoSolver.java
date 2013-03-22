@@ -29,30 +29,26 @@ public class ChocoSolver {
         RhinoContext context = new RhinoContext();
         engine.put("rc", context);
 
-        long start = System.currentTimeMillis();
         engine.put(ScriptEngine.FILENAME, "header.js");
         engine.eval(Util.readAll(ChocoSolver.class.getResourceAsStream("header.js")));
         engine.put(ScriptEngine.FILENAME, "Test.js");
         engine.eval(Util.readAll(new File("/home/jimmy/Programming/clafer/Test.js")));
-        System.out.println(System.currentTimeMillis() - start);
 
         ChocoCompiler compiler = ChocoCompiler.compiler(context.getModel(), context.getScope());
-        System.out.println(System.currentTimeMillis() - start);
         Solver solver = new CPSolver();
 
         Printer printer = compiler.compileTo(solver);
-        System.out.println(System.currentTimeMillis() - start);
-//        int c = 0;
-//        if (solver.solve()) {
-//            do {
-//                c++;
-//                System.out.println(printer.printToString());
-//                System.out.println(solver.runtimeStatistics());
-//                if (c == 10) {
-//                    break;
-//                }
-//            } while (solver.nextSolution());
-//        }
+        int c = 0;
+        if (solver.solve()) {
+            do {
+                c++;
+                System.out.println(printer.printToString());
+                System.out.println(solver.runtimeStatistics());
+                if (c == 10) {
+                    break;
+                }
+            } while (solver.nextSolution());
+        }
     }
 //    - Solution #1 found. 4843 Time (ms), 76 Nodes, 0 Backtracks, 0 Restarts.
 //- Search completed

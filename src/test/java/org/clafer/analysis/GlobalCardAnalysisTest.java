@@ -42,7 +42,8 @@ public class GlobalCardAnalysisTest {
 
         Map<AstClafer, Card> analysis = GlobalCardAnalysis.analyze(model, scope, TypeHierarchyDepthAnalysis.analyze(model));
         
-        assertEquals(new Card(7, 10), analysis.get(object));
+        System.out.println(analysis);
+        assertEquals(new Card(7, 14), analysis.get(object));
         assertEquals(new Card(7, 10), analysis.get(id));
         
         assertEquals(new Card(2, 4), analysis.get(animal));

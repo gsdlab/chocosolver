@@ -87,50 +87,43 @@ public class Util {
     }
 
     /**
-     * @param low - inclusive
-     * @param high - exclusive
-     */
-    public static int[] range(int low, int high) {
-        if (low > high) {
-            throw new IllegalArgumentException();
-        }
-        int[] range = new int[high - low];
-        for (int i = 0; i < range.length; i++) {
-            range[i] = low + i;
-        }
-        return range;
-    }
-
-    /**
      * @return - The set difference
      */
-    public static int[] difference(int[] s1, int[] s2) {
-        TIntArrayList diff = new TIntArrayList();
-        for (int s : s1) {
-            if (!in(s, s2)) {
-                diff.add(s);
-            }
-        }
-        return diff.toNativeArray();
-    }
-
+//    public static int[] difference(int[] s1, int[] s2) {
+//        TIntArrayList diff = new TIntArrayList();
+//        for (int s : s1) {
+//            if (!in(s, s2)) {
+//                diff.add(s);
+//            }
+//        }
+//        return diff.toNativeArray();
+//    }
     /**
      * @return - The position of all the trues
      */
     public static int[] trues(boolean[] bs) {
+        return boolIndices(bs, true);
+    }
+
+    public static int[] falses(boolean[] bs) {
+        return boolIndices(bs, false);
+    }
+
+    private static int[] boolIndices(boolean[] bs, boolean val) {
         int count = 0;
         for (boolean b : bs) {
-            if (b) {
+            if (b == val) {
                 count++;
             }
         }
         int[] trues = new int[count];
         count = 0;
         for (int i = 0; i < bs.length && count < trues.length; i++) {
-            if (bs[i]) {
+            if (bs[i] == val) {
                 trues[count++] = i;
             }
         }
+        assert count == bs.length;
         return trues;
     }
 
@@ -244,6 +237,21 @@ public class Util {
 
     public static <T> T[] cons(T[] list, T item) {
         T[] r = Arrays.copyOf(list, list.length + 1);
+        r[list.length] = item;
+        return r;
+    }
+
+    public static int[] cons(int item, int[] list) {
+        int[] r = Arrays.copyOf(list, list.length + 1);
+        for (int i = r.length - 1; i > 0; i--) {
+            r[i] = r[i - 1];
+        }
+        r[0] = item;
+        return r;
+    }
+
+    public static int[] cons(int[] list, int item) {
+        int[] r = Arrays.copyOf(list, list.length + 1);
         r[list.length] = item;
         return r;
     }

@@ -27,6 +27,7 @@ import org.clafer.ScopeBuilder;
 import org.clafer.Util;
 import org.clafer.analysis.Analysis;
 import org.clafer.analysis.FormatAnalysis.Format;
+import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.ast.Ast;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpression;
@@ -68,43 +69,27 @@ import org.clafer.ast.Card;
 public class ChocoCompiler {
 
     public static void main(String[] args) {
-//        AstModel m = new AstModel();
-//        AstAbstractClafer person = m.addAbstractClafer("person");
-//        AstConcreteClafer name = person.addChild("name").withCard(1, 1);
-//
-//        AstClafer jim = m.addTopClafer("Jimmy").withCard(2, 3).extending(person);
-//        AstClafer jam = m.addTopClafer("James").withCard(1, 1).extending(person);
-//        AstClafer jak = m.addTopClafer("Jake").withCard(1, 1).extending(person);
-//
-//        Map<AstClafer, Integer> scopes = new HashMap<AstClafer, Integer>();
-//        scopes.put(jim, 100);
-//        scopes.put(jam, 100);
-//        scopes.put(name, 100);
-//        AstModel m = Ast.newModel();
-//        AstAbstractClafer person = m.addAbstractClafer("person");
-//        AstConcreteClafer name = person.addChild("name").withCard(1, 1);
-////        name.refTo(AstIntClafer.Singleton);
-//
-//        AstConcreteClafer jim = m.addTopClafer("Jimmy").withCard(2, 3).extending(person);
-////        jim.addConstraint(new AstCompare(new AstJoinRef(new AstJoin(new AstThis(), name)), AstCompare.Op.Equal, new AstConstant(3)));
-//        AstConcreteClafer food = jim.addChild("food").withCard(1, 1).withGroupCard(1, 1);
-//        food.addChild("Hamburger");
-//        food.addChild("Milk");
-//        food.addChild("Salad");
-//
-//        Map<AstClafer, Integer> scopes = new HashMap<AstClafer, Integer>();
-//        scopes.put(jim, 100);
-//        scopes.put(name, 100);
-//        scopes.put(food, 100);
         AstModel m = Ast.newModel();
+        AstAbstractClafer person = m.addAbstractClafer("person");
+        AstConcreteClafer name = person.addChild("name").withCard(1, 1);
 
-        AstConcreteClafer jim = m.addTopClafer("Jimmy").withCard(1, 1);
-//        jim.addConstraint(new AstCompare(new AstJoinRef(new AstJoin(new AstThis(), name)), AstCompare.Op.Equal, new AstConstant(3)));
-        AstConcreteClafer food = jim.addChild("food").withCard(2, 3);
-        food.addChild("Hamburger").withCard(2, 3);
-        food.addChild("Milk").withCard(2, 3);
+        AstClafer jim = m.addTopClafer("Jimmy").withCard(2, 3).extending(person);
+        AstClafer jam = m.addTopClafer("James").withCard(1, 1).extending(person);
+        AstClafer jak = m.addTopClafer("Jake").withCard(1, 1).extending(person);
 
         Map<AstClafer, Integer> scopes = new HashMap<AstClafer, Integer>();
+        scopes.put(jim, 100);
+        scopes.put(jam, 100);
+        scopes.put(name, 100);
+//        AstModel m = Ast.newModel();
+//
+//        AstConcreteClafer jim = m.addTopClafer("Jimmy").withCard(1, 1);
+////        jim.addConstraint(new AstCompare(new AstJoinRef(new AstJoin(new AstThis(), name)), AstCompare.Op.Equal, new AstConstant(3)));
+//        AstConcreteClafer food = jim.addChild("food").withCard(2, 3);
+//        food.addChild("Hamburger").withCard(2, 3);
+//        food.addChild("Milk").withCard(2, 3);
+//
+//        Map<AstClafer, Integer> scopes = new HashMap<AstClafer, Integer>();
 
         ChocoCompiler c = new ChocoCompiler(m, new Scope(scopes, 100));
         c.compile();
@@ -202,7 +187,9 @@ public class ChocoCompiler {
                      * to Person0. Otherwise, the children can swap around creating many isomorphic
                      * solutions.
                      */
-                    model.addConstraint(IncreasingManager.increasing(parentPointers.get(clafer)));
+                    if (clafer.hasParent()) {
+                        model.addConstraint(IncreasingManager.increasing(parentPointers.get(clafer)));
+                    }
 
                     /**
                      * What is this optimization?
@@ -316,7 +303,7 @@ public class ChocoCompiler {
             // build group card
             int claferScope = getScope(clafer);
             Card groupCard = clafer.getGroupCard();
-            boolean[] partialSolution = getPartialSolution(clafer);
+            PartialSolution partialSolution = getPartialSolution(clafer);
             for (int i = 0; i < claferScope; i++) {
                 IntegerVariable[] cards = new IntegerVariable[clafer.getChildren().size()];
                 for (int j = 0; j < cards.length; j++) {
@@ -324,7 +311,7 @@ public class ChocoCompiler {
                 }
                 IntegerExpressionVariable cardSum = ChocoUtil.sum(cards);
 
-                if (partialSolution[i] || !groupCard.hasLow()) {
+                if (partialSolution.hasClafer(i) || !groupCard.hasLow()) {
                     model.addConstraint(ChocoUtil.betweenCard(cardSum, groupCard));
                 } else {
                     model.addConstraint(Choco.implies(
@@ -346,10 +333,10 @@ public class ChocoCompiler {
     }
 
     void compile(AstClafer clafer, AstBoolExpression constraint) {
-        boolean[] partialSolution = getPartialSolution(clafer);
-        for (int id = 0; id < partialSolution.length; id++) {
+        PartialSolution partialSolution = getPartialSolution(clafer);
+        for (int id = 0; id < partialSolution.size(); id++) {
             ExpressionCompiler expressionCompiler;
-            if (partialSolution[id]) {
+            if (partialSolution.hasClafer(id)) {
                 // We know these ids exist so always optimize.
                 expressionCompiler = new ExpressionCompiler(new IntVarExpr(clafer, constant(id)));
                 BoolVarExpr boolVar = (BoolVarExpr) constraint.accept(expressionCompiler, null);
@@ -425,9 +412,9 @@ public class ChocoCompiler {
                 }
                 return ivs;
             }
-            boolean[] partialSolution = getPartialSolution(a);
+            PartialSolution partialSolution = getPartialSolution(a);
             for (int i = 0; i < ivs.length; i++) {
-                ivs[i] = partialSolution[i]
+                ivs[i] = partialSolution.hasClafer(i)
                         ? constant(1)
                         : makeBooleanVar(a.getName() + "@Membership#" + i);
             }
@@ -446,9 +433,9 @@ public class ChocoCompiler {
             // Variables are added in the order that is most cooperative with symmetry breaking.
             model.addVariables(svs);
             Card card = a.getCard();
-            boolean[] partialParentSolution = a.hasParent() ? getPartialSolution(a.getParent()) : new boolean[]{true};
-            for (int i = 0; i < partialParentSolution.length; i++) {
-                if (partialParentSolution[i]) {
+            PartialSolution partialParentSolution = getPartialParentSolution(a);
+            for (int i = 0; i < partialParentSolution.size(); i++) {
+                if (partialParentSolution.hasClafer(i)) {
                     if (card.isBounded()) {
                         model.addConstraint(ChocoUtil.betweenCard(svs[i], card));
                     }
@@ -486,18 +473,15 @@ public class ChocoCompiler {
         @Override
         IntegerVariable[] compile(AstConcreteClafer a) {
             if (!a.hasParent()) {
-                return new IntegerVariable[]{constant(0)};
+                throw new CompilerException(a + " cannot have parent pointers");
             }
             Card globalCard = getGlobalCard(a);
-            IntegerVariable[] ivs;
+            IntegerVariable[] ivs = buildParentPointers(a);
             if (globalCard.isExact()) {
                 // No unused
-                ivs = makeIntVarArray(a.getName() + "@Parent", getScope(a), 0, getScope(a.getParent()) - 1);
                 model.addConstraint(inverseSet(ivs, childrenSet.get(a)));
             } else {
-                ivs = makeIntVarArray(a.getName() + "@Parent", getScope(a), 0, getScope(a.getParent()));
-                SetVariable unused = makeSetVar(a.getName() + "@Unused",
-                        Util.difference(Util.range(0, getScope(a)), Util.trues(getPartialSolution(a))));
+                SetVariable unused = makeSetVar(a.getName() + "@Unused", getPartialSolution(a).getUnknownClafers());
                 model.addConstraint(eq(plus(setCard.get(a), unused.getCard()), getScope(a)));
                 model.addConstraint(inverseSet(ivs, Util.cons(childrenSet.get(a), unused)));
             }
@@ -811,8 +795,12 @@ public class ChocoCompiler {
         return analysis.getFormat(clafer);
     }
 
-    public boolean[] getPartialSolution(AstClafer clafer) {
+    public PartialSolution getPartialSolution(AstClafer clafer) {
         return analysis.getPartialSolution(clafer);
+    }
+
+    public PartialSolution getPartialParentSolution(AstConcreteClafer clafer) {
+        return clafer.hasParent() ? getPartialSolution(clafer.getParent()) : PartialSolution.rootSolution();
     }
 
     public int getOffset(AstAbstractClafer sup, AstClafer sub) {
@@ -857,8 +845,7 @@ public class ChocoCompiler {
 
     private SetVariable[] skipCards(AstConcreteClafer clafer) {
         int parentScope = clafer.hasParent() ? getScope(clafer.getParent()) : 1;
-        boolean[] partialParentSolution = clafer.hasParent() ? getPartialSolution(clafer.getParent()) : new boolean[]{true};
-        assert parentScope == partialParentSolution.length;
+        PartialSolution partialParentSolution = clafer.hasParent() ? getPartialSolution(clafer.getParent()) : PartialSolution.rootSolution();
 
         int claferScope = getScope(clafer);
         Card card = clafer.getCard();
@@ -875,12 +862,24 @@ public class ChocoCompiler {
             } else {
                 skip[i] = emptySet();
             }
-            if (partialParentSolution[i]) {
+            if (partialParentSolution.hasClafer(i)) {
                 low += card.getLow();
             }
             high += card.getHigh();
         }
         return skip;
+    }
+
+    private IntegerVariable[] buildParentPointers(AstConcreteClafer clafer) {
+        PartialSolution solution = getPartialSolution(clafer);
+        IntegerVariable[] pointers = new IntegerVariable[solution.size()];
+        for (int i = 0; i < pointers.length; i++) {
+            pointers[i] = makeIntVar(clafer.getName() + "@Parent#" + i,
+                    solution.hasClafer(i)
+                    ? solution.getPossibleParents(i)
+                    : Util.cons(solution.getPossibleParents(i), getScope(clafer.getParent())));
+        }
+        return pointers;
     }
 
     private IntegerVariable[] score(AstClafer clafer, Model model, List<Term> terms) {
