@@ -50,6 +50,10 @@ public class RhinoContext {
         return objective != null;
     }
 
+    public AstRef getObjective() {
+        return objective;
+    }
+
     public boolean isMinimize() {
         return hasObjective() && minimize;
     }

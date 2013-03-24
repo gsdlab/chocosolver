@@ -134,6 +134,22 @@ public class ChocoCompiler {
         return compiler;
     }
 
+    public static ChocoCompiler compiler(AstModel ast, Scope scope, AstRef objective) {
+        ChocoCompiler compiler = new ChocoCompiler(ast, scope);
+        compiler.compile();
+        IntegerVariable[] ivs = compiler.refs.get(objective);
+        IntegerExpressionVariable sum = ChocoUtil.sum(ivs);
+        IntegerVariable score;
+        if (sum instanceof IntegerVariable) {
+            score = (IntegerVariable) sum;
+            score.addOption(Options.V_OBJECTIVE);
+        } else {
+            score = makeIntVar("@Objective", sum.getLowB(), sum.getUppB(), Options.V_BOUND, Options.V_OBJECTIVE, Options.V_NO_DECISION);
+            compiler.model.addConstraint(eq(score, sum));
+        }
+        return compiler;
+    }
+
     public Printer compileTo(Solver solver) {
         solver.read(model);
         return newPrinter(solver);
@@ -531,8 +547,15 @@ public class ChocoCompiler {
             AstClafer src = a.getSourceType();
             AstClafer tar = a.getTargetType();
             int scope = getScope(a.getTargetType());
-            String option = a.getTargetType() instanceof AstIntClafer && scope > 100 ? Options.V_BOUND : Options.V_ENUM;
-            IntegerVariable[] ivs = makeIntVarArray(src.getName() + "@Ref", getScope(src), getScopeLow(tar), getScopeHigh(tar), option);
+
+            int[] partialInts = getPartialInts(a);
+            IntegerVariable[] ivs;
+            if (partialInts == null) {
+                String option = a.getTargetType() instanceof AstIntClafer && scope > 100 ? Options.V_BOUND : Options.V_ENUM;
+                ivs = makeIntVarArray(src.getName() + "@Ref", getScope(src), getScopeLow(tar), getScopeHigh(tar), option);
+            } else {
+                ivs = makeIntVarArray(src.getName() + "@Ref", getScope(src), partialInts);
+            }
 
             // TODO: Abstract refs
             // If cardinality is one, then it is already unique even without an explicit constraint.
@@ -863,6 +886,10 @@ public class ChocoCompiler {
 
     public PartialSolution getPartialParentSolution(AstConcreteClafer clafer) {
         return clafer.hasParent() ? getPartialSolution(clafer.getParent()) : PartialSolution.rootSolution();
+    }
+
+    public int[] getPartialInts(AstRef ref) {
+        return analysis.getPartialInts(ref);
     }
 
     public int getOffset(AstAbstractClafer sup, AstClafer sub) {

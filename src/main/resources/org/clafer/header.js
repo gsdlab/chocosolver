@@ -3,6 +3,8 @@ importClass(Packages.org.clafer.ast.Ast);
 var scope = rc.setScope.bind(rc);
 var defaultScope = rc.setDefaultScope.bind(rc);
 var intRange = rc.setIntRange.bind(rc);
+var minimize = rc.setMinimize.bind(rc);
+var maximize = rc.setMaximize.bind(rc);
 var clafer = rc.getModel().addTopClafer.bind(rc.getModel());
 var abstract = rc.getModel().addAbstractClafer.bind(rc.getModel());
 

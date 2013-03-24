@@ -1,10 +1,13 @@
 package org.clafer.analysis;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.clafer.Check;
 import org.clafer.Util;
 import org.clafer.ast.AstAbstractClafer;
@@ -47,6 +50,16 @@ public class AnalysisUtil {
         return clafers;
     }
 
+    public static AstClafer getTopParent(AstClafer clafer) {
+        if (clafer instanceof AstConcreteClafer) {
+            AstConcreteClafer concrete = (AstConcreteClafer) clafer;
+            if (concrete.hasParent()) {
+                return getTopParent(((AstConcreteClafer) clafer).getParent());
+            }
+        }
+        return clafer;
+    }
+
     public static List<AstClafer> getNestedClafers(AstClafer clafer) {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
         getNestedClafers(clafer, clafers);
@@ -57,6 +70,23 @@ public class AnalysisUtil {
         clafers.add(clafer);
         for (AstClafer child : clafer.getChildren()) {
             getNestedClafers(child, clafers);
+        }
+    }
+
+    public static List<AstConcreteClafer> getConcreteSubs(AstClafer clafer) {
+        List<AstConcreteClafer> subs = new ArrayList<AstConcreteClafer>();
+        getConcreteSubs(clafer, subs);
+        return subs;
+    }
+
+    private static void getConcreteSubs(AstClafer sub, Collection<AstConcreteClafer> subs) {
+        if (sub instanceof AstAbstractClafer) {
+            AstAbstractClafer sup = (AstAbstractClafer) sub;
+            for (AstClafer subsub : sup.getSubs()) {
+                getConcreteSubs(subsub, subs);
+            }
+        } else {
+            subs.add((AstConcreteClafer) sub);
         }
     }
 
@@ -95,6 +125,16 @@ public class AnalysisUtil {
             return Util.in(t2, getSupers(t1));
         }
         return false;
+    }
+
+    public static boolean isUnionType(AstClafer union, List<AstClafer> ts) {
+        Set<AstConcreteClafer> unionSubs = new HashSet<AstConcreteClafer>();
+        getConcreteSubs(union, unionSubs);
+        Set<AstConcreteClafer> tSubs = new HashSet<AstConcreteClafer>();
+        for (AstClafer t : ts) {
+            getConcreteSubs(t, tSubs);
+        }
+        return unionSubs.equals(tSubs);
     }
 
     public static List<AstAbstractClafer> descendingDepths(

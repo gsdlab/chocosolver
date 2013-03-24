@@ -10,6 +10,7 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstExpression;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstRef;
 import org.clafer.ast.Card;
 
 /**
@@ -24,6 +25,7 @@ public class Analysis {
     private final Map<AstClafer, Format> formats;
     private final Map<AstAbstractClafer, Offsets> offsets;
     private final Map<AstClafer, PartialSolution> partialSolutions;
+    private final Map<AstRef, int[]> partialInts;
     private final Map<AstExpression, AstClafer> types;
 
     private Analysis(Map<AstAbstractClafer, Integer> depths,
@@ -32,6 +34,7 @@ public class Analysis {
             Map<AstClafer, Format> formats,
             Map<AstAbstractClafer, Offsets> offsets,
             Map<AstClafer, PartialSolution> partialSolutions,
+            Map<AstRef, int[]> partialInts,
             Map<AstExpression, AstClafer> types) {
         this.depths = depths;
         this.globalCards = globalCards;
@@ -39,12 +42,15 @@ public class Analysis {
         this.formats = formats;
         this.offsets = offsets;
         this.partialSolutions = partialSolutions;
+        this.partialInts = partialInts;
         this.types = types;
     }
 
     public static Analysis analyze(AstModel model, Scope scope) {
         Check.notNull(model);
         Check.notNull(scope);
+        Map<AstExpression, AstClafer> types = TypeAnalysis.analyze(model);
+
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
         Map<AstClafer, Card> globalCards = GlobalCardAnalysis.analyze(model, scope, depths);
         Scope optimizedScope = ScopeAnalysis.analyze(model, scope, globalCards);
@@ -54,8 +60,10 @@ public class Analysis {
 
         Map<AstAbstractClafer, Offsets> offsets = AbstractOffsetAnalysis.analyze(model, globalCards);
         Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, depths, offsets);
-        Map<AstExpression, AstClafer> types = TypeAnalysis.analyze(model);
-        return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, types);
+
+        Map<AstRef, int[]> partialInts = PartialIntAnalysis.analyze(model, types);
+
+        return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, types);
     }
 
     public int getDepth(AstAbstractClafer clafer) {
@@ -80,5 +88,9 @@ public class Analysis {
 
     public PartialSolution getPartialSolution(AstClafer clafer) {
         return AnalysisUtil.notNull("Cannot find partial solution analysis for " + clafer, partialSolutions.get(clafer));
+    }
+
+    public int[] getPartialInts(AstRef ref) {
+        return partialInts.get(ref);
     }
 }

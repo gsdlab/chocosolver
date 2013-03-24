@@ -34,20 +34,31 @@ public class ChocoSolver {
         engine.put(ScriptEngine.FILENAME, "Test.js");
         engine.eval(Util.readAll(new File("/home/jimmy/Programming/clafer/Test.js")));
 
-        ChocoCompiler compiler = ChocoCompiler.compiler(context.getModel(), context.getScope());
         Solver solver = new CPSolver();
 
-        Printer printer = compiler.compileTo(solver);
-        int c = 0;
-        if (solver.solve()) {
-            do {
-                c++;
+        if (context.hasObjective()) {
+            ChocoCompiler compiler = ChocoCompiler.compiler(context.getModel(), context.getScope(), context.getObjective());
+
+            Printer printer = compiler.compileTo(solver);
+            if (solver.minimize(false)) {
                 System.out.println(printer.printToString());
                 System.out.println(solver.runtimeStatistics());
-                if (c == 10) {
-                    break;
-                }
-            } while (solver.nextSolution());
+            }
+        } else {
+            ChocoCompiler compiler = ChocoCompiler.compiler(context.getModel(), context.getScope());
+
+            Printer printer = compiler.compileTo(solver);
+            int c = 0;
+            if (solver.solve()) {
+                do {
+                    c++;
+                    System.out.println(printer.printToString());
+                    System.out.println(solver.runtimeStatistics());
+                    if (c == 10) {
+                        break;
+                    }
+                } while (solver.nextSolution());
+            }
         }
     }
 //    - Solution #1 found. 4843 Time (ms), 76 Nodes, 0 Backtracks, 0 Restarts.

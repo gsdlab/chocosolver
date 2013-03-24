@@ -6,14 +6,16 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class Pair<A, B> {
+public class Triple<A, B, C> {
 
     private final A fst;
     private final B snd;
+    private final C thd;
 
-    public Pair(A fst, B snd) {
+    public Triple(A fst, B snd, C thd) {
         this.fst = Check.notNull(fst);
         this.snd = Check.notNull(snd);
+        this.thd = Check.notNull(thd);
     }
 
     public A getFst() {
@@ -24,23 +26,27 @@ public class Pair<A, B> {
         return snd;
     }
 
+    public C getThd() {
+        return thd;
+    }
+
     @Override
     public int hashCode() {
-        return fst.hashCode() ^ snd.hashCode();
+        return fst.hashCode() ^ snd.hashCode() ^ thd.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Pair<?, ?>) {
-            Pair<?, ?> other = (Pair<?, ?>) obj;
+        if (obj instanceof Triple<?, ?, ?>) {
+            Triple<?, ?, ?> other = (Triple<?, ?, ?>) obj;
 
-            return fst.equals(other.fst) && snd.equals(other.snd);
+            return fst.equals(other.fst) && snd.equals(other.snd) && thd.equals(other.thd);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return "(" + fst + ", " + snd + ")";
+        return "(" + fst + ", " + snd + ", " + thd + ")";
     }
 }
