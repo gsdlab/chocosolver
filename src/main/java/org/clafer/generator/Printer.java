@@ -62,7 +62,7 @@ public class Printer {
         for (int num : nums) {
             out.append(indent + clafer.getName() + num);
             if(clafer.hasRef()) {
-                print(clafer.getRef(), parent, out);
+                print(clafer.getRef(), num, out);
             }
             out.append('\n');
             for (AstConcreteClafer child : clafer.getChildren()) {

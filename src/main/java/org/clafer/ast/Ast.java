@@ -13,7 +13,9 @@ public class Ast {
         return new AstModel();
     }
 
-    public static AstThis $this = AstThis.Singleton;
+    public static AstThis $this() {
+        return new AstThis();
+    }
 
     public static AstConstantInt constantInt(int value) {
         return new AstConstantInt(value);

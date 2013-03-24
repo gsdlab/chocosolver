@@ -87,6 +87,23 @@ public class Util {
     }
 
     /**
+     * 
+     * @param low - inclusive
+     * @param high - exclusive
+     * @return 
+     */
+    public static int[] range(int low, int high) {
+        if (low > high) {
+            throw new IllegalArgumentException();
+        }
+        int[] range = new int[high - low];
+        for (int i = 0; i < range.length; i++) {
+            range[i] = i + low;
+        }
+        return range;
+    }
+
+    /**
      * @return - The set difference
      */
 //    public static int[] difference(int[] s1, int[] s2) {

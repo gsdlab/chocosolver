@@ -10,6 +10,7 @@ import org.clafer.analysis.AnalysisUtil;
 import org.clafer.ast.Ast;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstRef;
 import sun.org.mozilla.javascript.JavaScriptException;
 
 /**
@@ -19,7 +20,12 @@ import sun.org.mozilla.javascript.JavaScriptException;
 public class RhinoContext {
 
     private final Map<String, Integer> scope = new HashMap<String, Integer>();
+    private int defaultScope = 1;
+    private int intLow = -16;
+    private int intHigh = 16;
     private final AstModel model = Ast.newModel();
+    private boolean minimize;
+    private AstRef objective;
 
     public void setScope(Map<String, Double> scope) {
         for (Entry<String, Double> entry : scope.entrySet()) {
@@ -28,28 +34,50 @@ public class RhinoContext {
         }
     }
 
-    public int getDefaultScope() {
-        Integer defaultScope = scope.get("default");
-        if (defaultScope == null) {
-            return 1;
+    public void setDefaultScope(int defaultScope) {
+        if (defaultScope < 1) {
+            throw new IllegalArgumentException();
         }
-        return defaultScope.intValue();
+        this.defaultScope = defaultScope;
     }
 
-    public int getIntLow() {
-        Integer intLow = scope.get("intLow");
-        if (intLow == null) {
-            return -16;
-        }
-        return intLow.intValue();
+    public void setIntRange(int intLow, int intHigh) {
+        this.intLow = intLow;
+        this.intHigh = intHigh;
     }
 
-    public int getIntHigh() {
-        Integer intHigh = scope.get("intHigh");
-        if (intHigh == null) {
-            return 16;
+    public boolean hasObjective() {
+        return objective != null;
+    }
+
+    public boolean isMinimize() {
+        return hasObjective() && minimize;
+    }
+
+    public boolean isMaximize() {
+        return hasObjective() && !minimize;
+    }
+
+    public void setMinimize(AstClafer objective) {
+        if (hasObjective()) {
+            throw new IllegalStateException("Already has an objective");
         }
-        return intHigh.intValue();
+        if (!objective.hasRef()) {
+            throw new IllegalStateException(objective + " cannot be an objective");
+        }
+        this.minimize = true;
+        this.objective = objective.getRef();
+    }
+
+    public void setMaximize(AstClafer objective) {
+        if (hasObjective()) {
+            throw new IllegalStateException("Already has an objective");
+        }
+        if (!objective.hasRef()) {
+            throw new IllegalStateException(objective + " cannot be an objective");
+        }
+        this.minimize = false;
+        this.objective = objective.getRef();
     }
 
     public Scope getScope() {
@@ -57,15 +85,13 @@ public class RhinoContext {
         Map<String, AstClafer> resolvedClafers = AnalysisUtil.getClafersMap(model);
         for (Entry<String, Integer> entry : scope.entrySet()) {
             String key = entry.getKey();
-            if (!key.equals("default") && !key.equals("intLow") && !key.equals("intHigh")) {
-                AstClafer clafer = resolvedClafers.get(key);
-                if (clafer == null) {
-                    throw new IllegalStateException("Cannot set scope for unknown clafer \"" + key + "\"");
-                }
-                resolvedScope.put(clafer, entry.getValue());
+            AstClafer clafer = resolvedClafers.get(key);
+            if (clafer == null) {
+                throw new IllegalStateException("Cannot set scope for unknown clafer \"" + key + "\"");
             }
+            resolvedScope.put(clafer, entry.getValue());
         }
-        return new Scope(resolvedScope, getDefaultScope(), getIntLow(), getIntHigh());
+        return new Scope(resolvedScope, defaultScope, intLow, intHigh);
     }
 
     public AstModel getModel() {

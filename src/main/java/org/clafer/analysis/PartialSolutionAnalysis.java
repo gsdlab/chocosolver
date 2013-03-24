@@ -81,32 +81,34 @@ public class PartialSolutionAnalysis {
             Arrays.fill(solution, 0, globalCard.getLow(), true);
         } else {
             PartialSolution partialParentSolution = partialSolutions.get(clafer.getParent());
+            int lowCard = clafer.getCard().getLow();
+            int highCard = clafer.getCard().getHigh();
             switch (format) {
                 case LowGroup:
                     Arrays.fill(solution, 0, globalCard.getLow(), true);
                     int low = 0;
-                    int high = clafer.getCard().getHigh();
+                    int high = highCard;
                     for (int i = 0; i < partialParentSolution.size(); i++) {
                         for (int j = low; j < high && j < parents.length; j++) {
                             parents[j].add(i);
                         }
                         if (partialParentSolution.hasClafer(i)) {
-                            low += clafer.getCard().getLow();
+                            low += lowCard;
                         }
-                        high += clafer.getCard().getHigh();
+                        high += highCard;
                     }
                     break;
                 case ParentGroup:
-//                    // assert has a fixed effective cardinality
-//                    // assert clafer.card.low is equal to effective lower cardinality
-//                    PartialSolution[] partialParentSolution = partialSolutions.get(clafer.getParent());
-//                    for (int i = 0; i < partialParentSolution.length; i++) {
-//                        for (int j = 0; j < clafer.getCard().getLow(); j++) {
-//                            partialSolution[i * clafer.getCard().getLow() + j] = partialParentSolution[i];
-//                        }
-//                    }
-                    throw new UnsupportedOperationException();
-//                    break;
+                    assert lowCard == highCard;
+                    for (int i = 0; i < partialParentSolution.size(); i++) {
+                        for (int j = 0; j < lowCard; j++) {
+                            solution[i * lowCard + j] = partialParentSolution.hasClafer(i);
+                            parents[i * lowCard + j].add(i);
+                        }
+                    }
+                    break;
+                default:
+                    throw new AnalysisException();
             }
         }
         partialSolutions.put(clafer, new PartialSolution(solution, toArray(parents)));
