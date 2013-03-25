@@ -42,6 +42,9 @@ public class RhinoContext {
     }
 
     public void setIntRange(int intLow, int intHigh) {
+        if (intLow > intHigh) {
+            throw new IllegalArgumentException();
+        }
         this.intLow = intLow;
         this.intHigh = intHigh;
     }

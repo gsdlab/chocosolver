@@ -13,14 +13,17 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstantInt;
+import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstExpression;
 import org.clafer.ast.AstExpressionVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNone;
+import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstSetExpression;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
@@ -169,6 +172,29 @@ public class TypeAnalysis {
         public TypedExpression visit(AstNone ast, Void a) {
             TypedExpression $set = ast.getSet().accept(this, a);
             return put(BoolType, none((AstSetExpression) $set.getExpression()));
+        }
+
+        @Override
+        public TypedExpression visit(AstLocal ast, Void a) {
+            return put(AnalysisUtil.notNull(ast + " type not analyzed yet", types.get(ast)), ast);
+        }
+
+        @Override
+        public TypedExpression visit(AstQuantify ast, Void a) {
+            List<AstDecl> $decl = new ArrayList<AstDecl>();
+            for (AstDecl decl : ast.getDecls()) {
+                TypedExpression $body = decl.getBody().accept(this, a);
+                for (AstLocal local : decl.getLocals()) {
+                    put($body.getType(), local);
+                }
+                $decl.add(decl.withBody((AstSetExpression) $body.getExpression()));
+            }
+
+            TypedExpression $body = ast.getBody().accept(this, a);
+            return put(BoolType, quantify(
+                    ast.getQuantifier(),
+                    $decl.toArray(new AstDecl[$decl.size()]),
+                    (AstBoolExpression) $body.getExpression()));
         }
     }
 

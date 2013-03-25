@@ -36,13 +36,16 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstantInt;
+import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstExpressionVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNone;
+import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
@@ -549,12 +552,19 @@ public class ChocoCompiler {
             int scope = getScope(a.getTargetType());
 
             int[] partialInts = getPartialInts(a);
-            IntegerVariable[] ivs;
-            if (partialInts == null) {
-                String option = a.getTargetType() instanceof AstIntClafer && scope > 100 ? Options.V_BOUND : Options.V_ENUM;
-                ivs = makeIntVarArray(src.getName() + "@Ref", getScope(src), getScopeLow(tar), getScopeHigh(tar), option);
-            } else {
-                ivs = makeIntVarArray(src.getName() + "@Ref", getScope(src), partialInts);
+            IntegerVariable[] ivs = new IntegerVariable[getScope(src)];
+            for (int i = 0; i < ivs.length; i++) {
+                Integer instantiate = analysis.getPartialRefInts(a, i);
+                if (instantiate == null) {
+                    if (partialInts == null) {
+                        String option = a.getTargetType() instanceof AstIntClafer && scope > 100 ? Options.V_BOUND : Options.V_ENUM;
+                        ivs[i] = makeIntVar(src.getName() + "@Ref", getScopeLow(tar), getScopeHigh(tar), option);
+                    } else {
+                        ivs[i] = makeIntVar(src.getName() + "@Ref", partialInts);
+                    }
+                } else {
+                    ivs[i] = makeIntVar(src.getName() + "@Ref" + i, new int[]{0, instantiate});
+                }
             }
 
             // TODO: Abstract refs
@@ -600,13 +610,24 @@ public class ChocoCompiler {
 
         private final VarExpr thisExpr;
         private final List<Constraint> globalConstraints = new ArrayList<Constraint>();
+        private final Map<AstLocal, VarExpr> localExprs;
 
-        public ExpressionCompiler(VarExpr thisExpr) {
+        ExpressionCompiler(VarExpr thisExpr) {
             this.thisExpr = Check.notNull(thisExpr);
+            this.localExprs = new HashMap<AstLocal, VarExpr>();
+        }
+
+        ExpressionCompiler(VarExpr thisExpr, Map<AstLocal, VarExpr> localExprs) {
+            this.thisExpr = Check.notNull(thisExpr);
+            this.localExprs = Check.notNull(localExprs);
         }
 
         void addGlobalConstraint(Constraint constraint) {
             globalConstraints.add(constraint);
+        }
+
+        void addGlobalConstraints(List<Constraint> constraints) {
+            globalConstraints.addAll(constraints);
         }
 
         List<Constraint> getGlobalConstraints() {
@@ -858,6 +879,29 @@ public class ChocoCompiler {
         public VarExpr visit(AstNone ast, Void a) {
             SetVarExpr set = (SetVarExpr) ast.getSet().accept(this, a);
             return new BoolVarExpr(eq(set.getValue(), emptySet()));
+        }
+
+        @Override
+        public VarExpr visit(AstLocal ast, Void a) {
+            VarExpr var = localExprs.get(ast);
+            if (var == null) {
+                throw new IllegalStateException();
+            }
+            return var;
+        }
+
+        @Override
+        public VarExpr visit(AstQuantify ast, Void a) {
+            switch (ast.getQuantifier()) {
+                case All:
+                    AstDecl[] decls = ast.getDecls();
+
+                    for (AstDecl decl : decls) {
+                        // TODO decl.isDisjoint
+                        VarExpr $body = decl.getBody().accept(this, a);
+                    }
+            }
+            return null;
         }
     }
 

@@ -32,6 +32,7 @@ public class AbstractOffsetAnalysis {
                 offsets.put(sub, offset);
                 offset += globalCards.get(sub).getHigh();
             }
+            offsets.put(abstractClafer, 0);
             offsetMap.put(abstractClafer, new Offsets(abstractClafer, offsets));
         }
         return offsetMap;

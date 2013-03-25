@@ -1,5 +1,7 @@
 package org.clafer.ast;
 
+import org.clafer.ast.AstQuantify.Quantifier;
+
 /**
  *
  * @author jimmy
@@ -71,5 +73,29 @@ public class Ast {
 
     public static AstNone none(AstSetExpression set) {
         return new AstNone(set);
+    }
+
+    public static AstLocal local() {
+        return new AstLocal();
+    }
+
+    public static AstDecl decl(AstLocal[] locals, AstSetExpression body) {
+        return new AstDecl(false, locals, body);
+    }
+
+    public static AstDecl disjointDecl(AstLocal[] locals, AstSetExpression body) {
+        return new AstDecl(true, locals, body);
+    }
+
+    public static AstQuantify quantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpression body) {
+        return new AstQuantify(quantifier, decls, body);
+    }
+    
+    public static AstQuantify some(AstDecl[] decls, AstBoolExpression body) {
+        return new AstQuantify(Quantifier.Some, decls, body);
+    }
+
+    public static AstQuantify all(AstDecl[] decls, AstBoolExpression body) {
+        return new AstQuantify(Quantifier.All, decls, body);
     }
 }

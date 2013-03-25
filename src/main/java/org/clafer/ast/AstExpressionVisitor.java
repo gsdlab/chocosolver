@@ -23,4 +23,8 @@ public interface AstExpressionVisitor<A, B> {
     public B visit(AstUpcast ast, A a);
 
     public B visit(AstNone ast, A a);
+
+    public B visit(AstLocal ast, A a);
+
+    public B visit(AstQuantify ast, A a);
 }

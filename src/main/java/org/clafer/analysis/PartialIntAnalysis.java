@@ -2,10 +2,15 @@ package org.clafer.analysis;
 
 import gnu.trove.TIntHashSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.clafer.Scope;
+import org.clafer.analysis.AbstractOffsetAnalysis.Offsets;
+import org.clafer.analysis.FormatAnalysis.Format;
+import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpression;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
@@ -20,6 +25,7 @@ import org.clafer.ast.AstSetExpression;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.collection.Pair;
+import org.clafer.collection.Quad;
 import org.clafer.collection.Triple;
 
 /**
@@ -28,47 +34,100 @@ import org.clafer.collection.Triple;
  */
 public class PartialIntAnalysis {
 
-    private final AstClafer thisType;
     private final Map<AstExpression, AstClafer> types;
+    private final Map<AstClafer, Format> formats;
 
-    private PartialIntAnalysis(AstClafer thisType, Map<AstExpression, AstClafer> types) {
-        this.thisType = thisType;
+    private PartialIntAnalysis(Map<AstExpression, AstClafer> types, Map<AstClafer, Format> formats) {
         this.types = types;
+        this.formats = formats;
     }
 
-    public static Map<AstRef, int[]> analyze(AstModel model, Map<AstExpression, AstClafer> types) {
+    public static Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, Integer>> analyze(
+            AstModel model,
+            Map<AstAbstractClafer, Offsets> offsets,
+            Map<AstClafer, Format> formats,
+            Map<AstExpression, AstClafer> types,
+            Scope scope) {
         Map<AstRef, int[]> partialInts = new HashMap<AstRef, int[]>();
+        Map<Pair<AstRef, Integer>, Integer> partialRefInts = new HashMap<Pair<AstRef, Integer>, Integer>();
 
-        Map<AstRef, Pair<List<AstClafer>, TIntHashSet>> subMap = new HashMap<AstRef, Pair<List<AstClafer>, TIntHashSet>>();
+        Map<AstRef, Pair<List<List<AstClafer>>, TIntHashSet>> subMap = new HashMap<AstRef, Pair<List<List<AstClafer>>, TIntHashSet>>();
         for (AstClafer clafer : AnalysisUtil.getClafers(model)) {
-            PartialIntAnalysis analysis = new PartialIntAnalysis(clafer, types);
+            PartialIntAnalysis analysis = new PartialIntAnalysis(types, formats);
             for (AstBoolExpression constraint : clafer.getConstraints()) {
-                Triple<AstRef, AstClafer, Integer> triple = analysis.analyze(constraint);
-                if (triple == null) {
+                Quad<AstRef, List<AstClafer>, Integer, Boolean> quad = analysis.analyze(constraint);
+                if (quad == null) {
                     continue;
                 }
-                AstRef key = triple.getFst();
-                Pair<List<AstClafer>, TIntHashSet> subs = subMap.get(key);
+
+                AstRef key = quad.getFst();
+
+                if (quad.getFou()) {
+                    List<AstClafer> path = quad.getSnd();
+                    if (path.isEmpty()) {
+                        for (int i = 0; i < scope.getScope(key.getSourceType()); i++) {
+                            partialRefInts.put(new Pair<AstRef, Integer>(key, 0), quad.getThd());
+                        }
+                    } else {
+                        int offset = 0;
+                        for (AstClafer p : path) {
+                            offset += offsets.get(p.getSuperClafer()).getOffset(p);
+                        }
+                        int s = scope.getScope(path.get(0));
+                        for (int i = 0; i < s; i++) {
+                            partialRefInts.put(new Pair<AstRef, Integer>(key, offset + i), quad.getThd());
+                        }
+                    }
+                }
+
+                Pair<List<List<AstClafer>>, TIntHashSet> subs = subMap.get(key);
                 if (subs == null) {
-                    subs = new Pair<List<AstClafer>, TIntHashSet>(new ArrayList<AstClafer>(), new TIntHashSet());
+                    subs = new Pair<List<List<AstClafer>>, TIntHashSet>(new ArrayList<List<AstClafer>>(), new TIntHashSet());
                     subs.getSnd().add(0);
                     subMap.put(key, subs);
                 }
-                subs.getFst().add(triple.getSnd());
-                subs.getSnd().add(triple.getThd());
+                subs.getFst().add(quad.getSnd());
+                subs.getSnd().add(quad.getThd());
             }
         }
 
-        for (Entry<AstRef, Pair<List<AstClafer>, TIntHashSet>> entry : subMap.entrySet()) {
-            if (AnalysisUtil.isUnionType(AnalysisUtil.getTopParent(entry.getKey().getSourceType()), entry.getValue().getFst())) {
+        for (Entry<AstRef, Pair<List<List<AstClafer>>, TIntHashSet>> entry : subMap.entrySet()) {
+            if (covers(entry.getKey().getSourceType(), entry.getValue().getFst())) {
                 partialInts.put(entry.getKey(), entry.getValue().getSnd().toArray());
             }
         }
-
-        return partialInts;
+        return new Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, Integer>>(partialInts, partialRefInts);
     }
 
-    private Triple<AstRef, AstClafer, Integer> analyze(AstBoolExpression exp) {
+    private static boolean covers(AstClafer clafer, List<List<AstClafer>> paths) {
+        for (List<AstClafer> path : paths) {
+            if (path.isEmpty()) {
+                return true;
+            }
+            if (clafer.equals(path.get(0))) {
+                return true;
+            }
+        }
+        AstClafer topClafer = AnalysisUtil.getTopParent(clafer);
+        if (topClafer instanceof AstAbstractClafer) {
+            AstAbstractClafer sup = (AstAbstractClafer) topClafer;
+            for (AstClafer sub : sup.getSubs()) {
+                List<List<AstClafer>> $paths = new ArrayList<List<AstClafer>>();
+                for (List<AstClafer> path : paths) {
+                    if (sub.equals(path.get(path.size() - 1))) {
+                        $paths.add(path.subList(0, path.size() - 1));
+                    }
+                }
+                if (!covers(sub, $paths)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private Quad<AstRef, List<AstClafer>, Integer, Boolean> analyze(AstBoolExpression exp) {
         if (exp instanceof AstCompare) {
             AstCompare compare = (AstCompare) exp;
             if (Op.Equal.equals(compare.getOp())) {
@@ -83,39 +142,47 @@ public class PartialIntAnalysis {
         return null;
     }
 
-    private Triple<AstRef, AstClafer, Integer> analyzeEqual(AstJoinRef exp, AstConstantInt constant) {
-        Pair<AstRef, AstClafer> expAnalysis = analyze(exp);
+    private Quad<AstRef, List<AstClafer>, Integer, Boolean> analyzeEqual(AstJoinRef exp, AstConstantInt constant) {
+        Triple<AstRef, List<AstClafer>, Boolean> expAnalysis = analyze(exp);
         if (expAnalysis == null) {
             return null;
         }
-        return new Triple<AstRef, AstClafer, Integer>(expAnalysis.getFst(), expAnalysis.getSnd(), constant.getValue());
+        return new Quad<AstRef, List<AstClafer>, Integer, Boolean>(
+                expAnalysis.getFst(), expAnalysis.getSnd(), constant.getValue(), expAnalysis.getThd());
     }
 
-    private Pair<AstRef, AstClafer> analyze(AstJoinRef exp) {
-        AstClafer derefAnalysis = analyze(exp.getDeref());
+    private Triple<AstRef, List<AstClafer>, Boolean> analyze(AstJoinRef exp) {
+        Pair<List<AstClafer>, Boolean> derefAnalysis = analyze(exp.getDeref());
         if (derefAnalysis == null) {
             return null;
         }
-        return new Pair<AstRef, AstClafer>(getType(exp.getDeref()).getRef(), derefAnalysis);
+        return new Triple<AstRef, List<AstClafer>, Boolean>(getType(exp.getDeref()).getRef(), derefAnalysis.getFst(), derefAnalysis.getSnd());
     }
 
-    private AstClafer analyze(AstSetExpression exp) {
-        AstClafer type = AnalysisUtil.getTopParent(thisType);
-        while (true) {
-            if (exp instanceof AstThis) {
-                return type;
-            } else if (exp instanceof AstUpcast) {
+    private Pair<List<AstClafer>, Boolean> analyze(AstSetExpression exp) {
+        List<AstClafer> subs = new ArrayList<AstClafer>();
+        boolean allParentGroup = true;
+        while (exp instanceof AstUpcast || exp instanceof AstJoin) {
+            if (exp instanceof AstUpcast) {
                 exp = ((AstUpcast) exp).getBase();
-                type = getType(exp);
+                subs.add(getType(exp));
             } else if (exp instanceof AstJoin) {
+                allParentGroup = allParentGroup && Format.ParentGroup.equals(getFormat(((AstJoin) exp).getRight()));
                 exp = ((AstJoin) exp).getLeft();
-            } else {
-                return null;
             }
         }
+        if (exp instanceof AstThis) {
+            Collections.reverse(subs);
+            return new Pair<List<AstClafer>, Boolean>(subs, allParentGroup);
+        }
+        return new Pair<List<AstClafer>, Boolean>(Collections.<AstClafer>emptyList(), allParentGroup);
     }
 
     private AstClafer getType(AstExpression exp) {
         return AnalysisUtil.notNull(exp + " type not analyzed yet", types.get(exp));
+    }
+
+    private Format getFormat(AstClafer exp) {
+        return AnalysisUtil.notNull(exp + " format not analyzed yet", formats.get(exp));
     }
 }

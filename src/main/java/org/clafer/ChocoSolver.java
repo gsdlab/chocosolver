@@ -43,6 +43,7 @@ public class ChocoSolver {
             if (solver.minimize(false)) {
                 System.out.println(printer.printToString());
                 System.out.println(solver.runtimeStatistics());
+                System.out.println(context.getObjective() + " minimal " + solver.getOptimumValue());
             }
         } else {
             ChocoCompiler compiler = ChocoCompiler.compiler(context.getModel(), context.getScope());
