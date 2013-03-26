@@ -15,8 +15,11 @@ import solver.variables.VariableFactory;
 import util.tools.ArrayUtils;
 
 /**
- * 1. optimize union if detect operands are disjoint.
- * 2. remove useless members and set unions
+ * 1. optimize union if detect operands are disjoint. ie. |children| = |union|
+ * 2. same with intchannel
+ * 3. remove useless members and set unions
+ * 4. remove useless parent pointers if already solved
+ * 5. common subexpression elimination
  * 
  * 
  * @author jimmy

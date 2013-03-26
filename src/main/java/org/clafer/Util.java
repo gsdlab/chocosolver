@@ -2,6 +2,7 @@ package org.clafer;
 
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -193,49 +194,49 @@ public class Util {
         return false;
     }
 
-//    public static <T> List<T> cons(T head, List<? extends T> tail) {
-//        List<T> r = new ArrayList<T>(tail.size() + 1);
-//        r.add(head);
-//        r.addAll(tail);
-//        return r;
-//    }
-//
-//    public static <T> List<T> cons(List<? extends T> head, T tail) {
-//        List<T> r = new ArrayList<T>(head.size() + 1);
-//        r.addAll(head);
-//        r.add(tail);
-//        return r;
-//    }
-//
-//    public static <T> T[] cons(T item, T[] list) {
-//        T[] r = Arrays.copyOf(list, list.length + 1);
-//        for (int i = r.length - 1; i > 0; i--) {
-//            r[i] = r[i - 1];
-//        }
-//        r[0] = item;
-//        return r;
-//    }
-//
-//    public static <T> T[] cons(T[] list, T item) {
-//        T[] r = Arrays.copyOf(list, list.length + 1);
-//        r[list.length] = item;
-//        return r;
-//    }
-//
-//    public static int[] cons(int item, int[] list) {
-//        int[] r = Arrays.copyOf(list, list.length + 1);
-//        for (int i = r.length - 1; i > 0; i--) {
-//            r[i] = r[i - 1];
-//        }
-//        r[0] = item;
-//        return r;
-//    }
-//
-//    public static int[] cons(int[] list, int item) {
-//        int[] r = Arrays.copyOf(list, list.length + 1);
-//        r[list.length] = item;
-//        return r;
-//    }
+    public static <T> List<T> cons(T head, List<? extends T> tail) {
+        List<T> r = new ArrayList<T>(tail.size() + 1);
+        r.add(head);
+        r.addAll(tail);
+        return r;
+    }
+
+    public static <T> List<T> cons(List<? extends T> head, T tail) {
+        List<T> r = new ArrayList<T>(head.size() + 1);
+        r.addAll(head);
+        r.add(tail);
+        return r;
+    }
+
+    public static <T> T[] cons(T item, T[] list) {
+        T[] r = Arrays.copyOf(list, list.length + 1);
+        for (int i = r.length - 1; i > 0; i--) {
+            r[i] = r[i - 1];
+        }
+        r[0] = item;
+        return r;
+    }
+
+    public static <T> T[] cons(T[] list, T item) {
+        T[] r = Arrays.copyOf(list, list.length + 1);
+        r[list.length] = item;
+        return r;
+    }
+
+    public static int[] cons(int item, int[] list) {
+        int[] r = Arrays.copyOf(list, list.length + 1);
+        for (int i = r.length - 1; i > 0; i--) {
+            r[i] = r[i - 1];
+        }
+        r[0] = item;
+        return r;
+    }
+
+    public static int[] cons(int[] list, int item) {
+        int[] r = Arrays.copyOf(list, list.length + 1);
+        r[list.length] = item;
+        return r;
+    }
 //
 //    public static <T> List<T> add(List<T> list, T... items) {
 //        list.addAll(Arrays.asList(items));

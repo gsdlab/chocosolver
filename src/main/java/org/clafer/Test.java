@@ -3,8 +3,11 @@ package org.clafer;
 import java.util.ArrayList;
 import java.util.List;
 import solver.Solver;
-import solver.constraints.IntConstraintFactory;
-import solver.explanations.ExplanationFactory;
+import solver.constraints.set.SetConstraintsFactory;
+import solver.search.strategy.IntStrategyFactory;
+import solver.search.strategy.SetStrategyFactory;
+import solver.search.strategy.strategy.StrategiesSequencer;
+import solver.search.strategy.strategy.set.SetSearchStrategy;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
@@ -15,25 +18,27 @@ import solver.variables.VariableFactory;
  * @author jimmy
  */
 public class Test {
-    public static void main(String[] args) {
-        Solver solver = new Solver("my first problem");
-        IntVar v = VariableFactory.enumerated("iv", 0, 3, solver);
-        
-        ExplanationFactory.DBT.plugin(solver, true);
-        
-        solver.post(IntConstraintFactory.arithm(v, "=", VariableFactory.fixed(2, solver)));
-        solver.post(IntConstraintFactory.arithm(v, "=", VariableFactory.fixed(1, solver)));
-        
-        if(solver.findSolution()) {
-            System.out.println(solver);
-        }
-        
-        System.out.println(solver.getExplainer().retrieve(v, 0));
-        System.out.println(solver.getExplainer().retrieve(v, 1));
-        System.out.println(solver.getExplainer().retrieve(v, 2));
-        System.out.println(solver.getExplainer().retrieve(v, 3));
-        System.out.println(solver.getExplainer().flatten(v, 3));
+
+public static void main(String[] args) {
+    Solver solver = new Solver("my first problem");
+    IntVar[] iv = VariableFactory.enumeratedArray("iv", 5, 0, 3, solver);
+    SetVar[] sv = new SetVar[4];
+    for (int i = 0; i < sv.length; i++) {
+        sv[i] = VariableFactory.set("sv" + i, new int[]{0, 1, 2, 3, 4}, solver);
     }
+
+    solver.post(SetConstraintsFactory.int_channel(sv, iv, 0, 0));
+
+    solver.set(new StrategiesSequencer(solver.getEnvironment(),
+            IntStrategyFactory.firstFail_InDomainMin(iv),
+            SetStrategyFactory.setLex(sv)));
+
+    if (solver.findSolution()) {
+        do {
+            System.out.println(solver);
+        } while (solver.nextSolution());
+    }
+}
 //    public static void main(String[] args) {
 //        Solver solver = new Solver("my first problem");
 //
@@ -57,6 +62,8 @@ public class Test {
 //        }
 //        System.out.println(solver.getMeasures());
 //    }
+
+    
 
     private static SetVar[] svs(Solver solver) {
         Variable[] vars = solver.getVars();

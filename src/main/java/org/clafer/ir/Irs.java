@@ -25,6 +25,13 @@ public class Irs {
     public static IrIntChannel intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
         return new IrIntChannel(ints, sets);
     }
+
+    public static IrConstraint sort(IrIntExpr[] array) {
+        if (array.length < 2) {
+            return boolConstraint(True);
+        }
+        return new IrSort(array);
+    }
     /********************
      * 
      * Boolean

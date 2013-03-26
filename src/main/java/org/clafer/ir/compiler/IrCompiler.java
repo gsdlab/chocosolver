@@ -1,16 +1,20 @@
 package org.clafer.ir.compiler;
 
+import java.util.List;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.ArrayList;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetCompare;
+import org.clafer.ir.IrSort;
 import org.clafer.ir.IrUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrConstraint;
 import org.clafer.Check;
 import org.clafer.constraint.ConstraintUtil;
+import org.clafer.constraint.Increasing;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolConstraint;
 import org.clafer.ir.IrIntChannel;
@@ -80,12 +84,12 @@ public class IrCompiler {
         this.solver = Check.notNull(solver);
     }
 
-    public static void compile(IrModule in, Solver out) {
+    public static IrSolutionMap compile(IrModule in, Solver out) {
         IrCompiler compiler = new IrCompiler(out);
-        compiler.compile(in);
+        return compiler.compile(in);
     }
 
-    private void compile(IrModule module) {
+    private IrSolutionMap compile(IrModule module) {
         for (LazyCompiler<?, ?> compiler : compilers) {
             compiler.unlock();
         }
@@ -95,6 +99,16 @@ public class IrCompiler {
         for (LazyCompiler<?, ?> compiler : compilers) {
             compiler.lock();
         }
+
+        List<SetVar> setVars = new ArrayList<SetVar>();
+        List<IntVar> intVars = new ArrayList<IntVar>();
+
+        setVars.addAll(setVar.values());
+        intVars.addAll(intVar.values());
+        intVars.addAll(boolVar.values());
+        intVars.addAll(setCardVar.values());
+
+        return new IrSolutionMap(intVars, setVars);
     }
 
     private BoolVar numBoolVar(String name) {
@@ -188,6 +202,20 @@ public class IrCompiler {
                 $sets[i] = sets[i].accept(setExprCompiler, a);
             }
             return SetConstraintsFactory.int_channel($sets, $ints, 0, 0);
+        }
+
+        @Override
+        public Constraint visit(IrSort ir, Void a) {
+            IrIntExpr[] array = ir.getArray();
+
+            IntVar[] $array = new IntVar[array.length];
+            for (int i = 0; i < $array.length; i++) {
+                $array[i] = array[i].accept(intExprCompiler, a);
+            }
+            for (int i = 1; i < $array.length; i++) {
+                solver.post(_arithm($array[i - 1], "<=", $array[i]));
+            }
+            return _sort($array);
         }
     };
     private final IrBoolExprVisitor<Void, BoolVar> boolExprCompiler = new IrBoolExprVisitor<Void, BoolVar>() {
@@ -417,6 +445,9 @@ public class IrCompiler {
     }
 
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
+        if (var2.instantiated()) {
+            return IntConstraintFactory.arithm(var1, op, var2.getValue());
+        }
         return IntConstraintFactory.arithm(var1, op, var2);
     }
 
@@ -430,5 +461,9 @@ public class IrCompiler {
 
     private static Constraint _union(SetVar[] operands, SetVar union) {
         return SetConstraintsFactory.union(operands, union);
+    }
+
+    private Constraint _sort(IntVar[] vars) {
+        return new Increasing(vars, solver);
     }
 }

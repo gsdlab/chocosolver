@@ -1,5 +1,11 @@
 package org.clafer.ast.compiler;
 
+import java.util.Arrays;
+import solver.search.strategy.IntStrategyFactory;
+import solver.search.strategy.SetStrategyFactory;
+import solver.search.strategy.strategy.StrategiesSequencer;
+import org.clafer.ir.compiler.IrSolutionMap;
+import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.Util;
 import org.clafer.ir.IrBoolVar;
@@ -38,17 +44,20 @@ public class AstCompiler {
 
     public static void main(String[] args) {
         AstModel model = Ast.newModel();
-        model.addTopClafer("Jimmy").withCard(1, 2).addChild("Degree").withCard(1, 2);
+        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(2, 2);
 
         IrModule out = new IrModule();
-        AstCompiler.compile(model, new Scope(100), out);
+        AstCompiler.compile(model, new Scope(4), out);
 
         Solver solver = new Solver();
-        IrCompiler.compile(out, solver);
+        IrSolutionMap svmap = IrCompiler.compile(out, solver);
+        System.out.println(solver);
 
-        if (solver.findSolution()) {
-            System.out.println(solver);
-        }
+        solver.set(new StrategiesSequencer(solver.getEnvironment(),
+                IntStrategyFactory.firstFail_InDomainMin(svmap.getIntVars()),
+                SetStrategyFactory.setLex(svmap.getSetVars())));
+
+        System.out.println(solver.findAllSolutions());
     }
     private final AstModel model;
     private final Analysis analysis;
@@ -72,25 +81,31 @@ public class AstCompiler {
         clafers.addAll(abstractClafers);
         clafers.addAll(concreteClafers);
         for (AstClafer clafer : clafers) {
-//            if (Format.LowGroup.equals(getFormat(clafer))) {
-            getCompiler(clafer).initLowGroup(clafer);
-//            }
+            if (Format.LowGroup.equals(getFormat(clafer))) {
+                getCompiler(clafer).initLowGroup(clafer);
+            }
         }
-//        for (AstClafer clafer : clafers) {
-//            if (Format.ParentGroup.equals(getFormat(clafer))) {
-//                getCompiler(clafer).initParentGroup(clafer);
-//            }
-//        }
         for (AstClafer clafer : clafers) {
-//            if (Format.LowGroup.equals(getFormat(clafer))) {
-            getCompiler(clafer).constrainLowGroup(clafer);
-//            }
+            if (Format.ParentGroup.equals(getFormat(clafer))) {
+                getCompiler(clafer).initParentGroup(clafer);
+            }
         }
-//        for (AstClafer clafer : clafers) {
-//            if (Format.ParentGroup.equals(getFormat(clafer))) {
-//                getCompiler(clafer).constrainParentGroup(clafer);
-//            }
-//        }
+        for (AstClafer clafer : clafers) {
+            getCompiler(clafer).init(clafer);
+        }
+        for (AstClafer clafer : clafers) {
+            if (Format.LowGroup.equals(getFormat(clafer))) {
+                getCompiler(clafer).constrainLowGroup(clafer);
+            }
+        }
+        for (AstClafer clafer : clafers) {
+            if (Format.ParentGroup.equals(getFormat(clafer))) {
+                getCompiler(clafer).constrainParentGroup(clafer);
+            }
+        }
+        for (AstClafer clafer : clafers) {
+            getCompiler(clafer).constrain(clafer);
+        }
     }
 
     private ClaferCompiler getCompiler(AstClafer clafer) {
@@ -100,6 +115,28 @@ public class AstCompiler {
         throw new IllegalArgumentException();
     }
     private final ClaferCompiler<AstConcreteClafer> concreteClaferCompiler = new ClaferCompiler<AstConcreteClafer>() {
+
+        @Override
+        void init(AstConcreteClafer clafer) {
+            if (clafer.hasParent()) {
+                parentPointers.put(clafer, buildParentPointers(clafer));
+            }
+        }
+
+        @Override
+        void constrain(AstConcreteClafer clafer) {
+            if (clafer.hasParent()) {
+                IrIntVar[] parents = parentPointers.get(clafer);
+                Card globalCard = getGlobalCard(clafer);
+                if (globalCard.isExact()) {
+                    // No unused
+                    module.addConstraint(intChannel(parents, childrenSet.get(clafer)));
+                } else {
+                    IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
+                    module.addConstraint(intChannel(parents, Util.cons(childrenSet.get(clafer), unused)));
+                }
+            }
+        }
 
         @Override
         void initLowGroup(AstConcreteClafer clafer) {
@@ -139,16 +176,65 @@ public class AstCompiler {
 
             IrBoolVar[] members = membership.get(clafer);
             module.addConstraint(boolChannel(members, claferSet));
+
+            if (clafer.hasParent() && getScope(clafer.getParent()) > 1) {
+                IrIntVar[] parents = parentPointers.get(clafer);
+                module.addConstraint(sort(parents));
+            }
         }
 
         @Override
         void initParentGroup(AstConcreteClafer clafer) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            PartialSolution partialParentSolution = getPartialParentSolution(clafer);
+
+            IrSetVar[] children = new IrSetVar[partialParentSolution.size()];
+            assert clafer.getCard().getLow() == clafer.getCard().getHigh();
+            int lowCard = clafer.getCard().getLow();
+            for (int i = 0; i < children.length; i++) {
+                if (partialParentSolution.hasClafer(i)) {
+                    children[i] = constant(Util.range(i * lowCard, i * lowCard + lowCard));
+                } else {
+                    children[i] = set(clafer.getName() + "#" + i, Util.range(i * lowCard, i * lowCard + lowCard));
+                }
+            }
+
+            childrenSet.put(clafer, children);
+            set.put(clafer, union(children));
+
+            IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+            if (!clafer.hasParent()) {
+                Arrays.fill(members, 0, lowCard, True);
+                Arrays.fill(members, lowCard, members.length, False);
+            } else {
+                IrBoolVar[] parentMembership = membership.get(clafer.getParent());
+                if (lowCard == 1) {
+                    members = parentMembership;
+                } else {
+                    for (int i = 0; i < parentMembership.length; i++) {
+                        for (int j = 0; j < lowCard; j++) {
+                            members[i * lowCard + j] = parentMembership[i];
+                        }
+                    }
+                }
+            }
+            membership.put(clafer, members);
         }
 
         @Override
         void constrainParentGroup(AstConcreteClafer clafer) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            PartialSolution partialParentSolution = getPartialParentSolution(clafer);
+
+            IrSetVar[] children = childrenSet.get(clafer);
+            assert clafer.getCard().getLow() == clafer.getCard().getHigh();
+            int lowCard = clafer.getCard().getLow();
+            for (int i = 0; i < children.length; i++) {
+                if (!partialParentSolution.hasClafer(i)) {
+                    module.addConstraint(implies(membership.get(clafer.getParent())[i],
+                            equal(children[i], constant(Util.range(i * lowCard, i * lowCard + lowCard)))));
+                    module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
+                            equal(children[i], EmptySet)));
+                }
+            }
         }
 
         IrSetVar[] compile(AstConcreteClafer a) {
@@ -198,6 +284,7 @@ public class AstCompiler {
     private final Map<AstClafer, IrSetExpr> set = new HashMap<AstClafer, IrSetExpr>();
     private final Map<AstClafer, IrSetVar[]> childrenSet = new HashMap<AstClafer, IrSetVar[]>();
     private final Map<AstClafer, IrBoolVar[]> membership = new HashMap<AstClafer, IrBoolVar[]>();
+    private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
 
     /*************************
      * Optimization functions.
@@ -227,6 +314,18 @@ public class AstCompiler {
             high += card.getHigh();
         }
         return skip;
+    }
+
+    private IrIntVar[] buildParentPointers(AstConcreteClafer clafer) {
+        PartialSolution solution = getPartialSolution(clafer);
+        IrIntVar[] pointers = new IrIntVar[solution.size()];
+        for (int i = 0; i < pointers.length; i++) {
+            pointers[i] = enumInt(clafer.getName() + "@Parent#" + i,
+                    solution.hasClafer(i)
+                    ? solution.getPossibleParents(i)
+                    : Util.cons(solution.getPossibleParents(i), getScope(clafer.getParent())));
+        }
+        return pointers;
     }
 
     /*************************
@@ -302,6 +401,12 @@ public class AstCompiler {
         abstract void initParentGroup(T clafer);
 
         /**
+         * Create the variables.
+         */
+        void init(T clafer) {
+        }
+
+        /**
          * Constrain the variables.
          */
         abstract void constrainLowGroup(T clafer);
@@ -310,5 +415,11 @@ public class AstCompiler {
          * Constrain the variables.
          */
         abstract void constrainParentGroup(T clafer);
+
+        /**
+         * Constrain the variables.
+         */
+        void constrain(T clafer) {
+        }
     }
 }

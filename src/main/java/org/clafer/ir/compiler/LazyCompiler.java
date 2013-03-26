@@ -1,5 +1,6 @@
 package org.clafer.ir.compiler;
 
+import java.util.Collection;
 import org.clafer.generator.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,5 +58,9 @@ abstract class LazyCompiler<A, C> {
 
     void lock() {
         lock = true;
+    }
+
+    Collection<C> values() {
+        return cache.values();
     }
 }
