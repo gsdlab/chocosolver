@@ -56,14 +56,17 @@ public class Analysis {
         Map<AstExpression, AstClafer> types = TypeAnalysis.analyze(model);
 
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
-        Map<AstClafer, Card> globalCards = GlobalCardAnalysis.analyze(model, scope, depths);
+
+        AnalysisUtil.descendingDepths(model.getAbstractClafers(), depths);
+
+        Map<AstClafer, Card> globalCards = GlobalCardAnalysis.analyze(model, scope);
         Scope optimizedScope = ScopeAnalysis.analyze(model, scope, globalCards);
 
         CardAnalysis.analyze(model, globalCards);
         Map<AstClafer, Format> formats = FormatAnalysis.analyze(model, optimizedScope);
 
         Map<AstAbstractClafer, Offsets> offsets = AbstractOffsetAnalysis.analyze(model, globalCards);
-        Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, depths, offsets);
+        Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, offsets);
 
         Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, Integer>> pair = PartialIntAnalysis.analyze(model, offsets, formats, types, optimizedScope);
 
@@ -81,8 +84,8 @@ public class Analysis {
         return AnalysisUtil.notNull("Cannot find global card analysis for " + clafer, globalCards.get(clafer));
     }
 
-    public int getScope(AstClafer clafer) {
-        return scope.getScope(clafer);
+    public Scope getScope() {
+        return scope;
     }
 
     public Format getFormat(AstClafer clafer) {

@@ -1,6 +1,6 @@
 package org.clafer.analysis;
 
-import gnu.trove.TIntArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,14 +23,13 @@ public class PartialSolutionAnalysis {
             AstModel model,
             Map<AstClafer, Card> globalCards,
             Map<AstClafer, Format> formats,
-            Map<AstAbstractClafer, Integer> depths,
             Map<AstAbstractClafer, Offsets> offsets) {
         Map<AstClafer, PartialSolution> partialSolutions = new HashMap<AstClafer, PartialSolution>();
 
         for (AstConcreteClafer topClafer : model.getTopClafers()) {
             analyze(topClafer, globalCards, formats, partialSolutions);
         }
-        for (AstAbstractClafer abstractClafer : AnalysisUtil.descendingDepths(model.getAbstractClafers(), depths)) {
+        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             analyze(abstractClafer, globalCards, formats, offsets, partialSolutions);
         }
 
@@ -121,7 +120,7 @@ public class PartialSolutionAnalysis {
     private static int[][] toArray(TIntArrayList[] list) {
         int[][] array = new int[list.length][];
         for (int i = 0; i < array.length; i++) {
-            array[i] = list[i].toNativeArray();
+            array[i] = list[i].toArray();
         }
         return array;
     }

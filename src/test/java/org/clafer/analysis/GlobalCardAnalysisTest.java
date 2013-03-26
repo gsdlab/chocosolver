@@ -40,7 +40,7 @@ public class GlobalCardAnalysisTest {
 
         Scope scope = new Scope(10);
 
-        Map<AstClafer, Card> analysis = GlobalCardAnalysis.analyze(model, scope, TypeHierarchyDepthAnalysis.analyze(model));
+        Map<AstClafer, Card> analysis = GlobalCardAnalysis.analyze(model, scope);
         
         System.out.println(analysis);
         assertEquals(new Card(7, 14), analysis.get(object));

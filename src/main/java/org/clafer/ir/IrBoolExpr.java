@@ -4,6 +4,7 @@ package org.clafer.ir;
  *
  * @author jimmy
  */
-public class IrBoolExpr {
-    
+public interface IrBoolExpr {
+
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a);
 }

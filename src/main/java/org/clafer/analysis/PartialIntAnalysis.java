@@ -1,6 +1,6 @@
 package org.clafer.analysis;
 
-import gnu.trove.TIntHashSet;
+import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

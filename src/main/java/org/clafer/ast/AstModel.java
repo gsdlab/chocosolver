@@ -1,7 +1,6 @@
 package org.clafer.ast;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,7 +18,7 @@ public class AstModel {
     }
 
     public List<AstAbstractClafer> getAbstractClafers() {
-        return Collections.unmodifiableList(abstractClafers);
+        return abstractClafers;
     }
 
     public AstAbstractClafer addAbstractClafer(String name) {

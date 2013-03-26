@@ -1,11 +1,12 @@
 package org.clafer.collection;
 
-import gnu.trove.TIntArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import java.util.Collections;
 import java.util.PriorityQueue;
 import java.util.Random;
 import org.clafer.Util;
 import org.junit.Test;
+import solver.constraints.IntConstraintFactory;
 import static org.junit.Assert.*;
 
 /**
@@ -28,7 +29,7 @@ public class FixedIntQueueTest {
         while (a.size() < top && !q.isEmpty()) {
             a.add(q.poll());
         }
-        return a.toNativeArray();
+        return a.toArray();
     }
 
     @Test

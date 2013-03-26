@@ -3,7 +3,6 @@ package org.clafer.analysis;
 import java.util.HashMap;
 import java.util.Map;
 import org.clafer.Scope;
-import org.clafer.Util;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -16,14 +15,14 @@ import org.clafer.ast.Card;
  */
 public class GlobalCardAnalysis {
 
-    public static Map<AstClafer, Card> analyze(AstModel model, Scope scope, Map<AstAbstractClafer, Integer> depths) {
+    public static Map<AstClafer, Card> analyze(AstModel model, Scope scope) {
         Map<AstClafer, Card> globalCards = new HashMap<AstClafer, Card>();
         for (AstConcreteClafer topClafer : model.getTopClafers()) {
             analyze(topClafer, new Card(1, 1), scope, globalCards);
         }
         // Abstract clafers that are the super clafer of other abstract clafers are
         // analyzed last. Higher depth clafers go first.
-        for (AstAbstractClafer abstractClafer : AnalysisUtil.descendingDepths(model.getAbstractClafers(), depths)) {
+        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             analyze(abstractClafer, scope, globalCards);
         }
         return globalCards;

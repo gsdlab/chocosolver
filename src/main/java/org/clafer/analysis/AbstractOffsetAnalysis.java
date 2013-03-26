@@ -27,7 +27,9 @@ public class AbstractOffsetAnalysis {
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             Map<AstClafer, Integer> offsets = new HashMap<AstClafer, Integer>();
             int offset = 0;
-            List<AstClafer> greedy = AnalysisUtil.descendingGlobalCardRatio(abstractClafer.getSubs(), globalCards);
+            List<AstClafer> subs = new ArrayList<AstClafer>(abstractClafer.getSubs());
+            AnalysisUtil.descendingGlobalCardRatio(subs, globalCards);
+            List<AstClafer> greedy = subs;
             for (AstClafer sub : greedy) {
                 offsets.put(sub, offset);
                 offset += globalCards.get(sub).getHigh();

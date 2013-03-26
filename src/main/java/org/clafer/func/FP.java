@@ -1,7 +1,5 @@
 package org.clafer.func;
 
-import choco.kernel.model.variables.integer.IntegerVariable;
-import choco.kernel.model.variables.set.SetVariable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -12,15 +10,6 @@ import java.util.List;
  * @author jimmy
  */
 public class FP {
-
-    public static final Func<SetVariable, IntegerVariable> getCard =
-            new Func<SetVariable, IntegerVariable>() {
-
-                @Override
-                public IntegerVariable apply(SetVariable param) {
-                    return param.getCard();
-                }
-            };
 
     public static <T> Func<T[], Integer> length() {
         return new Func<T[], Integer>() {

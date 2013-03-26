@@ -2,6 +2,7 @@ package org.clafer.analysis;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,10 +43,24 @@ public class AnalysisUtil {
     public static List<AstClafer> getClafers(AstModel model) {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
-            getNestedClafers(abstractClafer, clafers);
+            clafers.add(abstractClafer);
+            getNestedChildClafers(abstractClafer, clafers);
         }
         for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            getNestedClafers(topClafer, clafers);
+            clafers.add(topClafer);
+            getNestedChildClafers(topClafer, clafers);
+        }
+        return clafers;
+    }
+
+    public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
+        List<AstConcreteClafer> clafers = new ArrayList<AstConcreteClafer>();
+        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
+            getNestedChildClafers(abstractClafer, clafers);
+        }
+        for (AstConcreteClafer topClafer : model.getTopClafers()) {
+            clafers.add(topClafer);
+            getNestedChildClafers(topClafer, clafers);
         }
         return clafers;
     }
@@ -62,14 +77,15 @@ public class AnalysisUtil {
 
     public static List<AstClafer> getNestedClafers(AstClafer clafer) {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
-        getNestedClafers(clafer, clafers);
+        clafers.add(clafer);
+        getNestedChildClafers(clafer, clafers);
         return clafers;
     }
 
-    private static void getNestedClafers(AstClafer clafer, List<AstClafer> clafers) {
-        clafers.add(clafer);
-        for (AstClafer child : clafer.getChildren()) {
-            getNestedClafers(child, clafers);
+    private static void getNestedChildClafers(AstClafer clafer, List<? super AstConcreteClafer> clafers) {
+        for (AstConcreteClafer child : clafer.getChildren()) {
+            clafers.add(child);
+            getNestedChildClafers(child, clafers);
         }
     }
 
@@ -137,16 +153,16 @@ public class AnalysisUtil {
         return unionSubs.equals(tSubs);
     }
 
-    public static List<AstAbstractClafer> descendingDepths(
+    public static void descendingDepths(
             List<AstAbstractClafer> abstractClafers,
             Map<AstAbstractClafer, Integer> depths) {
-        return Util.sorted(abstractClafers, new DepthComparator(depths));
+        Collections.sort(abstractClafers, new DepthComparator(depths));
     }
 
-    public static List<AstClafer> descendingGlobalCardRatio(
+    public static void descendingGlobalCardRatio(
             List<AstClafer> clafers,
             Map<AstClafer, Card> globalCards) {
-        return Util.sorted(clafers, new GlobalCardRatioComparator(globalCards));
+        Collections.sort(clafers, new GlobalCardRatioComparator(globalCards));
     }
 
     private static class DepthComparator implements Comparator<AstAbstractClafer> {
