@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.clafer.ir.IrDomain.IrBoundDomain;
@@ -32,6 +33,13 @@ public class Irs {
         }
         return new IrSort(array);
     }
+
+    public static IrConstraint allDifferent(IrIntExpr[] ints) {
+        if (ints.length < 2) {
+            return boolConstraint(True);
+        }
+        return allDifferent(ints);
+    }
     /********************
      * 
      * Boolean
@@ -48,26 +56,41 @@ public class Irs {
         return new IrBoolVar(name);
     }
 
-    public static IrNot not(IrBoolExpr proposition) {
+    public static IrBoolExpr not(IrBoolExpr proposition) {
+        if (IrUtil.isTrue(proposition)) {
+            return False;
+        }
+        if (IrUtil.isFalse(proposition)) {
+            return True;
+        }
         return new IrNot(proposition);
     }
 
-    public static IrBoolExpr and(List<IrBoolExpr> operands) {
-        return and(operands.toArray(new IrBoolExpr[operands.size()]));
+    public static IrBoolExpr and(IrBoolExpr... operands) {
+        return and(Arrays.asList(operands));
     }
 
-    public static IrBoolExpr and(IrBoolExpr... operands) {
-        switch (operands.length) {
+    public static IrBoolExpr and(List<IrBoolExpr> operands) {
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>();
+        for (IrBoolExpr operand : operands) {
+            if (!IrUtil.isTrue(operand)) {
+                filter.add(operand);
+            }
+        }
+        switch (filter.size()) {
             case 0:
-                throw new IllegalArgumentException();
+                return True;
             case 1:
-                return operands[0];
+                return filter.get(0);
             default:
-                return new IrAnd(operands);
+                return new IrAnd(filter.toArray(new IrBoolExpr[filter.size()]));
         }
     }
 
-    public static IrImplies implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
+    public static IrBoolExpr implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
+        if (IrUtil.isTrue(antecedent)) {
+            return consequent;
+        }
         return new IrImplies(antecedent, consequent);
     }
 

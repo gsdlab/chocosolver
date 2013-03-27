@@ -1,10 +1,10 @@
 package org.clafer.ir.compiler;
 
-import java.util.List;
+import org.clafer.collection.CacheMap;
+import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.ArrayList;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetCompare;
 import org.clafer.ir.IrSort;
@@ -90,49 +90,37 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        for (LazyCompiler<?, ?> compiler : compilers) {
-            compiler.unlock();
-        }
         for (IrConstraint constraint : module.getConstraints()) {
             solver.post(constraint.accept(constraintCompiler, null));
         }
-        for (LazyCompiler<?, ?> compiler : compilers) {
-            compiler.lock();
-        }
-
-        List<SetVar> setVars = new ArrayList<SetVar>();
-        List<IntVar> intVars = new ArrayList<IntVar>();
-
-        setVars.addAll(setVar.values());
-        intVars.addAll(intVar.values());
-        intVars.addAll(boolVar.values());
-        intVars.addAll(setCardVar.values());
-
-        return new IrSolutionMap(intVars, setVars);
+        return new IrSolutionMap(boolVar, intVar, setVar);
     }
 
     private BoolVar numBoolVar(String name) {
         return VariableFactory.bool(name + "#" + varNum++, solver);
     }
 
+    private IntVar numIntVar(String name, int[] dom) {
+        return VariableFactory.enumerated(name, dom, solver);
+    }
+
     private SetVar numSetVar(String name, int[] env) {
         return VariableFactory.set(name, env, solver);
     }
-    private final LazyCompiler<IrBoolVar, BoolVar> boolVar = new LazyCompiler<IrBoolVar, BoolVar>() {
+    private final CacheMap<IrBoolVar, BoolVar> boolVar = new CacheMap<IrBoolVar, BoolVar>() {
 
         @Override
-        BoolVar compile(IrBoolVar ir) {
-            Boolean constant = ir.getConstant();
-            if (constant != null) {
-                return (BoolVar) VariableFactory.fixed(constant ? 1 : 0, solver);
+        protected BoolVar cache(IrBoolVar ir) {
+            if (ir.isConstant()) {
+                return (BoolVar) VariableFactory.fixed(ir.isTrue() ? 1 : 0, solver);
             }
             return VariableFactory.bool(ir.getName(), solver);
         }
     };
-    private final LazyCompiler<IrIntVar, IntVar> intVar = new LazyCompiler<IrIntVar, IntVar>() {
+    private final CacheMap<IrIntVar, IntVar> intVar = new CacheMap<IrIntVar, IntVar>() {
 
         @Override
-        IntVar compile(IrIntVar ir) {
+        protected IntVar cache(IrIntVar ir) {
             IrDomain domain = ir.getDomain();
             Integer constant = domain.getConstant();
             if (constant != null) {
@@ -149,25 +137,24 @@ public class IrCompiler {
             }
         }
     };
-    private final LazyCompiler<IrSetVar, SetVar> setVar = new LazyCompiler<IrSetVar, SetVar>() {
+    private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
 
         @Override
-        SetVar compile(IrSetVar a) {
+        protected SetVar cache(IrSetVar a) {
             IrDomain env = a.getEnv();
             IrDomain ker = a.getKer();
             return VariableFactory.set(a.getName(), env.getValues(), ker.getValues(), solver);
         }
     };
-    private final LazyCompiler<SetVar, IntVar> setCardVar = new LazyCompiler<SetVar, IntVar>() {
+    private final CacheMap<SetVar, IntVar> setCardVar = new CacheMap<SetVar, IntVar>() {
 
         @Override
-        IntVar compile(SetVar a) {
+        protected IntVar cache(SetVar a) {
             IntVar card = VariableFactory.enumerated("|" + a.getName() + "|", a.getKernelSize(), a.getEnvelopeSize(), solver);
             solver.post(SetConstraintsFactory.cardinality(a, card));
             return card;
         }
     };
-    private final LazyCompiler<?, ?>[] compilers = new LazyCompiler<?, ?>[]{boolVar, intVar, setVar, setCardVar};
     private final IrConstraintVisitor<Void, Constraint> constraintCompiler = new IrConstraintVisitor<Void, Constraint>() {
 
         @Override
@@ -212,10 +199,18 @@ public class IrCompiler {
             for (int i = 0; i < $array.length; i++) {
                 $array[i] = array[i].accept(intExprCompiler, a);
             }
-            for (int i = 1; i < $array.length; i++) {
-                solver.post(_arithm($array[i - 1], "<=", $array[i]));
-            }
             return _sort($array);
+        }
+
+        @Override
+        public Constraint visit(IrAllDifferent ir, Void a) {
+            IrIntExpr[] operands = ir.getOperands();
+
+            IntVar[] $operands = new IntVar[operands.length];
+            for (int i = 0; i < $operands.length; i++) {
+                $operands[i] = operands[i].accept(intExprCompiler, a);
+            }
+            return _all_different($operands);
         }
     };
     private final IrBoolExprVisitor<Void, BoolVar> boolExprCompiler = new IrBoolExprVisitor<Void, BoolVar>() {
@@ -324,9 +319,8 @@ public class IrCompiler {
 
         @Override
         public ALogicTree visit(IrBoolVar ir, Void a) {
-            Boolean constant = ir.getConstant();
-            if (constant != null) {
-                return constant ? Singleton.TRUE : Singleton.FALSE;
+            if (ir.isConstant()) {
+                return ir.isTrue() ? Singleton.TRUE : Singleton.FALSE;
             }
             return Literal.pos(boolVar.get(ir));
         }
@@ -457,6 +451,10 @@ public class IrCompiler {
 
     private static Constraint _all_different(SetVar... vars) {
         return SetConstraintsFactory.all_different(vars);
+    }
+
+    private static Constraint _all_different(IntVar... vars) {
+        return IntConstraintFactory.alldifferent(vars, "AC");
     }
 
     private static Constraint _union(SetVar[] operands, SetVar union) {

@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import org.clafer.collection.ReadWriteHashMap;
 import java.util.Arrays;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
@@ -10,9 +11,7 @@ import org.clafer.ir.IrSetExpr;
 import org.clafer.Util;
 import org.clafer.ir.IrBoolVar;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.clafer.Check;
 import org.clafer.Scope;
 import org.clafer.analysis.Analysis;
@@ -69,12 +68,12 @@ public class AstCompiler {
         this.module = Check.notNull(module);
     }
 
-    public static void compile(AstModel in, Scope scope, IrModule out) {
+    public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out) {
         AstCompiler compiler = new AstCompiler(in, scope, out);
-        compiler.compile();
+        return compiler.compile();
     }
 
-    private void compile() {
+    private AstSolutionMap compile() {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = AnalysisUtil.getConcreteClafers(model);
         List<AstClafer> clafers = new ArrayList<AstClafer>(abstractClafers.size() + concreteClafers.size());
@@ -106,6 +105,7 @@ public class AstCompiler {
         for (AstClafer clafer : clafers) {
             getCompiler(clafer).constrain(clafer);
         }
+        return new AstSolutionMap(model, childrenSet, refPointers, analysis);
     }
 
     private ClaferCompiler getCompiler(AstClafer clafer) {
@@ -121,6 +121,9 @@ public class AstCompiler {
             if (clafer.hasParent()) {
                 parentPointers.put(clafer, buildParentPointers(clafer));
             }
+            if (clafer.hasRef()) {
+                refPointers.put(clafer.getRef(), buildRefPointers(clafer.getRef()));
+            }
         }
 
         @Override
@@ -134,6 +137,42 @@ public class AstCompiler {
                 } else {
                     IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
                     module.addConstraint(intChannel(parents, Util.cons(childrenSet.get(clafer), unused)));
+                }
+            }
+            if (clafer.hasRef()) {
+                AstRef ref = clafer.getRef();
+                IrIntVar[] refs = refPointers.get(ref);
+                if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
+                    if (!clafer.hasParent()) {
+                        if (clafer.getCard().isExact()) {
+                            assert clafer.getCard().getLow() == refs.length;
+                            module.addConstraint(allDifferent(refs));
+                        } else {
+                            IrBoolVar[] members = membership.get(clafer);
+                            for (int i = 0; i < refs.length; i++) {
+                                for (int j = i + 1; j < refs.length; j++) {
+                                    module.addConstraint(
+                                            implies(and(members[i], members[j]), notEqual(refs[i], refs[j])));
+                                }
+                            }
+                        }
+                    } else {
+                        IrIntVar[] parents = parentPointers.get(clafer);
+                        int unused = getScope(clafer.getParent());
+                        for (int i = 0; i < refs.length; i++) {
+                            for (int j = i + 1; j < refs.length; j++) {
+                                module.addConstraint(
+                                        implies(and(notEqual(parents[i], unused), equal(parents[i], parents[j])),
+                                        notEqual(refs[i], refs[j])));
+                            }
+                        }
+                    }
+                } else {
+                    IrBoolVar[] members = membership.get(clafer);
+                    assert refs.length == members.length;
+                    for (int i = 0; i < members.length; i++) {
+                        module.addConstraint(implies(not(members[i]), equal(refs[i], 0)));
+                    }
                 }
             }
         }
@@ -281,10 +320,11 @@ public class AstCompiler {
             }
         }
     };
-    private final Map<AstClafer, IrSetExpr> set = new HashMap<AstClafer, IrSetExpr>();
-    private final Map<AstClafer, IrSetVar[]> childrenSet = new HashMap<AstClafer, IrSetVar[]>();
-    private final Map<AstClafer, IrBoolVar[]> membership = new HashMap<AstClafer, IrBoolVar[]>();
-    private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
+    private final ReadWriteHashMap<AstClafer, IrSetExpr> set = new ReadWriteHashMap<AstClafer, IrSetExpr>();
+    private final ReadWriteHashMap<AstClafer, IrSetVar[]> childrenSet = new ReadWriteHashMap<AstClafer, IrSetVar[]>();
+    private final ReadWriteHashMap<AstClafer, IrBoolVar[]> membership = new ReadWriteHashMap<AstClafer, IrBoolVar[]>();
+    private final ReadWriteHashMap<AstConcreteClafer, IrIntVar[]> parentPointers = new ReadWriteHashMap<AstConcreteClafer, IrIntVar[]>();
+    private final ReadWriteHashMap<AstRef, IrIntVar[]> refPointers = new ReadWriteHashMap<AstRef, IrIntVar[]>();
 
     /*************************
      * Optimization functions.
@@ -326,6 +366,28 @@ public class AstCompiler {
                     : Util.cons(solution.getPossibleParents(i), getScope(clafer.getParent())));
         }
         return pointers;
+    }
+
+    private IrIntVar[] buildRefPointers(AstRef ref) {
+        AstClafer src = ref.getSourceType();
+        AstClafer tar = ref.getTargetType();
+
+        int[] partialInts = getPartialInts(ref);
+        IrIntVar[] ivs = new IrIntVar[getScope(src)];
+        for (int i = 0; i < ivs.length; i++) {
+            Integer instantiate = analysis.getPartialRefInts(ref, i);
+            if (instantiate == null) {
+                if (partialInts == null) {
+                    ivs[i] = boundInt(src.getName() + "@Ref", getScopeLow(tar), getScopeHigh(tar));
+                } else {
+                    ivs[i] = enumInt(src.getName() + "@Ref", partialInts);
+                }
+            } else {
+                ivs[i] = enumInt(src.getName() + "@Ref" + i, new int[]{0, instantiate});
+            }
+        }
+
+        return ivs;
     }
 
     /*************************

@@ -22,7 +22,7 @@ public class IrModule {
             for (IrBoolExpr operand : and.getOperands()) {
                 addConstraint(operand);
             }
-        } else if (!Irs.True.equals(expr)) {
+        } else if (!IrUtil.isTrue(expr)) {
             constraints.add(Irs.boolConstraint(Check.notNull(expr)));
         }
     }

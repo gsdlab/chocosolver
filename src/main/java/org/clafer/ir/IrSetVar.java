@@ -13,6 +13,7 @@ public class IrSetVar implements IrSetExpr {
 
     IrSetVar(String name, IrDomain env, IrDomain ker) {
         this.name = Check.notNull(name);
+        // TODO: ker subseteq env
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
     }
@@ -27,6 +28,14 @@ public class IrSetVar implements IrSetExpr {
 
     public IrDomain getKer() {
         return ker;
+    }
+
+    public boolean isConstant() {
+        return env.size() == ker.size();
+    }
+
+    public int[] getValue() {
+        return env.getValues();
     }
 
     @Override

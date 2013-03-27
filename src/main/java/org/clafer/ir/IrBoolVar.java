@@ -24,8 +24,16 @@ public class IrBoolVar implements IrBoolExpr {
         return name;
     }
 
-    public Boolean getConstant() {
-        return value;
+    public boolean isConstant() {
+        return value != null;
+    }
+    
+    public boolean isTrue() {
+        return isConstant() && value.booleanValue();
+    }
+    
+    public boolean isFalse() {
+        return isConstant() && !value.booleanValue();
     }
 
     @Override
