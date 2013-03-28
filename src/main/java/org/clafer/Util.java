@@ -80,6 +80,7 @@ public class Util {
 ////        }
 ////        return diff.toNativeArray();
 ////    }
+
     /**
      * @return - The position of all the trues
      */
@@ -105,7 +106,7 @@ public class Util {
                 vals[count++] = i;
             }
         }
-        assert count == bs.length;
+        assert count == vals.length;
         return vals;
     }
 
@@ -118,18 +119,22 @@ public class Util {
         }
     }
 
-//    public static <T> void reverse(T[] a) {
-//        reverse(a, a.length);
-//    }
-//
-//    public static <T> void reverse(T[] a, int to) {
-//        for (int j = 0; j < to / 2; j++) {
-//            T temp = a[j];
-//            a[j] = a[to - j - 1];
-//            a[to - j - 1] = temp;
-//        }
-//    }
-//
+    public static void reverse(int[] a) {
+        reverse(a, a.length);
+    }
+
+    public static <T> void reverse(T[] a, int to) {
+        for (int j = 0; j < to / 2; j++) {
+            T temp = a[j];
+            a[j] = a[to - j - 1];
+            a[to - j - 1] = temp;
+        }
+    }
+
+    public static <T> void reverse(T[] a) {
+        reverse(a, a.length);
+    }
+
     public static <T> List<T> sorted(List<T> list, Comparator<? super T> c) {
         List<T> sorted = new ArrayList<T>(list);
         Collections.sort(sorted, c);
@@ -322,6 +327,7 @@ public class Util {
 //        return a;
 //    }
 //
+
     public static int[] iterate(IntIterator it) {
         TIntArrayList i = new TIntArrayList();
         while (it.hasNext()) {

@@ -7,11 +7,11 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSort implements IrConstraint {
+public class IrSortInts implements IrConstraint {
 
     private final IrIntExpr[] array;
 
-    IrSort(IrIntExpr[] array) {
+    IrSortInts(IrIntExpr[] array) {
         this.array = Check.noNulls(array);
     }
 

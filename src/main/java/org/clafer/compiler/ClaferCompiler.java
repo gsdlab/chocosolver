@@ -1,7 +1,7 @@
 package org.clafer.compiler;
 
 import org.clafer.Scope;
-import org.clafer.ast.Ast;
+import org.clafer.ast.Asts;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
@@ -45,8 +45,8 @@ public class ClaferCompiler {
     }
 
     public static void main(String[] args) {
-        AstModel model = Ast.newModel();
-        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(1, 2).refTo(Ast.IntType);
+        AstModel model = Asts.newModel();
+        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(1, 2).refTo(Asts.IntType);
 
         ClaferSolver solver = compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
         System.out.println(solver);

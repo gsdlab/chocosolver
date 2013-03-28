@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import org.clafer.analysis.AnalysisUtil;
-import org.clafer.ast.Ast;
+import org.clafer.ast.Asts;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
@@ -23,7 +23,7 @@ public class RhinoContext {
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
-    private final AstModel model = Ast.newModel();
+    private final AstModel model = Asts.newModel();
     private boolean minimize;
     private AstRef objective;
 

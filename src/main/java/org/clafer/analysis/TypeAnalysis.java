@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.clafer.Check;
-import static org.clafer.ast.Ast.*;
+import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpression;
 import org.clafer.ast.AstCard;

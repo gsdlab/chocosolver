@@ -31,7 +31,14 @@ public class Irs {
         if (array.length < 2) {
             return boolConstraint(True);
         }
-        return new IrSort(array);
+        return new IrSortInts(array);
+    }
+
+    public static IrConstraint sort(IrIntExpr[][] strings) {
+        if (strings.length < 2) {
+            return boolConstraint(True);
+        }
+        return new IrSortStrings(strings);
     }
 
     public static IrConstraint allDifferent(IrIntExpr[] ints) {
@@ -77,11 +84,11 @@ public class Irs {
     public static IrBoolExpr and(List<IrBoolExpr> operands) {
         List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>();
         for (IrBoolExpr operand : operands) {
-            if (!IrUtil.isTrue(operand)) {
-                filter.add(operand);
-            }
             if (IrUtil.isFalse(operand)) {
                 return False;
+            }
+            if (!IrUtil.isTrue(operand)) {
+                filter.add(operand);
             }
         }
         switch (filter.size()) {

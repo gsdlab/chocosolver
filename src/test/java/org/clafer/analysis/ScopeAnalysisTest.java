@@ -3,7 +3,7 @@ package org.clafer.analysis;
 import java.util.HashMap;
 import java.util.Map;
 import org.clafer.Scope;
-import org.clafer.ast.Ast;
+import org.clafer.ast.Asts;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -20,7 +20,7 @@ public class ScopeAnalysisTest {
 
     @Test
     public void testAnalyze() {
-        AstModel model = Ast.newModel();
+        AstModel model = Asts.newModel();
 
         AstAbstractClafer object = model.addAbstractClafer("object");
         AstConcreteClafer id = object.addChild("id").withCard(new Card(1, 1));

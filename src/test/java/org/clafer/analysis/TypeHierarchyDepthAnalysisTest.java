@@ -1,7 +1,7 @@
 package org.clafer.analysis;
 
 import java.util.Map;
-import org.clafer.ast.Ast;
+import org.clafer.ast.Asts;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstModel;
 import static org.junit.Assert.*;
@@ -15,7 +15,7 @@ public class TypeHierarchyDepthAnalysisTest {
 
     @Test
     public void testAnalyze() {
-        AstModel model = Ast.newModel();
+        AstModel model = Asts.newModel();
 
         AstAbstractClafer object = model.addAbstractClafer("object");
         

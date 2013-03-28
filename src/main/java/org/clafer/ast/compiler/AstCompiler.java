@@ -1,7 +1,8 @@
 package org.clafer.ast.compiler;
 
+import java.util.Collections;
 import org.clafer.compiler.ClaferCompiler;
-import org.clafer.ast.Ast;
+import org.clafer.ast.Asts;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.collection.ReadWriteHashMap;
 import java.util.Arrays;
@@ -38,12 +39,12 @@ import static org.clafer.ir.Irs.*;
 public class AstCompiler {
 
     public static void main(String[] args) {
-        AstModel model = Ast.newModel();
-        AstAbstractClafer person = model.addAbstractClafer("person");
+        AstModel model = Asts.newModel();
+        AstAbstractClafer person = model.addAbstractClafer("person");//.refTo(Asts.IntType);
         AstConcreteClafer name = person.addChild("name").withCard(1, 2);
 
         AstConcreteClafer jim = model.addTopClafer("Jimmy").withCard(1, 2).extending(person);
-        AstConcreteClafer jan = model.addTopClafer("Janet").withCard(1, 3).extending(person);
+        AstConcreteClafer jan = model.addTopClafer("Janet").withCard(1, 2).extending(person);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
 
@@ -170,6 +171,106 @@ public class AstCompiler {
                 }
             }
         }
+
+        /**
+         * What is this optimization?
+         * 
+         * This optimization is to remove isomorphic solutions due to swapping of children.
+         * 
+         * Consider the following Clafer model.
+         * 
+         *   Diner 2
+         *     Burger 1..*
+         * 
+         * Let the scope be {Diner=2, Food=3}. What this says is that we have 2 Diners and 3
+         * Burgers but each Diner gets at least one serving. Logically, there are two solutions:
+         * 
+         *   1. Each Diner gets 1 Burger each (the last Burger is unused)
+         *   2. One Diner gets 2 Burgers and the other Diner gets 1 Burger
+         * 
+         * There are two unique solutions, other isomorphic solutions may arise from the solver,
+         * but ideally we want to eliminate the isomorphic duplicates. For example, here are
+         * two isomorphic instances that will arrise with symmetry breaking:
+         * 
+         *   Diner0
+         *     Burger0
+         *     Burger1
+         *   Diner1
+         *     Burger2
+         * 
+         *  
+         *   Diner0
+         *     Burger0
+         *   Diner1
+         *     Burger1
+         *     Burger2
+         * 
+         * We add the constraint |Diner0.Burger| >= |Diner1.Burger| to break the symmetry.
+         * This is how it works when Diner only has one type as a child. This optimization
+         * generalizes to multi-children. For example, consider the Clafer model:
+         * 
+         *   Diner 2
+         *     Burger 1..*
+         *     Drink 1..*
+         * 
+         * Let the scope be {Diner=2, Food=3, Drink=4}. First we'll see a wrong generalization.
+         * Adding the two constraints DO NOT WORK:
+         * 
+         *   1. |Diner0.Burger| >= |Diner1.Burger|
+         *   2. |Diner0.Drink| >= |Diner1.Drink|
+         * 
+         * The two constraints above DO NOT WORK because it rules out the case where one Diner has
+         * more Burgers but the other Diner has more drinks. Instead, we want tuple comparison like
+         * the following constraint (tuple comparision as implemented in Haskell, ie. compare the
+         * first indices, then use the second index to break ties, then use the third index to break
+         * the next tie, etc.):
+         * 
+         *   (|Diner0.Burger|, |Diner0.Drink|) >= (|Diner1.Burger|, |Diner1.Drink|)
+         * 
+         * However, Choco does not implement tuple comparision but it's we can simulate it with
+         * the equation constraint since the size of the sets are bounded.
+         * 
+         *   5 * |Diner0.Burger| + 1 * |Diner0.Drink| >= 5 * |Diner1.Burger| + 1 * |Diner1.Drink|
+         * 
+         * The "5" is coefficient comes from the fact that scope(Drink) = 4.
+         */
+        IrIntExpr[][] terms = new IrIntExpr[getScope(clafer)][];
+        for (int i = 0; i < terms.length; i++) {
+            List<IrIntExpr> string = new ArrayList<IrIntExpr>();
+            for (AstConcreteClafer child : clafer.getChildren()) {
+                // Children with exact cards will always contribute the same score hence it
+                // is a waste of computation time to include them in the scoring constraints.
+                if (!child.getCard().isExact()) {
+                    string.add(setCard(childrenSet.get(child)[i]));
+                }
+            }
+            AstClafer sup = clafer;
+            int offset = 0;
+            while (sup.hasSuperClafer()) {
+                offset += getOffset(sup.getSuperClafer(), sup);
+                for (AstConcreteClafer child : sup.getSuperClafer().getChildren()) {
+                    if (!child.getCard().isExact()) {
+                        string.add(setCard(childrenSet.get(child)[i + offset]));
+                    }
+                }
+                sup = sup.getSuperClafer();
+            }
+            if (string.isEmpty()) {
+                break;
+            }
+            terms[i] = string.toArray(new IrIntExpr[string.size()]);
+        }
+        /*
+         * What is this optimization?
+         *
+         * Reversing is so that earlier children have higher scores. Not necessary,
+         * but the solutions will have instances that are similar closer together.
+         * Technically not an optimization.
+         */
+        if (terms[0] != null) {
+            Util.reverse(terms);
+            module.addConstraint(sort(terms));
+        }
     }
 
     private void initLowGroupConcrete(AstConcreteClafer clafer) {
@@ -214,9 +315,21 @@ public class AstCompiler {
 
         module.addConstraint(boolChannel(members, claferSet));
 
-        if (clafer.hasParent() && getScope(clafer.getParent()) > 1) {
-            IrIntVar[] parents = parentPointers.get(clafer);
-            module.addConstraint(sort(parents));
+        /**
+         * What is this optimization?
+         * 
+         * Force the lower number atoms to choose lower number parents. For example consider
+         * the following clafer model:
+         * 
+         *   Person 2
+         *     Hand 2
+         * 
+         * The constraint forbids the case where Hand0 belongs to Person1 and Hand1 belongs
+         * to Person0. Otherwise, the children can swap around creating many isomorphic
+         * solutions.
+         */
+        if (clafer.hasParent()) {
+            module.addConstraint(sort(parentPointers.get(clafer)));
         }
     }
 
@@ -286,6 +399,10 @@ public class AstCompiler {
         }
         Check.noNulls(members);
         membership.put(clafer, members);
+
+        if (clafer.hasRef()) {
+            refPointers.put(clafer.getRef(), buildRefPointers(clafer.getRef()));
+        }
     }
 
     private void constrainAbstract(AstAbstractClafer clafer) {

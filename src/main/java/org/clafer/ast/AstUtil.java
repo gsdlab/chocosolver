@@ -12,4 +12,14 @@ public class AstUtil {
         }
         return t;
     }
+
+    public static AstRef getInheritedRef(AstClafer clafer) {
+        if (clafer.hasRef()) {
+            return clafer.getRef();
+        }
+        if (clafer.hasSuperClafer()) {
+            return getInheritedRef(clafer.getSuperClafer());
+        }
+        return null;
+    }
 }

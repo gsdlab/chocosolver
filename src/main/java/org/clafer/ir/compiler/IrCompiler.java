@@ -8,7 +8,8 @@ import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetCompare;
-import org.clafer.ir.IrSort;
+import org.clafer.ir.IrSortInts;
+import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
@@ -16,7 +17,6 @@ import org.clafer.ir.IrConstraint;
 import org.clafer.Check;
 import org.clafer.constraint.ConstraintUtil;
 import org.clafer.constraint.Constraints;
-import org.clafer.constraint.Increasing;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolConstraint;
 import org.clafer.ir.IrIntChannel;
@@ -182,7 +182,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrSort ir, Void a) {
+        public Constraint visit(IrSortInts ir, Void a) {
             IrIntExpr[] array = ir.getArray();
 
             IntVar[] $array = new IntVar[array.length];
@@ -190,6 +190,20 @@ public class IrCompiler {
                 $array[i] = array[i].accept(intExprCompiler, a);
             }
             return Constraints.increasing($array);
+        }
+
+        @Override
+        public Constraint visit(IrSortStrings ir, Void a) {
+            IrIntExpr[][] strings = ir.getStrings();
+
+            IntVar[][] $strings = new IntVar[strings.length][];
+            for (int i = 0; i < $strings.length; i++) {
+                $strings[i] = new IntVar[strings[i].length];
+                for (int j = 0; j < $strings[i].length; j++) {
+                    $strings[i][j] = strings[i][j].accept(intExprCompiler, a);
+                }
+            }
+            return _lex_chain_less_eq($strings);
         }
 
         @Override
@@ -207,13 +221,13 @@ public class IrCompiler {
         public Constraint visit(IrSelectN ir, Void a) {
             IrBoolExpr[] bools = ir.getBools();
             IrIntExpr n = ir.getN();
-            
+
             BoolVar[] $bools = new BoolVar[bools.length];
-            for(int i = 0; i  < $bools.length;i++){
+            for (int i = 0; i < $bools.length; i++) {
                 $bools[i] = bools[i].accept(boolExprCompiler, a);
             }
             IntVar $n = n.accept(intExprCompiler, a);
-            
+
             return Constraints.selectN($bools, $n);
         }
     };
@@ -459,6 +473,13 @@ public class IrCompiler {
 
     private static Constraint _all_different(IntVar... vars) {
         return IntConstraintFactory.alldifferent(vars, "AC");
+    }
+
+    private static Constraint _lex_chain_less_eq(IntVar[]... vars) {
+        if (vars.length == 2) {
+            return IntConstraintFactory.lex_less_eq(vars[0], vars[1]);
+        }
+        return IntConstraintFactory.lex_chain_less_eq(vars);
     }
 
     private static Constraint _union(SetVar[] operands, SetVar union) {

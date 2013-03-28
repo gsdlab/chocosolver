@@ -5,6 +5,7 @@ import org.clafer.Check;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstUtil;
 
 /**
  *
@@ -56,8 +57,8 @@ public class InstanceClafer {
 
     private void print(String indent, Appendable out) throws IOException {
         out.append(indent).append(type.getName()).append(Integer.toString(id));
-        if (type.hasRef()) {
-            AstRef typeRef = type.getRef();
+        AstRef typeRef = AstUtil.getInheritedRef(type);
+        if (typeRef != null) {
             out.append(" = ");
             if (!(typeRef.getTargetType() instanceof AstIntClafer)) {
                 out.append(typeRef.getTargetType().getName());

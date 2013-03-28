@@ -6,7 +6,7 @@ import org.clafer.ast.AstQuantify.Quantifier;
  *
  * @author jimmy
  */
-public class Ast {
+public class Asts {
 
     public static final AstIntClafer IntType = AstIntClafer.Singleton;
     public static final AstBoolClafer BoolType = AstBoolClafer.Singleton;

@@ -14,6 +14,14 @@ public class Check {
         return ts;
     }
 
+    public static <T> T[][] noNulls(T[]... ts) {
+        Check.notNull(ts);
+        for (T[] t : ts) {
+            Check.noNulls(t);
+        }
+        return ts;
+    }
+
     public static <T extends Iterable<?>> T noNulls(T ts) {
         Check.notNull(ts);
         for (Object t : ts) {
