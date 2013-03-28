@@ -3,6 +3,7 @@ package org.clafer.ir.compiler;
 import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrIntExpr;
+import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ir.IrNot;
@@ -14,6 +15,7 @@ import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrConstraint;
 import org.clafer.Check;
 import org.clafer.constraint.ConstraintUtil;
+import org.clafer.constraint.Constraints;
 import org.clafer.constraint.Increasing;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolConstraint;
@@ -187,7 +189,7 @@ public class IrCompiler {
             for (int i = 0; i < $array.length; i++) {
                 $array[i] = array[i].accept(intExprCompiler, a);
             }
-            return _sort($array);
+            return Constraints.increasing($array);
         }
 
         @Override
@@ -199,6 +201,20 @@ public class IrCompiler {
                 $operands[i] = operands[i].accept(intExprCompiler, a);
             }
             return _all_different($operands);
+        }
+
+        @Override
+        public Constraint visit(IrSelectN ir, Void a) {
+            IrBoolExpr[] bools = ir.getBools();
+            IrIntExpr n = ir.getN();
+            
+            BoolVar[] $bools = new BoolVar[bools.length];
+            for(int i = 0; i  < $bools.length;i++){
+                $bools[i] = bools[i].accept(boolExprCompiler, a);
+            }
+            IntVar $n = n.accept(intExprCompiler, a);
+            
+            return Constraints.selectN($bools, $n);
         }
     };
     private final IrBoolExprVisitor<Void, BoolVar> boolExprCompiler = new IrBoolExprVisitor<Void, BoolVar>() {
@@ -447,9 +463,5 @@ public class IrCompiler {
 
     private static Constraint _union(SetVar[] operands, SetVar union) {
         return SetConstraintsFactory.union(operands, union);
-    }
-
-    private Constraint _sort(IntVar[] vars) {
-        return new Increasing(vars, solver);
     }
 }

@@ -38,7 +38,11 @@ public class Irs {
         if (ints.length < 2) {
             return boolConstraint(True);
         }
-        return allDifferent(ints);
+        return new IrAllDifferent(ints);
+    }
+
+    public static IrConstraint selectN(IrBoolExpr[] bools, IrIntExpr n) {
+        return new IrSelectN(bools, n);
     }
     /********************
      * 

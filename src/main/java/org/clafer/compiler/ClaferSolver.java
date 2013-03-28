@@ -24,7 +24,7 @@ public class ClaferSolver {
         return solver.getMeasures();
     }
 
-    public boolean nextSolution() {
+    public boolean find() {
         if (first) {
             first = false;
             return solver.findSolution();
@@ -32,7 +32,7 @@ public class ClaferSolver {
         return solver.nextSolution();
     }
 
-    public InstanceModel solution() {
+    public InstanceModel instance() {
         return solutionMap.getInstance();
     }
 

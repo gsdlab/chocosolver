@@ -50,8 +50,8 @@ public class ClaferCompiler {
 
         ClaferSolver solver = compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
         System.out.println(solver);
-        while (solver.nextSolution()) {
-            System.out.println(solver.solution());
+        while (solver.find()) {
+            System.out.println(solver.instance());
         }
         System.out.println(solver.getMeasures().getSolutionCount());
     }

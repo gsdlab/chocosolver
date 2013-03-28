@@ -52,7 +52,7 @@ public class ClaferSolutionMap {
                 if (child.hasSuperClafer()) {
                     getChildren(
                             child.getSuperClafer().getChildren(),
-                            id + astSolution.getOffset(child.getSuperClafer(), child),
+                            childId + astSolution.getOffset(child.getSuperClafer(), child),
                             grandChildInstances);
                 }
                 childrenInstances.add(new InstanceClafer(child, childId, ref,

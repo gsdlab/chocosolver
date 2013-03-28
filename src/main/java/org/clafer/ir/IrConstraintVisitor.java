@@ -15,4 +15,6 @@ public interface IrConstraintVisitor<A, B> {
     public B visit(IrSort ir, A a);
 
     public B visit(IrAllDifferent ir, A a);
+
+    public B visit(IrSelectN ir, A a);
 }

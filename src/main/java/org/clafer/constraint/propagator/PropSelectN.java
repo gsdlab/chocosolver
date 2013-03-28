@@ -42,30 +42,77 @@ public class PropSelectN extends Propagator<IntVar> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isBoolsVar(vIdx)) {
-            return EventType.DECUPP.mask + EventType.INCLOW.mask;
+            return EventType.INSTANTIATE.mask;
         }
-        return EventType.INSTANTIATE.mask;
+        return EventType.DECUPP.mask + EventType.INCLOW.mask;
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // Prune n
+        for (int i = n.getLB(); i < n.getUB(); i++) {
+            if (bools[i].instantiated()) {
+                if (bools[i].getValue() == 0) {
+                    n.updateUpperBound(i, aCause);
+                    break;
+                }
+            }
+        }
+        for (int i = n.getUB() - 1; i >= n.getLB(); i--) {
+            if (bools[i].instantiated()) {
+                if (bools[i].getValue() == 1) {
+                    n.updateLowerBound(i + 1, aCause);
+                }
+            }
+        }
+        // Pick bool
+        for (int i = 0; i < n.getLB(); i++) {
+            bools[i].setToTrue(aCause);
+        }
+        for (int i = n.getUB(); i < bools.length; i++) {
+            bools[i].setToFalse(aCause);
+        }
+        assert !ESat.FALSE.equals(isEntailed());
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        propagate(mask);
+        if (isBoolsVar(idxVarInProp)) {
+            assert bools[idxVarInProp].instantiated();
+            if (bools[idxVarInProp].getValue() == 0) {
+                for (int i = idxVarInProp + 1; i < bools.length; i++) {
+                    bools[i].setToFalse(aCause);
+                }
+                n.updateUpperBound(idxVarInProp, aCause);
+            } else {
+                for (int i = 0; i < idxVarInProp; i++) {
+                    bools[i].setToTrue(aCause);
+                }
+                n.updateLowerBound(idxVarInProp + 1, aCause);
+            }
+        } else {
+            assert isNVar(idxVarInProp) : "Not n: " + idxVarInProp;
+            if (EventType.isInclow(mask)) {
+                for (int i = 0; i < n.getLB(); i++) {
+                    bools[i].setToTrue(aCause);
+                }
+            } else {
+                for (int i = n.getUB(); i < bools.length; i++) {
+                    bools[i].setToFalse(aCause);
+                }
+            }
+        }
     }
 
     @Override
     public ESat isEntailed() {
         boolean allInstantiated = true;
-        for(int i = 0; i < bools.length;i++) {
-            if(bools[i].instantiated()) {
-                if(bools[i].getValue() == 0 && i > n.getUB()) {
+        for (int i = 0; i < bools.length; i++) {
+            if (bools[i].instantiated()) {
+                if (bools[i].getValue() == 0 && i < n.getLB()) {
                     return ESat.FALSE;
                 }
-                if(bools[i].getValue() == 1 && i < n.getLB()) {
+                if (bools[i].getValue() == 1 && i >= n.getUB()) {
                     return ESat.FALSE;
                 }
             } else {
@@ -74,72 +121,4 @@ public class PropSelectN extends Propagator<IntVar> {
         }
         return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
-
-//    @Override
-//    public void awakeOnInf(int varIdx) throws ContradictionException {
-//        if (isNVar(varIdx)) {
-//            // Pick bools
-//            for (int i = 0; i < n.getInf(); i++) {
-//                bools[i].instantiate(1, this, false);
-//            }
-//        }
-//    }
-//
-//    @Override
-//    public void awakeOnSup(int varIdx) throws ContradictionException {
-//        if (isNVar(varIdx)) {
-//            // Pick bools
-//            for (int i = n.getSup(); i < bools.length; i++) {
-//                bools[i].instantiate(0, this, false);
-//            }
-//        }
-//    }
-//
-//    @Override
-//    public void awakeOnInst(int idx) throws ContradictionException {
-//        if (isBoolsVar(idx)) {
-//            // Prune N
-//            int id = getBoosVarIndex(idx);
-//            if (bools[id].getVal() == 0) {
-//                n.updateSup(id, this, false);
-//            } else {
-//                n.updateInf(id + 1, this, false);
-//            }
-//        }
-//    }
-//
-//    @Override
-//    public void awake() throws ContradictionException {
-//        n.updateInf(0, this, false);
-//        n.updateSup(bools.length, this, false);
-//        propagate();
-//    }
-//
-//    @Override
-//    public void propagate() throws ContradictionException {
-//        pickBools();
-//        pruneN();
-//    }
-//
-//    private void pickBools() throws ContradictionException {
-//        for (int i = 0; i < n.getInf(); i++) {
-//            bools[i].instantiate(1, this, false);
-//        }
-//        for (int i = n.getSup(); i < bools.length; i++) {
-//            bools[i].instantiate(0, this, false);
-//        }
-//    }
-//
-//    private void pruneN() throws ContradictionException {
-//        for (int i = 0; i < bools.length; i++) {
-//            if (bools[i].isInstantiated()) {
-//                if (bools[i].getVal() == 0) {
-//                    n.updateSup(i, this, false);
-//                } else {
-//                    n.updateInf(i + 1, this, false);
-//                }
-//            }
-//        }
-//    }
-//
 }

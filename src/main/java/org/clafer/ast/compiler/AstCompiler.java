@@ -28,7 +28,6 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
-import solver.constraints.IntConstraintFactory;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -47,9 +46,9 @@ public class AstCompiler {
         AstConcreteClafer jan = model.addTopClafer("Janet").withCard(1, 3).extending(person);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
-        System.out.println(solver);
-        while (solver.nextSolution()) {
-            System.out.println(solver.solution());
+
+        while (solver.find()) {
+            System.out.println(solver.instance());
         }
         System.out.println(solver.getMeasures().getSolutionCount());
     }
@@ -188,6 +187,12 @@ public class AstCompiler {
     }
 
     private void constrainLowGroupConcrete(AstConcreteClafer clafer) {
+        IrBoolVar[] members = membership.get(clafer);
+
+        if (!clafer.hasParent()) {
+            module.addConstraint(selectN(members, setCard(set.get(clafer))));
+        }
+
         PartialSolution partialParentSolution = getPartialParentSolution(clafer);
         Card card = clafer.getCard();
 
@@ -207,7 +212,6 @@ public class AstCompiler {
 
         IrSetExpr claferSet = set.get(clafer);
 
-        IrBoolVar[] members = membership.get(clafer);
         module.addConstraint(boolChannel(members, claferSet));
 
         if (clafer.hasParent() && getScope(clafer.getParent()) > 1) {
