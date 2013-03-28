@@ -35,6 +35,7 @@ public class IrSetVar implements IrSetExpr {
     }
 
     public int[] getValue() {
+        assert isConstant();
         return env.getValues();
     }
 

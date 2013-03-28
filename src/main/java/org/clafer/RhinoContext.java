@@ -1,17 +1,17 @@
 package org.clafer;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import org.clafer.analysis.AnalysisUtil;
 import org.clafer.ast.Ast;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
-import sun.org.mozilla.javascript.JavaScriptException;
 
 /**
  *
@@ -106,18 +106,20 @@ public class RhinoContext {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
-            if (engine == null) {
-                throw new IllegalStateException("Missing javascript engine.");
-            }
-            RhinoContext c = new RhinoContext();
-            engine.put("cc", c);
-            Object person = engine.eval("cc.k(3);");
-
-            System.out.println(c.scope);
-        } catch (ScriptException e) {
-            JavaScriptException ex = (JavaScriptException) e.getCause();
+        ScriptEngine engine = new ScriptEngineManager().getEngineByMimeType("application/javascript");
+        if (engine == null) {
+            throw new IllegalStateException("Missing javascript engine.");
         }
+        System.out.print(">");
+        BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
+        String line;
+        while ((line = r.readLine()) != null) {
+            line = line.trim();
+            if (line.length() > 0) {
+                System.out.println(engine.eval(line));
+            }
+            System.out.print(">");
+        }
+        System.out.println("done");
     }
 }

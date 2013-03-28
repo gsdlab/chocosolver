@@ -5,7 +5,6 @@ import org.clafer.ast.Ast;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
-import org.clafer.collection.Pair;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
@@ -38,7 +37,7 @@ public class Compiler {
     public static SolutionMap compile(AstModel in, Scope scope, Solver out) {
         IrModule module = new IrModule();
         AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
-        
+
         IrSolutionMap irSolution = IrCompiler.compile(module, out);
 
         return new SolutionMap(astSolution, irSolution);
@@ -46,12 +45,13 @@ public class Compiler {
 
     public static void main(String[] args) {
         AstModel model = Ast.newModel();
-        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(1, 2);
+        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(1, 2).refTo(Ast.IntType);
 
-        ChocoSolver solver = compile(model, new Scope(100));
-
+        ChocoSolver solver = compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
+        System.out.println(solver);
         while (solver.nextSolution()) {
             System.out.println(solver.solution());
         }
+        System.out.println(solver.getMeasures().getSolutionCount());
     }
 }

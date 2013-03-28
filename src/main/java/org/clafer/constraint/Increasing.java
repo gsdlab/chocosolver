@@ -1,5 +1,7 @@
 package org.clafer.constraint;
 
+import java.util.ArrayList;
+import java.util.List;
 import solver.Solver;
 import solver.constraints.IntConstraint;
 import solver.constraints.propagators.Propagator;
@@ -16,11 +18,13 @@ public class Increasing extends IntConstraint<IntVar> {
     public Increasing(IntVar[] vars, Solver solver) {
         super(vars, solver);
 
-        Propagator[] propogators = new Propagator[vars.length - 1];
+        List<Propagator> propogators = new ArrayList<Propagator>();
         for (int i = 1; i < vars.length; i++) {
-            propogators[i - 1] = new PropGreaterOrEqualX_Y(new IntVar[]{vars[i], vars[i - 1]});
+            if (vars[i].getLB() < vars[i - 1].getUB()) {
+                propogators.add(new PropGreaterOrEqualX_Y(new IntVar[]{vars[i], vars[i - 1]}));
+            }
         }
-        setPropagators(propogators);
+        setPropagators(propogators.toArray(new Propagator[propogators.size()]));
     }
 
     @Override

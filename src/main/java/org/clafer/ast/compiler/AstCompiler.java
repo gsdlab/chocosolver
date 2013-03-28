@@ -41,23 +41,6 @@ import static org.clafer.ir.Irs.*;
  */
 public class AstCompiler {
 
-    public static void main(String[] args) {
-        AstModel model = Ast.newModel();
-        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(2, 2);
-
-        IrModule out = new IrModule();
-        AstCompiler.compile(model, new Scope(4), out);
-
-        Solver solver = new Solver();
-        IrSolutionMap svmap = IrCompiler.compile(out, solver);
-        System.out.println(solver);
-
-        solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                IntStrategyFactory.firstFail_InDomainMin(svmap.getIntVars()),
-                SetStrategyFactory.setLex(svmap.getSetVars())));
-
-        System.out.println(solver.findAllSolutions());
-    }
     private final AstModel model;
     private final Analysis analysis;
     private final IrModule module;
@@ -104,6 +87,12 @@ public class AstCompiler {
         }
         for (AstClafer clafer : clafers) {
             getCompiler(clafer).constrain(clafer);
+        }
+        for (IrSetVar[] childSet : childrenSet.getValues()) {
+            module.addSetVars(childSet);
+        }
+        for (IrIntVar[] refs : refPointers.getValues()) {
+            module.addIntVars(refs);
         }
         return new AstSolutionMap(model, childrenSet, refPointers, analysis);
     }
@@ -378,9 +367,9 @@ public class AstCompiler {
             Integer instantiate = analysis.getPartialRefInts(ref, i);
             if (instantiate == null) {
                 if (partialInts == null) {
-                    ivs[i] = boundInt(src.getName() + "@Ref", getScopeLow(tar), getScopeHigh(tar));
+                    ivs[i] = boundInt(src.getName() + "@Ref" + i, getScopeLow(tar), getScopeHigh(tar));
                 } else {
-                    ivs[i] = enumInt(src.getName() + "@Ref", partialInts);
+                    ivs[i] = enumInt(src.getName() + "@Ref" + i, partialInts);
                 }
             } else {
                 ivs[i] = enumInt(src.getName() + "@Ref" + i, new int[]{0, instantiate});

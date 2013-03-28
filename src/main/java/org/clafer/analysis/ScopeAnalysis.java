@@ -28,16 +28,15 @@ public class ScopeAnalysis {
             }
             optimizedScope.put(clafer, Math.min(scope.getScope(clafer), globalCard.getHigh()));
         }
-        scope = new Scope(optimizedScope);
 
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             int subScopes = 0;
-            for(AstClafer sub : abstractClafer.getSubs()) {
-                subScopes += scope.getScope(sub);
+            for (AstClafer sub : abstractClafer.getSubs()) {
+                subScopes += optimizedScope.containsKey(sub) ? optimizedScope.get(sub) : scope.getDefaultScope();
             }
             optimizedScope.put(abstractClafer, subScopes);
         }
 
-        return new Scope(optimizedScope, scope.getDefaultScope());
+        return new Scope(optimizedScope, scope.getDefaultScope(), scope.getIntLow(), scope.getIntHigh());
     }
 }

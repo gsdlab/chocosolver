@@ -76,6 +76,9 @@ public class Irs {
             if (!IrUtil.isTrue(operand)) {
                 filter.add(operand);
             }
+            if (IrUtil.isFalse(operand)) {
+                return False;
+            }
         }
         switch (filter.size()) {
             case 0:
@@ -90,6 +93,15 @@ public class Irs {
     public static IrBoolExpr implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
         if (IrUtil.isTrue(antecedent)) {
             return consequent;
+        }
+        if (IrUtil.isFalse(antecedent)) {
+            return True;
+        }
+        if (IrUtil.isTrue(consequent)) {
+            return True;
+        }
+        if (IrUtil.isFalse(consequent)) {
+            return not(antecedent);
         }
         return new IrImplies(antecedent, consequent);
     }

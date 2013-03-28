@@ -5,6 +5,7 @@ import java.util.Random;
 import solver.ResolutionPolicy;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
+import solver.explanations.ExplanationFactory;
 import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.search.strategy.selectors.values.InDomainMin;
 import solver.search.strategy.selectors.variables.FirstFail;
@@ -20,6 +21,18 @@ import util.tools.ArrayUtils;
  * 3. remove useless members and set unions
  * 4. remove useless parent pointers if already solved
  * 5. common subexpression elimination
+ * 6. remove |set| <= 5 if set only contains 5 env
+ * 
+ * 7. Degree#0 should have #0 in its ker
+        AstModel model = Ast.newModel();
+        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(1, 2).refTo(Ast.IntType);
+
+        ChocoSolver solver = compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
+        System.out.println(solver);
+        while (solver.nextSolution()) {
+            System.out.println(solver.solution());
+        }
+        System.out.println(solver.getMeasures().getSolutionCount());
  * 
  * 
  * @author jimmy
@@ -29,8 +42,10 @@ public class Feature {
     public static void main(String[] args) {
         Solver solver = new Solver();
         SearchMonitorFactory.log(solver, false, true);
-        IntVar objective = VariableFactory.bounded("objective", -10000, 10000, solver);
-        BoolVar[] features = VariableFactory.boolArray("feature", 100, solver);
+        ExplanationFactory.CBJ.plugin(solver, true);
+        
+        IntVar objective = VariableFactory.bounded("objective", -100, 100, solver);
+        BoolVar[] features = VariableFactory.boolArray("feature", 10, solver);
         Random rand = new Random();
         IntVar[] footprint = new IntVar[features.length];
         for (int i = 0; i < footprint.length; i++) {
@@ -45,6 +60,9 @@ public class Feature {
         }
         solver.post(IntConstraintFactory.sum(footprint, objective));
         solver.set(new Assignment(new FirstFail(ArrayUtils.append(features, footprint)), new InDomainMin()));
+        
+        System.out.println(solver);
+        
         solver.findOptimalSolution(ResolutionPolicy.MINIMIZE, objective);
         System.out.println(solver);
     }

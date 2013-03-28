@@ -57,26 +57,6 @@ import static org.clafer.ir.Irs.*;
  */
 public class IrCompiler {
 
-    public static void main(String[] args) {
-        IrBoolExpr ir = implies(bool("feature"), equal(boundInt("footprint", -4, 4), constant(4)));
-
-        IrModule irModule = new IrModule();
-        irModule.addConstraint(ir);
-
-        Solver solver = new Solver();
-        compile(irModule, solver);
-
-        if (solver.findSolution()) {
-            do {
-                System.out.println("----");
-                for (Variable var : solver.getVars()) {
-                    System.out.println(var + " : " + var.getClass());
-                }
-                System.out.println("****");
-            } while (solver.nextSolution());
-        }
-        System.out.println(solver);
-    }
     private final Solver solver;
     private int varNum = 0;
 
@@ -90,6 +70,15 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
+        for (IrBoolVar var : module.getBoolVars()) {
+            var.accept(boolExprCompiler, null);
+        }
+        for (IrIntVar var : module.getIntVars()) {
+            var.accept(intExprCompiler, null);
+        }
+        for (IrSetVar var : module.getSetVars()) {
+            var.accept(setExprCompiler, null);
+        }
         for (IrConstraint constraint : module.getConstraints()) {
             solver.post(constraint.accept(constraintCompiler, null));
         }
