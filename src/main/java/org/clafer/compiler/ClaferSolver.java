@@ -9,13 +9,13 @@ import solver.search.measure.IMeasures;
  *
  * @author jimmy
  */
-public class ChocoSolver {
+public class ClaferSolver {
 
     private final Solver solver;
-    private final SolutionMap solutionMap;
+    private final ClaferSolutionMap solutionMap;
     private boolean first = true;
 
-    ChocoSolver(Solver solver, SolutionMap solutionMap) {
+    ClaferSolver(Solver solver, ClaferSolutionMap solutionMap) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);
     }

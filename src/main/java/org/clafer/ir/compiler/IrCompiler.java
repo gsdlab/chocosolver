@@ -23,7 +23,6 @@ import org.clafer.ir.IrJoinRef;
 import org.clafer.ir.IrSetCard;
 import solver.variables.SetVar;
 import solver.constraints.Constraint;
-import solver.variables.Variable;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
 import org.clafer.ir.IrBoolVar;
@@ -49,10 +48,10 @@ import solver.constraints.set.SetConstraintsFactory;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.VariableFactory;
-import static org.clafer.ir.Irs.*;
 
 /**
- *
+ * Compile from IR to Choco.
+ * 
  * @author jimmy
  */
 public class IrCompiler {

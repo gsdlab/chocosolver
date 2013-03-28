@@ -1,11 +1,10 @@
 package org.clafer.ast.compiler;
 
+import org.clafer.compiler.ClaferCompiler;
+import org.clafer.ast.Ast;
+import org.clafer.compiler.ClaferSolver;
 import org.clafer.collection.ReadWriteHashMap;
 import java.util.Arrays;
-import solver.search.strategy.IntStrategyFactory;
-import solver.search.strategy.SetStrategyFactory;
-import solver.search.strategy.strategy.StrategiesSequencer;
-import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.Util;
@@ -18,11 +17,9 @@ import org.clafer.analysis.Analysis;
 import org.clafer.analysis.AnalysisUtil;
 import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
-import org.clafer.ast.Ast;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstException;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
@@ -31,16 +28,31 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
-import org.clafer.ir.compiler.IrCompiler;
-import solver.Solver;
+import solver.constraints.IntConstraintFactory;
 import static org.clafer.ir.Irs.*;
 
 /**
- *
+ * Compile from AST -> IR
+ * 
  * @author jimmy
  */
 public class AstCompiler {
 
+    public static void main(String[] args) {
+        AstModel model = Ast.newModel();
+        AstAbstractClafer person = model.addAbstractClafer("person");
+        AstConcreteClafer name = person.addChild("name").withCard(1, 2);
+
+        AstConcreteClafer jim = model.addTopClafer("Jimmy").withCard(1, 2).extending(person);
+        AstConcreteClafer jan = model.addTopClafer("Janet").withCard(1, 3).extending(person);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
+        System.out.println(solver);
+        while (solver.nextSolution()) {
+            System.out.println(solver.solution());
+        }
+        System.out.println(solver.getMeasures().getSolutionCount());
+    }
     private final AstModel model;
     private final Analysis analysis;
     private final IrModule module;
@@ -59,35 +71,40 @@ public class AstCompiler {
     private AstSolutionMap compile() {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = AnalysisUtil.getConcreteClafers(model);
-        List<AstClafer> clafers = new ArrayList<AstClafer>(abstractClafers.size() + concreteClafers.size());
-        clafers.addAll(abstractClafers);
-        clafers.addAll(concreteClafers);
-        for (AstClafer clafer : clafers) {
+
+        for (AstConcreteClafer clafer : concreteClafers) {
+            initConcrete(clafer);
+        }
+        for (AstConcreteClafer clafer : concreteClafers) {
             if (Format.LowGroup.equals(getFormat(clafer))) {
-                getCompiler(clafer).initLowGroup(clafer);
+                initLowGroupConcrete(clafer);
             }
         }
-        for (AstClafer clafer : clafers) {
+        for (AstConcreteClafer clafer : concreteClafers) {
             if (Format.ParentGroup.equals(getFormat(clafer))) {
-                getCompiler(clafer).initParentGroup(clafer);
+                initParentGroupConcrete(clafer);
             }
         }
-        for (AstClafer clafer : clafers) {
-            getCompiler(clafer).init(clafer);
+        for (AstAbstractClafer clafer : abstractClafers) {
+            initAbstract(clafer);
         }
-        for (AstClafer clafer : clafers) {
+        for (AstConcreteClafer clafer : concreteClafers) {
+            constrainConcrete(clafer);
+        }
+        for (AstConcreteClafer clafer : concreteClafers) {
             if (Format.LowGroup.equals(getFormat(clafer))) {
-                getCompiler(clafer).constrainLowGroup(clafer);
+                constrainLowGroupConcrete(clafer);
             }
         }
-        for (AstClafer clafer : clafers) {
+        for (AstConcreteClafer clafer : concreteClafers) {
             if (Format.ParentGroup.equals(getFormat(clafer))) {
-                getCompiler(clafer).constrainParentGroup(clafer);
+                constrainParentGroupConcrete(clafer);
             }
         }
-        for (AstClafer clafer : clafers) {
-            getCompiler(clafer).constrain(clafer);
+        for (AstAbstractClafer clafer : abstractClafers) {
+            constrainAbstract(clafer);
         }
+
         for (IrSetVar[] childSet : childrenSet.getValues()) {
             module.addSetVars(childSet);
         }
@@ -97,218 +114,179 @@ public class AstCompiler {
         return new AstSolutionMap(model, childrenSet, refPointers, analysis);
     }
 
-    private ClaferCompiler getCompiler(AstClafer clafer) {
-        if (clafer instanceof AstConcreteClafer) {
-            return concreteClaferCompiler;
+    private void initConcrete(AstConcreteClafer clafer) {
+        if (clafer.hasParent()) {
+            parentPointers.put(clafer, buildParentPointers(clafer));
         }
-        throw new IllegalArgumentException();
+        if (clafer.hasRef()) {
+            refPointers.put(clafer.getRef(), buildRefPointers(clafer.getRef()));
+        }
     }
-    private final ClaferCompiler<AstConcreteClafer> concreteClaferCompiler = new ClaferCompiler<AstConcreteClafer>() {
 
-        @Override
-        void init(AstConcreteClafer clafer) {
-            if (clafer.hasParent()) {
-                parentPointers.put(clafer, buildParentPointers(clafer));
-            }
-            if (clafer.hasRef()) {
-                refPointers.put(clafer.getRef(), buildRefPointers(clafer.getRef()));
+    private void constrainConcrete(AstConcreteClafer clafer) {
+        if (clafer.hasParent()) {
+            IrIntVar[] parents = parentPointers.get(clafer);
+            Card globalCard = getGlobalCard(clafer);
+            if (globalCard.isExact()) {
+                // No unused
+                module.addConstraint(intChannel(parents, childrenSet.get(clafer)));
+            } else {
+                IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
+                module.addConstraint(intChannel(parents, Util.cons(childrenSet.get(clafer), unused)));
             }
         }
-
-        @Override
-        void constrain(AstConcreteClafer clafer) {
-            if (clafer.hasParent()) {
-                IrIntVar[] parents = parentPointers.get(clafer);
-                Card globalCard = getGlobalCard(clafer);
-                if (globalCard.isExact()) {
-                    // No unused
-                    module.addConstraint(intChannel(parents, childrenSet.get(clafer)));
-                } else {
-                    IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
-                    module.addConstraint(intChannel(parents, Util.cons(childrenSet.get(clafer), unused)));
-                }
-            }
-            if (clafer.hasRef()) {
-                AstRef ref = clafer.getRef();
-                IrIntVar[] refs = refPointers.get(ref);
-                if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
-                    if (!clafer.hasParent()) {
-                        if (clafer.getCard().isExact()) {
-                            assert clafer.getCard().getLow() == refs.length;
-                            module.addConstraint(allDifferent(refs));
-                        } else {
-                            IrBoolVar[] members = membership.get(clafer);
-                            for (int i = 0; i < refs.length; i++) {
-                                for (int j = i + 1; j < refs.length; j++) {
-                                    module.addConstraint(
-                                            implies(and(members[i], members[j]), notEqual(refs[i], refs[j])));
-                                }
-                            }
-                        }
+        if (clafer.hasRef()) {
+            AstRef ref = clafer.getRef();
+            IrIntVar[] refs = refPointers.get(ref);
+            if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
+                if (!clafer.hasParent()) {
+                    if (clafer.getCard().isExact()) {
+                        assert clafer.getCard().getLow() == refs.length;
+                        module.addConstraint(allDifferent(refs));
                     } else {
-                        IrIntVar[] parents = parentPointers.get(clafer);
-                        int unused = getScope(clafer.getParent());
+                        IrBoolVar[] members = membership.get(clafer);
                         for (int i = 0; i < refs.length; i++) {
                             for (int j = i + 1; j < refs.length; j++) {
                                 module.addConstraint(
-                                        implies(and(notEqual(parents[i], unused), equal(parents[i], parents[j])),
-                                        notEqual(refs[i], refs[j])));
+                                        implies(and(members[i], members[j]), notEqual(refs[i], refs[j])));
                             }
                         }
                     }
                 } else {
-                    IrBoolVar[] members = membership.get(clafer);
-                    assert refs.length == members.length;
-                    for (int i = 0; i < members.length; i++) {
-                        module.addConstraint(implies(not(members[i]), equal(refs[i], 0)));
+                    IrIntVar[] parents = parentPointers.get(clafer);
+                    int unused = getScope(clafer.getParent());
+                    for (int i = 0; i < refs.length; i++) {
+                        for (int j = i + 1; j < refs.length; j++) {
+                            module.addConstraint(
+                                    implies(and(notEqual(parents[i], unused), equal(parents[i], parents[j])),
+                                    notEqual(refs[i], refs[j])));
+                        }
                     }
                 }
-            }
-        }
-
-        @Override
-        void initLowGroup(AstConcreteClafer clafer) {
-            PartialSolution partialSolution = getPartialSolution(clafer);
-
-            IrSetVar[] children = skipCards(clafer);
-            childrenSet.put(clafer, children);
-            set.put(clafer, union(children));
-
-            IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
-            for (int i = 0; i < members.length; i++) {
-                members[i] = partialSolution.hasClafer(i) ? True : bool(clafer.getName() + "@Membership#" + i);
-            }
-            membership.put(clafer, members);
-        }
-
-        @Override
-        void constrainLowGroup(AstConcreteClafer clafer) {
-            PartialSolution partialParentSolution = getPartialParentSolution(clafer);
-            Card card = clafer.getCard();
-
-            IrSetVar[] children = childrenSet.get(clafer);
-            for (int i = 0; i < partialParentSolution.size(); i++) {
-                if (partialParentSolution.hasClafer(i)) {
-                    module.addConstraint(constrainCard(setCard(children[i]), card));
-                } else {
-                    if (card.isBounded()) {
-                        module.addConstraint(implies(membership.get(clafer.getParent())[i],
-                                constrainCard(setCard(children[i]), card)));
-                    }
-                    module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
-                            equal(children[i], EmptySet)));
-                }
-            }
-
-            IrSetExpr claferSet = set.get(clafer);
-
-            IrBoolVar[] members = membership.get(clafer);
-            module.addConstraint(boolChannel(members, claferSet));
-
-            if (clafer.hasParent() && getScope(clafer.getParent()) > 1) {
-                IrIntVar[] parents = parentPointers.get(clafer);
-                module.addConstraint(sort(parents));
-            }
-        }
-
-        @Override
-        void initParentGroup(AstConcreteClafer clafer) {
-            PartialSolution partialParentSolution = getPartialParentSolution(clafer);
-
-            IrSetVar[] children = new IrSetVar[partialParentSolution.size()];
-            assert clafer.getCard().getLow() == clafer.getCard().getHigh();
-            int lowCard = clafer.getCard().getLow();
-            for (int i = 0; i < children.length; i++) {
-                if (partialParentSolution.hasClafer(i)) {
-                    children[i] = constant(Util.range(i * lowCard, i * lowCard + lowCard));
-                } else {
-                    children[i] = set(clafer.getName() + "#" + i, Util.range(i * lowCard, i * lowCard + lowCard));
-                }
-            }
-
-            childrenSet.put(clafer, children);
-            set.put(clafer, union(children));
-
-            IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
-            if (!clafer.hasParent()) {
-                Arrays.fill(members, 0, lowCard, True);
-                Arrays.fill(members, lowCard, members.length, False);
             } else {
-                IrBoolVar[] parentMembership = membership.get(clafer.getParent());
-                if (lowCard == 1) {
-                    members = parentMembership;
-                } else {
-                    for (int i = 0; i < parentMembership.length; i++) {
-                        for (int j = 0; j < lowCard; j++) {
-                            members[i * lowCard + j] = parentMembership[i];
-                        }
-                    }
+                IrBoolVar[] members = membership.get(clafer);
+                assert refs.length == members.length;
+                for (int i = 0; i < members.length; i++) {
+                    module.addConstraint(implies(not(members[i]), equal(refs[i], 0)));
                 }
             }
-            membership.put(clafer, members);
         }
+    }
 
-        @Override
-        void constrainParentGroup(AstConcreteClafer clafer) {
-            PartialSolution partialParentSolution = getPartialParentSolution(clafer);
+    private void initLowGroupConcrete(AstConcreteClafer clafer) {
+        PartialSolution partialSolution = getPartialSolution(clafer);
 
-            IrSetVar[] children = childrenSet.get(clafer);
-            assert clafer.getCard().getLow() == clafer.getCard().getHigh();
-            int lowCard = clafer.getCard().getLow();
-            for (int i = 0; i < children.length; i++) {
-                if (!partialParentSolution.hasClafer(i)) {
+        IrSetVar[] children = skipCards(clafer);
+        childrenSet.put(clafer, children);
+        set.put(clafer, union(children));
+
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        for (int i = 0; i < members.length; i++) {
+            members[i] = partialSolution.hasClafer(i) ? True : bool(clafer.getName() + "@Membership#" + i);
+        }
+        membership.put(clafer, members);
+    }
+
+    private void constrainLowGroupConcrete(AstConcreteClafer clafer) {
+        PartialSolution partialParentSolution = getPartialParentSolution(clafer);
+        Card card = clafer.getCard();
+
+        IrSetVar[] children = childrenSet.get(clafer);
+        for (int i = 0; i < partialParentSolution.size(); i++) {
+            if (partialParentSolution.hasClafer(i)) {
+                module.addConstraint(constrainCard(setCard(children[i]), card));
+            } else {
+                if (card.isBounded()) {
                     module.addConstraint(implies(membership.get(clafer.getParent())[i],
-                            equal(children[i], constant(Util.range(i * lowCard, i * lowCard + lowCard)))));
-                    module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
-                            equal(children[i], EmptySet)));
+                            constrainCard(setCard(children[i]), card)));
+                }
+                module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
+                        equal(children[i], EmptySet)));
+            }
+        }
+
+        IrSetExpr claferSet = set.get(clafer);
+
+        IrBoolVar[] members = membership.get(clafer);
+        module.addConstraint(boolChannel(members, claferSet));
+
+        if (clafer.hasParent() && getScope(clafer.getParent()) > 1) {
+            IrIntVar[] parents = parentPointers.get(clafer);
+            module.addConstraint(sort(parents));
+        }
+    }
+
+    private void initParentGroupConcrete(AstConcreteClafer clafer) {
+        PartialSolution partialParentSolution = getPartialParentSolution(clafer);
+
+        IrSetVar[] children = new IrSetVar[partialParentSolution.size()];
+        assert clafer.getCard().getLow() == clafer.getCard().getHigh();
+        int lowCard = clafer.getCard().getLow();
+        for (int i = 0; i < children.length; i++) {
+            if (partialParentSolution.hasClafer(i)) {
+                children[i] = constant(Util.range(i * lowCard, i * lowCard + lowCard));
+            } else {
+                children[i] = set(clafer.getName() + "#" + i, Util.range(i * lowCard, i * lowCard + lowCard));
+            }
+        }
+
+        childrenSet.put(clafer, children);
+        set.put(clafer, union(children));
+
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        if (!clafer.hasParent()) {
+            Arrays.fill(members, 0, lowCard, True);
+            Arrays.fill(members, lowCard, members.length, False);
+        } else {
+            IrBoolVar[] parentMembership = membership.get(clafer.getParent());
+            if (lowCard == 1) {
+                members = parentMembership;
+            } else {
+                for (int i = 0; i < parentMembership.length; i++) {
+                    for (int j = 0; j < lowCard; j++) {
+                        members[i * lowCard + j] = parentMembership[i];
+                    }
                 }
             }
         }
+        membership.put(clafer, members);
+    }
 
-        IrSetVar[] compile(AstConcreteClafer a) {
-            PartialSolution partialParentSolution = getPartialParentSolution(a);
-            switch (getFormat(a)) {
-                case LowGroup:
-                    IrSetVar[] svs = skipCards(a);
-                    // Variables are added in the order that is most cooperative with symmetry breaking.
-                    Card card = a.getCard();
-                    for (int i = 0; i < partialParentSolution.size(); i++) {
-                        if (partialParentSolution.hasClafer(i)) {
-                            module.addConstraint(constrainCard(setCard(svs[i]), card));
-                        } else {
-                            if (card.isBounded()) {
-                                module.addConstraint(implies(membership.get(a.getParent())[i],
-                                        constrainCard(setCard(svs[i]), card)));
-                            }
-                            module.addConstraint(implies(not(membership.get(a.getParent())[i]),
-                                    equal(svs[i], EmptySet)));
-                        }
-                    }
+    private void constrainParentGroupConcrete(AstConcreteClafer clafer) {
+        PartialSolution partialParentSolution = getPartialParentSolution(clafer);
 
-                    // TODO: optimize with partial solution?
-//                    model.addConstraint(SetLexManager.setLex(svs, card));
-                    return svs;
-                case ParentGroup:
-                    svs = new IrSetVar[partialParentSolution.size()];
-                    assert a.getCard().getLow() == a.getCard().getHigh();
-                    int lowCard = a.getCard().getLow();
-                    for (int i = 0; i < svs.length; i++) {
-                        if (partialParentSolution.hasClafer(i)) {
-                            svs[i] = constant(Util.range(i * lowCard, i * lowCard + lowCard));
-                        } else {
-                            svs[i] = set(a.getName() + "#" + i, Util.range(i * lowCard, i * lowCard + lowCard));
-                            module.addConstraint(implies(membership.get(a.getParent())[i],
-                                    equal(svs[i], constant(Util.range(i * lowCard, i * lowCard + lowCard)))));
-                            module.addConstraint(implies(not(membership.get(a.getParent())[i]),
-                                    equal(svs[i], EmptySet)));
-                        }
-                    }
-                    return svs;
-                default:
-                    throw new AstException();
+        IrSetVar[] children = childrenSet.get(clafer);
+        assert clafer.getCard().getLow() == clafer.getCard().getHigh();
+        int lowCard = clafer.getCard().getLow();
+        for (int i = 0; i < children.length; i++) {
+            if (!partialParentSolution.hasClafer(i)) {
+                module.addConstraint(implies(membership.get(clafer.getParent())[i],
+                        equal(children[i], constant(Util.range(i * lowCard, i * lowCard + lowCard)))));
+                module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
+                        equal(children[i], EmptySet)));
             }
         }
-    };
+    }
+
+    private void initAbstract(AstAbstractClafer clafer) {
+        set.put(clafer, set(clafer.getName(), 0, getScope(clafer) - 1));
+
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        for (AstClafer sub : clafer.getSubs()) {
+            IrBoolVar[] subMembers = membership.get(sub);
+            int offset = getOffset(clafer, sub);
+            for (int i = 0; i < subMembers.length; i++) {
+                assert members[offset + i] == null;
+                members[offset + i] = Check.notNull(subMembers[i]);
+            }
+        }
+        Check.noNulls(members);
+        membership.put(clafer, members);
+    }
+
+    private void constrainAbstract(AstAbstractClafer clafer) {
+        // Do nothing
+    }
     private final ReadWriteHashMap<AstClafer, IrSetExpr> set = new ReadWriteHashMap<AstClafer, IrSetExpr>();
     private final ReadWriteHashMap<AstClafer, IrSetVar[]> childrenSet = new ReadWriteHashMap<AstClafer, IrSetVar[]>();
     private final ReadWriteHashMap<AstClafer, IrBoolVar[]> membership = new ReadWriteHashMap<AstClafer, IrBoolVar[]>();
@@ -434,43 +412,5 @@ public class AstCompiler {
             exprs.add(lessThanEqual(setCard, card.getHigh()));
         }
         return and(exprs);
-    }
-
-    /**
-     * Requires two steps to avoid circularity.
-     */
-    private static abstract class ClaferCompiler<T extends AstClafer> {
-
-        /**
-         * Create the variables.
-         */
-        abstract void initLowGroup(T clafer);
-
-        /**
-         * Create the variables.
-         */
-        abstract void initParentGroup(T clafer);
-
-        /**
-         * Create the variables.
-         */
-        void init(T clafer) {
-        }
-
-        /**
-         * Constrain the variables.
-         */
-        abstract void constrainLowGroup(T clafer);
-
-        /**
-         * Constrain the variables.
-         */
-        abstract void constrainParentGroup(T clafer);
-
-        /**
-         * Constrain the variables.
-         */
-        void constrain(T clafer) {
-        }
     }
 }

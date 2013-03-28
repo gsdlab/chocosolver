@@ -14,40 +14,41 @@ import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
 
 /**
- *
+ * Compiles from AST -> Choco
+ * 
  * @author jimmy
  */
-public class Compiler {
+public class ClaferCompiler {
 
     /**
      * Higher-level, less control.
      */
-    public static ChocoSolver compile(AstModel in, Scope scope) {
+    public static ClaferSolver compile(AstModel in, Scope scope) {
         Solver solver = new Solver();
-        SolutionMap solution = compile(in, scope, solver);
+        ClaferSolutionMap solution = compile(in, scope, solver);
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
                 SetStrategyFactory.setLex(solution.getIrSolution().getSetVars())));
-        return new ChocoSolver(solver, solution);
+        return new ClaferSolver(solver, solution);
     }
 
     /**
      * Lower-level, more control.
      */
-    public static SolutionMap compile(AstModel in, Scope scope, Solver out) {
+    public static ClaferSolutionMap compile(AstModel in, Scope scope, Solver out) {
         IrModule module = new IrModule();
         AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
 
         IrSolutionMap irSolution = IrCompiler.compile(module, out);
 
-        return new SolutionMap(astSolution, irSolution);
+        return new ClaferSolutionMap(astSolution, irSolution);
     }
 
     public static void main(String[] args) {
         AstModel model = Ast.newModel();
         model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(1, 2).refTo(Ast.IntType);
 
-        ChocoSolver solver = compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
         System.out.println(solver);
         while (solver.nextSolution()) {
             System.out.println(solver.solution());
