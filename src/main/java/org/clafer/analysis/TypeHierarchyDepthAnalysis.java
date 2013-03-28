@@ -1,6 +1,8 @@
 package org.clafer.analysis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstModel;
@@ -15,12 +17,17 @@ public class TypeHierarchyDepthAnalysis {
         Map<AstAbstractClafer, Integer> depths = new HashMap<AstAbstractClafer, Integer>();
 
         for (final AstAbstractClafer clafer : model.getAbstractClafers()) {
-            int depth = 0;
+            List<AstAbstractClafer> hierarchy = new ArrayList<AstAbstractClafer>(0);
             for (AstAbstractClafer sup = clafer; sup.hasSuperClafer(); sup = sup.getSuperClafer()) {
-                depth++;
+                if (hierarchy.contains(sup)) {
+                    throw new AnalysisException("Cycle in type hierarchy " + hierarchy);
+                }
+                hierarchy.add(sup);
             }
-            depths.put(clafer, depth);
+            depths.put(clafer, hierarchy.size());
         }
+
+        AnalysisUtil.descendingDepths(model.getAbstractClafers(), depths);
 
         return depths;
     }

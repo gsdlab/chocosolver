@@ -1,5 +1,7 @@
 package org.clafer.compiler;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.Check;
 import org.clafer.instance.InstanceModel;
 import solver.Solver;
@@ -34,6 +36,14 @@ public class ClaferSolver {
 
     public InstanceModel instance() {
         return solutionMap.getInstance();
+    }
+
+    public InstanceModel[] allInstances() {
+        List<InstanceModel> instances = new ArrayList<InstanceModel>();
+        while (find()) {
+            instances.add(instance());
+        }
+        return instances.toArray(new InstanceModel[instances.size()]);
     }
 
     @Override

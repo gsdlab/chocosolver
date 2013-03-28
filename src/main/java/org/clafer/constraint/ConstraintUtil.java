@@ -6,11 +6,13 @@ import solver.ICause;
 import solver.exception.ContradictionException;
 import solver.variables.SetVar;
 import solver.variables.delta.monitor.SetDeltaMonitor;
+import util.procedure.IntProcedure;
 
 /**
- *
+ * Rename to PropagatorUtil
  * @author jimmy
  */
+@Deprecated
 public class ConstraintUtil {
 
     public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propogator) {
@@ -58,6 +60,12 @@ public class ConstraintUtil {
     public static void iterateEnv(SetVar set, TIntCollection collection) {
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             collection.add(i);
+        }
+    }
+
+    public static void forEachKer(SetVar set, IntProcedure proc) throws ContradictionException {
+        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+            proc.execute(i);
         }
     }
 }

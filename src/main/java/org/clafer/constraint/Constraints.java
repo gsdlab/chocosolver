@@ -1,16 +1,26 @@
 package org.clafer.constraint;
 
+import org.clafer.collection.Appender;
 import org.clafer.constraint.propagator.PropSelectN;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
+import solver.variables.SetVar;
 
 /**
  *
  * @author jimmy
  */
 public class Constraints {
+
+    public static Constraint join(SetVar take, SetVar[] children, SetVar to) {
+        Constraint con = new Constraint(
+                Appender.<SetVar>build().add(take).addAll(children).add(to).toArray(),
+                take.getSolver());
+        con.setPropagators(new PropJoin(take, children, to));
+        return con;
+    }
 
     public static Constraint increasing(IntVar[] vars) {
         return new Increasing(vars, vars[0].getSolver());

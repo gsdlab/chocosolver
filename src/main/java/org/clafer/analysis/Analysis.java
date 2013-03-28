@@ -57,8 +57,6 @@ public class Analysis {
 
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
 
-        AnalysisUtil.descendingDepths(model.getAbstractClafers(), depths);
-
         Map<AstClafer, Card> globalCards = GlobalCardAnalysis.analyze(model, scope);
         Scope optimizedScope = ScopeAnalysis.analyze(model, scope, globalCards);
 

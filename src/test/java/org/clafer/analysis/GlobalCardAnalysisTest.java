@@ -23,7 +23,7 @@ public class GlobalCardAnalysisTest {
 
         AstAbstractClafer object = model.addAbstractClafer("object");
         AstConcreteClafer id = object.addChild("id").withCard(new Card(1, 1));
-        
+
         AstAbstractClafer animal = model.addAbstractClafer("animal").extending(object);
         AstAbstractClafer mammal = model.addAbstractClafer("mammal").extending(animal);
         AstAbstractClafer primate = model.addAbstractClafer("primate").extending(mammal);
@@ -40,12 +40,12 @@ public class GlobalCardAnalysisTest {
 
         Scope scope = new Scope(10);
 
+        TypeHierarchyDepthAnalysis.analyze(model);
         Map<AstClafer, Card> analysis = GlobalCardAnalysis.analyze(model, scope);
-        
-        System.out.println(analysis);
+
         assertEquals(new Card(7, 14), analysis.get(object));
         assertEquals(new Card(7, 10), analysis.get(id));
-        
+
         assertEquals(new Card(2, 4), analysis.get(animal));
         assertEquals(new Card(2, 4), analysis.get(mammal));
         assertEquals(new Card(2, 3), analysis.get(primate));
