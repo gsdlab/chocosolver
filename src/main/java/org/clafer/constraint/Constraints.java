@@ -2,17 +2,29 @@ package org.clafer.constraint;
 
 import org.clafer.collection.Appender;
 import org.clafer.constraint.propagator.PropSelectN;
+import org.clafer.constraint.propagator.PropSingleton;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.Variable;
 
 /**
  *
  * @author jimmy
  */
 public class Constraints {
+
+    public static Constraint singleton(SetVar svar, IntVar ivar) {
+        return singleton(ivar, svar);
+    }
+
+    public static Constraint singleton(IntVar ivar, SetVar svar) {
+        Constraint con = new Constraint(new Variable[]{ivar, svar}, ivar.getSolver());
+        con.setPropagators(new PropSingleton(ivar, svar));
+        return con;
+    }
 
     public static Constraint join(SetVar take, SetVar[] children, SetVar to) {
         Constraint con = new Constraint(

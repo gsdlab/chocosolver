@@ -1,16 +1,14 @@
 package org.clafer.constraint;
 
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.Arrays;
 import org.clafer.collection.Appender;
 import solver.Solver;
 import solver.constraints.Constraint;
-import solver.constraints.IntConstraintFactory;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.constraints.set.SetConstraintsFactory;
 import solver.exception.ContradictionException;
-import solver.search.loop.monitors.SearchMonitorFactory;
-import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.set.SetSearchStrategy;
 import solver.variables.EventType;
 import solver.variables.SetVar;
@@ -69,7 +67,7 @@ public class PropJoin extends Propagator<SetVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask + EventType.INSTANTIATE.mask;
+        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
     }
 
     @Override
@@ -86,14 +84,7 @@ public class PropJoin extends Propagator<SetVar> {
             ConstraintUtil.subsetKer(children[i], to, aCause);
             ConstraintUtil.subsetEnv(children[i], to, aCause);
         }
-
         // Pick take
-        
-        takeD.unfreeze();
-        ConstraintUtil.unfreezeAll(childrenD);
-        toD.unfreeze();
-        
-        assert !ESat.FALSE.equals(isEntailed());
     }
 
     @Override
@@ -111,14 +102,15 @@ public class PropJoin extends Propagator<SetVar> {
         } else {
             assert isChildVar(idxVarInProp);
             int id = getChildVarIndex(idxVarInProp);
-            if (take.kernelContains(id)) {
-                childrenD[id].freeze();
+            childrenD[id].freeze();
+            if (take.envelopeContains(id)) {
                 childrenD[id].forEach(pruneToOnChildEnv, EventType.REMOVE_FROM_ENVELOPE);
-                childrenD[id].forEach(pickToOnChildKer, EventType.ADD_TO_KER);
-                childrenD[id].unfreeze();
+                if (take.kernelContains(id)) {
+                    childrenD[id].forEach(pickToOnChildKer, EventType.ADD_TO_KER);
+                }
             }
+            childrenD[id].unfreeze();
         }
-        assert !ESat.FALSE.equals(isEntailed());
     }
     private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
 
@@ -126,21 +118,33 @@ public class PropJoin extends Propagator<SetVar> {
         public void execute(int takeEnv) throws ContradictionException {
             assert !take.envelopeContains(takeEnv);
             for (int i = children[takeEnv].getEnvelopeFirst(); i != SetVar.END; i = children[takeEnv].getEnvelopeNext()) {
-                if (!hasChildSupport(i)) {
+                if (!to.envelopeContains(i)) {
+                    continue;
+                }
+                int child = -1;
+                for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
+                    if (children[j].envelopeContains(i)) {
+                        // Found a second or don't care after first
+                        if (child != -1 || !to.kernelContains(i)) {
+                            child = -2;
+                            break;
+                        }
+                        child = j;
+                    }
+                }
+                if (child == -1) {
+                    // i is not longer supported
                     to.removeFromEnvelope(i, aCause);
+                } else if (child != -2 && to.kernelContains(i)) {
+                    // i has only one support
+                    take.addToKernel(child, aCause);
+                    ConstraintUtil.subsetKer(children[child], to, aCause);
+                    ConstraintUtil.subsetEnv(children[child], to, aCause);
+                    children[child].addToKernel(i, aCause);
                 }
             }
         }
     };
-
-    private boolean hasChildSupport(int child) {
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            if (children[i].envelopeContains(child)) {
-                return true;
-            }
-        }
-        return false;
-    }
     private final IntProcedure pickToAndPruneChildOnTakeKer = new IntProcedure() {
 
         @Override
@@ -156,12 +160,29 @@ public class PropJoin extends Propagator<SetVar> {
 
         @Override
         public void execute(int i) throws ContradictionException {
+            if (!to.envelopeContains(i)) {
+                return;
+            }
+            int child = -1;
             for (int takeEnv = take.getEnvelopeFirst(); takeEnv != SetVar.END; takeEnv = take.getEnvelopeNext()) {
                 if (children[takeEnv].envelopeContains(i)) {
-                    return;
+                    // Found a second or don't care after first
+                    if (child != -1 || !to.kernelContains(i)) {
+                        return;
+                    }
+                    child = takeEnv;
                 }
             }
-            to.removeFromEnvelope(i, aCause);
+            if (child == -1) {
+                // No support
+                to.removeFromEnvelope(i, aCause);
+            } else if (to.kernelContains(i)) {
+                // One support
+                take.addToKernel(child, aCause);
+                ConstraintUtil.subsetKer(children[child], to, aCause);
+                ConstraintUtil.subsetEnv(children[child], to, aCause);
+                children[child].addToKernel(i, aCause);
+            }
         }
     };
     private final IntProcedure pickToOnChildKer = new IntProcedure() {
@@ -204,31 +225,37 @@ public class PropJoin extends Propagator<SetVar> {
             } else {
                 take.addToKernel(child, aCause);
                 ConstraintUtil.subsetKer(children[child], to, aCause);
+                ConstraintUtil.subsetEnv(children[child], to, aCause);
                 children[child].addToKernel(toVal, aCause);
             }
         }
     };
 
     @Override
-    public boolean isStateLess() {
-        return super.isStateLess();
-    }
-
-    @Override
     public ESat isEntailed() {
-        int count = 0;
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            for (int j = children[i].getEnvelopeFirst(); j != SetVar.END; j = children[i].getEnvelopeNext()) {
+        for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+            for (int j = children[i].getKernelFirst(); j != SetVar.END; j = children[i].getKernelNext()) {
                 if (!to.envelopeContains(j)) {
                     return ESat.FALSE;
                 }
-                count++;
             }
+        }
+        int count = 0;
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            count += children[i].getEnvelopeSize();
         }
         if (count < to.getKernelSize()) {
             return ESat.FALSE;
         }
-        return count == to.getKernelSize() ? ESat.TRUE : ESat.UNDEFINED;
+        if (!take.instantiated() || !to.instantiated()) {
+            return ESat.UNDEFINED;
+        }
+        for (SetVar child : children) {
+            if (!child.instantiated()) {
+                return ESat.UNDEFINED;
+            }
+        }
+        return ESat.TRUE;
     }
 
     public static void main(String[] args) {
@@ -262,5 +289,10 @@ public class PropJoin extends Propagator<SetVar> {
         }
         System.out.println(solver.getMeasures());
 
+    }
+
+    @Override
+    public String toString() {
+        return "propJoin(" + take + ", " + Arrays.toString(children) + ", " + to + ")";
     }
 }

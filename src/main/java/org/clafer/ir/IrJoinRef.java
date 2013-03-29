@@ -13,7 +13,7 @@ public class IrJoinRef implements IrSetExpr {
 
     IrJoinRef(IrSetExpr take, IrIntExpr[] refs) {
         this.take = Check.notNull(take);
-        this.refs = Check.notNull(refs);
+        this.refs = Check.noNulls(refs);
     }
 
     public IrSetExpr getTake() {

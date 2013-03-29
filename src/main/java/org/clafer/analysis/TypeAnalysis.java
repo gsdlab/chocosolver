@@ -1,6 +1,5 @@
 package org.clafer.analysis;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,6 @@ import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNone;
 import org.clafer.ast.AstQuantify;
-import org.clafer.ast.AstSetExpression;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 
@@ -40,67 +38,63 @@ public class TypeAnalysis {
         List<AstClafer> clafers = AnalysisUtil.getClafers(model);
         for (AstClafer clafer : clafers) {
             TypeVisitor visitor = new TypeVisitor(clafer, types);
-            List<AstBoolExpression> explicitConstraints = new ArrayList<AstBoolExpression>();
             for (AstBoolExpression constraint : clafer.getConstraints()) {
-                TypedExpression typedConstraint = constraint.accept(visitor, null);
-                explicitConstraints.add((AstBoolExpression) typedConstraint.getExpression());
+                constraint.accept(visitor, null);
             }
-            clafer.withConstraints(explicitConstraints);
         }
         return types;
     }
 
-    private static class TypeVisitor implements AstExpressionVisitor<Void, TypedExpression> {
+    public static Map<AstExpression, AstClafer> analyze(AstClafer clafer) {
+        Map<AstExpression, AstClafer> types = new HashMap<AstExpression, AstClafer>();
+        TypeVisitor visitor = new TypeVisitor(clafer, types);
+        for (AstBoolExpression constraint : clafer.getConstraints()) {
+            constraint.accept(visitor, null);
+        }
+        return types;
+    }
+
+    private static class TypeVisitor implements AstExpressionVisitor<Void, AstClafer> {
 
         private final AstClafer context;
         private final Map<AstExpression, AstClafer> types;
 
-        public TypeVisitor(AstClafer context, Map<AstExpression, AstClafer> typeMap) {
+        TypeVisitor(AstClafer context, Map<AstExpression, AstClafer> typeMap) {
             this.context = context;
             this.types = typeMap;
         }
 
-        TypedExpression put(AstClafer type, AstExpression expression) {
+        AstClafer put(AstClafer type, AstExpression expression) {
             types.put(expression, type);
-            return new TypedExpression(type, expression);
+            return type;
         }
 
         @Override
-        public TypedExpression visit(AstThis ast, Void a) {
+        public AstClafer visit(AstThis ast, Void a) {
             return put(context, ast);
         }
 
         @Override
-        public TypedExpression visit(AstConstantInt ast, Void a) {
+        public AstClafer visit(AstConstantInt ast, Void a) {
             return put(IntType, ast);
         }
 
         @Override
-        public TypedExpression visit(AstJoin ast, Void a) {
-            TypedExpression $ast = ast.getLeft().accept(this, a);
-            AstClafer leftType = $ast.getType();
-            AstSetExpression left = (AstSetExpression) $ast.getExpression();
+        public AstClafer visit(AstJoin ast, Void a) {
+            AstClafer leftType = ast.getLeft().accept(this, a);
             AstConcreteClafer rightType = ast.getRight();
-
             if (rightType.hasParent()) {
                 AstClafer joinType = rightType.getParent();
-                if (leftType.equals(joinType)) {
-                    return put(rightType, join(left, rightType));
-                }
                 if (AnalysisUtil.isAssignable(leftType, joinType)) {
-                    AstUpcast upcast = upcast(left, (AstAbstractClafer) joinType);
-                    put(joinType, upcast);
-                    return put(rightType, join(upcast, rightType));
+                    return put(rightType, ast);
                 }
             }
             throw new AnalysisException("Cannot join " + leftType.getName() + "." + rightType.getName());
         }
 
         @Override
-        public TypedExpression visit(AstJoinParent ast, Void a) {
-            TypedExpression $children = ast.getChildren().accept(this, a);
-            AstClafer childrenType = $children.getType();
-            AstSetExpression children = (AstSetExpression) $children.getExpression();
+        public AstClafer visit(AstJoinParent ast, Void a) {
+            AstClafer childrenType = ast.getChildren().accept(this, a);
             if (!(childrenType instanceof AstConcreteClafer)) {
                 throw new AnalysisException("Cannot join " + childrenType.getName() + ".parent");
             }
@@ -108,41 +102,35 @@ public class TypeAnalysis {
             if (!concreteChildrenType.hasParent()) {
                 throw new AnalysisException("Cannot join " + childrenType.getName() + ".parent");
             }
-            return put(concreteChildrenType.getParent(), joinParent(children));
+            return put(concreteChildrenType.getParent(), ast);
         }
 
         @Override
-        public TypedExpression visit(AstJoinRef ast, Void a) {
-            TypedExpression $ast = ast.getDeref().accept(this, a);
-            AstClafer derefType = $ast.getType();
-            AstSetExpression deref = (AstSetExpression) $ast.getExpression();
+        public AstClafer visit(AstJoinRef ast, Void a) {
+            AstClafer derefType = ast.getDeref().accept(this, a);
             if (!derefType.hasRef()) {
                 throw new AnalysisException("Cannot join " + derefType.getName() + ".ref");
             }
-            return put(derefType.getRef().getTargetType(), joinRef(deref));
+            return put(derefType.getRef().getTargetType(), ast);
         }
 
         @Override
-        public TypedExpression visit(AstCard ast, Void a) {
-            TypedExpression $set = ast.getSet().accept(this, a);
-            return put(IntType, card((AstSetExpression) $set.getExpression()));
+        public AstClafer visit(AstCard ast, Void a) {
+            ast.getSet().accept(this, a);
+            return put(IntType, ast);
         }
 
         @Override
-        public TypedExpression visit(AstCompare ast, Void a) {
-            TypedExpression $leftAst = ast.getLeft().accept(this, a);
-            TypedExpression $rightAst = ast.getRight().accept(this, a);
-            AstClafer leftType = $leftAst.getType();
-            AstClafer rightType = $rightAst.getType();
-            AstExpression left = $leftAst.getExpression();
-            AstExpression right = $rightAst.getExpression();
+        public AstClafer visit(AstCompare ast, Void a) {
+            AstClafer leftType = ast.getLeft().accept(this, a);
+            AstClafer rightType = ast.getRight().accept(this, a);
             switch (ast.getOp()) {
                 case Equal:
                 case NotEqual:
                     if (!AnalysisUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
                         throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
                     }
-                    return put(BoolType, compare(left, ast.getOp(), right));
+                    return put(BoolType, ast);
                 case LessThan:
                 case LessThanEqual:
                 case GreaterThan:
@@ -150,51 +138,43 @@ public class TypeAnalysis {
                     if (!(leftType instanceof AstIntClafer) || !(rightType instanceof AstIntClafer)) {
                         throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
                     }
-                    return put(BoolType, compare(left, ast.getOp(), right));
+                    return put(BoolType, ast);
                 default:
                     throw new AnalysisException("Unknown op " + ast.getOp());
             }
         }
 
         @Override
-        public TypedExpression visit(AstUpcast ast, Void a) {
-            TypedExpression $ast = ast.getBase().accept(this, a);
-            AstClafer fromType = $ast.getType();
-            AstSetExpression from = (AstSetExpression) $ast.getExpression();
+        public AstClafer visit(AstUpcast ast, Void a) {
+            AstClafer baseType = ast.getBase().accept(this, a);
             AstAbstractClafer to = ast.getTarget();
-            if (!AnalysisUtil.isAssignable(fromType, to)) {
-                throw new AnalysisException("Cannot upcast from " + fromType + " to " + to);
+            if (!AnalysisUtil.isAssignable(baseType, to)) {
+                throw new AnalysisException("Cannot upcast from " + baseType + " to " + to);
             }
-            return put(to, upcast(from, to));
+            return put(to, ast);
         }
 
         @Override
-        public TypedExpression visit(AstNone ast, Void a) {
-            TypedExpression $set = ast.getSet().accept(this, a);
-            return put(BoolType, none((AstSetExpression) $set.getExpression()));
+        public AstClafer visit(AstNone ast, Void a) {
+            ast.getSet().accept(this, a);
+            return put(BoolType, ast);
         }
 
         @Override
-        public TypedExpression visit(AstLocal ast, Void a) {
+        public AstClafer visit(AstLocal ast, Void a) {
             return put(AnalysisUtil.notNull(ast + " type not analyzed yet", types.get(ast)), ast);
         }
 
         @Override
-        public TypedExpression visit(AstQuantify ast, Void a) {
-            List<AstDecl> $decl = new ArrayList<AstDecl>();
+        public AstClafer visit(AstQuantify ast, Void a) {
             for (AstDecl decl : ast.getDecls()) {
-                TypedExpression $body = decl.getBody().accept(this, a);
+                AstClafer bodyType = decl.getBody().accept(this, a);
                 for (AstLocal local : decl.getLocals()) {
-                    put($body.getType(), local);
+                    put(bodyType, local);
                 }
-                $decl.add(decl.withBody((AstSetExpression) $body.getExpression()));
             }
-
-            TypedExpression $body = ast.getBody().accept(this, a);
-            return put(BoolType, quantify(
-                    ast.getQuantifier(),
-                    $decl.toArray(new AstDecl[$decl.size()]),
-                    (AstBoolExpression) $body.getExpression()));
+            ast.getBody().accept(this, a);
+            return put(BoolType, ast);
         }
     }
 

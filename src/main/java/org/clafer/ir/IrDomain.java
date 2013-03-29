@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
-import org.clafer.Check;
 
 /**
  *
@@ -20,7 +19,8 @@ public interface IrDomain {
         private final int[] values;
 
         public IrEnumDomain(int[] values) {
-            this.values = Check.notNull(values);
+            this.values = Arrays.copyOf(values, values.length);
+            Arrays.sort(this.values);
         }
 
         @Override
@@ -64,6 +64,20 @@ public interface IrDomain {
         @Override
         public int hashCode() {
             return Arrays.hashCode(values);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder result = new StringBuilder();
+            result.append('{');
+            for (int i = 0; i < values.length; i++) {
+                if (i > 0) {
+                    result.append(", ");
+                }
+                result.append(values[i]);
+            }
+            result.append('}');
+            return result.toString();
         }
     }
 
@@ -133,6 +147,11 @@ public interface IrDomain {
         @Override
         public int hashCode() {
             return low ^ high;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + low + ", ..., " + high + "}";
         }
     }
 }

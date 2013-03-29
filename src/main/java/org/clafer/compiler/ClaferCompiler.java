@@ -38,7 +38,7 @@ public class ClaferCompiler {
     public static ClaferSolutionMap compile(AstModel in, Scope scope, Solver out) {
         IrModule module = new IrModule();
         AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
-
+System.out.println(module);
         IrSolutionMap irSolution = IrCompiler.compile(module, out);
 
         return new ClaferSolutionMap(astSolution, irSolution);

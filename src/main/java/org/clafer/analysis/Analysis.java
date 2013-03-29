@@ -28,7 +28,6 @@ public class Analysis {
     private final Map<AstClafer, PartialSolution> partialSolutions;
     private final Map<AstRef, int[]> partialInts;
     private final Map<Pair<AstRef, Integer>, Integer> partialRefInts;
-    private final Map<AstExpression, AstClafer> types;
 
     private Analysis(Map<AstAbstractClafer, Integer> depths,
             Map<AstClafer, Card> globalCards,
@@ -37,8 +36,7 @@ public class Analysis {
             Map<AstAbstractClafer, Offsets> offsets,
             Map<AstClafer, PartialSolution> partialSolutions,
             Map<AstRef, int[]> partialInts,
-            Map<Pair<AstRef, Integer>, Integer> partialRefInts,
-            Map<AstExpression, AstClafer> types) {
+            Map<Pair<AstRef, Integer>, Integer> partialRefInts) {
         this.depths = depths;
         this.globalCards = globalCards;
         this.scope = scope;
@@ -47,13 +45,15 @@ public class Analysis {
         this.partialSolutions = partialSolutions;
         this.partialInts = partialInts;
         this.partialRefInts = partialRefInts;
-        this.types = types;
     }
 
     public static Analysis analyze(AstModel model, Scope scope) {
         Check.notNull(model);
         Check.notNull(scope);
         Map<AstExpression, AstClafer> types = TypeAnalysis.analyze(model);
+        CanonicalAnalysis.analyze(model, types);
+        // Reanalyze types.
+        types = TypeAnalysis.analyze(model);
 
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
 
@@ -71,7 +71,7 @@ public class Analysis {
         Map<AstRef, int[]> partialInts = pair.getFst();
         Map<Pair<AstRef, Integer>, Integer> partialRefInts = pair.getSnd();
 
-        return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, partialRefInts, types);
+        return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, partialRefInts);
     }
 
     public int getDepth(AstAbstractClafer clafer) {

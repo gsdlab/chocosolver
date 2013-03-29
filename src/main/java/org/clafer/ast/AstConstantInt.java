@@ -4,7 +4,7 @@ package org.clafer.ast;
  *
  * @author jimmy
  */
-public class AstConstantInt implements AstExpression {
+public class AstConstantInt implements AstSetExpression {
 
     private final int value;
 

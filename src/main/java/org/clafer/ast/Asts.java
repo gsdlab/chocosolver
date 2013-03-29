@@ -39,31 +39,31 @@ public class Asts {
         return new AstCard(set);
     }
 
-    public static AstCompare compare(AstExpression left, AstCompare.Op op, AstExpression right) {
+    public static AstCompare compare(AstSetExpression left, AstCompare.Op op, AstSetExpression right) {
         return new AstCompare(left, op, right);
     }
 
-    public static AstCompare equal(AstExpression left, AstExpression right) {
+    public static AstCompare equal(AstSetExpression left, AstSetExpression right) {
         return compare(left, AstCompare.Op.Equal, right);
     }
 
-    public static AstCompare notEqual(AstExpression left, AstExpression right) {
+    public static AstCompare notEqual(AstSetExpression left, AstSetExpression right) {
         return compare(left, AstCompare.Op.NotEqual, right);
     }
 
-    public static AstCompare lessThan(AstExpression left, AstExpression right) {
+    public static AstCompare lessThan(AstSetExpression left, AstSetExpression right) {
         return compare(left, AstCompare.Op.LessThan, right);
     }
 
-    public static AstCompare lessThanEqual(AstExpression left, AstExpression right) {
+    public static AstCompare lessThanEqual(AstSetExpression left, AstSetExpression right) {
         return compare(left, AstCompare.Op.LessThanEqual, right);
     }
 
-    public static AstCompare greaterThan(AstExpression left, AstExpression right) {
+    public static AstCompare greaterThan(AstSetExpression left, AstSetExpression right) {
         return compare(left, AstCompare.Op.GreaterThan, right);
     }
 
-    public static AstCompare greaterThanEqual(AstExpression left, AstExpression right) {
+    public static AstCompare greaterThanEqual(AstSetExpression left, AstSetExpression right) {
         return compare(left, AstCompare.Op.GreaterThanEqual, right);
     }
 
@@ -90,7 +90,7 @@ public class Asts {
     public static AstQuantify quantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpression body) {
         return new AstQuantify(quantifier, decls, body);
     }
-    
+
     public static AstQuantify some(AstDecl[] decls, AstBoolExpression body) {
         return new AstQuantify(Quantifier.Some, decls, body);
     }

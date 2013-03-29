@@ -1,6 +1,20 @@
 package org.clafer.ast.compiler;
 
-import java.util.Collections;
+import org.clafer.ast.AstExpression;
+import java.util.Map;
+import org.clafer.ast.AstSetExpression;
+import org.clafer.ast.AstCard;
+import org.clafer.ast.AstCompare;
+import org.clafer.ast.AstConstantInt;
+import org.clafer.ast.AstJoin;
+import org.clafer.ast.AstJoinParent;
+import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstLocal;
+import org.clafer.ast.AstNone;
+import org.clafer.ast.AstQuantify;
+import org.clafer.ast.AstThis;
+import org.clafer.ast.AstUpcast;
+import org.clafer.ir.IrExpr;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.Asts;
 import org.clafer.compiler.ClaferSolver;
@@ -18,9 +32,13 @@ import org.clafer.analysis.Analysis;
 import org.clafer.analysis.AnalysisUtil;
 import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
+import org.clafer.analysis.TypeAnalysis;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstBoolExpression;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstException;
+import org.clafer.ast.AstExpressionVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
@@ -40,11 +58,9 @@ public class AstCompiler {
 
     public static void main(String[] args) {
         AstModel model = Asts.newModel();
-        AstAbstractClafer person = model.addAbstractClafer("person");//.refTo(Asts.IntType);
-        AstConcreteClafer name = person.addChild("name").withCard(1, 2);
-
-        AstConcreteClafer jim = model.addTopClafer("Jimmy").withCard(1, 2).extending(person);
-        AstConcreteClafer jan = model.addTopClafer("Janet").withCard(1, 2).extending(person);
+        AstConcreteClafer person = model.addTopClafer("person");
+        AstConcreteClafer name = person.addChild("name").withCard(1, 1).refTo(Asts.IntType);
+        person.addConstraint(Asts.equal(Asts.joinRef(Asts.join(Asts.$this(), name)), Asts.constantInt(1)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
 
@@ -71,6 +87,9 @@ public class AstCompiler {
     private AstSolutionMap compile() {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = AnalysisUtil.getConcreteClafers(model);
+        List<AstClafer> clafers = new ArrayList<AstClafer>(abstractClafers.size() + concreteClafers.size());
+        clafers.addAll(abstractClafers);
+        clafers.addAll(concreteClafers);
 
         for (AstConcreteClafer clafer : concreteClafers) {
             initConcrete(clafer);
@@ -103,6 +122,17 @@ public class AstCompiler {
         }
         for (AstAbstractClafer clafer : abstractClafers) {
             constrainAbstract(clafer);
+        }
+
+        for (AstClafer clafer : clafers) {
+            int scope = getScope(clafer);
+            for (int i = 0; i < scope; i++) {
+                ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, i);
+                for (AstBoolExpression constraint : clafer.getConstraints()) {
+                    IrBoolExpr thisConstraint = (IrBoolExpr) constraint.accept(expressionCompiler, null);
+                    module.addConstraint(implies(membership.get(clafer)[i], thisConstraint));
+                }
+            }
         }
 
         for (IrSetVar[] childSet : childrenSet.getValues()) {
@@ -413,6 +443,137 @@ public class AstCompiler {
     private final ReadWriteHashMap<AstClafer, IrBoolVar[]> membership = new ReadWriteHashMap<AstClafer, IrBoolVar[]>();
     private final ReadWriteHashMap<AstConcreteClafer, IrIntVar[]> parentPointers = new ReadWriteHashMap<AstConcreteClafer, IrIntVar[]>();
     private final ReadWriteHashMap<AstRef, IrIntVar[]> refPointers = new ReadWriteHashMap<AstRef, IrIntVar[]>();
+
+    private class ExpressionCompiler implements AstExpressionVisitor<Void, IrExpr> {
+
+        private final int thisId;
+        private final Map<AstExpression, AstClafer> types;
+
+        private ExpressionCompiler(AstClafer thisType, int thisId) {
+            this.thisId = thisId;
+            this.types = TypeAnalysis.analyze(thisType);
+        }
+
+        @Override
+        public IrExpr visit(AstThis ast, Void a) {
+            return constant(thisId);
+        }
+
+        @Override
+        public IrExpr visit(AstConstantInt ast, Void a) {
+            return constant(ast.getValue());
+        }
+
+        @Override
+        public IrExpr visit(AstJoin ast, Void a) {
+            AstSetExpression left = ast.getLeft();
+            AstConcreteClafer right = ast.getRight();
+
+            IrExpr $left = left.accept(this, a);
+            if ($left instanceof IrIntExpr) {
+                IrIntExpr $intLeft = (IrIntExpr) $left;
+                switch (getFormat(right)) {
+                    case ParentGroup:
+                        assert right.getCard().isExact();
+                        int lowCard = right.getCard().getLow();
+                        if (lowCard == 1) {
+                            return $intLeft;
+                        }
+                    // fallthrough
+                    case LowGroup:
+                        return join(singleton($intLeft), childrenSet.get(right));
+                }
+            } else if ($left instanceof IrSetExpr) {
+                IrSetExpr $setLeft = (IrSetExpr) $left;
+                return join($setLeft, childrenSet.get(right));
+            }
+            throw new AstException();
+        }
+
+        @Override
+        public IrExpr visit(AstJoinParent ast, Void a) {
+            AstSetExpression children = ast.getChildren();
+            AstConcreteClafer childrenType = (AstConcreteClafer) types.get(children);
+
+            IrExpr $children = children.accept(this, a);
+            if ($children instanceof IrIntExpr) {
+                IrIntExpr $intChildren = (IrIntExpr) $children;
+                switch (getFormat(childrenType)) {
+                    case ParentGroup:
+                        assert childrenType.getCard().isExact();
+                        int lowCard = childrenType.getCard().getLow();
+                        return div($intChildren, constant(lowCard));
+                    case LowGroup:
+                        return element(parentPointers.get(childrenType), $intChildren);
+                }
+            } else if ($children instanceof IrSetExpr) {
+                IrSetExpr $setChildren = (IrSetExpr) $children;
+                return joinRef($setChildren, parentPointers.get(childrenType));
+            }
+            throw new AstException();
+        }
+
+        @Override
+        public IrExpr visit(AstJoinRef ast, Void a) {
+            AstSetExpression deref = ast.getDeref();
+            AstClafer derefType = types.get(deref);
+
+            IrExpr $deref = deref.accept(this, a);
+            if ($deref instanceof IrIntExpr) {
+                IrIntExpr $intDeref = (IrIntExpr) $deref;
+                return element(refPointers.get(derefType.getRef()), $intDeref);
+            } else if ($deref instanceof IrSetExpr) {
+                IrSetExpr $setDeref = (IrSetExpr) $deref;
+                return joinRef($setDeref, refPointers.get(derefType.getRef()));
+            }
+            throw new AstException();
+        }
+
+        @Override
+        public IrExpr visit(AstCard ast, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public IrExpr visit(AstCompare ast, Void a) {
+            AstSetExpression left = ast.getLeft();
+            AstSetExpression right = ast.getRight();
+
+            IrExpr $left = left.accept(this, a);
+            IrExpr $right = right.accept(this, a);
+
+            if ($left instanceof IrIntExpr && $right instanceof IrIntExpr) {
+                IrIntExpr $intLeft = (IrIntExpr) $left;
+                IrIntExpr $intRight = (IrIntExpr) $right;
+
+                switch (ast.getOp()) {
+                    case Equal:
+                        return equal($intLeft, $intRight);
+                }
+            }
+            throw new AstException();
+        }
+
+        @Override
+        public IrExpr visit(AstUpcast ast, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public IrExpr visit(AstNone ast, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public IrExpr visit(AstLocal ast, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public IrExpr visit(AstQuantify ast, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    };
 
     /*************************
      * Optimization functions.

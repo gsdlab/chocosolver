@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.set.SetConstraintsFactory;
+import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.variables.SetVar;
 import solver.variables.VariableFactory;
 

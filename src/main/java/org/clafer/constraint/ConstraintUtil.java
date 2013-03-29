@@ -4,6 +4,7 @@ import gnu.trove.TIntCollection;
 import gnu.trove.set.hash.TIntHashSet;
 import solver.ICause;
 import solver.exception.ContradictionException;
+import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.procedure.IntProcedure;
@@ -53,6 +54,32 @@ public class ConstraintUtil {
         for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
             if (!sup.envelopeContains(i)) {
                 sub.removeFromEnvelope(i, propogator);
+            }
+        }
+    }
+
+    public static void subsetEnv(IntVar sub, SetVar sup, ICause propagtor) throws ContradictionException {
+        int left = Integer.MIN_VALUE;
+        int right = left;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (!sup.envelopeContains(val)) {
+                if (val == right + 1) {
+                    right = val;
+                } else {
+                    sub.removeInterval(left, right, propagtor);
+                    left = val;
+                    right = val;
+                }
+            }
+        }
+        sub.removeInterval(left, right, propagtor);
+    }
+
+    public static void subsetEnv(SetVar sub, IntVar sup, ICause propagator) throws ContradictionException {
+        for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
+            if (!sup.contains(val)) {
+                sub.removeFromEnvelope(val, propagator);
             }
         }
     }

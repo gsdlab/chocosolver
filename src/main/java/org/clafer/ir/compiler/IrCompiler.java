@@ -2,12 +2,15 @@ package org.clafer.ir.compiler;
 
 import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
+import org.clafer.ir.IrDiv;
+import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetCompare;
+import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortInts;
 import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrUnion;
@@ -15,6 +18,7 @@ import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrConstraint;
 import org.clafer.Check;
+import org.clafer.Util;
 import org.clafer.constraint.ConstraintUtil;
 import org.clafer.constraint.Constraints;
 import org.clafer.ir.IrBoolChannel;
@@ -90,8 +94,16 @@ public class IrCompiler {
         return VariableFactory.bool(name + "#" + varNum++, solver);
     }
 
+    private IntVar numIntVar(String name, int low, int high) {
+        return VariableFactory.enumerated(name, low, high, solver);
+    }
+
     private IntVar numIntVar(String name, int[] dom) {
         return VariableFactory.enumerated(name, dom, solver);
+    }
+
+    private SetVar numSetVar(String name, int low, int high) {
+        return VariableFactory.set(name, Util.range(low, high + 1), solver);
     }
 
     private SetVar numSetVar(String name, int[] env) {
@@ -398,12 +410,51 @@ public class IrCompiler {
         public IntVar visit(IrSetCard ir, Void a) {
             return setCardVar.get(ir.getSet().accept(setExprCompiler, a));
         }
+
+        @Override
+        public IntVar visit(IrDiv ir, Void a) {
+            IrIntExpr numerator = ir.getNumerator();
+            IrIntExpr denominator = ir.getDenominator();
+
+            IntVar $numerator = numerator.accept(this, a);
+            IntVar $denominator = denominator.accept(this, a);
+            IntVar quotient = numIntVar("Div",
+                    $numerator.getLB() / $denominator.getUB(),
+                    $numerator.getUB() / $denominator.getLB());
+            solver.post(IntConstraintFactory.eucl_div($numerator, $denominator, quotient));
+            return quotient;
+        }
+
+        @Override
+        public IntVar visit(IrElement ir, Void a) {
+            IrIntExpr index = ir.getIndex();
+            IrIntExpr[] array = ir.getArray();
+
+            IntVar $index = index.accept(intExprCompiler, a);
+            IntVar[] $array = new IntVar[array.length];
+            for (int i = 0; i < $array.length; i++) {
+                $array[i] = array[i].accept(intExprCompiler, a);
+            }
+            IntVar element = numIntVar("Element", getLB($array), getUB($array));
+            solver.post(_element($index, $array, element));
+            return element;
+        }
     };
     private final IrSetExprVisitor<Void, SetVar> setExprCompiler = new IrSetExprVisitor<Void, SetVar>() {
 
         @Override
         public SetVar visit(IrSetVar ir, Void a) {
             return setVar.get(ir);
+        }
+
+        @Override
+        public SetVar visit(IrSingleton ir, Void a) {
+            IrIntExpr value = ir.getValue();
+
+            IntVar $value = value.accept(intExprCompiler, a);
+            SetVar singleton = numSetVar("Singleton", $value.getLB(), $value.getUB());
+            solver.post(Constraints.singleton($value, singleton));
+            return singleton;
         }
 
         @Override
@@ -463,6 +514,10 @@ public class IrCompiler {
         return IntConstraintFactory.arithm(var1, op, var2);
     }
 
+    private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
+        return IntConstraintFactory.element(value, array, index, 0);
+    }
+
     private static Constraint _all_equal(SetVar... vars) {
         return SetConstraintsFactory.all_equal(vars);
     }
@@ -484,5 +539,27 @@ public class IrCompiler {
 
     private static Constraint _union(SetVar[] operands, SetVar union) {
         return SetConstraintsFactory.union(operands, union);
+    }
+
+    private int getLB(IntVar... vars) {
+        if (vars.length < 0) {
+            throw new IllegalArgumentException();
+        }
+        int lb = vars[0].getLB();
+        for (int i = 1; i < vars.length; i++) {
+            lb = Math.min(lb, vars[i].getLB());
+        }
+        return lb;
+    }
+
+    private int getUB(IntVar... vars) {
+        if (vars.length < 0) {
+            throw new IllegalArgumentException();
+        }
+        int ub = vars[0].getUB();
+        for (int i = 1; i < vars.length; i++) {
+            ub = Math.max(ub, vars[i].getUB());
+        }
+        return ub;
     }
 }

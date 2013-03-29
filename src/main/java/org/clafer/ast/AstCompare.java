@@ -8,11 +8,11 @@ import org.clafer.Check;
  */
 public class AstCompare implements AstBoolExpression {
 
-    private final AstExpression left;
+    private final AstSetExpression left;
     private final Op op;
-    private final AstExpression right;
+    private final AstSetExpression right;
 
-    AstCompare(AstExpression left, Op op, AstExpression right) {
+    AstCompare(AstSetExpression left, Op op, AstSetExpression right) {
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);
@@ -22,11 +22,11 @@ public class AstCompare implements AstBoolExpression {
         return op;
     }
 
-    public AstExpression getLeft() {
+    public AstSetExpression getLeft() {
         return left;
     }
 
-    public AstExpression getRight() {
+    public AstSetExpression getRight() {
         return right;
     }
 
