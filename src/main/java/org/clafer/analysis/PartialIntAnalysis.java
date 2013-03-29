@@ -11,17 +11,17 @@ import org.clafer.Scope;
 import org.clafer.analysis.AbstractOffsetAnalysis.Offsets;
 import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstBoolExpression;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstCompare.Op;
-import org.clafer.ast.AstConstantInt;
-import org.clafer.ast.AstExpression;
+import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
-import org.clafer.ast.AstSetExpression;
+import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.collection.Pair;
@@ -34,10 +34,10 @@ import org.clafer.collection.Triple;
  */
 public class PartialIntAnalysis {
 
-    private final Map<AstExpression, AstClafer> types;
+    private final Map<AstExpr, AstClafer> types;
     private final Map<AstClafer, Format> formats;
 
-    private PartialIntAnalysis(Map<AstExpression, AstClafer> types, Map<AstClafer, Format> formats) {
+    private PartialIntAnalysis(Map<AstExpr, AstClafer> types, Map<AstClafer, Format> formats) {
         this.types = types;
         this.formats = formats;
     }
@@ -46,7 +46,7 @@ public class PartialIntAnalysis {
             AstModel model,
             Map<AstAbstractClafer, Offsets> offsets,
             Map<AstClafer, Format> formats,
-            Map<AstExpression, AstClafer> types,
+            Map<AstExpr, AstClafer> types,
             Scope scope) {
         Map<AstRef, int[]> partialInts = new HashMap<AstRef, int[]>();
         Map<Pair<AstRef, Integer>, Integer> partialRefInts = new HashMap<Pair<AstRef, Integer>, Integer>();
@@ -54,7 +54,7 @@ public class PartialIntAnalysis {
         Map<AstRef, Pair<List<List<AstClafer>>, TIntHashSet>> subMap = new HashMap<AstRef, Pair<List<List<AstClafer>>, TIntHashSet>>();
         for (AstClafer clafer : AnalysisUtil.getClafers(model)) {
             PartialIntAnalysis analysis = new PartialIntAnalysis(types, formats);
-            for (AstBoolExpression constraint : clafer.getConstraints()) {
+            for (AstBoolExpr constraint : clafer.getConstraints()) {
                 Quad<AstRef, List<AstClafer>, Integer, Boolean> quad = analysis.analyze(constraint);
                 if (quad == null) {
                     continue;
@@ -127,22 +127,22 @@ public class PartialIntAnalysis {
         return false;
     }
 
-    private Quad<AstRef, List<AstClafer>, Integer, Boolean> analyze(AstBoolExpression exp) {
+    private Quad<AstRef, List<AstClafer>, Integer, Boolean> analyze(AstBoolExpr exp) {
         if (exp instanceof AstCompare) {
             AstCompare compare = (AstCompare) exp;
             if (Op.Equal.equals(compare.getOp())) {
-                if (compare.getLeft() instanceof AstJoinRef && compare.getRight() instanceof AstConstantInt) {
-                    return analyzeEqual((AstJoinRef) compare.getLeft(), (AstConstantInt) compare.getRight());
+                if (compare.getLeft() instanceof AstJoinRef && compare.getRight() instanceof AstConstant) {
+                    return analyzeEqual((AstJoinRef) compare.getLeft(), (AstConstant) compare.getRight());
                 }
-                if (compare.getRight() instanceof AstJoinRef && compare.getLeft() instanceof AstConstantInt) {
-                    return analyzeEqual((AstJoinRef) compare.getRight(), (AstConstantInt) compare.getLeft());
+                if (compare.getRight() instanceof AstJoinRef && compare.getLeft() instanceof AstConstant) {
+                    return analyzeEqual((AstJoinRef) compare.getRight(), (AstConstant) compare.getLeft());
                 }
             }
         }
         return null;
     }
 
-    private Quad<AstRef, List<AstClafer>, Integer, Boolean> analyzeEqual(AstJoinRef exp, AstConstantInt constant) {
+    private Quad<AstRef, List<AstClafer>, Integer, Boolean> analyzeEqual(AstJoinRef exp, AstConstant constant) {
         Triple<AstRef, List<AstClafer>, Boolean> expAnalysis = analyze(exp);
         if (expAnalysis == null) {
             return null;
@@ -159,7 +159,7 @@ public class PartialIntAnalysis {
         return new Triple<AstRef, List<AstClafer>, Boolean>(getType(exp.getDeref()).getRef(), derefAnalysis.getFst(), derefAnalysis.getSnd());
     }
 
-    private Pair<List<AstClafer>, Boolean> analyze(AstSetExpression exp) {
+    private Pair<List<AstClafer>, Boolean> analyze(AstSetExpr exp) {
         List<AstClafer> subs = new ArrayList<AstClafer>();
         boolean allParentGroup = true;
         while (exp instanceof AstUpcast || exp instanceof AstJoin) {
@@ -178,7 +178,7 @@ public class PartialIntAnalysis {
         return new Pair<List<AstClafer>, Boolean>(Collections.<AstClafer>emptyList(), allParentGroup);
     }
 
-    private AstClafer getType(AstExpression exp) {
+    private AstClafer getType(AstExpr exp) {
         return AnalysisUtil.notNull(exp + " type not analyzed yet", types.get(exp));
     }
 

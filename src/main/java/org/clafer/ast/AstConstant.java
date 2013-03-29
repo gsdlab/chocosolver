@@ -4,11 +4,11 @@ package org.clafer.ast;
  *
  * @author jimmy
  */
-public class AstConstantInt implements AstSetExpression {
+public class AstConstant implements AstSetExpr {
 
     private final int value;
 
-    AstConstantInt(int value) {
+    AstConstant(int value) {
         this.value = value;
     }
 
@@ -17,7 +17,7 @@ public class AstConstantInt implements AstSetExpression {
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 }

@@ -6,20 +6,20 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstJoinRef implements AstSetExpression {
+public class AstJoinRef implements AstSetExpr {
 
-    private final AstSetExpression deref;
+    private final AstSetExpr deref;
 
-    AstJoinRef(AstSetExpression deref) {
+    AstJoinRef(AstSetExpr deref) {
         this.deref = Check.notNull(deref);
     }
 
-    public AstSetExpression getDeref() {
+    public AstSetExpr getDeref() {
         return deref;
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 }

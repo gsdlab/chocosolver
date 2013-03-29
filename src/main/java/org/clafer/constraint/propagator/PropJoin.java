@@ -1,4 +1,4 @@
-package org.clafer.constraint;
+package org.clafer.constraint.propagator;
 
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
@@ -36,7 +36,7 @@ public class PropJoin extends Propagator<SetVar> {
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
         this.children = children;
-        this.childrenD = ConstraintUtil.monitorDeltas(children, aCause);
+        this.childrenD = PropagatorUtil.monitorDeltas(children, aCause);
         this.to = to;
         this.toD = to.monitorDelta(aCause);
     }
@@ -75,14 +75,14 @@ public class PropJoin extends Propagator<SetVar> {
         // Prune to and child
         TIntHashSet viableTo = new TIntHashSet();
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            ConstraintUtil.iterateEnv(children[i], viableTo);
+            PropagatorUtil.iterateEnv(children[i], viableTo);
         }
-        ConstraintUtil.subsetEnv(to, viableTo, aCause);
+        PropagatorUtil.subsetEnv(to, viableTo, aCause);
 
         // Pick to and prune child
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            ConstraintUtil.subsetKer(children[i], to, aCause);
-            ConstraintUtil.subsetEnv(children[i], to, aCause);
+            PropagatorUtil.subsetKer(children[i], to, aCause);
+            PropagatorUtil.subsetEnv(children[i], to, aCause);
         }
         // Pick take
     }
@@ -138,8 +138,8 @@ public class PropJoin extends Propagator<SetVar> {
                 } else if (child != -2 && to.kernelContains(i)) {
                     // i has only one support
                     take.addToKernel(child, aCause);
-                    ConstraintUtil.subsetKer(children[child], to, aCause);
-                    ConstraintUtil.subsetEnv(children[child], to, aCause);
+                    PropagatorUtil.subsetKer(children[child], to, aCause);
+                    PropagatorUtil.subsetEnv(children[child], to, aCause);
                     children[child].addToKernel(i, aCause);
                 }
             }
@@ -152,8 +152,8 @@ public class PropJoin extends Propagator<SetVar> {
             assert take.kernelContains(takeKer);
 
             SetVar child = children[takeKer];
-            ConstraintUtil.subsetKer(child, to, aCause);
-            ConstraintUtil.subsetEnv(child, to, aCause);
+            PropagatorUtil.subsetKer(child, to, aCause);
+            PropagatorUtil.subsetEnv(child, to, aCause);
         }
     };
     private final IntProcedure pruneToOnChildEnv = new IntProcedure() {
@@ -179,8 +179,8 @@ public class PropJoin extends Propagator<SetVar> {
             } else if (to.kernelContains(i)) {
                 // One support
                 take.addToKernel(child, aCause);
-                ConstraintUtil.subsetKer(children[child], to, aCause);
-                ConstraintUtil.subsetEnv(children[child], to, aCause);
+                PropagatorUtil.subsetKer(children[child], to, aCause);
+                PropagatorUtil.subsetEnv(children[child], to, aCause);
                 children[child].addToKernel(i, aCause);
             }
         }
@@ -224,8 +224,8 @@ public class PropJoin extends Propagator<SetVar> {
                 contradiction(to, "no support for " + toVal);
             } else {
                 take.addToKernel(child, aCause);
-                ConstraintUtil.subsetKer(children[child], to, aCause);
-                ConstraintUtil.subsetEnv(children[child], to, aCause);
+                PropagatorUtil.subsetKer(children[child], to, aCause);
+                PropagatorUtil.subsetEnv(children[child], to, aCause);
                 children[child].addToKernel(toVal, aCause);
             }
         }

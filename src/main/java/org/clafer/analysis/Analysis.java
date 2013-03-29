@@ -8,7 +8,7 @@ import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstExpression;
+import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.Card;
@@ -50,7 +50,7 @@ public class Analysis {
     public static Analysis analyze(AstModel model, Scope scope) {
         Check.notNull(model);
         Check.notNull(scope);
-        Map<AstExpression, AstClafer> types = TypeAnalysis.analyze(model);
+        Map<AstExpr, AstClafer> types = TypeAnalysis.analyze(model);
         CanonicalAnalysis.analyze(model, types);
         // Reanalyze types.
         types = TypeAnalysis.analyze(model);

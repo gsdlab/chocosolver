@@ -19,7 +19,7 @@ import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrConstraint;
 import org.clafer.Check;
 import org.clafer.Util;
-import org.clafer.constraint.ConstraintUtil;
+import org.clafer.constraint.propagator.PropagatorUtil;
 import org.clafer.constraint.Constraints;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolConstraint;
@@ -475,7 +475,7 @@ public class IrCompiler {
             SetVar[] $operands = new SetVar[operands.length];
             for (int i = 0; i < operands.length; i++) {
                 $operands[i] = operands[i].accept(setExprCompiler, a);
-                ConstraintUtil.iterateEnv($operands[i], env);
+                PropagatorUtil.iterateEnv($operands[i], env);
             }
             SetVar union = numSetVar("Union", env.toArray());
             solver.post(_union($operands, union));

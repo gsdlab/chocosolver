@@ -6,17 +6,17 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstUpcast implements AstSetExpression {
+public class AstUpcast implements AstSetExpr {
 
-    private final AstSetExpression base;
+    private final AstSetExpr base;
     private final AstAbstractClafer target;
 
-    AstUpcast(AstSetExpression base, AstAbstractClafer target) {
+    AstUpcast(AstSetExpr base, AstAbstractClafer target) {
         this.base = Check.notNull(base);
         this.target = Check.notNull(target);
     }
 
-    public AstSetExpression getBase() {
+    public AstSetExpr getBase() {
         return base;
     }
 
@@ -25,7 +25,7 @@ public class AstUpcast implements AstSetExpression {
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 }

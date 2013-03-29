@@ -5,10 +5,10 @@ package org.clafer.ast;
  * 
  * @author jimmy
  */
-public class AstThis implements AstSetExpression {
+public class AstThis implements AstSetExpr {
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 }

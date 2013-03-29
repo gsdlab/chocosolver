@@ -10,9 +10,9 @@ public class AstDecl {
 
     private final boolean disjoint;
     private final AstLocal[] locals;
-    private final AstSetExpression body;
+    private final AstSetExpr body;
 
-    public AstDecl(boolean disjoint, AstLocal[] locals, AstSetExpression body) {
+    public AstDecl(boolean disjoint, AstLocal[] locals, AstSetExpr body) {
         this.disjoint = disjoint;
         this.locals = Check.notNull(locals);
         if (locals.length < 1) {
@@ -29,11 +29,11 @@ public class AstDecl {
         return locals;
     }
 
-    public AstSetExpression getBody() {
+    public AstSetExpr getBody() {
         return body;
     }
 
-    public AstDecl withBody(AstSetExpression body) {
+    public AstDecl withBody(AstSetExpr body) {
         return new AstDecl(disjoint, locals, body);
     }
 }

@@ -1,11 +1,11 @@
 package org.clafer.ast.compiler;
 
-import org.clafer.ast.AstExpression;
+import org.clafer.ast.AstExpr;
 import java.util.Map;
-import org.clafer.ast.AstSetExpression;
+import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstCompare;
-import org.clafer.ast.AstConstantInt;
+import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -34,11 +34,11 @@ import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.analysis.TypeAnalysis;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstBoolExpression;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstException;
-import org.clafer.ast.AstExpressionVisitor;
+import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
@@ -60,7 +60,7 @@ public class AstCompiler {
         AstModel model = Asts.newModel();
         AstConcreteClafer person = model.addTopClafer("person");
         AstConcreteClafer name = person.addChild("name").withCard(1, 1).refTo(Asts.IntType);
-        person.addConstraint(Asts.equal(Asts.joinRef(Asts.join(Asts.$this(), name)), Asts.constantInt(1)));
+        person.addConstraint(Asts.equal(Asts.joinRef(Asts.join(Asts.$this(), name)), Asts.constant(1)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
 
@@ -128,7 +128,7 @@ public class AstCompiler {
             int scope = getScope(clafer);
             for (int i = 0; i < scope; i++) {
                 ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, i);
-                for (AstBoolExpression constraint : clafer.getConstraints()) {
+                for (AstBoolExpr constraint : clafer.getConstraints()) {
                     IrBoolExpr thisConstraint = (IrBoolExpr) constraint.accept(expressionCompiler, null);
                     module.addConstraint(implies(membership.get(clafer)[i], thisConstraint));
                 }
@@ -444,10 +444,10 @@ public class AstCompiler {
     private final ReadWriteHashMap<AstConcreteClafer, IrIntVar[]> parentPointers = new ReadWriteHashMap<AstConcreteClafer, IrIntVar[]>();
     private final ReadWriteHashMap<AstRef, IrIntVar[]> refPointers = new ReadWriteHashMap<AstRef, IrIntVar[]>();
 
-    private class ExpressionCompiler implements AstExpressionVisitor<Void, IrExpr> {
+    private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 
         private final int thisId;
-        private final Map<AstExpression, AstClafer> types;
+        private final Map<AstExpr, AstClafer> types;
 
         private ExpressionCompiler(AstClafer thisType, int thisId) {
             this.thisId = thisId;
@@ -460,13 +460,13 @@ public class AstCompiler {
         }
 
         @Override
-        public IrExpr visit(AstConstantInt ast, Void a) {
+        public IrExpr visit(AstConstant ast, Void a) {
             return constant(ast.getValue());
         }
 
         @Override
         public IrExpr visit(AstJoin ast, Void a) {
-            AstSetExpression left = ast.getLeft();
+            AstSetExpr left = ast.getLeft();
             AstConcreteClafer right = ast.getRight();
 
             IrExpr $left = left.accept(this, a);
@@ -492,7 +492,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoinParent ast, Void a) {
-            AstSetExpression children = ast.getChildren();
+            AstSetExpr children = ast.getChildren();
             AstConcreteClafer childrenType = (AstConcreteClafer) types.get(children);
 
             IrExpr $children = children.accept(this, a);
@@ -515,7 +515,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoinRef ast, Void a) {
-            AstSetExpression deref = ast.getDeref();
+            AstSetExpr deref = ast.getDeref();
             AstClafer derefType = types.get(deref);
 
             IrExpr $deref = deref.accept(this, a);
@@ -536,8 +536,8 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstCompare ast, Void a) {
-            AstSetExpression left = ast.getLeft();
-            AstSetExpression right = ast.getRight();
+            AstSetExpr left = ast.getLeft();
+            AstSetExpr right = ast.getRight();
 
             IrExpr $left = left.accept(this, a);
             IrExpr $right = right.accept(this, a);

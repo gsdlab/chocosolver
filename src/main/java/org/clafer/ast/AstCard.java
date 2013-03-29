@@ -6,20 +6,20 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstCard implements AstSetExpression {
+public class AstCard implements AstSetExpr {
 
-    private final AstSetExpression set;
+    private final AstSetExpr set;
 
-    public AstCard(AstSetExpression set) {
+    public AstCard(AstSetExpr set) {
         this.set = Check.notNull(set);
     }
 
-    public AstSetExpression getSet() {
+    public AstSetExpr getSet() {
         return set;
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 }

@@ -6,15 +6,15 @@ import java.util.Map;
 import org.clafer.Check;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstBoolExpression;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstConstantInt;
+import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstDecl;
-import org.clafer.ast.AstExpression;
-import org.clafer.ast.AstExpressionVisitor;
+import org.clafer.ast.AstExpr;
+import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
@@ -33,38 +33,38 @@ import org.clafer.ast.AstUpcast;
  */
 public class TypeAnalysis {
 
-    public static Map<AstExpression, AstClafer> analyze(AstModel model) {
-        Map<AstExpression, AstClafer> types = new HashMap<AstExpression, AstClafer>();
+    public static Map<AstExpr, AstClafer> analyze(AstModel model) {
+        Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
         List<AstClafer> clafers = AnalysisUtil.getClafers(model);
         for (AstClafer clafer : clafers) {
             TypeVisitor visitor = new TypeVisitor(clafer, types);
-            for (AstBoolExpression constraint : clafer.getConstraints()) {
+            for (AstBoolExpr constraint : clafer.getConstraints()) {
                 constraint.accept(visitor, null);
             }
         }
         return types;
     }
 
-    public static Map<AstExpression, AstClafer> analyze(AstClafer clafer) {
-        Map<AstExpression, AstClafer> types = new HashMap<AstExpression, AstClafer>();
+    public static Map<AstExpr, AstClafer> analyze(AstClafer clafer) {
+        Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
         TypeVisitor visitor = new TypeVisitor(clafer, types);
-        for (AstBoolExpression constraint : clafer.getConstraints()) {
+        for (AstBoolExpr constraint : clafer.getConstraints()) {
             constraint.accept(visitor, null);
         }
         return types;
     }
 
-    private static class TypeVisitor implements AstExpressionVisitor<Void, AstClafer> {
+    private static class TypeVisitor implements AstExprVisitor<Void, AstClafer> {
 
         private final AstClafer context;
-        private final Map<AstExpression, AstClafer> types;
+        private final Map<AstExpr, AstClafer> types;
 
-        TypeVisitor(AstClafer context, Map<AstExpression, AstClafer> typeMap) {
+        TypeVisitor(AstClafer context, Map<AstExpr, AstClafer> typeMap) {
             this.context = context;
             this.types = typeMap;
         }
 
-        AstClafer put(AstClafer type, AstExpression expression) {
+        AstClafer put(AstClafer type, AstExpr expression) {
             types.put(expression, type);
             return type;
         }
@@ -75,7 +75,7 @@ public class TypeAnalysis {
         }
 
         @Override
-        public AstClafer visit(AstConstantInt ast, Void a) {
+        public AstClafer visit(AstConstant ast, Void a) {
             return put(IntType, ast);
         }
 
@@ -181,9 +181,9 @@ public class TypeAnalysis {
     private static class TypedExpression {
 
         private final AstClafer type;
-        private final AstExpression expression;
+        private final AstExpr expression;
 
-        public TypedExpression(AstClafer type, AstExpression expression) {
+        public TypedExpression(AstClafer type, AstExpr expression) {
             this.type = Check.notNull(type);
             this.expression = Check.notNull(expression);
         }
@@ -192,7 +192,7 @@ public class TypeAnalysis {
             return type;
         }
 
-        public AstExpression getExpression() {
+        public AstExpr getExpression() {
             return expression;
         }
     }

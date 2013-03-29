@@ -88,7 +88,7 @@ public class AstConcreteClafer extends AstClafer {
     }
 
     @Override
-    public AstConcreteClafer withConstraints(List<AstBoolExpression> constraints) {
+    public AstConcreteClafer withConstraints(List<AstBoolExpr> constraints) {
         super.withConstraints(constraints);
         return this;
     }

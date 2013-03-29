@@ -6,20 +6,20 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstNone implements AstBoolExpression {
+public class AstNone implements AstBoolExpr {
 
-    private final AstSetExpression set;
+    private final AstSetExpr set;
 
-    public AstNone(AstSetExpression set) {
+    public AstNone(AstSetExpr set) {
         this.set = Check.notNull(set);
     }
 
-    public AstSetExpression getSet() {
+    public AstSetExpr getSet() {
         return set;
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 }

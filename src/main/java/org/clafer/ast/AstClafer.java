@@ -21,7 +21,7 @@ public class AstClafer {
     private AstRef ref;
     private Card groupCard = new Card();
     private final List<AstConcreteClafer> children = new ArrayList<AstConcreteClafer>();
-    private final List<AstBoolExpression> constraints = new ArrayList<AstBoolExpression>();
+    private final List<AstBoolExpr> constraints = new ArrayList<AstBoolExpr>();
 
     AstClafer(String name) {
         this.name = Check.notNull(name);
@@ -117,15 +117,15 @@ public class AstClafer {
         return !constraints.isEmpty();
     }
 
-    public List<AstBoolExpression> getConstraints() {
+    public List<AstBoolExpr> getConstraints() {
         return Collections.unmodifiableList(constraints);
     }
 
-    public void addConstraint(AstBoolExpression constraint) {
+    public void addConstraint(AstBoolExpr constraint) {
         constraints.add(constraint);
     }
 
-    public AstClafer withConstraints(List<AstBoolExpression> constraints) {
+    public AstClafer withConstraints(List<AstBoolExpr> constraints) {
         this.constraints.clear();
         this.constraints.addAll(constraints);
         return this;

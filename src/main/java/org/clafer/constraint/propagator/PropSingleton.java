@@ -1,6 +1,5 @@
 package org.clafer.constraint.propagator;
 
-import org.clafer.constraint.ConstraintUtil;
 import org.clafer.constraint.Constraints;
 import solver.Solver;
 import solver.constraints.propagators.Propagator;
@@ -54,8 +53,8 @@ public class PropSingleton extends Propagator<Variable> {
         if (svar.getEnvelopeSize() < 1) {
             contradiction(svar, "Singleton cannot have less than 1 element");
         }
-        ConstraintUtil.subsetEnv(ivar, svar, aCause);
-        ConstraintUtil.subsetEnv(svar, ivar, aCause);
+        PropagatorUtil.subsetEnv(ivar, svar, aCause);
+        PropagatorUtil.subsetEnv(svar, ivar, aCause);
         if (ivar.instantiated()) {
             svar.instantiateTo(new int[]{ivar.getValue()}, aCause);
         } else if (svar.getEnvelopeSize() == 1) {

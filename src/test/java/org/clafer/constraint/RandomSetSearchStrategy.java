@@ -12,8 +12,7 @@ import solver.variables.SetVar;
 import util.PoolManager;
 
 /**
- * Strategy for branching on set variables
- * Lexicographic element enforcing by default
+ * Does random things to make propogation harder.
  */
 public class RandomSetSearchStrategy extends AbstractStrategy<SetVar> {
 

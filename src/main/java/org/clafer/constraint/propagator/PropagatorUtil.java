@@ -1,4 +1,4 @@
-package org.clafer.constraint;
+package org.clafer.constraint.propagator;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.set.hash.TIntHashSet;
@@ -14,7 +14,7 @@ import util.procedure.IntProcedure;
  * @author jimmy
  */
 @Deprecated
-public class ConstraintUtil {
+public class PropagatorUtil {
 
     public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propogator) {
         SetDeltaMonitor[] deltas = new SetDeltaMonitor[vars.length];

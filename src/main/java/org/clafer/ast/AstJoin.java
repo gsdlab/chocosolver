@@ -6,12 +6,12 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstJoin implements AstSetExpression {
+public class AstJoin implements AstSetExpr {
 
-    private final AstSetExpression left;
+    private final AstSetExpr left;
     private final AstConcreteClafer right;
 
-    AstJoin(AstSetExpression left, AstConcreteClafer right) {
+    AstJoin(AstSetExpr left, AstConcreteClafer right) {
         if (!right.hasParent()) {
             throw new IllegalArgumentException();
         }
@@ -19,7 +19,7 @@ public class AstJoin implements AstSetExpression {
         this.right = Check.notNull(right);
     }
 
-    public AstSetExpression getLeft() {
+    public AstSetExpr getLeft() {
         return left;
     }
 
@@ -28,7 +28,7 @@ public class AstJoin implements AstSetExpression {
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 }

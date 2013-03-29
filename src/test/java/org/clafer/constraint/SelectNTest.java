@@ -1,7 +1,5 @@
-package org.clafer.constraint.propagator;
+package org.clafer.constraint;
 
-import org.clafer.constraint.ConstraintTest;
-import org.clafer.constraint.Constraints;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
@@ -13,7 +11,7 @@ import solver.variables.VariableFactory;
  *
  * @author jimmy
  */
-public class PropSelectNTest extends ConstraintTest {
+public class SelectNTest extends ConstraintTest {
 
     @Test(timeout = 60000)
     public void quickTest() {

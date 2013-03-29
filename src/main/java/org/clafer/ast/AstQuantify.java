@@ -6,13 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstQuantify implements AstBoolExpression {
+public class AstQuantify implements AstBoolExpr {
 
     private final Quantifier quantifier;
     private final AstDecl[] decls;
-    private final AstBoolExpression body;
+    private final AstBoolExpr body;
 
-    public AstQuantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpression body) {
+    public AstQuantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpr body) {
         this.quantifier = Check.notNull(quantifier);
         this.decls = Check.notNull(decls);
         if (decls.length < 1) {
@@ -29,12 +29,12 @@ public class AstQuantify implements AstBoolExpression {
         return decls;
     }
 
-    public AstBoolExpression getBody() {
+    public AstBoolExpr getBody() {
         return body;
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 

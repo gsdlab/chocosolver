@@ -1,5 +1,6 @@
 package org.clafer.constraint;
 
+import org.clafer.constraint.propagator.PropJoin;
 import org.clafer.collection.Appender;
 import org.clafer.constraint.propagator.PropSelectN;
 import org.clafer.constraint.propagator.PropSingleton;

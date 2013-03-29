@@ -6,13 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstCompare implements AstBoolExpression {
+public class AstCompare implements AstBoolExpr {
 
-    private final AstSetExpression left;
+    private final AstSetExpr left;
     private final Op op;
-    private final AstSetExpression right;
+    private final AstSetExpr right;
 
-    AstCompare(AstSetExpression left, Op op, AstSetExpression right) {
+    AstCompare(AstSetExpr left, Op op, AstSetExpr right) {
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);
@@ -22,16 +22,16 @@ public class AstCompare implements AstBoolExpression {
         return op;
     }
 
-    public AstSetExpression getLeft() {
+    public AstSetExpr getLeft() {
         return left;
     }
 
-    public AstSetExpression getRight() {
+    public AstSetExpr getRight() {
         return right;
     }
 
     @Override
-    public <A, B> B accept(AstExpressionVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 
