@@ -6,13 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrIntCompare implements IrBoolExpr {
+public class IrCompare implements IrBoolExpr {
 
     private final IrIntExpr left;
     private final Op op;
     private final IrIntExpr right;
 
-    IrIntCompare(IrIntExpr left, Op op, IrIntExpr right) {
+    IrCompare(IrIntExpr left, Op op, IrIntExpr right) {
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);

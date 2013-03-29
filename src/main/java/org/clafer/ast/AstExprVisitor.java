@@ -18,6 +18,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstCard ast, A a);
 
+    public B visit(AstEqual ast, A a);
+    
     public B visit(AstCompare ast, A a);
 
     public B visit(AstUpcast ast, A a);

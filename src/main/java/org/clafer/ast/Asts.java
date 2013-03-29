@@ -39,16 +39,20 @@ public class Asts {
         return new AstCard(set);
     }
 
+    public static AstEqual equal(AstSetExpr left, AstEqual.Op op, AstSetExpr right) {
+        return new AstEqual(left, op, right);
+    }
+
+    public static AstEqual equal(AstSetExpr left, AstSetExpr right) {
+        return equal(left, AstEqual.Op.Equal, right);
+    }
+
+    public static AstEqual notEqual(AstSetExpr left, AstSetExpr right) {
+        return equal(left, AstEqual.Op.NotEqual, right);
+    }
+
     public static AstCompare compare(AstSetExpr left, AstCompare.Op op, AstSetExpr right) {
         return new AstCompare(left, op, right);
-    }
-
-    public static AstCompare equal(AstSetExpr left, AstSetExpr right) {
-        return compare(left, AstCompare.Op.Equal, right);
-    }
-
-    public static AstCompare notEqual(AstSetExpr left, AstSetExpr right) {
-        return compare(left, AstCompare.Op.NotEqual, right);
     }
 
     public static AstCompare lessThan(AstSetExpr left, AstSetExpr right) {

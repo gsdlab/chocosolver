@@ -14,7 +14,7 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrImplies ir, A a);
 
-    public B visit(IrIntCompare ir, A a);
+    public B visit(IrCompare ir, A a);
 
     public B visit(IrSetCompare ir, A a);
 }

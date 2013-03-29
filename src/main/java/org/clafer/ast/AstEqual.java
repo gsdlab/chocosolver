@@ -6,13 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class AstCompare implements AstBoolExpr {
+public class AstEqual implements AstBoolExpr {
 
     private final AstSetExpr left;
     private final Op op;
     private final AstSetExpr right;
 
-    AstCompare(AstSetExpr left, Op op, AstSetExpr right) {
+    AstEqual(AstSetExpr left, Op op, AstSetExpr right) {
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);
@@ -37,10 +37,8 @@ public class AstCompare implements AstBoolExpr {
 
     public static enum Op {
 
-        LessThan("<"),
-        LessThanEqual("<="),
-        GreaterThan(">"),
-        GreaterThanEqual(">=");
+        Equal("="),
+        NotEqual("!=");
         private final String syntax;
 
         private Op(String syntax) {

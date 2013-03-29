@@ -38,7 +38,7 @@ import org.clafer.ir.IrDomain.IrBoundDomain;
 import org.clafer.ir.IrDomain.IrEnumDomain;
 import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
-import org.clafer.ir.IrIntCompare;
+import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
@@ -272,7 +272,7 @@ public class IrCompiler {
         }
 
         @Override
-        public BoolVar visit(IrIntCompare ir, Void a) {
+        public BoolVar visit(IrCompare ir, Void a) {
             IntVar $left = ir.getLeft().accept(intExprCompiler, a);
             IntVar $right = ir.getRight().accept(intExprCompiler, a);
             BoolVar reified = numBoolVar("IntCompare");
@@ -325,7 +325,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrIntCompare ir, Void a) {
+        public Constraint visit(IrCompare ir, Void a) {
             IntVar $left = ir.getLeft().accept(intExprCompiler, a);
             IntVar $right = ir.getRight().accept(intExprCompiler, a);
             return _arithm($left, ir.getOp().getSyntax(), $right);
@@ -379,7 +379,7 @@ public class IrCompiler {
         }
 
         @Override
-        public ALogicTree visit(IrIntCompare ir, Void a) {
+        public ALogicTree visit(IrCompare ir, Void a) {
             return Literal.pos(ir.accept(boolExprCompiler, a));
         }
 

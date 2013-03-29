@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstExpr;
 import java.util.Map;
 import org.clafer.ast.AstSetExpr;
@@ -535,7 +536,7 @@ public class AstCompiler {
         }
 
         @Override
-        public IrExpr visit(AstCompare ast, Void a) {
+        public IrExpr visit(AstEqual ast, Void a) {
             AstSetExpr left = ast.getLeft();
             AstSetExpr right = ast.getRight();
 
@@ -549,9 +550,17 @@ public class AstCompiler {
                 switch (ast.getOp()) {
                     case Equal:
                         return equal($intLeft, $intRight);
+                    case NotEqual:
+                        return notEqual($intLeft, $intRight);
                 }
             }
             throw new AstException();
+        }
+
+        @Override
+        public IrExpr visit(AstCompare ast, Void a) {
+
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
