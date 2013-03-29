@@ -10,10 +10,9 @@ import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.procedure.IntProcedure;
 
 /**
- * Rename to PropagatorUtil
+ * 
  * @author jimmy
  */
-@Deprecated
 public class PropagatorUtil {
 
     public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propogator) {

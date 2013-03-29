@@ -15,7 +15,8 @@ import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
 
 /**
- *
+ * Analyzes and optimizes the AST.
+ * 
  * @author jimmy
  */
 public class Analysis {
@@ -28,6 +29,7 @@ public class Analysis {
     private final Map<AstClafer, PartialSolution> partialSolutions;
     private final Map<AstRef, int[]> partialInts;
     private final Map<Pair<AstRef, Integer>, Integer> partialRefInts;
+    private final Map<AstExpr, AstClafer> types;
 
     private Analysis(Map<AstAbstractClafer, Integer> depths,
             Map<AstClafer, Card> globalCards,
@@ -36,7 +38,8 @@ public class Analysis {
             Map<AstAbstractClafer, Offsets> offsets,
             Map<AstClafer, PartialSolution> partialSolutions,
             Map<AstRef, int[]> partialInts,
-            Map<Pair<AstRef, Integer>, Integer> partialRefInts) {
+            Map<Pair<AstRef, Integer>, Integer> partialRefInts,
+            Map<AstExpr, AstClafer> types) {
         this.depths = depths;
         this.globalCards = globalCards;
         this.scope = scope;
@@ -45,6 +48,7 @@ public class Analysis {
         this.partialSolutions = partialSolutions;
         this.partialInts = partialInts;
         this.partialRefInts = partialRefInts;
+        this.types = types;
     }
 
     public static Analysis analyze(AstModel model, Scope scope) {
@@ -52,8 +56,6 @@ public class Analysis {
         Check.notNull(scope);
         Map<AstExpr, AstClafer> types = TypeAnalysis.analyze(model);
         CanonicalAnalysis.analyze(model, types);
-        // Reanalyze types.
-        types = TypeAnalysis.analyze(model);
 
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
 
@@ -66,12 +68,14 @@ public class Analysis {
         Map<AstAbstractClafer, Offsets> offsets = AbstractOffsetAnalysis.analyze(model, globalCards);
         Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, offsets);
 
+        // Reanalyze types.
+        types = TypeAnalysis.analyze(model);
         Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, Integer>> pair = PartialIntAnalysis.analyze(model, offsets, formats, types, optimizedScope);
 
         Map<AstRef, int[]> partialInts = pair.getFst();
         Map<Pair<AstRef, Integer>, Integer> partialRefInts = pair.getSnd();
 
-        return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, partialRefInts);
+        return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, partialRefInts, types);
     }
 
     public int getDepth(AstAbstractClafer clafer) {
@@ -104,5 +108,9 @@ public class Analysis {
 
     public Integer getPartialRefInts(AstRef ref, int id) {
         return partialRefInts.get(new Pair<AstRef, Integer>(ref, id));
+    }
+
+    public AstClafer getType(AstExpr expr) {
+        return AnalysisUtil.notNull("Cannot find partial solution analysis for " + expr, types.get(expr));
     }
 }

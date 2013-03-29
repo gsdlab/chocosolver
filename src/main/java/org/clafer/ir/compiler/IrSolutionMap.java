@@ -1,6 +1,5 @@
 package org.clafer.ir.compiler;
 
-import org.clafer.Check;
 import org.clafer.collection.ReadMap;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;

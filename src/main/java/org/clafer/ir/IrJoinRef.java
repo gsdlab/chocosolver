@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import java.util.Arrays;
 import org.clafer.Check;
 
 /**
@@ -27,5 +28,10 @@ public class IrJoinRef implements IrSetExpr {
     @Override
     public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public String toString() {
+        return take + "." + Arrays.toString(refs);
     }
 }

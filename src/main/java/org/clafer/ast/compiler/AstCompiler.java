@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import java.util.Set;
 import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstExpr;
 import java.util.Map;
@@ -44,6 +45,9 @@ import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.Card;
+import org.clafer.collection.DirectedGraphBuilder;
+import org.clafer.collection.DirectedVertex;
+import org.clafer.collection.TopologicalSort;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
@@ -59,11 +63,14 @@ public class AstCompiler {
 
     public static void main(String[] args) {
         AstModel model = Asts.newModel();
-        AstConcreteClafer person = model.addTopClafer("person");
-        AstConcreteClafer name = person.addChild("name").withCard(1, 1).refTo(Asts.IntType);
+        AstAbstractClafer object = model.addAbstractClafer("object");
+        AstConcreteClafer person = model.addTopClafer("person").withCard(1, 5).extending(object);
+        AstConcreteClafer animal = model.addTopClafer("animal").withCard(1, 2).extending(object);
+        AstConcreteClafer name = object.addChild("name").withCard(1, 1).refTo(Asts.IntType);
         person.addConstraint(Asts.equal(Asts.joinRef(Asts.join(Asts.$this(), name)), Asts.constant(1)));
+        animal.addConstraint(Asts.equal(Asts.joinRef(Asts.join(Asts.$this(), name)), Asts.constant(2)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(100).intLow(-1).intHigh(2).toScope());
 
         while (solver.find()) {
             System.out.println(solver.instance());
@@ -88,41 +95,46 @@ public class AstCompiler {
     private AstSolutionMap compile() {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = AnalysisUtil.getConcreteClafers(model);
-        List<AstClafer> clafers = new ArrayList<AstClafer>(abstractClafers.size() + concreteClafers.size());
-        clafers.addAll(abstractClafers);
-        clafers.addAll(concreteClafers);
 
-        for (AstConcreteClafer clafer : concreteClafers) {
-            initConcrete(clafer);
-        }
-        for (AstConcreteClafer clafer : concreteClafers) {
-            if (Format.LowGroup.equals(getFormat(clafer))) {
-                initLowGroupConcrete(clafer);
+        DirectedGraphBuilder<AstClafer> dependency = new DirectedGraphBuilder<AstClafer>();
+        for (AstAbstractClafer abstractClafer : abstractClafers) {
+            DirectedVertex<AstClafer> node = dependency.getVertex(abstractClafer);
+            for (AstClafer sub : abstractClafer.getSubs()) {
+                node.addNeighbour(dependency.getVertex(sub));
             }
         }
-        for (AstConcreteClafer clafer : concreteClafers) {
-            if (Format.ParentGroup.equals(getFormat(clafer))) {
-                initParentGroupConcrete(clafer);
+        for (AstConcreteClafer concreteClafer : concreteClafers) {
+            DirectedVertex<AstClafer> node = dependency.getVertex(concreteClafer);
+            if (Format.ParentGroup.equals(getFormat(concreteClafer))) {
+                node.addNeighbour(dependency.getVertex(concreteClafer.getParent()));
             }
         }
-        for (AstAbstractClafer clafer : abstractClafers) {
-            initAbstract(clafer);
+        List<Set<AstClafer>> components = TopologicalSort.computeStronglyConnectedComponents(dependency);
+        List<AstClafer> clafers = new ArrayList<AstClafer>();
+        for (Set<AstClafer> component : components) {
+            if (component.size() != 1) {
+                throw new AstException("Cannot satisfy the cycle " + component);
+            }
+            clafers.addAll(component);
         }
-        for (AstConcreteClafer clafer : concreteClafers) {
-            constrainConcrete(clafer);
-        }
-        for (AstConcreteClafer clafer : concreteClafers) {
-            if (Format.LowGroup.equals(getFormat(clafer))) {
-                constrainLowGroupConcrete(clafer);
+
+        for (AstClafer clafer : clafers) {
+            if (clafer instanceof AstConcreteClafer) {
+                initConcrete((AstConcreteClafer) clafer);
+            } else if (clafer instanceof AstAbstractClafer) {
+                initAbstract((AstAbstractClafer) clafer);
+            } else {
+                throw new AstException();
             }
         }
-        for (AstConcreteClafer clafer : concreteClafers) {
-            if (Format.ParentGroup.equals(getFormat(clafer))) {
-                constrainParentGroupConcrete(clafer);
+        for (AstClafer clafer : clafers) {
+            if (clafer instanceof AstConcreteClafer) {
+                constrainConcrete((AstConcreteClafer) clafer);
+            } else if (clafer instanceof AstAbstractClafer) {
+                constrainAbstract((AstAbstractClafer) clafer);
+            } else {
+                throw new AstException();
             }
-        }
-        for (AstAbstractClafer clafer : abstractClafers) {
-            constrainAbstract(clafer);
         }
 
         for (AstClafer clafer : clafers) {
@@ -151,6 +163,16 @@ public class AstCompiler {
         }
         if (clafer.hasRef()) {
             refPointers.put(clafer.getRef(), buildRefPointers(clafer.getRef()));
+        }
+        switch (getFormat(clafer)) {
+            case LowGroup:
+                initLowGroupConcrete(clafer);
+                break;
+            case ParentGroup:
+                initParentGroupConcrete(clafer);
+                break;
+            default:
+                throw new AstException();
         }
     }
 
@@ -202,7 +224,6 @@ public class AstCompiler {
                 }
             }
         }
-
         /**
          * What is this optimization?
          * 
@@ -266,6 +287,7 @@ public class AstCompiler {
          * The "5" is coefficient comes from the fact that scope(Drink) = 4.
          */
         IrIntExpr[][] terms = new IrIntExpr[getScope(clafer)][];
+
         for (int i = 0; i < terms.length; i++) {
             List<IrIntExpr> string = new ArrayList<IrIntExpr>();
             for (AstConcreteClafer child : clafer.getChildren()) {
@@ -298,9 +320,21 @@ public class AstCompiler {
          * but the solutions will have instances that are similar closer together.
          * Technically not an optimization.
          */
+
         if (terms[0] != null) {
             Util.reverse(terms);
             module.addConstraint(sort(terms));
+        }
+
+        switch (getFormat(clafer)) {
+            case LowGroup:
+                constrainLowGroupConcrete(clafer);
+                break;
+            case ParentGroup:
+                constrainParentGroupConcrete(clafer);
+                break;
+            default:
+                throw new AstException();
         }
     }
 
@@ -554,6 +588,15 @@ public class AstCompiler {
                         return notEqual($intLeft, $intRight);
                 }
             }
+
+            IrSetExpr setLeft = $left instanceof IrSetExpr ? (IrSetExpr) $left : singleton((IrIntExpr) $left);
+            IrSetExpr setRight = $right instanceof IrSetExpr ? (IrSetExpr) $right : singleton((IrIntExpr) $right);
+            switch (ast.getOp()) {
+                case Equal:
+                    return equal(setLeft, setRight);
+                case NotEqual:
+                    return notEqual(setLeft, setRight);
+            }
             throw new AstException();
         }
 
@@ -565,7 +608,14 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstUpcast ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            AstSetExpr base = ast.getBase();
+
+            IrExpr $base = ast.getBase().accept(this, a);
+            if ($base instanceof IrIntExpr) {
+                IrIntExpr intBase = (IrIntExpr) $base;
+                return add(intBase, constant(getOffset(ast.getTarget(), getType(base))));
+            }
+            throw new AstException();
         }
 
         @Override
@@ -691,17 +741,23 @@ public class AstCompiler {
         return analysis.getDepth(clafer);
     }
 
+    public AstClafer getType(AstExpr expr) {
+        return analysis.getType(expr);
+    }
+
     private IrBoolExpr constrainCard(IrIntExpr setCard, Card card) {
         if (card.isExact()) {
             return equal(setCard, card.getLow());
         }
-        List<IrBoolExpr> exprs = new ArrayList<IrBoolExpr>(2);
+        if (card.hasLow() && card.hasHigh()) {
+            return member(setCard, card.getLow(), card.getHigh());
+        }
         if (card.hasLow()) {
-            exprs.add(greaterThanEqual(setCard, card.getLow()));
+            return greaterThanEqual(setCard, card.getLow());
         }
         if (card.hasHigh()) {
-            exprs.add(lessThanEqual(setCard, card.getHigh()));
+            return lessThanEqual(setCard, card.getHigh());
         }
-        return and(exprs);
+        return True;
     }
 }

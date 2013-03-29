@@ -2,9 +2,10 @@ package org.clafer.ir.compiler;
 
 import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
-import org.clafer.ir.IrDiv;
+import org.clafer.ir.IrArithm;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIntExpr;
+import org.clafer.ir.IrMember;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
@@ -44,8 +45,10 @@ import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrUtil;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
+import solver.constraints.nary.Sum;
 import solver.constraints.nary.cnf.ALogicTree;
 import solver.constraints.nary.cnf.Literal;
 import solver.constraints.nary.cnf.Node;
@@ -265,9 +268,20 @@ public class IrCompiler {
 
         @Override
         public BoolVar visit(IrImplies ir, Void a) {
+            BoolVar $antecedent = ir.getAntecedent().accept(this, a);
+            BoolVar $consequnet = ir.getConsequent().accept(this, a);
             BoolVar reified = numBoolVar("Implies");
-            solver.post(_implies(reified, _arithm(reified, ">=", reified)));
-            solver.post(_implies(_not(reified), _arithm(reified, "<", reified)));
+            solver.post(_implies(reified, _arithm($antecedent, "<=", $consequnet)));
+            solver.post(_implies(_not(reified), _arithm($antecedent, ">", $consequnet)));
+            return reified;
+        }
+
+        @Override
+        public BoolVar visit(IrMember ir, Void a) {
+            IntVar $var = ir.getVar().accept(intExprCompiler, a);
+            BoolVar reified = numBoolVar("Member");
+            solver.post(_implies(reified, _member($var, ir.getLow(), ir.getHigh())));
+            solver.post(_implies(_not(reified), _not_member($var, ir.getLow(), ir.getHigh())));
             return reified;
         }
 
@@ -325,6 +339,12 @@ public class IrCompiler {
         }
 
         @Override
+        public Constraint visit(IrMember ir, Void a) {
+            IntVar $var = ir.getVar().accept(intExprCompiler, a);
+            return _member($var, ir.getLow(), ir.getHigh());
+        }
+
+        @Override
         public Constraint visit(IrCompare ir, Void a) {
             IntVar $left = ir.getLeft().accept(intExprCompiler, a);
             IntVar $right = ir.getRight().accept(intExprCompiler, a);
@@ -357,6 +377,7 @@ public class IrCompiler {
 
         @Override
         public ALogicTree visit(IrNot ir, Void a) {
+            // TODO: Node.not?
             return Literal.neg(ir.getProposition().accept(boolExprCompiler, a));
         }
 
@@ -376,6 +397,11 @@ public class IrCompiler {
             ALogicTree $antecedent = ir.getAntecedent().accept(this, a);
             ALogicTree $consequent = ir.getConsequent().accept(this, a);
             return Node.implies($antecedent, $consequent);
+        }
+
+        @Override
+        public ALogicTree visit(IrMember ir, Void a) {
+            return Literal.pos(ir.accept(boolExprCompiler, a));
         }
 
         @Override
@@ -412,17 +438,80 @@ public class IrCompiler {
         }
 
         @Override
-        public IntVar visit(IrDiv ir, Void a) {
-            IrIntExpr numerator = ir.getNumerator();
-            IrIntExpr denominator = ir.getDenominator();
+        public IntVar visit(IrArithm ir, Void a) {
+            IrIntExpr left = ir.getLeft();
+            IrIntExpr right = ir.getRight();
 
-            IntVar $numerator = numerator.accept(this, a);
-            IntVar $denominator = denominator.accept(this, a);
-            IntVar quotient = numIntVar("Div",
-                    $numerator.getLB() / $denominator.getUB(),
-                    $numerator.getUB() / $denominator.getLB());
-            solver.post(IntConstraintFactory.eucl_div($numerator, $denominator, quotient));
-            return quotient;
+            switch (ir.getOp()) {
+                case Add: {
+                    Integer leftConstant = IrUtil.getConstant(left);
+                    Integer rightConstant = IrUtil.getConstant(right);
+                    if (leftConstant != null && rightConstant != null) {
+                        return VariableFactory.fixed(leftConstant.intValue() + rightConstant.intValue(), solver);
+                    }
+                    if (leftConstant != null) {
+                        IntVar $right = right.accept(this, a);
+                        return VariableFactory.offset($right, leftConstant.intValue());
+                    }
+                    if (rightConstant != null) {
+                        IntVar $left = left.accept(this, a);
+                        return VariableFactory.offset($left, rightConstant.intValue());
+                    }
+                    IntVar $left = left.accept(this, a);
+                    IntVar $right = right.accept(this, a);
+                    return _sum($left, $right);
+                }
+                case Sub: {
+                    Integer leftConstant = IrUtil.getConstant(left);
+                    Integer rightConstant = IrUtil.getConstant(right);
+                    if (leftConstant != null && rightConstant != null) {
+                        return VariableFactory.fixed(leftConstant.intValue() - rightConstant.intValue(), solver);
+                    }
+                    if (leftConstant != null && leftConstant.intValue() == 0) {
+                        IntVar $right = right.accept(this, a);
+                        return VariableFactory.minus($right);
+                    }
+                    if (rightConstant != null) {
+                        IntVar $left = left.accept(this, a);
+                        return VariableFactory.offset($left, -rightConstant.intValue());
+                    }
+                    IntVar $left = left.accept(this, a);
+                    IntVar $right = right.accept(this, a);
+                    return _sum($left, VariableFactory.minus($right));
+                }
+                case Mul: {
+                    Integer leftConstant = IrUtil.getConstant(left);
+                    Integer rightConstant = IrUtil.getConstant(right);
+                    if (leftConstant != null && rightConstant != null) {
+                        return VariableFactory.fixed(leftConstant.intValue() * rightConstant.intValue(), solver);
+                    }
+                    if (leftConstant != null && leftConstant.intValue() > -2) {
+                        IntVar $right = right.accept(this, a);
+                        return VariableFactory.scale($right, leftConstant.intValue());
+                    }
+                    if (rightConstant != null && rightConstant.intValue() > -2) {
+                        IntVar $left = left.accept(this, a);
+                        return VariableFactory.scale($left, rightConstant.intValue());
+                    }
+                    IntVar $left = left.accept(this, a);
+                    IntVar $right = right.accept(this, a);
+                    IntVar product = numIntVar("Mul",
+                            $left.getLB() * $right.getLB(),
+                            $left.getUB() * $right.getUB());
+                    solver.post(_times(product, $left, $right));
+                    return product;
+                }
+                case Div: {
+                    IntVar $left = left.accept(this, a);
+                    IntVar $right = right.accept(this, a);
+                    IntVar quotient = numIntVar("Div",
+                            $left.getLB() / $right.getUB(),
+                            $left.getUB() / $right.getLB());
+                    solver.post(IntConstraintFactory.eucl_div($left, $right, quotient));
+                    return quotient;
+                }
+            }
+            throw new IrException();
         }
 
         @Override
@@ -464,6 +553,7 @@ public class IrCompiler {
 
         @Override
         public SetVar visit(IrJoinRef ir, Void a) {
+            System.out.println(ir.getTake());
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -507,6 +597,14 @@ public class IrCompiler {
         return IntConstraintFactory.implies(b, c);
     }
 
+    private static IntVar _sum(IntVar var1, IntVar var2) {
+        return Sum.var(var1, var2);
+    }
+
+    private static Constraint _times(IntVar product, IntVar var1, IntVar var2) {
+        return IntConstraintFactory.times(product, var1, var2);
+    }
+
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
         if (var2.instantiated()) {
             return IntConstraintFactory.arithm(var1, op, var2.getValue());
@@ -528,6 +626,14 @@ public class IrCompiler {
 
     private static Constraint _all_different(IntVar... vars) {
         return IntConstraintFactory.alldifferent(vars, "AC");
+    }
+
+    private static Constraint _member(IntVar var, int low, int high) {
+        return IntConstraintFactory.member(var, low, high);
+    }
+
+    private static Constraint _not_member(IntVar var, int low, int high) {
+        return IntConstraintFactory.not_member(var, low, high);
     }
 
     private static Constraint _lex_chain_less_eq(IntVar[]... vars) {

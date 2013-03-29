@@ -41,7 +41,6 @@ public class GlobalCardAnalysis {
             lowGlobalCard += subGlobalCard.getLow();
             highGlobalCard += subGlobalCard.getHigh();
         }
-        System.out.println(clafer);
         Card globalCard = new Card(lowGlobalCard, highGlobalCard);
         globalCards.put(clafer, globalCard);
         for (AstConcreteClafer child : clafer.getChildren()) {

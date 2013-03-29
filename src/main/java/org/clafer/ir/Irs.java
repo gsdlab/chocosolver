@@ -117,8 +117,12 @@ public class Irs {
         return new IrImplies(antecedent, consequent);
     }
 
+    public static IrBoolExpr member(IrIntExpr var, int low, int high) {
+        return new IrMember(var, low, high);
+    }
+
     public static IrCompare equal(IrIntExpr left, int right) {
-        return new IrCompare(left, IrCompare.Op.Equal, constant(right));
+        return equal(left, constant(right));
     }
 
     public static IrCompare equal(IrIntExpr left, IrIntExpr right) {
@@ -130,7 +134,7 @@ public class Irs {
     }
 
     public static IrCompare notEqual(IrIntExpr left, int right) {
-        return new IrCompare(left, IrCompare.Op.NotEqual, constant(right));
+        return notEqual(left, constant(right));
     }
 
     public static IrCompare notEqual(IrIntExpr left, IrIntExpr right) {
@@ -142,7 +146,7 @@ public class Irs {
     }
 
     public static IrCompare lessThan(IrIntExpr left, int right) {
-        return new IrCompare(left, IrCompare.Op.LessThan, constant(right));
+        return lessThan(left, constant(right));
     }
 
     public static IrCompare lessThan(IrIntExpr left, IrIntExpr right) {
@@ -150,7 +154,7 @@ public class Irs {
     }
 
     public static IrCompare lessThanEqual(IrIntExpr left, int right) {
-        return new IrCompare(left, IrCompare.Op.LessThanEqual, constant(right));
+        return lessThanEqual(left, constant(right));
     }
 
     public static IrCompare lessThanEqual(IrIntExpr left, IrIntExpr right) {
@@ -158,7 +162,7 @@ public class Irs {
     }
 
     public static IrCompare greaterThan(IrIntExpr left, int right) {
-        return new IrCompare(left, IrCompare.Op.GreaterThan, constant(right));
+        return greaterThan(left, constant(right));
     }
 
     public static IrCompare greaterThan(IrIntExpr left, IrIntExpr right) {
@@ -166,7 +170,7 @@ public class Irs {
     }
 
     public static IrCompare greaterThanEqual(IrIntExpr left, int right) {
-        return new IrCompare(left, IrCompare.Op.GreaterThanEqual, constant(right));
+        return greaterThanEqual(left, constant(right));
     }
 
     public static IrCompare greaterThanEqual(IrIntExpr left, IrIntExpr right) {
@@ -194,16 +198,89 @@ public class Irs {
         return new IrSetCard(set);
     }
 
-    public static IrIntExpr div(IrIntExpr numerator, IrIntExpr denominator) {
-        Integer numeratorConstant = IrUtil.getConstant(numerator);
-        Integer denominatorConstant = IrUtil.getConstant(denominator);
-        if (numeratorConstant != null && denominatorConstant != null) {
-            return constant(numeratorConstant.intValue() / denominatorConstant.intValue());
+    public static IrIntExpr add(IrIntExpr left, int right) {
+        return add(left, constant(right));
+    }
+
+    public static IrIntExpr add(IrIntExpr left, IrIntExpr right) {
+        Integer leftConstant = IrUtil.getConstant(left);
+        Integer rightConstant = IrUtil.getConstant(right);
+        if (leftConstant != null && rightConstant != null) {
+            return constant(leftConstant.intValue() + rightConstant.intValue());
         }
-        if (denominatorConstant != null && denominatorConstant.intValue() == 1) {
-            return numerator;
+        if (leftConstant != null) {
+            if (leftConstant.intValue() == 0) {
+                return right;
+            }
         }
-        return new IrDiv(numerator, denominator);
+        if (rightConstant != null) {
+            if (rightConstant.intValue() == 0) {
+                return left;
+            }
+        }
+        return new IrArithm(left, IrArithm.Op.Add, right);
+    }
+
+    public static IrIntExpr sub(IrIntExpr left, int right) {
+        return sub(left, constant(right));
+    }
+
+    public static IrIntExpr sub(IrIntExpr left, IrIntExpr right) {
+        Integer leftConstant = IrUtil.getConstant(left);
+        Integer rightConstant = IrUtil.getConstant(right);
+        if (leftConstant != null && rightConstant != null) {
+            return constant(leftConstant.intValue() - rightConstant.intValue());
+        }
+        if (rightConstant != null && rightConstant.intValue() == 0) {
+            return left;
+        }
+        return new IrArithm(left, IrArithm.Op.Sub, right);
+    }
+
+    public static IrIntExpr mul(IrIntExpr left, int right) {
+        return mul(left, constant(right));
+
+    }
+
+    public static IrIntExpr mul(IrIntExpr left, IrIntExpr right) {
+        Integer leftConstant = IrUtil.getConstant(left);
+        Integer rightConstant = IrUtil.getConstant(right);
+        if (leftConstant != null && rightConstant != null) {
+            return constant(leftConstant.intValue() * rightConstant.intValue());
+        }
+        if (leftConstant != null) {
+            if (leftConstant.intValue() == 0) {
+                return constant(0);
+            }
+            if (leftConstant.intValue() == 1) {
+                return right;
+            }
+        }
+        if (rightConstant != null) {
+            if (rightConstant.intValue() == 0) {
+                return constant(0);
+            }
+            if (rightConstant.intValue() == 1) {
+                return left;
+            }
+        }
+        return new IrArithm(left, IrArithm.Op.Mul, right);
+    }
+
+    public static IrIntExpr div(IrIntExpr left, int right) {
+        return div(left, constant(right));
+    }
+
+    public static IrIntExpr div(IrIntExpr left, IrIntExpr right) {
+        Integer leftConstant = IrUtil.getConstant(left);
+        Integer rightConstant = IrUtil.getConstant(right);
+        if (leftConstant != null && rightConstant != null) {
+            return constant(leftConstant.intValue() / rightConstant.intValue());
+        }
+        if (rightConstant != null && rightConstant.intValue() == 1) {
+            return left;
+        }
+        return new IrArithm(left, IrArithm.Op.Div, right);
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {
