@@ -1,6 +1,6 @@
 package org.clafer.ir;
 
-import solver.constraints.IntConstraintFactory;
+import org.clafer.Check;
 
 /**
  *
@@ -11,7 +11,7 @@ public class IrAllDifferent implements IrConstraint {
     private final IrIntExpr[] operands;
 
     IrAllDifferent(IrIntExpr[] operands) {
-        this.operands = operands;
+        this.operands = Check.noNulls(operands);
     }
 
     public IrIntExpr[] getOperands() {

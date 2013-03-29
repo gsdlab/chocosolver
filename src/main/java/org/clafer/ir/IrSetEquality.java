@@ -6,13 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSetCompare implements IrBoolExpr {
+public class IrSetEquality implements IrBoolExpr {
 
     private final IrSetExpr left;
     private final Op op;
     private final IrSetExpr right;
 
-    IrSetCompare(IrSetExpr left, Op op, IrSetExpr right) {
+    IrSetEquality(IrSetExpr left, Op op, IrSetExpr right) {
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);

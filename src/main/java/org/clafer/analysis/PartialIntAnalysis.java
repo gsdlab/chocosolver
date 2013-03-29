@@ -13,9 +13,9 @@ import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstCompare;
-import org.clafer.ast.AstCompare.Op;
 import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstEqual;
+import org.clafer.ast.AstEqual.Op;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
@@ -128,8 +128,8 @@ public class PartialIntAnalysis {
     }
 
     private Quad<AstRef, List<AstClafer>, Integer, Boolean> analyze(AstBoolExpr exp) {
-        if (exp instanceof AstCompare) {
-            AstCompare compare = (AstCompare) exp;
+        if (exp instanceof AstEqual) {
+            AstEqual compare = (AstEqual) exp;
             if (Op.Equal.equals(compare.getOp())) {
                 if (compare.getLeft() instanceof AstJoinRef && compare.getRight() instanceof AstConstant) {
                     return analyzeEqual((AstJoinRef) compare.getLeft(), (AstConstant) compare.getRight());

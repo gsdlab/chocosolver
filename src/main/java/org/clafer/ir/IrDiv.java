@@ -28,4 +28,9 @@ public class IrDiv implements IrIntExpr {
     public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public String toString() {
+        return numerator + " / " + denominator;
+    }
 }

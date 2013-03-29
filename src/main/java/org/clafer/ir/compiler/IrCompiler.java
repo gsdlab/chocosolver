@@ -9,7 +9,7 @@ import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ir.IrNot;
-import org.clafer.ir.IrSetCompare;
+import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortInts;
 import org.clafer.ir.IrSortStrings;
@@ -282,7 +282,7 @@ public class IrCompiler {
         }
 
         @Override
-        public BoolVar visit(IrSetCompare ir, Void a) {
+        public BoolVar visit(IrSetEquality ir, Void a) {
             SetVar $left = ir.getLeft().accept(setExprCompiler, a);
             SetVar $right = ir.getRight().accept(setExprCompiler, a);
             BoolVar reified = numBoolVar("SetCompare");
@@ -332,7 +332,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrSetCompare ir, Void a) {
+        public Constraint visit(IrSetEquality ir, Void a) {
             SetVar $left = ir.getLeft().accept(setExprCompiler, a);
             SetVar $right = ir.getRight().accept(setExprCompiler, a);
             switch (ir.getOp()) {
@@ -384,7 +384,7 @@ public class IrCompiler {
         }
 
         @Override
-        public ALogicTree visit(IrSetCompare ir, Void a) {
+        public ALogicTree visit(IrSetEquality ir, Void a) {
             return Literal.pos(ir.accept(boolExprCompiler, a));
         }
     };

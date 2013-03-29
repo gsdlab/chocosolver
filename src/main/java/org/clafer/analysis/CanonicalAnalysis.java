@@ -1,5 +1,6 @@
 package org.clafer.analysis;
 
+import org.clafer.ast.AstEqual;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,13 @@ public class CanonicalAnalysis {
         public AstExpr visit(AstCard ast, Void a) {
             AstSetExpr set = (AstSetExpr) ast.getSet().accept(this, a);
             return card(set);
+        }
+
+        @Override
+        public AstExpr visit(AstEqual ast, Void a) {
+            AstSetExpr left = (AstSetExpr) ast.getLeft().accept(this, a);
+            AstSetExpr right = (AstSetExpr) ast.getRight().accept(this, a);
+            return equal(left, ast.getOp(), right);
         }
 
         @Override

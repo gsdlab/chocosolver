@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.clafer.Check;
+import org.clafer.ast.AstEqual;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
@@ -121,27 +122,23 @@ public class TypeAnalysis {
         }
 
         @Override
+        public AstClafer visit(AstEqual ast, Void a) {
+            AstClafer leftType = ast.getLeft().accept(this, a);
+            AstClafer rightType = ast.getRight().accept(this, a);
+            if (!AnalysisUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
+                throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
+            }
+            return put(BoolType, ast);
+        }
+
+        @Override
         public AstClafer visit(AstCompare ast, Void a) {
             AstClafer leftType = ast.getLeft().accept(this, a);
             AstClafer rightType = ast.getRight().accept(this, a);
-            switch (ast.getOp()) {
-                case Equal:
-                case NotEqual:
-                    if (!AnalysisUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
-                        throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
-                    }
-                    return put(BoolType, ast);
-                case LessThan:
-                case LessThanEqual:
-                case GreaterThan:
-                case GreaterThanEqual:
-                    if (!(leftType instanceof AstIntClafer) || !(rightType instanceof AstIntClafer)) {
-                        throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
-                    }
-                    return put(BoolType, ast);
-                default:
-                    throw new AnalysisException("Unknown op " + ast.getOp());
+            if (!(leftType instanceof AstIntClafer) || !(rightType instanceof AstIntClafer)) {
+                throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
             }
+            return put(BoolType, ast);
         }
 
         @Override

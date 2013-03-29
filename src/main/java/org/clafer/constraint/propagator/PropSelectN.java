@@ -1,5 +1,6 @@
 package org.clafer.constraint.propagator;
 
+import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -120,5 +121,10 @@ public class PropSelectN extends Propagator<IntVar> {
             }
         }
         return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return "selectN(" + Arrays.toString(bools) + ", " + n + ")";
     }
 }

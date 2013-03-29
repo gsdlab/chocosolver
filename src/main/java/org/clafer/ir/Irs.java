@@ -5,13 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.clafer.ir.IrDomain.IrBoundDomain;
 import org.clafer.ir.IrDomain.IrEnumDomain;
-import solver.Solver;
-import solver.constraints.IntConstraintFactory;
-import solver.variables.IntVar;
-import solver.variables.VariableFactory;
 
 /**
- *
+ * 
  * @author jimmy
  */
 public class Irs {
@@ -86,7 +82,7 @@ public class Irs {
     }
 
     public static IrBoolExpr and(List<IrBoolExpr> operands) {
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>();
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.size());
         for (IrBoolExpr operand : operands) {
             if (IrUtil.isFalse(operand)) {
                 return False;
@@ -129,8 +125,8 @@ public class Irs {
         return new IrCompare(left, IrCompare.Op.Equal, right);
     }
 
-    public static IrSetCompare equal(IrSetExpr left, IrSetExpr right) {
-        return new IrSetCompare(left, IrSetCompare.Op.Equal, right);
+    public static IrSetEquality equal(IrSetExpr left, IrSetExpr right) {
+        return new IrSetEquality(left, IrSetEquality.Op.Equal, right);
     }
 
     public static IrCompare notEqual(IrIntExpr left, int right) {
@@ -141,8 +137,8 @@ public class Irs {
         return new IrCompare(left, IrCompare.Op.NotEqual, right);
     }
 
-    public static IrSetCompare notEqual(IrSetExpr left, IrSetExpr right) {
-        return new IrSetCompare(left, IrSetCompare.Op.NotEqual, right);
+    public static IrSetEquality notEqual(IrSetExpr left, IrSetExpr right) {
+        return new IrSetEquality(left, IrSetEquality.Op.NotEqual, right);
     }
 
     public static IrCompare lessThan(IrIntExpr left, int right) {
@@ -222,14 +218,18 @@ public class Irs {
      * Set
      * 
      ********************/
-    private static final IrDomain EmptyDomain = new IrEnumDomain(new int[0]);
+    public static final IrDomain EmptyDomain = new IrEnumDomain(new int[0]);
     public static final IrSetVar EmptySet = new IrSetVar("{}", EmptyDomain, EmptyDomain);
 
     public static IrSetVar constant(int[] value) {
-        return new IrSetVar(Arrays.toString(value), new IrEnumDomain(value), new IrEnumDomain(value));
+        IrEnumDomain domain = new IrEnumDomain(value);
+        return new IrSetVar(Arrays.toString(value), domain, domain);
     }
 
     public static IrSetVar set(String name, int low, int high) {
+        if (low == high) {
+            return constant(new int[]{low});
+        }
         return new IrSetVar(name, new IrBoundDomain(low, high), EmptyDomain);
     }
 
@@ -251,8 +251,8 @@ public class Irs {
             IrSetExpr[] to = new IrSetExpr[constant.length];
             for (int i = 0; i < to.length; i++) {
                 to[i] = children[constant[i]];
-                return union(to);
             }
+            return union(to);
         }
         return new IrJoin(take, children);
     }
@@ -263,8 +263,8 @@ public class Irs {
             IrIntExpr[] to = new IrIntExpr[constant.length];
             for (int i = 0; i < to.length; i++) {
                 to[i] = refs[constant[i]];
-                return tupleToSet(to);
             }
+            return tupleToSet(to);
         }
         return new IrJoinRef(take, refs);
     }
@@ -287,22 +287,8 @@ public class Irs {
             case 1:
                 return singleton(tuple[0]);
             default:
+                // TODO
                 throw new UnsupportedOperationException();
-        }
-    }
-
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-
-        IntVar x = VariableFactory.enumerated("x", 0, 10, solver);
-        IntVar y = VariableFactory.enumerated("y", 0, 10, solver);
-        IntVar z = VariableFactory.enumerated("z", 0, 10, solver);
-        solver.post(IntConstraintFactory.eucl_div(x, y, z));
-
-        if (solver.findSolution()) {
-            do {
-                System.out.println(solver);
-            } while (solver.nextSolution());
         }
     }
 }

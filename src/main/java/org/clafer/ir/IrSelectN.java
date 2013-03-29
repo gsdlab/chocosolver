@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import java.util.Arrays;
 import org.clafer.Check;
 
 /**
@@ -27,5 +28,10 @@ public class IrSelectN implements IrConstraint {
     @Override
     public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public String toString() {
+        return "selectN(" + Arrays.toString(bools) + ", " + n + ")";
     }
 }

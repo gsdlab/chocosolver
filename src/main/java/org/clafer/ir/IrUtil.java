@@ -1,7 +1,5 @@
 package org.clafer.ir;
 
-import solver.variables.IntVar;
-
 /**
  *
  * @author jimmy
