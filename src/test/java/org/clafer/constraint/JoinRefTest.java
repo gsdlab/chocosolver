@@ -1,25 +1,20 @@
-//package org.clafer.constraint;
-//
-//import static org.junit.Assert.*;
-//import static org.clafer.constraint.JoinRefManager.*;
-//import choco.Choco;
-//import choco.Options;
-//import choco.cp.model.CPModel;
-//import choco.kernel.model.Model;
-//import choco.kernel.model.variables.integer.IntegerVariable;
-//import choco.kernel.model.variables.set.SetVariable;
-//import choco.kernel.solver.Solver;
-//import gnu.trove.TIntHashSet;
-//import java.util.Random;
-//import org.clafer.Util;
-//import org.junit.Test;
-//
-///**
-// *
-// * @author jimmy
-// */
-//public class JoinRefTest extends ConstraintTest {
-//
+package org.clafer.constraint;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import solver.Configuration;
+import solver.Solver;
+import solver.constraints.set.SetConstraintsFactory;
+import solver.variables.IntVar;
+import solver.variables.SetVar;
+import solver.variables.VariableFactory;
+
+/**
+ *
+ * @author jimmy
+ */
+public class JoinRefTest extends ConstraintTest {
+
 //    private void checkCorrectness(Solver solver, SetVariable take, IntegerVariable[] refs, SetVariable to) {
 //        int[] $from = solver.getVar(take).getValue();
 //        int[] $refs = Util.getVals(solver.getVar(refs));
@@ -67,17 +62,19 @@
 //        Solver solver = solveOnce(m);
 //        checkCorrectness(solver, take, refs, to);
 //    }
-//
-//    @Test(timeout = 60000)
-//    public void quickTest() {
-//        Model m = new CPModel();
-//
-//        SetVariable take = Choco.makeSetVar("take", 0, 4);
-//        IntegerVariable[] refs = Choco.makeIntVarArray("ref", 3, 0, 4);
-//        SetVariable to = Choco.makeSetVar("to", 0, 4);
-//
-//        m.addConstraint(joinRef(take, refs, to));
-//
-//        assertEquals(1000, quickCheckModel(m, 10));
-//    }
-//}
+    @Test(timeout = 60000)
+    public void quickTest() {
+        Solver solver = new Solver();
+
+        SetVar take = VariableFactory.set("take", new int[]{0, 1, 2}, solver);
+        IntVar[] refs = new IntVar[3];
+        for (int i = 0; i < refs.length; i++) {
+            refs[i] = VariableFactory.enumerated("ref" + i, 0, 4, solver);
+        }
+        SetVar to = VariableFactory.set("to", new int[]{0, 1, 2, 3, 4}, solver);
+
+        solver.post(Constraints.joinRef(take, refs, to));
+
+        assertEquals(1000, quickCheckModel(solver));
+    }
+}

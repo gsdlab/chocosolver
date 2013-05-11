@@ -7,7 +7,6 @@ import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.delta.monitor.SetDeltaMonitor;
-import util.procedure.IntProcedure;
 
 /**
  * 
@@ -33,6 +32,41 @@ public class PropagatorUtil {
         for (SetDeltaMonitor delta : deltas) {
             delta.unfreeze();
         }
+    }
+
+    public static boolean approxCanIntersect(IntVar e1, SetVar e2, boolean otherwise) {
+        if (e1.instantiated()) {
+            return e2.envelopeContains(e1.getValue());
+        }
+        if (Math.min(e1.getDomainSize(), e2.getEnvelopeSize()) < 100) {
+            return canIntersect(e1, e2);
+        }
+        return otherwise;
+    }
+
+    /**
+     * TODO: use region iterator
+     * 
+     * @param e1
+     * @param e2
+     * @return true if and only if e1 in e2 is possible, false otherwise
+     */
+    public static boolean canIntersect(IntVar e1, SetVar e2) {
+        if (e1.getDomainSize() < e2.getEnvelopeSize()) {
+            int ub = e1.getUB();
+            for (int i = e1.getLB(); i <= ub; i = e1.nextValue(i)) {
+                if (e2.envelopeContains(i)) {
+                    return true;
+                }
+            }
+        } else {
+            for (int i = e2.getEnvelopeFirst(); i != SetVar.END; i = e2.getEnvelopeNext()) {
+                if (e1.contains(i)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static void subsetKer(SetVar sub, SetVar sup, ICause propogator) throws ContradictionException {
@@ -83,15 +117,35 @@ public class PropagatorUtil {
         }
     }
 
+    public static int[] iterateEnv(SetVar set) {
+        int[] iterate = new int[set.getEnvelopeSize()];
+        int count = 0;
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            iterate[count++] = i;
+        }
+        assert count == iterate.length;
+        return iterate;
+    }
+
     public static void iterateEnv(SetVar set, TIntCollection collection) {
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             collection.add(i);
         }
     }
 
-    public static void forEachKer(SetVar set, IntProcedure proc) throws ContradictionException {
+    public static int[] iterateKer(SetVar set) {
+        int[] iterate = new int[set.getKernelSize()];
+        int count = 0;
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            proc.execute(i);
+            iterate[count++] = i;
+        }
+        assert count == iterate.length;
+        return iterate;
+    }
+
+    public static void iterateKer(SetVar set, TIntCollection collection) {
+        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+            collection.add(i);
         }
     }
 }

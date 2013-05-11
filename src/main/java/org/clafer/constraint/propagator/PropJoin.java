@@ -12,7 +12,7 @@ import util.ESat;
 import util.procedure.IntProcedure;
 
 /**
- * Note: Assumes disjoint children!
+ * Assumptions: Children are disjoint, undefined behaviour otherwise.
  * 
  * @author jimmy
  */
@@ -78,6 +78,7 @@ public class PropJoin extends Propagator<SetVar> {
             PropagatorUtil.subsetKer(children[i], to, aCause);
             PropagatorUtil.subsetEnv(children[i], to, aCause);
         }
+        
         // Pick take
         for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
             int child = -1;
