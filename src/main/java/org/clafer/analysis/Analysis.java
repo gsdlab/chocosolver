@@ -28,7 +28,7 @@ public class Analysis {
     private final Map<AstAbstractClafer, Offsets> offsets;
     private final Map<AstClafer, PartialSolution> partialSolutions;
     private final Map<AstRef, int[]> partialInts;
-    private final Map<Pair<AstRef, Integer>, Integer> partialRefInts;
+    private final Map<Pair<AstRef, Integer>, int[]> partialRefInts;
     private final Map<AstExpr, AstClafer> types;
 
     private Analysis(Map<AstAbstractClafer, Integer> depths,
@@ -38,7 +38,7 @@ public class Analysis {
             Map<AstAbstractClafer, Offsets> offsets,
             Map<AstClafer, PartialSolution> partialSolutions,
             Map<AstRef, int[]> partialInts,
-            Map<Pair<AstRef, Integer>, Integer> partialRefInts,
+            Map<Pair<AstRef, Integer>, int[]> partialRefInts,
             Map<AstExpr, AstClafer> types) {
         this.depths = depths;
         this.globalCards = globalCards;
@@ -70,10 +70,10 @@ public class Analysis {
 
         // Reanalyze types.
         types = TypeAnalysis.analyze(model);
-        Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, Integer>> pair = PartialIntAnalysis.analyze(model, offsets, formats, types, optimizedScope);
+        Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, int[]>> pair = PartialIntAnalysis.analyze(model, offsets, formats, types, optimizedScope);
 
         Map<AstRef, int[]> partialInts = pair.getFst();
-        Map<Pair<AstRef, Integer>, Integer> partialRefInts = pair.getSnd();
+        Map<Pair<AstRef, Integer>, int[]> partialRefInts = pair.getSnd();
 
         return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, partialRefInts, types);
     }
@@ -106,7 +106,7 @@ public class Analysis {
         return partialInts.get(ref);
     }
 
-    public Integer getPartialRefInts(AstRef ref, int id) {
+    public int[] getPartialRefInts(AstRef ref, int id) {
         return partialRefInts.get(new Pair<AstRef, Integer>(ref, id));
     }
 

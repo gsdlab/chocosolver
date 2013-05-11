@@ -1,27 +1,23 @@
 package org.clafer.ast;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import org.clafer.Check;
 
 /**
  *
  * @author jimmy
  */
-public class AstClafer {
+public class AstClafer implements Serializable {
 
     private final String name;
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard = new Card();
     private final List<AstConcreteClafer> children = new ArrayList<AstConcreteClafer>();
-    private final List<AstBoolExpr> constraints = new ArrayList<AstBoolExpr>();
+    private final List<AstConstraint> constraints = new ArrayList<AstConstraint>();
 
     AstClafer(String name) {
         this.name = Check.notNull(name);
@@ -117,17 +113,11 @@ public class AstClafer {
         return !constraints.isEmpty();
     }
 
-    public List<AstBoolExpr> getConstraints() {
+    public List<AstConstraint> getConstraints() {
         return Collections.unmodifiableList(constraints);
     }
 
     public void addConstraint(AstBoolExpr constraint) {
-        constraints.add(constraint);
-    }
-
-    public AstClafer withConstraints(List<AstBoolExpr> constraints) {
-        this.constraints.clear();
-        this.constraints.addAll(constraints);
-        return this;
+        constraints.add(new AstConstraint(this, constraint));
     }
 }

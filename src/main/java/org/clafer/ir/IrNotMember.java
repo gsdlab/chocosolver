@@ -6,12 +6,12 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrMember implements IrDualExpr {
+public class IrNotMember implements IrDualExpr {
 
     private final IrIntExpr var;
     private final int low, high;
 
-    IrMember(IrIntExpr var, int low, int high) {
+    IrNotMember(IrIntExpr var, int low, int high) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
@@ -39,11 +39,11 @@ public class IrMember implements IrDualExpr {
 
     @Override
     public IrBoolExpr opposite() {
-        return Irs.notMember(var, low, high);
+        return Irs.member(var, low, high);
     }
 
     @Override
     public String toString() {
-        return var + " ∈ [" + low + ", " + high + "]";
+        return var + " ∉ [" + low + ", " + high + "]";
     }
 }

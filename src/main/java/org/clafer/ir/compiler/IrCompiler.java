@@ -4,8 +4,11 @@ import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArithm;
 import org.clafer.ir.IrElement;
+import org.clafer.ir.IrHalfReification;
+import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrMember;
+import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
@@ -14,6 +17,7 @@ import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortInts;
 import org.clafer.ir.IrSortStrings;
+import org.clafer.ir.IrSum;
 import org.clafer.ir.IrUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
@@ -27,7 +31,7 @@ import org.clafer.ir.IrBoolConstraint;
 import org.clafer.ir.IrIntChannel;
 import org.clafer.ir.IrJoin;
 import org.clafer.ir.IrJoinRef;
-import org.clafer.ir.IrSetCard;
+import org.clafer.ir.IrCard;
 import solver.variables.SetVar;
 import solver.constraints.Constraint;
 import org.clafer.ir.IrBoolExpr;
@@ -35,8 +39,6 @@ import org.clafer.ir.IrBoolExprVisitor;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrConstraintVisitor;
 import org.clafer.ir.IrDomain;
-import org.clafer.ir.IrDomain.IrBoundDomain;
-import org.clafer.ir.IrDomain.IrEnumDomain;
 import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
@@ -78,14 +80,14 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        for (IrBoolVar var : module.getBoolVars()) {
-            var.accept(boolExprCompiler, null);
+        for (IrSetVar var : module.getSetVars()) {
+            var.accept(setExprCompiler, null);
         }
         for (IrIntVar var : module.getIntVars()) {
             var.accept(intExprCompiler, null);
         }
-        for (IrSetVar var : module.getSetVars()) {
-            var.accept(setExprCompiler, null);
+        for (IrBoolVar var : module.getBoolVars()) {
+            var.accept(boolExprCompiler, null);
         }
         for (IrConstraint constraint : module.getConstraints()) {
             solver.post(constraint.accept(constraintCompiler, null));
@@ -131,15 +133,10 @@ public class IrCompiler {
             if (constant != null) {
                 return VariableFactory.fixed(constant, solver);
             }
-            if (domain instanceof IrEnumDomain) {
-                IrEnumDomain enumDomain = (IrEnumDomain) domain;
-                return VariableFactory.enumerated(ir.getName(), enumDomain.getValues(), solver);
-            } else if (domain instanceof IrBoundDomain) {
-                IrBoundDomain boundDomain = (IrBoundDomain) domain;
-                return VariableFactory.enumerated(ir.getName(), boundDomain.getLow(), boundDomain.getHigh(), solver);
-            } else {
-                throw new IrException();
-            }
+//            if (domain instanceof IrEnumDomain && domain.getUpperBound() - domain.getLowerBound() < 100) {
+//                return VariableFactory.enumerated(ir.getName(), domain.getValues(), solver);
+//            }
+            return VariableFactory.bounded(ir.getName(), domain.getLowerBound(), domain.getUpperBound(), solver);
         }
     };
     private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
@@ -165,6 +162,13 @@ public class IrCompiler {
         @Override
         public Constraint visit(IrBoolConstraint ir, Void a) {
             return ir.getExpr().accept(boolExprConstraintCompiler, a);
+        }
+
+        @Override
+        public Constraint visit(IrHalfReification ir, Void a) {
+            BoolVar $antecedent = ir.getAntecedent().accept(boolExprCompiler, a);
+            Constraint $consequent = ir.getConsequent().accept(this, a);
+            return _implies($antecedent, $consequent);
         }
 
         @Override
@@ -263,16 +267,25 @@ public class IrCompiler {
             BoolVar reified = numBoolVar("And");
             solver.post(_clauses(_reified(reified, ir.accept(boolExprTreeCompiler, a))));
             return reified;
-
         }
 
         @Override
         public BoolVar visit(IrImplies ir, Void a) {
             BoolVar $antecedent = ir.getAntecedent().accept(this, a);
-            BoolVar $consequnet = ir.getConsequent().accept(this, a);
+            BoolVar $consequent = ir.getConsequent().accept(this, a);
             BoolVar reified = numBoolVar("Implies");
-            solver.post(_implies(reified, _arithm($antecedent, "<=", $consequnet)));
-            solver.post(_implies(_not(reified), _arithm($antecedent, ">", $consequnet)));
+            solver.post(_implies(reified, _arithm($antecedent, "<=", $consequent)));
+            solver.post(_implies(_not(reified), _arithm($antecedent, ">", $consequent)));
+            return reified;
+        }
+
+        @Override
+        public BoolVar visit(IrIfOnlyIf ir, Void a) {
+            BoolVar $left = ir.getLeft().accept(this, a);
+            BoolVar $right = ir.getRight().accept(this, a);
+            BoolVar reified = numBoolVar("IfOnlyIf");
+            solver.post(_implies(reified, _arithm($left, "=", $right)));
+            solver.post(_implies(_not(reified), _arithm($left, "!=", $right)));
             return reified;
         }
 
@@ -282,6 +295,15 @@ public class IrCompiler {
             BoolVar reified = numBoolVar("Member");
             solver.post(_implies(reified, _member($var, ir.getLow(), ir.getHigh())));
             solver.post(_implies(_not(reified), _not_member($var, ir.getLow(), ir.getHigh())));
+            return reified;
+        }
+
+        @Override
+        public BoolVar visit(IrNotMember ir, Void a) {
+            IntVar $var = ir.getVar().accept(intExprCompiler, a);
+            BoolVar reified = numBoolVar("NotMember");
+            solver.post(_implies(reified, _not_member($var, ir.getLow(), ir.getHigh())));
+            solver.post(_implies(_not(reified), _member($var, ir.getLow(), ir.getHigh())));
             return reified;
         }
 
@@ -328,7 +350,16 @@ public class IrCompiler {
 
         @Override
         public Constraint visit(IrAnd ir, Void a) {
-            return _clauses(ir.accept(boolExprTreeCompiler, a));
+            IrBoolExpr[] operands = ir.getOperands();
+
+            BoolVar[] $operands = new BoolVar[operands.length];
+            for (int i = 0; i < $operands.length; i++) {
+                $operands[i] = operands[i].accept(boolExprCompiler, a);
+            }
+            if ($operands.length == 2) {
+                return _arithm($operands[0], "+", $operands[1], "=", 2);
+            }
+            return _sum(VariableFactory.fixed($operands.length, solver), $operands);
         }
 
         @Override
@@ -339,9 +370,22 @@ public class IrCompiler {
         }
 
         @Override
+        public Constraint visit(IrIfOnlyIf ir, Void a) {
+            BoolVar $left = ir.getLeft().accept(boolExprCompiler, a);
+            BoolVar $right = ir.getRight().accept(boolExprCompiler, a);
+            return _arithm($left, "=", $right);
+        }
+
+        @Override
         public Constraint visit(IrMember ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
             return _member($var, ir.getLow(), ir.getHigh());
+        }
+
+        @Override
+        public Constraint visit(IrNotMember ir, Void a) {
+            IntVar $var = ir.getVar().accept(intExprCompiler, a);
+            return _not_member($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
@@ -377,8 +421,7 @@ public class IrCompiler {
 
         @Override
         public ALogicTree visit(IrNot ir, Void a) {
-            // TODO: Node.not?
-            return Literal.neg(ir.getProposition().accept(boolExprCompiler, a));
+            return Node.nor(ir.getProposition().accept(this, a));
         }
 
         @Override
@@ -400,7 +443,19 @@ public class IrCompiler {
         }
 
         @Override
+        public ALogicTree visit(IrIfOnlyIf ir, Void a) {
+            ALogicTree $left = ir.getLeft().accept(this, a);
+            ALogicTree $right = ir.getRight().accept(this, a);
+            return Node.ifOnlyIf($left, $right);
+        }
+
+        @Override
         public ALogicTree visit(IrMember ir, Void a) {
+            return Literal.pos(ir.accept(boolExprCompiler, a));
+        }
+
+        @Override
+        public ALogicTree visit(IrNotMember ir, Void a) {
             return Literal.pos(ir.accept(boolExprCompiler, a));
         }
 
@@ -433,7 +488,7 @@ public class IrCompiler {
         }
 
         @Override
-        public IntVar visit(IrSetCard ir, Void a) {
+        public IntVar visit(IrCard ir, Void a) {
             return setCardVar.get(ir.getSet().accept(setExprCompiler, a));
         }
 
@@ -515,6 +570,20 @@ public class IrCompiler {
         }
 
         @Override
+        public IntVar visit(IrSum ir, Void a) {
+            IrIntExpr[] addends = ir.getAddends();
+
+            IntVar[] $addends = new IntVar[addends.length];
+            for (int i = 0; i < $addends.length; i++) {
+                $addends[i] = addends[i].accept(this, a);
+            }
+            int[] bounds = Sum.getSumBounds($addends);
+            IntVar sum = numIntVar("Sum", bounds[0], bounds[1]);
+            solver.post(_sum(sum, $addends));
+            return sum;
+        }
+
+        @Override
         public IntVar visit(IrElement ir, Void a) {
             IrIntExpr index = ir.getIndex();
             IrIntExpr[] array = ir.getArray();
@@ -548,12 +617,23 @@ public class IrCompiler {
 
         @Override
         public SetVar visit(IrJoin ir, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            IrSetExpr take = ir.getTake();
+            IrSetExpr[] children = ir.getChildren();
+
+            TIntHashSet env = new TIntHashSet();
+            SetVar $take = take.accept(this, a);
+            SetVar[] $children = new SetVar[children.length];
+            for (int i = 0; i < $children.length; i++) {
+                $children[i] = children[i].accept(this, a);
+                PropagatorUtil.iterateEnv($children[i], env);
+            }
+            SetVar join = numSetVar("Join", env.toArray());
+            solver.post(Constraints.join($take, $children, join));
+            return join;
         }
 
         @Override
         public SetVar visit(IrJoinRef ir, Void a) {
-            System.out.println(ir.getTake());
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -572,7 +652,9 @@ public class IrCompiler {
             return union;
         }
     };
-
+    public static void main(String[] args) {
+        
+    }
     private ConjunctiveNormalForm _clauses(ALogicTree tree) {
         return IntConstraintFactory.clauses(tree, solver);
     }
@@ -601,8 +683,20 @@ public class IrCompiler {
         return Sum.var(var1, var2);
     }
 
+    private static Constraint _sum(IntVar sum, IntVar... vars) {
+        return IntConstraintFactory.sum(vars, sum);
+    }
+
+    private static Constraint _sum(IntVar sum, BoolVar... vars) {
+        return IntConstraintFactory.sum(vars, sum);
+    }
+
     private static Constraint _times(IntVar product, IntVar var1, IntVar var2) {
         return IntConstraintFactory.times(product, var1, var2);
+    }
+
+    private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {
+        return IntConstraintFactory.arithm(var1, op1, var2, op2, cste);
     }
 
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {

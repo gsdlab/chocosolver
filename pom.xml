@@ -44,7 +44,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.clafer.ChocoSolver</mainClass>
+                            <mainClass>org.clafer.RhinoShell</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

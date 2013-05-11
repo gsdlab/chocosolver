@@ -13,9 +13,9 @@ public class IrUtil {
         return t;
     }
 
-    public static boolean isTrue(IrBoolExpr booExprl) {
-        if (booExprl instanceof IrBoolVar) {
-            IrBoolVar var = (IrBoolVar) booExprl;
+    public static boolean isTrue(IrBoolExpr boolExpr) {
+        if (boolExpr instanceof IrBoolVar) {
+            IrBoolVar var = (IrBoolVar) boolExpr;
             return var.isTrue();
         }
         return false;
@@ -25,6 +25,22 @@ public class IrUtil {
         if (boolExpr instanceof IrBoolVar) {
             IrBoolVar var = (IrBoolVar) boolExpr;
             return var.isFalse();
+        }
+        return false;
+    }
+
+    public static boolean isTrue(IrConstraint constraint) {
+        if (constraint instanceof IrBoolConstraint) {
+            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
+            return isTrue(boolConstraint.getExpr());
+        }
+        return false;
+    }
+
+    public static boolean isFalse(IrConstraint constraint) {
+        if (constraint instanceof IrBoolConstraint) {
+            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
+            return isFalse(boolConstraint.getExpr());
         }
         return false;
     }

@@ -83,33 +83,6 @@ public class ClaferSolutionMap {
         return astSolution.getScope(clafer);
     }
 
-//    public Children[] getTopChildren() {
-//        List<Children> children = new ArrayList<Children>();
-//        getChildren(astSolution.getModel().getTopClafers(), 0, children);
-//        return children.toArray(new Children[children.size()]);
-//    }
-//
-//    private void getChildren(AstClafer clafer, int id, List<Children> children) {
-//        getChildren(clafer.getChildren(), id, children);
-//        if (clafer.hasSuperClafer()) {
-//            getChildren(
-//                    clafer.getSuperClafer(),
-//                    id + astSolution.getOffset(clafer.getSuperClafer(), clafer),
-//                    children);
-//        }
-//    }
-//
-//    private void getChildren(List<AstConcreteClafer> astChildren, int id, List<Children> children) {
-//        for (AstClafer child : astChildren) {
-//            IrSetVar childSetIrVar = astSolution.getChildrenVars(child)[id];
-//            if (childSetIrVar.isConstant()) {
-//                children.add(new Children(child, childSetIrVar.getValue()));
-//            } else {
-//                SetVar childSetVar = irSolution.getSetVar(childSetIrVar);
-//                children.add(new Children(child, childSetVar.getValue()));
-//            }
-//        }
-//    }
     public int getRefScope(AstRef ref) {
         return astSolution.getScope(ref.getSourceType());
     }
@@ -118,12 +91,6 @@ public class ClaferSolutionMap {
         IrIntVar[] refIrVars = astSolution.getRefVars(ref);
         IntVar refVar = irSolution.getIntVar(refIrVars[id]);
         return refVar.getValue();
-
-
-
-
-
-
     }
 
     public static class Children {

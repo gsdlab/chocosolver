@@ -8,12 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.clafer.Scope;
+import org.clafer.Util;
 import org.clafer.analysis.AbstractOffsetAnalysis.Offsets;
 import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstEqual.Op;
 import org.clafer.ast.AstExpr;
@@ -42,20 +44,23 @@ public class PartialIntAnalysis {
         this.formats = formats;
     }
 
-    public static Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, Integer>> analyze(
+    public static Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, int[]>> analyze(
             AstModel model,
             Map<AstAbstractClafer, Offsets> offsets,
             Map<AstClafer, Format> formats,
             Map<AstExpr, AstClafer> types,
             Scope scope) {
         Map<AstRef, int[]> partialInts = new HashMap<AstRef, int[]>();
-        Map<Pair<AstRef, Integer>, Integer> partialRefInts = new HashMap<Pair<AstRef, Integer>, Integer>();
+        Map<Pair<AstRef, Integer>, int[]> partialRefInts = new HashMap<Pair<AstRef, Integer>, int[]>();
 
         Map<AstRef, Pair<List<List<AstClafer>>, TIntHashSet>> subMap = new HashMap<AstRef, Pair<List<List<AstClafer>>, TIntHashSet>>();
         for (AstClafer clafer : AnalysisUtil.getClafers(model)) {
             PartialIntAnalysis analysis = new PartialIntAnalysis(types, formats);
-            for (AstBoolExpr constraint : clafer.getConstraints()) {
-                Quad<AstRef, List<AstClafer>, Integer, Boolean> quad = analysis.analyze(constraint);
+            for (AstConstraint constraint : clafer.getConstraints()) {
+                if (constraint.isSoft()) {
+                    continue;
+                }
+                Quad<AstRef, List<AstClafer>, Integer, Boolean> quad = analysis.analyze(constraint.getExpr());
                 if (quad == null) {
                     continue;
                 }
@@ -66,7 +71,12 @@ public class PartialIntAnalysis {
                     List<AstClafer> path = quad.getSnd();
                     if (path.isEmpty()) {
                         for (int i = 0; i < scope.getScope(key.getSourceType()); i++) {
-                            partialRefInts.put(new Pair<AstRef, Integer>(key, 0), quad.getThd());
+                            int[] oldValue = partialRefInts.get(new Pair<AstRef, Integer>(key, 0));
+                            if (oldValue != null) {
+                                partialRefInts.put(new Pair<AstRef, Integer>(key, 0), Util.cons(quad.getThd(), oldValue));
+                            } else {
+                                partialRefInts.put(new Pair<AstRef, Integer>(key, 0), new int[]{quad.getThd()});
+                            }
                         }
                     } else {
                         int offset = 0;
@@ -75,7 +85,12 @@ public class PartialIntAnalysis {
                         }
                         int s = scope.getScope(path.get(0));
                         for (int i = 0; i < s; i++) {
-                            partialRefInts.put(new Pair<AstRef, Integer>(key, offset + i), quad.getThd());
+                            int[] oldValue = partialRefInts.get(new Pair<AstRef, Integer>(key, 0));
+                            if (oldValue != null) {
+                                partialRefInts.put(new Pair<AstRef, Integer>(key, 0), Util.cons(quad.getThd(), oldValue));
+                            } else {
+                                partialRefInts.put(new Pair<AstRef, Integer>(key, 0), new int[]{quad.getThd()});
+                            }
                         }
                     }
                 }
@@ -96,7 +111,7 @@ public class PartialIntAnalysis {
                 partialInts.put(entry.getKey(), entry.getValue().getSnd().toArray());
             }
         }
-        return new Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, Integer>>(partialInts, partialRefInts);
+        return new Pair<Map<AstRef, int[]>, Map<Pair<AstRef, Integer>, int[]>>(partialInts, partialRefInts);
     }
 
     private static boolean covers(AstClafer clafer, List<List<AstClafer>> paths) {

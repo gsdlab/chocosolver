@@ -45,7 +45,7 @@ public class PropSelectN extends Propagator<IntVar> {
         if (isBoolsVar(vIdx)) {
             return EventType.INSTANTIATE.mask;
         }
-        return EventType.DECUPP.mask + EventType.INCLOW.mask;
+        return EventType.DECUPP.mask + EventType.INCLOW.mask + EventType.INSTANTIATE.mask;
     }
 
     @Override
@@ -92,12 +92,13 @@ public class PropSelectN extends Propagator<IntVar> {
                 n.updateLowerBound(idxVarInProp + 1, aCause);
             }
         } else {
-            assert isNVar(idxVarInProp) : "Not n: " + idxVarInProp;
+            assert isNVar(idxVarInProp);
             if (EventType.isInclow(mask)) {
                 for (int i = 0; i < n.getLB(); i++) {
                     bools[i].setToTrue(aCause);
                 }
-            } else {
+            }
+            if (EventType.isDecupp(mask)) {
                 for (int i = n.getUB(); i < bools.length; i++) {
                     bools[i].setToFalse(aCause);
                 }

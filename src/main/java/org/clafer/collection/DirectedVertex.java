@@ -2,6 +2,7 @@ package org.clafer.collection;
 
 import java.util.HashSet;
 import java.util.Set;
+import org.clafer.Check;
 
 /**
  *
@@ -13,7 +14,7 @@ public class DirectedVertex<V> {
     private final Set<DirectedVertex<V>> neighbours = new HashSet<DirectedVertex<V>>();
 
     public DirectedVertex(V data) {
-        this.data = data;
+        this.data = Check.notNull(data);
     }
 
     public V getData() {

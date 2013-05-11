@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import org.clafer.ast.AstConstraint;
 import java.util.Set;
 import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstExpr;
@@ -17,9 +18,6 @@ import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ir.IrExpr;
-import org.clafer.compiler.ClaferCompiler;
-import org.clafer.ast.Asts;
-import org.clafer.compiler.ClaferSolver;
 import org.clafer.collection.ReadWriteHashMap;
 import java.util.Arrays;
 import org.clafer.ir.IrIntVar;
@@ -36,7 +34,6 @@ import org.clafer.analysis.FormatAnalysis.Format;
 import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.analysis.TypeAnalysis;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstException;
@@ -51,6 +48,7 @@ import org.clafer.collection.TopologicalSort;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrSetEquality.Op;
 import org.clafer.ir.IrSetVar;
 import static org.clafer.ir.Irs.*;
 
@@ -62,20 +60,6 @@ import static org.clafer.ir.Irs.*;
 public class AstCompiler {
 
     public static void main(String[] args) {
-        AstModel model = Asts.newModel();
-        AstAbstractClafer object = model.addAbstractClafer("object");
-        AstConcreteClafer person = model.addTopClafer("person").withCard(1, 5).extending(object);
-        AstConcreteClafer animal = model.addTopClafer("animal").withCard(1, 2).extending(object);
-        AstConcreteClafer name = object.addChild("name").withCard(1, 1).refTo(Asts.IntType);
-        person.addConstraint(Asts.equal(Asts.joinRef(Asts.join(Asts.$this(), name)), Asts.constant(1)));
-        animal.addConstraint(Asts.equal(Asts.joinRef(Asts.join(Asts.$this(), name)), Asts.constant(2)));
-
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.builder().defaultScope(100).intLow(-1).intHigh(2).toScope());
-
-        while (solver.find()) {
-            System.out.println(solver.instance());
-        }
-        System.out.println(solver.getMeasures().getSolutionCount());
     }
     private final AstModel model;
     private final Analysis analysis;
@@ -137,13 +121,27 @@ public class AstCompiler {
             }
         }
 
+        List<IrBoolVar> softVars = new ArrayList<IrBoolVar>();
         for (AstClafer clafer : clafers) {
+            List<AstConstraint> constraints = clafer.getConstraints();
             int scope = getScope(clafer);
-            for (int i = 0; i < scope; i++) {
-                ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, i);
-                for (AstBoolExpr constraint : clafer.getConstraints()) {
-                    IrBoolExpr thisConstraint = (IrBoolExpr) constraint.accept(expressionCompiler, null);
-                    module.addConstraint(implies(membership.get(clafer)[i], thisConstraint));
+            for (int i = 0; i < constraints.size(); i++) {
+                AstConstraint constraint = constraints.get(i);
+                if (constraint.isHard()) {
+                    for (int j = 0; j < scope; j++) {
+                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
+                        IrBoolExpr thisConstraint = (IrBoolExpr) constraint.getExpr().accept(expressionCompiler, null);
+                        module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
+                    }
+                } else {
+                    IrBoolVar soft = bool("Constraint#" + i + " under " + clafer + i);
+                    softVars.add(soft);
+                    module.addBoolVar(soft);
+                    for (int j = 0; j < scope; j++) {
+                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
+                        IrBoolExpr thisConstraint = (IrBoolExpr) constraint.getExpr().accept(expressionCompiler, null);
+                        module.addConstraint(implies(soft, implies(membership.get(clafer)[j], thisConstraint)));
+                    }
                 }
             }
         }
@@ -154,7 +152,7 @@ public class AstCompiler {
         for (IrIntVar[] refs : refPointers.getValues()) {
             module.addIntVars(refs);
         }
-        return new AstSolutionMap(model, childrenSet, refPointers, analysis);
+        return new AstSolutionMap(model, childrenSet, refPointers, softVars.toArray(new IrBoolVar[softVars.size()]), analysis);
     }
 
     private void initConcrete(AstConcreteClafer clafer) {
@@ -294,7 +292,7 @@ public class AstCompiler {
                 // Children with exact cards will always contribute the same score hence it
                 // is a waste of computation time to include them in the scoring constraints.
                 if (!child.getCard().isExact()) {
-                    string.add(setCard(childrenSet.get(child)[i]));
+                    string.add(card(childrenSet.get(child)[i]));
                 }
             }
             AstClafer sup = clafer;
@@ -303,27 +301,33 @@ public class AstCompiler {
                 offset += getOffset(sup.getSuperClafer(), sup);
                 for (AstConcreteClafer child : sup.getSuperClafer().getChildren()) {
                     if (!child.getCard().isExact()) {
-                        string.add(setCard(childrenSet.get(child)[i + offset]));
+                        string.add(card(childrenSet.get(child)[i + offset]));
                     }
                 }
                 sup = sup.getSuperClafer();
             }
             if (string.isEmpty()) {
+                assert terms[0] == null;
                 break;
             }
             terms[i] = string.toArray(new IrIntExpr[string.size()]);
         }
-        /*
-         * What is this optimization?
-         *
-         * Reversing is so that earlier children have higher scores. Not necessary,
-         * but the solutions will have instances that are similar closer together.
-         * Technically not an optimization.
-         */
-
         if (terms[0] != null) {
-            Util.reverse(terms);
-            module.addConstraint(sort(terms));
+            if (!clafer.hasParent()) {
+                /*
+                 * Reversing is so that earlier children have higher scores. Not necessary,
+                 * but the solutions will have instances that are similar closer together.
+                 */
+                Util.reverse(terms);
+                module.addConstraint(sort(terms));
+            } else {
+                IrIntVar[] parents = parentPointers.get(clafer);
+                for (int i = 0; i < getScope(clafer) - 1; i++) {
+                    module.addConstraint(
+                            implies(equal(parents[i], parents[i + 1]),
+                            sort(terms[i + 1], terms[i])));
+                }
+            }
         }
 
         switch (getFormat(clafer)) {
@@ -356,7 +360,7 @@ public class AstCompiler {
         IrBoolVar[] members = membership.get(clafer);
 
         if (!clafer.hasParent()) {
-            module.addConstraint(selectN(members, setCard(set.get(clafer))));
+            module.addConstraint(selectN(members, card(set.get(clafer))));
         }
 
         PartialSolution partialParentSolution = getPartialParentSolution(clafer);
@@ -365,11 +369,11 @@ public class AstCompiler {
         IrSetVar[] children = childrenSet.get(clafer);
         for (int i = 0; i < partialParentSolution.size(); i++) {
             if (partialParentSolution.hasClafer(i)) {
-                module.addConstraint(constrainCard(setCard(children[i]), card));
+                module.addConstraint(constrainCard(card(children[i]), card));
             } else {
                 if (card.isBounded()) {
                     module.addConstraint(implies(membership.get(clafer.getParent())[i],
-                            constrainCard(setCard(children[i]), card)));
+                            constrainCard(card(children[i]), card)));
                 }
                 module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
                         equal(children[i], EmptySet)));
@@ -566,7 +570,10 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstCard ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            AstSetExpr set = ast.getSet();
+
+            IrSetExpr setExpr = (IrSetExpr) set.accept(this, a);
+            return card(setExpr);
         }
 
         @Override
@@ -602,7 +609,6 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstCompare ast, Void a) {
-
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -615,12 +621,12 @@ public class AstCompiler {
                 IrIntExpr intBase = (IrIntExpr) $base;
                 return add(intBase, constant(getOffset(ast.getTarget(), getType(base))));
             }
-            throw new AstException();
+            throw new AstException("TODO: upcast set");
         }
 
         @Override
         public IrExpr visit(AstNone ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return equal((IrSetExpr) ast.getSet().accept(this, a), Op.Equal, EmptySet);
         }
 
         @Override
@@ -683,7 +689,7 @@ public class AstCompiler {
         int[] partialInts = getPartialInts(ref);
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
         for (int i = 0; i < ivs.length; i++) {
-            Integer instantiate = analysis.getPartialRefInts(ref, i);
+            int[] instantiate = analysis.getPartialRefInts(ref, i);
             if (instantiate == null) {
                 if (partialInts == null) {
                     ivs[i] = boundInt(src.getName() + "@Ref" + i, getScopeLow(tar), getScopeHigh(tar));
@@ -691,7 +697,7 @@ public class AstCompiler {
                     ivs[i] = enumInt(src.getName() + "@Ref" + i, partialInts);
                 }
             } else {
-                ivs[i] = enumInt(src.getName() + "@Ref" + i, new int[]{0, instantiate});
+                ivs[i] = enumInt(src.getName() + "@Ref" + i, Util.cons(0, instantiate));
             }
         }
 

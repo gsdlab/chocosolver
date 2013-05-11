@@ -8,6 +8,8 @@ public interface IrConstraintVisitor<A, B> {
 
     public B visit(IrBoolConstraint ir, A a);
 
+    public B visit(IrHalfReification ir, A a);
+
     public B visit(IrBoolChannel ir, A a);
 
     public B visit(IrIntChannel ir, A a);

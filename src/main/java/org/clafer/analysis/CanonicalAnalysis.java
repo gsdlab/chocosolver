@@ -1,5 +1,6 @@
 package org.clafer.analysis;
 
+import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstEqual;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,12 +37,10 @@ public class CanonicalAnalysis {
         List<AstClafer> clafers = AnalysisUtil.getClafers(model);
         CanonicalVisitor visitor = new CanonicalVisitor(types);
         for (AstClafer clafer : clafers) {
-            List<AstBoolExpr> explicitConstraints = new ArrayList<AstBoolExpr>();
-            for (AstBoolExpr constraint : clafer.getConstraints()) {
-                AstBoolExpr canonicalConstraint = (AstBoolExpr) constraint.accept(visitor, null);
-                explicitConstraints.add(canonicalConstraint);
+            for (AstConstraint constraint : clafer.getConstraints()) {
+                AstBoolExpr canonicalConstraint = (AstBoolExpr) constraint.getExpr().accept(visitor, null);
+                constraint.setExpr(canonicalConstraint);
             }
-            clafer.withConstraints(explicitConstraints);
         }
     }
 

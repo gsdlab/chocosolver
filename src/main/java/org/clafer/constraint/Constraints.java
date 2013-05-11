@@ -1,7 +1,6 @@
 package org.clafer.constraint;
 
 import org.clafer.constraint.propagator.PropJoin;
-import org.clafer.collection.Appender;
 import org.clafer.constraint.propagator.PropSelectN;
 import org.clafer.constraint.propagator.PropSingleton;
 import solver.Solver;
@@ -28,9 +27,11 @@ public class Constraints {
     }
 
     public static Constraint join(SetVar take, SetVar[] children, SetVar to) {
-        Constraint con = new Constraint(
-                Appender.<SetVar>build().add(take).addAll(children).add(to).toArray(),
-                take.getSolver());
+        SetVar[] vars = new SetVar[children.length + 2];
+        vars[0] = take;
+        vars[1] = to;
+        System.arraycopy(children, 0, vars, 2, children.length);
+        Constraint con = new Constraint(vars, take.getSolver());
         con.setPropagators(new PropJoin(take, children, to));
         return con;
     }

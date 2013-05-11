@@ -61,8 +61,8 @@ public class FormatAnalysis {
     private static void analyze(AstConcreteClafer clafer, Scope scope, Map<AstClafer, Format> formats) {
         formats.put(clafer,
                 clafer.getCard().isExact()
-                && (!clafer.hasParent()
-                || scope.getScope(clafer) >= clafer.getCard().getHigh() * scope.getScope(clafer.getParent()))
+                && clafer.hasParent()
+                && scope.getScope(clafer) >= clafer.getCard().getHigh() * scope.getScope(clafer.getParent())
                 ? Format.ParentGroup : Format.LowGroup);
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, scope, formats);

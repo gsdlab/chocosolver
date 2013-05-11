@@ -56,12 +56,12 @@ public class InstanceClafer {
     }
 
     private void print(String indent, Appendable out) throws IOException {
-        out.append(indent).append(type.getName()).append(Integer.toString(id));
+        out.append(indent).append(type.getName()).append("#").append(Integer.toString(id));
         AstRef typeRef = AstUtil.getInheritedRef(type);
         if (typeRef != null) {
             out.append(" = ");
             if (!(typeRef.getTargetType() instanceof AstIntClafer)) {
-                out.append(typeRef.getTargetType().getName());
+                out.append(typeRef.getTargetType().getName()).append("#");
             }
             out.append(Integer.toString(ref));
         }

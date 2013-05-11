@@ -7,12 +7,12 @@ import org.clafer.Check;
 import org.clafer.ast.AstEqual;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
@@ -39,8 +39,8 @@ public class TypeAnalysis {
         List<AstClafer> clafers = AnalysisUtil.getClafers(model);
         for (AstClafer clafer : clafers) {
             TypeVisitor visitor = new TypeVisitor(clafer, types);
-            for (AstBoolExpr constraint : clafer.getConstraints()) {
-                constraint.accept(visitor, null);
+            for (AstConstraint constraint : clafer.getConstraints()) {
+                constraint.getExpr().accept(visitor, null);
             }
         }
         return types;
@@ -49,8 +49,8 @@ public class TypeAnalysis {
     public static Map<AstExpr, AstClafer> analyze(AstClafer clafer) {
         Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
         TypeVisitor visitor = new TypeVisitor(clafer, types);
-        for (AstBoolExpr constraint : clafer.getConstraints()) {
-            constraint.accept(visitor, null);
+        for (AstConstraint constraint : clafer.getConstraints()) {
+            constraint.getExpr().accept(visitor, null);
         }
         return types;
     }

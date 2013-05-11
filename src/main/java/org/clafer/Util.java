@@ -1,6 +1,17 @@
 package org.clafer;
 
 import gnu.trove.list.array.TIntArrayList;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Reader;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -532,28 +543,48 @@ public class Util {
 //        return false;
 //    }
 //
-//    public static String readAll(File in) throws IOException {
-//        Reader reader = new FileReader(in);
-//        try {
-//            return readAll(reader);
-//        } finally {
-//            reader.close();
-//        }
-//    }
-//
-//    public static String readAll(InputStream in) throws IOException {
-//        return readAll(new InputStreamReader(in));
-//    }
-//
-//    public static String readAll(Reader in) throws IOException {
-//        StringBuilder result = new StringBuilder();
-//        char[] buffer = new char[1024];
-//        int l;
-//        while ((l = in.read(buffer)) != -1) {
-//            result.append(buffer, 0, l);
-//        }
-//        return result.toString();
-//    }
+
+    public static <T extends Serializable> T copy(T t) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream out;
+        try {
+            out = new ObjectOutputStream(baos);
+            out.writeObject(t);
+            out.close();
+            byte[] buf = baos.toByteArray();
+
+            ByteArrayInputStream bin = new ByteArrayInputStream(buf);
+            ObjectInputStream in = new ObjectInputStream(bin);
+            return (T) in.readObject();
+        } catch (IOException e) {
+            throw new Error(e);
+        } catch (ClassNotFoundException e) {
+            throw new Error(e);
+        }
+    }
+
+    public static String readAll(File in) throws IOException {
+        Reader reader = new FileReader(in);
+        try {
+            return readAll(reader);
+        } finally {
+            reader.close();
+        }
+    }
+
+    public static String readAll(InputStream in) throws IOException {
+        return readAll(new InputStreamReader(in));
+    }
+
+    public static String readAll(Reader in) throws IOException {
+        StringBuilder result = new StringBuilder();
+        char[] buffer = new char[1024];
+        int l;
+        while ((l = in.read(buffer)) != -1) {
+            result.append(buffer, 0, l);
+        }
+        return result.toString();
+    }
 //
 //    public static Solution allSolutions(Model model) {
 //        return allSolutions(newSolver(model));

@@ -6,11 +6,11 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSetCard implements IrIntExpr {
+public class IrCard implements IrIntExpr {
 
     private final IrSetExpr set;
 
-    IrSetCard(IrSetExpr set) {
+    IrCard(IrSetExpr set) {
         this.set = Check.notNull(set);
     }
 

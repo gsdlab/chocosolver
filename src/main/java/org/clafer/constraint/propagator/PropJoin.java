@@ -2,17 +2,11 @@ package org.clafer.constraint.propagator;
 
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
-import org.clafer.collection.Appender;
-import solver.Solver;
-import solver.constraints.Constraint;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
-import solver.constraints.set.SetConstraintsFactory;
 import solver.exception.ContradictionException;
-import solver.search.strategy.strategy.set.SetSearchStrategy;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.VariableFactory;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
@@ -85,6 +79,26 @@ public class PropJoin extends Propagator<SetVar> {
             PropagatorUtil.subsetEnv(children[i], to, aCause);
         }
         // Pick take
+        for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
+            int child = -1;
+            for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
+                if (children[j].envelopeContains(i)) {
+                    if (child != -1) {
+                        child = -2;
+                        break;
+                    }
+                    child = j;
+                }
+            }
+            if (child == -1) {
+                contradiction(to, "to not subset of children");
+            } else if (child != -2) {
+                take.addToKernel(child, aCause);
+                PropagatorUtil.subsetKer(children[child], to, aCause);
+                PropagatorUtil.subsetEnv(children[child], to, aCause);
+                children[child].addToKernel(i, aCause);
+            }
+        }
     }
 
     @Override
@@ -256,39 +270,6 @@ public class PropJoin extends Propagator<SetVar> {
             }
         }
         return ESat.TRUE;
-    }
-
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-
-//        SearchMonitorFactory.log(solver, false, true);
-
-        SetVar take = VariableFactory.set("take", new int[]{0, 1, 2}, solver);
-        SetVar[] children = new SetVar[3];
-        for (int i = 0; i < children.length; i++) {
-            children[i] = VariableFactory.set("child" + i, new int[]{0, 1, 2, 3, 4}, solver);
-        }
-        SetVar to = VariableFactory.set("to", new int[]{0, 1, 2, 3, 4}, solver);
-
-        SetVar[] svs = Appender.<SetVar>build().add(take).addAll(children).add(to).toArray();
-        Constraint con = new Constraint(svs, solver);
-        con.setPropagators(new PropJoin(take, children, to));
-        solver.post(con);
-
-        solver.post(SetConstraintsFactory.all_disjoint(children));
-
-        solver.set(new SetSearchStrategy(svs));
-
-        if (solver.findSolution()) {
-            do {
-                if (!ESat.TRUE.equals(solver.isEntailed())) {
-                    System.out.println(solver);
-                    throw new Error();
-                }
-            } while (solver.nextSolution());
-        }
-        System.out.println(solver.getMeasures());
-
     }
 
     @Override

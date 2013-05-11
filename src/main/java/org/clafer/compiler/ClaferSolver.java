@@ -13,7 +13,7 @@ import solver.search.measure.IMeasures;
  */
 public class ClaferSolver {
 
-    private final Solver solver;
+    public final Solver solver;
     private final ClaferSolutionMap solutionMap;
     private boolean first = true;
 

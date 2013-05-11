@@ -8,6 +8,10 @@ import java.util.Arrays;
  */
 public interface IrDomain {
 
+    public int getLowerBound();
+
+    public int getUpperBound();
+
     public int size();
 
     public int[] getValues();
@@ -21,6 +25,16 @@ public interface IrDomain {
         public IrEnumDomain(int[] values) {
             this.values = Arrays.copyOf(values, values.length);
             Arrays.sort(this.values);
+        }
+
+        @Override
+        public int getLowerBound() {
+            return values[0];
+        }
+
+        @Override
+        public int getUpperBound() {
+            return values[values.length - 1];
         }
 
         @Override
@@ -94,11 +108,13 @@ public interface IrDomain {
             this.high = high;
         }
 
-        public int getLow() {
+        @Override
+        public int getLowerBound() {
             return low;
         }
 
-        public int getHigh() {
+        @Override
+        public int getUpperBound() {
             return high;
         }
 

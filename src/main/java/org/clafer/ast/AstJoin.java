@@ -12,9 +12,6 @@ public class AstJoin implements AstSetExpr {
     private final AstConcreteClafer right;
 
     AstJoin(AstSetExpr left, AstConcreteClafer right) {
-        if (!right.hasParent()) {
-            throw new IllegalArgumentException();
-        }
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);
     }

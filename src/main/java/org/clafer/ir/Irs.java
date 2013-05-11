@@ -12,52 +12,13 @@ import org.clafer.ir.IrDomain.IrEnumDomain;
  */
 public class Irs {
 
-    /**
-     * Constraints
-     */
-    public static IrBoolConstraint boolConstraint(IrBoolExpr expr) {
-        return new IrBoolConstraint(expr);
-    }
-
-    public static IrBoolChannel boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
-        return new IrBoolChannel(bools, set);
-    }
-
-    public static IrIntChannel intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
-        return new IrIntChannel(ints, sets);
-    }
-
-    public static IrConstraint sort(IrIntExpr[] array) {
-        if (array.length < 2) {
-            return boolConstraint(True);
-        }
-        return new IrSortInts(array);
-    }
-
-    public static IrConstraint sort(IrIntExpr[][] strings) {
-        if (strings.length < 2) {
-            return boolConstraint(True);
-        }
-        return new IrSortStrings(strings);
-    }
-
-    public static IrConstraint allDifferent(IrIntExpr[] ints) {
-        if (ints.length < 2) {
-            return boolConstraint(True);
-        }
-        return new IrAllDifferent(ints);
-    }
-
-    public static IrConstraint selectN(IrBoolExpr[] bools, IrIntExpr n) {
-        return new IrSelectN(bools, n);
-    }
     /********************
      * 
      * Boolean
      * 
      ********************/
-    public static IrBoolVar True = new IrBoolVar("True", Boolean.TRUE);
-    public static IrBoolVar False = new IrBoolVar("False", Boolean.FALSE);
+    public static final IrBoolVar True = new IrBoolVar("True", Boolean.TRUE);
+    public static final IrBoolVar False = new IrBoolVar("False", Boolean.FALSE);
 
     public static IrBoolVar constant(boolean value) {
         return value ? True : False;
@@ -74,15 +35,14 @@ public class Irs {
         if (IrUtil.isFalse(proposition)) {
             return True;
         }
+        if (proposition instanceof IrDualExpr) {
+            return ((IrDualExpr) proposition).opposite();
+        }
         return new IrNot(proposition);
     }
 
     public static IrBoolExpr and(IrBoolExpr... operands) {
-        return and(Arrays.asList(operands));
-    }
-
-    public static IrBoolExpr and(List<IrBoolExpr> operands) {
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.size());
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {
             if (IrUtil.isFalse(operand)) {
                 return False;
@@ -117,31 +77,87 @@ public class Irs {
         return new IrImplies(antecedent, consequent);
     }
 
+    public static IrConstraint implies(IrBoolExpr antecedent, IrConstraint consequent) {
+        if (IrUtil.isTrue(antecedent)) {
+            return consequent;
+        }
+        if (IrUtil.isFalse(antecedent)) {
+            return Tautalogy;
+        }
+        if (IrUtil.isTrue(consequent)) {
+            return Tautalogy;
+        }
+        if (IrUtil.isFalse(consequent)) {
+            return boolConstraint(not(antecedent));
+        }
+        return new IrHalfReification(antecedent, consequent);
+    }
+
+    public static IrBoolExpr ifOnlyIf(IrBoolExpr left, IrBoolExpr right) {
+        if (IrUtil.isTrue(left)) {
+            return right;
+        }
+        if (IrUtil.isFalse(left)) {
+            return not(right);
+        }
+        if (IrUtil.isTrue(right)) {
+            return left;
+        }
+        if (IrUtil.isFalse(right)) {
+            return not(left);
+        }
+        return new IrIfOnlyIf(left, right);
+    }
+
     public static IrBoolExpr member(IrIntExpr var, int low, int high) {
         return new IrMember(var, low, high);
     }
 
-    public static IrCompare equal(IrIntExpr left, int right) {
+    public static IrBoolExpr notMember(IrIntExpr var, int low, int high) {
+        return new IrNotMember(var, low, high);
+    }
+
+    public static IrCompare compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+        return new IrCompare(left, op, right);
+    }
+
+    public static IrBoolExpr equal(IrIntExpr left, int right) {
         return equal(left, constant(right));
     }
 
-    public static IrCompare equal(IrIntExpr left, IrIntExpr right) {
+    public static IrBoolExpr equal(IrIntExpr left, IrIntExpr right) {
+        if (left.equals(right)) {
+            return True;
+        }
         return new IrCompare(left, IrCompare.Op.Equal, right);
     }
 
-    public static IrSetEquality equal(IrSetExpr left, IrSetExpr right) {
+    public static IrSetEquality equal(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
+        return new IrSetEquality(left, op, right);
+    }
+
+    public static IrBoolExpr equal(IrSetExpr left, IrSetExpr right) {
+        if (left.equals(right)) {
+            return True;
+        }
         return new IrSetEquality(left, IrSetEquality.Op.Equal, right);
     }
 
-    public static IrCompare notEqual(IrIntExpr left, int right) {
+    public static IrBoolExpr notEqual(IrIntExpr left, int right) {
         return notEqual(left, constant(right));
     }
 
-    public static IrCompare notEqual(IrIntExpr left, IrIntExpr right) {
+    public static IrBoolExpr notEqual(IrIntExpr left, IrIntExpr right) {
+        if (left.equals(right)) {
+            return False;
+        }
         return new IrCompare(left, IrCompare.Op.NotEqual, right);
     }
 
-    public static IrSetEquality notEqual(IrSetExpr left, IrSetExpr right) {
+    public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
+        if (left.equals(right)) {
+            return False;
+        }
         return new IrSetEquality(left, IrSetEquality.Op.NotEqual, right);
     }
 
@@ -194,8 +210,8 @@ public class Irs {
         return new IrIntVar(name, new IrEnumDomain(values));
     }
 
-    public static IrIntExpr setCard(IrSetExpr set) {
-        return new IrSetCard(set);
+    public static IrIntExpr card(IrSetExpr set) {
+        return new IrCard(set);
     }
 
     public static IrIntExpr add(IrIntExpr left, int right) {
@@ -283,6 +299,11 @@ public class Irs {
         return new IrArithm(left, IrArithm.Op.Div, right);
     }
 
+    public static IrIntExpr sum(IrIntExpr... addends) {
+        // TODO: optimize
+        return new IrSum(addends);
+    }
+
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {
         Integer constant = IrUtil.getConstant(index);
         if (constant != null) {
@@ -304,9 +325,6 @@ public class Irs {
     }
 
     public static IrSetVar set(String name, int low, int high) {
-        if (low == high) {
-            return constant(new int[]{low});
-        }
         return new IrSetVar(name, new IrBoundDomain(low, high), EmptyDomain);
     }
 
@@ -367,5 +385,53 @@ public class Irs {
                 // TODO
                 throw new UnsupportedOperationException();
         }
+    }
+    /**
+     * Constraints
+     */
+    public static final IrBoolConstraint Tautalogy = new IrBoolConstraint(True);
+    public static final IrBoolConstraint FalseTautalogy = new IrBoolConstraint(False);
+
+    public static IrBoolConstraint boolConstraint(IrBoolExpr expr) {
+        if (IrUtil.isTrue(expr)) {
+            return Tautalogy;
+        }
+        if (IrUtil.isFalse(expr)) {
+            return FalseTautalogy;
+        }
+        return new IrBoolConstraint(expr);
+    }
+
+    public static IrBoolChannel boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
+        return new IrBoolChannel(bools, set);
+    }
+
+    public static IrIntChannel intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
+        return new IrIntChannel(ints, sets);
+    }
+
+    public static IrConstraint sort(IrIntExpr[] array) {
+        if (array.length < 2) {
+            return Tautalogy;
+        }
+        return new IrSortInts(array);
+    }
+
+    public static IrConstraint sort(IrIntExpr[]... strings) {
+        if (strings.length < 2) {
+            return Tautalogy;
+        }
+        return new IrSortStrings(strings);
+    }
+
+    public static IrConstraint allDifferent(IrIntExpr[] ints) {
+        if (ints.length < 2) {
+            return Tautalogy;
+        }
+        return new IrAllDifferent(ints);
+    }
+
+    public static IrConstraint selectN(IrBoolExpr[] bools, IrIntExpr n) {
+        return new IrSelectN(bools, n);
     }
 }

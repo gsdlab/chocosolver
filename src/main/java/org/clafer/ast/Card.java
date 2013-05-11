@@ -1,11 +1,13 @@
 package org.clafer.ast;
 
+import java.io.Serializable;
+
 /**
  * Immutable.
  * 
  * @author jimmy
  */
-public class Card {
+public class Card implements Serializable {
 
     private static final int UNBOUNDED_HIGH = Integer.MAX_VALUE;
     private final int low;

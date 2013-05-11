@@ -1,5 +1,6 @@
 package org.clafer.ast;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,7 +8,7 @@ import java.util.List;
  *
  * @author jimmy
  */
-public class AstModel {
+public class AstModel implements Serializable {
 
     private final List<AstAbstractClafer> abstractClafers;
     private final List<AstConcreteClafer> topClafers;

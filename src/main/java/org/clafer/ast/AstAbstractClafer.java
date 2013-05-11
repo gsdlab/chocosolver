@@ -64,12 +64,6 @@ public class AstAbstractClafer extends AstClafer {
     }
 
     @Override
-    public AstAbstractClafer withConstraints(List<AstBoolExpr> constraints) {
-        super.withConstraints(constraints);
-        return this;
-    }
-
-    @Override
     public String toString() {
         return "abstract " + getName();
     }

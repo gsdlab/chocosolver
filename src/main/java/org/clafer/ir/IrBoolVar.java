@@ -27,11 +27,11 @@ public class IrBoolVar implements IrBoolExpr {
     public boolean isConstant() {
         return value != null;
     }
-    
+
     public boolean isTrue() {
         return isConstant() && value.booleanValue();
     }
-    
+
     public boolean isFalse() {
         return isConstant() && !value.booleanValue();
     }
