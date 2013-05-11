@@ -12,7 +12,7 @@ import solver.variables.delta.monitor.SetDeltaMonitor;
  * 
  * @author jimmy
  */
-public class PropagatorUtil {
+public class PropUtil {
 
     public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propogator) {
         SetDeltaMonitor[] deltas = new SetDeltaMonitor[vars.length];

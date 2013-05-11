@@ -78,7 +78,7 @@ public class PropJoinRef extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         // Prune env
         // Need to iterate env(take) many times so read it into an array
-        int[] takeEnv = PropagatorUtil.iterateEnv(take);
+        int[] takeEnv = PropUtil.iterateEnv(take);
         for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
             if (!possibleTo(takeEnv, i)) {
                 to.removeFromEnvelope(i, aCause);
@@ -87,7 +87,7 @@ public class PropJoinRef extends Propagator<Variable> {
 
         // Prune refs, Pick to
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            PropagatorUtil.subsetEnv(refs[i], to, aCause);
+            PropUtil.subsetEnv(refs[i], to, aCause);
             if (refs[i].instantiated()) {
                 to.addToKernel(refs[i].getValue(), aCause);
             }
@@ -95,7 +95,7 @@ public class PropJoinRef extends Propagator<Variable> {
 
         // Prune take
         for (int i : takeEnv) {
-            if (!PropagatorUtil.canIntersect(refs[i], to)) {
+            if (!PropUtil.canIntersect(refs[i], to)) {
                 take.removeFromEnvelope(i, aCause);
             }
         }
@@ -109,7 +109,7 @@ public class PropJoinRef extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            if (!PropagatorUtil.approxCanIntersect(refs[i], to, true)) {
+            if (!PropUtil.approxCanIntersect(refs[i], to, true)) {
                 return ESat.FALSE;
             }
         }

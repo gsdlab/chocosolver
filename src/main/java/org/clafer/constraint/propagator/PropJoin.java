@@ -30,7 +30,7 @@ public class PropJoin extends Propagator<SetVar> {
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
         this.children = children;
-        this.childrenD = PropagatorUtil.monitorDeltas(children, aCause);
+        this.childrenD = PropUtil.monitorDeltas(children, aCause);
         this.to = to;
         this.toD = to.monitorDelta(aCause);
     }
@@ -69,14 +69,14 @@ public class PropJoin extends Propagator<SetVar> {
         // Prune to and child
         TIntHashSet viableTo = new TIntHashSet();
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            PropagatorUtil.iterateEnv(children[i], viableTo);
+            PropUtil.iterateEnv(children[i], viableTo);
         }
-        PropagatorUtil.subsetEnv(to, viableTo, aCause);
+        PropUtil.subsetEnv(to, viableTo, aCause);
 
         // Pick to and prune child
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            PropagatorUtil.subsetKer(children[i], to, aCause);
-            PropagatorUtil.subsetEnv(children[i], to, aCause);
+            PropUtil.subsetKer(children[i], to, aCause);
+            PropUtil.subsetEnv(children[i], to, aCause);
         }
         
         // Pick take
@@ -95,8 +95,8 @@ public class PropJoin extends Propagator<SetVar> {
                 contradiction(to, "to not subset of children");
             } else if (child != -2) {
                 take.addToKernel(child, aCause);
-                PropagatorUtil.subsetKer(children[child], to, aCause);
-                PropagatorUtil.subsetEnv(children[child], to, aCause);
+                PropUtil.subsetKer(children[child], to, aCause);
+                PropUtil.subsetEnv(children[child], to, aCause);
                 children[child].addToKernel(i, aCause);
             }
         }
@@ -153,8 +153,8 @@ public class PropJoin extends Propagator<SetVar> {
                 } else if (child != -2 && to.kernelContains(i)) {
                     // i has only one support
                     take.addToKernel(child, aCause);
-                    PropagatorUtil.subsetKer(children[child], to, aCause);
-                    PropagatorUtil.subsetEnv(children[child], to, aCause);
+                    PropUtil.subsetKer(children[child], to, aCause);
+                    PropUtil.subsetEnv(children[child], to, aCause);
                     children[child].addToKernel(i, aCause);
                 }
             }
@@ -167,8 +167,8 @@ public class PropJoin extends Propagator<SetVar> {
             assert take.kernelContains(takeKer);
 
             SetVar child = children[takeKer];
-            PropagatorUtil.subsetKer(child, to, aCause);
-            PropagatorUtil.subsetEnv(child, to, aCause);
+            PropUtil.subsetKer(child, to, aCause);
+            PropUtil.subsetEnv(child, to, aCause);
         }
     };
     private final IntProcedure pruneToOnChildEnv = new IntProcedure() {
@@ -194,8 +194,8 @@ public class PropJoin extends Propagator<SetVar> {
             } else if (to.kernelContains(i)) {
                 // One support
                 take.addToKernel(child, aCause);
-                PropagatorUtil.subsetKer(children[child], to, aCause);
-                PropagatorUtil.subsetEnv(children[child], to, aCause);
+                PropUtil.subsetKer(children[child], to, aCause);
+                PropUtil.subsetEnv(children[child], to, aCause);
                 children[child].addToKernel(i, aCause);
             }
         }
@@ -239,8 +239,8 @@ public class PropJoin extends Propagator<SetVar> {
                 contradiction(to, "no support for " + toVal);
             } else {
                 take.addToKernel(child, aCause);
-                PropagatorUtil.subsetKer(children[child], to, aCause);
-                PropagatorUtil.subsetEnv(children[child], to, aCause);
+                PropUtil.subsetKer(children[child], to, aCause);
+                PropUtil.subsetEnv(children[child], to, aCause);
                 children[child].addToKernel(toVal, aCause);
             }
         }

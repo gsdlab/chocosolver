@@ -53,8 +53,8 @@ public class PropSingleton extends Propagator<Variable> {
         if (svar.getEnvelopeSize() < 1) {
             contradiction(svar, "Singleton cannot have less than 1 element");
         }
-        PropagatorUtil.subsetEnv(ivar, svar, aCause);
-        PropagatorUtil.subsetEnv(svar, ivar, aCause);
+        PropUtil.subsetEnv(ivar, svar, aCause);
+        PropUtil.subsetEnv(svar, ivar, aCause);
         if (ivar.instantiated()) {
             svar.instantiateTo(new int[]{ivar.getValue()}, aCause);
         } else if (svar.getEnvelopeSize() == 1) {
