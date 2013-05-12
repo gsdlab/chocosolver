@@ -1,9 +1,11 @@
 package org.clafer.ir;
 
+import gnu.trove.TIntCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.clafer.ir.IrDomain.IrBoundDomain;
+import org.clafer.ir.IrDomain.IrEmptyDomain;
 import org.clafer.ir.IrDomain.IrEnumDomain;
 
 /**
@@ -203,11 +205,11 @@ public class Irs {
     }
 
     public static IrIntVar boundInt(String name, int low, int high) {
-        return new IrIntVar(name, new IrBoundDomain(low, high));
+        return new IrIntVar(name, boundDomain(low, high));
     }
 
     public static IrIntVar enumInt(String name, int[] values) {
-        return new IrIntVar(name, new IrEnumDomain(values));
+        return new IrIntVar(name, enumDomain(values));
     }
 
     public static IrIntExpr card(IrSetExpr set) {
@@ -316,20 +318,58 @@ public class Irs {
      * Set
      * 
      ********************/
-    public static final IrDomain EmptyDomain = new IrEnumDomain(new int[0]);
-    public static final IrSetVar EmptySet = new IrSetVar("{}", EmptyDomain, EmptyDomain);
+    public static final IrDomain EmptyDomain = new IrEmptyDomain();
+    public static final IrDomain ZeroDomain = new IrEnumDomain(new int[]{0});
+    public static final IrDomain OneDomain = new IrEnumDomain(new int[]{1});
+    public static final IrSetVar EmptySet = new IrSetVar("{}", EmptyDomain, EmptyDomain, ZeroDomain);
+
+    public static IrDomain boundDomain(int low, int high) {
+        return new IrBoundDomain(low, high);
+    }
+
+    public static IrDomain enumDomain(int... values) {
+        return values.length == 0 ? EmptyDomain : new IrEnumDomain(values);
+    }
+
+    public static IrDomain enumDomain(TIntCollection values) {
+        return values.isEmpty() ? EmptyDomain : new IrEnumDomain(values.toArray());
+    }
 
     public static IrSetVar constant(int[] value) {
-        IrEnumDomain domain = new IrEnumDomain(value);
-        return new IrSetVar(Arrays.toString(value), domain, domain);
+        IrDomain domain = enumDomain(value);
+        return new IrSetVar(Arrays.toString(value), domain, domain, OneDomain);
     }
 
-    public static IrSetVar set(String name, int low, int high) {
-        return new IrSetVar(name, new IrBoundDomain(low, high), EmptyDomain);
+    public static IrSetVar set(String name, int lowEnv, int highEnv) {
+        return set(name, boundDomain(lowEnv, highEnv), EmptyDomain);
     }
 
-    public static IrSetVar set(String name, int[] values) {
-        return new IrSetVar(name, new IrEnumDomain(values), EmptyDomain);
+    public static IrSetVar set(String name, int lowEnv, int highEnv, int lowKer, int highKer) {
+        return set(name, boundDomain(lowEnv, highEnv), boundDomain(lowKer, highKer));
+    }
+
+    public static IrSetVar set(String name, int lowEnv, int highEnv, int[] ker) {
+        return set(name, boundDomain(lowEnv, highEnv), enumDomain(ker));
+    }
+
+    public static IrSetVar set(String name, int[] env) {
+        return set(name, enumDomain(env), EmptyDomain);
+    }
+
+    public static IrSetVar set(String name, int[] env, int lowKer, int highKer) {
+        return set(name, enumDomain(env), boundDomain(lowKer, highKer));
+    }
+
+    public static IrSetVar set(String name, int[] env, int[] ker) {
+        return set(name, enumDomain(env), enumDomain(ker));
+    }
+
+    public static IrSetVar set(String name, IrDomain env, IrDomain ker) {
+        return new IrSetVar(name, env, ker, boundDomain(ker.size(), env.size()));
+    }
+
+    public static IrSetVar set(String name, IrDomain env, IrDomain ker, IrDomain card) {
+        return new IrSetVar(name, env, ker, card);
     }
 
     public static IrSetExpr singleton(IrIntExpr value) {
@@ -364,6 +404,7 @@ public class Irs {
         return new IrJoinRef(take, refs);
     }
 
+    // TODO: Partially union set of constants
     public static IrSetExpr union(IrSetExpr[] operands) {
         switch (operands.length) {
             case 0:

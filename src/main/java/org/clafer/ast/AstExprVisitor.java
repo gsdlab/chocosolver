@@ -8,6 +8,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstThis ast, A a);
 
+    public B visit(AstGlobal ast, A a);
+
     public B visit(AstConstant ast, A a);
 
     public B visit(AstJoin ast, A a);
@@ -19,7 +21,7 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstCard ast, A a);
 
     public B visit(AstEqual ast, A a);
-    
+
     public B visit(AstCompare ast, A a);
 
     public B visit(AstUpcast ast, A a);

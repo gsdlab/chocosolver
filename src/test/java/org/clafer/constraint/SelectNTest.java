@@ -22,6 +22,6 @@ public class SelectNTest extends ConstraintTest {
 
         solver.post(Constraints.selectN(bools, n));
 
-        assertEquals(21, quickCheckModel(solver));
+        assertEquals(21, randomizeStrategy(solver).findAllSolutions());
     }
 }

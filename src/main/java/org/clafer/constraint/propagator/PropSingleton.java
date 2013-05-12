@@ -1,17 +1,16 @@
 package org.clafer.constraint.propagator;
 
-import org.clafer.constraint.Constraints;
-import solver.Solver;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.search.strategy.IntStrategyFactory;
 import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
-import solver.variables.VariableFactory;
+import solver.variables.delta.IIntDeltaMonitor;
+import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;
+import util.procedure.IntProcedure;
 
 /**
  *
@@ -19,21 +18,25 @@ import util.ESat;
  */
 public class PropSingleton extends Propagator<Variable> {
 
-    private final IntVar ivar;
-    private final SetVar svar;
+    private final IntVar i;
+    private final IIntDeltaMonitor iD;
+    private final SetVar s;
+    private final SetDeltaMonitor sD;
 
     public PropSingleton(IntVar ivar, SetVar svar) {
         super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY);
-        this.ivar = ivar;
-        this.svar = svar;
+        this.i = ivar;
+        this.iD = i.monitorDelta(aCause);
+        this.s = svar;
+        this.sD = s.monitorDelta(aCause);
     }
 
-    private final boolean isIVar(int idxVarInProp) {
-        return idxVarInProp == 0;
+    private boolean isIVar(int idx) {
+        return idx == 0;
     }
 
-    private final boolean isSVar(int idxVarInProp) {
-        return idxVarInProp == 1;
+    private boolean isSVar(int idx) {
+        return idx == 1;
     }
 
     @Override
@@ -47,67 +50,84 @@ public class PropSingleton extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (svar.getKernelSize() > 1) {
-            contradiction(svar, "Singleton cannot have more than 1 element");
+        if (s.getKernelSize() > 1) {
+            contradiction(s, "Singleton cannot have more than 1 element");
+        } else if (s.getKernelSize() == 1) {
+            int val = s.getKernelFirst();
+            i.instantiateTo(val, aCause);
+            s.instantiateTo(new int[]{val}, aCause);
         }
-        if (svar.getEnvelopeSize() < 1) {
-            contradiction(svar, "Singleton cannot have less than 1 element");
-        }
-        PropUtil.subsetEnv(ivar, svar, aCause);
-        PropUtil.subsetEnv(svar, ivar, aCause);
-        if (ivar.instantiated()) {
-            svar.instantiateTo(new int[]{ivar.getValue()}, aCause);
-        } else if (svar.getEnvelopeSize() == 1) {
-            int val = svar.getEnvelopeFirst();
-            ivar.instantiateTo(val, aCause);
-            svar.instantiateTo(new int[]{val}, aCause);
+        PropUtil.intSubsetEnv(i, s, aCause);
+        PropUtil.envSubsetInt(s, i, aCause);
+        if (i.instantiated()) {
+            s.instantiateTo(new int[]{i.getValue()}, aCause);
+        } else if (s.getEnvelopeSize() == 1) {
+            int val = s.getEnvelopeFirst();
+            i.instantiateTo(val, aCause);
+            s.instantiateTo(new int[]{val}, aCause);
         }
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        // TODO
-        propagate(mask);
+        if (isIVar(idxVarInProp)) {
+            if (i.instantiated()) {
+                s.instantiateTo(new int[]{i.getValue()}, aCause);
+            } else {
+                iD.freeze();
+                iD.forEach(pruneSOnIRem, EventType.REMOVE);
+                iD.unfreeze();
+            }
+        } else {
+            assert isSVar(idxVarInProp);
+            int sKerSize = s.getKernelSize();
+            if (sKerSize > 1) {
+                contradiction(s, "Singleton cannot have more than 1 element");
+            } else if (sKerSize == 1) {
+                int val = s.getKernelFirst();
+                i.instantiateTo(val, aCause);
+                s.instantiateTo(new int[]{val}, aCause);
+            } else {
+                sD.freeze();
+                sD.forEach(pruneIOnSEnv, EventType.REMOVE_FROM_ENVELOPE);
+                sD.unfreeze();
+                if (i.instantiated()) {
+                    s.instantiateTo(new int[]{i.getValue()}, aCause);
+                }
+            }
+        }
     }
+    private final IntProcedure pruneSOnIRem = new IntProcedure() {
+
+        @Override
+        public void execute(int i) throws ContradictionException {
+            s.removeFromEnvelope(i, aCause);
+        }
+    };
+    private final IntProcedure pruneIOnSEnv = new IntProcedure() {
+
+        @Override
+        public void execute(int sEnv) throws ContradictionException {
+            i.removeValue(sEnv, aCause);
+        }
+    };
 
     @Override
     public ESat isEntailed() {
-        if (svar.getKernelSize() > 1) {
+        if (s.getKernelSize() > 1) {
             return ESat.FALSE;
         }
-        if (svar.getEnvelopeSize() < 1) {
+        if (s.getEnvelopeSize() < 1) {
             return ESat.FALSE;
         }
-        int ub = ivar.getUB();
-        for (int i = ivar.getLB(); i <= ub; i = ivar.nextValue(i)) {
-            for (int j = svar.getEnvelopeFirst(); j != SetVar.END; j = svar.getEnvelopeNext()) {
-                if (i == j) {
-                    return ivar.instantiated() && svar.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
-                }
-            }
+        if (PropUtil.canIntersect(i, s)) {
+            return i.instantiated() && s.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
         }
         return ESat.FALSE;
     }
 
     @Override
     public String toString() {
-        return "{" + ivar + "} = " + svar;
-    }
-
-    public static void main(String[] args) {
-        Solver s = new Solver();
-
-        IntVar ivar = VariableFactory.enumerated("ivar", 0, 10, s);
-        SetVar svar = VariableFactory.set("svar", new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9}, s);
-        s.post(Constraints.singleton(ivar, svar));
-
-        s.set(IntStrategyFactory.firstFail_InDomainMin(new IntVar[]{ivar}));
-
-        if (s.findSolution()) {
-            do {
-                System.out.println(s);
-            } while (s.nextSolution());
-        }
-        System.out.println(s.getMeasures());
+        return "{" + i + "} = " + s;
     }
 }

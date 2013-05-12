@@ -18,7 +18,11 @@ public class Scope {
     private final int intLow, intHigh;
 
     public Scope(int defaultScope) {
-        this(Collections.<AstClafer, Integer>emptyMap(), defaultScope, -16, 16);
+        this(defaultScope, -16, 16);
+    }
+
+    public Scope(int defaultScope, int intLow, int intHigh) {
+        this(Collections.<AstClafer, Integer>emptyMap(), defaultScope, intLow, intHigh);
     }
 
     public Scope(Map<AstClafer, Integer> scopes) {

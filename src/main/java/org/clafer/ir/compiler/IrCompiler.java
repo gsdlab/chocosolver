@@ -129,10 +129,11 @@ public class IrCompiler {
         @Override
         protected IntVar cache(IrIntVar ir) {
             IrDomain domain = ir.getDomain();
-            Integer constant = domain.getConstant();
+            Integer constant = IrUtil.getConstant(ir);
             if (constant != null) {
                 return VariableFactory.fixed(constant, solver);
             }
+            // TODO: missing "linked list" int vars
 //            if (domain instanceof IrEnumDomain && domain.getUpperBound() - domain.getLowerBound() < 100) {
 //                return VariableFactory.enumerated(ir.getName(), domain.getValues(), solver);
 //            }
@@ -197,6 +198,7 @@ public class IrCompiler {
             for (int i = 0; i < $sets.length; i++) {
                 $sets[i] = sets[i].accept(setExprCompiler, a);
             }
+            solver.post(SetConstraintsFactory.all_disjoint($sets));
             return SetConstraintsFactory.int_channel($sets, $ints, 0, 0);
         }
 
@@ -652,9 +654,7 @@ public class IrCompiler {
             return union;
         }
     };
-    public static void main(String[] args) {
-        
-    }
+
     private ConjunctiveNormalForm _clauses(ALogicTree tree) {
         return IntConstraintFactory.clauses(tree, solver);
     }
@@ -761,5 +761,8 @@ public class IrCompiler {
             ub = Math.max(ub, vars[i].getUB());
         }
         return ub;
+    }
+    public static void main(String[] args) {
+        
     }
 }

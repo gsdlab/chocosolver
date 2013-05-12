@@ -1,6 +1,10 @@
 package org.clafer.ir;
 
+import gnu.trove.iterator.TIntIterator;
 import java.util.Arrays;
+import org.clafer.collection.ArrayIntIterator;
+import org.clafer.collection.BoundIntIterator;
+import org.clafer.collection.EmptyIntIterator;
 
 /**
  *
@@ -8,23 +12,88 @@ import java.util.Arrays;
  */
 public interface IrDomain {
 
+    public boolean contains(int value);
+
     public int getLowerBound();
 
     public int getUpperBound();
+
+    public boolean isEmpty();
 
     public int size();
 
     public int[] getValues();
 
-    public Integer getConstant();
+    public TIntIterator iterator();
+
+    public static class IrEmptyDomain implements IrDomain {
+
+        @Override
+        public boolean contains(int value) {
+            return false;
+        }
+
+        @Override
+        public int getLowerBound() {
+            throw new IrException();
+        }
+
+        @Override
+        public int getUpperBound() {
+            throw new IrException();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return true;
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public int[] getValues() {
+            return new int[]{};
+        }
+
+        @Override
+        public TIntIterator iterator() {
+            return EmptyIntIterator.getIterator();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof EmptyIntIterator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0x12345678;
+        }
+
+        @Override
+        public String toString() {
+            return "{}";
+        }
+    }
 
     public static class IrEnumDomain implements IrDomain {
 
         private final int[] values;
 
         public IrEnumDomain(int[] values) {
+            if (values.length == 0) {
+                throw new IllegalArgumentException();
+            }
             this.values = Arrays.copyOf(values, values.length);
             Arrays.sort(this.values);
+        }
+
+        @Override
+        public boolean contains(int value) {
+            return Arrays.binarySearch(values, value) >= 0;
         }
 
         @Override
@@ -38,6 +107,11 @@ public interface IrDomain {
         }
 
         @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
         public int size() {
             return values.length;
         }
@@ -48,11 +122,8 @@ public interface IrDomain {
         }
 
         @Override
-        public Integer getConstant() {
-            if (values.length == 1) {
-                return values[0];
-            }
-            return null;
+        public TIntIterator iterator() {
+            return new ArrayIntIterator(values);
         }
 
         @Override
@@ -100,12 +171,21 @@ public interface IrDomain {
         private final int low;
         private final int high;
 
+        /**
+         * @param low - Inclusive
+         * @param high - Exclusive
+         */
         public IrBoundDomain(int low, int high) {
             if (low > high) {
                 throw new IllegalArgumentException();
             }
             this.low = low;
             this.high = high;
+        }
+
+        @Override
+        public boolean contains(int value) {
+            return value >= low && value <= high;
         }
 
         @Override
@@ -116,6 +196,11 @@ public interface IrDomain {
         @Override
         public int getUpperBound() {
             return high;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
         }
 
         @Override
@@ -133,11 +218,8 @@ public interface IrDomain {
         }
 
         @Override
-        public Integer getConstant() {
-            if (low == high) {
-                return low;
-            }
-            return null;
+        public TIntIterator iterator() {
+            return new BoundIntIterator(low, high);
         }
 
         @Override

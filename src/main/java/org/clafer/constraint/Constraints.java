@@ -1,10 +1,10 @@
 package org.clafer.constraint;
 
-import java.util.Arrays;
 import org.clafer.constraint.propagator.PropJoin;
 import org.clafer.constraint.propagator.PropJoinRef;
 import org.clafer.constraint.propagator.PropSelectN;
 import org.clafer.constraint.propagator.PropSingleton;
+import org.clafer.constraint.propagator.PropTupleToSet;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -24,6 +24,15 @@ public class Constraints {
     public static Constraint singleton(IntVar ivar, SetVar svar) {
         Constraint constraint = new Constraint(new Variable[]{ivar, svar}, ivar.getSolver());
         constraint.setPropagators(new PropSingleton(ivar, svar));
+        return constraint;
+    }
+
+    public static Constraint tupleToSet(IntVar[] ivars, SetVar svar) {
+        Variable[] vars = new Variable[ivars.length + 1];
+        System.arraycopy(ivars, 0, vars, 0, ivars.length);
+        vars[ivars.length] = svar;
+        Constraint constraint = new Constraint(vars, svar.getSolver());
+        constraint.setPropagators(new PropTupleToSet(ivars, svar));
         return constraint;
     }
 

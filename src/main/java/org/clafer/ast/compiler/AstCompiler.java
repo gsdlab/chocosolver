@@ -5,6 +5,7 @@ import java.util.Set;
 import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstExpr;
 import java.util.Map;
+import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstCompare;
@@ -46,6 +47,7 @@ import org.clafer.collection.DirectedGraphBuilder;
 import org.clafer.collection.DirectedVertex;
 import org.clafer.collection.TopologicalSort;
 import org.clafer.ir.IrBoolExpr;
+import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetEquality.Op;
@@ -499,6 +501,11 @@ public class AstCompiler {
         }
 
         @Override
+        public IrExpr visit(AstGlobal ast, Void a) {
+            return set.get(ast.getType());
+        }
+
+        @Override
         public IrExpr visit(AstConstant ast, Void a) {
             return constant(ast.getValue());
         }
@@ -536,6 +543,10 @@ public class AstCompiler {
 
             IrExpr $children = children.accept(this, a);
             if ($children instanceof IrIntExpr) {
+                if (getScope(childrenType.getParent()) == 1) {
+                    return constant(0);
+                }
+
                 IrIntExpr $intChildren = (IrIntExpr) $children;
                 switch (getFormat(childrenType)) {
                     case ParentGroup:
@@ -644,6 +655,8 @@ public class AstCompiler {
      * Optimization functions.
      *************************/
     private IrSetVar[] skipCards(AstConcreteClafer clafer) {
+        assert Format.LowGroup.equals(getFormat(clafer));
+
         int parentScope = clafer.hasParent() ? getScope(clafer.getParent()) : 1;
         PartialSolution partialParentSolution = clafer.hasParent() ? getPartialSolution(clafer.getParent()) : PartialSolution.rootSolution();
 
@@ -658,7 +671,18 @@ public class AstCompiler {
         IrSetVar[] skip = new IrSetVar[parentScope];
         for (int i = 0; i < skip.length; i++) {
             if (low <= max) {
-                skip[i] = set(clafer.getName() + "#" + i, low, Math.min(high - 1, max));
+                IrDomain _env = boundDomain(low, Math.min(high - 1, max));
+                IrDomain _ker = EmptyDomain;
+                IrDomain _card = boundDomain(0, card.getHigh());
+                if (partialParentSolution.hasClafer(i)) {
+                    int prevHigh = high - card.getHigh();
+                    int nextLow = low + card.getLow();
+                    if (nextLow > prevHigh) {
+                        _ker = boundDomain(prevHigh, Math.min(nextLow - 1, max));
+                    }
+                    _card = boundDomain(card.getLow(), card.getHigh());
+                }
+                skip[i] = set(clafer.getName() + "#" + i, _env, _ker, _card);
             } else {
                 skip[i] = EmptySet;
             }

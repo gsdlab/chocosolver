@@ -1,10 +1,8 @@
 package org.clafer.constraint;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import solver.Solver;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
@@ -18,25 +16,13 @@ import solver.variables.Variable;
  */
 public abstract class ConstraintTest {
 
-    private final Random rand = new Random();
+    protected final Random rand = new Random();
 
     public int nextInt(int n) {
         return rand.nextInt(n);
     }
 
-    public Set<String> solveAll(Solver solver) {
-        Set<String> solutions = new HashSet<String>();
-        if (solver.findSolution()) {
-            do {
-                if (!solutions.add(solver.toString())) {
-                    throw new AssertionError();
-                }
-            } while (solver.nextSolution());
-        }
-        return solutions;
-    }
-
-    public long quickCheckModel(Solver solver) {
+    public static Solver randomizeStrategy(Solver solver) {
         List<IntVar> intVars = new ArrayList<IntVar>();
         List<SetVar> setVars = new ArrayList<SetVar>();
         for (Variable var : solver.getVars()) {
@@ -52,6 +38,6 @@ public abstract class ConstraintTest {
                 new StrategiesSequencer(solver.getEnvironment(),
                 new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
                 IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
-        return solver.findAllSolutions();
+        return solver;
     }
 }

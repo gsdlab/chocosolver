@@ -9,25 +9,49 @@ import org.clafer.Check;
 public class IrSetVar implements IrSetExpr {
 
     private final String name;
-    private final IrDomain env, ker;
+    private final IrDomain env, ker, card;
 
-    IrSetVar(String name, IrDomain env, IrDomain ker) {
+    IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
         this.name = Check.notNull(name);
         // TODO: ker subseteq env
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
+        this.card = Check.notNull(card);
+
+        if (card.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        if (card.getLowerBound() < ker.size()) {
+            throw new IllegalArgumentException();
+        }
+        if (card.getUpperBound() < ker.size()) {
+            throw new IllegalArgumentException();
+        }
+        if (card.getLowerBound() > env.size()) {
+            throw new IllegalArgumentException();
+        }
+        if (card.getUpperBound() > env.size()) {
+            throw new IllegalArgumentException();
+        }
     }
 
     public String getName() {
         return name;
     }
 
+    @Override
     public IrDomain getEnv() {
         return env;
     }
 
+    @Override
     public IrDomain getKer() {
         return ker;
+    }
+
+    @Override
+    public IrDomain getCard() {
+        return card;
     }
 
     public boolean isConstant() {
@@ -46,6 +70,6 @@ public class IrSetVar implements IrSetExpr {
 
     @Override
     public String toString() {
-        return name;
+        return name + " : " + env + " : " + ker;
     }
 }

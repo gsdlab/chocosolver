@@ -19,6 +19,21 @@ public class IrUnion implements IrSetExpr {
     }
 
     @Override
+    public IrDomain getEnv() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public IrDomain getKer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public IrDomain getCard() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }

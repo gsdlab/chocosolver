@@ -1,53 +1,49 @@
-//package org.clafer.constraint;
-//
-//import choco.Choco;
-//import choco.Options;
-//import choco.cp.model.CPModel;
-//import choco.kernel.model.Model;
-//import choco.kernel.model.variables.integer.IntegerVariable;
-//import choco.kernel.model.variables.set.SetVariable;
-//import choco.kernel.solver.Solver;
-//import gnu.trove.TIntHashSet;
-//import java.util.Random;
-//import org.clafer.Util;
-//import static org.junit.Assert.*;
-//import org.junit.Test;
-//
-///**
-// *
-// * @author jimmy
-// */
-//public class TupleToSetTest extends ConstraintTest {
-//
-//    void checkCorrectness(Solver solver, IntegerVariable[] tuple, SetVariable set) {
-//        int[] $tuple = Util.getVals(solver.getVar(tuple));
-//        int[] $set = solver.getVar(set).getValue();
-//
-//        assertEquals($tuple.length, $set.length);
-//        assertEquals(new TIntHashSet($tuple), new TIntHashSet($set));
-//    }
-//
-//    @Test(timeout = 60000)
-//    public void testTupleToSet() {
-//        for (int repeat = 0; repeat < 10; repeat++) {
-//            Model m = new CPModel();
-//
-//            int low = nextInt(5) + 1;
-//            int high = nextInt(5);
-//
-//            // TODO
-//            IntegerVariable[] tuple = Choco.makeIntVarArray("tuple", /*1 +*/ low + high, -low - nextInt(10), high + nextInt(10));
-//            SetVariable set = Choco.makeSetVar("set", -low - nextInt(10), high + nextInt(10));
-//
-//            m.addConstraint(TupleToSetManager.tupleToSet(tuple, set));
-//
-//            for (int restart = 0; restart < 10; restart++) {
-//                Solver solver = solveRandomly(m);
-//                checkCorrectness(solver, tuple, set);
-//            }
-//        }
-//    }
-//
+package org.clafer.constraint;
+
+import gnu.trove.set.hash.TIntHashSet;
+import org.clafer.Util;
+import org.clafer.constraint.propagator.PropUtil;
+import static org.junit.Assert.*;
+import org.junit.Test;
+import solver.Solver;
+import solver.variables.IntVar;
+import solver.variables.SetVar;
+import solver.variables.VariableFactory;
+
+/**
+ *
+ * @author jimmy
+ */
+public class TupleToSetTest extends ConstraintTest {
+
+    private void checkCorrectness(IntVar[] tuple, SetVar set) {
+        int[] $tuple = PropUtil.getValues(tuple);
+        int[] $set = set.getValue();
+
+        assertEquals(new TIntHashSet($tuple), new TIntHashSet($set));
+    }
+
+    @Test(timeout = 60000)
+    public void testTupleToSet() {
+        for (int repeat = 0; repeat < 10; repeat++) {
+            Solver solver = new Solver();
+
+            int low = nextInt(5) + 1;
+            int high = nextInt(5);
+
+            IntVar[] tuple = VariableFactory.enumeratedArray("tuple", low + high, -low - nextInt(10), high + nextInt(10), solver);
+            SetVar set = VariableFactory.set("set", Util.range(-low - nextInt(10), high + nextInt(10) + 1), solver);
+
+            solver.post(Constraints.tupleToSet(tuple, set));
+
+            assertTrue(randomizeStrategy(solver).findSolution());
+            checkCorrectness(tuple, set);
+            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
+                checkCorrectness(tuple, set);
+            }
+        }
+    }
+
 //    @Test(timeout = 60000)
 //    public void largeDomainTest() {
 //        Model m = new CPModel();
@@ -60,16 +56,15 @@
 //        Solver solver = solveOnce(m);
 //        checkCorrectness(solver, tuple, set);
 //    }
-//
-//    @Test(timeout = 60000)
-//    public void quickTest() {
-//        Model m = new CPModel();
-//
-//        IntegerVariable[] tuple = Choco.makeIntVarArray("tuple", 3, 0, 5);
-//        SetVariable set = Choco.makeSetVar("set", 0, 5);
-//
-//        m.addConstraint(TupleToSetManager.tupleToSet(tuple, set));
-//
-//        assertEquals(120, quickCheckModel(m, 10));
-//    }
-//}
+    @Test(timeout = 60000)
+    public void quickTest() {
+        Solver solver = new Solver();
+
+        IntVar[] ivars = VariableFactory.enumeratedArray("ivar", 3, 0, 5, solver);
+        SetVar svar = VariableFactory.set("svar", new int[]{0, 1, 2, 3, 4, 5}, solver);
+
+        solver.post(Constraints.tupleToSet(ivars, svar));
+
+        assertEquals(216, randomizeStrategy(solver).findAllSolutions());
+    }
+}

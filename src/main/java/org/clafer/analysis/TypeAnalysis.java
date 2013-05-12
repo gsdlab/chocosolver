@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import org.clafer.Check;
 import org.clafer.ast.AstEqual;
+import org.clafer.ast.AstGlobal;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstCard;
@@ -73,6 +74,11 @@ public class TypeAnalysis {
         @Override
         public AstClafer visit(AstThis ast, Void a) {
             return put(context, ast);
+        }
+
+        @Override
+        public AstClafer visit(AstGlobal ast, Void a) {
+            return put(ast.getType(), ast);
         }
 
         @Override

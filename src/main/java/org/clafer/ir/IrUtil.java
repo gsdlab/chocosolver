@@ -46,9 +46,9 @@ public class IrUtil {
     }
 
     public static Integer getConstant(IrIntExpr intExpr) {
-        if (intExpr instanceof IrIntVar) {
-            IrIntVar var = (IrIntVar) intExpr;
-            return var.isConstant() ? var.getValue() : null;
+        IrDomain domain = intExpr.getDomain();
+        if(domain.size() == 1) {
+            return domain.getLowerBound();
         }
         return null;
     }

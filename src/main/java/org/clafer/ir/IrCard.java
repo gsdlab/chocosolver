@@ -19,6 +19,11 @@ public class IrCard implements IrIntExpr {
     }
 
     @Override
+    public IrDomain getDomain() {
+        return set.getCard();
+    }
+
+    @Override
     public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }

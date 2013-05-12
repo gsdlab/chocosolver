@@ -1,12 +1,13 @@
 package org.clafer.collection;
 
+import gnu.trove.iterator.TIntIterator;
 import java.util.NoSuchElementException;
 
 /**
  *
  * @author jimmy
  */
-public class EmptyIntIterator implements IntIterator {
+public class EmptyIntIterator implements TIntIterator {
 
     private static final EmptyIntIterator iterator = new EmptyIntIterator();
 
@@ -25,5 +26,10 @@ public class EmptyIntIterator implements IntIterator {
     @Override
     public int next() {
         throw new NoSuchElementException();
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
     }
 }

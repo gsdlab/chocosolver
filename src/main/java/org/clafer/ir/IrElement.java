@@ -1,7 +1,9 @@
 package org.clafer.ir;
 
+import gnu.trove.iterator.TIntIterator;
 import java.util.Arrays;
 import org.clafer.Check;
+import org.clafer.ir.IrDomain.IrBoundDomain;
 
 /**
  *
@@ -23,6 +25,22 @@ public class IrElement implements IrIntExpr {
 
     public IrIntExpr[] getArray() {
         return array;
+    }
+
+    @Override
+    public IrDomain getDomain() {
+        TIntIterator iter = index.getDomain().iterator();
+        assert iter.hasNext();
+
+        IrDomain domain = array[iter.next()].getDomain();
+        int low = domain.getLowerBound();
+        int high = domain.getUpperBound();
+        while (iter.hasNext()) {
+            domain = array[iter.next()].getDomain();
+            low = Math.min(low, domain.getLowerBound());
+            high = Math.max(high, domain.getUpperBound());
+        }
+        return new IrBoundDomain(low, high);
     }
 
     @Override

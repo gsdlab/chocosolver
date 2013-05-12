@@ -19,6 +19,10 @@ public class Asts {
         return new AstThis();
     }
 
+    public static AstGlobal global(AstClafer type) {
+        return new AstGlobal(type);
+    }
+
     public static AstConstant constant(int value) {
         return new AstConstant(value);
     }

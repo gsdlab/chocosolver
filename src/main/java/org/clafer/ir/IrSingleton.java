@@ -14,6 +14,21 @@ public class IrSingleton implements IrSetExpr {
         this.value = Check.notNull(value);
     }
 
+    @Override
+    public IrDomain getEnv() {
+        return value.getDomain();
+    }
+
+    @Override
+    public IrDomain getKer() {
+        return Irs.EmptyDomain;
+    }
+
+    @Override
+    public IrDomain getCard() {
+        return Irs.OneDomain;
+    }
+
     public IrIntExpr getValue() {
         return value;
     }

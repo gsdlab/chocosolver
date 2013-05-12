@@ -15,6 +15,7 @@ import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
+import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -28,7 +29,8 @@ import org.clafer.ast.AstUpcast;
 import static org.clafer.ast.Asts.*;
 
 /**
- *
+ * Inserts explicit upcasts.
+ * 
  * @author jimmy
  */
 public class CanonicalAnalysis {
@@ -65,6 +67,11 @@ public class CanonicalAnalysis {
             return ast;
         }
 
+        @Override
+        public AstExpr visit(AstGlobal ast, Void a) {
+            return ast;
+        }
+        
         @Override
         public AstExpr visit(AstConstant ast, Void a) {
             return ast;

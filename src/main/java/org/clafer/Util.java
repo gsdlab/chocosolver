@@ -17,7 +17,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import org.clafer.collection.IntIterator;
+import java.util.Random;
+import util.iterators.IntIterator;
 
 /**
  *
@@ -252,6 +253,69 @@ public class Util {
         int[] r = Arrays.copyOf(list, list.length + 1);
         r[list.length] = item;
         return r;
+    }
+
+    public static int gcd(int a, int b) {
+        if (a <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (b <= 0) {
+            throw new IllegalArgumentException();
+        }
+        while (b != 0) {
+            int r = a % b;
+            a = b;
+            b = r;
+        }
+        return a;
+    }
+
+    public static int[] shiftLeft(final int[] array, final int shift) {
+        if (array.length < shift) {
+            throw new IllegalArgumentException();
+        }
+        if (shift < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (shift > 0) {
+            int gcd = gcd(array.length, shift);
+            int div = array.length / gcd;
+            for (int i = 0; i < gcd; i++) {
+                int index = i;
+                int place = i + shift;
+                int temp = array[i];
+
+                for (int j = 0; j < div - 1; j++) {
+                    array[index] = array[place];
+                    index = place;
+                    place = (index + shift) % array.length;
+                }
+
+                array[index] = temp;
+            }
+        }
+        return array;
+    }
+
+    public static void assertEquals(String message, int a, int b) {
+        if (a != b) {
+            throw new RuntimeException(message);
+        }
+    }
+
+    public static void main(String[] args) {
+        Random rand = new Random();
+        for (int repeat = 0; repeat < 100000; repeat++) {
+            int[] array = Util.range(0, rand.nextInt(50) + 1);
+            int shift = rand.nextInt(array.length);
+            int[] shifted = Util.shiftLeft(Arrays.copyOf(array, array.length), shift);
+
+            for (int i = 0; i < array.length; i++) {
+                assertEquals(
+                        Arrays.toString(array) + " << " + shift + " != " + Arrays.toString(shifted),
+                        array[(i + shift) % array.length], shifted[i]);
+            }
+        }
     }
 //
 //    public static <T> List<T> add(List<T> list, T... items) {

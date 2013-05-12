@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.Check;
+
 /**
  *
  * @author jimmy
@@ -10,25 +12,21 @@ public class IrIntVar implements IrIntExpr {
     private final IrDomain domain;
 
     IrIntVar(String name, IrDomain domain) {
-        this.name = name;
-        this.domain = domain;
+        this.name = Check.notNull(name);
+        this.domain = Check.notNull(domain);
+
+        if (domain.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
     }
 
     public String getName() {
         return name;
     }
 
+    @Override
     public IrDomain getDomain() {
         return domain;
-    }
-
-    public boolean isConstant() {
-        return domain.size() == 1;
-    }
-
-    public int getValue() {
-        assert isConstant();
-        return domain.getConstant().intValue();
     }
 
     @Override
