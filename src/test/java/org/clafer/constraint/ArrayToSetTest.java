@@ -14,32 +14,32 @@ import solver.variables.VariableFactory;
  *
  * @author jimmy
  */
-public class TupleToSetTest extends ConstraintTest {
+public class ArrayToSetTest extends ConstraintTest {
 
-    private void checkCorrectness(IntVar[] tuple, SetVar set) {
-        int[] $tuple = PropUtil.getValues(tuple);
+    private void checkCorrectness(IntVar[] array, SetVar set) {
+        int[] $array = PropUtil.getValues(array);
         int[] $set = set.getValue();
 
-        assertEquals(new TIntHashSet($tuple), new TIntHashSet($set));
+        assertEquals(new TIntHashSet($array), new TIntHashSet($set));
     }
 
     @Test(timeout = 60000)
-    public void testTupleToSet() {
+    public void testArrayToSet() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
             int low = nextInt(5) + 1;
             int high = nextInt(5);
 
-            IntVar[] tuple = VariableFactory.enumeratedArray("tuple", low + high, -low - nextInt(10), high + nextInt(10), solver);
+            IntVar[] array = VariableFactory.enumeratedArray("array", low + high, -low - nextInt(10), high + nextInt(10), solver);
             SetVar set = VariableFactory.set("set", Util.range(-low - nextInt(10), high + nextInt(10) + 1), solver);
 
-            solver.post(Constraints.tupleToSet(tuple, set));
+            solver.post(Constraints.arrayToSet(array, set));
 
             assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(tuple, set);
+            checkCorrectness(array, set);
             for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(tuple, set);
+                checkCorrectness(array, set);
             }
         }
     }
@@ -48,13 +48,13 @@ public class TupleToSetTest extends ConstraintTest {
 //    public void largeDomainTest() {
 //        Model m = new CPModel();
 //
-//        IntegerVariable[] tuple = Choco.makeIntVarArray("tuple", 5, 0, 1000000);
+//        IntegerVariable[] array = Choco.makeIntVarArray("array", 5, 0, 1000000);
 //        SetVariable set = Choco.makeSetVar("set", 0, 1000000, Options.V_NO_DECISION);
 //
-//        m.addConstraint(TupleToSetManager.tupleToSet(tuple, set));
+//        m.addConstraint(arrayToSetManager.arrayToSet(array, set));
 //
 //        Solver solver = solveOnce(m);
-//        checkCorrectness(solver, tuple, set);
+//        checkCorrectness(solver, array, set);
 //    }
     @Test(timeout = 60000)
     public void quickTest() {
@@ -63,7 +63,7 @@ public class TupleToSetTest extends ConstraintTest {
         IntVar[] ivars = VariableFactory.enumeratedArray("ivar", 3, 0, 5, solver);
         SetVar svar = VariableFactory.set("svar", new int[]{0, 1, 2, 3, 4, 5}, solver);
 
-        solver.post(Constraints.tupleToSet(ivars, svar));
+        solver.post(Constraints.arrayToSet(ivars, svar));
 
         assertEquals(216, randomizeStrategy(solver).findAllSolutions());
     }

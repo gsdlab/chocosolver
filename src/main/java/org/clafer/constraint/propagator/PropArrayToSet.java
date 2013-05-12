@@ -16,14 +16,14 @@ import util.ESat;
  *
  * @author jimmy
  */
-public class PropTupleToSet extends Propagator<Variable> {
+public class PropArrayToSet extends Propagator<Variable> {
 
     private final IntVar[] ts;
     private final IIntDeltaMonitor[] tsD;
     private final SetVar s;
     private final SetDeltaMonitor sD;
 
-    public PropTupleToSet(IntVar[] is, SetVar s) {
+    public PropArrayToSet(IntVar[] is, SetVar s) {
         super(buildArray(is, s), PropagatorPriority.BINARY);
         if (is.length == 0) {
             throw new IllegalArgumentException();

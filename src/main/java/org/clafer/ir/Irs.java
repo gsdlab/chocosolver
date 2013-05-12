@@ -399,7 +399,7 @@ public class Irs {
             for (int i = 0; i < to.length; i++) {
                 to[i] = refs[constant[i]];
             }
-            return tupleToSet(to);
+            return arrayToSet(to);
         }
         return new IrJoinRef(take, refs);
     }
@@ -416,12 +416,12 @@ public class Irs {
         }
     }
 
-    public static IrSetExpr tupleToSet(IrIntExpr[] tuple) {
-        switch (tuple.length) {
+    public static IrSetExpr arrayToSet(IrIntExpr[] array) {
+        switch (array.length) {
             case 0:
                 return EmptySet;
             case 1:
-                return singleton(tuple[0]);
+                return singleton(array[0]);
             default:
                 // TODO
                 throw new UnsupportedOperationException();

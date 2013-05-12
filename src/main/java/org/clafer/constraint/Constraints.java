@@ -4,7 +4,7 @@ import org.clafer.constraint.propagator.PropJoin;
 import org.clafer.constraint.propagator.PropJoinRef;
 import org.clafer.constraint.propagator.PropSelectN;
 import org.clafer.constraint.propagator.PropSingleton;
-import org.clafer.constraint.propagator.PropTupleToSet;
+import org.clafer.constraint.propagator.PropArrayToSet;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -27,12 +27,12 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint tupleToSet(IntVar[] ivars, SetVar svar) {
+    public static Constraint arrayToSet(IntVar[] ivars, SetVar svar) {
         Variable[] vars = new Variable[ivars.length + 1];
         System.arraycopy(ivars, 0, vars, 0, ivars.length);
         vars[ivars.length] = svar;
         Constraint constraint = new Constraint(vars, svar.getSolver());
-        constraint.setPropagators(new PropTupleToSet(ivars, svar));
+        constraint.setPropagators(new PropArrayToSet(ivars, svar));
         return constraint;
     }
 
