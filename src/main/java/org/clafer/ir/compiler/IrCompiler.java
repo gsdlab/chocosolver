@@ -3,6 +3,7 @@ package org.clafer.ir.compiler;
 import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArithm;
+import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrHalfReification;
 import org.clafer.ir.IrIfOnlyIf;
@@ -99,6 +100,13 @@ public class IrCompiler {
         return VariableFactory.bool(name + "#" + varNum++, solver);
     }
 
+    private IntVar numIntVar(String name, IrDomain domain) {
+        if (domain.isBounded()) {
+            return VariableFactory.enumerated(name + "#" + varNum++, domain.getLowerBound(), domain.getUpperBound(), solver);
+        }
+        return VariableFactory.enumerated(name + "#" + varNum++, domain.getValues(), solver);
+    }
+
     private IntVar numIntVar(String name, int low, int high) {
         return VariableFactory.enumerated(name, low, high, solver);
     }
@@ -107,12 +115,18 @@ public class IrCompiler {
         return VariableFactory.enumerated(name, dom, solver);
     }
 
+    private SetVar numSetVar(String name, IrSetExpr expr) {
+        IrDomain env = expr.getEnv();
+        System.out.println(env);
+        return VariableFactory.set(name + "#" + varNum++, env.getValues(), solver);
+    }
+
     private SetVar numSetVar(String name, int low, int high) {
-        return VariableFactory.set(name, Util.range(low, high + 1), solver);
+        return VariableFactory.set(name + "#" + varNum++, Util.range(low, high + 1), solver);
     }
 
     private SetVar numSetVar(String name, int[] env) {
-        return VariableFactory.set(name, env, solver);
+        return VariableFactory.set(name + "#" + varNum++, env, solver);
     }
     private final CacheMap<IrBoolVar, BoolVar> boolVar = new CacheMap<IrBoolVar, BoolVar>() {
 
@@ -137,7 +151,7 @@ public class IrCompiler {
 //            if (domain instanceof IrEnumDomain && domain.getUpperBound() - domain.getLowerBound() < 100) {
 //                return VariableFactory.enumerated(ir.getName(), domain.getValues(), solver);
 //            }
-            return VariableFactory.bounded(ir.getName(), domain.getLowerBound(), domain.getUpperBound(), solver);
+            return numIntVar(ir.getName(), ir.getDomain());
         }
     };
     private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
@@ -618,6 +632,19 @@ public class IrCompiler {
         }
 
         @Override
+        public SetVar visit(IrArrayToSet ir, Void a) {
+            IrIntExpr[] array = ir.getArray();
+
+            IntVar[] $array = new IntVar[array.length];
+            for (int i = 0; i < $array.length; i++) {
+                $array[i] = array[i].accept(intExprCompiler, a);
+            }
+            SetVar set = numSetVar("Singleton", ir);
+            solver.post(Constraints.arrayToSet($array, set));
+            return set;
+        }
+
+        @Override
         public SetVar visit(IrJoin ir, Void a) {
             IrSetExpr take = ir.getTake();
             IrSetExpr[] children = ir.getChildren();
@@ -762,7 +789,7 @@ public class IrCompiler {
         }
         return ub;
     }
+
     public static void main(String[] args) {
-        
     }
 }

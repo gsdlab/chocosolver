@@ -1,6 +1,8 @@
 package org.clafer.ir;
 
+import gnu.trove.TCollections;
 import gnu.trove.TIntCollection;
+import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -328,16 +330,31 @@ public class Irs {
     }
 
     public static IrDomain enumDomain(int... values) {
-        return values.length == 0 ? EmptyDomain : new IrEnumDomain(values);
+        return enumDomain(new TIntHashSet(values));
     }
 
     public static IrDomain enumDomain(TIntCollection values) {
-        return values.isEmpty() ? EmptyDomain : new IrEnumDomain(values.toArray());
+        return enumDomain(new TIntHashSet(values));
+    }
+
+    // TODO: collect enum over an interval into a bound domain
+    public static IrDomain enumDomain(TIntHashSet values) {
+        switch (values.size()) {
+            case 0:
+                return EmptyDomain;
+            case 1:
+                int value = values.iterator().next();
+                return boundDomain(value, value);
+            default:
+                int[] array = values.toArray();
+                Arrays.sort(array);
+                return new IrEnumDomain(array);
+        }
     }
 
     public static IrSetVar constant(int[] value) {
         IrDomain domain = enumDomain(value);
-        return new IrSetVar(Arrays.toString(value), domain, domain, OneDomain);
+        return new IrSetVar(Arrays.toString(value), domain, domain, enumDomain(value.length));
     }
 
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
@@ -380,6 +397,17 @@ public class Irs {
         return new IrSingleton(value);
     }
 
+    public static IrSetExpr arrayToSet(IrIntExpr[] array) {
+        switch (array.length) {
+            case 0:
+                return EmptySet;
+            case 1:
+                return singleton(array[0]);
+            default:
+                return new IrArrayToSet(array);
+        }
+    }
+
     public static IrSetExpr join(IrSetExpr take, IrSetExpr[] children) {
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
@@ -413,18 +441,6 @@ public class Irs {
                 return operands[0];
             default:
                 return new IrUnion(operands);
-        }
-    }
-
-    public static IrSetExpr arrayToSet(IrIntExpr[] array) {
-        switch (array.length) {
-            case 0:
-                return EmptySet;
-            case 1:
-                return singleton(array[0]);
-            default:
-                // TODO
-                throw new UnsupportedOperationException();
         }
     }
     /**

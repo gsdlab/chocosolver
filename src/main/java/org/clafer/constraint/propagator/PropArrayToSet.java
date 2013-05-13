@@ -1,6 +1,7 @@
 package org.clafer.constraint.propagator;
 
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -11,6 +12,7 @@ import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;
+import util.procedure.IntProcedure;
 
 /**
  *
@@ -18,35 +20,35 @@ import util.ESat;
  */
 public class PropArrayToSet extends Propagator<Variable> {
 
-    private final IntVar[] ts;
-    private final IIntDeltaMonitor[] tsD;
+    private final IntVar[] as;
+    private final IIntDeltaMonitor[] asD;
     private final SetVar s;
     private final SetDeltaMonitor sD;
 
-    public PropArrayToSet(IntVar[] is, SetVar s) {
-        super(buildArray(is, s), PropagatorPriority.BINARY);
-        if (is.length == 0) {
+    public PropArrayToSet(IntVar[] as, SetVar s) {
+        super(buildArray(as, s), PropagatorPriority.BINARY);
+        if (as.length == 0) {
             throw new IllegalArgumentException();
         }
-        this.ts = is;
-        this.tsD = PropUtil.monitorDeltas(is, aCause);
+        this.as = as;
+        this.asD = PropUtil.monitorDeltas(as, aCause);
         this.s = s;
         this.sD = s.monitorDelta(aCause);
 
     }
 
-    private static Variable[] buildArray(IntVar[] is, SetVar s) {
-        Variable[] array = new Variable[is.length + 1];
+    private static Variable[] buildArray(IntVar[] as, SetVar s) {
+        Variable[] array = new Variable[as.length + 1];
         array[0] = s;
-        System.arraycopy(is, 0, array, 1, is.length);
+        System.arraycopy(as, 0, array, 1, as.length);
         return array;
     }
 
-    private boolean isTVar(int idx) {
+    private boolean isAVar(int idx) {
         return idx > 0;
     }
 
-    private int getTVarIndex(int idx) {
+    private int getAVarIndex(int idx) {
         return idx - 1;
     }
 
@@ -56,53 +58,109 @@ public class PropArrayToSet extends Propagator<Variable> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        if (isTVar(vIdx)) {
-            return EventType.REMOVE.mask + EventType.INSTANTIATE.mask;
+        if (isAVar(vIdx)) {
+            return EventType.INT_ALL_MASK();
         }
         assert isSVar(vIdx);
         return EventType.REMOVE_FROM_ENVELOPE.mask + EventType.ADD_TO_KER.mask;
     }
 
-    @Override
-    public void propagate(int evtmask) throws ContradictionException {
-        if (s.getKernelSize() > ts.length) {
+    private void instantiateS(int[] value) throws ContradictionException {
+        s.instantiateTo(value, aCause);
+        PropUtil.intsSubsetEnv(as, s, aCause);
+    }
+
+    private void checkKerSize() throws ContradictionException {
+        if (s.getKernelSize() > as.length) {
             contradiction(s, s + " is too large");
         }
-
-        if (s.getKernelSize() == ts.length) {
+        if (s.getKernelSize() == as.length) {
             if (!s.instantiated()) {
-                s.instantiateTo(PropUtil.iterateKer(s), aCause);
-            }
-        } else {
-            int maxDisjoint = ts.length - s.getEnvelopeSize();
-            if (maxDisjoint == 0) {
-                if (!s.instantiated()) {
-                    s.instantiateTo(PropUtil.iterateEnv(s), aCause);
-                }
+                instantiateS(PropUtil.iterateKer(s));
             }
         }
-        PropUtil.intsSubsetEnv(ts, s, aCause);
-        PropUtil.envSubsetInts(s, ts, aCause);
+    }
+
+    @Override
+    public void propagate(int evtmask) throws ContradictionException {
+        // Prune as
+        PropUtil.intsSubsetEnv(as, s, aCause);
+        // Prune s
+        PropUtil.envSubsetInts(s, as, aCause);
+        // Pick s
+        for (IntVar a : as) {
+            if (a.instantiated()) {
+                s.addToKernel(a.getValue(), aCause);
+            }
+        }
+        checkKerSize();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        propagate(mask);
+        if (isSVar(idxVarInProp)) {
+            sD.freeze();
+            sD.forEach(pruneAOnSEnv, EventType.REMOVE_FROM_ENVELOPE);
+            sD.unfreeze();
+            checkKerSize();
+        } else {
+            assert isAVar(idxVarInProp);
+
+            int id = getAVarIndex(idxVarInProp);
+            if (EventType.isInclow(mask)) {
+            }
+            if (EventType.isRemove(mask)
+                    || (EventType.isInclow(mask) && as[id].getLB() > s.getEnvelopeFirst())
+                    || EventType.isDecupp(mask)) {
+                asD[id].freeze();
+                asD[id].forEach(pruneSOnARem, EventType.REMOVE);
+                asD[id].unfreeze();
+            }
+            if (as[id].instantiated()) {
+                s.addToKernel(as[id].getValue(), aCause);
+                checkKerSize();
+            }
+        }
     }
+    private final IntProcedure pruneAOnSEnv = new IntProcedure() {
+
+        @Override
+        public void execute(int sEnv) throws ContradictionException {
+            for (IntVar a : as) {
+                if (a.removeValue(sEnv, aCause) && a.instantiated()) {
+                    s.addToKernel(a.getValue(), aCause);
+                }
+            }
+        }
+    };
+    private final IntProcedure pruneSOnARem = new IntProcedure() {
+
+        @Override
+        public void execute(int aRem) throws ContradictionException {
+            if (s.envelopeContains(aRem)) {
+                for (IntVar a : as) {
+                    if (a.contains(aRem)) {
+                        return;
+                    }
+                }
+                s.removeFromEnvelope(aRem, aCause);
+            }
+        }
+    };
 
     @Override
     public ESat isEntailed() {
-        if (s.getKernelSize() > ts.length) {
+        if (s.getKernelSize() > as.length) {
             return ESat.FALSE;
         }
         boolean tsInstantiated = true;
         TIntHashSet values = new TIntHashSet();
-        for (IntVar t : ts) {
-            if (!PropUtil.canIntersect(t, s)) {
+        for (IntVar a : as) {
+            if (!PropUtil.canIntersect(a, s)) {
                 return ESat.FALSE;
             }
-            if (t.instantiated()) {
-                values.add(t.getValue());
+            if (a.instantiated()) {
+                values.add(a.getValue());
             } else {
                 tsInstantiated = false;
             }
@@ -117,8 +175,5 @@ public class PropArrayToSet extends Propagator<Variable> {
                     : ESat.FALSE;
         }
         return ESat.UNDEFINED;
-    }
-
-    public static void main(String[] args) {
     }
 }

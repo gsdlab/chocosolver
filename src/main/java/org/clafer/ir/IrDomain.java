@@ -1,32 +1,44 @@
 package org.clafer.ir;
 
+import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import java.util.Arrays;
 import org.clafer.collection.ArrayIntIterator;
 import org.clafer.collection.BoundIntIterator;
 import org.clafer.collection.EmptyIntIterator;
+import org.clafer.collection.SingleIntIterator;
 
 /**
  *
  * @author jimmy
  */
-public interface IrDomain {
+public abstract class IrDomain {
 
-    public boolean contains(int value);
+    private IrDomain() {
+    }
 
-    public int getLowerBound();
+    public abstract boolean isBounded();
 
-    public int getUpperBound();
+    public abstract boolean contains(int value);
 
-    public boolean isEmpty();
+    public abstract int getLowerBound();
 
-    public int size();
+    public abstract int getUpperBound();
 
-    public int[] getValues();
+    public abstract boolean isEmpty();
 
-    public TIntIterator iterator();
+    public abstract int size();
 
-    public static class IrEmptyDomain implements IrDomain {
+    public abstract int[] getValues();
+
+    public abstract TIntIterator iterator();
+
+    public static class IrEmptyDomain extends IrDomain {
+
+        @Override
+        public boolean isBounded() {
+            return false;
+        }
 
         @Override
         public boolean contains(int value) {
@@ -65,7 +77,7 @@ public interface IrDomain {
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof EmptyIntIterator;
+            return obj instanceof IrEmptyDomain;
         }
 
         @Override
@@ -79,16 +91,23 @@ public interface IrDomain {
         }
     }
 
-    public static class IrEnumDomain implements IrDomain {
+    public static class IrEnumDomain extends IrDomain {
 
         private final int[] values;
 
+        /**
+         * @param values - sorted, unique, and immutable integers
+         */
         public IrEnumDomain(int[] values) {
             if (values.length == 0) {
                 throw new IllegalArgumentException();
             }
-            this.values = Arrays.copyOf(values, values.length);
-            Arrays.sort(this.values);
+            this.values = values;
+        }
+
+        @Override
+        public boolean isBounded() {
+            return false;
         }
 
         @Override
@@ -166,7 +185,7 @@ public interface IrDomain {
         }
     }
 
-    public static class IrBoundDomain implements IrDomain {
+    public static class IrBoundDomain extends IrDomain {
 
         private final int low;
         private final int high;
@@ -181,6 +200,11 @@ public interface IrDomain {
             }
             this.low = low;
             this.high = high;
+        }
+
+        @Override
+        public boolean isBounded() {
+            return true;
         }
 
         @Override

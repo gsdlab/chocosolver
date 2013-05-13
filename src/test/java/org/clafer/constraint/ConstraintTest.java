@@ -22,7 +22,7 @@ public abstract class ConstraintTest {
         return rand.nextInt(n);
     }
 
-    public static Solver randomizeStrategy(Solver solver) {
+    public Solver randomizeStrategy(Solver solver) {
         List<IntVar> intVars = new ArrayList<IntVar>();
         List<SetVar> setVars = new ArrayList<SetVar>();
         for (Variable var : solver.getVars()) {
@@ -34,10 +34,17 @@ public abstract class ConstraintTest {
                 throw new IllegalStateException();
             }
         }
-        solver.set(
-                new StrategiesSequencer(solver.getEnvironment(),
-                new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
-                IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
+//        if (rand.nextBoolean()) {
+            solver.set(
+                    new StrategiesSequencer(solver.getEnvironment(),
+                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
+                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
+//        } else {
+//            solver.set(
+//                    new StrategiesSequencer(solver.getEnvironment(),
+//                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime()),
+//                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
+//        }
         return solver;
     }
 }

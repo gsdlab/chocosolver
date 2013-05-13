@@ -10,7 +10,6 @@ public class IrSetVar implements IrSetExpr {
 
     private final String name;
     private final IrDomain env, ker, card;
-
     IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
         this.name = Check.notNull(name);
         // TODO: ker subseteq env
@@ -21,17 +20,17 @@ public class IrSetVar implements IrSetExpr {
         if (card.isEmpty()) {
             throw new IllegalArgumentException();
         }
-        if (card.getLowerBound() < ker.size()) {
-            throw new IllegalArgumentException();
-        }
-        if (card.getUpperBound() < ker.size()) {
-            throw new IllegalArgumentException();
-        }
         if (card.getLowerBound() > env.size()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(card.getLowerBound() + " > " + env.size());
         }
         if (card.getUpperBound() > env.size()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(card.getUpperBound() + " > " + env.size());
+        }
+        if (card.getLowerBound() < ker.size()) {
+            throw new IllegalArgumentException(card.getLowerBound() + " < " + ker.size());
+        }
+        if (card.getUpperBound() < ker.size()) {
+            throw new IllegalArgumentException(card.getUpperBound() + " < " + ker.size());
         }
     }
 

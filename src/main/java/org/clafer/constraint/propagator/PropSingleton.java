@@ -42,7 +42,7 @@ public class PropSingleton extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isIVar(vIdx)) {
-            return EventType.REMOVE.mask + EventType.INSTANTIATE.mask;
+            return EventType.INT_ALL_MASK();
         }
         assert isSVar(vIdx);
         return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
