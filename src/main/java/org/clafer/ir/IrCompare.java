@@ -37,7 +37,7 @@ public class IrCompare implements IrDualExpr {
 
     @Override
     public IrDualExpr opposite() {
-        return Irs.compare(left, op.getOpposite(), right);
+        return new IrCompare(left, op.getOpposite(), right);
     }
 
     @Override

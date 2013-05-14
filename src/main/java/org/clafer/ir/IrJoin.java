@@ -69,7 +69,7 @@ public class IrJoin implements IrSetExpr {
         while (iter.hasNext()) {
             int val = iter.next();
             IrDomain childDomain = children[val].getCard();
-            if (takeEnv.contains(val)) {
+            if (takeKer.contains(val)) {
                 cardLow += childDomain.getLowerBound();
                 cardHigh += childDomain.getUpperBound();
             } else {

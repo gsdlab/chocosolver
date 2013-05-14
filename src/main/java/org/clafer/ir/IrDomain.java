@@ -1,12 +1,10 @@
 package org.clafer.ir;
 
-import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import java.util.Arrays;
 import org.clafer.collection.ArrayIntIterator;
 import org.clafer.collection.BoundIntIterator;
 import org.clafer.collection.EmptyIntIterator;
-import org.clafer.collection.SingleIntIterator;
 
 /**
  *

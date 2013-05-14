@@ -14,7 +14,7 @@ import util.ESat;
  */
 public class ClaferObjective {
 
-    private final Solver solver;
+    public final Solver solver;
     private final ClaferSolutionMap solutionMap;
     private final Objective objective;
     private final IntVar score;

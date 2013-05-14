@@ -13,6 +13,8 @@ import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.HashMap;
+import java.util.Map;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSingleton;
@@ -25,6 +27,7 @@ import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrConstraint;
 import org.clafer.Check;
 import org.clafer.Util;
+import org.clafer.collection.IntArrayKey;
 import org.clafer.constraint.propagator.PropUtil;
 import org.clafer.constraint.Constraints;
 import org.clafer.ir.IrBoolChannel;
@@ -57,6 +60,9 @@ import solver.constraints.nary.cnf.Literal;
 import solver.constraints.nary.cnf.Node;
 import solver.constraints.nary.cnf.Singleton;
 import solver.constraints.set.SetConstraintsFactory;
+import solver.search.loop.monitors.SearchMonitorFactory;
+import solver.search.strategy.SetStrategyFactory;
+import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.VariableFactory;
@@ -117,12 +123,11 @@ public class IrCompiler {
 
     private SetVar numSetVar(String name, IrSetExpr expr) {
         IrDomain env = expr.getEnv();
-        System.out.println(env);
         return VariableFactory.set(name + "#" + varNum++, env.getValues(), solver);
     }
 
     private SetVar numSetVar(String name, int low, int high) {
-        return VariableFactory.set(name + "#" + varNum++, Util.range(low, high + 1), solver);
+        return VariableFactory.set(name + "#" + varNum++, Util.range(low, high), solver);
     }
 
     private SetVar numSetVar(String name, int[] env) {
@@ -142,7 +147,6 @@ public class IrCompiler {
 
         @Override
         protected IntVar cache(IrIntVar ir) {
-            IrDomain domain = ir.getDomain();
             Integer constant = IrUtil.getConstant(ir);
             if (constant != null) {
                 return VariableFactory.fixed(constant, solver);
@@ -156,8 +160,20 @@ public class IrCompiler {
     };
     private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
 
+        private final Map<IntArrayKey, SetVar> constantCache = new HashMap<IntArrayKey, SetVar>();
+
         @Override
         protected SetVar cache(IrSetVar a) {
+            int[] constant = IrUtil.getConstant(a);
+            if (constant != null) {
+                IntArrayKey key = new IntArrayKey(constant);
+                SetVar constantVar = constantCache.get(key);
+                if (constantVar == null) {
+                    constantVar = VariableFactory.set(key.toString(), key.getArray(), key.getArray(), solver);
+                    constantCache.put(key, constantVar);
+                }
+                return constantVar;
+            }
             IrDomain env = a.getEnv();
             IrDomain ker = a.getKer();
             return VariableFactory.set(a.getName(), env.getValues(), ker.getValues(), solver);
@@ -212,8 +228,7 @@ public class IrCompiler {
             for (int i = 0; i < $sets.length; i++) {
                 $sets[i] = sets[i].accept(setExprCompiler, a);
             }
-            solver.post(SetConstraintsFactory.all_disjoint($sets));
-            return SetConstraintsFactory.int_channel($sets, $ints, 0, 0);
+            return Constraints.intChannel($sets, $ints);
         }
 
         @Override
@@ -262,11 +277,12 @@ public class IrCompiler {
                 $bools[i] = bools[i].accept(boolExprCompiler, a);
             }
             IntVar $n = n.accept(intExprCompiler, a);
-System.out.println(ir);
             return Constraints.selectN($bools, $n);
         }
     };
     private final IrBoolExprVisitor<Void, BoolVar> boolExprCompiler = new IrBoolExprVisitor<Void, BoolVar>() {
+
+        private final Map<BoolVar, BoolVar> notCache = new HashMap<BoolVar, BoolVar>();
 
         @Override
         public BoolVar visit(IrBoolVar ir, Void a) {
@@ -275,7 +291,13 @@ System.out.println(ir);
 
         @Override
         public BoolVar visit(IrNot ir, Void a) {
-            return VariableFactory.not(ir.getProposition().accept(this, a));
+            BoolVar var = ir.getProposition().accept(this, a);
+            BoolVar not = notCache.get(var);
+            if (not == null) {
+                not = VariableFactory.not(var);
+                notCache.put(var, not);
+            }
+            return not;
         }
 
         @Override
@@ -340,12 +362,12 @@ System.out.println(ir);
             BoolVar reified = numBoolVar("SetCompare");
             switch (ir.getOp()) {
                 case Equal:
-                    solver.post(_implies(reified, _all_equal($left, $right)));
+                    solver.post(_implies(reified, _equal($left, $right)));
                     solver.post(_implies(_not(reified), _all_different($left, $right)));
                     return reified;
                 case NotEqual:
                     solver.post(_implies(reified, _all_different($left, $right)));
-                    solver.post(_implies(_not(reified), _all_equal($left, $right)));
+                    solver.post(_implies(_not(reified), _equal($left, $right)));
                     return reified;
                 default:
                     throw new IrException();
@@ -417,7 +439,7 @@ System.out.println(ir);
             SetVar $right = ir.getRight().accept(setExprCompiler, a);
             switch (ir.getOp()) {
                 case Equal:
-                    return _all_equal($left, $right);
+                    return _equal($left, $right);
                 case NotEqual:
                     return _all_different($left, $right);
                 default:
@@ -726,7 +748,12 @@ System.out.println(ir);
         return IntConstraintFactory.arithm(var1, op1, var2, op2, cste);
     }
 
+    @Deprecated
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
+        if (var1.instantiated() && var2.instantiated()) {
+            // REMOVE
+            throw new Error();
+        }
         if (var2.instantiated()) {
             return IntConstraintFactory.arithm(var1, op, var2.getValue());
         }
@@ -737,8 +764,8 @@ System.out.println(ir);
         return IntConstraintFactory.element(value, array, index, 0);
     }
 
-    private static Constraint _all_equal(SetVar... vars) {
-        return SetConstraintsFactory.all_equal(vars);
+    private static Constraint _equal(SetVar var1, SetVar var2) {
+        return Constraints.equal(var1, var2);
     }
 
     private static Constraint _all_different(SetVar... vars) {
@@ -791,5 +818,25 @@ System.out.println(ir);
     }
 
     public static void main(String[] args) {
+        Solver solver = new Solver();
+        SearchMonitorFactory.log(solver, true, true);
+
+        SetVar dummy = VariableFactory.set("dummy", new int[]{0}, solver);
+        SetVar check = VariableFactory.set("check", new int[]{0}, solver);
+        BoolVar member = VariableFactory.bool("member", solver);
+        SetVar footprint = VariableFactory.set("footprint", new int[]{42}, solver);
+
+        solver.post(SetConstraintsFactory.bool_channel(new BoolVar[]{member}, check, 0));
+        solver.post(IntConstraintFactory.implies(member, Constraints.equal(footprint,
+                VariableFactory.set("{42}", new int[]{42}, new int[]{42}, solver))));
+        solver.post(IntConstraintFactory.implies(VariableFactory.not(member), Constraints.equal(footprint,
+                VariableFactory.set("{}", new int[]{}, new int[]{}, solver))));
+
+        solver.set(
+                new StrategiesSequencer(solver.getEnvironment(),
+                SetStrategyFactory.setLex(new SetVar[]{dummy}),
+                SetStrategyFactory.setLex(new SetVar[]{check, footprint})));
+        System.out.println(solver);
+        solver.findAllSolutions();
     }
 }

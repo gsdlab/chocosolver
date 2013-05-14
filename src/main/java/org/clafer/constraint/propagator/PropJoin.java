@@ -51,12 +51,13 @@ public class PropJoin extends Propagator<SetVar> {
         return idx == 1;
     }
 
-    private boolean isChildVar(int varIdx) {
-        return varIdx >= 2;
+    private boolean isChildVar(int idx) {
+        return idx >= 2;
     }
 
-    private int getChildVarIndex(int varIdx) {
-        return varIdx - 2;
+    private int getChildVarIndex(int idx) {
+        assert isChildVar(idx);
+        return idx - 2;
     }
 
     @Override
@@ -78,7 +79,7 @@ public class PropJoin extends Propagator<SetVar> {
             PropUtil.kerSubsetKer(children[i], to, aCause);
             PropUtil.envSubsetEnv(children[i], to, aCause);
         }
-        
+
         // Pick take
         for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
             int child = -1;

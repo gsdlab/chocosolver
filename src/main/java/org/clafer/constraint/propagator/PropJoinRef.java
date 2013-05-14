@@ -58,6 +58,7 @@ public class PropJoinRef extends Propagator<Variable> {
     }
 
     private int getRefVarIndex(int idx) {
+        assert isRefVar(idx);
         return idx - 2;
     }
 

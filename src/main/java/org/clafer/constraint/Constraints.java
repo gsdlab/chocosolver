@@ -5,8 +5,10 @@ import org.clafer.constraint.propagator.PropJoinRef;
 import org.clafer.constraint.propagator.PropSelectN;
 import org.clafer.constraint.propagator.PropSingleton;
 import org.clafer.constraint.propagator.PropArrayToSet;
+import org.clafer.constraint.propagator.PropIntChannel;
 import org.clafer.constraint.propagator.PropSetEqual;
 import solver.constraints.Constraint;
+import solver.constraints.set.SetConstraintsFactory;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -68,11 +70,20 @@ public class Constraints {
     }
 
     public static Constraint selectN(BoolVar[] bools, IntVar n) {
-        IntVar[] init = new IntVar[bools.length + 1];
-        System.arraycopy(bools, 0, init, 0, bools.length);
-        init[bools.length] = n;
-        Constraint constraint = new Constraint(init, bools[0].getSolver());
+        IntVar[] vars = new IntVar[bools.length + 1];
+        System.arraycopy(bools, 0, vars, 0, bools.length);
+        vars[bools.length] = n;
+        Constraint constraint = new Constraint(vars, bools[0].getSolver());
         constraint.setPropagators(new PropSelectN(bools, n));
+        return constraint;
+    }
+
+    public static Constraint intChannel(SetVar[] sets, IntVar[] ints) {
+        Variable[] vars = new Variable[sets.length + ints.length];
+        System.arraycopy(sets, 0, vars, 0, sets.length);
+        System.arraycopy(ints, 0, vars, sets.length, ints.length);
+        Constraint constraint = new Constraint(vars, sets[0].getSolver());
+        constraint.setPropagators(new PropIntChannel(sets, ints));
         return constraint;
     }
 }

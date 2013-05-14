@@ -1,7 +1,6 @@
 package org.clafer.constraint.propagator;
 
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -49,6 +48,7 @@ public class PropArrayToSet extends Propagator<Variable> {
     }
 
     private int getAVarIndex(int idx) {
+        assert isAVar(idx);
         return idx - 1;
     }
 

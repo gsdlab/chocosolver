@@ -22,7 +22,7 @@ public class BoundIntIterator implements TIntIterator {
 
     @Override
     public boolean hasNext() {
-        return index < high;
+        return index <= high;
     }
 
     @Override

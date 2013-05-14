@@ -36,12 +36,12 @@ public class JoinRefTest extends ConstraintTest {
             Solver solver = new Solver();
             int num = nextInt(10);
 
-            SetVar take = VariableFactory.set("take", Util.range(0, num), solver);
+            SetVar take = VariableFactory.set("take", Util.fromTo(0, num), solver);
             IntVar[] refs = new IntVar[num];
             for (int i = 0; i < refs.length; i++) {
                 refs[i] = VariableFactory.enumerated("ref" + i, 0, nextInt(10), solver);
             }
-            SetVar to = VariableFactory.set("to", Util.range(0, nextInt(10)), solver);
+            SetVar to = VariableFactory.set("to", Util.fromTo(0, nextInt(10)), solver);
 
             solver.post(Constraints.joinRef(take, refs, to));
             assertTrue(randomizeStrategy(solver).findSolution());

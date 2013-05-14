@@ -121,7 +121,55 @@ public class Irs {
         return new IrNotMember(var, low, high);
     }
 
-    public static IrCompare compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+    public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+        IrDomain leftDomain = left.getDomain();
+        IrDomain rightDomain = right.getDomain();
+        switch (op) {
+            case Equal:
+                if (leftDomain.size() == 1 && rightDomain.size() == 1) {
+                    return constant(leftDomain.getLowerBound() == rightDomain.getLowerBound());
+                }
+                break;
+            case NotEqual:
+                if (leftDomain.size() == 1 && rightDomain.size() == 1) {
+                    return constant(leftDomain.getLowerBound() != rightDomain.getLowerBound());
+                }
+                break;
+            case LessThan:
+                if (leftDomain.getUpperBound() < rightDomain.getLowerBound()) {
+                    return True;
+                }
+                if (leftDomain.getLowerBound() >= rightDomain.getUpperBound()) {
+                    return False;
+                }
+                break;
+            case LessThanEqual:
+                if (leftDomain.getUpperBound() <= rightDomain.getLowerBound()) {
+                    return True;
+                }
+                if (leftDomain.getLowerBound() > rightDomain.getUpperBound()) {
+                    return False;
+                }
+                break;
+            case GreaterThan:
+                if (leftDomain.getLowerBound() > rightDomain.getUpperBound()) {
+                    return True;
+                }
+                if (leftDomain.getUpperBound() <= rightDomain.getLowerBound()) {
+                    return False;
+                }
+                break;
+            case GreaterThanEqual:
+                if (leftDomain.getLowerBound() >= rightDomain.getUpperBound()) {
+                    return True;
+                }
+                if (leftDomain.getUpperBound() < rightDomain.getLowerBound()) {
+                    return False;
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown op: " + op);
+        }
         return new IrCompare(left, op, right);
     }
 
@@ -130,10 +178,7 @@ public class Irs {
     }
 
     public static IrBoolExpr equal(IrIntExpr left, IrIntExpr right) {
-        if (left.equals(right)) {
-            return True;
-        }
-        return new IrCompare(left, IrCompare.Op.Equal, right);
+        return compare(left, IrCompare.Op.Equal, right);
     }
 
     public static IrSetEquality equal(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
@@ -141,9 +186,6 @@ public class Irs {
     }
 
     public static IrBoolExpr equal(IrSetExpr left, IrSetExpr right) {
-        if (left.equals(right)) {
-            return True;
-        }
         return new IrSetEquality(left, IrSetEquality.Op.Equal, right);
     }
 
@@ -152,10 +194,7 @@ public class Irs {
     }
 
     public static IrBoolExpr notEqual(IrIntExpr left, IrIntExpr right) {
-        if (left.equals(right)) {
-            return False;
-        }
-        return new IrCompare(left, IrCompare.Op.NotEqual, right);
+        return compare(left, IrCompare.Op.NotEqual, right);
     }
 
     public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
@@ -165,36 +204,36 @@ public class Irs {
         return new IrSetEquality(left, IrSetEquality.Op.NotEqual, right);
     }
 
-    public static IrCompare lessThan(IrIntExpr left, int right) {
+    public static IrBoolExpr lessThan(IrIntExpr left, int right) {
         return lessThan(left, constant(right));
     }
 
-    public static IrCompare lessThan(IrIntExpr left, IrIntExpr right) {
-        return new IrCompare(left, IrCompare.Op.LessThan, right);
+    public static IrBoolExpr lessThan(IrIntExpr left, IrIntExpr right) {
+        return compare(left, IrCompare.Op.LessThan, right);
     }
 
-    public static IrCompare lessThanEqual(IrIntExpr left, int right) {
+    public static IrBoolExpr lessThanEqual(IrIntExpr left, int right) {
         return lessThanEqual(left, constant(right));
     }
 
-    public static IrCompare lessThanEqual(IrIntExpr left, IrIntExpr right) {
-        return new IrCompare(left, IrCompare.Op.LessThanEqual, right);
+    public static IrBoolExpr lessThanEqual(IrIntExpr left, IrIntExpr right) {
+        return compare(left, IrCompare.Op.LessThanEqual, right);
     }
 
-    public static IrCompare greaterThan(IrIntExpr left, int right) {
+    public static IrBoolExpr greaterThan(IrIntExpr left, int right) {
         return greaterThan(left, constant(right));
     }
 
-    public static IrCompare greaterThan(IrIntExpr left, IrIntExpr right) {
-        return new IrCompare(left, IrCompare.Op.GreaterThan, right);
+    public static IrBoolExpr greaterThan(IrIntExpr left, IrIntExpr right) {
+        return compare(left, IrCompare.Op.GreaterThan, right);
     }
 
-    public static IrCompare greaterThanEqual(IrIntExpr left, int right) {
+    public static IrBoolExpr greaterThanEqual(IrIntExpr left, int right) {
         return greaterThanEqual(left, constant(right));
     }
 
-    public static IrCompare greaterThanEqual(IrIntExpr left, IrIntExpr right) {
-        return new IrCompare(left, IrCompare.Op.GreaterThanEqual, right);
+    public static IrBoolExpr greaterThanEqual(IrIntExpr left, IrIntExpr right) {
+        return compare(left, IrCompare.Op.GreaterThanEqual, right);
     }
 
     /********************
@@ -215,6 +254,10 @@ public class Irs {
     }
 
     public static IrIntExpr card(IrSetExpr set) {
+        IrDomain card = set.getCard();
+        if (card.size() == 1) {
+            return constant(card.getLowerBound());
+        }
         return new IrCard(set);
     }
 
@@ -489,6 +532,25 @@ public class Irs {
     }
 
     public static IrConstraint selectN(IrBoolExpr[] bools, IrIntExpr n) {
+        boolean allConstant = true;
+        IrDomain nDomain = n.getDomain();
+        for (int i = 0; i < bools.length; i++) {
+            Boolean constant = IrUtil.getConstant(bools[i]);
+            if (Boolean.TRUE.equals(constant)) {
+                if (i >= nDomain.getUpperBound()) {
+                    return FalseTautalogy;
+                }
+            } else if (Boolean.FALSE.equals(constant)) {
+                if (i < nDomain.getLowerBound()) {
+                    return FalseTautalogy;
+                }
+            } else {
+                allConstant = false;
+            }
+        }
+        if (allConstant) {
+            return Tautalogy;
+        }
         return new IrSelectN(bools, n);
     }
 }

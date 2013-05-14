@@ -3,7 +3,6 @@ package org.clafer.ir;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ir.IrDomain.IrBoundDomain;
-import org.clafer.ir.IrDomain.IrEnumDomain;
 
 /**
  *
@@ -19,19 +18,20 @@ public class IrUtil {
     }
 
     public static boolean isTrue(IrBoolExpr boolExpr) {
-        if (boolExpr instanceof IrBoolVar) {
-            IrBoolVar var = (IrBoolVar) boolExpr;
-            return var.isTrue();
-        }
-        return false;
+        return Boolean.TRUE.equals(getConstant(boolExpr));
     }
 
     public static boolean isFalse(IrBoolExpr boolExpr) {
+        return Boolean.FALSE.equals(getConstant(boolExpr));
+    }
+
+    public static Boolean getConstant(IrBoolExpr boolExpr) {
         if (boolExpr instanceof IrBoolVar) {
             IrBoolVar var = (IrBoolVar) boolExpr;
-            return var.isFalse();
+            return var.isTrue() ? Boolean.TRUE
+                    : (var.isFalse() ? Boolean.FALSE : null);
         }
-        return false;
+        return null;
     }
 
     public static boolean isTrue(IrConstraint constraint) {

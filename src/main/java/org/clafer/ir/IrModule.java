@@ -12,10 +12,21 @@ import org.clafer.Check;
  */
 public class IrModule {
 
-    private final List<IrBoolVar> boolVars = new ArrayList<IrBoolVar>();
-    private final List<IrIntVar> intVars = new ArrayList<IrIntVar>();
-    private final List<IrSetVar> setVars = new ArrayList<IrSetVar>();
-    private final List<IrConstraint> constraints = new ArrayList<IrConstraint>();
+    private final List<IrBoolVar> boolVars;
+    private final List<IrIntVar> intVars;
+    private final List<IrSetVar> setVars;
+    private final List<IrConstraint> constraints;
+
+    private IrModule(List<IrBoolVar> boolVars, List<IrIntVar> intVars, List<IrSetVar> setVars, List<IrConstraint> constraints) {
+        this.boolVars = boolVars;
+        this.intVars = intVars;
+        this.setVars = setVars;
+        this.constraints = constraints;
+    }
+
+    public IrModule() {
+        this(new ArrayList<IrBoolVar>(), new ArrayList<IrIntVar>(), new ArrayList<IrSetVar>(), new ArrayList<IrConstraint>());
+    }
 
     public void addBoolVar(IrBoolVar var) {
         boolVars.add(Check.notNull(var));
@@ -66,7 +77,9 @@ public class IrModule {
     }
 
     public void addConstraint(IrConstraint constraint) {
-        constraints.add(Check.notNull(constraint));
+        if (!IrUtil.isTrue(constraint)) {
+            constraints.add(Check.notNull(constraint));
+        }
     }
 
     public void addConstraint(IrBoolExpr expr) {
@@ -82,6 +95,10 @@ public class IrModule {
 
     public List<IrConstraint> getConstraints() {
         return constraints;
+    }
+
+    public IrModule withConstraints(Collection<IrConstraint> constraints) {
+        return new IrModule(boolVars, intVars, setVars, new ArrayList<IrConstraint>(constraints));
     }
 
     @Override

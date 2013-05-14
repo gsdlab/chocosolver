@@ -32,7 +32,7 @@ public class ArrayToSetTest extends ConstraintTest {
             int high = nextInt(5);
 
             IntVar[] array = VariableFactory.enumeratedArray("array", low + high, -low - nextInt(10), high + nextInt(10), solver);
-            SetVar set = VariableFactory.set("set", Util.range(-low - nextInt(10), high + nextInt(10) + 1), solver);
+            SetVar set = VariableFactory.set("set", Util.range(-low - nextInt(10), high + nextInt(10)), solver);
 
             solver.post(Constraints.arrayToSet(array, set));
 
@@ -49,7 +49,7 @@ public class ArrayToSetTest extends ConstraintTest {
         Solver solver = new Solver();
 
         IntVar[] array = VariableFactory.enumeratedArray("array", 5, 0, 100000, solver);
-        SetVar set = VariableFactory.set("set", Util.range(0, 100001), solver);
+        SetVar set = VariableFactory.set("set", Util.range(0, 10000), solver);
 
         solver.post(Constraints.arrayToSet(array, set));
 

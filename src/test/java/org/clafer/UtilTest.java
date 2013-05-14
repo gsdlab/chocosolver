@@ -33,7 +33,7 @@ public class UtilTest {
     @Test
     public void testShiftLeft() {
         for (int repeat = 0; repeat < 100000; repeat++) {
-            int[] array = Util.range(0, rand.nextInt(50) + 1);
+            int[] array = Util.range(0, rand.nextInt(50) );
             int shift = rand.nextInt(array.length);
             Util.shiftLeft(array, shift);
 

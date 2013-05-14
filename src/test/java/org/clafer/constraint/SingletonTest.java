@@ -45,7 +45,7 @@ public class SingletonTest extends ConstraintTest {
         Solver solver = new Solver();
 
         IntVar i = VariableFactory.enumerated("i", -120, 10, solver);
-        SetVar s = VariableFactory.set("s", Util.range(-10, 111), solver);
+        SetVar s = VariableFactory.set("s", Util.range(-10, 110), solver);
 
         solver.post(Constraints.singleton(i, s));
 

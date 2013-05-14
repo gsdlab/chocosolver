@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import solver.variables.SetVar;
 import org.clafer.ast.AstConstraint;
 import java.util.Set;
 import org.clafer.ast.AstEqual;
@@ -52,6 +53,7 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetEquality.Op;
 import org.clafer.ir.IrSetVar;
+import solver.variables.VariableFactory;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -410,9 +412,9 @@ public class AstCompiler {
         int lowCard = clafer.getCard().getLow();
         for (int i = 0; i < children.length; i++) {
             if (partialParentSolution.hasClafer(i)) {
-                children[i] = constant(Util.range(i * lowCard, i * lowCard + lowCard));
+                children[i] = constant(Util.fromTo(i * lowCard, i * lowCard + lowCard));
             } else {
-                children[i] = set(clafer.getName() + "#" + i, Util.range(i * lowCard, i * lowCard + lowCard));
+                children[i] = set(clafer.getName() + "#" + i, Util.fromTo(i * lowCard, i * lowCard + lowCard));
             }
         }
 
@@ -447,7 +449,7 @@ public class AstCompiler {
         for (int i = 0; i < children.length; i++) {
             if (!partialParentSolution.hasClafer(i)) {
                 module.addConstraint(implies(membership.get(clafer.getParent())[i],
-                        equal(children[i], constant(Util.range(i * lowCard, i * lowCard + lowCard)))));
+                        equal(children[i], constant(Util.fromTo(i * lowCard, i * lowCard + lowCard)))));
                 module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
                         equal(children[i], EmptySet)));
             }
