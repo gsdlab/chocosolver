@@ -262,7 +262,7 @@ public class IrCompiler {
                 $bools[i] = bools[i].accept(boolExprCompiler, a);
             }
             IntVar $n = n.accept(intExprCompiler, a);
-
+System.out.println(ir);
             return Constraints.selectN($bools, $n);
         }
     };

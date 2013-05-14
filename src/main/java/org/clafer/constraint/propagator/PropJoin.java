@@ -75,8 +75,8 @@ public class PropJoin extends Propagator<SetVar> {
 
         // Pick to and prune child
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            PropUtil.subsetKer(children[i], to, aCause);
-            PropUtil.subsetEnv(children[i], to, aCause);
+            PropUtil.kerSubsetKer(children[i], to, aCause);
+            PropUtil.envSubsetEnv(children[i], to, aCause);
         }
         
         // Pick take
@@ -95,8 +95,8 @@ public class PropJoin extends Propagator<SetVar> {
                 contradiction(to, "to not subset of children");
             } else if (child != -2) {
                 take.addToKernel(child, aCause);
-                PropUtil.subsetKer(children[child], to, aCause);
-                PropUtil.subsetEnv(children[child], to, aCause);
+                PropUtil.kerSubsetKer(children[child], to, aCause);
+                PropUtil.envSubsetEnv(children[child], to, aCause);
                 children[child].addToKernel(i, aCause);
             }
         }
@@ -153,8 +153,8 @@ public class PropJoin extends Propagator<SetVar> {
                 } else if (child != -2 && to.kernelContains(i)) {
                     // i has only one support
                     take.addToKernel(child, aCause);
-                    PropUtil.subsetKer(children[child], to, aCause);
-                    PropUtil.subsetEnv(children[child], to, aCause);
+                    PropUtil.kerSubsetKer(children[child], to, aCause);
+                    PropUtil.envSubsetEnv(children[child], to, aCause);
                     children[child].addToKernel(i, aCause);
                 }
             }
@@ -167,8 +167,8 @@ public class PropJoin extends Propagator<SetVar> {
             assert take.kernelContains(takeKer);
 
             SetVar child = children[takeKer];
-            PropUtil.subsetKer(child, to, aCause);
-            PropUtil.subsetEnv(child, to, aCause);
+            PropUtil.kerSubsetKer(child, to, aCause);
+            PropUtil.envSubsetEnv(child, to, aCause);
         }
     };
     private final IntProcedure pruneToOnChildEnv = new IntProcedure() {
@@ -194,8 +194,8 @@ public class PropJoin extends Propagator<SetVar> {
             } else if (to.kernelContains(i)) {
                 // One support
                 take.addToKernel(child, aCause);
-                PropUtil.subsetKer(children[child], to, aCause);
-                PropUtil.subsetEnv(children[child], to, aCause);
+                PropUtil.kerSubsetKer(children[child], to, aCause);
+                PropUtil.envSubsetEnv(children[child], to, aCause);
                 children[child].addToKernel(i, aCause);
             }
         }
@@ -239,8 +239,8 @@ public class PropJoin extends Propagator<SetVar> {
                 contradiction(to, "no support for " + toVal);
             } else {
                 take.addToKernel(child, aCause);
-                PropUtil.subsetKer(children[child], to, aCause);
-                PropUtil.subsetEnv(children[child], to, aCause);
+                PropUtil.kerSubsetKer(children[child], to, aCause);
+                PropUtil.envSubsetEnv(children[child], to, aCause);
                 children[child].addToKernel(toVal, aCause);
             }
         }

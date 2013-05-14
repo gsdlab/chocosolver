@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import util.iterators.IntIterator;
 
 /**
@@ -66,16 +65,32 @@ public class Util {
     /**
      * 
      * @param low - inclusive
-     * @param high - exclusive
+     * @param high - inclusive
      * @return 
      */
     public static int[] range(int low, int high) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
-        int[] range = new int[high - low];
+        int[] range = new int[high - low + 1];
         for (int i = 0; i < range.length; i++) {
             range[i] = i + low;
+        }
+        return range;
+    }
+
+    /**
+     * @param from - inclusive
+     * @param to - exclusive
+     * @return 
+     */
+    public static int[] fromTo(int from, int to) {
+        if (from > to) {
+            throw new IllegalArgumentException();
+        }
+        int[] range = new int[to - from];
+        for (int i = 0; i < range.length; i++) {
+            range[i] = i + from;
         }
         return range;
     }
@@ -297,26 +312,6 @@ public class Util {
         return array;
     }
 
-    public static void assertEquals(String message, int a, int b) {
-        if (a != b) {
-            throw new RuntimeException(message);
-        }
-    }
-
-    public static void main(String[] args) {
-        Random rand = new Random();
-        for (int repeat = 0; repeat < 100000; repeat++) {
-            int[] array = Util.range(0, rand.nextInt(50) + 1);
-            int shift = rand.nextInt(array.length);
-            int[] shifted = Util.shiftLeft(Arrays.copyOf(array, array.length), shift);
-
-            for (int i = 0; i < array.length; i++) {
-                assertEquals(
-                        Arrays.toString(array) + " << " + shift + " != " + Arrays.toString(shifted),
-                        array[(i + shift) % array.length], shifted[i]);
-            }
-        }
-    }
 //
 //    public static <T> List<T> add(List<T> list, T... items) {
 //        list.addAll(Arrays.asList(items));
@@ -402,7 +397,6 @@ public class Util {
 //        return a;
 //    }
 //
-
     public static int[] iterate(IntIterator it) {
         TIntArrayList i = new TIntArrayList();
         while (it.hasNext()) {

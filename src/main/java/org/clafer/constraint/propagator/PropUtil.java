@@ -94,6 +94,15 @@ public class PropUtil {
         return true;
     }
 
+    public static boolean isKerSubsetEnv(SetVar sub, SetVar sup) {
+        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
+            if (!sup.envelopeContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean isKerSubsetOf(SetVar sub, TIntCollection sup) {
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
             if (!sup.contains(i)) {
@@ -103,7 +112,7 @@ public class PropUtil {
         return true;
     }
 
-    public static void subsetKer(SetVar sub, SetVar sup, ICause propogator) throws ContradictionException {
+    public static void kerSubsetKer(SetVar sub, SetVar sup, ICause propogator) throws ContradictionException {
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
             sup.addToKernel(i, propogator);
         }
@@ -117,7 +126,7 @@ public class PropUtil {
         }
     }
 
-    public static void subsetEnv(SetVar sub, SetVar sup, ICause propogator) throws ContradictionException {
+    public static void envSubsetEnv(SetVar sub, SetVar sup, ICause propogator) throws ContradictionException {
         for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
             if (!sup.envelopeContains(i)) {
                 sub.removeFromEnvelope(i, propogator);

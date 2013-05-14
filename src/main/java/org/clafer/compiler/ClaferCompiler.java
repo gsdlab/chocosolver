@@ -1,5 +1,7 @@
 package org.clafer.compiler;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.Scope;
 import org.clafer.analysis.AnalysisUtil;
 import org.clafer.ast.AstClafer;
@@ -16,6 +18,7 @@ import org.clafer.ir.compiler.IrSolutionMap;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
 import solver.constraints.nary.Sum;
+import solver.constraints.propagators.set.PropAllEqual;
 import solver.search.loop.monitors.IMessage;
 import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.search.strategy.IntStrategyFactory;
@@ -23,6 +26,7 @@ import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
+import solver.variables.SetVar;
 import solver.variables.VariableFactory;
 
 /**
@@ -41,10 +45,19 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
+                SetStrategyFactory.setLex(forgetUnused(solution.getIrSolution().getSetVars())),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
-                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
         return new ClaferSolver(solver, solution);
+    }
+    private static SetVar[] forgetUnused(SetVar[] svs) {
+        List<SetVar> filtered = new ArrayList<SetVar>();
+        for (int i = 0; i < svs.length; i++) {
+            if (!svs[i].getName().endsWith("Unused")) {
+                filtered.add(svs[i]);
+            }
+        }
+        return filtered.toArray(new SetVar[filtered.size()]);
     }
 
     private static class DefaultDecisionMessage implements IMessage {
@@ -73,7 +86,7 @@ public class ClaferCompiler {
         solver.post(IntConstraintFactory.sum(score, sum));
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
+                SetStrategyFactory.setLex(forgetUnused(solution.getIrSolution().getSetVars())),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars()),
                 IntStrategyFactory.firstFail_InDomainMin(score)));

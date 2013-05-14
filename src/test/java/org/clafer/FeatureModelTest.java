@@ -195,7 +195,7 @@ public class FeatureModelTest {
         c554_SQLITE_DEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(9)));
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
-        ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(150, -5000, 5000), c2_footprint.getRef());
+        ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());
         System.out.println(solver.optimal());
     }
 }

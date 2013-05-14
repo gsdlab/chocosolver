@@ -5,6 +5,7 @@ import org.clafer.constraint.propagator.PropJoinRef;
 import org.clafer.constraint.propagator.PropSelectN;
 import org.clafer.constraint.propagator.PropSingleton;
 import org.clafer.constraint.propagator.PropArrayToSet;
+import org.clafer.constraint.propagator.PropSetEqual;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -33,6 +34,12 @@ public class Constraints {
         vars[ivars.length] = svar;
         Constraint constraint = new Constraint(vars, svar.getSolver());
         constraint.setPropagators(new PropArrayToSet(ivars, svar));
+        return constraint;
+    }
+
+    public static Constraint equal(SetVar s1, SetVar s2) {
+        Constraint constraint = new Constraint(new SetVar[]{s1, s2}, s1.getSolver());
+        constraint.setPropagators(new PropSetEqual(s1, s2));
         return constraint;
     }
 

@@ -61,8 +61,6 @@ import static org.clafer.ir.Irs.*;
  */
 public class AstCompiler {
 
-    public static void main(String[] args) {
-    }
     private final AstModel model;
     private final Analysis analysis;
     private final IrModule module;
@@ -543,6 +541,7 @@ public class AstCompiler {
 
             IrExpr $children = children.accept(this, a);
             if ($children instanceof IrIntExpr) {
+                // TODO: remove this, and do this as an optimization step
                 if (getScope(childrenType.getParent()) == 1) {
                     return constant(0);
                 }

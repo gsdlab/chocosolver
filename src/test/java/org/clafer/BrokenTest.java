@@ -23,7 +23,9 @@ public class BrokenTest {
         }
         IntVar[] ivs = VariableFactory.enumeratedArray("iv", 10, 0, 3, solver);
 
-        solver.set(new SetSearchStrategy(Arrays.copyOf(svs, 3)));
+        solver.post(SetConstraintsFactory.cardinality(svs[0], VariableFactory.fixed(3, solver)));
+        solver.post(SetConstraintsFactory.cardinality(svs[1], VariableFactory.fixed(3, solver)));
+        solver.set(new SetSearchStrategy(Arrays.copyOf(svs, 2)));
 
         solver.post(SetConstraintsFactory.int_channel(svs, ivs, 0, 0));
         if (solver.findSolution()) {
