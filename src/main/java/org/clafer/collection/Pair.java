@@ -1,6 +1,6 @@
 package org.clafer.collection;
 
-import org.clafer.Check;
+import org.clafer.Util;
 
 /**
  *
@@ -12,8 +12,8 @@ public class Pair<A, B> {
     private final B snd;
 
     public Pair(A fst, B snd) {
-        this.fst = Check.notNull(fst);
-        this.snd = Check.notNull(snd);
+        this.fst = fst;
+        this.snd = snd;
     }
 
     public A getFst() {
@@ -26,7 +26,7 @@ public class Pair<A, B> {
 
     @Override
     public int hashCode() {
-        return fst.hashCode() ^ snd.hashCode();
+        return Util.hashCode(fst) ^ Util.hashCode(snd.hashCode());
     }
 
     @Override
@@ -34,7 +34,7 @@ public class Pair<A, B> {
         if (obj instanceof Pair<?, ?>) {
             Pair<?, ?> other = (Pair<?, ?>) obj;
 
-            return fst.equals(other.fst) && snd.equals(other.snd);
+            return Util.equals(fst, other.fst) && Util.equals(snd, other.snd);
         }
         return false;
     }

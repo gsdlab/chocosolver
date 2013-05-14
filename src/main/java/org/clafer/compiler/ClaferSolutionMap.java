@@ -37,7 +37,7 @@ public class ClaferSolutionMap {
                 topInstances.add(getInstanceClafer(topClafer, topId));
             }
         }
-        return new InstanceModel(toArray(topInstances));
+        return new InstanceModel(topInstances.toArray(new InstanceClafer[topInstances.size()]));
     }
 
     private InstanceClafer getInstanceClafer(AstConcreteClafer clafer, int id) {
@@ -65,10 +65,6 @@ public class ClaferSolutionMap {
             ref = irSolution.getIntVar(refIrVar).getValue();
         }
         return ref;
-    }
-
-    private InstanceClafer[] toArray(List<InstanceClafer> instances) {
-        return instances.toArray(new InstanceClafer[instances.size()]);
     }
 
     public AstSolutionMap getAstSolution() {

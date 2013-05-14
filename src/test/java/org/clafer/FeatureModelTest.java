@@ -1,21 +1,12 @@
 package org.clafer;
 
-import java.util.Arrays;
-import solver.variables.IntVar;
-import solver.Solver;
 import org.clafer.compiler.ClaferObjective;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.ast.compiler.AstCompiler;
+import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.ResolutionPolicy;
-import solver.constraints.IntConstraintFactory;
-import solver.search.loop.monitors.SearchMonitorFactory;
-import solver.search.strategy.IntStrategyFactory;
-import solver.variables.BoolVar;
-import solver.variables.VariableFactory;
 import static org.clafer.ast.Asts.*;
 
 /**
@@ -24,32 +15,32 @@ import static org.clafer.ast.Asts.*;
  */
 public class FeatureModelTest {
 
-    @Test(timeout = 10000)
-    public void testSmall() {
-        Solver solver = new Solver();
+//    @Test(timeout = 10000)
+//    public void testSmall() {
+//        Solver solver = new Solver();
+//
+//        int n = 50;
+//        BoolVar[] members = VariableFactory.boolArray("member", n, solver);
+//        IntVar[] footprints = new IntVar[n];
+//
+//        for (int i = 0; i < n; i++) {
+//            int[] values = new int[]{0, n - i * 2 + 1};
+//            Arrays.sort(values);
+//            footprints[i] = VariableFactory.enumerated("footprint#" + i, values, solver);
+//            solver.post(IntConstraintFactory.implies(members[i],
+//                    IntConstraintFactory.arithm(footprints[i], "=", VariableFactory.fixed(n - i * 2 + 1, solver))));
+//            solver.post(IntConstraintFactory.implies(VariableFactory.not(members[i]),
+//                    IntConstraintFactory.arithm(footprints[i], "=", VariableFactory.fixed(0, solver))));
+//        }
+//        IntVar score = VariableFactory.enumerated("score", -10000, 10000, solver);
+//        solver.post(IntConstraintFactory.sum(footprints, score));
+//        solver.set(IntStrategyFactory.firstFail_InDomainMax(members));
+//        SearchMonitorFactory.log(solver, true, true);
+//        int[] answ = solver.findOptimalSolution(ResolutionPolicy.MINIMIZE, score);
+//        System.out.println(Arrays.toString(answ));
+//    }
 
-        int n = 50;
-        BoolVar[] members = VariableFactory.boolArray("member", n, solver);
-        IntVar[] footprints = new IntVar[n];
-
-        for (int i = 0; i < n; i++) {
-            int[] values = new int[]{0, n - i * 2 + 1};
-            Arrays.sort(values);
-            footprints[i] = VariableFactory.enumerated("footprint#" + i, values, solver);
-            solver.post(IntConstraintFactory.implies(members[i],
-                    IntConstraintFactory.arithm(footprints[i], "=", VariableFactory.fixed(n - i * 2 + 1, solver))));
-            solver.post(IntConstraintFactory.implies(VariableFactory.not(members[i]),
-                    IntConstraintFactory.arithm(footprints[i], "=", VariableFactory.fixed(0, solver))));
-        }
-        IntVar score = VariableFactory.enumerated("score", -10000, 10000, solver);
-        solver.post(IntConstraintFactory.sum(footprints, score));
-        solver.set(IntStrategyFactory.firstFail_InDomainMax(members));
-        SearchMonitorFactory.log(solver, true, true);
-        int[] answ = solver.findOptimalSolution(ResolutionPolicy.MINIMIZE, score);
-        System.out.println(Arrays.toString(answ));
-    }
-
-    @Test(timeout = 10000)
+    @Test(timeout = 60000)
     public void testSmallFeatureModel() {
         AstModel model = newModel();
 
@@ -62,13 +53,11 @@ public class FeatureModelTest {
             f.addConstraint(equal(joinRef(join($this(), footprint)), constant(n - i * 2 + 1)));
         }
 
-        ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(1000, -10000, 10000), footprint.getRef());
-        System.out.println(solver.solver);
-        SearchMonitorFactory.log(solver.solver, true, true);
-        System.out.println(solver.optimal());
+        ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(100, -1000, 1000), footprint.getRef());
+        assertEquals(-576, solver.optimal().getFst().intValue());
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 60000)
     public void testSqlLite() {
         AstModel model = newModel();
         AstAbstractClafer c3_SQLite = model.addAbstractClafer("c3_SQLite");
@@ -250,8 +239,6 @@ public class FeatureModelTest {
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());
-        System.out.println(solver.solver);
-        SearchMonitorFactory.log(solver.solver, true, true);
-        solver.optimal();
+        assertEquals(-299, solver.optimal().getFst().intValue());
     }
 }

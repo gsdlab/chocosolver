@@ -88,6 +88,16 @@ public class AstConcreteClafer extends AstClafer {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
+
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    @Override
     public String toString() {
         return getName();
     }

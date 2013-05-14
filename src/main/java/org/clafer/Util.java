@@ -66,6 +66,10 @@ public class Util {
         return (a == b) || (a != null && a.equals(b));
     }
 
+    public static int hashCode(Object o) {
+        return o != null ? o.hashCode() : 0;
+    }
+
     /**
      * 
      * @param low - inclusive

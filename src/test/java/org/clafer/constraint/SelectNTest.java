@@ -30,7 +30,7 @@ public class SelectNTest extends ConstraintTest {
     public void testSelectN() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
-            int num = nextInt(100);
+            int num = nextInt(100) + 1;
 
             BoolVar[] bools = VariableFactory.boolArray("bool", num, solver);
             IntVar n = VariableFactory.enumerated("n", 0, num, solver);

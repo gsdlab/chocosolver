@@ -31,6 +31,16 @@ public class AstRef {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
+
+    @Override
+    public int hashCode() {
+        return sourceType.hashCode() ^ targetType.hashCode();
+    }
+
+    @Override
     public String toString() {
         return sourceType.getName() + ".ref::" + targetType;
     }

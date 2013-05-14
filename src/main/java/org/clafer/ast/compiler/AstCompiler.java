@@ -713,7 +713,7 @@ public class AstCompiler {
         int[][] partialInts = getPartialInts(ref);
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
         for (int i = 0; i < ivs.length; i++) {
-            if (partialInts == null) {
+            if (partialInts[i] == null) {
                 // TODO what if '0' is not between intlow and inthigh
                 ivs[i] = boundInt(src.getName() + "@Ref" + i, getScopeLow(tar), getScopeHigh(tar));
             } else {

@@ -34,7 +34,7 @@ public class RhinoShellContext {
             throw new IllegalArgumentException("Cannot minimize " + clafer);
         }
         ClaferObjective objective = ClaferCompiler.compileMinimize(context.getModel(), context.getScope(), clafer.getRef());
-        return objective.optimal();
+        return objective.optimal().getSnd();
 
     }
 

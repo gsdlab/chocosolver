@@ -59,7 +59,7 @@ public class ClaferCompiler {
         solver.post(IntConstraintFactory.sum(score, sum));
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolVars())
 //                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
 //                IntStrategyFactory.firstFail_InDomainMin(score),
 //                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars())

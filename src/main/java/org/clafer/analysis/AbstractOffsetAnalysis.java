@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.clafer.Check;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
@@ -39,13 +38,6 @@ public class AbstractOffsetAnalysis {
                     reverseOffsets.add(sub);
                 }
                 offset += skip;
-
-                if (sub instanceof AstAbstractClafer) {
-                    Offsets subOffsets = AnalysisUtil.notNull(sub + " offset not analyzed yet", offsetMap.get((AstAbstractClafer) sub));
-                    for (Entry<AstClafer, Integer> entry : subOffsets.offsets.entrySet()) {
-                        offsets.put(entry.getKey(), entry.getValue() + offset);
-                    }
-                }
             }
             offsetMap.put(abstractClafer, new Offsets(abstractClafer, offsets, reverseOffsets.toArray(new AstClafer[reverseOffsets.size()])));
         }
@@ -66,7 +58,7 @@ public class AbstractOffsetAnalysis {
         }
 
         public int getOffset(AstClafer sub) {
-            return AnalysisUtil.notNull(sub + " is not a sub clafer of " + sup, offsets.get(sub)).intValue();
+            return AnalysisUtil.notNull(sub + " is not a direct sub clafer of " + sup, offsets.get(sub)).intValue();
         }
 
         public AstClafer getClafer(int offset) {

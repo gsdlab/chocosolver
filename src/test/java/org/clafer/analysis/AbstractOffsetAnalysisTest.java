@@ -45,8 +45,12 @@ public class AbstractOffsetAnalysisTest {
         Map<AstClafer, Card> globalCards = GlobalCardAnalysis.analyze(model, scope);
         Map<AstAbstractClafer, Offsets> offsetMap = AbstractOffsetAnalysis.analyze(model, globalCards);
 
-        assertEquals(0, offsetMap.get(object).getOffset(object));
-        assertEquals(offsetMap.get(object).getOffset(jimmy),
-                offsetMap.get(object).getOffset(primate) + offsetMap.get(primate).getOffset(jimmy));
+        Offsets offsets = offsetMap.get(object);
+        for (AstClafer sub : object.getSubs()) {
+            assertEquals(sub, offsets.getClafer(offsets.getOffset(sub)));
+        }
+        for (int i = 0; i < scope.getScope(object); i++) {
+            assertTrue(i >= offsets.getOffset(offsets.getClafer(i)));
+        }
     }
 }
