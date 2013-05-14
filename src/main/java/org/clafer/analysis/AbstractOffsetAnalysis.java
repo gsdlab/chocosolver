@@ -27,13 +27,18 @@ public class AbstractOffsetAnalysis {
         Map<AstAbstractClafer, Offsets> offsetMap = new HashMap<AstAbstractClafer, Offsets>();
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             Map<AstClafer, Integer> offsets = new HashMap<AstClafer, Integer>();
+            List<AstClafer> reverseOffsets = new ArrayList<AstClafer>();
             int offset = 0;
             List<AstClafer> subs = new ArrayList<AstClafer>(abstractClafer.getSubs());
             AnalysisUtil.descendingGlobalCardRatio(subs, globalCards);
             List<AstClafer> greedy = subs;
             for (AstClafer sub : greedy) {
                 offsets.put(sub, offset);
-                offset += globalCards.get(sub).getHigh();
+                int skip = globalCards.get(sub).getHigh();
+                for (int i = 0; i < skip; i++) {
+                    reverseOffsets.add(sub);
+                }
+                offset += skip;
 
                 if (sub instanceof AstAbstractClafer) {
                     Offsets subOffsets = AnalysisUtil.notNull(sub + " offset not analyzed yet", offsetMap.get((AstAbstractClafer) sub));
@@ -42,8 +47,7 @@ public class AbstractOffsetAnalysis {
                     }
                 }
             }
-            offsets.put(abstractClafer, 0);
-            offsetMap.put(abstractClafer, new Offsets(abstractClafer, offsets));
+            offsetMap.put(abstractClafer, new Offsets(abstractClafer, offsets, reverseOffsets.toArray(new AstClafer[reverseOffsets.size()])));
         }
         return offsetMap;
     }
@@ -52,14 +56,21 @@ public class AbstractOffsetAnalysis {
 
         private final AstAbstractClafer sup;
         private final Map<AstClafer, Integer> offsets;
+        private final AstClafer[] reverseOffsets;
 
-        public Offsets(AstAbstractClafer sup, Map<AstClafer, Integer> offsets) {
+        Offsets(AstAbstractClafer sup, Map<AstClafer, Integer> offsets, AstClafer[] reverseOffsets) {
             this.sup = Check.notNull(sup);
             this.offsets = Check.notNull(offsets);
+            this.reverseOffsets = Check.noNulls(reverseOffsets);
+
         }
 
         public int getOffset(AstClafer sub) {
             return AnalysisUtil.notNull(sub + " is not a sub clafer of " + sup, offsets.get(sub)).intValue();
+        }
+
+        public AstClafer getClafer(int offset) {
+            return reverseOffsets[offset];
         }
 
         @Override

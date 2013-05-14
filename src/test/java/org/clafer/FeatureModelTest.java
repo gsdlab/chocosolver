@@ -28,7 +28,7 @@ public class FeatureModelTest {
     public void testSmall() {
         Solver solver = new Solver();
 
-        int n = 15;
+        int n = 50;
         BoolVar[] members = VariableFactory.boolArray("member", n, solver);
         IntVar[] footprints = new IntVar[n];
 
@@ -56,7 +56,7 @@ public class FeatureModelTest {
         AstAbstractClafer feature = model.addAbstractClafer("feature");
         AstConcreteClafer footprint = feature.addChild("footprint").withCard(1, 1).refTo(IntType);
 
-        int n = 15;
+        int n = 50;
         for (int i = 0; i < n; i++) {
             AstConcreteClafer f = model.addTopClafer("f" + i).withCard(0, 1).extending(feature);
             f.addConstraint(equal(joinRef(join($this(), footprint)), constant(n - i * 2 + 1)));
@@ -65,7 +65,7 @@ public class FeatureModelTest {
         ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(1000, -10000, 10000), footprint.getRef());
         System.out.println(solver.solver);
         SearchMonitorFactory.log(solver.solver, true, true);
-//        System.out.println(solver.optimal());
+        System.out.println(solver.optimal());
     }
 
     @Test(timeout = 10000)

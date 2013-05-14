@@ -140,7 +140,7 @@ public class PartialSolutionAnalysis {
 
         /**
          * @param id
-         * @return - true if id exists, false if unknown.
+         * @return true if id exists, false if unknown.
          */
         public boolean hasClafer(int id) {
             return solution[id];
@@ -156,7 +156,7 @@ public class PartialSolutionAnalysis {
 
         /**
          * @param id
-         * @return - id's possible parents
+         * @return id's possible parents
          */
         public int[] getPossibleParents(int id) {
             return parent[id];

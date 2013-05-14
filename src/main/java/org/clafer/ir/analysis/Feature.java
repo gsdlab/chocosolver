@@ -208,6 +208,6 @@ public class Feature {
             }
             names.add(var.getName());
         }
-        System.out.println(solver.find());
+//        System.out.println(solver.find());
     }
 }

@@ -1,6 +1,5 @@
 package org.clafer.ast.compiler;
 
-import solver.variables.SetVar;
 import org.clafer.ast.AstConstraint;
 import java.util.Set;
 import org.clafer.ast.AstEqual;
@@ -44,8 +43,8 @@ import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.Card;
-import org.clafer.collection.DirectedGraphBuilder;
-import org.clafer.collection.DirectedVertex;
+import org.clafer.collection.KeyGraph;
+import org.clafer.collection.Vertex;
 import org.clafer.collection.TopologicalSort;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrDomain;
@@ -53,7 +52,6 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetEquality.Op;
 import org.clafer.ir.IrSetVar;
-import solver.variables.VariableFactory;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -82,15 +80,15 @@ public class AstCompiler {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = AnalysisUtil.getConcreteClafers(model);
 
-        DirectedGraphBuilder<AstClafer> dependency = new DirectedGraphBuilder<AstClafer>();
+        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
         for (AstAbstractClafer abstractClafer : abstractClafers) {
-            DirectedVertex<AstClafer> node = dependency.getVertex(abstractClafer);
+            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
             for (AstClafer sub : abstractClafer.getSubs()) {
                 node.addNeighbour(dependency.getVertex(sub));
             }
         }
         for (AstConcreteClafer concreteClafer : concreteClafers) {
-            DirectedVertex<AstClafer> node = dependency.getVertex(concreteClafer);
+            Vertex<AstClafer> node = dependency.getVertex(concreteClafer);
             if (Format.ParentGroup.equals(getFormat(concreteClafer))) {
                 node.addNeighbour(dependency.getVertex(concreteClafer.getParent()));
             }
@@ -711,18 +709,19 @@ public class AstCompiler {
         AstClafer src = ref.getSourceType();
         AstClafer tar = ref.getTargetType();
 
-        int[] partialInts = getPartialInts(ref);
+        PartialSolution partialSolution = getPartialSolution(src);
+        int[][] partialInts = getPartialInts(ref);
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
         for (int i = 0; i < ivs.length; i++) {
-            int[] instantiate = analysis.getPartialRefInts(ref, i);
-            if (instantiate == null) {
-                if (partialInts == null) {
-                    ivs[i] = boundInt(src.getName() + "@Ref" + i, getScopeLow(tar), getScopeHigh(tar));
-                } else {
-                    ivs[i] = enumInt(src.getName() + "@Ref" + i, partialInts);
-                }
+            if (partialInts == null) {
+                // TODO what if '0' is not between intlow and inthigh
+                ivs[i] = boundInt(src.getName() + "@Ref" + i, getScopeLow(tar), getScopeHigh(tar));
             } else {
-                ivs[i] = enumInt(src.getName() + "@Ref" + i, Util.cons(0, instantiate));
+                if (partialSolution.hasClafer(i)) {
+                    ivs[i] = enumInt(src.getName() + "@Ref" + i, partialInts[i]);
+                } else {
+                    ivs[i] = enumInt(src.getName() + "@Ref" + i, Util.cons(0, partialInts[i]));
+                }
             }
         }
 
@@ -756,7 +755,7 @@ public class AstCompiler {
         return clafer.hasParent() ? getPartialSolution(clafer.getParent()) : PartialSolution.rootSolution();
     }
 
-    public int[] getPartialInts(AstRef ref) {
+    public int[][] getPartialInts(AstRef ref) {
         return analysis.getPartialInts(ref);
     }
 

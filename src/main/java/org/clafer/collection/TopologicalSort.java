@@ -16,17 +16,13 @@ import java.util.Stack;
 public class TopologicalSort<V> {
 
     private int index = 0;
-    private Map<DirectedVertex<V>, Index> vertexIndices = new HashMap<DirectedVertex<V>, Index>();
-    private Stack<DirectedVertex<V>> S = new Stack<DirectedVertex<V>>();
+    private Map<Vertex<V>, Index> vertexIndices = new HashMap<Vertex<V>, Index>();
+    private Stack<Vertex<V>> S = new Stack<Vertex<V>>();
     private List<Set<V>> components = new ArrayList<Set<V>>();
 
-    public static <V> List<Set<V>> computeStronglyConnectedComponents(DirectedGraphBuilder<V> graph) {
-        return computeStronglyConnectedComponents(graph.toGraph());
-    }
-
-    public static <V> List<Set<V>> computeStronglyConnectedComponents(DirectedGraph<V> graph) {
+    public static <V> List<Set<V>> computeStronglyConnectedComponents(Graph<V> graph) {
         TopologicalSort<V> tarjan = new TopologicalSort<V>();
-        for (DirectedVertex vertex : graph.getVertices()) {
+        for (Vertex vertex : graph.getVertices()) {
             if (!tarjan.vertexIndices.containsKey(vertex)) {
                 tarjan.strongConnect(vertex);
             }
@@ -34,14 +30,14 @@ public class TopologicalSort<V> {
         return tarjan.components;
     }
 
-    private Index strongConnect(DirectedVertex<V> vertex) {
+    private Index strongConnect(Vertex<V> vertex) {
         Index vertexIndex = new Index(index, index);
         vertexIndices.put(vertex, vertexIndex);
         index++;
 
         S.push(vertex);
 
-        for (DirectedVertex<V> neighbour : vertex.getNeighbours()) {
+        for (Vertex<V> neighbour : vertex.getNeighbours()) {
             Index neighbourIndex = vertexIndices.get(neighbour);
             if (neighbourIndex == null) {
                 neighbourIndex = strongConnect(neighbour);
@@ -54,7 +50,7 @@ public class TopologicalSort<V> {
         if (vertexIndex.getLowIndex() == vertexIndex.getIndex()) {
             Set<V> component = new HashSet<V>();
 
-            DirectedVertex<V> cycle;
+            Vertex<V> cycle;
             do {
                 cycle = S.pop();
                 component.add(cycle.getData());

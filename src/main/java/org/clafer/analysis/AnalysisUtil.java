@@ -90,6 +90,9 @@ public class AnalysisUtil {
     }
 
     public static List<AstConcreteClafer> getConcreteSubs(AstClafer clafer) {
+        if (clafer instanceof AstConcreteClafer) {
+            return Collections.singletonList((AstConcreteClafer) clafer);
+        }
         List<AstConcreteClafer> subs = new ArrayList<AstConcreteClafer>();
         getConcreteSubs(clafer, subs);
         return subs;
