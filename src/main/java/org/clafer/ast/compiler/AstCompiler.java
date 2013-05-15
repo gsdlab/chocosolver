@@ -803,7 +803,7 @@ public class AstCompiler {
             return equal(setCard, card.getLow());
         }
         if (card.hasLow() && card.hasHigh()) {
-            return member(setCard, card.getLow(), card.getHigh());
+            return between(setCard, card.getLow(), card.getHigh());
         }
         if (card.hasLow()) {
             return greaterThanEqual(setCard, card.getLow());

@@ -8,8 +8,8 @@ import org.clafer.ir.IrElement;
 import org.clafer.ir.IrHalfReification;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrMember;
-import org.clafer.ir.IrNotMember;
+import org.clafer.ir.IrBetween;
+import org.clafer.ir.IrNotBetween;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
@@ -344,7 +344,7 @@ public class IrCompiler {
         }
 
         @Override
-        public BoolVar visit(IrMember ir, Void a) {
+        public BoolVar visit(IrBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
             BoolVar reified = numBoolVar("Member");
             solver.post(_implies(reified, _member($var, ir.getLow(), ir.getHigh())));
@@ -353,7 +353,7 @@ public class IrCompiler {
         }
 
         @Override
-        public BoolVar visit(IrNotMember ir, Void a) {
+        public BoolVar visit(IrNotBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
             BoolVar reified = numBoolVar("NotMember");
             solver.post(_implies(reified, _not_member($var, ir.getLow(), ir.getHigh())));
@@ -431,13 +431,13 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrMember ir, Void a) {
+        public Constraint visit(IrBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
             return _member($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
-        public Constraint visit(IrNotMember ir, Void a) {
+        public Constraint visit(IrNotBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
             return _not_member($var, ir.getLow(), ir.getHigh());
         }
@@ -504,12 +504,12 @@ public class IrCompiler {
         }
 
         @Override
-        public ALogicTree visit(IrMember ir, Void a) {
+        public ALogicTree visit(IrBetween ir, Void a) {
             return Literal.pos(ir.accept(boolExprCompiler, a));
         }
 
         @Override
-        public ALogicTree visit(IrNotMember ir, Void a) {
+        public ALogicTree visit(IrNotBetween ir, Void a) {
             return Literal.pos(ir.accept(boolExprCompiler, a));
         }
 

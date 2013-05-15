@@ -16,9 +16,9 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrIfOnlyIf ir, A a);
 
-    public B visit(IrMember ir, A a);
+    public B visit(IrBetween ir, A a);
 
-    public B visit(IrNotMember ir, A a);
+    public B visit(IrNotBetween ir, A a);
 
     public B visit(IrCompare ir, A a);
 

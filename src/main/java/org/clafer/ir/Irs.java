@@ -113,7 +113,7 @@ public class Irs {
         return new IrIfOnlyIf(left, right);
     }
 
-    public static IrBoolExpr member(IrIntExpr var, int low, int high) {
+    public static IrBoolExpr between(IrIntExpr var, int low, int high) {
         IrDomain domain = var.getDomain();
         if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
             return True;
@@ -121,10 +121,10 @@ public class Irs {
         if (domain.getLowerBound() > high || domain.getUpperBound() < low) {
             return False;
         }
-        return new IrMember(var, low, high);
+        return new IrBetween(var, low, high);
     }
 
-    public static IrBoolExpr notMember(IrIntExpr var, int low, int high) {
+    public static IrBoolExpr notBetween(IrIntExpr var, int low, int high) {
         IrDomain domain = var.getDomain();
         if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
             return False;
@@ -132,7 +132,7 @@ public class Irs {
         if (domain.getLowerBound() > high || domain.getUpperBound() < low) {
             return True;
         }
-        return new IrNotMember(var, low, high);
+        return new IrNotBetween(var, low, high);
     }
 
     public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {

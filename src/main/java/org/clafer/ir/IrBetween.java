@@ -6,12 +6,12 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrMember implements IrDualExpr {
+public class IrBetween implements IrDualExpr {
 
     private final IrIntExpr var;
     private final int low, high;
 
-    IrMember(IrIntExpr var, int low, int high) {
+    IrBetween(IrIntExpr var, int low, int high) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
@@ -39,7 +39,7 @@ public class IrMember implements IrDualExpr {
 
     @Override
     public IrBoolExpr opposite() {
-        return Irs.notMember(var, low, high);
+        return Irs.notBetween(var, low, high);
     }
 
     @Override
