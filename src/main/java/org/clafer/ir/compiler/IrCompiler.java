@@ -106,11 +106,15 @@ public class IrCompiler {
         return VariableFactory.bool(name + "#" + varNum++, solver);
     }
 
-    private IntVar numIntVar(String name, IrDomain domain) {
+    private IntVar intVar(String name, IrDomain domain) {
         if (domain.isBounded()) {
-            return VariableFactory.enumerated(name + "#" + varNum++, domain.getLowerBound(), domain.getUpperBound(), solver);
+            return VariableFactory.enumerated(name, domain.getLowerBound(), domain.getUpperBound(), solver);
         }
         return VariableFactory.enumerated(name + "#" + varNum++, domain.getValues(), solver);
+    }
+
+    private IntVar numIntVar(String name, IrDomain domain) {
+        return intVar(name, domain);
     }
 
     private IntVar numIntVar(String name, int low, int high) {
@@ -155,7 +159,7 @@ public class IrCompiler {
 //            if (domain instanceof IrEnumDomain && domain.getUpperBound() - domain.getLowerBound() < 100) {
 //                return VariableFactory.enumerated(ir.getName(), domain.getValues(), solver);
 //            }
-            return numIntVar(ir.getName(), ir.getDomain());
+            return intVar(ir.getName(), ir.getDomain());
         }
     };
     private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
@@ -176,7 +180,19 @@ public class IrCompiler {
             }
             IrDomain env = a.getEnv();
             IrDomain ker = a.getKer();
-            return VariableFactory.set(a.getName(), env.getValues(), ker.getValues(), solver);
+            IrDomain card = a.getCard();
+            SetVar set = VariableFactory.set(a.getName(), env.getValues(), ker.getValues(), solver);
+
+            if (card.getUpperBound() < env.size()) {
+                IntVar setCard = setCardVar.get(set);
+                solver.post(_arithm(setCard, "<=", card.getUpperBound()));
+            }
+            if (card.getLowerBound() > ker.size()) {
+                IntVar setCard = setCardVar.get(set);
+                solver.post(_arithm(setCard, ">=", card.getLowerBound()));
+            }
+
+            return set;
         }
     };
     private final CacheMap<SetVar, IntVar> setCardVar = new CacheMap<SetVar, IntVar>() {
@@ -748,16 +764,15 @@ public class IrCompiler {
         return IntConstraintFactory.arithm(var1, op1, var2, op2, cste);
     }
 
-    @Deprecated
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
-        if (var1.instantiated() && var2.instantiated()) {
-            // REMOVE
-            throw new Error();
-        }
         if (var2.instantiated()) {
             return IntConstraintFactory.arithm(var1, op, var2.getValue());
         }
         return IntConstraintFactory.arithm(var1, op, var2);
+    }
+
+    private static Constraint _arithm(IntVar var1, String op, int c) {
+        return IntConstraintFactory.arithm(var1, op, c);
     }
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {

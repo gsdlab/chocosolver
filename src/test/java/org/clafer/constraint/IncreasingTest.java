@@ -13,7 +13,7 @@ import solver.variables.VariableFactory;
  */
 public class IncreasingTest extends ConstraintTest {
 
-    private static void checkCorrectness(IntVar[] vars) {
+    private void checkCorrectness(IntVar[] vars) {
         int[] $vars = PropUtil.getValues(vars);
 
         for (int i = 1; i < vars.length; i++) {

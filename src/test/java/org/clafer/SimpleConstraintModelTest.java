@@ -64,25 +64,4 @@ public class SimpleConstraintModelTest {
         ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2));
         assertEquals(4, solver.allInstances().length);
     }
-
-    @Test
-    public void testUniqueRefs() {
-        AstModel model = newModel();
-
-        AstConcreteClafer person = model.addTopClafer("Person").withCard(1, 1);
-        AstConcreteClafer age = person.addChild("Age").withCard(2, 2).refToUnique(IntType);
-
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2, -2, 2));
-        assertEquals(20, solver.allInstances().length);
-    }
-
-    @Test
-    public void testTopLevelUniqueRefs() {
-        AstModel model = newModel();
-
-        AstConcreteClafer age = model.addTopClafer("Age").withCard(2, 2).refToUnique(IntType);
-
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2, -2, 2));
-        assertEquals(20, solver.allInstances().length);
-    }
 }

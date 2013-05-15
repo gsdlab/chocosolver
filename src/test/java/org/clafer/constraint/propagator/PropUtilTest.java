@@ -18,7 +18,7 @@ import solver.variables.VariableFactory;
 public class PropUtilTest {
 
     private final Random rand = new Random();
-    private static final int problemSize = 100000;
+    private static final int problemSize = 10000;
 
     private boolean canIntersectBruteForce(IntVar e1, SetVar e2) {
         for (int i = e2.getEnvelopeFirst(); i != SetVar.END; i = e2.getEnvelopeNext()) {
@@ -63,21 +63,6 @@ public class PropUtilTest {
             SetVar sv = randSetVar("sv" + i, solver);
 
             assertEquals(canIntersectBruteForce(iv, sv), PropUtil.canIntersect(iv, sv));
-        }
-    }
-
-    @Test
-    public void testMinMaxEnv() {
-        Solver solver = new Solver();
-        SetVar sv = randSetVar("sv", solver);
-        int[] dom = PropUtil.iterateEnv(sv);
-        Pair<int[], int[]> minMax = PropUtil.minMaxEnv(sv, 20000);
-        if (dom.length <= 20000) {
-            assertArrayEquals(dom, minMax.getFst());
-            assertArrayEquals(dom, minMax.getSnd());
-        } else {
-            assertArrayEquals(Arrays.copyOf(dom, 20000), minMax.getFst());
-            assertArrayEquals(Arrays.copyOfRange(dom, dom.length - 20000, dom.length), minMax.getSnd());
         }
     }
 }

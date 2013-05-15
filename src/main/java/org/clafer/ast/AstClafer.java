@@ -68,10 +68,6 @@ public class AstClafer implements Serializable {
         return this;
     }
 
-    public boolean hasGroupCard() {
-        return groupCard != null;
-    }
-
     public Card getGroupCard() {
         return groupCard;
     }

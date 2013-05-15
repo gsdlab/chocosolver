@@ -1,6 +1,5 @@
 package org.clafer.ir;
 
-import gnu.trove.TCollections;
 import gnu.trove.TIntCollection;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
@@ -171,6 +170,9 @@ public class Irs {
                 throw new IllegalArgumentException("Unknown op: " + op);
         }
         return new IrCompare(left, op, right);
+    }
+
+    public static void main(String[] args) {
     }
 
     public static IrBoolExpr equal(IrIntExpr left, int right) {
@@ -348,7 +350,16 @@ public class Irs {
 
     public static IrIntExpr sum(IrIntExpr... addends) {
         // TODO: optimize
-        return new IrSum(addends);
+        switch (addends.length) {
+            case 0:
+                return constant(0);
+            case 1:
+                return addends[0];
+//            case 2:
+//                return plus
+            default:
+                return new IrSum(addends);
+        }
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {
@@ -502,7 +513,33 @@ public class Irs {
         return new IrBoolConstraint(expr);
     }
 
-    public static IrBoolChannel boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
+    public static IrConstraint boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
+        IrDomain env = set.getEnv();
+        IrDomain ker = set.getKer();
+        boolean entailed = true;
+        for (int i = 0; i < bools.length; i++) {
+            Boolean constant = IrUtil.getConstant(bools[i]);
+            if (Boolean.TRUE.equals(constant)) {
+                if (!env.contains(i)) {
+                    return FalseTautalogy;
+                }
+                if (!ker.contains(i)) {
+                    entailed = false;
+                }
+            } else if (Boolean.FALSE.equals(constant)) {
+                if (ker.contains(i)) {
+                    return FalseTautalogy;
+                }
+                if (env.contains(i)) {
+                    entailed = false;
+                }
+            } else {
+                entailed = false;
+            }
+        }
+        if (entailed) {
+            return Tautalogy;
+        }
         return new IrBoolChannel(bools, set);
     }
 
@@ -532,7 +569,7 @@ public class Irs {
     }
 
     public static IrConstraint selectN(IrBoolExpr[] bools, IrIntExpr n) {
-        boolean allConstant = true;
+        boolean entailed = true;
         IrDomain nDomain = n.getDomain();
         for (int i = 0; i < bools.length; i++) {
             Boolean constant = IrUtil.getConstant(bools[i]);
@@ -540,15 +577,21 @@ public class Irs {
                 if (i >= nDomain.getUpperBound()) {
                     return FalseTautalogy;
                 }
+                if (i >= nDomain.getLowerBound()) {
+                    entailed = false;
+                }
             } else if (Boolean.FALSE.equals(constant)) {
                 if (i < nDomain.getLowerBound()) {
                     return FalseTautalogy;
                 }
+                if (i < nDomain.getUpperBound()) {
+                    entailed = false;
+                }
             } else {
-                allConstant = false;
+                entailed = false;
             }
         }
-        if (allConstant) {
+        if (entailed) {
             return Tautalogy;
         }
         return new IrSelectN(bools, n);

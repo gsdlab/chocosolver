@@ -11,6 +11,9 @@ public class IrUnion implements IrSetExpr {
     private final IrSetExpr[] operands;
 
     IrUnion(IrSetExpr[] operands) {
+        if (operands.length == 0) {
+            throw new IllegalArgumentException();
+        }
         this.operands = Check.noNulls(operands);
     }
 
@@ -20,17 +23,35 @@ public class IrUnion implements IrSetExpr {
 
     @Override
     public IrDomain getEnv() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        IrDomain env = operands[0].getEnv();
+        for (int i = 1; i < operands.length; i++) {
+            env = IrUtil.union(env, operands[i].getEnv());
+        }
+        return env;
     }
 
     @Override
     public IrDomain getKer() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        IrDomain env = operands[0].getKer();
+        for (int i = 1; i < operands.length; i++) {
+            env = IrUtil.union(env, operands[i].getKer());
+        }
+        return env;
     }
 
     @Override
     public IrDomain getCard() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        IrDomain card = operands[0].getCard();
+        int low = card.getLowerBound();
+        int high = card.getUpperBound();
+        for (int i = 1; i < operands.length; i++) {
+            card = operands[i].getCard();
+            low = Math.max(low, card.getLowerBound());
+            high += card.getUpperBound();
+        }
+        return Irs.boundDomain(
+                Math.max(low, getKer().size()),
+                Math.min(high, getEnv().size()));
     }
 
     @Override

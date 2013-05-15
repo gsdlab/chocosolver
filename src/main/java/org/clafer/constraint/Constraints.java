@@ -7,6 +7,7 @@ import org.clafer.constraint.propagator.PropSingleton;
 import org.clafer.constraint.propagator.PropArrayToSet;
 import org.clafer.constraint.propagator.PropIntChannel;
 import org.clafer.constraint.propagator.PropSetEqual;
+import org.clafer.constraint.propagator.PropSumSetN;
 import solver.constraints.Constraint;
 import solver.constraints.set.SetConstraintsFactory;
 import solver.variables.BoolVar;
@@ -84,6 +85,12 @@ public class Constraints {
         System.arraycopy(ints, 0, vars, sets.length, ints.length);
         Constraint constraint = new Constraint(vars, sets[0].getSolver());
         constraint.setPropagators(new PropIntChannel(sets, ints));
+        return constraint;
+    }
+
+    public static Constraint sumSetN(SetVar set, IntVar sum, int n) {
+        Constraint constraint = new Constraint(new Variable[]{set, sum}, set.getSolver());
+        constraint.setPropagators(new PropSumSetN(set, sum, n));
         return constraint;
     }
 }

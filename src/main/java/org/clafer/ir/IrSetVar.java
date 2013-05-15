@@ -10,9 +10,10 @@ public class IrSetVar implements IrSetExpr {
 
     private final String name;
     private final IrDomain env, ker, card;
+
     IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
+        assert IrUtil.subsetOf(ker, env);
         this.name = Check.notNull(name);
-        // TODO: ker subseteq env
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
         this.card = Check.notNull(card);

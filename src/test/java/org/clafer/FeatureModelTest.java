@@ -7,6 +7,7 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import solver.search.loop.monitors.SearchMonitorFactory;
 import static org.clafer.ast.Asts.*;
 
 /**
@@ -239,6 +240,6 @@ public class FeatureModelTest {
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());
-        assertEquals(-299, solver.optimal().getFst().intValue());
+        assertEquals(-296, solver.optimal().getFst().intValue());
     }
 }

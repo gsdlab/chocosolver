@@ -61,6 +61,8 @@ import static org.clafer.ir.Irs.*;
  */
 public class AstCompiler {
 
+    public static void main(String[] args) {
+    }
     private final AstModel model;
     private final Analysis analysis;
     private final IrModule module;
@@ -119,6 +121,7 @@ public class AstCompiler {
             } else {
                 throw new AstException();
             }
+            constrainGroupCardinality(clafer);
         }
 
         List<IrBoolVar> softVars = new ArrayList<IrBoolVar>();
@@ -342,6 +345,27 @@ public class AstCompiler {
         }
     }
 
+    private void constrainGroupCardinality(AstClafer clafer) {
+        Card groupCard = clafer.getGroupCard();
+        if (groupCard.isBounded()) {
+            IrBoolVar[] members = membership.get(clafer);
+
+            IrSetVar[][] childrenSets = new IrSetVar[clafer.getChildren().size()][];
+            for (int i = 0; i < childrenSets.length; i++) {
+                childrenSets[i] = childrenSet.get(clafer.getChildren().get(i));
+            }
+            for (int i = 0; i < members.length; i++) {
+                IrIntExpr[] cards = new IrIntExpr[childrenSets.length];
+                for (int j = 0; j < cards.length; j++) {
+                    cards[j] = card(childrenSets[j][i]);
+                }
+                IrIntExpr sumCards = sum(cards);
+                module.addConstraint(greaterThanEqual(sumCards, groupCard.getLow()));
+                module.addConstraint(lessThanEqual(sumCards, groupCard.getHigh()));
+            }
+        }
+    }
+
     private void initLowGroupConcrete(AstConcreteClafer clafer) {
         PartialSolution partialSolution = getPartialSolution(clafer);
 
@@ -365,19 +389,18 @@ public class AstCompiler {
 
         PartialSolution partialParentSolution = getPartialParentSolution(clafer);
         Card card = clafer.getCard();
+        Card groupCard = clafer.getGroupCard();
 
         IrSetVar[] children = childrenSet.get(clafer);
         for (int i = 0; i < partialParentSolution.size(); i++) {
-            if (partialParentSolution.hasClafer(i)) {
-                module.addConstraint(constrainCard(card(children[i]), card));
-            } else {
-                if (card.isBounded()) {
-                    module.addConstraint(implies(membership.get(clafer.getParent())[i],
-                            constrainCard(card(children[i]), card)));
-                }
-                module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
-                        equal(children[i], EmptySet)));
+            IrBoolVar parentMember = clafer.hasParent()
+                    ? membership.get(clafer.getParent())[i]
+                    : True;
+            if (card.isBounded()) {
+                // Enforce cardinality.
+                module.addConstraint(implies(parentMember, constrainCard(card(children[i]), card)));
             }
+            module.addConstraint(implies(not(parentMember), equal(children[i], EmptySet)));
         }
 
         IrSetExpr claferSet = set.get(clafer);

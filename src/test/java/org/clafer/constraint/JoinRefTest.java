@@ -44,6 +44,7 @@ public class JoinRefTest extends ConstraintTest {
             SetVar to = VariableFactory.set("to", Util.fromTo(0, nextInt(10)), solver);
 
             solver.post(Constraints.joinRef(take, refs, to));
+            
             assertTrue(randomizeStrategy(solver).findSolution());
             checkCorrectness(take, refs, to);
             for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
@@ -66,7 +67,7 @@ public class JoinRefTest extends ConstraintTest {
 //        Solver solver = solveOnce(m);
 //        checkCorrectness(solver, take, refs, to);
 //    }
-//    @Test(timeout = 60000)
+    @Test(timeout = 60000)
     public void quickTest() {
         Solver solver = new Solver();
 

@@ -59,11 +59,10 @@ public class ClaferCompiler {
         solver.post(IntConstraintFactory.sum(score, sum));
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolVars())
-//                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
-//                IntStrategyFactory.firstFail_InDomainMin(score),
-//                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars())
-                ));
+                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
+                IntStrategyFactory.firstFail_InDomainMin(score),
+                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolVars())));
         return new ClaferObjective(solver, solution, Objective.Minimize, sum);
     }
 
@@ -92,17 +91,5 @@ public class ClaferCompiler {
                 SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
         return new ClaferUnsat(solver, solution, softVars, sum);
-    }
-
-    public static void main(String[] args) {
-        AstModel model = Asts.newModel();
-        model.addTopClafer("Jimmy").withCard(2, 2).addChild("Degree").withCard(1, 2).refTo(Asts.IntType);
-
-        ClaferSolver solver = compile(model, Scope.builder().defaultScope(5).intLow(-1).intHigh(1).toScope());
-        System.out.println(solver);
-        while (solver.find()) {
-            System.out.println(solver.instance());
-        }
-        System.out.println(solver.getMeasures().getSolutionCount());
     }
 }

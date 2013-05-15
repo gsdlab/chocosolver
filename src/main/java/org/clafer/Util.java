@@ -285,11 +285,11 @@ public class Util {
         if (b <= 0) {
             throw new IllegalArgumentException();
         }
-        while (b != 0) {
+        do {
             int r = a % b;
             a = b;
             b = r;
-        }
+        } while (b != 0);
         return a;
     }
 

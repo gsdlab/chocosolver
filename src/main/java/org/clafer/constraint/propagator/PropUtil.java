@@ -3,6 +3,7 @@ package org.clafer.constraint.propagator;
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.Arrays;
 import org.clafer.Util;
 import org.clafer.collection.Pair;
 import solver.ICause;
@@ -218,37 +219,6 @@ public class PropUtil {
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
             collection.add(i);
         }
-    }
-
-    public static Pair<int[], int[]> minMaxEnv(SetVar set, int top) {
-        if (set.getEnvelopeSize() <= top) {
-            int[] env = iterateEnv(set);
-            return new Pair<int[], int[]>(env, env);
-        }
-
-        int[] min = new int[top];
-        int[] max = new int[top];
-
-        int i = 0;
-        int j = set.getEnvelopeFirst();
-        for (; i < top; i++, j = set.getEnvelopeNext()) {
-            assert j != SetVar.END;
-            min[i] = j;
-            max[i] = j;
-        }
-
-        int index = 0;
-        for (; j != SetVar.END; j = set.getEnvelopeNext()) {
-            max[index++] = j;
-            if (index >= max.length) {
-                index = 0;
-            }
-        }
-
-        // Resort the max array
-        Util.shiftLeft(max, index);
-
-        return new Pair<int[], int[]>(min, max);
     }
 
     public static int[] getValues(IntVar[] vars) {
