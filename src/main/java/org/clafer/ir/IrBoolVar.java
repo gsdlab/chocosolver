@@ -37,6 +37,11 @@ public class IrBoolVar implements IrBoolExpr {
     }
 
     @Override
+    public IrBoolExpr opposite() {
+        return new IrNot(this);
+    }
+
+    @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }

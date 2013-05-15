@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrBetween implements IrDualExpr {
+public class IrBetween implements IrBoolExpr {
 
     private final IrIntExpr var;
     private final int low, high;
@@ -33,13 +33,13 @@ public class IrBetween implements IrDualExpr {
     }
 
     @Override
-    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public IrBoolExpr opposite() {
+        return new IrNotBetween(var, low, high);
     }
 
     @Override
-    public IrBoolExpr opposite() {
-        return Irs.notBetween(var, low, high);
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
     }
 
     @Override

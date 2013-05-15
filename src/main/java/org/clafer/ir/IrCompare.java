@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrCompare implements IrDualExpr {
+public class IrCompare implements IrBoolExpr {
 
     private final IrIntExpr left;
     private final Op op;
@@ -31,13 +31,13 @@ public class IrCompare implements IrDualExpr {
     }
 
     @Override
-    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public IrBoolExpr opposite() {
+        return new IrCompare(left, op.getOpposite(), right);
     }
 
     @Override
-    public IrDualExpr opposite() {
-        return new IrCompare(left, op.getOpposite(), right);
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
     }
 
     @Override

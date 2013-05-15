@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrImplies implements IrDualExpr {
+public class IrImplies implements IrBoolExpr {
 
     private final IrBoolExpr antecedent;
     private final IrBoolExpr consequent;
@@ -25,13 +25,13 @@ public class IrImplies implements IrDualExpr {
     }
 
     @Override
-    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public IrBoolExpr opposite() {
+        return Irs.and(antecedent, Irs.not(consequent));
     }
 
     @Override
-    public IrBoolExpr opposite() {
-        return Irs.and(antecedent, Irs.not(consequent));
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
     }
 
     @Override

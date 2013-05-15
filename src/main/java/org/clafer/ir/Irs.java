@@ -9,6 +9,7 @@ import org.clafer.ir.IrDomain.IrBoundDomain;
 import org.clafer.ir.IrDomain.IrEmptyDomain;
 import org.clafer.ir.IrDomain.IrEnumDomain;
 import solver.constraints.propagators.reified.PropImplied;
+import solver.constraints.set.SetConstraintsFactory;
 
 /**
  * 
@@ -23,28 +24,24 @@ public class Irs {
      ********************/
     public static final IrBoolVar True = new IrBoolVar("True", Boolean.TRUE);
     public static final IrBoolVar False = new IrBoolVar("False", Boolean.FALSE);
-
+    
     public static IrBoolVar constant(boolean value) {
         return value ? True : False;
     }
-
+    
     public static IrBoolVar bool(String name) {
         return new IrBoolVar(name);
     }
-
+    
     public static IrBoolExpr not(IrBoolExpr proposition) {
-        if (IrUtil.isTrue(proposition)) {
-            return False;
+        Boolean constant = IrUtil.getConstant(proposition);
+        if (constant != null) {
+            // Reverse the boolean
+            return constant.booleanValue() ? False : True;
         }
-        if (IrUtil.isFalse(proposition)) {
-            return True;
-        }
-        if (proposition instanceof IrDualExpr) {
-            return ((IrDualExpr) proposition).opposite();
-        }
-        return new IrNot(proposition);
+        return proposition.opposite();
     }
-
+    
     public static IrBoolExpr and(IrBoolExpr... operands) {
         List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {
@@ -64,7 +61,7 @@ public class Irs {
                 return new IrAnd(filter.toArray(new IrBoolExpr[filter.size()]));
         }
     }
-
+    
     public static IrBoolExpr implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
         if (IrUtil.isTrue(antecedent)) {
             return consequent;
@@ -80,7 +77,7 @@ public class Irs {
         }
         return new IrImplies(antecedent, consequent);
     }
-
+    
     public static IrConstraint implies(IrBoolExpr antecedent, IrConstraint consequent) {
         if (IrUtil.isTrue(antecedent)) {
             return consequent;
@@ -96,7 +93,7 @@ public class Irs {
         }
         return new IrHalfReification(antecedent, consequent);
     }
-
+    
     public static IrBoolExpr ifOnlyIf(IrBoolExpr left, IrBoolExpr right) {
         if (IrUtil.isTrue(left)) {
             return right;
@@ -112,7 +109,7 @@ public class Irs {
         }
         return new IrIfOnlyIf(left, right);
     }
-
+    
     public static IrBoolExpr between(IrIntExpr var, int low, int high) {
         IrDomain domain = var.getDomain();
         if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
@@ -123,7 +120,7 @@ public class Irs {
         }
         return new IrBetween(var, low, high);
     }
-
+    
     public static IrBoolExpr notBetween(IrIntExpr var, int low, int high) {
         IrDomain domain = var.getDomain();
         if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
@@ -134,7 +131,7 @@ public class Irs {
         }
         return new IrNotBetween(var, low, high);
     }
-
+    
     public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
         IrDomain leftDomain = left.getDomain();
         IrDomain rightDomain = right.getDomain();
@@ -186,18 +183,18 @@ public class Irs {
         }
         return new IrCompare(left, op, right);
     }
-
+    
     public static void main(String[] args) {
     }
-
+    
     public static IrBoolExpr equal(IrIntExpr left, int right) {
         return equal(left, constant(right));
     }
-
+    
     public static IrBoolExpr equal(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.Equal, right);
     }
-
+    
     public static IrBoolExpr equal(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
@@ -219,51 +216,51 @@ public class Irs {
         }
         return new IrSetEquality(left, op, right);
     }
-
+    
     public static IrBoolExpr equal(IrSetExpr left, IrSetExpr right) {
         return equal(left, IrSetEquality.Op.Equal, right);
     }
-
+    
     public static IrBoolExpr notEqual(IrIntExpr left, int right) {
         return notEqual(left, constant(right));
     }
-
+    
     public static IrBoolExpr notEqual(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.NotEqual, right);
     }
-
+    
     public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
         return equal(left, IrSetEquality.Op.NotEqual, right);
     }
-
+    
     public static IrBoolExpr lessThan(IrIntExpr left, int right) {
         return lessThan(left, constant(right));
     }
-
+    
     public static IrBoolExpr lessThan(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.LessThan, right);
     }
-
+    
     public static IrBoolExpr lessThanEqual(IrIntExpr left, int right) {
         return lessThanEqual(left, constant(right));
     }
-
+    
     public static IrBoolExpr lessThanEqual(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.LessThanEqual, right);
     }
-
+    
     public static IrBoolExpr greaterThan(IrIntExpr left, int right) {
         return greaterThan(left, constant(right));
     }
-
+    
     public static IrBoolExpr greaterThan(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.GreaterThan, right);
     }
-
+    
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, int right) {
         return greaterThanEqual(left, constant(right));
     }
-
+    
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.GreaterThanEqual, right);
     }
@@ -276,15 +273,15 @@ public class Irs {
     public static IrIntVar constant(int value) {
         return boundInt(Integer.toString(value), value, value);
     }
-
+    
     public static IrIntVar boundInt(String name, int low, int high) {
         return new IrIntVar(name, boundDomain(low, high));
     }
-
+    
     public static IrIntVar enumInt(String name, int[] values) {
         return new IrIntVar(name, enumDomain(values));
     }
-
+    
     public static IrIntExpr card(IrSetExpr set) {
         IrDomain card = set.getCard();
         if (card.size() == 1) {
@@ -292,11 +289,11 @@ public class Irs {
         }
         return new IrCard(set);
     }
-
+    
     public static IrIntExpr add(IrIntExpr left, int right) {
         return add(left, constant(right));
     }
-
+    
     public static IrIntExpr add(IrIntExpr left, IrIntExpr right) {
         Integer leftConstant = IrUtil.getConstant(left);
         Integer rightConstant = IrUtil.getConstant(right);
@@ -315,11 +312,11 @@ public class Irs {
         }
         return new IrArithm(left, IrArithm.Op.Add, right);
     }
-
+    
     public static IrIntExpr sub(IrIntExpr left, int right) {
         return sub(left, constant(right));
     }
-
+    
     public static IrIntExpr sub(IrIntExpr left, IrIntExpr right) {
         Integer leftConstant = IrUtil.getConstant(left);
         Integer rightConstant = IrUtil.getConstant(right);
@@ -331,12 +328,12 @@ public class Irs {
         }
         return new IrArithm(left, IrArithm.Op.Sub, right);
     }
-
+    
     public static IrIntExpr mul(IrIntExpr left, int right) {
         return mul(left, constant(right));
-
+        
     }
-
+    
     public static IrIntExpr mul(IrIntExpr left, IrIntExpr right) {
         Integer leftConstant = IrUtil.getConstant(left);
         Integer rightConstant = IrUtil.getConstant(right);
@@ -361,11 +358,11 @@ public class Irs {
         }
         return new IrArithm(left, IrArithm.Op.Mul, right);
     }
-
+    
     public static IrIntExpr div(IrIntExpr left, int right) {
         return div(left, constant(right));
     }
-
+    
     public static IrIntExpr div(IrIntExpr left, IrIntExpr right) {
         Integer leftConstant = IrUtil.getConstant(left);
         Integer rightConstant = IrUtil.getConstant(right);
@@ -377,7 +374,7 @@ public class Irs {
         }
         return new IrArithm(left, IrArithm.Op.Div, right);
     }
-
+    
     public static IrIntExpr sum(IrIntExpr... addends) {
         int constants = 0;
         List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
@@ -407,7 +404,7 @@ public class Irs {
                 return new IrSum(filter.toArray(new IrIntExpr[filter.size()]));
         }
     }
-
+    
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {
         Integer constant = IrUtil.getConstant(index);
         if (constant != null) {
@@ -424,15 +421,15 @@ public class Irs {
     public static final IrDomain ZeroDomain = new IrEnumDomain(new int[]{0});
     public static final IrDomain OneDomain = new IrEnumDomain(new int[]{1});
     public static final IrSetVar EmptySet = new IrSetVar("{}", EmptyDomain, EmptyDomain, ZeroDomain);
-
+    
     public static IrDomain boundDomain(int low, int high) {
         return new IrBoundDomain(low, high);
     }
-
+    
     public static IrDomain enumDomain(int... values) {
         return enumDomain(new TIntHashSet(values));
     }
-
+    
     public static IrDomain enumDomain(TIntCollection values) {
         return enumDomain(new TIntHashSet(values));
     }
@@ -451,44 +448,44 @@ public class Irs {
                 return new IrEnumDomain(array);
         }
     }
-
+    
     public static IrSetVar constant(int[] value) {
         IrDomain domain = enumDomain(value);
         return new IrSetVar(Arrays.toString(value), domain, domain, enumDomain(value.length));
     }
-
+    
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
         return set(name, boundDomain(lowEnv, highEnv), EmptyDomain);
     }
-
+    
     public static IrSetVar set(String name, int lowEnv, int highEnv, int lowKer, int highKer) {
         return set(name, boundDomain(lowEnv, highEnv), boundDomain(lowKer, highKer));
     }
-
+    
     public static IrSetVar set(String name, int lowEnv, int highEnv, int[] ker) {
         return set(name, boundDomain(lowEnv, highEnv), enumDomain(ker));
     }
-
+    
     public static IrSetVar set(String name, int[] env) {
         return set(name, enumDomain(env), EmptyDomain);
     }
-
+    
     public static IrSetVar set(String name, int[] env, int lowKer, int highKer) {
         return set(name, enumDomain(env), boundDomain(lowKer, highKer));
     }
-
+    
     public static IrSetVar set(String name, int[] env, int[] ker) {
         return set(name, enumDomain(env), enumDomain(ker));
     }
-
+    
     public static IrSetVar set(String name, IrDomain env, IrDomain ker) {
         return new IrSetVar(name, env, ker, boundDomain(ker.size(), env.size()));
     }
-
+    
     public static IrSetVar set(String name, IrDomain env, IrDomain ker, IrDomain card) {
         return new IrSetVar(name, env, ker, card);
     }
-
+    
     public static IrSetExpr singleton(IrIntExpr value) {
         Integer constant = IrUtil.getConstant(value);
         if (constant != null) {
@@ -496,7 +493,7 @@ public class Irs {
         }
         return new IrSingleton(value);
     }
-
+    
     public static IrSetExpr arrayToSet(IrIntExpr[] array) {
         switch (array.length) {
             case 0:
@@ -507,7 +504,7 @@ public class Irs {
                 return new IrArrayToSet(array);
         }
     }
-
+    
     public static IrSetExpr join(IrSetExpr take, IrSetExpr[] children) {
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
@@ -519,7 +516,7 @@ public class Irs {
         }
         return new IrJoin(take, children);
     }
-
+    
     public static IrSetExpr joinRef(IrSetExpr take, IrIntExpr[] refs) {
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
@@ -548,7 +545,7 @@ public class Irs {
      */
     public static final IrBoolConstraint Tautalogy = new IrBoolConstraint(True);
     public static final IrBoolConstraint FalseTautalogy = new IrBoolConstraint(False);
-
+    
     public static IrBoolConstraint boolConstraint(IrBoolExpr expr) {
         if (IrUtil.isTrue(expr)) {
             return Tautalogy;
@@ -558,7 +555,7 @@ public class Irs {
         }
         return new IrBoolConstraint(expr);
     }
-
+    
     public static IrConstraint boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
         IrDomain env = set.getEnv();
         IrDomain ker = set.getKer();
@@ -588,11 +585,11 @@ public class Irs {
         }
         return new IrBoolChannel(bools, set);
     }
-
+    
     public static IrIntChannel intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
         return new IrIntChannel(ints, sets);
     }
-
+    
     public static IrConstraint sort(IrIntExpr... array) {
         List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
         for (int i = 0; i < array.length - 1; i++) {
@@ -613,21 +610,21 @@ public class Irs {
                 return new IrSortInts(filter.toArray(new IrIntExpr[filter.size()]));
         }
     }
-
+    
     public static IrConstraint sort(IrIntExpr[]... strings) {
         if (strings.length < 2) {
             return Tautalogy;
         }
         return new IrSortStrings(strings);
     }
-
+    
     public static IrConstraint allDifferent(IrIntExpr[] ints) {
         if (ints.length < 2) {
             return Tautalogy;
         }
         return new IrAllDifferent(ints);
     }
-
+    
     public static IrConstraint selectN(IrBoolExpr[] bools, IrIntExpr n) {
         boolean entailed = true;
         IrDomain nDomain = n.getDomain();

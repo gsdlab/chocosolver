@@ -31,6 +31,14 @@ public class IrUtil {
             return var.isTrue() ? Boolean.TRUE
                     : (var.isFalse() ? Boolean.FALSE : null);
         }
+        if (boolExpr instanceof IrNot) {
+            IrNot not = (IrNot) boolExpr;
+            Boolean constant = getConstant(not.getProposition());
+            if (constant != null) {
+                // Reverse the boolean
+                return constant.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
+            }
+        }
         return null;
     }
 

@@ -6,11 +6,11 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrNot implements IrDualExpr {
+public class IrNot implements IrBoolExpr {
 
-    private final IrBoolExpr proposition;
+    private final IrBoolVar proposition;
 
-    public IrNot(IrBoolExpr proposition) {
+    public IrNot(IrBoolVar proposition) {
         this.proposition = Check.notNull(proposition);
     }
 
@@ -19,13 +19,13 @@ public class IrNot implements IrDualExpr {
     }
 
     @Override
-    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public IrBoolExpr opposite() {
+        return proposition;
     }
 
     @Override
-    public IrBoolExpr opposite() {
-        return proposition;
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
     }
 
     @Override

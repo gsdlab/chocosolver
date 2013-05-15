@@ -19,6 +19,11 @@ public class IrAnd implements IrBoolExpr {
     }
 
     @Override
+    public IrBoolExpr opposite() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
