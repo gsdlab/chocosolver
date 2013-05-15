@@ -37,7 +37,7 @@ public class IrSetEquality implements IrDualExpr {
 
     @Override
     public IrDualExpr opposite() {
-        return Irs.equal(left, op.getOpposite(), right);
+        return new IrSetEquality(left, op.getOpposite(), right);
     }
 
     @Override

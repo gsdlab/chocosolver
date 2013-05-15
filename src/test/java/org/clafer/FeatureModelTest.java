@@ -40,7 +40,6 @@ public class FeatureModelTest {
 //        int[] answ = solver.findOptimalSolution(ResolutionPolicy.MINIMIZE, score);
 //        System.out.println(Arrays.toString(answ));
 //    }
-
     @Test(timeout = 60000)
     public void testSmallFeatureModel() {
         AstModel model = newModel();
@@ -240,6 +239,7 @@ public class FeatureModelTest {
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());
+        System.out.println(solver.solver);
         assertEquals(-296, solver.optimal().getFst().intValue());
     }
 }

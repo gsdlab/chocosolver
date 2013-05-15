@@ -8,6 +8,7 @@ import java.util.List;
 import org.clafer.ir.IrDomain.IrBoundDomain;
 import org.clafer.ir.IrDomain.IrEmptyDomain;
 import org.clafer.ir.IrDomain.IrEnumDomain;
+import solver.constraints.propagators.reified.PropImplied;
 
 /**
  * 
@@ -113,10 +114,24 @@ public class Irs {
     }
 
     public static IrBoolExpr member(IrIntExpr var, int low, int high) {
+        IrDomain domain = var.getDomain();
+        if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
+            return True;
+        }
+        if (domain.getLowerBound() > high || domain.getUpperBound() < low) {
+            return False;
+        }
         return new IrMember(var, low, high);
     }
 
     public static IrBoolExpr notMember(IrIntExpr var, int low, int high) {
+        IrDomain domain = var.getDomain();
+        if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
+            return False;
+        }
+        if (domain.getLowerBound() > high || domain.getUpperBound() < low) {
+            return True;
+        }
         return new IrNotMember(var, low, high);
     }
 
@@ -183,12 +198,30 @@ public class Irs {
         return compare(left, IrCompare.Op.Equal, right);
     }
 
-    public static IrSetEquality equal(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
+    public static IrBoolExpr equal(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
+        switch (op) {
+            case Equal:
+                if (left.equals(right)) {
+                    return True;
+                }
+//                IrDomain leftEnv = left.getEnv();
+//                if(leftEnv.size() == 1) {
+//                    return 
+//                }
+                break;
+            case NotEqual:
+                if (left.equals(right)) {
+                    return False;
+                }
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
         return new IrSetEquality(left, op, right);
     }
 
     public static IrBoolExpr equal(IrSetExpr left, IrSetExpr right) {
-        return new IrSetEquality(left, IrSetEquality.Op.Equal, right);
+        return equal(left, IrSetEquality.Op.Equal, right);
     }
 
     public static IrBoolExpr notEqual(IrIntExpr left, int right) {
@@ -200,10 +233,7 @@ public class Irs {
     }
 
     public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
-        if (left.equals(right)) {
-            return False;
-        }
-        return new IrSetEquality(left, IrSetEquality.Op.NotEqual, right);
+        return equal(left, IrSetEquality.Op.NotEqual, right);
     }
 
     public static IrBoolExpr lessThan(IrIntExpr left, int right) {
@@ -349,16 +379,32 @@ public class Irs {
     }
 
     public static IrIntExpr sum(IrIntExpr... addends) {
-        // TODO: optimize
-        switch (addends.length) {
+        int constants = 0;
+        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
+        for (IrIntExpr addend : addends) {
+            System.out.println(addend);
+            Integer constant = IrUtil.getConstant(addend);
+            if (constant == null) {
+                filter.add(addend);
+            } else {
+                constants += constant.intValue();
+            }
+        }
+        switch (filter.size()) {
             case 0:
-                return constant(0);
+                return constant(constants);
             case 1:
-                return addends[0];
-//            case 2:
-//                return plus
+                return constants == 0 ? filter.get(0) : add(filter.get(0), constants);
+            case 2:
+                if (constants == 0) {
+                    return add(filter.get(0), filter.get(1));
+                }
+            // fallthrough
             default:
-                return new IrSum(addends);
+                if (constants == 0) {
+                    filter.add(constant(constants));
+                }
+                return new IrSum(filter.toArray(new IrIntExpr[filter.size()]));
         }
     }
 
@@ -547,11 +593,25 @@ public class Irs {
         return new IrIntChannel(ints, sets);
     }
 
-    public static IrConstraint sort(IrIntExpr[] array) {
-        if (array.length < 2) {
-            return Tautalogy;
+    public static IrConstraint sort(IrIntExpr... array) {
+        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
+        for (int i = 0; i < array.length - 1; i++) {
+            if (array[i].getDomain().getUpperBound() > array[i + 1].getDomain().getLowerBound()) {
+                filter.add(array[i]);
+            }
         }
-        return new IrSortInts(array);
+        if (array.length > 0) {
+            filter.add(array[array.length - 1]);
+        }
+        switch (filter.size()) {
+            case 0:
+            case 1:
+                return Tautalogy;
+//            case 2:
+//                return boolConstraint(lessThanEqual(filter.get(0), filter.get(1)));
+            default:
+                return new IrSortInts(filter.toArray(new IrIntExpr[filter.size()]));
+        }
     }
 
     public static IrConstraint sort(IrIntExpr[]... strings) {

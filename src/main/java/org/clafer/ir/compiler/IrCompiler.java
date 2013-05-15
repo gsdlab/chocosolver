@@ -114,15 +114,15 @@ public class IrCompiler {
     }
 
     private IntVar numIntVar(String name, IrDomain domain) {
-        return intVar(name, domain);
+        return intVar(name + "#" + varNum, domain);
     }
 
     private IntVar numIntVar(String name, int low, int high) {
-        return VariableFactory.enumerated(name, low, high, solver);
+        return VariableFactory.enumerated(name + "#" + varNum, low, high, solver);
     }
 
     private IntVar numIntVar(String name, int[] dom) {
-        return VariableFactory.enumerated(name, dom, solver);
+        return VariableFactory.enumerated(name + "#" + varNum, dom, solver);
     }
 
     private SetVar numSetVar(String name, IrSetExpr expr) {

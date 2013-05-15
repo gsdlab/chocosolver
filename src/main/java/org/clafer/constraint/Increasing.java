@@ -20,9 +20,7 @@ public class Increasing extends IntConstraint<IntVar> {
 
         List<Propagator> propogators = new ArrayList<Propagator>();
         for (int i = 1; i < vars.length; i++) {
-            if (vars[i].getLB() < vars[i - 1].getUB()) {
-                propogators.add(new PropGreaterOrEqualX_Y(new IntVar[]{vars[i], vars[i - 1]}));
-            }
+            propogators.add(new PropGreaterOrEqualX_Y(new IntVar[]{vars[i], vars[i - 1]}));
         }
         setPropagators(propogators.toArray(new Propagator[propogators.size()]));
     }

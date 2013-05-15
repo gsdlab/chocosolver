@@ -1,12 +1,9 @@
 package org.clafer.constraint;
 
 import org.clafer.Util;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.MatcherAssert;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
-import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VariableFactory;
