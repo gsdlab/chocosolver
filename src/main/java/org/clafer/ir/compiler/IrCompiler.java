@@ -9,7 +9,9 @@ import org.clafer.ir.IrHalfReification;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrBetween;
+import org.clafer.ir.IrMember;
 import org.clafer.ir.IrNotBetween;
+import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
@@ -58,7 +60,6 @@ import solver.constraints.nary.Sum;
 import solver.constraints.nary.cnf.ALogicTree;
 import solver.constraints.nary.cnf.Literal;
 import solver.constraints.nary.cnf.Node;
-import solver.constraints.nary.cnf.Singleton;
 import solver.constraints.set.SetConstraintsFactory;
 import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.search.strategy.SetStrategyFactory;
@@ -318,9 +319,27 @@ public class IrCompiler {
 
         @Override
         public BoolVar visit(IrAnd ir, Void a) {
-            BoolVar reified = numBoolVar("And");
-            solver.post(_clauses(_reified(reified, ir.accept(boolExprTreeCompiler, a))));
-            return reified;
+            IrBoolExpr[] operands = ir.getOperands();
+
+            BoolVar[] $operands = new BoolVar[operands.length];
+            for (int i = 0; i < $operands.length; i++) {
+                $operands[i] = operands[i].accept(boolExprCompiler, a);
+            }
+            switch ($operands.length) {
+                case 1:
+                    return $operands[0];
+                case 2:
+                    BoolVar reified = numBoolVar("And");
+                    solver.post(_implies(reified, _arithm($operands[0], "+", $operands[1], "=", 2)));
+                    solver.post(_implies(_not(reified), _arithm($operands[0], "+", $operands[1], "!=", 2)));
+                    return reified;
+                default:
+                    reified = numBoolVar("And");
+                    solver.post(_implies(reified, _sum(VariableFactory.fixed($operands.length, solver), $operands)));
+                    // The AndSum variable's domain is constructed in a way that guarantees sum < operands.length
+                    solver.post(_implies(_not(reified), _sum(numIntVar("AndSum", 0, $operands.length - 1), $operands)));
+                    return reified;
+            }
         }
 
         @Override
@@ -346,18 +365,18 @@ public class IrCompiler {
         @Override
         public BoolVar visit(IrBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
-            BoolVar reified = numBoolVar("Member");
-            solver.post(_implies(reified, _member($var, ir.getLow(), ir.getHigh())));
-            solver.post(_implies(_not(reified), _not_member($var, ir.getLow(), ir.getHigh())));
+            BoolVar reified = numBoolVar("Between");
+            solver.post(_implies(reified, _between($var, ir.getLow(), ir.getHigh())));
+            solver.post(_implies(_not(reified), _not_between($var, ir.getLow(), ir.getHigh())));
             return reified;
         }
 
         @Override
         public BoolVar visit(IrNotBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
-            BoolVar reified = numBoolVar("NotMember");
-            solver.post(_implies(reified, _not_member($var, ir.getLow(), ir.getHigh())));
-            solver.post(_implies(_not(reified), _member($var, ir.getLow(), ir.getHigh())));
+            BoolVar reified = numBoolVar("NotBetween");
+            solver.post(_implies(reified, _not_between($var, ir.getLow(), ir.getHigh())));
+            solver.post(_implies(_not(reified), _between($var, ir.getLow(), ir.getHigh())));
             return reified;
         }
 
@@ -389,6 +408,26 @@ public class IrCompiler {
                     throw new IrException();
             }
         }
+
+        @Override
+        public BoolVar visit(IrMember ir, Void a) {
+            IntVar $element = ir.getElement().accept(intExprCompiler, a);
+            SetVar $set = ir.getSet().accept(setExprCompiler, a);
+            BoolVar reified = numBoolVar("Member");
+            solver.post(_implies(reified, _member($element, $set)));
+            solver.post(_implies(_not(reified), _not_member($element, $set)));
+            return reified;
+        }
+
+        @Override
+        public BoolVar visit(IrNotMember ir, Void a) {
+            IntVar $element = ir.getElement().accept(intExprCompiler, a);
+            SetVar $set = ir.getSet().accept(setExprCompiler, a);
+            BoolVar reified = numBoolVar("NotMember");
+            solver.post(_implies(reified, _not_member($element, $set)));
+            solver.post(_implies(_not(reified), _member($element, $set)));
+            return reified;
+        }
     };
     private final IrBoolExprVisitor<Void, Constraint> boolExprConstraintCompiler = new IrBoolExprVisitor<Void, Constraint>() {
 
@@ -410,10 +449,14 @@ public class IrCompiler {
             for (int i = 0; i < $operands.length; i++) {
                 $operands[i] = operands[i].accept(boolExprCompiler, a);
             }
-            if ($operands.length == 2) {
-                return _arithm($operands[0], "+", $operands[1], "=", 2);
+            switch ($operands.length) {
+                case 1:
+                    return _arithm($operands[0], "=", 1);
+                case 2:
+                    return _arithm($operands[0], "+", $operands[1], "=", 2);
+                default:
+                    return _sum(VariableFactory.fixed($operands.length, solver), $operands);
             }
-            return _sum(VariableFactory.fixed($operands.length, solver), $operands);
         }
 
         @Override
@@ -433,13 +476,13 @@ public class IrCompiler {
         @Override
         public Constraint visit(IrBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
-            return _member($var, ir.getLow(), ir.getHigh());
+            return _between($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
         public Constraint visit(IrNotBetween ir, Void a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
-            return _not_member($var, ir.getLow(), ir.getHigh());
+            return _not_between($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
@@ -462,67 +505,81 @@ public class IrCompiler {
                     throw new IrException();
             }
         }
-    };
-    private final IrBoolExprVisitor<Void, ALogicTree> boolExprTreeCompiler = new IrBoolExprVisitor<Void, ALogicTree>() {
 
         @Override
-        public ALogicTree visit(IrBoolVar ir, Void a) {
-            if (ir.isConstant()) {
-                return ir.isTrue() ? Singleton.TRUE : Singleton.FALSE;
-            }
-            return Literal.pos(boolVar.get(ir));
+        public Constraint visit(IrMember ir, Void a) {
+            IntVar $element = ir.getElement().accept(intExprCompiler, a);
+            SetVar $set = ir.getSet().accept(setExprCompiler, a);
+            return _member($element, $set);
         }
 
         @Override
-        public ALogicTree visit(IrNot ir, Void a) {
-            return Node.nor(ir.getProposition().accept(this, a));
-        }
-
-        @Override
-        public ALogicTree visit(IrAnd ir, Void a) {
-            IrBoolExpr[] operands = ir.getOperands();
-
-            ALogicTree[] $operands = new ALogicTree[operands.length];
-            for (int i = 0; i < operands.length; i++) {
-                $operands[i] = operands[i].accept(this, a);
-            }
-            return _and($operands);
-        }
-
-        @Override
-        public ALogicTree visit(IrImplies ir, Void a) {
-            ALogicTree $antecedent = ir.getAntecedent().accept(this, a);
-            ALogicTree $consequent = ir.getConsequent().accept(this, a);
-            return Node.implies($antecedent, $consequent);
-        }
-
-        @Override
-        public ALogicTree visit(IrIfOnlyIf ir, Void a) {
-            ALogicTree $left = ir.getLeft().accept(this, a);
-            ALogicTree $right = ir.getRight().accept(this, a);
-            return Node.ifOnlyIf($left, $right);
-        }
-
-        @Override
-        public ALogicTree visit(IrBetween ir, Void a) {
-            return Literal.pos(ir.accept(boolExprCompiler, a));
-        }
-
-        @Override
-        public ALogicTree visit(IrNotBetween ir, Void a) {
-            return Literal.pos(ir.accept(boolExprCompiler, a));
-        }
-
-        @Override
-        public ALogicTree visit(IrCompare ir, Void a) {
-            return Literal.pos(ir.accept(boolExprCompiler, a));
-        }
-
-        @Override
-        public ALogicTree visit(IrSetEquality ir, Void a) {
-            return Literal.pos(ir.accept(boolExprCompiler, a));
+        public Constraint visit(IrNotMember ir, Void a) {
+            IntVar $element = ir.getElement().accept(intExprCompiler, a);
+            SetVar $set = ir.getSet().accept(setExprCompiler, a);
+            return _not_member($element, $set);
         }
     };
+//    private final IrBoolExprVisitor<Void, ALogicTree> boolExprTreeCompiler = new IrBoolExprVisitor<Void, ALogicTree>() {
+//
+//        @Override
+//        public ALogicTree visit(IrBoolVar ir, Void a) {
+//            if (ir.isConstant()) {
+//                return ir.isTrue() ? Singleton.TRUE : Singleton.FALSE;
+//            }
+//            return Literal.pos(boolVar.get(ir));
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrNot ir, Void a) {
+//            return Node.nor(ir.getProposition().accept(this, a));
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrAnd ir, Void a) {
+//            IrBoolExpr[] operands = ir.getOperands();
+//
+//            ALogicTree[] $operands = new ALogicTree[operands.length];
+//            for (int i = 0; i < operands.length; i++) {
+//                $operands[i] = operands[i].accept(this, a);
+//            }
+//            return _and($operands);
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrImplies ir, Void a) {
+//            ALogicTree $antecedent = ir.getAntecedent().accept(this, a);
+//            ALogicTree $consequent = ir.getConsequent().accept(this, a);
+//            return Node.implies($antecedent, $consequent);
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrIfOnlyIf ir, Void a) {
+//            ALogicTree $left = ir.getLeft().accept(this, a);
+//            ALogicTree $right = ir.getRight().accept(this, a);
+//            return Node.ifOnlyIf($left, $right);
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrBetween ir, Void a) {
+//            return Literal.pos(ir.accept(boolExprCompiler, a));
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrNotBetween ir, Void a) {
+//            return Literal.pos(ir.accept(boolExprCompiler, a));
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrCompare ir, Void a) {
+//            return Literal.pos(ir.accept(boolExprCompiler, a));
+//        }
+//
+//        @Override
+//        public ALogicTree visit(IrSetEquality ir, Void a) {
+//            return Literal.pos(ir.accept(boolExprCompiler, a));
+//        }
+//    };
     private final IrIntExprVisitor<Void, IntVar> intExprCompiler = new IrIntExprVisitor<Void, IntVar>() {
 
         /**
@@ -791,12 +848,20 @@ public class IrCompiler {
         return IntConstraintFactory.alldifferent(vars, "AC");
     }
 
-    private static Constraint _member(IntVar var, int low, int high) {
+    private static Constraint _between(IntVar var, int low, int high) {
         return IntConstraintFactory.member(var, low, high);
     }
 
-    private static Constraint _not_member(IntVar var, int low, int high) {
+    private static Constraint _not_between(IntVar var, int low, int high) {
         return IntConstraintFactory.not_member(var, low, high);
+    }
+
+    private static Constraint _member(IntVar element, SetVar set) {
+        return SetConstraintsFactory.member(element, set);
+    }
+
+    private static Constraint _not_member(IntVar element, SetVar set) {
+        return Constraints.notMember(element, set);
     }
 
     private static Constraint _lex_chain_less_eq(IntVar[]... vars) {

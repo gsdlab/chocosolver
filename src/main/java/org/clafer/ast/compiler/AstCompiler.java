@@ -659,7 +659,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstNone ast, Void a) {
-            return equal((IrSetExpr) ast.getSet().accept(this, a), Op.Equal, EmptySet);
+            return equality((IrSetExpr) ast.getSet().accept(this, a), Op.Equal, EmptySet);
         }
 
         @Override

@@ -3,6 +3,7 @@ package org.clafer.ir;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ir.IrDomain.IrBoundDomain;
+import solver.constraints.propagators.set.PropIntMemberSet;
 
 /**
  *
@@ -17,12 +18,32 @@ public class IrUtil {
         return t;
     }
 
+    public static boolean isTrue(IrConstraint constraint) {
+        if (constraint instanceof IrBoolConstraint) {
+            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
+            return isTrue(boolConstraint.getExpr());
+        }
+        return false;
+    }
+
+    public static boolean isFalse(IrConstraint constraint) {
+        if (constraint instanceof IrBoolConstraint) {
+            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
+            return isFalse(boolConstraint.getExpr());
+        }
+        return false;
+    }
+
     public static boolean isTrue(IrBoolExpr boolExpr) {
         return Boolean.TRUE.equals(getConstant(boolExpr));
     }
 
     public static boolean isFalse(IrBoolExpr boolExpr) {
         return Boolean.FALSE.equals(getConstant(boolExpr));
+    }
+
+    public static Boolean isConstant(IrBoolExpr boolExpr) {
+        return getConstant(boolExpr) != null;
     }
 
     public static Boolean getConstant(IrBoolExpr boolExpr) {
@@ -42,20 +63,8 @@ public class IrUtil {
         return null;
     }
 
-    public static boolean isTrue(IrConstraint constraint) {
-        if (constraint instanceof IrBoolConstraint) {
-            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
-            return isTrue(boolConstraint.getExpr());
-        }
-        return false;
-    }
-
-    public static boolean isFalse(IrConstraint constraint) {
-        if (constraint instanceof IrBoolConstraint) {
-            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
-            return isFalse(boolConstraint.getExpr());
-        }
-        return false;
+    public static boolean isConstant(IrIntExpr intExpr) {
+        return getConstant(intExpr) != null;
     }
 
     public static Integer getConstant(IrIntExpr intExpr) {
@@ -66,6 +75,14 @@ public class IrUtil {
         return null;
     }
 
+    public static boolean isConstant(IrSetExpr setExpr) {
+        if (setExpr instanceof IrSetVar) {
+            IrSetVar var = (IrSetVar) setExpr;
+            return var.isConstant();
+        }
+        return false;
+    }
+
     public static int[] getConstant(IrSetExpr setExpr) {
         if (setExpr instanceof IrSetVar) {
             IrSetVar var = (IrSetVar) setExpr;
@@ -74,7 +91,39 @@ public class IrUtil {
         return null;
     }
 
-    public static boolean subsetOf(IrDomain sub, IrDomain sup) {
+    public static boolean intersects(IrDomain d1, IrDomain d2) {
+        if (d1.isEmpty() || d2.isEmpty()) {
+            return false;
+        }
+        if (d1.getLowerBound() > d2.getUpperBound()) {
+            return false;
+        }
+        if (d1.getUpperBound() < d2.getLowerBound()) {
+            return false;
+        }
+        if (d1.isBounded() && d2.isBounded()) {
+            // Bounds are already checked.
+            return true;
+        }
+        if (d1.size() <= d2.size()) {
+            TIntIterator iter = d1.iterator();
+            while (iter.hasNext()) {
+                if (d2.contains(iter.next())) {
+                    return true;
+                }
+            }
+        } else {
+            TIntIterator iter = d2.iterator();
+            while (iter.hasNext()) {
+                if (d1.contains(iter.next())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean isSubsetOf(IrDomain sub, IrDomain sup) {
         if (sub.isEmpty()) {
             return true;
         }
@@ -87,7 +136,7 @@ public class IrUtil {
         if (sub.getUpperBound() > sup.getUpperBound()) {
             return false;
         }
-        if (sub instanceof IrBoundDomain && sup instanceof IrBoundDomain) {
+        if (sub.isBounded() && sup.isBounded()) {
             // Bounds are already checked.
             return true;
         }
@@ -101,10 +150,10 @@ public class IrUtil {
     }
 
     public static IrDomain union(IrDomain d1, IrDomain d2) {
-        if (subsetOf(d1, d2)) {
+        if (isSubsetOf(d1, d2)) {
             return d2;
         }
-        if (subsetOf(d2, d1)) {
+        if (isSubsetOf(d2, d1)) {
             return d1;
         }
         if (d1 instanceof IrBoundDomain && d2 instanceof IrBoundDomain) {

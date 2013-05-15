@@ -47,6 +47,16 @@ public class IrBoolVar implements IrBoolExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
     public String toString() {
         return name;
     }

@@ -6,10 +6,10 @@ import org.clafer.constraint.propagator.PropSelectN;
 import org.clafer.constraint.propagator.PropSingleton;
 import org.clafer.constraint.propagator.PropArrayToSet;
 import org.clafer.constraint.propagator.PropIntChannel;
+import org.clafer.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.constraint.propagator.PropSetEqual;
 import org.clafer.constraint.propagator.PropSumSetN;
 import solver.constraints.Constraint;
-import solver.constraints.set.SetConstraintsFactory;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -91,6 +91,12 @@ public class Constraints {
     public static Constraint sumSetN(SetVar set, IntVar sum, int n) {
         Constraint constraint = new Constraint(new Variable[]{set, sum}, set.getSolver());
         constraint.setPropagators(new PropSumSetN(set, sum, n));
+        return constraint;
+    }
+
+    public static Constraint notMember(IntVar element, SetVar set) {
+        Constraint constraint = new Constraint(new Variable[]{element, set}, element.getSolver());
+        constraint.setPropagators(new PropIntNotMemberSet(element, set));
         return constraint;
     }
 }

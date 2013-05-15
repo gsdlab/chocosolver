@@ -11,6 +11,9 @@ public class IrAnd implements IrBoolExpr {
     private final IrBoolExpr[] operands;
 
     IrAnd(IrBoolExpr[] operands) {
+        if (operands.length == 0) {
+            throw new IllegalArgumentException();
+        }
         this.operands = Check.noNulls(operands);
     }
 

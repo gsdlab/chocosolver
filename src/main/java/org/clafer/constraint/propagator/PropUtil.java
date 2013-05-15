@@ -3,9 +3,6 @@ package org.clafer.constraint.propagator;
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.Arrays;
-import org.clafer.Util;
-import org.clafer.collection.Pair;
 import solver.ICause;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
@@ -83,6 +80,33 @@ public class PropUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * @param e1
+     * @param e2
+     * @return true if and only if e1 in e2 is guaranteed, false otherwise
+     */
+    public static boolean intersects(IntVar e1, SetVar e2) {
+        if (e1.getDomainSize() < e2.getKernelSize()) {
+            int ub = e1.getUB();
+            for (int i = Math.max(e1.getLB(), e2.getKernelFirst()); i <= ub; i = e1.nextValue(i)) {
+                if (!e2.kernelContains(i)) {
+                    return false;
+                }
+            }
+        } else {
+            for (int i = e2.getKernelFirst(); i != SetVar.END;) {
+                int next = e1.nextValue(i - 1);
+                while (i < next && i != SetVar.END) {
+                    i = e2.getKernelNext();
+                }
+                if (i == next) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public static boolean isSubsetOfEnv(TIntCollection sub, SetVar sup) {

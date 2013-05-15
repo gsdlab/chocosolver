@@ -12,7 +12,7 @@ public class IrSetVar implements IrSetExpr {
     private final IrDomain env, ker, card;
 
     IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
-        assert IrUtil.subsetOf(ker, env);
+        assert IrUtil.isSubsetOf(ker, env);
         this.name = Check.notNull(name);
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
@@ -69,7 +69,17 @@ public class IrSetVar implements IrSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
     public String toString() {
-        return name + " : " + env + " : " + ker;
+        return name;
     }
 }
