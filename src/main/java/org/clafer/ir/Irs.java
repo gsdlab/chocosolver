@@ -273,9 +273,6 @@ public class Irs {
         return new IrCompare(left, op, right, BoolDomain);
     }
 
-    public static void main(String[] args) {
-    }
-
     public static IrBoolExpr equal(IrIntExpr left, int right) {
         return equal(left, $(constant(right)));
     }
@@ -284,173 +281,16 @@ public class Irs {
         return compare(left, IrCompare.Op.Equal, right);
     }
 
-    /**
-     * If
-     *   env(set) = {a, b, c, ..., x, y}
-     *   ker(set) = {a, b, c, ..., x}
-     *   domain = {a, b, c, ..., x, z}
-     * 
-     * then return z. Otherwise return null.
-     */
-    private static Integer missingEnv(IrSetExpr set, IrDomain domain) {
-        IrDomain env = set.getEnv();
-        if (env.size() != domain.size()) {
-            return null;
-        }
-        IrDomain ker = set.getKer();
-        if (ker.size() != domain.size() - 1) {
-            return null;
-        }
-        if (!IrUtil.isSubsetOf(ker, domain)) {
-            return null;
-        }
-        // Find the missing env.
-        if (ker.isEmpty()) {
-            return domain.getLowerBound();
-        }
-        if (domain.getLowerBound() < ker.getLowerBound()) {
-            return domain.getLowerBound();
-        }
-        if (domain.getUpperBound() > ker.getUpperBound()) {
-            return domain.getUpperBound();
-        }
-        for (int i : domain.getValues()) {
-            if (!ker.contains(i)) {
-                return i;
-            }
-        }
-        // Should not happen because ker(set) ⊂ domain
-        throw new IllegalStateException();
-    }
-
-    /**
-     * If
-     *   env(set) = {a, b, c, ..., x, y}
-     *   ker(set) = {a, b, c, ..., x}
-     *   domain = {a, b, c, ..., x}
-     * 
-     * then return y. Otherwise return null.
-     */
-    private static Integer extraEnv(IrSetExpr set, IrDomain domain) {
-        IrDomain env = set.getEnv();
-        if (env.size() != domain.size() + 1) {
-            return null;
-        }
-        IrDomain ker = set.getKer();
-        if (ker.size() != domain.size()) {
-            return null;
-        }
-        if (!IrUtil.isSubsetOf(ker, domain)) {
-            return null;
-        }
-        // Find the extra env.
-        if (domain.isEmpty()) {
-            return env.getLowerBound();
-        }
-        if (env.getLowerBound() < domain.getLowerBound()) {
-            return env.getLowerBound();
-        }
-        if (env.getUpperBound() > domain.getUpperBound()) {
-            return env.getUpperBound();
-        }
-        for (int i : env.getValues()) {
-            if (!domain.contains(i)) {
-                return i;
-            }
-        }
-        // Should not happen because domain = ker(set) ⊂ env(set)
-        throw new IllegalStateException();
-    }
-
     public static IrBoolExpr equality(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
                 if (left.equals(right)) {
                     return $(True);
                 }
-                if (IrUtil.isConstant(left)) {
-                    /**
-                     * What is this optimization?
-                     * 
-                     * For example:
-                     *   Variables:
-                     *     set
-                     *       env(set) = {1}
-                     *       ker(set) = {}
-                     * 
-                     *   Constraint:
-                     *     set = {1}
-                     * 
-                     *   Optimize by replacing the constraint with:
-                     *     1 ∈ set
-                     * 
-                     * Note that this (and the next) optimization are only effective
-                     * if membership propagators are more efficient, which likely in
-                     * practice is neglible. These two optimizations might not be
-                     * worthwhile.
-                     * 
-                     * In the our Clafer encoding into Choco, this optimization often
-                     * occurs on the right-hand side of an implication. Special membership
-                     * propagators for constant int might have a small improved efficiency.
-                     */
-                    Integer missingEnv = missingEnv(right, left.getKer());
-                    if (missingEnv != null) {
-                        return member($(constant(missingEnv.intValue())), right);
-                    }
-                    /**
-                     * What is this optimization?
-                     * 
-                     * For example:
-                     *   Variables:
-                     *     set
-                     *       env(set) = {1}
-                     *       ker(set) = {}
-                     * 
-                     *   Constraint:
-                     *     set = {}
-                     * 
-                     *   Optimize by replacing the constraint with:
-                     *     1 ∉ set
-                     */
-                    Integer extraEnv = extraEnv(right, left.getKer());
-                    if (extraEnv != null) {
-                        return notMember($(constant(extraEnv.intValue())), right);
-                    }
-                }
-                if (IrUtil.isConstant(right)) {
-                    Integer missingEnv = missingEnv(left, right.getKer());
-                    if (missingEnv != null) {
-                        return member($(constant(missingEnv.intValue())), left);
-                    }
-                    Integer extraEnv = extraEnv(left, right.getKer());
-                    if (extraEnv != null) {
-                        return notMember($(constant(extraEnv.intValue())), left);
-                    }
-                }
                 break;
             case NotEqual:
                 if (left.equals(right)) {
                     return $(False);
-                }
-                if (IrUtil.isConstant(left)) {
-                    Integer missingEnv = missingEnv(right, left.getKer());
-                    if (missingEnv != null) {
-                        return notMember($(constant(missingEnv.intValue())), right);
-                    }
-                    Integer extraEnv = extraEnv(right, left.getKer());
-                    if (extraEnv != null) {
-                        return member($(constant(extraEnv.intValue())), right);
-                    }
-                }
-                if (IrUtil.isConstant(right)) {
-                    Integer missingEnv = missingEnv(left, right.getKer());
-                    if (missingEnv != null) {
-                        return notMember($(constant(missingEnv.intValue())), left);
-                    }
-                    Integer extraEnv = extraEnv(left, right.getKer());
-                    if (extraEnv != null) {
-                        return member($(constant(extraEnv.intValue())), left);
-                    }
                 }
                 break;
             default:
