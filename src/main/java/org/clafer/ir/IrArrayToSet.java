@@ -1,14 +1,12 @@
 package org.clafer.ir;
 
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.Check;
 
 /**
  *
  * @author jimmy
  */
-public class IrArrayToSet extends IrAbstractSetExpr {
+public class IrArrayToSet extends IrAbstractSet implements IrSetExpr {
 
     private final IrIntExpr[] array;
 

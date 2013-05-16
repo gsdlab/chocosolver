@@ -6,16 +6,16 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public abstract class IrAbstractSetExpr implements IrSetExpr {
+public abstract class IrAbstractSet implements IrSet {
 
     private final IrDomain env, ker, card;
 
-    public IrAbstractSetExpr(IrDomain env, IrDomain ker, IrDomain card) {
-        assert IrUtil.isSubsetOf(ker, env);
+    public IrAbstractSet(IrDomain env, IrDomain ker, IrDomain card) {
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
         this.card = Check.notNull(card);
 
+        assert IrUtil.isSubsetOf(ker, env);
         if (card.isEmpty()) {
             throw new IllegalArgumentException();
         }

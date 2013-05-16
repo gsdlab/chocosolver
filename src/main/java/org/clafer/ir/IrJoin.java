@@ -1,19 +1,13 @@
 package org.clafer.ir;
 
-import gnu.trove.iterator.TIntIterator;
-import gnu.trove.set.hash.TIntHashSet;
-import java.util.Arrays;
 import org.clafer.Check;
-import org.clafer.ir.IrDomain.IrBoundDomain;
-import org.clafer.ir.IrDomain.IrEnumDomain;
-import util.iterators.IntIterator;
 
 /**
  * Assumption: children are disjoint
  * 
  * @author jimmy
  */
-public class IrJoin extends IrAbstractSetExpr {
+public class IrJoin extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr take;
     private final IrSetExpr[] children;

@@ -6,11 +6,11 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public abstract class IrAbstractIntExpr implements IrIntExpr {
+public abstract class IrAbstractInt implements IrInt {
 
     private final IrDomain domain;
 
-    public IrAbstractIntExpr(IrDomain domain) {
+    public IrAbstractInt(IrDomain domain) {
         this.domain = Check.notNull(domain);
 
         if (domain.isEmpty()) {

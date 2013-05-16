@@ -6,11 +6,11 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrNot extends IrAbstractBool implements IrBoolExpr {
+public class IrBoolLiteral extends IrAbstractBool  implements IrBoolExpr {
 
     private final IrBoolVar var;
 
-    public IrNot(IrBoolVar var, IrBoolDomain domain) {
+    IrBoolLiteral(IrBoolVar var, IrBoolDomain domain) {
         super(domain);
         this.var = Check.notNull(var);
     }
@@ -21,7 +21,7 @@ public class IrNot extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrBoolLiteral(var, getDomain().invert());
+        return new IrNot(var, getDomain().invert());
     }
 
     @Override
@@ -31,6 +31,6 @@ public class IrNot extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public String toString() {
-        return "!(" + var + ")";
+        return var.toString();
     }
 }

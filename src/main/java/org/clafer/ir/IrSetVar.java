@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSetVar extends IrAbstractSetExpr implements IrVarExpr {
+public class IrSetVar extends IrAbstractSet implements IrVar {
 
     private final String name;
 
@@ -15,22 +15,9 @@ public class IrSetVar extends IrAbstractSetExpr implements IrVarExpr {
         this.name = Check.notNull(name);
     }
 
+    @Override
     public String getName() {
         return name;
-    }
-
-    public boolean isConstant() {
-        return getEnv().size() == getKer().size();
-    }
-
-    public int[] getValue() {
-        assert isConstant();
-        return getEnv().getValues();
-    }
-
-    @Override
-    public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
     }
 
     @Override
@@ -45,6 +32,7 @@ public class IrSetVar extends IrAbstractSetExpr implements IrVarExpr {
 
     @Override
     public String toString() {
-        return name + "{env=" + getEnv() + ", ker=" + getKer() + "}";
+        // TODO: should only print name
+        return name + "{env=" + getEnv() + ", ker=" + getKer() + ", card=" + getCard() + "}";
     }
 }

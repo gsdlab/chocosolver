@@ -17,36 +17,36 @@ public class IrUtil {
         return t;
     }
 
-    public static boolean isTrue(IrConstraint constraint) {
-        if (constraint instanceof IrBoolConstraint) {
-            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
+    public static boolean isTrue(IrConstraint c) {
+        if (c instanceof IrBoolConstraint) {
+            IrBoolConstraint boolConstraint = (IrBoolConstraint) c;
             return isTrue(boolConstraint.getExpr());
         }
         return false;
     }
 
-    public static boolean isFalse(IrConstraint constraint) {
-        if (constraint instanceof IrBoolConstraint) {
-            IrBoolConstraint boolConstraint = (IrBoolConstraint) constraint;
+    public static boolean isFalse(IrConstraint c) {
+        if (c instanceof IrBoolConstraint) {
+            IrBoolConstraint boolConstraint = (IrBoolConstraint) c;
             return isFalse(boolConstraint.getExpr());
         }
         return false;
     }
 
-    public static boolean isTrue(IrBoolExpr boolExpr) {
-        return IrBoolDomain.TrueDomain.equals(boolExpr.getDomain());
+    public static boolean isTrue(IrBool b) {
+        return IrBoolDomain.TrueDomain.equals(b.getDomain());
     }
 
-    public static boolean isFalse(IrBoolExpr boolExpr) {
-        return IrBoolDomain.FalseDomain.equals(boolExpr.getDomain());
+    public static boolean isFalse(IrBool b) {
+        return IrBoolDomain.FalseDomain.equals(b.getDomain());
     }
 
-    public static Boolean isConstant(IrBoolExpr boolExpr) {
-        return !IrBoolDomain.BoolDomain.equals(boolExpr.getDomain());
+    public static Boolean isConstant(IrBool b) {
+        return !IrBoolDomain.BoolDomain.equals(b.getDomain());
     }
 
-    public static Boolean getConstant(IrBoolExpr boolExpr) {
-        switch (boolExpr.getDomain()) {
+    public static Boolean getConstant(IrBool b) {
+        switch (b.getDomain()) {
             case TrueDomain:
                 return Boolean.TRUE;
             case FalseDomain:
@@ -58,32 +58,50 @@ public class IrUtil {
         }
     }
 
-    public static boolean isConstant(IrIntExpr intExpr) {
-        return getConstant(intExpr) != null;
+    public static IrBoolVar asConstant(IrBoolVar b) {
+        switch (b.getDomain()) {
+            case TrueDomain:
+                return Irs.True;
+            case FalseDomain:
+                return Irs.False;
+            case BoolDomain:
+                return b;
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
-    public static Integer getConstant(IrIntExpr intExpr) {
-        IrDomain domain = intExpr.getDomain();
-        if (domain.size() == 1) {
-            return domain.getLowerBound();
-        }
-        return null;
+    public static boolean isConstant(IrInt i) {
+        IrDomain domain = i.getDomain();
+        return domain.size() == 1;
     }
 
-    public static boolean isConstant(IrSetExpr setExpr) {
-        if (setExpr instanceof IrSetVar) {
-            IrSetVar var = (IrSetVar) setExpr;
-            return var.isConstant();
-        }
-        return false;
+    public static Integer getConstant(IrInt i) {
+        IrDomain domain = i.getDomain();
+        return domain.size() == 1 ? domain.getLowerBound() : null;
     }
 
-    public static int[] getConstant(IrSetExpr setExpr) {
-        if (setExpr instanceof IrSetVar) {
-            IrSetVar var = (IrSetVar) setExpr;
-            return var.isConstant() ? var.getValue() : null;
-        }
-        return null;
+    public static IrIntVar asConstant(IrIntVar i) {
+        IrDomain domain = i.getDomain();
+        return domain.size() == 1 ? Irs.constant(domain.getLowerBound()) : i;
+    }
+
+    public static boolean isConstant(IrSet s) {
+        IrDomain env = s.getEnv();
+        IrDomain ker = s.getKer();
+        return env.equals(ker);
+    }
+
+    public static int[] getConstant(IrSet s) {
+        IrDomain env = s.getEnv();
+        IrDomain ker = s.getKer();
+        return env.equals(ker) ? ker.getValues() : null;
+    }
+
+    public static IrSetVar asConstant(IrSetVar s) {
+        IrDomain env = s.getEnv();
+        IrDomain ker = s.getKer();
+        return env.equals(ker) ? Irs.constant(ker.getValues()) : s;
     }
 
     public static boolean intersects(IrDomain d1, IrDomain d2) {

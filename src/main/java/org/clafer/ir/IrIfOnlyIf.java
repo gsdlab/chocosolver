@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrIfOnlyIf extends IrAbstractBoolExpr {
+public class IrIfOnlyIf extends IrAbstractBool implements IrBoolExpr {
 
     private final IrBoolExpr left, right;
 

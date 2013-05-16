@@ -6,7 +6,7 @@ package org.clafer.ir;
  */
 public interface IrIntExprVisitor<A, B> {
 
-    public B visit(IrIntVar ir, A a);
+    public B visit(IrIntLiteral ir, A a);
 
     public B visit(IrCard ir, A a);
 

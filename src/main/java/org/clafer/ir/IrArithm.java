@@ -9,7 +9,7 @@ import org.clafer.ir.IrDomain.IrBoundDomain;
  * 
  * @author jimmy
  */
-public class IrArithm extends IrAbstractIntExpr implements IrIntExpr {
+public class IrArithm extends IrAbstractInt implements IrIntExpr {
 
     private final Op op;
     private final IrIntExpr[] operands;

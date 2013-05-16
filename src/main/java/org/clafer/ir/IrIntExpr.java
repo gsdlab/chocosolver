@@ -5,14 +5,7 @@ package org.clafer.ir;
  * 
  * @author jimmy
  */
-public interface IrIntExpr extends IrExpr {
-
-    /**
-     * Domain cannot be empty.
-     * 
-     * @return the domain of values this expression can take
-     */
-    public IrDomain getDomain();
+public interface IrIntExpr extends IrInt, IrExpr {
 
     public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a);
 }

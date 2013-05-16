@@ -46,7 +46,6 @@ public class SimpleStructureTest {
         type.addChild("Van").withCard(0, 1);
 
         ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2));
-        System.out.println(solver.solver);
         assertEquals(3, solver.allInstances().length);
     }
 

@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSingleton extends IrAbstractSetExpr {
+public class IrSingleton extends IrAbstractSet implements IrSetExpr {
 
     private final IrIntExpr value;
 

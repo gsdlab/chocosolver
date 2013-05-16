@@ -31,6 +31,12 @@ public abstract class IrDomain {
 
     public abstract TIntIterator iterator();
 
+    @Override
+    public abstract boolean equals(Object obj);
+
+    @Override
+    public abstract int hashCode();
+
     public static class IrEmptyDomain extends IrDomain {
 
         @Override
@@ -145,6 +151,9 @@ public abstract class IrDomain {
 
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj instanceof IrEnumDomain) {
                 IrEnumDomain other = (IrEnumDomain) obj;
                 return Arrays.equals(values, other.values);
@@ -246,6 +255,9 @@ public abstract class IrDomain {
 
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj instanceof IrBoundDomain) {
                 IrBoundDomain other = (IrBoundDomain) obj;
                 return low == other.low && high == other.high;

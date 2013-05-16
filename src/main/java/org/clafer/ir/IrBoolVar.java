@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrBoolVar extends IrAbstractBoolExpr implements IrVarExpr {
+public class IrBoolVar extends IrAbstractBool implements IrVar {
 
     private final String name;
 
@@ -15,18 +15,9 @@ public class IrBoolVar extends IrAbstractBoolExpr implements IrVarExpr {
         this.name = Check.notNull(name);
     }
 
+    @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public IrBoolExpr negate() {
-        return new IrNot(this);
-    }
-
-    @Override
-    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
     }
 
     @Override

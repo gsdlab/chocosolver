@@ -32,7 +32,6 @@ import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrConstraint;
 import org.clafer.Check;
 import org.clafer.Util;
-import org.clafer.collection.IntArrayKey;
 import org.clafer.constraint.propagator.PropUtil;
 import org.clafer.constraint.Constraints;
 import org.clafer.ir.IrBoolChannel;
@@ -45,6 +44,7 @@ import solver.variables.SetVar;
 import solver.constraints.Constraint;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
+import org.clafer.ir.IrBoolLiteral;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrConstraintVisitor;
 import org.clafer.ir.IrDomain;
@@ -52,9 +52,11 @@ import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrIntExprVisitor;
+import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetExprVisitor;
+import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
 import solver.Solver;
@@ -91,14 +93,14 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        for (IrSetVar var : module.getSetVars()) {
-            var.accept(setExprCompiler, null);
+        for (IrBoolVar var : module.getBoolVars()) {
+            boolVar.get(var);
         }
         for (IrIntVar var : module.getIntVars()) {
-            var.accept(intExprCompiler, null);
+            intVar.get(var);
         }
-        for (IrBoolVar var : module.getBoolVars()) {
-            var.accept(boolExprCompiler, null);
+        for (IrSetVar var : module.getSetVars()) {
+            setVar.get(var);
         }
         for (IrConstraint constraint : module.getConstraints()) {
             solver.post(constraint.accept(constraintCompiler, null));
@@ -114,19 +116,19 @@ public class IrCompiler {
         if (domain.isBounded()) {
             return VariableFactory.enumerated(name, domain.getLowerBound(), domain.getUpperBound(), solver);
         }
-        return VariableFactory.enumerated(name + "#" + varNum++, domain.getValues(), solver);
+        return VariableFactory.enumerated(name, domain.getValues(), solver);
     }
 
     private IntVar numIntVar(String name, IrDomain domain) {
-        return intVar(name + "#" + varNum, domain);
+        return intVar(name + "#" + varNum++, domain);
     }
 
     private IntVar numIntVar(String name, int low, int high) {
-        return VariableFactory.enumerated(name + "#" + varNum, low, high, solver);
+        return VariableFactory.enumerated(name + "#" + varNum++, low, high, solver);
     }
 
     private IntVar numIntVar(String name, int[] dom) {
-        return VariableFactory.enumerated(name + "#" + varNum, dom, solver);
+        return VariableFactory.enumerated(name + "#" + varNum++, dom, solver);
     }
 
     private SetVar numSetVar(String name, IrSetExpr expr) {
@@ -169,19 +171,11 @@ public class IrCompiler {
     };
     private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
 
-        private final Map<IntArrayKey, SetVar> constantCache = new HashMap<IntArrayKey, SetVar>();
-
         @Override
         protected SetVar cache(IrSetVar a) {
             int[] constant = IrUtil.getConstant(a);
             if (constant != null) {
-                IntArrayKey key = new IntArrayKey(constant);
-                SetVar constantVar = constantCache.get(key);
-                if (constantVar == null) {
-                    constantVar = VariableFactory.set(key.toString(), key.getArray(), key.getArray(), solver);
-                    constantCache.put(key, constantVar);
-                }
-                return constantVar;
+                return VariableFactory.set(a.toString(), constant, constant, solver);
             }
             IrDomain env = a.getEnv();
             IrDomain ker = a.getKer();
@@ -306,13 +300,13 @@ public class IrCompiler {
         private final Map<BoolVar, BoolVar> notCache = new HashMap<BoolVar, BoolVar>();
 
         @Override
-        public BoolVar visit(IrBoolVar ir, Void a) {
-            return boolVar.get(ir);
+        public BoolVar visit(IrBoolLiteral ir, Void a) {
+            return boolVar.get(ir.getVar());
         }
 
         @Override
         public BoolVar visit(IrNot ir, Void a) {
-            BoolVar var = ir.getProposition().accept(this, a);
+            BoolVar var = boolVar.get(ir.getVar());
             BoolVar not = notCache.get(var);
             if (not == null) {
                 not = VariableFactory.not(var);
@@ -448,13 +442,13 @@ public class IrCompiler {
     private final IrBoolExprVisitor<Void, Constraint> boolExprConstraintCompiler = new IrBoolExprVisitor<Void, Constraint>() {
 
         @Override
-        public Constraint visit(IrBoolVar ir, Void a) {
-            return _arithm(boolVar.get(ir), "=", VariableFactory.fixed(1, solver));
+        public Constraint visit(IrBoolLiteral ir, Void a) {
+            return _arithm(boolVar.get(ir.getVar()), "=", VariableFactory.fixed(1, solver));
         }
 
         @Override
         public Constraint visit(IrNot ir, Void a) {
-            return _arithm(ir.getProposition().accept(boolExprCompiler, a), "=", VariableFactory.fixed(0, solver));
+            return _arithm(boolVar.get(ir.getVar()), "=", VariableFactory.fixed(0, solver));
         }
 
         @Override
@@ -620,8 +614,8 @@ public class IrCompiler {
          * sum([x,y], 5)
          */
         @Override
-        public IntVar visit(IrIntVar ir, Void a) {
-            return intVar.get(ir);
+        public IntVar visit(IrIntLiteral ir, Void a) {
+            return intVar.get(ir.getVar());
         }
 
         @Override
@@ -655,6 +649,7 @@ public class IrCompiler {
                         case 2:
                             return VariableFactory.offset(_sum(addends[0], addends[1]), constants);
                         default:
+                            System.out.println(ir);
                             IntVar sum = numIntVar("Sum", ir.getDomain());
                             solver.post(_sum(sum, addends));
                             return VariableFactory.offset(sum, constants);
@@ -748,8 +743,8 @@ public class IrCompiler {
     private final IrSetExprVisitor<Void, SetVar> setExprCompiler = new IrSetExprVisitor<Void, SetVar>() {
 
         @Override
-        public SetVar visit(IrSetVar ir, Void a) {
-            return setVar.get(ir);
+        public SetVar visit(IrSetLiteral ir, Void a) {
+            return setVar.get(ir.getVar());
         }
 
         @Override

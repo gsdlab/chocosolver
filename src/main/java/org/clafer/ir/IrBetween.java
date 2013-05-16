@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrBetween extends IrAbstractBoolExpr {
+public class IrBetween extends IrAbstractBool implements IrBoolExpr {
 
     private final IrIntExpr var;
     private final int low, high;

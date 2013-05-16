@@ -7,7 +7,8 @@ import java.util.List;
 import org.clafer.Check;
 
 /**
- *
+ * The compiled model in IR. A module contains variables and constraints.
+ * 
  * @author jimmy
  */
 public class IrModule {

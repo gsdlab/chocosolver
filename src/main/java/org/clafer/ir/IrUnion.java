@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrUnion extends IrAbstractSetExpr {
+public class IrUnion extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr[] operands;
 
@@ -17,39 +17,6 @@ public class IrUnion extends IrAbstractSetExpr {
 
     public IrSetExpr[] getOperands() {
         return operands;
-    }
-
-    @Override
-    public IrDomain getEnv() {
-        IrDomain env = operands[0].getEnv();
-        for (int i = 1; i < operands.length; i++) {
-            env = IrUtil.union(env, operands[i].getEnv());
-        }
-        return env;
-    }
-
-    @Override
-    public IrDomain getKer() {
-        IrDomain env = operands[0].getKer();
-        for (int i = 1; i < operands.length; i++) {
-            env = IrUtil.union(env, operands[i].getKer());
-        }
-        return env;
-    }
-
-    @Override
-    public IrDomain getCard() {
-        IrDomain card = operands[0].getCard();
-        int low = card.getLowerBound();
-        int high = card.getUpperBound();
-        for (int i = 1; i < operands.length; i++) {
-            card = operands[i].getCard();
-            low = Math.max(low, card.getLowerBound());
-            high += card.getUpperBound();
-        }
-        return Irs.boundDomain(
-                Math.max(low, getKer().size()),
-                Math.min(high, getEnv().size()));
     }
 
     @Override

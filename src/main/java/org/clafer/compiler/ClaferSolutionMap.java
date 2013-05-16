@@ -31,8 +31,9 @@ public class ClaferSolutionMap {
     public InstanceModel getInstance() {
         List<InstanceClafer> topInstances = new ArrayList<InstanceClafer>();
         for (AstConcreteClafer topClafer : astSolution.getModel().getTopClafers()) {
+            // [0] because top clafers only have exactly one children set
             IrSetVar topSetIrVar = astSolution.getChildrenVars(topClafer)[0];
-            int[] topIds = irSolution.getSetVar(topSetIrVar).getValue();
+            int[] topIds = irSolution.getSetValue(topSetIrVar);
             for (int topId : topIds) {
                 topInstances.add(getInstanceClafer(topClafer, topId));
             }
@@ -49,7 +50,7 @@ public class ClaferSolutionMap {
     private int getInstanceClafer(AstClafer clafer, int id, List<InstanceClafer> children) {
         for (AstConcreteClafer child : clafer.getChildren()) {
             IrSetVar childSetIrVar = astSolution.getChildrenVars(child)[id];
-            int[] childIds = irSolution.getSetVar(childSetIrVar).getValue();
+            int[] childIds = irSolution.getSetValue(childSetIrVar);
             for (int childId : childIds) {
                 children.add(getInstanceClafer(child, childId));
             }
@@ -62,7 +63,7 @@ public class ClaferSolutionMap {
         }
         if (clafer.hasRef()) {
             IrIntVar refIrVar = astSolution.getRefVars(clafer.getRef())[id];
-            ref = irSolution.getIntVar(refIrVar).getValue();
+            ref = irSolution.getIntValue(refIrVar);
         }
         return ref;
     }

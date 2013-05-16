@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrIntVar extends IrAbstractIntExpr implements IrVarExpr {
+public class IrIntVar extends IrAbstractInt implements IrVar {
 
     private final String name;
 
@@ -15,13 +15,9 @@ public class IrIntVar extends IrAbstractIntExpr implements IrVarExpr {
         this.name = Check.notNull(name);
     }
 
+    @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
     }
 
     @Override
@@ -36,6 +32,7 @@ public class IrIntVar extends IrAbstractIntExpr implements IrVarExpr {
 
     @Override
     public String toString() {
-        return name;
+        // TODO: return only name
+        return name + "{domain=" + getDomain() + "}";
     }
 }

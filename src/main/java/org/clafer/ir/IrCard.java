@@ -6,7 +6,7 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrCard extends IrAbstractIntExpr {
+public class IrCard extends IrAbstractInt implements IrIntExpr {
 
     private final IrSetExpr set;
 
