@@ -6,15 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrUnion implements IrSetExpr {
+public class IrUnion extends IrAbstractSetExpr {
 
     private final IrSetExpr[] operands;
 
-    IrUnion(IrSetExpr[] operands) {
-        if (operands.length == 0) {
-            throw new IllegalArgumentException();
-        }
-        this.operands = Check.noNulls(operands);
+    IrUnion(IrSetExpr[] operands, IrDomain env, IrDomain ker, IrDomain card) {
+        super(env, ker, card);
+        this.operands = Check.noNullsNotEmpty(operands);
     }
 
     public IrSetExpr[] getOperands() {

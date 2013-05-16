@@ -6,61 +6,26 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSetVar implements IrSetExpr {
+public class IrSetVar extends IrAbstractSetExpr implements IrVarExpr {
 
     private final String name;
-    private final IrDomain env, ker, card;
 
     IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
-        assert IrUtil.isSubsetOf(ker, env);
+        super(env, ker, card);
         this.name = Check.notNull(name);
-        this.env = Check.notNull(env);
-        this.ker = Check.notNull(ker);
-        this.card = Check.notNull(card);
-
-        if (card.isEmpty()) {
-            throw new IllegalArgumentException();
-        }
-        if (card.getLowerBound() > env.size()) {
-            throw new IllegalArgumentException(card.getLowerBound() + " > " + env.size());
-        }
-        if (card.getUpperBound() > env.size()) {
-            throw new IllegalArgumentException(card.getUpperBound() + " > " + env.size());
-        }
-        if (card.getLowerBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getLowerBound() + " < " + ker.size());
-        }
-        if (card.getUpperBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getUpperBound() + " < " + ker.size());
-        }
     }
 
     public String getName() {
         return name;
     }
 
-    @Override
-    public IrDomain getEnv() {
-        return env;
-    }
-
-    @Override
-    public IrDomain getKer() {
-        return ker;
-    }
-
-    @Override
-    public IrDomain getCard() {
-        return card;
-    }
-
     public boolean isConstant() {
-        return env.size() == ker.size();
+        return getEnv().size() == getKer().size();
     }
 
     public int[] getValue() {
         assert isConstant();
-        return env.getValues();
+        return getEnv().getValues();
     }
 
     @Override
@@ -80,6 +45,6 @@ public class IrSetVar implements IrSetExpr {
 
     @Override
     public String toString() {
-        return name;
+        return name + "{env=" + getEnv() + ", ker=" + getKer() + "}";
     }
 }

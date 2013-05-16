@@ -6,12 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrNotBetween implements IrBoolExpr {
+public class IrNotBetween extends IrAbstractBoolExpr {
 
     private final IrIntExpr var;
     private final int low, high;
 
-    IrNotBetween(IrIntExpr var, int low, int high) {
+    IrNotBetween(IrIntExpr var, int low, int high, IrBoolDomain domain) {
+        super(domain);
         if (low > high) {
             throw new IllegalArgumentException();
         }
@@ -33,8 +34,8 @@ public class IrNotBetween implements IrBoolExpr {
     }
 
     @Override
-    public IrBoolExpr opposite() {
-        return new IrBetween(var, low, high);
+    public IrBoolExpr negate() {
+        return new IrBetween(var, low, high, getDomain().invert());
     }
 
     @Override

@@ -6,27 +6,16 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSingleton implements IrSetExpr {
+public class IrSingleton extends IrAbstractSetExpr {
 
     private final IrIntExpr value;
 
-    IrSingleton(IrIntExpr value) {
+    IrSingleton(IrIntExpr value, IrDomain env, IrDomain ker) {
+        super(env, ker, Irs.OneDomain);
         this.value = Check.notNull(value);
-    }
-
-    @Override
-    public IrDomain getEnv() {
-        return value.getDomain();
-    }
-
-    @Override
-    public IrDomain getKer() {
-        return Irs.EmptyDomain;
-    }
-
-    @Override
-    public IrDomain getCard() {
-        return Irs.OneDomain;
+        if (ker.size() > 1) {
+            throw new IllegalArgumentException();
+        }
     }
 
     public IrIntExpr getValue() {

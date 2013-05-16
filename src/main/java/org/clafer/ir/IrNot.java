@@ -19,7 +19,12 @@ public class IrNot implements IrBoolExpr {
     }
 
     @Override
-    public IrBoolExpr opposite() {
+    public IrBoolDomain getDomain() {
+        return proposition.getDomain().invert();
+    }
+
+    @Override
+    public IrBoolExpr negate() {
         return proposition;
     }
 

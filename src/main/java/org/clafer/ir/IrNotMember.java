@@ -6,12 +6,13 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrNotMember implements IrBoolExpr {
+public class IrNotMember extends IrAbstractBoolExpr {
 
     private final IrIntExpr element;
     private final IrSetExpr set;
 
-    IrNotMember(IrIntExpr element, IrSetExpr set) {
+    IrNotMember(IrIntExpr element, IrSetExpr set, IrBoolDomain domain) {
+        super(domain);
         this.element = Check.notNull(element);
         this.set = Check.notNull(set);
     }
@@ -25,8 +26,8 @@ public class IrNotMember implements IrBoolExpr {
     }
 
     @Override
-    public IrBoolExpr opposite() {
-        return new IrMember(element, set);
+    public IrBoolExpr negate() {
+        return new IrMember(element, set, getDomain().invert());
     }
 
     @Override

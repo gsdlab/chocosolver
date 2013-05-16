@@ -11,14 +11,15 @@ import org.clafer.ir.IrDomain.IrEnumDomain;
  *
  * @author jimmy
  */
-public class IrJoinRef implements IrSetExpr {
+public class IrJoinRef extends IrAbstractSetExpr {
 
     private final IrSetExpr take;
     private final IrIntExpr[] refs;
 
-    IrJoinRef(IrSetExpr take, IrIntExpr[] refs) {
+    IrJoinRef(IrSetExpr take, IrIntExpr[] refs, IrDomain env, IrDomain ker, IrDomain card) {
+        super(env, ker, card);
         this.take = Check.notNull(take);
-        this.refs = Check.noNulls(refs);
+        this.refs = Check.noNullsNotEmpty(refs);
     }
 
     public IrSetExpr getTake() {

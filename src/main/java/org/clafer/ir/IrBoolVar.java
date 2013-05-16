@@ -6,38 +6,21 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrBoolVar implements IrBoolExpr {
+public class IrBoolVar extends IrAbstractBoolExpr implements IrVarExpr {
 
     private final String name;
-    private final Boolean value;
 
-    IrBoolVar(String name) {
-        this(name, null);
-    }
-
-    IrBoolVar(String name, Boolean value) {
+    IrBoolVar(String name, IrBoolDomain domain) {
+        super(domain);
         this.name = Check.notNull(name);
-        this.value = value;
     }
 
     public String getName() {
         return name;
     }
 
-    public boolean isConstant() {
-        return value != null;
-    }
-
-    public boolean isTrue() {
-        return isConstant() && value.booleanValue();
-    }
-
-    public boolean isFalse() {
-        return isConstant() && !value.booleanValue();
-    }
-
     @Override
-    public IrBoolExpr opposite() {
+    public IrBoolExpr negate() {
         return new IrNot(this);
     }
 

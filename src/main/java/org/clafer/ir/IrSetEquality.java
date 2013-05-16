@@ -6,13 +6,14 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrSetEquality implements IrBoolExpr {
+public class IrSetEquality extends IrAbstractBoolExpr {
 
     private final IrSetExpr left;
     private final Op op;
     private final IrSetExpr right;
 
-    IrSetEquality(IrSetExpr left, Op op, IrSetExpr right) {
+    IrSetEquality(IrSetExpr left, Op op, IrSetExpr right, IrBoolDomain domain) {
+        super(domain);
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);
@@ -31,8 +32,8 @@ public class IrSetEquality implements IrBoolExpr {
     }
 
     @Override
-    public IrBoolExpr opposite() {
-        return new IrSetEquality(left, op.getOpposite(), right);
+    public IrBoolExpr negate() {
+        return new IrSetEquality(left, op.getOpposite(), right, getDomain().invert());
     }
 
     @Override

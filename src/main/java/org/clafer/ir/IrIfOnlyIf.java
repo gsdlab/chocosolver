@@ -6,11 +6,12 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrIfOnlyIf implements IrBoolExpr {
+public class IrIfOnlyIf extends IrAbstractBoolExpr {
 
     private final IrBoolExpr left, right;
 
-    IrIfOnlyIf(IrBoolExpr left, IrBoolExpr right) {
+    IrIfOnlyIf(IrBoolExpr left, IrBoolExpr right, IrBoolDomain domain) {
+        super(domain);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);
     }
@@ -24,10 +25,10 @@ public class IrIfOnlyIf implements IrBoolExpr {
     }
 
     @Override
-    public IrBoolExpr opposite() {
+    public IrBoolExpr negate() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
+
     @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);

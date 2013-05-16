@@ -190,7 +190,7 @@ public abstract class IrDomain {
 
         /**
          * @param low - Inclusive
-         * @param high - Exclusive
+         * @param high - Inclusive
          */
         public IrBoundDomain(int low, int high) {
             if (low > high) {

@@ -11,7 +11,9 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrBetween;
 import org.clafer.ir.IrMember;
 import org.clafer.ir.IrNotBetween;
+import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrNotMember;
+import org.clafer.ir.IrOr;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
@@ -143,8 +145,9 @@ public class IrCompiler {
 
         @Override
         protected BoolVar cache(IrBoolVar ir) {
-            if (ir.isConstant()) {
-                return (BoolVar) VariableFactory.fixed(ir.isTrue() ? 1 : 0, solver);
+            Boolean constant = IrUtil.getConstant(ir);
+            if (constant != null) {
+                return (BoolVar) VariableFactory.fixed(constant.booleanValue() ? 1 : 0, solver);
             }
             return VariableFactory.bool(ir.getName(), solver);
         }
@@ -346,6 +349,11 @@ public class IrCompiler {
         }
 
         @Override
+        public BoolVar visit(IrOr ir, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public BoolVar visit(IrImplies ir, Void a) {
             BoolVar $antecedent = ir.getAntecedent().accept(this, a);
             BoolVar $consequent = ir.getConsequent().accept(this, a);
@@ -353,6 +361,11 @@ public class IrCompiler {
             solver.post(_implies(reified, _arithm($antecedent, "<=", $consequent)));
             solver.post(_implies(_not(reified), _arithm($antecedent, ">", $consequent)));
             return reified;
+        }
+
+        @Override
+        public BoolVar visit(IrNotImplies ir, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
@@ -463,10 +476,20 @@ public class IrCompiler {
         }
 
         @Override
+        public Constraint visit(IrOr ir, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public Constraint visit(IrImplies ir, Void a) {
             BoolVar $antecedent = ir.getAntecedent().accept(boolExprCompiler, a);
             Constraint $consequent = ir.getConsequent().accept(this, a);
             return _implies($antecedent, $consequent);
+        }
+
+        @Override
+        public Constraint visit(IrNotImplies ir, Void a) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override

@@ -6,11 +6,11 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrAnd extends IrAbstractBoolExpr {
+public class IrOr extends IrAbstractBoolExpr {
 
     private final IrBoolExpr[] operands;
 
-    IrAnd(IrBoolExpr[] operands, IrBoolDomain domain) {
+    IrOr(IrBoolExpr[] operands, IrBoolDomain domain) {
         super(domain);
         this.operands = Check.noNullsNotEmpty(operands);
     }
@@ -25,7 +25,7 @@ public class IrAnd extends IrAbstractBoolExpr {
         for (int i = 0; i < negativeOperands.length; i++) {
             negativeOperands[i] = operands[i].negate();
         }
-        return new IrOr(negativeOperands, getDomain().invert());
+        return new IrAnd(negativeOperands, getDomain().invert());
     }
 
     @Override
@@ -39,7 +39,7 @@ public class IrAnd extends IrAbstractBoolExpr {
 
         for (int i = 0; i < operands.length; i++) {
             if (i > 0) {
-                result.append(" & ");
+                result.append(" | ");
             }
             result.append('(').append(operands[i]).append(')');
         }

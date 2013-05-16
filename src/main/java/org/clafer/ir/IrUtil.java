@@ -34,32 +34,28 @@ public class IrUtil {
     }
 
     public static boolean isTrue(IrBoolExpr boolExpr) {
-        return Boolean.TRUE.equals(getConstant(boolExpr));
+        return IrBoolDomain.TrueDomain.equals(boolExpr.getDomain());
     }
 
     public static boolean isFalse(IrBoolExpr boolExpr) {
-        return Boolean.FALSE.equals(getConstant(boolExpr));
+        return IrBoolDomain.FalseDomain.equals(boolExpr.getDomain());
     }
 
     public static Boolean isConstant(IrBoolExpr boolExpr) {
-        return getConstant(boolExpr) != null;
+        return !IrBoolDomain.BoolDomain.equals(boolExpr.getDomain());
     }
 
     public static Boolean getConstant(IrBoolExpr boolExpr) {
-        if (boolExpr instanceof IrBoolVar) {
-            IrBoolVar var = (IrBoolVar) boolExpr;
-            return var.isTrue() ? Boolean.TRUE
-                    : (var.isFalse() ? Boolean.FALSE : null);
+        switch (boolExpr.getDomain()) {
+            case TrueDomain:
+                return Boolean.TRUE;
+            case FalseDomain:
+                return Boolean.FALSE;
+            case BoolDomain:
+                return null;
+            default:
+                throw new IllegalArgumentException();
         }
-        if (boolExpr instanceof IrNot) {
-            IrNot not = (IrNot) boolExpr;
-            Boolean constant = getConstant(not.getProposition());
-            if (constant != null) {
-                // Reverse the boolean
-                return constant.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
-            }
-        }
-        return null;
     }
 
     public static boolean isConstant(IrIntExpr intExpr) {
@@ -169,5 +165,27 @@ public class IrUtil {
         values.addAll(d1.getValues());
         values.addAll(d2.getValues());
         return Irs.enumDomain(values);
+    }
+
+    public static IrDomain unionEnvs(IrSetExpr... sets) {
+        if (sets.length == 0) {
+            return Irs.EmptyDomain;
+        }
+        IrDomain domain = sets[0].getEnv();
+        for (int i = 1; i < sets.length; i++) {
+            domain = union(domain, sets[i].getEnv());
+        }
+        return domain;
+    }
+
+    public static IrDomain unionKers(IrSetExpr... sets) {
+        if (sets.length == 0) {
+            return Irs.EmptyDomain;
+        }
+        IrDomain domain = sets[0].getKer();
+        for (int i = 1; i < sets.length; i++) {
+            domain = union(domain, sets[i].getKer());
+        }
+        return domain;
     }
 }

@@ -6,13 +6,14 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrCompare implements IrBoolExpr {
+public class IrCompare extends IrAbstractBoolExpr {
 
     private final IrIntExpr left;
     private final Op op;
     private final IrIntExpr right;
 
-    IrCompare(IrIntExpr left, Op op, IrIntExpr right) {
+    IrCompare(IrIntExpr left, Op op, IrIntExpr right, IrBoolDomain domain) {
+        super(domain);
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);
@@ -31,8 +32,8 @@ public class IrCompare implements IrBoolExpr {
     }
 
     @Override
-    public IrBoolExpr opposite() {
-        return new IrCompare(left, op.getOpposite(), right);
+    public IrBoolExpr negate() {
+        return new IrCompare(left, op.getOpposite(), right, getDomain().invert());
     }
 
     @Override

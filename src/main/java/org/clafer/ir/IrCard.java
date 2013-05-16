@@ -6,21 +6,20 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrCard implements IrIntExpr {
+public class IrCard extends IrAbstractIntExpr {
 
     private final IrSetExpr set;
 
-    IrCard(IrSetExpr set) {
+    IrCard(IrSetExpr set, IrDomain domain) {
+        super(domain);
         this.set = Check.notNull(set);
+        if (!IrUtil.isSubsetOf(domain, set.getCard())) {
+            throw new IllegalArgumentException();
+        }
     }
 
     public IrSetExpr getSet() {
         return set;
-    }
-
-    @Override
-    public IrDomain getDomain() {
-        return set.getCard();
     }
 
     @Override

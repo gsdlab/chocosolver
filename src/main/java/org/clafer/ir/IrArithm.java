@@ -9,12 +9,13 @@ import org.clafer.ir.IrDomain.IrBoundDomain;
  * 
  * @author jimmy
  */
-public class IrArithm implements IrIntExpr {
+public class IrArithm extends IrAbstractIntExpr implements IrIntExpr {
 
     private final Op op;
     private final IrIntExpr[] operands;
 
-    IrArithm(Op op, IrIntExpr... operands) {
+    IrArithm(Op op, IrIntExpr[] operands, IrDomain domain) {
+        super(domain);
         this.op = Check.notNull(op);
         this.operands = Check.noNulls(operands);
         if (operands.length < 2) {
@@ -28,50 +29,6 @@ public class IrArithm implements IrIntExpr {
 
     public IrIntExpr[] getOperands() {
         return operands;
-    }
-
-    @Override
-    public IrDomain getDomain() {
-        IrDomain domain = operands[0].getDomain();
-        int low = domain.getLowerBound();
-        int high = domain.getUpperBound();
-
-        switch (op) {
-            case Add:
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low += domain.getLowerBound();
-                    high += domain.getUpperBound();
-                }
-                return new IrBoundDomain(low, high);
-            case Sub:
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low -= domain.getUpperBound();
-                    high -= domain.getLowerBound();
-                }
-                return new IrBoundDomain(low, high);
-            case Mul:
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low = Util.min(low * domain.getLowerBound(), low * domain.getUpperBound(),
-                            high * domain.getLowerBound(), high * domain.getUpperBound());
-                    high = Util.max(low * domain.getLowerBound(), low * domain.getUpperBound(),
-                            high * domain.getLowerBound(), high * domain.getUpperBound());
-                }
-                return new IrBoundDomain(low, high);
-            case Div:
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low = Util.min(low / domain.getLowerBound(), low / domain.getUpperBound(),
-                            high * domain.getLowerBound(), high * domain.getUpperBound());
-                    high = Util.max(low / domain.getLowerBound(), low / domain.getUpperBound(),
-                            high / domain.getLowerBound(), high / domain.getUpperBound());
-                }
-                return new IrBoundDomain(low, high);
-            default:
-                throw new IllegalStateException();
-        }
     }
 
     @Override

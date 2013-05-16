@@ -1,7 +1,8 @@
 package org.clafer.ir;
 
 /**
- *
+ * An immutable expression that evaluates to a set of integers.
+ * 
  * @author jimmy
  */
 public interface IrSetExpr extends IrExpr {

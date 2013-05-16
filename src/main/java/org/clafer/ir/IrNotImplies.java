@@ -6,12 +6,12 @@ import org.clafer.Check;
  *
  * @author jimmy
  */
-public class IrImplies extends IrAbstractBoolExpr {
+public class IrNotImplies extends IrAbstractBoolExpr {
 
     private final IrBoolExpr antecedent;
     private final IrBoolExpr consequent;
 
-    IrImplies(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolDomain domain) {
+    IrNotImplies(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolDomain domain) {
         super(domain);
         this.antecedent = Check.notNull(antecedent);
         this.consequent = Check.notNull(consequent);
@@ -27,7 +27,7 @@ public class IrImplies extends IrAbstractBoolExpr {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrNotImplies(antecedent, consequent, getDomain().invert());
+        return new IrImplies(antecedent, consequent, getDomain().invert());
     }
 
     @Override
@@ -37,6 +37,6 @@ public class IrImplies extends IrAbstractBoolExpr {
 
     @Override
     public String toString() {
-        return antecedent + " => " + consequent;
+        return antecedent + " =/> " + consequent;
     }
 }
