@@ -48,7 +48,7 @@ public class ArrayToSetTest extends ConstraintTest {
     public void testLargeDomain() {
         Solver solver = new Solver();
 
-        IntVar[] array = VariableFactory.enumeratedArray("array", 5, 0, 100000, solver);
+        IntVar[] array = VariableFactory.boundedArray("array", 5, 0, 100000, solver);
         SetVar set = VariableFactory.set("set", Util.range(0, 10000), solver);
 
         solver.post(Constraints.arrayToSet(array, set));

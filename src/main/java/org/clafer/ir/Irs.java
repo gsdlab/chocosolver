@@ -4,10 +4,13 @@ import gnu.trove.TIntCollection;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import org.clafer.ir.IrDomain.IrBoundDomain;
 import org.clafer.ir.IrDomain.IrEmptyDomain;
 import org.clafer.ir.IrDomain.IrEnumDomain;
+import solver.constraints.IntConstraintFactory;
 
 /**
  * 
@@ -435,12 +438,14 @@ public class Irs {
         }
         return new IrNotMember(element, set);
     }
-
     /********************
      * 
      * Integers
      * 
      ********************/
+    public static IrIntExpr Zero = constant(0);
+    public static IrIntExpr One = constant(1);
+
     public static IrIntVar constant(int value) {
         return boundInt(Integer.toString(value), value, value);
     }
@@ -461,118 +466,119 @@ public class Irs {
         return new IrCard(set);
     }
 
+    public static IrIntExpr arithm(IrArithm.Op op, IrIntExpr... operands) {
+        int constants;
+        Deque<IrIntExpr> filter = new LinkedList<IrIntExpr>();
+        switch (op) {
+            case Add:
+                constants = 0;
+                for (IrIntExpr operand : operands) {
+                    Integer constant = IrUtil.getConstant(operand);
+                    if (constant != null) {
+                        constants += constant.intValue();
+                    } else {
+                        filter.add(operand);
+                    }
+                }
+                if (constants != 0) {
+                    filter.add(constant(constants));
+                }
+                if (filter.isEmpty()) {
+                    return Zero;
+                }
+                if (filter.size() == 1) {
+                    return filter.getFirst();
+                }
+                break;
+            case Sub:
+                constants = 0;
+                for (int i = 1; i < operands.length; i++) {
+                    IrIntExpr operand = operands[i];
+                    Integer constant = IrUtil.getConstant(operand);
+                    if (constant != null) {
+                        constants += constant.intValue();
+                    } else {
+                        filter.add(operand);
+                    }
+                }
+                Integer head = IrUtil.getConstant(operands[0]);
+                if (head != null && filter.isEmpty()) {
+                    return constant(head - constants);
+                }
+                filter.addFirst(operands[0]);
+                if (constants != 0) {
+                    filter.add(constant(constants));
+                }
+                if (filter.size() == 1) {
+                    return filter.getFirst();
+                }
+                break;
+            case Mul:
+                constants = 1;
+                for (IrIntExpr operand : operands) {
+                    Integer constant = IrUtil.getConstant(operand);
+                    if (constant != null) {
+                        constants *= constant.intValue();
+                    } else {
+                        filter.add(operand);
+                    }
+                }
+                if (constants == 0) {
+                    return Zero;
+                }
+                if (constants != 1) {
+                    filter.add(constant(constants));
+                }
+                if (filter.isEmpty()) {
+                    return One;
+                }
+                if (filter.size() == 1) {
+                    return filter.getFirst();
+                }
+                break;
+            case Div:
+                // TODO: optimize
+                filter.addAll(Arrays.asList(operands));
+                if (filter.size() == 1) {
+                    return filter.getFirst();
+                }
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+        return new IrArithm(op, filter.toArray(new IrIntExpr[filter.size()]));
+    }
+
     public static IrIntExpr add(IrIntExpr left, int right) {
         return add(left, constant(right));
     }
 
-    public static IrIntExpr add(IrIntExpr left, IrIntExpr right) {
-        Integer leftConstant = IrUtil.getConstant(left);
-        Integer rightConstant = IrUtil.getConstant(right);
-        if (leftConstant != null && rightConstant != null) {
-            return constant(leftConstant.intValue() + rightConstant.intValue());
-        }
-        if (leftConstant != null) {
-            if (leftConstant.intValue() == 0) {
-                return right;
-            }
-        }
-        if (rightConstant != null) {
-            if (rightConstant.intValue() == 0) {
-                return left;
-            }
-        }
-        return new IrArithm(left, IrArithm.Op.Add, right);
+    public static IrIntExpr add(IrIntExpr... operands) {
+        return arithm(IrArithm.Op.Add, operands);
     }
 
     public static IrIntExpr sub(IrIntExpr left, int right) {
         return sub(left, constant(right));
     }
 
-    public static IrIntExpr sub(IrIntExpr left, IrIntExpr right) {
-        Integer leftConstant = IrUtil.getConstant(left);
-        Integer rightConstant = IrUtil.getConstant(right);
-        if (leftConstant != null && rightConstant != null) {
-            return constant(leftConstant.intValue() - rightConstant.intValue());
-        }
-        if (rightConstant != null && rightConstant.intValue() == 0) {
-            return left;
-        }
-        return new IrArithm(left, IrArithm.Op.Sub, right);
+    public static IrIntExpr sub(IrIntExpr... operands) {
+        return new IrArithm(IrArithm.Op.Sub, operands);
     }
 
     public static IrIntExpr mul(IrIntExpr left, int right) {
         return mul(left, constant(right));
-
     }
 
-    public static IrIntExpr mul(IrIntExpr left, IrIntExpr right) {
-        Integer leftConstant = IrUtil.getConstant(left);
-        Integer rightConstant = IrUtil.getConstant(right);
-        if (leftConstant != null && rightConstant != null) {
-            return constant(leftConstant.intValue() * rightConstant.intValue());
-        }
-        if (leftConstant != null) {
-            if (leftConstant.intValue() == 0) {
-                return constant(0);
-            }
-            if (leftConstant.intValue() == 1) {
-                return right;
-            }
-        }
-        if (rightConstant != null) {
-            if (rightConstant.intValue() == 0) {
-                return constant(0);
-            }
-            if (rightConstant.intValue() == 1) {
-                return left;
-            }
-        }
-        return new IrArithm(left, IrArithm.Op.Mul, right);
+    public static IrIntExpr mul(IrIntExpr... operands) {
+        return arithm(IrArithm.Op.Mul, operands);
     }
 
     public static IrIntExpr div(IrIntExpr left, int right) {
         return div(left, constant(right));
     }
 
-    public static IrIntExpr div(IrIntExpr left, IrIntExpr right) {
-        Integer leftConstant = IrUtil.getConstant(left);
-        Integer rightConstant = IrUtil.getConstant(right);
-        if (leftConstant != null && rightConstant != null) {
-            return constant(leftConstant.intValue() / rightConstant.intValue());
-        }
-        if (rightConstant != null && rightConstant.intValue() == 1) {
-            return left;
-        }
-        return new IrArithm(left, IrArithm.Op.Div, right);
-    }
-
-    public static IrIntExpr sum(IrIntExpr... addends) {
-        int constants = 0;
-        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
-        for (IrIntExpr addend : addends) {
-            Integer constant = IrUtil.getConstant(addend);
-            if (constant == null) {
-                filter.add(addend);
-            } else {
-                constants += constant.intValue();
-            }
-        }
-        switch (filter.size()) {
-            case 0:
-                return constant(constants);
-            case 1:
-                return constants == 0 ? filter.get(0) : add(filter.get(0), constants);
-            case 2:
-                if (constants == 0) {
-                    return add(filter.get(0), filter.get(1));
-                }
-            // fallthrough
-            default:
-                if (constants == 0) {
-                    filter.add(constant(constants));
-                }
-                return new IrSum(filter.toArray(new IrIntExpr[filter.size()]));
-        }
+    public static IrIntExpr div(IrIntExpr... operands) {
+        return new IrArithm(IrArithm.Op.Div, operands);
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {

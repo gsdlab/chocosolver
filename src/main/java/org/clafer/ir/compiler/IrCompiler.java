@@ -15,14 +15,15 @@ import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortInts;
 import org.clafer.ir.IrSortStrings;
-import org.clafer.ir.IrSum;
 import org.clafer.ir.IrUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
@@ -334,10 +335,12 @@ public class IrCompiler {
                     solver.post(_implies(_not(reified), _arithm($operands[0], "+", $operands[1], "!=", 2)));
                     return reified;
                 default:
+                    ALogicTree[] ands = new ALogicTree[$operands.length];
+                    for (int i = 0; i < ands.length; i++) {
+                        ands[i] = Literal.pos($operands[i]);
+                    }
                     reified = numBoolVar("And");
-                    solver.post(_implies(reified, _sum(VariableFactory.fixed($operands.length, solver), $operands)));
-                    // The AndSum variable's domain is constructed in a way that guarantees sum < operands.length
-                    solver.post(_implies(_not(reified), _sum(numIntVar("AndSum", 0, $operands.length - 1), $operands)));
+                    solver.post(_clauses(Node.reified(Literal.pos(reified), Node.and(ands))));
                     return reified;
             }
         }
@@ -605,93 +608,103 @@ public class IrCompiler {
 
         @Override
         public IntVar visit(IrArithm ir, Void a) {
-            IrIntExpr left = ir.getLeft();
-            IrIntExpr right = ir.getRight();
-
+            int constants;
+            IrIntExpr[] operands = ir.getOperands();
+            Deque<IntVar> filter = new LinkedList<IntVar>();
             switch (ir.getOp()) {
                 case Add: {
-                    Integer leftConstant = IrUtil.getConstant(left);
-                    Integer rightConstant = IrUtil.getConstant(right);
-                    if (leftConstant != null && rightConstant != null) {
-                        return VariableFactory.fixed(leftConstant.intValue() + rightConstant.intValue(), solver);
+                    constants = 0;
+                    for (IrIntExpr operand : operands) {
+                        Integer constant = IrUtil.getConstant(operand);
+                        if (constant != null) {
+                            constants += constant.intValue();
+                        } else {
+                            filter.add(operand.accept(this, a));
+                        }
                     }
-                    if (leftConstant != null) {
-                        IntVar $right = right.accept(this, a);
-                        return VariableFactory.offset($right, leftConstant.intValue());
+                    IntVar[] addends = filter.toArray(new IntVar[filter.size()]);
+                    switch (addends.length) {
+                        case 0:
+                            // This case should have already been optimized earlier.
+                            return VariableFactory.fixed(constants, solver);
+                        case 1:
+                            return VariableFactory.offset(addends[0], constants);
+                        case 2:
+                            return VariableFactory.offset(_sum(addends[0], addends[1]), constants);
+                        default:
+                            IntVar sum = numIntVar("Sum", ir.getDomain());
+                            solver.post(_sum(sum, addends));
+                            return VariableFactory.offset(sum, constants);
                     }
-                    if (rightConstant != null) {
-                        IntVar $left = left.accept(this, a);
-                        return VariableFactory.offset($left, rightConstant.intValue());
-                    }
-                    IntVar $left = left.accept(this, a);
-                    IntVar $right = right.accept(this, a);
-                    return _sum($left, $right);
                 }
                 case Sub: {
-                    Integer leftConstant = IrUtil.getConstant(left);
-                    Integer rightConstant = IrUtil.getConstant(right);
-                    if (leftConstant != null && rightConstant != null) {
-                        return VariableFactory.fixed(leftConstant.intValue() - rightConstant.intValue(), solver);
+                    constants = 0;
+                    for (int i = 1; i < operands.length; i++) {
+                        Integer constant = IrUtil.getConstant(operands[i]);
+                        if (constant != null) {
+                            constants += constant.intValue();
+                        } else {
+                            filter.add(operands[i].accept(this, a));
+                        }
                     }
-                    if (leftConstant != null && leftConstant.intValue() == 0) {
-                        IntVar $right = right.accept(this, a);
-                        return VariableFactory.minus($right);
+                    filter.add(operands[0].accept(this, a));
+                    IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
+                    switch (subtractends.length) {
+                        case 1:
+                            return VariableFactory.offset(subtractends[0], -constants);
+                        case 2:
+                            return VariableFactory.offset(_sum(subtractends[0], subtractends[1]), -constants);
+                        default:
+                            IntVar diff = numIntVar("Diff", ir.getDomain());
+                            solver.post(_difference(diff, subtractends));
+                            return VariableFactory.offset(diff, -constants);
                     }
-                    if (rightConstant != null) {
-                        IntVar $left = left.accept(this, a);
-                        return VariableFactory.offset($left, -rightConstant.intValue());
-                    }
-                    IntVar $left = left.accept(this, a);
-                    IntVar $right = right.accept(this, a);
-                    return _sum($left, VariableFactory.minus($right));
                 }
                 case Mul: {
-                    Integer leftConstant = IrUtil.getConstant(left);
-                    Integer rightConstant = IrUtil.getConstant(right);
-                    if (leftConstant != null && rightConstant != null) {
-                        return VariableFactory.fixed(leftConstant.intValue() * rightConstant.intValue(), solver);
+                    // TODO: assert operands.length == 2
+                    constants = 1;
+                    for (IrIntExpr operand : operands) {
+                        Integer constant = IrUtil.getConstant(operand);
+                        if (constant != null) {
+                            constants *= constant.intValue();
+                        } else {
+                            filter.add(operand.accept(this, a));
+                        }
                     }
-                    if (leftConstant != null && leftConstant.intValue() > -2) {
-                        IntVar $right = right.accept(this, a);
-                        return VariableFactory.scale($right, leftConstant.intValue());
+                    if (filter.isEmpty()) {
+                        // This case should have already been optimized earlier.
+                        return VariableFactory.fixed(constants, solver);
                     }
-                    if (rightConstant != null && rightConstant.intValue() > -2) {
-                        IntVar $left = left.accept(this, a);
-                        return VariableFactory.scale($left, rightConstant.intValue());
+                    if (constants < -1) {
+                        filter.add(VariableFactory.fixed(constants, solver));
                     }
-                    IntVar $left = left.accept(this, a);
-                    IntVar $right = right.accept(this, a);
-                    IntVar product = numIntVar("Mul",
-                            $left.getLB() * $right.getLB(),
-                            $left.getUB() * $right.getUB());
-                    solver.post(_times(product, $left, $right));
-                    return product;
+                    IntVar[] multiplicands = filter.toArray(new IntVar[filter.size()]);
+                    switch (multiplicands.length) {
+                        case 1:
+                            return constants < -1 ? multiplicands[0]
+                                    : VariableFactory.scale(multiplicands[0], constants);
+                        default:
+                            IntVar multiplicand = multiplicands[0];
+                            for (int i = 1; i < multiplicands.length; i++) {
+                                IntVar product = numIntVar("Mul", ir.getDomain());
+                                solver.post(_times(multiplicand, multiplicands[i], product));
+                                multiplicand = product;
+                            }
+                            return constants < -1 ? multiplicand : VariableFactory.scale(multiplicand, constants);
+                    }
                 }
                 case Div: {
-                    IntVar $left = left.accept(this, a);
-                    IntVar $right = right.accept(this, a);
-                    IntVar quotient = numIntVar("Div",
-                            $left.getLB() / $right.getUB(),
-                            $left.getUB() / $right.getLB());
-                    solver.post(IntConstraintFactory.eucl_div($left, $right, quotient));
-                    return quotient;
+                    // TODO: assert operands.length == 2
+                    IntVar divisor = operands[0].accept(this, a);
+                    for (int i = 1; i < operands.length; i++) {
+                        IntVar quotient = numIntVar("Div", ir.getDomain());
+                        solver.post(_times(divisor, operands[i].accept(this, a), quotient));
+                        divisor = quotient;
+                    }
+                    return divisor;
                 }
             }
             throw new IrException();
-        }
-
-        @Override
-        public IntVar visit(IrSum ir, Void a) {
-            IrIntExpr[] addends = ir.getAddends();
-
-            IntVar[] $addends = new IntVar[addends.length];
-            for (int i = 0; i < $addends.length; i++) {
-                $addends[i] = addends[i].accept(this, a);
-            }
-            int[] bounds = Sum.getSumBounds($addends);
-            IntVar sum = numIntVar("Sum", bounds[0], bounds[1]);
-            solver.post(_sum(sum, $addends));
-            return sum;
         }
 
         @Override
@@ -805,6 +818,15 @@ public class IrCompiler {
         return Sum.var(var1, var2);
     }
 
+    private static Constraint _difference(IntVar difference, IntVar... vars) {
+        int[] coeffiecients = new int[vars.length];
+        coeffiecients[0] = 1;
+        for (int i = 1; i < coeffiecients.length; i++) {
+            coeffiecients[i] = -1;
+        }
+        return IntConstraintFactory.scalar(vars, coeffiecients, difference);
+    }
+
     private static Constraint _sum(IntVar sum, IntVar... vars) {
         return IntConstraintFactory.sum(vars, sum);
     }
@@ -813,8 +835,8 @@ public class IrCompiler {
         return IntConstraintFactory.sum(vars, sum);
     }
 
-    private static Constraint _times(IntVar product, IntVar var1, IntVar var2) {
-        return IntConstraintFactory.times(product, var1, var2);
+    private static Constraint _times(IntVar var1, IntVar var2, IntVar product) {
+        return IntConstraintFactory.times(var1, var2, product);
     }
 
     private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {

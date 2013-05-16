@@ -359,7 +359,7 @@ public class AstCompiler {
                 for (int j = 0; j < cards.length; j++) {
                     cards[j] = card(childrenSets[j][i]);
                 }
-                IrIntExpr sumCards = sum(cards);
+                IrIntExpr sumCards = add(cards);
                 module.addConstraint(greaterThanEqual(sumCards, groupCard.getLow()));
                 module.addConstraint(lessThanEqual(sumCards, groupCard.getHigh()));
             }

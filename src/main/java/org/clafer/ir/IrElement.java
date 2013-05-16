@@ -6,7 +6,8 @@ import org.clafer.Check;
 import org.clafer.ir.IrDomain.IrBoundDomain;
 
 /**
- *
+ * Returns array[index].
+ * 
  * @author jimmy
  */
 public class IrElement implements IrIntExpr {

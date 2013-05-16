@@ -94,14 +94,6 @@ public class PropSumSetN extends Propagator<Variable> {
         return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
-    private static int sum(int[] array) {
-        int sum = 0;
-        for (int a : array) {
-            sum += a;
-        }
-        return sum;
-    }
-
     private static int sumKer(SetVar set) {
         int sum = 0;
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
@@ -121,7 +113,7 @@ public class PropSumSetN extends Propagator<Variable> {
         }
 
         int[] ker = PropUtil.iterateKer(set);
-        int sumKer = sum(ker);
+        int sumKer = Util.sum(ker);
 
         int low = sumKer;
         int[] max = new int[top - kerSize];

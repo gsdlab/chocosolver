@@ -3,7 +3,6 @@ package org.clafer.ir;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ir.IrDomain.IrBoundDomain;
-import solver.constraints.propagators.set.PropIntMemberSet;
 
 /**
  *

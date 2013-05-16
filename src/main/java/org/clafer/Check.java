@@ -1,5 +1,7 @@
 package org.clafer;
 
+import java.util.Iterator;
+
 /**
  *
  * @author jimmy
@@ -27,6 +29,40 @@ public class Check {
         for (Object t : ts) {
             Check.notNull(t);
         }
+        return ts;
+    }
+
+    public static <T> T[] noNullsNotEmpty(T... ts) {
+        Check.notNull(ts);
+        if (ts.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        for (T t : ts) {
+            Check.notNull(t);
+        }
+        return ts;
+    }
+
+    public static <T> T[][] noNullsNotEmpty(T[]... ts) {
+        Check.notNull(ts);
+        if (ts.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        for (T[] t : ts) {
+            Check.noNulls(t);
+        }
+        return ts;
+    }
+
+    public static <T extends Iterable<?>> T noNullsNotEmpty(T ts) {
+        Check.notNull(ts);
+        Iterator<?> iter = ts.iterator();
+        if (!iter.hasNext()) {
+            throw new IllegalArgumentException();
+        }
+        do {
+            Check.notNull(iter.next());
+        } while (iter.hasNext());
         return ts;
     }
 
