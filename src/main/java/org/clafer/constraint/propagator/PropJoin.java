@@ -65,9 +65,34 @@ public class PropJoin extends Propagator<SetVar> {
         return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
     }
 
+    private void findMate(int toEnv) throws ContradictionException {
+        boolean inKer = to.kernelContains(toEnv);
+        int mate = -1;
+        for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
+            if (children[j].envelopeContains(toEnv)) {
+                // Found a second mate.
+                if (mate != -1 || !inKer) {
+                    mate = -2;
+                    break;
+                }
+                mate = j;
+            }
+        }
+        if (mate == -1) {
+            // No mates.
+            to.removeFromEnvelope(toEnv, aCause);
+        } else if (mate != -2 && inKer) {
+            // One mate.
+            take.addToKernel(mate, aCause);
+            PropUtil.kerSubsetKer(children[mate], to, aCause);
+            PropUtil.envSubsetEnv(children[mate], to, aCause);
+            children[mate].addToKernel(toEnv, aCause);
+        }
+    }
+
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        // Prune to and child
+        // Prune to
         TIntHashSet viableTo = new TIntHashSet();
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             PropUtil.iterateEnv(children[i], viableTo);
@@ -80,26 +105,16 @@ public class PropJoin extends Propagator<SetVar> {
             PropUtil.envSubsetEnv(children[i], to, aCause);
         }
 
-        // Pick take
+        // Prune take
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (!PropUtil.isKerSubsetEnv(children[i], to)) {
+                take.removeFromEnvelope(i, aCause);
+            }
+        }
+
+        // Pick take, pick child, pick take, prune to
         for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
-            int child = -1;
-            for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
-                if (children[j].envelopeContains(i)) {
-                    if (child != -1) {
-                        child = -2;
-                        break;
-                    }
-                    child = j;
-                }
-            }
-            if (child == -1) {
-                contradiction(to, "to not subset of children");
-            } else if (child != -2) {
-                take.addToKernel(child, aCause);
-                PropUtil.kerSubsetKer(children[child], to, aCause);
-                PropUtil.envSubsetEnv(children[child], to, aCause);
-                children[child].addToKernel(i, aCause);
-            }
+            findMate(i);
         }
     }
 
@@ -115,48 +130,49 @@ public class PropJoin extends Propagator<SetVar> {
             toD.forEach(pruneChildOnToEnv, EventType.REMOVE_FROM_ENVELOPE);
             toD.forEach(pickTakeOnToKer, EventType.ADD_TO_KER);
             toD.unfreeze();
+            if ((EventType.REMOVE_FROM_ENVELOPE.mask & mask) != 0) {
+                for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+                    if (!PropUtil.isKerSubsetEnv(children[i], to)) {
+                        take.removeFromEnvelope(i, aCause);
+                    }
+                }
+            }
         } else {
             assert isChildVar(idxVarInProp);
-            int id = getChildVarIndex(idxVarInProp);
+            final int id = getChildVarIndex(idxVarInProp);
             childrenD[id].freeze();
             if (take.envelopeContains(id)) {
                 childrenD[id].forEach(pruneToOnChildEnv, EventType.REMOVE_FROM_ENVELOPE);
                 if (take.kernelContains(id)) {
                     childrenD[id].forEach(pickToOnChildKer, EventType.ADD_TO_KER);
+                } else {
+                    IntProcedure pruneTakeOnChildKer = new IntProcedure() {
+
+                        @Override
+                        public void execute(int childKer) throws ContradictionException {
+                            if (!to.envelopeContains(childKer)) {
+                                take.removeFromEnvelope(id, aCause);
+                            }
+                        }
+                    };
+                    childrenD[id].forEach(pruneTakeOnChildKer, EventType.ADD_TO_KER);
                 }
             }
             childrenD[id].unfreeze();
         }
+    }
+
+    public static void main(String[] args) {
     }
     private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
 
         @Override
         public void execute(int takeEnv) throws ContradictionException {
             assert !take.envelopeContains(takeEnv);
+
             for (int i = children[takeEnv].getEnvelopeFirst(); i != SetVar.END; i = children[takeEnv].getEnvelopeNext()) {
-                if (!to.envelopeContains(i)) {
-                    continue;
-                }
-                int child = -1;
-                for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
-                    if (children[j].envelopeContains(i)) {
-                        // Found a second or don't care after first
-                        if (child != -1 || !to.kernelContains(i)) {
-                            child = -2;
-                            break;
-                        }
-                        child = j;
-                    }
-                }
-                if (child == -1) {
-                    // i is not longer supported
-                    to.removeFromEnvelope(i, aCause);
-                } else if (child != -2 && to.kernelContains(i)) {
-                    // i has only one support
-                    take.addToKernel(child, aCause);
-                    PropUtil.kerSubsetKer(children[child], to, aCause);
-                    PropUtil.envSubsetEnv(children[child], to, aCause);
-                    children[child].addToKernel(i, aCause);
+                if (to.envelopeContains(i)) {
+                    findMate(i);
                 }
             }
         }
@@ -176,36 +192,17 @@ public class PropJoin extends Propagator<SetVar> {
 
         @Override
         public void execute(int i) throws ContradictionException {
-            if (!to.envelopeContains(i)) {
-                return;
-            }
-            int child = -1;
-            for (int takeEnv = take.getEnvelopeFirst(); takeEnv != SetVar.END; takeEnv = take.getEnvelopeNext()) {
-                if (children[takeEnv].envelopeContains(i)) {
-                    // Found a second or don't care after first
-                    if (child != -1 || !to.kernelContains(i)) {
-                        return;
-                    }
-                    child = takeEnv;
-                }
-            }
-            if (child == -1) {
-                // No support
-                to.removeFromEnvelope(i, aCause);
-            } else if (to.kernelContains(i)) {
-                // One support
-                take.addToKernel(child, aCause);
-                PropUtil.kerSubsetKer(children[child], to, aCause);
-                PropUtil.envSubsetEnv(children[child], to, aCause);
-                children[child].addToKernel(i, aCause);
+            if (to.envelopeContains(i)) {
+                findMate(i);
             }
         }
     };
     private final IntProcedure pickToOnChildKer = new IntProcedure() {
 
         @Override
-        public void execute(int i) throws ContradictionException {
-            to.addToKernel(i, aCause);
+        public void execute(int childKer) throws ContradictionException {
+            // assert id in ker(take)
+            to.addToKernel(childKer, aCause);
         }
     };
     private final IntProcedure pruneChildOnToEnv = new IntProcedure() {
@@ -224,26 +221,7 @@ public class PropJoin extends Propagator<SetVar> {
         @Override
         public void execute(int toVal) throws ContradictionException {
             assert to.kernelContains(toVal);
-
-            // Even though the children are disjoint, there env may not be.
-            int child = -1;
-            for (int takeEnv = take.getEnvelopeFirst(); takeEnv != SetVar.END; takeEnv = take.getEnvelopeNext()) {
-                if (children[takeEnv].envelopeContains(toVal)) {
-                    if (child != -1) {
-                        // Found a second child.
-                        return;
-                    }
-                    child = takeEnv;
-                }
-            }
-            if (child == -1) {
-                contradiction(to, "no support for " + toVal);
-            } else {
-                take.addToKernel(child, aCause);
-                PropUtil.kerSubsetKer(children[child], to, aCause);
-                PropUtil.envSubsetEnv(children[child], to, aCause);
-                children[child].addToKernel(toVal, aCause);
-            }
+            findMate(toVal);
         }
     };
 

@@ -64,10 +64,9 @@ import org.clafer.ir.IrUtil;
 import org.clafer.ir.analysis.ExpressionAnalysis;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
+import solver.constraints.LogicalConstraintFactory;
 import solver.constraints.nary.Sum;
-import solver.constraints.nary.cnf.ALogicTree;
-import solver.constraints.nary.cnf.Literal;
-import solver.constraints.nary.cnf.Node;
+import solver.constraints.nary.cnf.LogOp;
 import solver.constraints.set.SetConstraintsFactory;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -336,15 +335,11 @@ public class IrCompiler {
                 case 2:
                     BoolVar reified = numBoolVar("And");
                     solver.post(_implies(reified, _arithm($operands[0], "+", $operands[1], "=", 2)));
-                    solver.post(_implies(_not(reified), _arithm($operands[0], "+", $operands[1], "!=", 2)));
+                    solver.post(_implies(reified.not(), _arithm($operands[0], "+", $operands[1], "!=", 2)));
                     return reified;
                 default:
-                    ALogicTree[] ands = new ALogicTree[$operands.length];
-                    for (int i = 0; i < ands.length; i++) {
-                        ands[i] = Literal.pos($operands[i]);
-                    }
                     reified = numBoolVar("And");
-                    solver.post(_clauses(Node.reified(Literal.pos(reified), Node.and(ands))));
+                    solver.post(_clauses(LogOp.reified(reified, LogOp.and($operands))));
                     return reified;
             }
         }
@@ -359,8 +354,7 @@ public class IrCompiler {
             BoolVar $antecedent = ir.getAntecedent().accept(this, a);
             BoolVar $consequent = ir.getConsequent().accept(this, a);
             BoolVar reified = numBoolVar("Implies");
-            solver.post(_clauses(Node.reified(Literal.pos(reified), Node.implies(
-                    Literal.pos($antecedent), Literal.pos($consequent)))));
+            solver.post(_clauses(LogOp.reified(reified, LogOp.implies($antecedent, $consequent))));
             return reified;
         }
 
@@ -369,8 +363,7 @@ public class IrCompiler {
             BoolVar $antecedent = ir.getAntecedent().accept(this, a);
             BoolVar $consequent = ir.getConsequent().accept(this, a);
             BoolVar reified = numBoolVar("NotImplies");
-            solver.post(_clauses(Node.reified(Literal.neg(reified), Node.implies(
-                    Literal.pos($antecedent), Literal.pos($consequent)))));
+            solver.post(_clauses(LogOp.reified(reified.not(), LogOp.implies($antecedent, $consequent))));
             return reified;
         }
 
@@ -380,8 +373,8 @@ public class IrCompiler {
             BoolVar $consequent = ir.getConsequent().accept(this, a);
             BoolVar $alternative = ir.getAlternative().accept(this, a);
             BoolVar reified = numBoolVar("IfThenElse");
-            solver.post(_clauses(Node.reified(Literal.pos(reified), Node.ifThenElse(
-                    Literal.pos($antecedent), Literal.pos($consequent), Literal.pos($alternative)))));
+            solver.post(_clauses(LogOp.reified(reified, LogOp.ifThenElse(
+                    $antecedent, $consequent, $alternative))));
             return reified;
         }
 
@@ -391,7 +384,7 @@ public class IrCompiler {
             BoolVar $right = ir.getRight().accept(this, a);
             BoolVar reified = numBoolVar("IfOnlyIf");
             solver.post(_implies(reified, _arithm($left, "=", $right)));
-            solver.post(_implies(_not(reified), _arithm($left, "!=", $right)));
+            solver.post(_implies(reified.not(), _arithm($left, "!=", $right)));
             return reified;
         }
 
@@ -400,7 +393,7 @@ public class IrCompiler {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
             BoolVar reified = numBoolVar("Between");
             solver.post(_implies(reified, _between($var, ir.getLow(), ir.getHigh())));
-            solver.post(_implies(_not(reified), _not_between($var, ir.getLow(), ir.getHigh())));
+            solver.post(_implies(reified.not(), _not_between($var, ir.getLow(), ir.getHigh())));
             return reified;
         }
 
@@ -409,7 +402,7 @@ public class IrCompiler {
             IntVar $var = ir.getVar().accept(intExprCompiler, a);
             BoolVar reified = numBoolVar("NotBetween");
             solver.post(_implies(reified, _not_between($var, ir.getLow(), ir.getHigh())));
-            solver.post(_implies(_not(reified), _between($var, ir.getLow(), ir.getHigh())));
+            solver.post(_implies(reified.not(), _between($var, ir.getLow(), ir.getHigh())));
             return reified;
         }
 
@@ -419,7 +412,7 @@ public class IrCompiler {
             IntVar $right = ir.getRight().accept(intExprCompiler, a);
             BoolVar reified = numBoolVar("IntCompare");
             solver.post(_implies(reified, _arithm($left, ir.getOp().getSyntax(), $right)));
-            solver.post(_implies(_not(reified), _arithm($left, ir.getOp().getOpposite().getSyntax(), $right)));
+            solver.post(_implies(reified.not(), _arithm($left, ir.getOp().getOpposite().getSyntax(), $right)));
             return reified;
         }
 
@@ -431,11 +424,11 @@ public class IrCompiler {
             switch (ir.getOp()) {
                 case Equal:
                     solver.post(_implies(reified, _equal($left, $right)));
-                    solver.post(_implies(_not(reified), _all_different($left, $right)));
+                    solver.post(_implies(reified.not(), _all_different($left, $right)));
                     return reified;
                 case NotEqual:
                     solver.post(_implies(reified, _all_different($left, $right)));
-                    solver.post(_implies(_not(reified), _equal($left, $right)));
+                    solver.post(_implies(reified.not(), _equal($left, $right)));
                     return reified;
                 default:
                     throw new IrException();
@@ -448,7 +441,7 @@ public class IrCompiler {
             SetVar $set = ir.getSet().accept(setExprCompiler, a);
             BoolVar reified = numBoolVar("Member");
             solver.post(_implies(reified, _member($element, $set)));
-            solver.post(_implies(_not(reified), _not_member($element, $set)));
+            solver.post(_implies(reified.not(), _not_member($element, $set)));
             return reified;
         }
 
@@ -458,7 +451,7 @@ public class IrCompiler {
             SetVar $set = ir.getSet().accept(setExprCompiler, a);
             BoolVar reified = numBoolVar("NotMember");
             solver.post(_implies(reified, _not_member($element, $set)));
-            solver.post(_implies(_not(reified), _member($element, $set)));
+            solver.post(_implies(reified.not(), _member($element, $set)));
             return reified;
         }
 
@@ -867,32 +860,16 @@ public class IrCompiler {
         }
     };
 
-    private ConjunctiveNormalForm _clauses(ALogicTree tree) {
+    private ConjunctiveNormalForm _clauses(LogOp tree) {
         return IntConstraintFactory.clauses(tree, solver);
     }
 
-    private static BoolVar _not(BoolVar b) {
-        return VariableFactory.not(b);
-    }
-
-    private static Node _reified(Literal var, ALogicTree tree) {
-        return Node.reified(var, tree);
-    }
-
-    private static Node _reified(BoolVar var, ALogicTree tree) {
-        return _reified(Literal.pos(var), tree);
-    }
-
-    private static Node _and(ALogicTree... children) {
-        return Node.and(children);
-    }
-
     private static Constraint _implies(BoolVar b, Constraint c) {
-        return IntConstraintFactory.implies(b, c);
+        return LogicalConstraintFactory.ifThen(b, c);
     }
 
     private static Constraint _ifThenElse(BoolVar b, Constraint c, Constraint d) {
-        return IntConstraintFactory.implies(b, c, d);
+        return LogicalConstraintFactory.ifThenElse(b, c, d);
     }
 
     private static IntVar _sum(IntVar var1, IntVar var2) {

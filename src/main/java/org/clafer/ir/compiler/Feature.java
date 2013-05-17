@@ -5,6 +5,9 @@ import java.util.Random;
 import solver.ResolutionPolicy;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
+import solver.constraints.LogicalConstraintFactory;
+import solver.constraints.nary.cnf.ILogical;
+import solver.constraints.nary.cnf.LogOp;
 import solver.explanations.ExplanationFactory;
 import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.search.strategy.selectors.values.InDomainMin;
@@ -46,6 +49,10 @@ public class Feature {
         
         IntVar objective = VariableFactory.bounded("objective", -100, 100, solver);
         BoolVar[] features = VariableFactory.boolArray("feature", 10, solver);
+        
+        ILogical f = features[0];
+        LogOp.or(features);
+        
         Random rand = new Random();
         IntVar[] footprint = new IntVar[features.length];
         for (int i = 0; i < footprint.length; i++) {
@@ -53,9 +60,9 @@ public class Feature {
             int[] e = new int[]{0, val};
             Arrays.sort(e);
             footprint[i] = VariableFactory.enumerated("footprint#" + i, e, solver);
-            solver.post(IntConstraintFactory.implies(features[i],
+            solver.post(LogicalConstraintFactory.ifThen(features[i],
                     IntConstraintFactory.arithm(footprint[i], "=", VariableFactory.fixed(val, solver))));
-            solver.post(IntConstraintFactory.implies(VariableFactory.not(features[i]),
+            solver.post(LogicalConstraintFactory.ifThen(VariableFactory.not(features[i]),
                     IntConstraintFactory.arithm(footprint[i], "=", VariableFactory.fixed(0, solver))));
         }
         solver.post(IntConstraintFactory.sum(footprint, objective));

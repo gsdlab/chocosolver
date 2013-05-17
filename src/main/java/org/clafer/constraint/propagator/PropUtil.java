@@ -119,6 +119,15 @@ public class PropUtil {
         return true;
     }
 
+    public static boolean isEnvSubsetEnv(SetVar sub, SetVar sup) {
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!sup.envelopeContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean isKerSubsetEnv(SetVar sub, SetVar sup) {
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
             if (!sup.envelopeContains(i)) {

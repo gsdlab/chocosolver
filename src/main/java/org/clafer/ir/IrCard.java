@@ -3,6 +3,7 @@ package org.clafer.ir;
 import org.clafer.Check;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
+import solver.constraints.LogicalConstraintFactory;
 import solver.search.strategy.IntStrategyFactory;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -65,24 +66,24 @@ public class IrCard extends IrAbstractInt implements IrIntExpr {
 //            System.out.println(solver.instance());
 //        }
 //    }
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-        BoolVar v = VariableFactory.bool("v", solver);
-        IntVar i1 = VariableFactory.enumerated("i1", 0, 10, solver);
-        IntVar i2 = VariableFactory.enumerated("i2", 0, 10, solver);
-        solver.post(IntConstraintFactory.implies(v,
-                IntConstraintFactory.arithm(i1, "=", 3),
-                IntConstraintFactory.arithm(i2, "=", 3)));
-        solver.post(IntConstraintFactory.implies(v,
-                IntConstraintFactory.arithm(i2, "=", 0),
-                IntConstraintFactory.arithm(i1, "=", 0)));
+public static void main(String[] args) {
+    Solver solver = new Solver();
+    BoolVar v = VariableFactory.bool("v", solver);
+    IntVar i1 = VariableFactory.enumerated("i1", 0, 10, solver);
+    IntVar i2 = VariableFactory.enumerated("i2", 0, 10, solver);
+    solver.post(LogicalConstraintFactory.ifThenElse(v,
+            IntConstraintFactory.arithm(i1, "=", 3),
+            IntConstraintFactory.arithm(i2, "=", 3)));
+    solver.post(LogicalConstraintFactory.ifThenElse(v,
+            IntConstraintFactory.arithm(i2, "=", 0),
+            IntConstraintFactory.arithm(i1, "=", 0)));
 
-        solver.set(IntStrategyFactory.firstFail_InDomainMin(new IntVar[]{i1, i2}));
+    solver.set(IntStrategyFactory.firstFail_InDomainMin(new IntVar[]{i1, i2}));
 
-        if (solver.findSolution()) {
-            do {
-                System.out.println(solver);
-            } while (solver.nextSolution());
-        }
+    if (solver.findSolution()) {
+        do {
+            System.out.println(solver);
+        } while (solver.nextSolution());
     }
+}
 }

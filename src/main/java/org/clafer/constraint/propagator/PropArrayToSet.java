@@ -33,7 +33,6 @@ public class PropArrayToSet extends Propagator<Variable> {
         this.asD = PropUtil.monitorDeltas(as, aCause);
         this.s = s;
         this.sD = s.monitorDelta(aCause);
-
     }
 
     private static Variable[] buildArray(IntVar[] as, SetVar s) {
@@ -65,18 +64,14 @@ public class PropArrayToSet extends Propagator<Variable> {
         return EventType.REMOVE_FROM_ENVELOPE.mask + EventType.ADD_TO_KER.mask;
     }
 
-    private void instantiateS(int[] value) throws ContradictionException {
-        s.instantiateTo(value, aCause);
-        PropUtil.intsSubsetEnv(as, s, aCause);
-    }
-
     private void checkKerSize() throws ContradictionException {
         if (s.getKernelSize() > as.length) {
             contradiction(s, s + " is too large");
         }
         if (s.getKernelSize() == as.length) {
             if (!s.instantiated()) {
-                instantiateS(PropUtil.iterateKer(s));
+                s.instantiateTo(PropUtil.iterateKer(s), aCause);
+                PropUtil.intsSubsetEnv(as, s, aCause);
             }
         }
     }
@@ -107,8 +102,6 @@ public class PropArrayToSet extends Propagator<Variable> {
             assert isAVar(idxVarInProp);
 
             int id = getAVarIndex(idxVarInProp);
-            if (EventType.isInclow(mask)) {
-            }
             if (EventType.isRemove(mask)
                     || (EventType.isInclow(mask) && as[id].getLB() > s.getEnvelopeFirst())
                     || EventType.isDecupp(mask)) {

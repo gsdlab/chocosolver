@@ -742,6 +742,15 @@ public class Irs {
         }
     }
 
+    /**
+     * Relational join, Clafer version.
+     * 
+     *   Union{for all i in take} children[i]
+     * 
+     * @param take
+     * @param children
+     * @return the join expression take.children
+     */
     public static IrSetExpr join(IrSetExpr take, IrSetExpr[] children) {
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {

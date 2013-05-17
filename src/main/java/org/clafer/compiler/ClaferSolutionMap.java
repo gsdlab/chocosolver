@@ -89,23 +89,4 @@ public class ClaferSolutionMap {
         IntVar refVar = irSolution.getIntVar(refIrVars[id]);
         return refVar.getValue();
     }
-
-    public static class Children {
-
-        private final AstClafer type;
-        private final int[] ids;
-
-        private Children(AstClafer type, int[] ids) {
-            this.type = Check.notNull(type);
-            this.ids = Check.notNull(ids);
-        }
-
-        public AstClafer getType() {
-            return type;
-        }
-
-        public int[] getIds() {
-            return ids;
-        }
-    }
 }
