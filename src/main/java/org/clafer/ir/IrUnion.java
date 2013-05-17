@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import java.util.Arrays;
 import org.clafer.Check;
 
 /**
@@ -22,6 +23,20 @@ public class IrUnion extends IrAbstractSet implements IrSetExpr {
     @Override
     public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrUnion) {
+            IrUnion other = (IrUnion) obj;
+            return Arrays.equals(operands, other.operands) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(operands);
     }
 
     @Override

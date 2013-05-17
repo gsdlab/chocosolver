@@ -25,6 +25,20 @@ public class IrSetLiteral extends IrAbstractSet implements IrSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrSetLiteral) {
+            IrSetLiteral other = (IrSetLiteral) obj;
+            return var.equals(other.var) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 127 * var.hashCode();
+    }
+
+    @Override
     public String toString() {
         return var.toString();
     }

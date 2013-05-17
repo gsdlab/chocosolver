@@ -18,6 +18,8 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrNotImplies ir, A a);
 
+    public B visit(IrIfThenElse ir, A a);
+
     public B visit(IrIfOnlyIf ir, A a);
 
     public B visit(IrBetween ir, A a);
@@ -31,4 +33,6 @@ public interface IrBoolExprVisitor<A, B> {
     public B visit(IrMember ir, A a);
 
     public B visit(IrNotMember ir, A a);
+
+    public B visit(IrBoolCast ir, A a);
 }

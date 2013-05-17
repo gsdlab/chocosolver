@@ -134,7 +134,7 @@ public class AstCompiler {
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
                         IrBoolExpr thisConstraint = (IrBoolExpr) constraint.getExpr().accept(expressionCompiler, null);
-                        module.addConstraint(implies($(membership.get(clafer)[j]), thisConstraint));
+                        module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
                     }
                 } else {
                     IrBoolVar soft = bool("Constraint#" + i + " under " + clafer + i);
@@ -142,7 +142,7 @@ public class AstCompiler {
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
                         IrBoolExpr thisConstraint = (IrBoolExpr) constraint.getExpr().accept(expressionCompiler, null);
-                        module.addConstraint(implies($(soft), implies($(membership.get(clafer)[j]), thisConstraint)));
+                        module.addConstraint(implies($(soft), implies(membership.get(clafer)[j], thisConstraint)));
                     }
                 }
             }
@@ -181,8 +181,9 @@ public class AstCompiler {
                 // No unused
                 module.addConstraint(intChannel($(parents), $(childrenSet.get(clafer))));
             } else {
+                IrSetExpr[] childSet = $(childrenSet.get(clafer));
                 IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
-                module.addConstraint(intChannel($(parents), Util.cons($(childrenSet.get(clafer)), $(unused))));
+                module.addConstraint(intChannel($(parents), Util.cons(childSet, $(unused))));
             }
         }
         if (clafer.hasRef()) {
@@ -194,11 +195,11 @@ public class AstCompiler {
                         assert clafer.getCard().getLow() == refs.length;
                         module.addConstraint(allDifferent($(refs)));
                     } else {
-                        IrBoolVar[] members = membership.get(clafer);
+                        IrBoolExpr[] members = membership.get(clafer);
                         for (int i = 0; i < refs.length; i++) {
                             for (int j = i + 1; j < refs.length; j++) {
                                 module.addConstraint(
-                                        implies(and($(members[i], members[j])),
+                                        implies(and(members[i], members[j]),
                                         notEqual($(refs[i]), $(refs[j]))));
                             }
                         }
@@ -216,10 +217,10 @@ public class AstCompiler {
                     }
                 }
             } else {
-                IrBoolVar[] members = membership.get(clafer);
+                IrBoolExpr[] members = membership.get(clafer);
                 assert refs.length == members.length;
                 for (int i = 0; i < members.length; i++) {
-                    module.addConstraint(implies(not($(members[i])), equal($(refs[i]), 0)));
+                    module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
                 }
             }
         }
@@ -349,7 +350,7 @@ public class AstCompiler {
         List<AstConcreteClafer> children = clafer.getChildren();
         if (groupCard.isBounded()) {
             IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
-            IrBoolVar[][] childrenMembership = new IrBoolVar[children.size()][];
+            IrBoolExpr[][] childrenMembership = new IrBoolExpr[children.size()][];
             boolean featureGroup = true;
             for (int i = 0; i < childrenSets.length; i++) {
                 AstConcreteClafer child = children.get(i);
@@ -382,43 +383,51 @@ public class AstCompiler {
     private void initLowGroupConcrete(AstConcreteClafer clafer) {
         PartialSolution partialSolution = getPartialSolution(clafer);
 
-        IrSetVar[] children = skipCards(clafer);
-        childrenSet.put(clafer, children);
-        set.put(clafer, union($(children)));
+        IrSetVar[] childSet = skipCards(clafer);
+        childrenSet.put(clafer, childSet);
+        set.put(clafer, union($(childSet)));
 
-        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         for (int i = 0; i < members.length; i++) {
-            members[i] = partialSolution.hasClafer(i) ? True : bool(clafer.getName() + "@Membership#" + i);
+            if (partialSolution.hasClafer(i)) {
+                members[i] = $(True);
+            } else {
+                members[i] =
+                        childSet.length == 1 && members.length == 1
+                        ? asBool(card($(childSet[0])))
+                        : $(bool(clafer.getName() + "@Membership#" + i));
+            }
         }
         membership.put(clafer, members);
     }
 
     private void constrainLowGroupConcrete(AstConcreteClafer clafer) {
-        IrBoolVar[] members = membership.get(clafer);
+        IrBoolExpr[] members = membership.get(clafer);
 
         if (!clafer.hasParent()) {
-            module.addConstraint(selectN($(members), card(set.get(clafer))));
+            module.addConstraint(selectN(members, card(set.get(clafer))));
         }
 
         PartialSolution partialParentSolution = getPartialParentSolution(clafer);
         Card card = clafer.getCard();
-        Card groupCard = clafer.getGroupCard();
 
-        IrSetVar[] children = childrenSet.get(clafer);
+        IrSetVar[] childSet = childrenSet.get(clafer);
         for (int i = 0; i < partialParentSolution.size(); i++) {
-            IrBoolVar parentMember = clafer.hasParent()
+            IrBoolExpr parentMember = clafer.hasParent()
                     ? membership.get(clafer.getParent())[i]
-                    : True;
+                    : $(True);
             if (card.isBounded()) {
                 // Enforce cardinality.
-                module.addConstraint(implies($(parentMember), constrainCard(card($(children[i])), card)));
+                module.addConstraint(implies(parentMember, constrainCard(card($(childSet[i])), card)));
             }
-            module.addConstraint(implies(not($(parentMember)), equal($(children[i]), $(EmptySet))));
+            module.addConstraint(implies(not(parentMember), equal($(childSet[i]), $(EmptySet))));
         }
 
         IrSetExpr claferSet = set.get(clafer);
 
-        module.addConstraint(boolChannel($(members), claferSet));
+        if (!(childSet.length == 1 && members.length == 1)) {
+            module.addConstraint(boolChannel(members, claferSet));
+        }
 
         /**
          * What is this optimization?
@@ -455,12 +464,12 @@ public class AstCompiler {
         childrenSet.put(clafer, children);
         set.put(clafer, union($(children)));
 
-        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         if (!clafer.hasParent()) {
             Arrays.fill(members, 0, lowCard, True);
             Arrays.fill(members, lowCard, members.length, False);
         } else {
-            IrBoolVar[] parentMembership = membership.get(clafer.getParent());
+            IrBoolExpr[] parentMembership = membership.get(clafer.getParent());
             if (lowCard == 1) {
                 members = parentMembership;
             } else {
@@ -482,9 +491,9 @@ public class AstCompiler {
         int lowCard = clafer.getCard().getLow();
         for (int i = 0; i < children.length; i++) {
             if (!partialParentSolution.hasClafer(i)) {
-                module.addConstraint(implies($(membership.get(clafer.getParent())[i]),
+                module.addConstraint(implies(membership.get(clafer.getParent())[i],
                         equal($(children[i]), $(constant(Util.fromTo(i * lowCard, i * lowCard + lowCard))))));
-                module.addConstraint(implies(not($(membership.get(clafer.getParent())[i])),
+                module.addConstraint(implies(not(membership.get(clafer.getParent())[i]),
                         equal($(children[i]), $(EmptySet))));
             }
         }
@@ -493,9 +502,9 @@ public class AstCompiler {
     private void initAbstract(AstAbstractClafer clafer) {
         set.put(clafer, $(set(clafer.getName(), 0, getScope(clafer) - 1)));
 
-        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         for (AstClafer sub : clafer.getSubs()) {
-            IrBoolVar[] subMembers = membership.get(sub);
+            IrBoolExpr[] subMembers = membership.get(sub);
             int offset = getOffset(clafer, sub);
             for (int i = 0; i < subMembers.length; i++) {
                 assert members[offset + i] == null;
@@ -515,7 +524,7 @@ public class AstCompiler {
     }
     private final ReadWriteHashMap<AstClafer, IrSetExpr> set = new ReadWriteHashMap<AstClafer, IrSetExpr>();
     private final ReadWriteHashMap<AstClafer, IrSetVar[]> childrenSet = new ReadWriteHashMap<AstClafer, IrSetVar[]>();
-    private final ReadWriteHashMap<AstClafer, IrBoolVar[]> membership = new ReadWriteHashMap<AstClafer, IrBoolVar[]>();
+    private final ReadWriteHashMap<AstClafer, IrBoolExpr[]> membership = new ReadWriteHashMap<AstClafer, IrBoolExpr[]>();
     private final ReadWriteHashMap<AstConcreteClafer, IrIntVar[]> parentPointers = new ReadWriteHashMap<AstConcreteClafer, IrIntVar[]>();
     private final ReadWriteHashMap<AstRef, IrIntVar[]> refPointers = new ReadWriteHashMap<AstRef, IrIntVar[]>();
 

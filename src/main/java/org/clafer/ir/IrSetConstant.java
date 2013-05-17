@@ -27,6 +27,7 @@ public class IrSetConstant extends IrSetVar {
         }
         if (obj instanceof IrSetConstant) {
             IrSetConstant other = (IrSetConstant) obj;
+            // Don't need to call super.hashCode since the domain is the same as value.
             return Arrays.equals(value, other.value);
         }
         return false;

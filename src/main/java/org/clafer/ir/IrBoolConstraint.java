@@ -24,6 +24,20 @@ public class IrBoolConstraint implements IrConstraint {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrBoolConstraint) {
+            IrBoolConstraint other = (IrBoolConstraint) obj;
+            return expr.equals(other.expr);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 37 * expr.hashCode();
+    }
+
+    @Override
     public String toString() {
         return expr.toString();
     }

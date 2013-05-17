@@ -1,16 +1,17 @@
 package org.clafer;
 
+import solver.Solver;
+import solver.constraints.IntConstraintFactory;
+import solver.variables.BoolVar;
+import solver.variables.IntVar;
+import solver.variables.VariableFactory;
 import org.clafer.compiler.ClaferObjective;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.constraint.propagator.PropIntNotMemberSet;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.constraints.propagators.set.PropIntMemberSet;
-import solver.constraints.set.SetConstraintsFactory;
-import solver.search.loop.monitors.SearchMonitorFactory;
 import static org.clafer.ast.Asts.*;
 
 /**

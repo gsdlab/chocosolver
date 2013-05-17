@@ -37,8 +37,27 @@ public class IrSetEquality extends IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrSetEquality) {
+            IrSetEquality other = (IrSetEquality) obj;
+            return left.equals(other.left) && op.equals(other.op) && right.equals(other.right) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return left.hashCode() ^ op.hashCode() ^ right.hashCode();
     }
 
     @Override

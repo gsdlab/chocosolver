@@ -25,12 +25,31 @@ public class IrNot extends IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public boolean isNegative() {
+        return true;
+    }
+
+    @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrNot) {
+            IrNot other = (IrNot) obj;
+            return var.equals(other.var) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return ~var.hashCode();
+    }
+
+    @Override
     public String toString() {
-        return "!(" + var + ")";
+        return "!" + var;
     }
 }

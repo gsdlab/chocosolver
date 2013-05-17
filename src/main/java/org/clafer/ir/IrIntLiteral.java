@@ -25,6 +25,20 @@ public class IrIntLiteral extends IrAbstractInt implements IrIntExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrIntLiteral) {
+            IrIntLiteral other = (IrIntLiteral) obj;
+            return var.equals(other.var) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 127 * var.hashCode();
+    }
+
+    @Override
     public String toString() {
         return var.toString();
     }

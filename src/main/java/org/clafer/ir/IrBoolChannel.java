@@ -31,6 +31,20 @@ public class IrBoolChannel implements IrConstraint {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrBoolChannel) {
+            IrBoolChannel other = (IrBoolChannel) obj;
+            return Arrays.equals(bools, other.bools) && set.equals(other.set);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(bools) ^ set.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "boolChannel(" + Arrays.toString(bools) + ", " + set + ")";
     }

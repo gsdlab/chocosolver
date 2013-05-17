@@ -31,7 +31,31 @@ public class IrMember extends IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrMember) {
+            IrMember other = (IrMember) obj;
+            return element.equals(other.element) && set.equals(other.set) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return element.hashCode() ^ set.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return element + " ∈ " + set;
     }
 }

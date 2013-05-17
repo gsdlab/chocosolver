@@ -169,7 +169,7 @@ public class IrUtil {
         if (isSubsetOf(d2, d1)) {
             return d1;
         }
-        if (d1 instanceof IrBoundDomain && d2 instanceof IrBoundDomain) {
+        if (d1.isBounded() && d2.isBounded()) {
             if (d1.getLowerBound() <= d2.getLowerBound()
                     && d1.getUpperBound() >= d2.getLowerBound()) {
                 return Irs.boundDomain(d1.getLowerBound(), d2.getUpperBound());

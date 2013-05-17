@@ -2,6 +2,7 @@ package org.clafer.ir;
 
 import java.util.Arrays;
 import org.clafer.Check;
+import org.clafer.Util;
 
 /**
  *
@@ -25,7 +26,21 @@ public class IrSortInts implements IrConstraint {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrSortInts) {
+            IrSortInts other = (IrSortInts) obj;
+            return Arrays.equals(array, other.array);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(array);
+    }
+
+    @Override
     public String toString() {
-        return "sort(" + Arrays.toString(array) + ")";
+        return "sort(" + Util.commaSeparate(array) + ")";
     }
 }

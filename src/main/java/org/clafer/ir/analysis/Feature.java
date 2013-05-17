@@ -10,6 +10,7 @@ import org.clafer.ast.AstModel;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import solver.variables.Variable;
+import solver.variables.VariableFactory;
 
 /**
  *
@@ -208,6 +209,6 @@ public class Feature {
             }
             names.add(var.getName());
         }
-//        System.out.println(solver.find());
+        System.out.println(solver.find());
     }
 }

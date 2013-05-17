@@ -4,9 +4,11 @@ import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArithm;
 import org.clafer.ir.IrArrayToSet;
+import org.clafer.ir.IrBoolCast;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrHalfReification;
 import org.clafer.ir.IrIfOnlyIf;
+import org.clafer.ir.IrIfThenElse;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrBetween;
 import org.clafer.ir.IrMember;
@@ -59,6 +61,7 @@ import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
+import org.clafer.ir.analysis.ExpressionAnalysis;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
 import solver.constraints.nary.Sum;
@@ -66,9 +69,6 @@ import solver.constraints.nary.cnf.ALogicTree;
 import solver.constraints.nary.cnf.Literal;
 import solver.constraints.nary.cnf.Node;
 import solver.constraints.set.SetConstraintsFactory;
-import solver.search.loop.monitors.SearchMonitorFactory;
-import solver.search.strategy.SetStrategyFactory;
-import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.VariableFactory;
@@ -93,6 +93,7 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
+        module = ExpressionAnalysis.analyze(module);
         for (IrBoolVar var : module.getBoolVars()) {
             boolVar.get(var);
         }
@@ -113,6 +114,9 @@ public class IrCompiler {
     }
 
     private IntVar intVar(String name, IrDomain domain) {
+        if (domain.getLowerBound() == 0 && domain.getUpperBound() == 1) {
+            return VariableFactory.bool(name, solver);
+        }
         if (domain.isBounded()) {
             return VariableFactory.enumerated(name, domain.getLowerBound(), domain.getUpperBound(), solver);
         }
@@ -299,6 +303,15 @@ public class IrCompiler {
 
         private final Map<BoolVar, BoolVar> notCache = new HashMap<BoolVar, BoolVar>();
 
+        private BoolVar not(BoolVar var) {
+            BoolVar not = notCache.get(var);
+            if (not == null) {
+                not = VariableFactory.not(var);
+                notCache.put(var, not);
+            }
+            return not;
+        }
+
         @Override
         public BoolVar visit(IrBoolLiteral ir, Void a) {
             return boolVar.get(ir.getVar());
@@ -306,13 +319,7 @@ public class IrCompiler {
 
         @Override
         public BoolVar visit(IrNot ir, Void a) {
-            BoolVar var = boolVar.get(ir.getVar());
-            BoolVar not = notCache.get(var);
-            if (not == null) {
-                not = VariableFactory.not(var);
-                notCache.put(var, not);
-            }
-            return not;
+            return not(boolVar.get(ir.getVar()));
         }
 
         @Override
@@ -352,14 +359,30 @@ public class IrCompiler {
             BoolVar $antecedent = ir.getAntecedent().accept(this, a);
             BoolVar $consequent = ir.getConsequent().accept(this, a);
             BoolVar reified = numBoolVar("Implies");
-            solver.post(_implies(reified, _arithm($antecedent, "<=", $consequent)));
-            solver.post(_implies(_not(reified), _arithm($antecedent, ">", $consequent)));
+            solver.post(_clauses(Node.reified(Literal.pos(reified), Node.implies(
+                    Literal.pos($antecedent), Literal.pos($consequent)))));
             return reified;
         }
 
         @Override
         public BoolVar visit(IrNotImplies ir, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            BoolVar $antecedent = ir.getAntecedent().accept(this, a);
+            BoolVar $consequent = ir.getConsequent().accept(this, a);
+            BoolVar reified = numBoolVar("NotImplies");
+            solver.post(_clauses(Node.reified(Literal.neg(reified), Node.implies(
+                    Literal.pos($antecedent), Literal.pos($consequent)))));
+            return reified;
+        }
+
+        @Override
+        public BoolVar visit(IrIfThenElse ir, Void a) {
+            BoolVar $antecedent = ir.getAntecedent().accept(this, a);
+            BoolVar $consequent = ir.getConsequent().accept(this, a);
+            BoolVar $alternative = ir.getAlternative().accept(this, a);
+            BoolVar reified = numBoolVar("IfThenElse");
+            solver.post(_clauses(Node.reified(Literal.pos(reified), Node.ifThenElse(
+                    Literal.pos($antecedent), Literal.pos($consequent), Literal.pos($alternative)))));
+            return reified;
         }
 
         @Override
@@ -438,6 +461,12 @@ public class IrCompiler {
             solver.post(_implies(_not(reified), _member($element, $set)));
             return reified;
         }
+
+        @Override
+        public BoolVar visit(IrBoolCast ir, Void a) {
+            BoolVar $expr = (BoolVar) ir.getExpr().accept(intExprCompiler, a);
+            return ir.isFlipped() ? not($expr) : $expr;
+        }
     };
     private final IrBoolExprVisitor<Void, Constraint> boolExprConstraintCompiler = new IrBoolExprVisitor<Void, Constraint>() {
 
@@ -484,6 +513,14 @@ public class IrCompiler {
         @Override
         public Constraint visit(IrNotImplies ir, Void a) {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Constraint visit(IrIfThenElse ir, Void a) {
+            BoolVar $antecedent = ir.getAntecedent().accept(boolExprCompiler, a);
+            Constraint $consequent = ir.getConsequent().accept(this, a);
+            Constraint $alternative = ir.getAlternative().accept(this, a);
+            return _ifThenElse($antecedent, $consequent, $alternative);
         }
 
         @Override
@@ -538,6 +575,12 @@ public class IrCompiler {
             IntVar $element = ir.getElement().accept(intExprCompiler, a);
             SetVar $set = ir.getSet().accept(setExprCompiler, a);
             return _not_member($element, $set);
+        }
+
+        @Override
+        public Constraint visit(IrBoolCast ir, Void a) {
+            IntVar $expr = ir.getExpr().accept(intExprCompiler, a);
+            return _arithm($expr, "=", ir.isFlipped() ? 0 : 1);
         }
     };
 //    private final IrBoolExprVisitor<Void, ALogicTree> boolExprTreeCompiler = new IrBoolExprVisitor<Void, ALogicTree>() {
@@ -649,7 +692,6 @@ public class IrCompiler {
                         case 2:
                             return VariableFactory.offset(_sum(addends[0], addends[1]), constants);
                         default:
-                            System.out.println(ir);
                             IntVar sum = numIntVar("Sum", ir.getDomain());
                             solver.post(_sum(sum, addends));
                             return VariableFactory.offset(sum, constants);
@@ -665,13 +707,30 @@ public class IrCompiler {
                             filter.add(operands[i].accept(this, a));
                         }
                     }
+                    Integer constant = IrUtil.getConstant(operands[0]);
+                    if (constant != null) {
+                        IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
+                        switch (subtractends.length) {
+                            case 0:
+                                return VariableFactory.fixed(constant - constants, solver);
+                            case 1:
+                                return VariableFactory.offset(VariableFactory.minus(subtractends[0]), constant - constants);
+                            case 2:
+                                return VariableFactory.offset(VariableFactory.minus(_sum(subtractends[0], subtractends[1])), constant - constants);
+                            default:
+                                IntVar diff = numIntVar("Diff", ir.getDomain());
+                                solver.post(_difference(diff, Util.cons(VariableFactory.fixed(constant - constants, solver), subtractends)));
+                                return VariableFactory.offset(diff, -constants);
+                        }
+                    }
                     filter.add(operands[0].accept(this, a));
                     IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
                     switch (subtractends.length) {
                         case 1:
                             return VariableFactory.offset(subtractends[0], -constants);
                         case 2:
-                            return VariableFactory.offset(_sum(subtractends[0], subtractends[1]), -constants);
+                            return VariableFactory.offset(_sum(subtractends[0],
+                                    VariableFactory.minus(subtractends[1])), -constants);
                         default:
                             IntVar diff = numIntVar("Diff", ir.getDomain());
                             solver.post(_difference(diff, subtractends));
@@ -832,6 +891,10 @@ public class IrCompiler {
         return IntConstraintFactory.implies(b, c);
     }
 
+    private static Constraint _ifThenElse(BoolVar b, Constraint c, Constraint d) {
+        return IntConstraintFactory.implies(b, c, d);
+    }
+
     private static IntVar _sum(IntVar var1, IntVar var2) {
         return Sum.var(var1, var2);
     }
@@ -938,25 +1001,5 @@ public class IrCompiler {
     }
 
     public static void main(String[] args) {
-        Solver solver = new Solver();
-        SearchMonitorFactory.log(solver, true, true);
-
-        SetVar dummy = VariableFactory.set("dummy", new int[]{0}, solver);
-        SetVar check = VariableFactory.set("check", new int[]{0}, solver);
-        BoolVar member = VariableFactory.bool("member", solver);
-        SetVar footprint = VariableFactory.set("footprint", new int[]{42}, solver);
-
-        solver.post(SetConstraintsFactory.bool_channel(new BoolVar[]{member}, check, 0));
-        solver.post(IntConstraintFactory.implies(member, Constraints.equal(footprint,
-                VariableFactory.set("{42}", new int[]{42}, new int[]{42}, solver))));
-        solver.post(IntConstraintFactory.implies(VariableFactory.not(member), Constraints.equal(footprint,
-                VariableFactory.set("{}", new int[]{}, new int[]{}, solver))));
-
-        solver.set(
-                new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(new SetVar[]{dummy}),
-                SetStrategyFactory.setLex(new SetVar[]{check, footprint})));
-        System.out.println(solver);
-        solver.findAllSolutions();
     }
 }

@@ -39,8 +39,27 @@ public class IrNotBetween extends IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public boolean isNegative() {
+        return true;
+    }
+
+    @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrNotBetween) {
+            IrNotBetween other = (IrNotBetween) obj;
+            return var.equals(other.var) && low == other.low && high == other.high && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return ~(var.hashCode() ^ low ^ high);
     }
 
     @Override

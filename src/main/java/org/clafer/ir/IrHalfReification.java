@@ -28,4 +28,23 @@ public class IrHalfReification implements IrConstraint {
     public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrHalfReification) {
+            IrHalfReification other = (IrHalfReification) obj;
+            return antecedent.equals(other.antecedent) && consequent.equals(other.consequent);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return antecedent.hashCode() ^ consequent.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return antecedent + " => " + consequent;
+    }
 }

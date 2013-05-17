@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import util.iterators.IntIterator;
 
@@ -337,6 +338,37 @@ public class Util {
         } catch (ClassNotFoundException e) {
             throw new Error(e);
         }
+    }
+
+    public static <T> String commaSeparate(T... items) {
+        return intercalate(", ", items);
+    }
+
+    public static String commaSeparate(Iterable<?> items) {
+        return intercalate(", ", items);
+    }
+
+    public static <T> String intercalate(String separator, T... items) {
+        StringBuilder result = new StringBuilder();
+        if (items.length > 0) {
+            result.append(items[0]);
+            for (int i = 1; i < items.length; i++) {
+                result.append(separator).append(items[i]);
+            }
+        }
+        return result.toString();
+    }
+
+    public static String intercalate(String separator, Iterable<?> items) {
+        StringBuilder result = new StringBuilder();
+        Iterator<?> iter = items.iterator();
+        if (iter.hasNext()) {
+            result.append(iter.next());
+            while (iter.hasNext()) {
+                result.append(separator).append(iter.next());
+            }
+        }
+        return result.toString();
     }
 
     public static String readAll(File in) throws IOException {

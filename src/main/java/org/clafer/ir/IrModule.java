@@ -7,7 +7,8 @@ import java.util.List;
 import org.clafer.Check;
 
 /**
- * The compiled model in IR. A module contains variables and constraints.
+ * The compiled model in IR. A module contains variables and constraints. Adding
+ * variables is only required for unconstrained variables.
  * 
  * @author jimmy
  */

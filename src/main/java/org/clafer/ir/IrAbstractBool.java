@@ -19,4 +19,20 @@ public abstract class IrAbstractBool implements IrBool {
     public IrBoolDomain getDomain() {
         return domain;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrAbstractBool) {
+            IrAbstractBool other = (IrAbstractBool) obj;
+            return domain.equals(other.domain);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        // Subclasses can choose not to callthis hashCode function since it can
+        // be expensive.
+        return domain.hashCode();
+    }
 }

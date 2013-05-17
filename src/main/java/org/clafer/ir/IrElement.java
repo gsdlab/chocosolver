@@ -33,6 +33,20 @@ public class IrElement extends IrAbstractInt implements IrIntExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrElement) {
+            IrElement other = (IrElement) obj;
+            return Arrays.equals(array, other.array) & index.equals(other.index) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(array) ^ index.hashCode();
+    }
+
+    @Override
     public String toString() {
         return Arrays.toString(array) + "[" + index + "]";
     }

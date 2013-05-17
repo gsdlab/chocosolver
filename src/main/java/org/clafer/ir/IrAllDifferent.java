@@ -1,6 +1,8 @@
 package org.clafer.ir;
 
+import java.util.Arrays;
 import org.clafer.Check;
+import org.clafer.Util;
 
 /**
  *
@@ -21,5 +23,24 @@ public class IrAllDifferent implements IrConstraint {
     @Override
     public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof IrAllDifferent) {
+            IrAllDifferent other = (IrAllDifferent) obj;
+            return Arrays.equals(operands, other.operands);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(operands);
+    }
+
+    @Override
+    public String toString() {
+        return "allDifferent(" + Util.commaSeparate(operands) + ")";
     }
 }

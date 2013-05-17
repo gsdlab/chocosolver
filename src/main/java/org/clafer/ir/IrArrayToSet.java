@@ -1,6 +1,8 @@
 package org.clafer.ir;
 
+import java.util.Arrays;
 import org.clafer.Check;
+import org.clafer.Util;
 
 /**
  *
@@ -25,5 +27,24 @@ public class IrArrayToSet extends IrAbstractSet implements IrSetExpr {
     @Override
     public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrArrayToSet) {
+            IrArrayToSet other = (IrArrayToSet) obj;
+            return Arrays.equals(array, other.array) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(array);
+    }
+
+    @Override
+    public String toString() {
+        return '{' + Util.commaSeparate(array) + '}';
     }
 }

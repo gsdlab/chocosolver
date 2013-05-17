@@ -31,6 +31,20 @@ public class IrIntChannel implements IrConstraint {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrIntChannel) {
+            IrIntChannel other = (IrIntChannel) obj;
+            return Arrays.equals(ints, other.ints) && Arrays.equals(sets, other.sets) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(ints) ^ Arrays.hashCode(sets);
+    }
+
+    @Override
     public String toString() {
         return "intChannel(" + Arrays.toString(ints) + ", " + Arrays.toString(sets) + ")";
     }

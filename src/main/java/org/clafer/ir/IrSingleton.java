@@ -26,4 +26,23 @@ public class IrSingleton extends IrAbstractSet implements IrSetExpr {
     public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrSingleton) {
+            IrSingleton other = (IrSingleton) obj;
+            return value.equals(other.value) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 511 * value.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "{" + value + "}";
+    }
 }

@@ -32,7 +32,21 @@ public class IrJoinRef extends IrAbstractSet implements IrSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrJoinRef) {
+            IrJoinRef other = (IrJoinRef) obj;
+            return take.equals(other.take) && Arrays.equals(refs, other.refs) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return take.hashCode() ^ Arrays.hashCode(refs);
+    }
+
+    @Override
     public String toString() {
-        return take + "." + Arrays.toString(refs);
+        return take + " . " + Arrays.toString(refs);
     }
 }

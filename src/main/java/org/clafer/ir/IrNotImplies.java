@@ -31,8 +31,27 @@ public class IrNotImplies extends IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public boolean isNegative() {
+        return true;
+    }
+
+    @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrNotImplies) {
+            IrNotImplies other = (IrNotImplies) obj;
+            return antecedent.equals(other.antecedent) && consequent.equals(other.consequent) && super.equals(other);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return ~(antecedent.hashCode() ^ consequent.hashCode());
     }
 
     @Override

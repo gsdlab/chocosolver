@@ -50,4 +50,20 @@ public abstract class IrAbstractSet implements IrSet {
     public IrDomain getCard() {
         return card;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrAbstractSet) {
+            IrAbstractSet other = (IrAbstractSet) obj;
+            return env.equals(other.env) && ker.equals(other.ker) && card.equals(other.card);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        // Subclasses can choose not to callthis hashCode function since it can
+        // be expensive.
+        return env.hashCode() ^ ker.hashCode() ^ card.hashCode();
+    }
 }

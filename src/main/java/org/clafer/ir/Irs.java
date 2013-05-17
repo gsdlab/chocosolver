@@ -81,18 +81,69 @@ public class Irs {
     }
     /********************
      * 
-     * Boolean
+     * Domain
      * 
      ********************/
     public static final IrBoolDomain TrueDomain = IrBoolDomain.TrueDomain;
     public static final IrBoolDomain FalseDomain = IrBoolDomain.FalseDomain;
     public static final IrBoolDomain BoolDomain = IrBoolDomain.BoolDomain;
-    public static final IrBoolVar True = new IrBoolConstant(true);
-    public static final IrBoolVar False = new IrBoolConstant(false);
+    public static final IrDomain EmptyDomain = new IrEmptyDomain();
+    public static final IrDomain ZeroDomain = new IrEnumDomain(new int[]{0});
+    public static final IrDomain OneDomain = new IrEnumDomain(new int[]{1});
+    public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
 
     public static IrBoolDomain domain(boolean value) {
         return value ? TrueDomain : FalseDomain;
     }
+
+    public static IrDomain boundDomain(int low, int high) {
+        return new IrBoundDomain(low, high);
+    }
+
+    public static IrDomain enumDomain(int... values) {
+        if (values.length == 1) {
+            if (values[0] == 0) {
+                return ZeroDomain;
+            }
+            if (values[0] == 1) {
+                return OneDomain;
+            }
+        }
+        return enumDomain(new TIntHashSet(values));
+    }
+
+    public static IrDomain enumDomain(TIntCollection values) {
+        return enumDomain(new TIntHashSet(values));
+    }
+
+    public static IrDomain enumDomain(TIntHashSet values) {
+        switch (values.size()) {
+            case 0:
+                return EmptyDomain;
+            case 1:
+                int value = values.iterator().next();
+                return boundDomain(value, value);
+            default:
+                int[] array = values.toArray();
+                Arrays.sort(array);
+                // If the values are over an interval, then return a bound domain.
+                int low = array[0];
+                for (int i = 1; i < array.length; i++) {
+                    if (low + i != array[i]) {
+                        return new IrEnumDomain(array);
+                    }
+                }
+                // A contigious interval.
+                return new IrBoundDomain(low, array[array.length - 1]);
+        }
+    }
+    /********************
+     * 
+     * Boolean
+     * 
+     ********************/
+    public static final IrBoolVar True = new IrBoolConstant(true);
+    public static final IrBoolVar False = new IrBoolConstant(false);
 
     public static IrBoolVar constant(boolean value) {
         return value ? True : False;
@@ -165,6 +216,28 @@ public class Irs {
             return not(antecedent);
         }
         return new IrImplies(antecedent, consequent, BoolDomain);
+    }
+
+    public static IrBoolExpr ifThenElse(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolExpr alternative) {
+        if (IrUtil.isTrue(antecedent)) {
+            return consequent;
+        }
+        if (IrUtil.isFalse(antecedent)) {
+            return alternative;
+        }
+        if (IrUtil.isTrue(consequent)) {
+            return or(antecedent, alternative);
+        }
+        if (IrUtil.isFalse(consequent)) {
+            return and(antecedent.negate(), alternative);
+        }
+        if (IrUtil.isTrue(alternative)) {
+            return or(antecedent.negate(), consequent);
+        }
+        if (IrUtil.isFalse(alternative)) {
+            return and(antecedent, consequent);
+        }
+        return new IrIfThenElse(antecedent, consequent, alternative, BoolDomain);
     }
 
     public static IrConstraint implies(IrBoolExpr antecedent, IrConstraint consequent) {
@@ -365,6 +438,19 @@ public class Irs {
             return $(False);
         }
         return new IrNotMember(element, set, BoolDomain);
+    }
+
+    public static IrBoolExpr asBool(IrIntExpr expr) {
+        Integer constant = IrUtil.getConstant(expr);
+        if (constant != null) {
+            if (constant.intValue() == 0) {
+                return $(False);
+            }
+            if (constant.intValue() == 1) {
+                return $(True);
+            }
+        }
+        return new IrBoolCast(expr, BoolDomain);
     }
     /********************
      * 
@@ -571,51 +657,12 @@ public class Irs {
         domain = boundDomain(low, high);
         return new IrElement(array, index, domain);
     }
+
     /********************
      * 
      * Set
      * 
      ********************/
-    public static final IrDomain EmptyDomain = new IrEmptyDomain();
-    public static final IrDomain ZeroDomain = new IrEnumDomain(new int[]{0});
-    public static final IrDomain OneDomain = new IrEnumDomain(new int[]{1});
-    public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
-
-    public static IrDomain boundDomain(int low, int high) {
-        return new IrBoundDomain(low, high);
-    }
-
-    public static IrDomain enumDomain(int... values) {
-        if (values.length == 1) {
-            if (values[0] == 0) {
-                return ZeroDomain;
-            }
-            if (values[0] == 1) {
-                return OneDomain;
-            }
-        }
-        return enumDomain(new TIntHashSet(values));
-    }
-
-    public static IrDomain enumDomain(TIntCollection values) {
-        return enumDomain(new TIntHashSet(values));
-    }
-
-    // TODO: collect enum over an interval into a bound domain
-    public static IrDomain enumDomain(TIntHashSet values) {
-        switch (values.size()) {
-            case 0:
-                return EmptyDomain;
-            case 1:
-                int value = values.iterator().next();
-                return boundDomain(value, value);
-            default:
-                int[] array = values.toArray();
-                Arrays.sort(array);
-                return new IrEnumDomain(array);
-        }
-    }
-
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
         return set(name, boundDomain(lowEnv, highEnv), EmptyDomain);
     }

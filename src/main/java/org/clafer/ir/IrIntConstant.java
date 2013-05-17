@@ -26,6 +26,7 @@ public class IrIntConstant extends IrIntVar {
         }
         if (obj instanceof IrIntConstant) {
             IrIntConstant other = (IrIntConstant) obj;
+            // Don't need to call super.hashCode since the domain is the same as value.
             return value == other.value;
         }
         return false;

@@ -1,8 +1,8 @@
 package org.clafer.ir;
 
+import java.util.Arrays;
 import org.clafer.Check;
 import org.clafer.Util;
-import org.clafer.ir.IrDomain.IrBoundDomain;
 
 /**
  * Equivalent to: foldl1 op operands
@@ -37,13 +37,22 @@ public class IrArithm extends IrAbstractInt implements IrIntExpr {
     }
 
     @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        result.append(operands[0]);
-        for (int i = 1; i < operands.length; i++) {
-            result.append(' ').append(op.getSyntax()).append(' ').append(operands[1]);
+    public boolean equals(Object obj) {
+        if (obj instanceof IrArithm) {
+            IrArithm other = (IrArithm) obj;
+            return op.equals(other.op) && Arrays.equals(operands, other.operands) && super.equals(other);
         }
-        return result.toString();
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return op.hashCode() ^ Arrays.hashCode(operands);
+    }
+
+    @Override
+    public String toString() {
+        return Util.intercalate(" " + op.getSyntax() + " ", operands);
     }
 
     public static enum Op {

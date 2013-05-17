@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import java.util.Arrays;
 import org.clafer.Check;
 
 /**
@@ -21,5 +22,24 @@ public class IrSortStrings implements IrConstraint {
     @Override
     public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrSortStrings) {
+            IrSortStrings other = (IrSortStrings) obj;
+            return Arrays.deepEquals(strings, other.strings);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.deepHashCode(strings);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString();
     }
 }
