@@ -152,7 +152,7 @@ public class IrCompiler {
         protected BoolVar cache(IrBoolVar ir) {
             Boolean constant = IrUtil.getConstant(ir);
             if (constant != null) {
-                return (BoolVar) VariableFactory.fixed(constant.booleanValue() ? 1 : 0, solver);
+                return constant.booleanValue() ? VariableFactory.one(solver) : VariableFactory.zero(solver);
             }
             return VariableFactory.bool(ir.getName(), solver);
         }
@@ -163,12 +163,15 @@ public class IrCompiler {
         protected IntVar cache(IrIntVar ir) {
             Integer constant = IrUtil.getConstant(ir);
             if (constant != null) {
-                return VariableFactory.fixed(constant, solver);
+                switch(constant.intValue()) {
+                    case 0:
+                        VariableFactory.zero(solver);
+                    case 1:
+                        VariableFactory.one(solver);
+                    default:
+                        return VariableFactory.fixed(constant, solver);
+                }
             }
-            // TODO: missing "linked list" int vars
-//            if (domain instanceof IrEnumDomain && domain.getUpperBound() - domain.getLowerBound() < 100) {
-//                return VariableFactory.enumerated(ir.getName(), domain.getValues(), solver);
-//            }
             return intVar(ir.getName(), ir.getDomain());
         }
     };

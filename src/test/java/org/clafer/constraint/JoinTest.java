@@ -41,14 +41,14 @@ public class JoinTest extends ConstraintTest {
     public void testJoin() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
-            int num = nextInt(30);
+            int num = nextInt(100);
 
             SetVar take = VariableFactory.set("take", Util.fromTo(0, num), solver);
             SetVar[] children = new SetVar[num];
             for (int i = 0; i < children.length; i++) {
-                children[i] = VariableFactory.set("child" + i, Util.range(0, nextInt(30)), solver);
+                children[i] = VariableFactory.set("child" + i, Util.range(0, nextInt(100)), solver);
             }
-            SetVar to = VariableFactory.set("to", Util.range(0, nextInt(30)), solver);
+            SetVar to = VariableFactory.set("to", Util.range(0, nextInt(100)), solver);
 
             solver.post(Constraints.join(take, children, to));
             if (num > 1) {
