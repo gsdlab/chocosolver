@@ -1,5 +1,4 @@
 /**
- * This package provides classes for building and retrieving the scope for
- * computation.
+ * This package provides classes for building and retrieving the scope.
  */
 package org.clafer.ast.scope;

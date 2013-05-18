@@ -10,7 +10,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstClafer implements Serializable {
+public abstract class AstClafer implements Serializable {
 
     private final String name;
     private AstAbstractClafer superClafer;

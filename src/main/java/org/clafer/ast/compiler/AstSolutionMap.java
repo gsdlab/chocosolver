@@ -4,9 +4,9 @@ import org.clafer.common.Check;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
-import org.clafer.ast.AstUtil;
 import org.clafer.collection.ReadMap;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
@@ -41,11 +41,11 @@ public class AstSolutionMap {
     }
 
     public IrSetVar[] getChildrenVars(AstClafer clafer) {
-        return AstUtil.notNull(clafer + " not part of the AST solution", childrenVars.get(clafer));
+        return notNull(clafer + " not part of the AST solution", childrenVars.get(clafer));
     }
 
     public IrIntVar[] getRefVars(AstRef ref) {
-        return AstUtil.notNull(ref + " not part of the AST solution", refVars.get(ref));
+        return notNull(ref + " not part of the AST solution", refVars.get(ref));
     }
 
     public IrBoolVar[] getSoftVars() {
@@ -58,5 +58,12 @@ public class AstSolutionMap {
 
     public int getOffset(AstAbstractClafer sup, AstClafer sub) {
         return analysis.getOffset(sup, sub);
+    }
+
+    public static <T> T notNull(String message, T t) {
+        if (t == null) {
+            throw new AstException(message);
+        }
+        return t;
     }
 }

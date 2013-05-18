@@ -1,6 +1,7 @@
 package org.clafer.ast;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,7 +33,7 @@ public class AstAbstractClafer extends AstClafer {
     }
 
     public List<AstClafer> getSubs() {
-        return subs;
+        return Collections.unmodifiableList(subs);
     }
 
     void addSub(AstClafer sub) {

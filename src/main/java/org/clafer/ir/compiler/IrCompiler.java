@@ -165,9 +165,9 @@ public class IrCompiler {
             if (constant != null) {
                 switch(constant.intValue()) {
                     case 0:
-                        VariableFactory.zero(solver);
+                        return VariableFactory.zero(solver);
                     case 1:
-                        VariableFactory.one(solver);
+                        return VariableFactory.one(solver);
                     default:
                         return VariableFactory.fixed(constant, solver);
                 }

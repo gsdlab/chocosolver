@@ -17,6 +17,9 @@ import solver.variables.delta.monitor.SetDeltaMonitor;
  */
 public class PropUtil {
 
+    private PropUtil() {
+    }
+
     public static IIntDeltaMonitor[] monitorDeltas(IntVar[] vars, ICause propogator) {
         IIntDeltaMonitor[] deltas = new IIntDeltaMonitor[vars.length];
         for (int i = 0; i < vars.length; i++) {

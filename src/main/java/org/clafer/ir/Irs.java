@@ -10,9 +10,9 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import org.clafer.common.Util;
-import org.clafer.ir.IrDomain.IrBoundDomain;
-import org.clafer.ir.IrDomain.IrEmptyDomain;
-import org.clafer.ir.IrDomain.IrEnumDomain;
+import org.clafer.ir.IrBoundDomain;
+import org.clafer.ir.IrEmptyDomain;
+import org.clafer.ir.IrEnumDomain;
 
 /**
  * 

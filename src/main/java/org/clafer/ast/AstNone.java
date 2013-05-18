@@ -22,4 +22,9 @@ public class AstNone implements AstBoolExpr {
     public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public String toString() {
+        return "none " + set;
+    }
 }

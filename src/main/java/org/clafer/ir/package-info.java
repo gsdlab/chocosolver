@@ -1,5 +1,6 @@
 /**
- * The IR is the internal language during compilation. AST -> <b>IR</b> -> Choco.
+ * This package provides the the internal language (IR) used during compilation.
+ * AST -> <b>IR</b> -> Choco.
  * <p>
  * It resembles the Choco API except for two facts.
  * </p>

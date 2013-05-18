@@ -26,6 +26,7 @@ import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
+import org.clafer.ast.AstUtil;
 import static org.clafer.collection.FList.*;
 import org.clafer.collection.FList;
 import org.clafer.collection.Pair;
@@ -44,7 +45,7 @@ public class PartialIntAnalysis {
 
         Map<AstRef, int[][]> partialInts = new HashMap<AstRef, int[][]>();
 
-        List<AstClafer> clafers = AnalysisUtil.getClafers(model);
+        List<AstClafer> clafers = AstUtil.getClafers(model);
         List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<Pair<FList<AstConcreteClafer>, Integer>>();
         for (AstClafer clafer : clafers) {
             for (AstConstraint constraint : clafer.getConstraints()) {
@@ -56,7 +57,7 @@ public class PartialIntAnalysis {
                     FList<AstConcreteClafer> path = assignment.getFst();
                     Integer value = assignment.getSnd();
                     if (assignment != null) {
-                        for (AstConcreteClafer concreteClafer : AnalysisUtil.getConcreteSubs(clafer)) {
+                        for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
                             assignments.add(new Pair<FList<AstConcreteClafer>, Integer>(
                                     snoc(path, concreteClafer), value));
                         }

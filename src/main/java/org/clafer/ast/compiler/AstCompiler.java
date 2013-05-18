@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import java.util.Set;
 import org.clafer.ast.AstEqual;
@@ -30,7 +31,6 @@ import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.ast.scope.Scope;
 import org.clafer.ast.analysis.Analysis;
-import org.clafer.ast.analysis.AnalysisUtil;
 import org.clafer.ast.analysis.FormatAnalysis.Format;
 import org.clafer.ast.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.ast.analysis.TypeAnalysis;
@@ -80,7 +80,7 @@ public class AstCompiler {
 
     private AstSolutionMap compile() {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
-        List<AstConcreteClafer> concreteClafers = AnalysisUtil.getConcreteClafers(model);
+        List<AstConcreteClafer> concreteClafers = AstUtil.getConcreteClafers(model);
 
         KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
         for (AstAbstractClafer abstractClafer : abstractClafers) {

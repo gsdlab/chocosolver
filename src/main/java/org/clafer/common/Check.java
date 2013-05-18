@@ -13,6 +13,38 @@ public class Check {
     }
 
     /**
+     * Check that the item is non-null.
+     * 
+     * @param <T> the type of the object
+     * @param message the message ofthe exception if thrown
+     * @param obj the object to check
+     * @return the original object
+     * @throws NullPointerException if the object is null
+     */
+    public static <T> T notNull(String message, T obj) throws NullPointerException {
+        if (obj == null) {
+            throw new NullPointerException(message);
+        }
+        return obj;
+    }
+
+    /**
+     * Check that the item is non-null.
+     * 
+     * @param <T> the type of the object
+     * @param obj the item to check
+     * @return the original object
+     * @throws NullPointerException if the object is null
+     */
+    public static <T> T notNull(T obj) throws NullPointerException {
+        if (obj == null) {
+            throw new NullPointerException();
+        }
+        return obj;
+    }
+
+    /**
+     * @param <T> the type of the elements
      * @param array not null and cannot contain null
      * @return the original array
      * @throws NullPointerException if the array is null or contains a null element
@@ -26,6 +58,7 @@ public class Check {
     }
 
     /**
+     * @param <T> the type of the elements
      * @param items not null and cannot contain null
      * @return the original items
      * @throws NullPointerException if the items is null or contains a null element
@@ -39,6 +72,7 @@ public class Check {
     }
 
     /**
+     * @param <T> the type of the elements' elements
      * @param arrays not null, cannot contain null, and none of its elements can
      *          contain null
      * @return the original array
@@ -54,6 +88,7 @@ public class Check {
     }
 
     /**
+     * @param <T> the type of the elements
      * @param array not null, cannot contain null, and is non-empty
      * @return the original array
      * @throws IllegalArgumentException if the array is empty
@@ -72,6 +107,7 @@ public class Check {
     }
 
     /**
+     * @param <T> the type of the elements
      * @param items not null, cannot contain null, and is non-empty
      * @return the original items
      * @throws IllegalArgumentException if the items is empty
@@ -91,6 +127,7 @@ public class Check {
     }
 
     /**
+     * @param <T> the type of the elements' elements
      * @param arrays not null, cannot contain null, none of its elements can
      *          contain null, and is non-empty
      * @return the original array
@@ -108,34 +145,5 @@ public class Check {
             Check.noNulls(t);
         }
         return arrays;
-    }
-
-    /**
-     * Check that the item is non-null.
-     * 
-     * @param message the message ofthe exception if thrown
-     * @param item the item to check
-     * @return the original item
-     * @throws NullPointerException if the item is null
-     */
-    public static <T> T notNull(String message, T item) throws NullPointerException {
-        if (item == null) {
-            throw new NullPointerException(message);
-        }
-        return item;
-    }
-
-    /**
-     * Check that the item is non-null.
-     * 
-     * @param item the item to check
-     * @return the original item
-     * @throws NullPointerException if the item is null
-     */
-    public static <T> T notNull(T item) throws NullPointerException {
-        if (item == null) {
-            throw new NullPointerException();
-        }
-        return item;
     }
 }

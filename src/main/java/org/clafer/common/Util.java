@@ -18,6 +18,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import solver.Solver;
+import solver.variables.BoolVar;
+import solver.variables.IntVar;
+import solver.variables.VF;
 import util.iterators.IntIterator;
 
 /**
@@ -26,7 +30,12 @@ import util.iterators.IntIterator;
  * @author jimmy
  */
 public class Util {
-
+    public static void main(String[] args) {
+        Solver solver = new Solver();
+        BoolVar v = VF.bool("v", solver);
+        IntVar i1 = VF.enumerated("i1", 0, 10, solver);
+        IntVar i2 = VF.enumerated("i2", 0, 10, solver);
+    }
     private Util() {
     }
 
@@ -84,17 +93,25 @@ public class Util {
     }
 
     /**
-     * @return The position of all the trues
+     * Returns the position of all the {@code true} elements in the array. The
+     * positions are returned in sorted order.
+     * 
+     * @param array the array
+     * @return the position of all the {@code true} elements
      */
-    public static int[] trues(boolean[] bs) {
-        return boolIndices(bs, true);
+    public static int[] trues(boolean[] array) {
+        return boolIndices(array, true);
     }
 
     /**
-     * @return The position of all the falses
+     * Returns the position of all the {@code false} elements in the array. The
+     * positions are returned in sorted order.
+     * 
+     * @param array the array
+     * @return the position of all the {@code false} elements
      */
-    public static int[] falses(boolean[] bs) {
-        return boolIndices(bs, false);
+    public static int[] falses(boolean[] array) {
+        return boolIndices(array, false);
     }
 
     private static int[] boolIndices(boolean[] bs, boolean val) {
@@ -141,6 +158,7 @@ public class Util {
     /**
      * Reverse part of an array in place.
      * 
+     * @param <T> the type of the elements
      * @param array the array to reverse
      * @param to reverse from index 0 to here
      */
@@ -155,6 +173,7 @@ public class Util {
     /**
      * Reverse an array in place.
      * 
+     * @param <T> the type of the elements
      * @param array the array to reverse
      */
     public static <T> void reverse(T[] array) {
@@ -164,6 +183,7 @@ public class Util {
     /**
      * Sort a list using the comparator. Nondestructive.
      * 
+     * @param <T> the type of the elements
      * @param list the list of items to be sorted
      * @param comparator induces the order of the sort
      * @return a new sorted list
@@ -193,6 +213,7 @@ public class Util {
     /**
      * Check if the array contains the item at least once.
      * 
+     * @param <T> the type of the elements
      * @param item check if this item exists in the array
      * @param array the array that may contain the item
      * @return true if and only if item s in array, false otherwise
@@ -209,6 +230,7 @@ public class Util {
     /**
      * Functional-programming cons. Nondestructive.
      * 
+     * @param <T> the type of the elements
      * @param head the beginning of the new list
      * @param tail the end of the new list
      * @return a copy of the original list with head appended at the start
@@ -223,6 +245,7 @@ public class Util {
     /**
      * Functional-programming snoc. Nondestructive.
      * 
+     * @param <T> the type of the elements
      * @param head the beginning of the new list
      * @param tail the end of the new list
      * @return a copy of the original list with tail appended at the end
@@ -237,6 +260,7 @@ public class Util {
     /**
      * Append the item at the start of the array. Nondestructive.
      * 
+     * @param <T> the type of the elements
      * @param item the beginning of the new array
      * @param array the end of the new array
      * @return a copy of the original array with item appended at the start
@@ -253,6 +277,7 @@ public class Util {
     /**
      * Append the item at the end of the array. Nondestructive.
      * 
+     * @param <T> the type of the elements
      * @param array the beginning of the new array
      * @param item the end of the new array
      * @return a copy of the original array with item appended at the end
@@ -294,6 +319,7 @@ public class Util {
      * Concatenates all the arrays in the given order into one array. Must be supplied
      * at least one array. Nondestructive.
      * 
+     * @param <T> the type of the elements
      * @param arrays the array of arrays
      * @return the concatenation of all the arrays
      */
@@ -434,9 +460,11 @@ public class Util {
     /**
      * Returns a deep copy of the object.
      * 
+     * @param <T> the type of the object
      * @param obj an object
      * @return a copy of the object
      */
+    @SuppressWarnings("unchecked")
     public static <T extends Serializable> T copy(T obj) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out;
@@ -462,6 +490,7 @@ public class Util {
      * Concatenate the string representation of the items with a comma separating
      * each item.
      * 
+     * @param <T> the type of the elements
      * @param items the items to display
      * @return the items string form separated by commas
      */
@@ -484,6 +513,7 @@ public class Util {
      * Concatenate the string representation of the items with a separator separating
      * each item.
      * 
+     * @param <T> the type of the elements
      * @param separator the string to separate each item
      * @param items the items to display
      * @return the items string form separated by the separatpr

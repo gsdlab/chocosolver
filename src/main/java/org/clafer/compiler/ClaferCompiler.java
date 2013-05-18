@@ -1,12 +1,11 @@
 package org.clafer.compiler;
 
 import org.clafer.ast.scope.Scope;
-import org.clafer.ast.analysis.AnalysisUtil;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
-import org.clafer.ast.Asts;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstUtil;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.compiler.ClaferObjective.Objective;
@@ -67,7 +66,7 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scope scope) {
-        for (AstClafer clafer : AnalysisUtil.getClafers(in)) {
+        for (AstClafer clafer : AstUtil.getClafers(in)) {
             for (AstConstraint constraint : clafer.getConstraints()) {
                 constraint.asSoft();
             }

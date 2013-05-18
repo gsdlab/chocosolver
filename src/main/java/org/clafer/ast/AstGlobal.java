@@ -22,4 +22,9 @@ public class AstGlobal implements AstSetExpr {
     public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public String toString() {
+        return type.getName();
+    }
 }

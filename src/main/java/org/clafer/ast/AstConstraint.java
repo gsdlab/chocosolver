@@ -48,4 +48,9 @@ public class AstConstraint implements Serializable {
     public void setExpr(AstBoolExpr expr) {
         this.expr = expr;
     }
+
+    @Override
+    public String toString() {
+        return isHard() ? "[" + expr + "]" : "(" + expr + ")";
+    }
 }

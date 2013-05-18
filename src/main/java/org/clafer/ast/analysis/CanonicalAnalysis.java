@@ -1,5 +1,6 @@
 package org.clafer.ast.analysis;
 
+import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstEqual;
 import java.util.ArrayList;
@@ -35,8 +36,11 @@ import static org.clafer.ast.Asts.*;
  */
 public class CanonicalAnalysis {
 
+    private CanonicalAnalysis() {
+    }
+
     public static void analyze(AstModel model, Map<AstExpr, AstClafer> types) {
-        List<AstClafer> clafers = AnalysisUtil.getClafers(model);
+        List<AstClafer> clafers = AstUtil.getClafers(model);
         CanonicalVisitor visitor = new CanonicalVisitor(types);
         for (AstClafer clafer : clafers) {
             for (AstConstraint constraint : clafer.getConstraints()) {
@@ -71,7 +75,7 @@ public class CanonicalAnalysis {
         public AstExpr visit(AstGlobal ast, Void a) {
             return ast;
         }
-        
+
         @Override
         public AstExpr visit(AstConstant ast, Void a) {
             return ast;
@@ -88,12 +92,12 @@ public class CanonicalAnalysis {
                 if (leftType.equals(joinType)) {
                     return join(left, rightType);
                 }
-                if (AnalysisUtil.isAssignable(leftType, joinType)) {
+                if (AstUtil.isAssignable(leftType, joinType)) {
                     AstUpcast upcast = upcast(left, (AstAbstractClafer) joinType);
                     return join(upcast, rightType);
                 }
             }
-            throw new AnalysisException("Cannot join " + leftType.getName() + "." + rightType.getName());
+            throw new AnalysisException("Cannot join " + leftType.getName() + " . " + rightType.getName());
         }
 
         @Override

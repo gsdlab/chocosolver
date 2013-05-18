@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
-import org.clafer.ir.IrDomain.IrBoundDomain;
+import org.clafer.ir.IrBoundDomain;
 
 /**
  *

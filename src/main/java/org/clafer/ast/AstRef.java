@@ -42,6 +42,6 @@ public class AstRef {
 
     @Override
     public String toString() {
-        return sourceType.getName() + ".ref::" + targetType;
+        return sourceType.getName() + " . ref::" + targetType;
     }
 }

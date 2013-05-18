@@ -27,6 +27,7 @@ import org.clafer.ast.AstNone;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
+import org.clafer.ast.AstUtil;
 
 /**
  * Type checks and creates explicit upcast nodes in the ast.
@@ -35,9 +36,12 @@ import org.clafer.ast.AstUpcast;
  */
 public class TypeAnalysis {
 
+    private TypeAnalysis() {
+    }
+
     public static Map<AstExpr, AstClafer> analyze(AstModel model) {
         Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
-        List<AstClafer> clafers = AnalysisUtil.getClafers(model);
+        List<AstClafer> clafers = AstUtil.getClafers(model);
         for (AstClafer clafer : clafers) {
             TypeVisitor visitor = new TypeVisitor(clafer, types);
             for (AstConstraint constraint : clafer.getConstraints()) {
@@ -92,22 +96,22 @@ public class TypeAnalysis {
             AstConcreteClafer rightType = ast.getRight();
             if (rightType.hasParent()) {
                 AstClafer joinType = rightType.getParent();
-                if (AnalysisUtil.isAssignable(leftType, joinType)) {
+                if (AstUtil.isAssignable(leftType, joinType)) {
                     return put(rightType, ast);
                 }
             }
-            throw new AnalysisException("Cannot join " + leftType.getName() + "." + rightType.getName());
+            throw new AnalysisException("Cannot join " + leftType.getName() + " . " + rightType.getName());
         }
 
         @Override
         public AstClafer visit(AstJoinParent ast, Void a) {
             AstClafer childrenType = ast.getChildren().accept(this, a);
             if (!(childrenType instanceof AstConcreteClafer)) {
-                throw new AnalysisException("Cannot join " + childrenType.getName() + ".parent");
+                throw new AnalysisException("Cannot join " + childrenType.getName() + " . parent");
             }
             AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
             if (!concreteChildrenType.hasParent()) {
-                throw new AnalysisException("Cannot join " + childrenType.getName() + ".parent");
+                throw new AnalysisException("Cannot join " + childrenType.getName() + " . parent");
             }
             return put(concreteChildrenType.getParent(), ast);
         }
@@ -116,7 +120,7 @@ public class TypeAnalysis {
         public AstClafer visit(AstJoinRef ast, Void a) {
             AstClafer derefType = ast.getDeref().accept(this, a);
             if (!derefType.hasRef()) {
-                throw new AnalysisException("Cannot join " + derefType.getName() + ".ref");
+                throw new AnalysisException("Cannot join " + derefType.getName() + " . ref");
             }
             return put(derefType.getRef().getTargetType(), ast);
         }
@@ -131,7 +135,7 @@ public class TypeAnalysis {
         public AstClafer visit(AstEqual ast, Void a) {
             AstClafer leftType = ast.getLeft().accept(this, a);
             AstClafer rightType = ast.getRight().accept(this, a);
-            if (!AnalysisUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
+            if (!AstUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
                 throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
             }
             return put(BoolType, ast);
@@ -151,7 +155,7 @@ public class TypeAnalysis {
         public AstClafer visit(AstUpcast ast, Void a) {
             AstClafer baseType = ast.getBase().accept(this, a);
             AstAbstractClafer to = ast.getTarget();
-            if (!AnalysisUtil.isAssignable(baseType, to)) {
+            if (!AstUtil.isAssignable(baseType, to)) {
                 throw new AnalysisException("Cannot upcast from " + baseType + " to " + to);
             }
             return put(to, ast);
@@ -186,7 +190,7 @@ public class TypeAnalysis {
         private final AstClafer type;
         private final AstExpr expression;
 
-        public TypedExpression(AstClafer type, AstExpr expression) {
+        TypedExpression(AstClafer type, AstExpr expression) {
             this.type = Check.notNull(type);
             this.expression = Check.notNull(expression);
         }

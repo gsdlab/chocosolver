@@ -35,6 +35,11 @@ public class AstCompare implements AstBoolExpr {
         return visitor.visit(this, a);
     }
 
+    @Override
+    public String toString() {
+        return left + " " + op.getSyntax() + " " + right;
+    }
+    
     public static enum Op {
 
         LessThan("<"),

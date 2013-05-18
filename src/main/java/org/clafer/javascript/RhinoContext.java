@@ -2,12 +2,13 @@ package org.clafer.javascript;
 
 import org.clafer.ast.scope.Scope;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.ast.analysis.AnalysisUtil;
 import org.clafer.ast.Asts;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstUtil;
 
 /**
  *
@@ -45,7 +46,7 @@ public class RhinoContext {
 
     public Scope getScope() {
         Map<AstClafer, Integer> resolvedScope = new HashMap<AstClafer, Integer>();
-        Map<String, AstClafer> resolvedClafers = AnalysisUtil.getClafersMap(model);
+        Map<String, AstClafer> resolvedClafers = getClafersMap(model);
         for (Entry<String, Integer> entry : scope.entrySet()) {
             String key = entry.getKey();
             AstClafer clafer = resolvedClafers.get(key);
@@ -60,4 +61,16 @@ public class RhinoContext {
     public AstModel getModel() {
         return model;
     }
+    
+    
+    private static Map<String, AstClafer> getClafersMap(AstModel model) {
+        List<AstClafer> clafers = AstUtil.getClafers(model);
+        Map<String, AstClafer> map = new HashMap<String, AstClafer>();
+        for (AstClafer clafer : clafers) {
+            map.put(clafer.getName(), clafer);
+        }
+        assert map.size() == clafers.size() : "Duplicate Clafer name";
+        return map;
+    }
+
 }

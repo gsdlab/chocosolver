@@ -20,6 +20,9 @@ public class RhinoShell {
         if (engine == null) {
             throw new IllegalStateException("Missing javascript engine.");
         }
+        System.out.println(engine.getFactory());
+        System.out.println(engine.getFactory().getEngineName());
+        if(true) {return;};
 
         RhinoContext context = new RhinoContext();
         engine.put("rc", context);

@@ -156,6 +156,8 @@ public class Scope {
     /**
      * Equivalent to {@code builder().set(clafer, scope)}.
      * 
+     * @param clafer the Clafer
+     * @param scope the scope of the clafer
      * @return a new builder
      */
     public static ScopeBuilder set(AstClafer clafer, int scope) {
@@ -165,6 +167,7 @@ public class Scope {
     /**
      * Equivalent to {@code builder().defaultScope(defaultScope)}.
      * 
+     * @param defaultScope the default scope
      * @return a new builder
      */
     public static ScopeBuilder defaultScope(int defaultScope) {
@@ -174,6 +177,7 @@ public class Scope {
     /**
      * Equivalent to {@code builder().intLow(intLow)}.
      * 
+     * @param intLow the lowest integer
      * @return a new builder
      */
     public static ScopeBuilder intLow(int intLow) {
@@ -183,6 +187,7 @@ public class Scope {
     /**
      * Equivalent to {@code builder().intHigh(intHigh)}.
      * 
+     * @param intHigh the highest integer
      * @return a new builder
      */
     public static ScopeBuilder intHigh(int intHigh) {

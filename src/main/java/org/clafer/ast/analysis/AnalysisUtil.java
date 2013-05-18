@@ -1,20 +1,12 @@
 package org.clafer.ast.analysis;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstModel;
 import org.clafer.ast.Card;
 
 /**
@@ -23,137 +15,14 @@ import org.clafer.ast.Card;
  */
 public class AnalysisUtil {
 
+    private AnalysisUtil() {
+    }
+
     public static <T> T notNull(String message, T t) {
         if (t == null) {
             throw new AnalysisException(message);
         }
         return t;
-    }
-
-    public static Map<String, AstClafer> getClafersMap(AstModel model) {
-        List<AstClafer> clafers = getClafers(model);
-        Map<String, AstClafer> map = new HashMap<String, AstClafer>();
-        for (AstClafer clafer : clafers) {
-            map.put(clafer.getName(), clafer);
-        }
-        assert map.size() == clafers.size();
-        return map;
-    }
-
-    public static List<AstClafer> getClafers(AstModel model) {
-        List<AstClafer> clafers = new ArrayList<AstClafer>();
-        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
-            clafers.add(abstractClafer);
-            getNestedChildClafers(abstractClafer, clafers);
-        }
-        for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            clafers.add(topClafer);
-            getNestedChildClafers(topClafer, clafers);
-        }
-        return clafers;
-    }
-
-    public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
-        List<AstConcreteClafer> clafers = new ArrayList<AstConcreteClafer>();
-        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
-            getNestedChildClafers(abstractClafer, clafers);
-        }
-        for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            clafers.add(topClafer);
-            getNestedChildClafers(topClafer, clafers);
-        }
-        return clafers;
-    }
-
-    public static AstClafer getTopParent(AstClafer clafer) {
-        if (clafer instanceof AstConcreteClafer) {
-            AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-            if (concrete.hasParent()) {
-                return getTopParent(((AstConcreteClafer) clafer).getParent());
-            }
-        }
-        return clafer;
-    }
-
-    public static List<AstClafer> getNestedClafers(AstClafer clafer) {
-        List<AstClafer> clafers = new ArrayList<AstClafer>();
-        clafers.add(clafer);
-        getNestedChildClafers(clafer, clafers);
-        return clafers;
-    }
-
-    private static void getNestedChildClafers(AstClafer clafer, List<? super AstConcreteClafer> clafers) {
-        for (AstConcreteClafer child : clafer.getChildren()) {
-            clafers.add(child);
-            getNestedChildClafers(child, clafers);
-        }
-    }
-
-    public static List<AstConcreteClafer> getConcreteSubs(AstClafer clafer) {
-        if (clafer instanceof AstConcreteClafer) {
-            return Collections.singletonList((AstConcreteClafer) clafer);
-        }
-        List<AstConcreteClafer> subs = new ArrayList<AstConcreteClafer>();
-        getConcreteSubs(clafer, subs);
-        return subs;
-    }
-
-    private static void getConcreteSubs(AstClafer sub, Collection<AstConcreteClafer> subs) {
-        if (sub instanceof AstAbstractClafer) {
-            AstAbstractClafer sup = (AstAbstractClafer) sub;
-            for (AstClafer subsub : sup.getSubs()) {
-                getConcreteSubs(subsub, subs);
-            }
-        } else {
-            subs.add((AstConcreteClafer) sub);
-        }
-    }
-
-    public static AstAbstractClafer[] getSupers(final AstClafer clafer) {
-        int count = 0;
-        AstAbstractClafer sup = clafer.getSuperClafer();
-        while (sup != null) {
-            count++;
-            sup = sup.getSuperClafer();
-        }
-
-        AstAbstractClafer[] sups = new AstAbstractClafer[count];
-        sup = clafer.getSuperClafer();
-        for (int i = 0; i < sups.length; i++) {
-            sups[i] = sup;
-            sup = sup.getSuperClafer();
-        }
-        return sups;
-    }
-
-    /**
-     * @return - to is a super class of from?
-     */
-    public static boolean isAssignable(AstClafer from, AstClafer to) {
-        return to.equals(from) || Util.in(to, getSupers(from));
-    }
-
-    public static boolean hasNonEmptyIntersectionType(AstClafer t1, AstClafer t2) {
-        if (t1.equals(t2)) {
-            return true;
-        }
-        if (t1 instanceof AstAbstractClafer) {
-            return Util.in(t1, getSupers(t2));
-        }
-        if (t2 instanceof AstAbstractClafer) {
-            return Util.in(t2, getSupers(t1));
-        }
-        return false;
-    }
-
-    public static boolean isUnionType(AstClafer union, List<AstClafer> ts) {
-        Set<AstConcreteClafer> unionSubs = new HashSet<AstConcreteClafer>();
-        getConcreteSubs(union, unionSubs);
-        Set<AstConcreteClafer> tSubs = new HashSet<AstConcreteClafer>();
-        for (AstClafer t : ts) {
-            getConcreteSubs(t, tSubs);
-        }
-        return unionSubs.equals(tSubs);
     }
 
     public static void descendingDepths(

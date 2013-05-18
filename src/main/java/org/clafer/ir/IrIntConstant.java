@@ -1,6 +1,6 @@
 package org.clafer.ir;
 
-import org.clafer.ir.IrDomain.IrBoundDomain;
+import org.clafer.ir.IrBoundDomain;
 
 /**
  *
