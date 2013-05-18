@@ -1,17 +1,12 @@
 package org.clafer.constraint;
 
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.clafer.Util;
 import org.clafer.constraint.propagator.PropUtil;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.set.SetConstraintsFactory;
-import solver.search.loop.monitors.SearchMonitorFactory;
-import solver.search.strategy.SetStrategyFactory;
 import solver.variables.SetVar;
 import solver.variables.VariableFactory;
 
@@ -54,7 +49,7 @@ public class JoinTest extends ConstraintTest {
             if (num > 1) {
                 solver.post(SetConstraintsFactory.all_disjoint(children));
             }
-            
+
             assertTrue(randomizeStrategy(solver).findSolution());
             checkCorrectness(take, children, to);
             for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {

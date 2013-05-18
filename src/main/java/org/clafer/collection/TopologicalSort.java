@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * Algorithm from http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
  * 
  * @author jimmy
  */
@@ -20,6 +19,15 @@ public class TopologicalSort<V> {
     private Stack<Vertex<V>> S = new Stack<Vertex<V>>();
     private List<Set<V>> components = new ArrayList<Set<V>>();
 
+    /**
+     * Compute the strongly connected components in the graph in topoloical order.
+     * 
+     * Algorithm from {@link http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm}.
+     * 
+     * @param <V>
+     * @param graph
+     * @return 
+     */
     public static <V> List<Set<V>> computeStronglyConnectedComponents(Graph<V> graph) {
         TopologicalSort<V> tarjan = new TopologicalSort<V>();
         for (Vertex vertex : graph.getVertices()) {

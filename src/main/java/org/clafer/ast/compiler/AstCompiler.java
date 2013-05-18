@@ -183,7 +183,7 @@ public class AstCompiler {
             } else {
                 IrSetExpr[] childSet = $(childrenSet.get(clafer));
                 IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
-                module.addConstraint(intChannel($(parents), Util.cons(childSet, $(unused))));
+                module.addConstraint(intChannel($(parents), Util.snoc(childSet, $(unused))));
             }
         }
         if (clafer.hasRef()) {
@@ -745,7 +745,7 @@ public class AstCompiler {
             pointers[i] = enumInt(clafer.getName() + "@Parent#" + i,
                     solution.hasClafer(i)
                     ? solution.getPossibleParents(i)
-                    : Util.cons(solution.getPossibleParents(i), getScope(clafer.getParent())));
+                    : Util.snoc(solution.getPossibleParents(i), getScope(clafer.getParent())));
         }
         return pointers;
     }

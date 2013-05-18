@@ -10,8 +10,10 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.constraint.AndConstraint;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import solver.constraints.LogicalConstraintFactory;
 import static org.clafer.ast.Asts.*;
 
 /**
@@ -243,7 +245,6 @@ public class FeatureModelTest {
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());
-        System.out.println(solver.solver);
         assertEquals(-296, solver.optimal().getFst().intValue());
     }
 }

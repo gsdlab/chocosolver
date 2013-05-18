@@ -21,23 +21,37 @@ import java.util.List;
 import util.iterators.IntIterator;
 
 /**
- *
+ * Various static utility functions.
+ * 
  * @author jimmy
  */
 public class Util {
 
+    /**
+     * Check equality in a null-friendly fashion.
+     * 
+     * @param a an object
+     * @param b an object to compare with a
+     * @return true if and only if a equals b, false otherwise
+     */
     public static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
     }
 
+    /**
+     * Compute a hash code in a null-friendly fashion.
+     * 
+     * @param o the object to compute the hash for
+     * @return the hash code of the object or 0 if null
+     */
     public static int hashCode(Object o) {
         return o != null ? o.hashCode() : 0;
     }
 
     /**
-     * @param low - inclusive
-     * @param high - inclusive
-     * @return 
+     * @param low the lowest integer in the range
+     * @param high the highest integer in the range
+     * @return an array of all the values between low (inclusive) and high (inclusive) in order
      */
     public static int[] range(int low, int high) {
         if (low > high) {
@@ -51,9 +65,9 @@ public class Util {
     }
 
     /**
-     * @param from - inclusive
-     * @param to - exclusive
-     * @return 
+     * @param from the lowest integer in the range
+     * @param to the integer after the highest integer in the range
+     * @return an array of all the values between from (inclusive) and to (exclusive) in order
      */
     public static int[] fromTo(int from, int to) {
         if (from > to) {
@@ -65,27 +79,17 @@ public class Util {
         }
         return range;
     }
-//
-//    /**
-//     * @return - The set difference
-//     */
-////    public static int[] difference(int[] s1, int[] s2) {
-////        TIntArrayList diff = new TIntArrayList();
-////        for (int s : s1) {
-////            if (!in(s, s2)) {
-////                diff.add(s);
-////            }
-////        }
-////        return diff.toNativeArray();
-////    }
 
     /**
-     * @return - The position of all the trues
+     * @return The position of all the trues
      */
     public static int[] trues(boolean[] bs) {
         return boolIndices(bs, true);
     }
 
+    /**
+     * @return The position of all the falses
+     */
     public static int[] falses(boolean[] bs) {
         return boolIndices(bs, false);
     }
@@ -108,77 +112,72 @@ public class Util {
         return vals;
     }
 
-    // http://stackoverflow.com/questions/8095045/java-array-order-reversing
-    public static void reverse(int[] a, int to) {
+    /**
+     * Reverse part of an array in place.
+     * 
+     * @param array the array to reverse
+     * @param to reverse from index 0 to here
+     */
+    public static void reverse(int[] array, int to) {
         for (int j = 0; j < to / 2; j++) {
-            int temp = a[j];
-            a[j] = a[to - j - 1];
-            a[to - j - 1] = temp;
+            int temp = array[j];
+            array[j] = array[to - j - 1];
+            array[to - j - 1] = temp;
         }
     }
 
-    public static void reverse(int[] a) {
-        reverse(a, a.length);
+    /**
+     * Reverse an array in place.
+     * 
+     * @param array the array to reverse
+     */
+    public static void reverse(int[] array) {
+        reverse(array, array.length);
     }
 
-    public static <T> void reverse(T[] a, int to) {
+    /**
+     * Reverse part of an array in place.
+     * 
+     * @param array the array to reverse
+     * @param to reverse from index 0 to here
+     */
+    public static <T> void reverse(T[] array, int to) {
         for (int j = 0; j < to / 2; j++) {
-            T temp = a[j];
-            a[j] = a[to - j - 1];
-            a[to - j - 1] = temp;
+            T temp = array[j];
+            array[j] = array[to - j - 1];
+            array[to - j - 1] = temp;
         }
     }
 
+    /**
+     * Reverse an array in place.
+     * 
+     * @param array the array to reverse
+     */
     public static <T> void reverse(T[] a) {
         reverse(a, a.length);
     }
 
-    public static <T> List<T> sorted(List<T> list, Comparator<? super T> c) {
+    /**
+     * Sort a list using the comparator. Nondestructive.
+     * 
+     * @param list the list of items to be sorted
+     * @param comparator induces the order of the sort
+     * @return a new sorted list
+     */
+    public static <T> List<T> sorted(List<T> list, Comparator<? super T> comparator) {
         List<T> sorted = new ArrayList<T>(list);
-        Collections.sort(sorted, c);
+        Collections.sort(sorted, comparator);
         return sorted;
     }
 
-//    public static IntegerVariable[][] transpose(IntegerVariable[][] a) {
-//        Check.noNulls(a);
-//        if (a.length == 0) {
-//            return new IntegerVariable[][]{};
-//        }
-//        int wide = a[0].length;
-//        for (IntegerVariable[] b : a) {
-//            Check.noNulls(b);
-//            if (b.length != wide) {
-//                throw new IllegalArgumentException();
-//            }
-//        }
-//        IntegerVariable[][] z = new IntegerVariable[wide][a.length];
-//        for (int i = 0; i < a.length; i++) {
-//            for (int j = 0; j < wide; j++) {
-//                z[j][i] = a[i][j];
-//            }
-//        }
-//        return z;
-//    }
-//
-//    public static int[] domainSizes(IntDomainVar... vars) {
-//        int[] sizes = new int[vars.length];
-//        for (int i = 0; i < vars.length; i++) {
-//            sizes[i] = vars[i].getDomainSize();
-//        }
-//        return sizes;
-//    }
-//
-//    public static int maximum(int[] is) {
-//        if (is.length == 0) {
-//            throw new IllegalArgumentException();
-//        }
-//        int max = is[0];
-//        for (int i = 1; i < is.length; i++) {
-//            max = Math.max(max, is[i]);
-//        }
-//        return max;
-//    }
-//
+    /**
+     * Check if the array contains the item at least once.
+     * 
+     * @param item check if this item exists in the array
+     * @param array the array that may contain the item
+     * @return true if and only if item s in array, false otherwise
+     */
     public static boolean in(int item, int[] array) {
         for (int a : array) {
             if (a == item) {
@@ -188,6 +187,13 @@ public class Util {
         return false;
     }
 
+    /**
+     * Check if the array contains the item at least once.
+     * 
+     * @param item check if this item exists in the array
+     * @param array the array that may contain the item
+     * @return true if and only if item s in array, false otherwise
+     */
     public static <T> boolean in(T item, T[] array) {
         for (T a : array) {
             if (a.equals(item)) {
@@ -197,6 +203,13 @@ public class Util {
         return false;
     }
 
+    /**
+     * Functional-programming cons. Nondestructive.
+     * 
+     * @param head the beginning of the new list
+     * @param tail the end of the new list
+     * @return a copy of the original list with head appended at the start
+     */
     public static <T> List<T> cons(T head, List<? extends T> tail) {
         List<T> r = new ArrayList<T>(tail.size() + 1);
         r.add(head);
@@ -204,15 +217,29 @@ public class Util {
         return r;
     }
 
-    public static <T> List<T> cons(List<? extends T> head, T tail) {
+    /**
+     * Functional-programming snoc. Nondestructive.
+     * 
+     * @param head the beginning of the new list
+     * @param tail the end of the new list
+     * @return a copy of the original list with tail appended at the end
+     */
+    public static <T> List<T> snoc(List<? extends T> head, T tail) {
         List<T> r = new ArrayList<T>(head.size() + 1);
         r.addAll(head);
         r.add(tail);
         return r;
     }
 
-    public static <T> T[] cons(T item, T[] list) {
-        T[] r = Arrays.copyOf(list, list.length + 1);
+    /**
+     * Append the item at the start of the array. Nondestructive.
+     * 
+     * @param item the beginning of the new array
+     * @param array the end of the new array
+     * @return a copy of the original array with item appended at the start
+     */
+    public static <T> T[] cons(T item, T[] array) {
+        T[] r = Arrays.copyOf(array, array.length + 1);
         for (int i = r.length - 1; i > 0; i--) {
             r[i] = r[i - 1];
         }
@@ -220,27 +247,77 @@ public class Util {
         return r;
     }
 
-    public static <T> T[] cons(T[] list, T item) {
-        T[] r = Arrays.copyOf(list, list.length + 1);
-        r[list.length] = item;
+    /**
+     * Append the item at the end of the array. Nondestructive.
+     * 
+     * @param array the beginning of the new array
+     * @param item the end of the new array
+     * @return a copy of the original array with item appended at the end
+     */
+    public static <T> T[] snoc(T[] array, T item) {
+        T[] r = Arrays.copyOf(array, array.length + 1);
+        r[array.length] = item;
         return r;
     }
 
-    public static int[] cons(int item, int[] list) {
-        int[] r = Arrays.copyOf(list, list.length + 1);
-        for (int i = r.length - 1; i > 0; i--) {
-            r[i] = r[i - 1];
-        }
+    /**
+     * Append the item at the start of the array. Nondestructive.
+     * 
+     * @param item the beginning of the new array
+     * @param array the end of the new array
+     * @return a copy of the original array with item appended at the start
+     */
+    public static int[] cons(int item, int[] array) {
+        int[] r = new int[array.length + 1];
+        System.arraycopy(array, 0, r, 1, array.length);
         r[0] = item;
         return r;
     }
 
-    public static int[] cons(int[] list, int item) {
-        int[] r = Arrays.copyOf(list, list.length + 1);
-        r[list.length] = item;
+    /**
+     * Append the item at the end of the array. Nondestructive.
+     * 
+     * @param array the beginning of the new array
+     * @param item the end of the new array
+     * @return a copy of the original array with item appended at the end
+     */
+    public static int[] snoc(int[] array, int item) {
+        int[] r = Arrays.copyOf(array, array.length + 1);
+        r[array.length] = item;
         return r;
     }
 
+    /**
+     * Concatenates all the arrays in the given order into one array. Must be supplied
+     * at least one array. Nondestructive.
+     * 
+     * @param arrays the array of arrays
+     * @return the concatenation of all the arrays
+     */
+    public static <T> T[] concat(T[]... arrays) {
+        if (arrays.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        int length = 0;
+        for (T[] array : arrays) {
+            length += array.length;
+        }
+        T[] concat = Arrays.copyOf(arrays[0], length);
+        int offset = 0;
+        for (T[] array : arrays) {
+            System.arraycopy(array, 0, concat, offset, array.length);
+            offset += array.length;
+        }
+        return concat;
+    }
+
+    /**
+     * Compute the greatest common divisor between two numbers usingFermat's algorithm.
+     * 
+     * @param a a non-negative integer
+     * @param b a non-negative integer
+     * @return the greatest common divisor
+     */
     public static int gcd(int a, int b) {
         if (a <= 0) {
             throw new IllegalArgumentException();
@@ -256,7 +333,19 @@ public class Util {
         return a;
     }
 
-    public static int[] shiftLeft(final int[] array, final int shift) {
+    /**
+     * Shift in place every element towards the start of the array, wrapping around to the
+     * end. For example:
+     * <pre>
+     * int[] array = new int[]{0,1,2,3,4};
+     * shiftLeft(new int[]{0,1,2,3,4}, 2);
+     * assertArrayEquals(new int[]{2,3,4,0,1}, array);
+     * </pre>
+     * 
+     * @param array the array to shift
+     * @param shift the number of indices to shift each element
+     */
+    public static void shiftLeft(final int[] array, final int shift) {
         if (array.length < shift) {
             throw new IllegalArgumentException();
         }
@@ -280,9 +369,12 @@ public class Util {
                 array[index] = temp;
             }
         }
-        return array;
     }
 
+    /**
+     * @param array an array of integers
+     * @return the sum of the integers in the array.
+     */
     public static int sum(int... array) {
         int sum = 0;
         for (int a : array) {
@@ -291,6 +383,10 @@ public class Util {
         return sum;
     }
 
+    /**
+     * @param array an array of integers
+     * @return the minimum integer in the array.
+     */
     public static int min(int... array) {
         if (array.length == 0) {
             throw new IllegalArgumentException();
@@ -302,6 +398,10 @@ public class Util {
         return min;
     }
 
+    /**
+     * @param array an array of integers
+     * @return the maximum integer in the array.
+     */
     public static int max(int... array) {
         if (array.length == 0) {
             throw new IllegalArgumentException();
@@ -313,20 +413,33 @@ public class Util {
         return max;
     }
 
-    public static int[] iterate(IntIterator it) {
+    /**
+     * Enumerate the iterator and return the values discovered. The iterator is
+     * exhausted on return.
+     * 
+     * @param iter an iterator
+     * @return the values found in the iterator
+     */
+    public static int[] iterate(IntIterator iter) {
         TIntArrayList i = new TIntArrayList();
-        while (it.hasNext()) {
-            i.add(it.next());
+        while (iter.hasNext()) {
+            i.add(iter.next());
         }
         return i.toArray();
     }
 
-    public static <T extends Serializable> T copy(T t) {
+    /**
+     * Returns a deep copy of the object.
+     * 
+     * @param obj an object
+     * @return a copy of the object
+     */
+    public static <T extends Serializable> T copy(T obj) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out;
         try {
             out = new ObjectOutputStream(baos);
-            out.writeObject(t);
+            out.writeObject(obj);
             out.close();
             byte[] buf = baos.toByteArray();
 
@@ -334,20 +447,44 @@ public class Util {
             ObjectInputStream in = new ObjectInputStream(bin);
             return (T) in.readObject();
         } catch (IOException e) {
+            // ByteArrayOutputStream should not throw IOException.
             throw new Error(e);
         } catch (ClassNotFoundException e) {
+            // Should not throw ClassNotFoundException since the class is already loaded.
             throw new Error(e);
         }
     }
 
+    /**
+     * Concatenate the string representation of the items with a comma separating
+     * each item.
+     * 
+     * @param items the items to display
+     * @return the items string form separated by commas
+     */
     public static <T> String commaSeparate(T... items) {
         return intercalate(", ", items);
     }
 
+    /**
+     * Concatenate the string representation of the items with a comma separating
+     * each item.
+     * 
+     * @param items the items to display
+     * @return the items string form separated by commas
+     */
     public static String commaSeparate(Iterable<?> items) {
         return intercalate(", ", items);
     }
 
+    /**
+     * Concatenate the string representation of the items with a separator separating
+     * each item.
+     * 
+     * @param separator the string to separate each item
+     * @param items the items to display
+     * @return the items string form separated by the separatpr
+     */
     public static <T> String intercalate(String separator, T... items) {
         StringBuilder result = new StringBuilder();
         if (items.length > 0) {
@@ -359,6 +496,14 @@ public class Util {
         return result.toString();
     }
 
+    /**
+     * Concatenate the string representation of the items with a separator separating
+     * each item.
+     * 
+     * @param separator the string to separate each item
+     * @param items the items to display
+     * @return the items string form separated by the separatpr
+     */
     public static String intercalate(String separator, Iterable<?> items) {
         StringBuilder result = new StringBuilder();
         Iterator<?> iter = items.iterator();
@@ -371,6 +516,13 @@ public class Util {
         return result.toString();
     }
 
+    /**
+     * Read the entire contents of a file into a string.
+     * 
+     * @param in the file to read
+     * @return the contents of the file
+     * @throws IOException an I/O error occured while reading the file
+     */
     public static String readAll(File in) throws IOException {
         Reader reader = new FileReader(in);
         try {
@@ -380,10 +532,26 @@ public class Util {
         }
     }
 
+    /**
+     * Read the entire contents of a stream into a string. The stream is left opened,
+     * but exhausted.
+     * 
+     * @param in the stream to read
+     * @return the contents of the stream
+     * @throws IOException an I/O error occured while reading the stream
+     */
     public static String readAll(InputStream in) throws IOException {
         return readAll(new InputStreamReader(in));
     }
 
+    /**
+     * Read the entire contents of a reader into a string. The reader is left opened,
+     * but exhausted.
+     * 
+     * @param in the reader to read
+     * @return the contents of the reader
+     * @throws IOException an I/O error occured while reading the reader
+     */
     public static String readAll(Reader in) throws IOException {
         StringBuilder result = new StringBuilder();
         char[] buffer = new char[1024];
