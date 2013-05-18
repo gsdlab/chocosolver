@@ -8,6 +8,8 @@ import org.clafer.ast.AstQuantify.Quantifier;
  */
 public class Asts {
 
+    private Asts() {
+    }
     public static final AstIntClafer IntType = AstIntClafer.Singleton;
     public static final AstBoolClafer BoolType = AstBoolClafer.Singleton;
 

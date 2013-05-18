@@ -21,6 +21,9 @@ import solver.variables.Variable;
  */
 public class Constraints {
 
+    private Constraints() {
+    }
+
     public static Constraint singleton(SetVar svar, IntVar ivar) {
         return singleton(ivar, svar);
     }

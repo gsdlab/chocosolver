@@ -20,6 +20,9 @@ import org.clafer.ir.IrDomain.IrEnumDomain;
  */
 public class Irs {
 
+    private Irs() {
+    }
+
     /**
      * @param var the variable to access
      * @return the variable's boolean value

@@ -27,6 +27,9 @@ import util.iterators.IntIterator;
  */
 public class Util {
 
+    private Util() {
+    }
+
     /**
      * Check equality in a null-friendly fashion.
      * 

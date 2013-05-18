@@ -9,6 +9,9 @@ import java.util.Iterator;
  */
 public class Check {
 
+    private Check() {
+    }
+
     /**
      * @param array not null and cannot contain null
      * @return the original array
