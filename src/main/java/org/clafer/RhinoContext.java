@@ -1,9 +1,10 @@
 package org.clafer;
 
+import org.clafer.ast.scope.Scope;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.analysis.AnalysisUtil;
+import org.clafer.ast.analysis.AnalysisUtil;
 import org.clafer.ast.Asts;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;

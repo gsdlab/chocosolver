@@ -1,12 +1,13 @@
-package org.clafer.analysis;
+package org.clafer.ast.analysis;
 
 import java.util.Map;
-import org.clafer.Scope;
-import org.clafer.ast.Asts;
+import org.clafer.ast.scope.Scope;
+import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -15,7 +16,7 @@ import org.junit.Test;
  *
  * @author jimmy
  */
-public class GlobalCardAnalysisTest {
+public class AbstractOffsetAnalysisTest {
 
     @Test
     public void testAnalyze() {
@@ -41,23 +42,15 @@ public class GlobalCardAnalysisTest {
         Scope scope = new Scope(10);
 
         TypeHierarchyDepthAnalysis.analyze(model);
-        Map<AstClafer, Card> analysis = GlobalCardAnalysis.analyze(model, scope);
+        Map<AstClafer, Card> globalCards = GlobalCardAnalysis.analyze(model, scope);
+        Map<AstAbstractClafer, Offsets> offsetMap = AbstractOffsetAnalysis.analyze(model, globalCards);
 
-        assertEquals(new Card(7, 14), analysis.get(object));
-        assertEquals(new Card(7, 10), analysis.get(id));
-
-        assertEquals(new Card(2, 4), analysis.get(animal));
-        assertEquals(new Card(2, 4), analysis.get(mammal));
-        assertEquals(new Card(2, 3), analysis.get(primate));
-        assertEquals(new Card(4, 6), analysis.get(arm));
-        assertEquals(new Card(2, 3), analysis.get(human));
-        assertEquals(new Card(0, 1), analysis.get(jimmy));
-        assertEquals(new Card(0, 1), analysis.get(degree));
-        assertEquals(new Card(1, 1), analysis.get(mona));
-        assertEquals(new Card(1, 1), analysis.get(lisa));
-        assertEquals(new Card(0, 1), analysis.get(knut));
-
-        assertEquals(new Card(1, 3), analysis.get(art));
-        assertEquals(new Card(1, 3), analysis.get(monalisa));
+        Offsets offsets = offsetMap.get(object);
+        for (AstClafer sub : object.getSubs()) {
+            assertEquals(sub, offsets.getClafer(offsets.getOffset(sub)));
+        }
+        for (int i = 0; i < scope.getScope(object); i++) {
+            assertTrue(i >= offsets.getOffset(offsets.getClafer(i)));
+        }
     }
 }

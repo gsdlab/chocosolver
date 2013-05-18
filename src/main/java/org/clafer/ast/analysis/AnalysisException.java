@@ -1,4 +1,4 @@
-package org.clafer.analysis;
+package org.clafer.ast.analysis;
 
 /**
  *

@@ -1,5 +1,6 @@
 package org.clafer;
 
+import org.clafer.ast.scope.Scope;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
 import solver.variables.BoolVar;

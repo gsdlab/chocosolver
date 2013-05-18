@@ -2,7 +2,7 @@ package org.clafer.ir.analysis;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.clafer.Scope;
+import org.clafer.ast.scope.Scope;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;

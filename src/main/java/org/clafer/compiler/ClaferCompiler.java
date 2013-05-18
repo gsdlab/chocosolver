@@ -1,7 +1,7 @@
 package org.clafer.compiler;
 
-import org.clafer.Scope;
-import org.clafer.analysis.AnalysisUtil;
+import org.clafer.ast.scope.Scope;
+import org.clafer.ast.analysis.AnalysisUtil;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.Asts;

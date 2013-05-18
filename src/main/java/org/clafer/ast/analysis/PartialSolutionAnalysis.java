@@ -1,12 +1,12 @@
-package org.clafer.analysis;
+package org.clafer.ast.analysis;
 
 import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.clafer.Util;
-import org.clafer.analysis.AbstractOffsetAnalysis.Offsets;
-import org.clafer.analysis.FormatAnalysis.Format;
+import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
+import org.clafer.ast.analysis.FormatAnalysis.Format;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;

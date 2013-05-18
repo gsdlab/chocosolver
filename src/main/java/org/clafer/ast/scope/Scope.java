@@ -1,9 +1,10 @@
-package org.clafer;
+package org.clafer.ast.scope;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.clafer.Check;
 import org.clafer.ast.AstClafer;
 
 /**
@@ -12,8 +13,8 @@ import org.clafer.ast.AstClafer;
  * the lowest and highest integers can be set indepedently and does not have to
  * be a power of 2.
  * 
- * The scope can be built with the constructor or the builder, whichever is more
- * convenient.
+ * The scope can be built with the constructor or through {@link builder()},
+ * whichever is more convenient.
  * 
  * @author jimmy
  */

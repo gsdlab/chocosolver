@@ -1,7 +1,7 @@
 package org.clafer.ast.compiler;
 
 import org.clafer.Check;
-import org.clafer.analysis.Analysis;
+import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;

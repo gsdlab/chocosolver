@@ -1,4 +1,4 @@
-package org.clafer.analysis;
+package org.clafer.ast.analysis;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -1,4 +1,4 @@
-package org.clafer.analysis;
+package org.clafer.ast.analysis;
 
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstEqual;

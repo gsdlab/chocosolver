@@ -1,11 +1,11 @@
-package org.clafer.analysis;
+package org.clafer.ast.analysis;
 
 import java.util.Map;
 import org.clafer.Check;
-import org.clafer.Scope;
-import org.clafer.analysis.AbstractOffsetAnalysis.Offsets;
-import org.clafer.analysis.FormatAnalysis.Format;
-import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
+import org.clafer.ast.scope.Scope;
+import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
+import org.clafer.ast.analysis.FormatAnalysis.Format;
+import org.clafer.ast.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstExpr;

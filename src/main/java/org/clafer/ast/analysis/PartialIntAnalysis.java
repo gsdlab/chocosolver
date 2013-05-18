@@ -1,4 +1,4 @@
-package org.clafer.analysis;
+package org.clafer.ast.analysis;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.Scope;
-import org.clafer.analysis.AbstractOffsetAnalysis.Offsets;
-import org.clafer.analysis.PartialSolutionAnalysis.PartialSolution;
+import org.clafer.ast.scope.Scope;
+import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
+import org.clafer.ast.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
