@@ -1,4 +1,4 @@
-package org.clafer;
+package org.clafer.javascript;
 
 import org.clafer.ast.scope.Scope;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package org.clafer;
+package org.clafer.javascript;
 
 import java.io.BufferedReader;
 import java.io.File;
