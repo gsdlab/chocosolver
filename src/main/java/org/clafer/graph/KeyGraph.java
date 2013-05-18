@@ -1,0 +1,50 @@
+package org.clafer.graph;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * A graph where every data is mapped to exactly one node.
+ * <p>
+ * There exists a injection from the data to the vertices. This graph maintains
+ * a mapping from data to its vertex. New vertices are created on-the-fly.
+ * </p>
+ * <p>For example, a 2-cycle graph:
+ * <pre>
+ * KeyGraph&lt;Character&gt;graph = new KeyGraph&lt;Character&gt;();
+ * graph.getVertex('a').addNeighbour(graph.getVertex('b'));
+ * graph.getVertex('b').addNeighbour(graph.getVertex('a'));
+ * </pre>
+ * </p>
+ * 
+ * @author jimmy
+ */
+public class KeyGraph<V> implements Graph<V> {
+
+    private final Map<V, Vertex<V>> vertices = new HashMap<V, Vertex<V>>();
+
+    /**
+     * Returns the vertex associated with the data. The data class should implement
+     * equals and hashCode.
+     * 
+     * @param  data the data
+     * @return the vertex containing the data
+     * @see    Object#equals(Object)
+     * @see    Object#hashCode()
+     */
+    public Vertex<V> getVertex(V data) {
+        Vertex<V> vertex = vertices.get(data);
+        if (vertex == null) {
+            vertex = new Vertex<V>(data);
+            vertices.put(data, vertex);
+        }
+        return vertex;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Collection<Vertex<V>> getVertices() {
+        return vertices.values();
+    }
+}

@@ -3,7 +3,8 @@ package org.clafer.collection;
 import org.clafer.Util;
 
 /**
- *
+ * A 2-tuple.
+ * 
  * @author jimmy
  */
 public class Pair<A, B> {
@@ -11,6 +12,12 @@ public class Pair<A, B> {
     private final A fst;
     private final B snd;
 
+    /**
+     * Construct a tuple.
+     * 
+     * @param fst
+     * @param snd 
+     */
     public Pair(A fst, B snd) {
         this.fst = fst;
         this.snd = snd;

@@ -4,7 +4,8 @@ import gnu.trove.iterator.TIntIterator;
 import org.clafer.Check;
 
 /**
- *
+ * In iterator for an array of integers.
+ * 
  * @author jimmy
  */
 public class ArrayIntIterator implements TIntIterator {
@@ -13,14 +14,21 @@ public class ArrayIntIterator implements TIntIterator {
     private int index;
     private final int to;
 
+    /**
+     * Iterate an array in order from the first to last element of the array.
+     * @param array 
+     */
     public ArrayIntIterator(int[] array) {
         this(array, 0, array.length);
     }
 
     /**
-     * @param array
-     * @param from - Inclusive
-     * @param to - Exclusive
+     * Iterate an array in order starting in position from (inclusive) and ending
+     * in position to (exclusive).
+     * 
+     * @param array iterate this array
+     * @param from start iterating from this index
+     * @param to stop before this index
      */
     public ArrayIntIterator(int[] array, int from, int to) {
         this.array = Check.notNull(array);
@@ -38,18 +46,25 @@ public class ArrayIntIterator implements TIntIterator {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return index < to;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int next() {
         return array[index++];
     }
 
+    /**
+     * Not supported.
+     * 
+     * @throws UnsupportedOperationException if invoked
+     */
     @Override
-    public void remove() {
+    public void remove() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 }

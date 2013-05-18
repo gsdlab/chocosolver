@@ -1,4 +1,4 @@
-package org.clafer.collection;
+package org.clafer.graph;
 
 import java.util.ArrayList;
 import java.util.HashMap;
