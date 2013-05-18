@@ -77,13 +77,12 @@ public class FList<E> implements Iterable<E> {
 
     /**
      * Detects if two lists are equivalent. This function is prefered over
-     * {@link equals(Object)} because it safely handles the empty list.
+     * {@link FList#equals(Object)} because it safely handles the empty list.
      * 
      * @param l1 the first list
      * @param l2 the second list
      * @return {@code true} if and only if the first and second list are equivalent,
      *         {@code false} otherwise
-     *         
      */
     public static <E> boolean equals(FList<E> l1, FList<E> l2) {
         if (isEmpty(l1)) {

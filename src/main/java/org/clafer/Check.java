@@ -1,6 +1,5 @@
 package org.clafer;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 /**

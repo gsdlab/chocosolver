@@ -1,6 +1,5 @@
 package org.clafer.ast.scope;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -8,15 +7,66 @@ import org.clafer.Check;
 import org.clafer.ast.AstClafer;
 
 /**
+ * <p>
  * An immutable mapping from Clafers to their scope. Also contains the scope of
  * integers for solving, like the bit-width in Alloy, but more flexible because
  * the lowest and highest integers can be set indepedently and does not have to
  * be a power of 2.
+ * </p>
+ * <p>
+ * The scope is built through the constructor or {@link ScopeBuilder}, whichever
+ * is mort convenient.
+ * </p>
+ * <p>
+ * Example 1:
+ * <pre>
+ * Map&lt;AstClafer, Integer&gt; map = new HashMap&lt;AstClafer, Integer&gt();
+ * map.put(claferA, 3);
+ * map.put(claferB, 2);
+ * Scope scope = new Scope(map, 3, -16, 16);
+ * </pre>
+ * </p>
+ * <p>
+ * Example 2:
+ * <pre>
+ * Scope scope = Scope.set(claferA, 3).set(claferB).defaultScope(3).intLow(-16).intHigh(16);
+ * </pre>
+ * </p>
+ * <p>
+ * Both examples construct the same scope.
+ * </p>
  * 
- * The scope can be built with the constructor or through {@link builder()},
- * whichever is more convenient.
+ * <p>
+ * What is scope? Because of the expressiveness of Clafer, reasoning is too difficult
+ * in general. The scope is a limitation of the solver so that reasoning feasible.
+ * <p>
+ * Example 1:
+ * <pre>
+ * A : int
+ * B : int
+ * C : int
+ * [A * A * A + B * B * B = C * C * C]
+ * </pre>
+ * </p>
+ * <p>
+ * Example 2:
+ * <pre>
+ * A *
+ * B *
+ * C *
+ * [#A * #A * #A + #B * #B * #B = #C * #C * #C]
+ * </pre>
+ * </p>
+ * Both examples are attempting to prove/disprove Fermat's last theorem for k=3,
+ * although this easily generalizes for any k. Unfortunately this is too difficult,
+ * so the solver only attempts to prove/disprove upto a certain scope. In example 1,
+ * a scope of {@code Scope.intLow(-16).intHigh(16).toScope()} would only attempt
+ * the proof for integers between negative and positive 16. In example 2, a scope
+ * of {@code Scope.defaultScope(16)} would only attemp the proof for integers
+ * between 0 and positive 16.
  * 
  * @author jimmy
+ * @see ScopeBuilder
  */
 public class Scope {
 
@@ -24,22 +74,15 @@ public class Scope {
     private final int defaultScope;
     private final int intLow, intHigh;
 
-    public Scope(int defaultScope) {
-        this(defaultScope, -16, 16);
-    }
-
-    public Scope(int defaultScope, int intLow, int intHigh) {
-        this(Collections.<AstClafer, Integer>emptyMap(), defaultScope, intLow, intHigh);
-    }
-
-    public Scope(Map<AstClafer, Integer> scopes) {
-        this(scopes, 1, -16, 16);
-    }
-
-    public Scope(Map<AstClafer, Integer> scopes, int defaultScope) {
-        this(scopes, defaultScope, -16, 16);
-    }
-
+    /**
+     * Construct a new scope. Altering the map has no affect once the scope is
+     * constructed.
+     * 
+     * @param scopes a map of Clafers to their scopes
+     * @param defaultScope the scope for unspecified Clafers
+     * @param intLow the lowest (inclusive) integer used for solving
+     * @param intHigh the highest (inclusive) integer used for solving
+     */
     public Scope(Map<AstClafer, Integer> scopes, int defaultScope, int intLow, int intHigh) {
         if (defaultScope <= 0) {
             throw new IllegalArgumentException("Default scope must be positive");
@@ -100,8 +143,50 @@ public class Scope {
         return intHigh;
     }
 
+    /**
+     * Construct the scope using the builder pattern.
+     * 
+     * @see ScopeBuilder
+     * @return a new builder
+     */
     public static ScopeBuilder builder() {
         return new ScopeBuilder();
+    }
+
+    /**
+     * Equivalent to {@code builder().set(clafer, scope)}.
+     * 
+     * @return a new builder
+     */
+    public static ScopeBuilder set(AstClafer clafer, int scope) {
+        return builder().set(clafer, scope);
+    }
+
+    /**
+     * Equivalent to {@code builder().defaultScope(defaultScope)}.
+     * 
+     * @return a new builder
+     */
+    public static ScopeBuilder defaultScope(int defaultScope) {
+        return builder().defaultScope(defaultScope);
+    }
+
+    /**
+     * Equivalent to {@code builder().intLow(intLow)}.
+     * 
+     * @return a new builder
+     */
+    public static ScopeBuilder intLow(int intLow) {
+        return builder().intLow(intLow);
+    }
+
+    /**
+     * Equivalent to {@code builder().intHigh(intHigh)}.
+     * 
+     * @return a new builder
+     */
+    public static ScopeBuilder intHigh(int intHigh) {
+        return builder().intHigh(intHigh);
     }
 
     /** {@inheritDoc} */

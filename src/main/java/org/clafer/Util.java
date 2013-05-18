@@ -154,8 +154,8 @@ public class Util {
      * 
      * @param array the array to reverse
      */
-    public static <T> void reverse(T[] a) {
-        reverse(a, a.length);
+    public static <T> void reverse(T[] array) {
+        reverse(array, array.length);
     }
 
     /**

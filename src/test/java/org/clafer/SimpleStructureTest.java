@@ -32,7 +32,7 @@ public class SimpleStructureTest {
         model.addTopClafer("Human").withCard(1, 1).extending(primate);
         model.addTopClafer("Beaver").withCard(1, 1).extending(animal);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         System.out.println(solver.solver);
         assertEquals(32, solver.allInstances().length);
     }
@@ -46,7 +46,7 @@ public class SimpleStructureTest {
         type.addChild("Truck").withCard(0, 1);
         type.addChild("Van").withCard(0, 1);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(3, solver.allInstances().length);
     }
 
@@ -57,7 +57,7 @@ public class SimpleStructureTest {
         AstConcreteClafer person = model.addTopClafer("Person").withCard(1, 1);
         person.addChild("Age").withCard(2, 2).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2, -2, 2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
         assertEquals(25, solver.allInstances().length);
     }
 
@@ -68,7 +68,7 @@ public class SimpleStructureTest {
         AstConcreteClafer person = model.addTopClafer("Person").withCard(1, 1);
         person.addChild("Age").withCard(2, 2).refToUnique(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2, -2, 2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
         assertEquals(20, solver.allInstances().length);
     }
 
@@ -78,7 +78,7 @@ public class SimpleStructureTest {
 
         model.addTopClafer("Age").withCard(2, 2).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2, -2, 2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
         assertEquals(25, solver.allInstances().length);
     }
 
@@ -88,7 +88,7 @@ public class SimpleStructureTest {
 
         model.addTopClafer("Age").withCard(2, 2).refToUnique(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2, -2, 2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
         assertEquals(20, solver.allInstances().length);
     }
 }

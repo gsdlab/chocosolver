@@ -23,7 +23,7 @@ public class SimpleConstraintModelTest {
         AstConcreteClafer age = model.addTopClafer("Age").withCard(2, 2).refTo(IntType);
         age.addConstraint(equal(joinRef(global(age)), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(1, solver.allInstances().length);
     }
 
@@ -36,7 +36,7 @@ public class SimpleConstraintModelTest {
         AstConcreteClafer finger = hand.addChild("Finger");
         person.addConstraint(equal(card(join(join($this(), hand), finger)), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(3));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
         assertEquals(6, solver.allInstances().length);
     }
 
@@ -47,7 +47,7 @@ public class SimpleConstraintModelTest {
         AstConcreteClafer age = model.addTopClafer("Age").withCard(2, 2).refTo(IntType);
         age.addConstraint(equal(joinRef($this()), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(1, solver.allInstances().length);
     }
 
@@ -62,7 +62,7 @@ public class SimpleConstraintModelTest {
         backup.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(4, solver.allInstances().length);
     }
 }

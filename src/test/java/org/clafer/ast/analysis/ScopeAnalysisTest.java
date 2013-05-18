@@ -43,7 +43,7 @@ public class ScopeAnalysisTest {
         globalCards.put(parrot, new Card(1, 3));
         globalCards.put(robin, new Card(2, 4));
 
-        Scope optimizedScope = ScopeAnalysis.analyze(model, new Scope(scope, 2), globalCards);
+        Scope optimizedScope = ScopeAnalysis.analyze(model, new Scope(scope, 2, -16, 16), globalCards);
         
         assertEquals(5, optimizedScope.getScope(object)); // scope(parrot) + scope(robin)
         assertEquals(2, optimizedScope.getScope(id));

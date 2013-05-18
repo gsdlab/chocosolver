@@ -38,7 +38,7 @@ public class GlobalCardAnalysisTest {
         AstAbstractClafer art = model.addAbstractClafer("art").extending(object);
         AstConcreteClafer monalisa = model.addTopClafer("Mona Lisa").extending(art).withCard(1, 3); // forgeries
 
-        Scope scope = new Scope(10);
+        Scope scope = Scope.defaultScope(10).toScope();
 
         TypeHierarchyDepthAnalysis.analyze(model);
         Map<AstClafer, Card> analysis = GlobalCardAnalysis.analyze(model, scope);

@@ -23,7 +23,7 @@ public class SymmetryBreakingTest {
         AstConcreteClafer food = patron.addChild("Food").withCard(1, 2);
         AstConcreteClafer drink = patron.addChild("Drink").withCard(1, 2);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(3));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
 
         assertEquals(5, solver.allInstances().length);
     }
@@ -110,7 +110,7 @@ public class SymmetryBreakingTest {
         AstConcreteClafer food = patron.addChild("Food").withCard(1);
         AstConcreteClafer cheese = food.addChild("Cheese").withCard(0);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, new Scope(3));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
 
         assertEquals(19, solver.allInstances().length);
     }
