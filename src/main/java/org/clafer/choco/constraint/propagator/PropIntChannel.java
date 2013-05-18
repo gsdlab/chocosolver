@@ -1,0 +1,179 @@
+package org.clafer.choco.constraint.propagator;
+
+import java.util.Arrays;
+import solver.Solver;
+import solver.constraints.Constraint;
+import solver.constraints.propagators.Propagator;
+import solver.constraints.propagators.PropagatorPriority;
+import solver.constraints.set.SetConstraintsFactory;
+import solver.exception.ContradictionException;
+import solver.search.loop.monitors.SearchMonitorFactory;
+import solver.variables.EventType;
+import solver.variables.IntVar;
+import solver.variables.SetVar;
+import solver.variables.Variable;
+import solver.variables.VariableFactory;
+import solver.variables.delta.IIntDeltaMonitor;
+import solver.variables.delta.monitor.SetDeltaMonitor;
+import util.ESat;
+import util.procedure.IntProcedure;
+
+/**
+ * An idempotent and more efficient propagator than the default one.
+ * Does not require an supplementary disjoint propagator like the default one.
+ * 
+ * @author jimmy
+ */
+public class PropIntChannel extends Propagator<Variable> {
+
+    private final SetVar[] sets;
+    private SetDeltaMonitor[] setsD;
+    private final IntVar[] ints;
+    private IIntDeltaMonitor[] intsD;
+
+    public PropIntChannel(SetVar[] sets, IntVar[] ints) {
+        super(buildArray(sets, ints), PropagatorPriority.LINEAR);
+        this.sets = sets;
+        this.setsD = PropUtil.monitorDeltas(sets, aCause);
+        this.ints = ints;
+        this.intsD = PropUtil.monitorDeltas(ints, aCause);
+    }
+
+    private static Variable[] buildArray(SetVar[] sets, IntVar[] ints) {
+        Variable[] vars = new Variable[sets.length + ints.length];
+        System.arraycopy(sets, 0, vars, 0, sets.length);
+        System.arraycopy(ints, 0, vars, sets.length, ints.length);
+        return vars;
+    }
+
+    private boolean isSetVar(int idx) {
+        return idx < sets.length;
+    }
+
+    private int getSetVarIndex(int idx) {
+        assert isSetVar(idx);
+        return idx;
+    }
+
+    private boolean isIntVar(int idx) {
+        return idx >= sets.length;
+    }
+
+    private int getIntVarIndex(int idx) {
+        assert isIntVar(idx);
+        return idx - sets.length;
+    }
+
+    @Override
+    public int getPropagationConditions(int vIdx) {
+        if (isSetVar(vIdx)) {
+            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        }
+        assert isIntVar(vIdx);
+        return EventType.INT_ALL_MASK();
+    }
+
+    @Override
+    public void propagate(int evtmask) throws ContradictionException {
+        for (int i = 0; i < ints.length; i++) {
+            int ub = ints[i].getUB();
+            for (int j = ints[i].getLB(); j <= ub; j = ints[i].nextValue(j)) {
+                if (!sets[j].envelopeContains(i)) {
+                    ints[i].removeValue(j, aCause);
+                }
+            }
+            if (ints[i].instantiated()) {
+                sets[ints[i].getValue()].addToKernel(i, aCause);
+            }
+        }
+        for (int i = 0; i < sets.length; i++) {
+            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
+                ints[j].instantiateTo(i, aCause);
+            }
+        }
+        for (int i = 0; i < sets.length; i++) {
+            for (int j = sets[i].getEnvelopeFirst(); j != SetVar.END; j = sets[i].getEnvelopeNext()) {
+                if (!ints[j].contains(i)) {
+                    sets[i].removeFromEnvelope(j, aCause);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void propagate(final int idxVarInProp, final int mask) throws ContradictionException {
+        if (isSetVar(idxVarInProp)) {
+            final int id = getSetVarIndex(idxVarInProp);
+
+            setsD[id].freeze();
+            setsD[id].forEach(new IntProcedure() {
+
+                @Override
+                public void execute(int setKer) throws ContradictionException {
+                    ints[setKer].instantiateTo(id, aCause);
+                    for (int i = 0; i < sets.length; i++) {
+                        if (i != id) {
+                            sets[i].removeFromEnvelope(setKer, aCause);
+                        }
+                    }
+                }
+            }, EventType.ADD_TO_KER);
+            setsD[id].forEach(new IntProcedure() {
+
+                @Override
+                public void execute(int setEnv) throws ContradictionException {
+                    if (ints[setEnv].removeValue(id, aCause) && ints[setEnv].instantiated()) {
+                        int val = ints[setEnv].getValue();
+                        sets[val].addToKernel(setEnv, aCause);
+                        for (int i = 0; i < sets.length; i++) {
+                            if (i != val) {
+                                sets[i].removeFromEnvelope(setEnv, aCause);
+                            }
+                        }
+                    }
+                }
+            }, EventType.REMOVE_FROM_ENVELOPE);
+            setsD[id].unfreeze();
+        } else {
+            assert isIntVar(idxVarInProp);
+            final int id = getIntVarIndex(idxVarInProp);
+
+            intsD[id].freeze();
+            intsD[id].forEach(new IntProcedure() {
+
+                @Override
+                public void execute(int intRem) throws ContradictionException {
+                    sets[intRem].removeFromEnvelope(id, aCause);
+                }
+            }, EventType.REMOVE);
+            if (ints[id].instantiated()) {
+                sets[ints[id].getValue()].addToKernel(id, aCause);
+            }
+            intsD[id].unfreeze();
+        }
+    }
+
+    @Override
+    public ESat isEntailed() {
+        for (int i = 0; i < ints.length; i++) {
+            if (ints[i].instantiated()) {
+                if (!sets[ints[i].getValue()].envelopeContains(i)) {
+                    return ESat.FALSE;
+                }
+            }
+        }
+        for (int i = 0; i < sets.length; i++) {
+            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
+                if (!ints[j].contains(i)) {
+                    return ESat.FALSE;
+                }
+            }
+        }
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return "intChannel(" + Arrays.toString(sets) + ", " + Arrays.toString(ints) + ")";
+    }
+}

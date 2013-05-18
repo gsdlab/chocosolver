@@ -11,7 +11,7 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.constraint.AndConstraint;
+import org.clafer.choco.constraint.AndConstraint;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.constraints.LogicalConstraintFactory;
