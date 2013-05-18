@@ -1,6 +1,6 @@
 package org.clafer.collection;
 
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  *

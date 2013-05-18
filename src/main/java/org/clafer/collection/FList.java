@@ -3,7 +3,7 @@ package org.clafer.collection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.clafer.Util;
+import org.clafer.common.Util;
 
 /**
  * Persistent singly-linked list. Empty list is represented by {@code null}. Useful

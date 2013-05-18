@@ -1,8 +1,8 @@
 package org.clafer.ast;
 
 import java.io.Serializable;
-import org.clafer.Check;
-import org.clafer.Util;
+import org.clafer.common.Check;
+import org.clafer.common.Util;
 
 /**
  *

@@ -1,7 +1,7 @@
 package org.clafer.collection;
 
 import java.util.Arrays;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  * Provides an alternative equal and hashCode implementation for int arrays. Useful

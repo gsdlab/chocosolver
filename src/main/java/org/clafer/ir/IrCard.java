@@ -1,6 +1,6 @@
 package org.clafer.ir;
 
-import org.clafer.Check;
+import org.clafer.common.Check;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
 import solver.constraints.LogicalConstraintFactory;

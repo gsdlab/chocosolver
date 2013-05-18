@@ -1,6 +1,6 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.Util;
+import org.clafer.common.Util;
 import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;

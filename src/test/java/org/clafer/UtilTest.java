@@ -1,5 +1,6 @@
 package org.clafer;
 
+import org.clafer.common.Util;
 import java.util.Random;
 import static org.junit.Assert.*;
 import org.junit.Test;

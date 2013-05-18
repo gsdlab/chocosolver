@@ -3,7 +3,7 @@ package org.clafer.ast.analysis;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstGlobal;
 import static org.clafer.ast.Asts.*;

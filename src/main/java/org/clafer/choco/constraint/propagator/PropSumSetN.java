@@ -1,6 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.clafer.Util;
+import org.clafer.common.Util;
 import org.clafer.collection.IntPair;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;

@@ -1,6 +1,6 @@
 package org.clafer.ir;
 
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  * Casts an integer to a boolean.

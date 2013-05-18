@@ -2,7 +2,7 @@ package org.clafer.compiler;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.collection.Pair;
 import org.clafer.instance.InstanceModel;
 import solver.ResolutionPolicy;

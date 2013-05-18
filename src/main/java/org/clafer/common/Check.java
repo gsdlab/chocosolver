@@ -1,4 +1,4 @@
-package org.clafer;
+package org.clafer.common;
 
 import java.util.Iterator;
 

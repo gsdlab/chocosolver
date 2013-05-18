@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  * Returns array[index].

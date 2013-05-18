@@ -1,7 +1,7 @@
 package org.clafer.collection;
 
 import gnu.trove.iterator.TIntIterator;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  * In iterator for an array of integers.

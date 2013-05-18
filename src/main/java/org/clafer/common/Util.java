@@ -1,4 +1,4 @@
-package org.clafer;
+package org.clafer.common;
 
 import gnu.trove.list.array.TIntArrayList;
 import java.io.ByteArrayInputStream;

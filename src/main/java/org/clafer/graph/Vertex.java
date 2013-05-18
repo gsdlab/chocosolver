@@ -2,7 +2,7 @@ package org.clafer.graph;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  * A mutable directed vertex.

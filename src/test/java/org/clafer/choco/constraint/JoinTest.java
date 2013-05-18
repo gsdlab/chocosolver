@@ -1,7 +1,7 @@
 package org.clafer.choco.constraint;
 
 import gnu.trove.set.hash.TIntHashSet;
-import org.clafer.Util;
+import org.clafer.common.Util;
 import org.clafer.choco.constraint.propagator.PropUtil;
 import static org.junit.Assert.*;
 import org.junit.Test;

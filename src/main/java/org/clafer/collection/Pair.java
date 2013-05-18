@@ -1,6 +1,6 @@
 package org.clafer.collection;
 
-import org.clafer.Util;
+import org.clafer.common.Util;
 
 /**
  * A 2-tuple.

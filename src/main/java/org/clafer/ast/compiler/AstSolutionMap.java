@@ -1,6 +1,6 @@
 package org.clafer.ast.compiler;
 
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;

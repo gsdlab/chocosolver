@@ -1,6 +1,6 @@
 package org.clafer.ast;
 
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  *

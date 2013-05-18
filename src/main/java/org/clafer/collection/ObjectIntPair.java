@@ -1,7 +1,7 @@
 package org.clafer.collection;
 
 import java.util.Comparator;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  *

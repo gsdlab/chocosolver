@@ -1,7 +1,7 @@
 package org.clafer.instance;
 
 import java.io.IOException;
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstRef;

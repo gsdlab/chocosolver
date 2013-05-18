@@ -2,7 +2,7 @@ package org.clafer.compiler;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstRef;

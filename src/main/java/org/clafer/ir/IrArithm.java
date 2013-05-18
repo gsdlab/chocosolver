@@ -1,8 +1,8 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
-import org.clafer.Check;
-import org.clafer.Util;
+import org.clafer.common.Check;
+import org.clafer.common.Util;
 
 /**
  * Equivalent to: foldl1 op operands

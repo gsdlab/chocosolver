@@ -1,6 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.clafer.Check;
+import org.clafer.common.Check;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;

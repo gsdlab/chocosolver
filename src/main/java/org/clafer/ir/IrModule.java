@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  * The compiled model in IR. A module contains variables and constraints. Adding

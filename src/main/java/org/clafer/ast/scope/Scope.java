@@ -3,7 +3,7 @@ package org.clafer.ast.scope;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
 
 /**

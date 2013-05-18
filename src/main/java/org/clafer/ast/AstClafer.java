@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  *

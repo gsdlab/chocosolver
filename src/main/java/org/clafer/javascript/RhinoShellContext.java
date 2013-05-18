@@ -1,7 +1,7 @@
 package org.clafer.javascript;
 
 import java.util.Set;
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
 import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;

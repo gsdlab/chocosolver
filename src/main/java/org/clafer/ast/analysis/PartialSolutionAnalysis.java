@@ -4,7 +4,7 @@ import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.clafer.Util;
+import org.clafer.common.Util;
 import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
 import org.clafer.ast.analysis.FormatAnalysis.Format;
 import org.clafer.ast.AstAbstractClafer;

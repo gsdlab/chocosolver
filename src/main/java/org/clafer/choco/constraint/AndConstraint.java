@@ -1,6 +1,6 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.Util;
+import org.clafer.common.Util;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import solver.constraints.Constraint;
 import solver.constraints.propagators.Propagator;

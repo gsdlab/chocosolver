@@ -1,7 +1,7 @@
 package org.clafer.ast.analysis;
 
 import java.util.Map;
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.ast.scope.Scope;
 import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
 import org.clafer.ast.analysis.FormatAnalysis.Format;

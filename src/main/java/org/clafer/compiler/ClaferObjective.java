@@ -1,6 +1,6 @@
 package org.clafer.compiler;
 
-import org.clafer.Check;
+import org.clafer.common.Check;
 import org.clafer.collection.Pair;
 import org.clafer.instance.InstanceModel;
 import solver.ResolutionPolicy;

@@ -1,7 +1,7 @@
 package org.clafer.instance;
 
 import java.io.IOException;
-import org.clafer.Check;
+import org.clafer.common.Check;
 
 /**
  *
