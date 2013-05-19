@@ -2,7 +2,6 @@ package org.clafer.ir.compiler;
 
 import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
-import org.clafer.ir.IrArithm;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolCast;
 import org.clafer.ir.IrElement;
@@ -17,7 +16,6 @@ import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrOr;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
-import gnu.trove.set.hash.TIntHashSet;
 import java.util.Deque;
 import java.util.LinkedList;
 import org.clafer.ir.IrNot;
@@ -29,8 +27,8 @@ import org.clafer.ir.IrUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrIntChannel;
 import org.clafer.ir.IrJoin;
@@ -46,13 +44,16 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
+import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrMul;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrSub;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.analysis.ExpressionAnalysis;
 import solver.Solver;
@@ -130,7 +131,6 @@ public class IrCompiler {
     private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
         return VariableFactory.set(name + "#" + varNum++, env.getValues(), ker.getValues(), solver);
     }
-
     private final CacheMap<IrBoolVar, BoolVar> boolVar = new CacheMap<IrBoolVar, BoolVar>() {
         @Override
         protected BoolVar cache(IrBoolVar ir) {
@@ -444,121 +444,112 @@ public class IrCompiler {
         }
 
         @Override
-        public IntVar visit(IrArithm ir, Void a) {
-            int constants;
-            IrIntExpr[] operands = ir.getOperands();
+        public IntVar visit(IrAdd ir, Void a) {
+            int constants = 0;
             Deque<IntVar> filter = new LinkedList<IntVar>();
-            switch (ir.getOp()) {
-                case Add: {
-                    constants = 0;
-                    for (IrIntExpr operand : operands) {
-                        Integer constant = IrUtil.getConstant(operand);
-                        if (constant != null) {
-                            constants += constant.intValue();
-                        } else {
-                            filter.add(operand.accept(this, a));
-                        }
-                    }
-                    IntVar[] addends = filter.toArray(new IntVar[filter.size()]);
-                    switch (addends.length) {
-                        case 0:
-                            // This case should have already been optimized earlier.
-                            return VariableFactory.fixed(constants, solver);
-                        case 1:
-                            return VariableFactory.offset(addends[0], constants);
-                        case 2:
-                            return VariableFactory.offset(_sum(addends[0], addends[1]), constants);
-                        default:
-                            IntVar sum = numIntVar("Sum", ir.getDomain());
-                            solver.post(_sum(sum, addends));
-                            return VariableFactory.offset(sum, constants);
-                    }
-                }
-                case Sub: {
-                    constants = 0;
-                    for (int i = 1; i < operands.length; i++) {
-                        Integer constant = IrUtil.getConstant(operands[i]);
-                        if (constant != null) {
-                            constants += constant.intValue();
-                        } else {
-                            filter.add(operands[i].accept(this, a));
-                        }
-                    }
-                    Integer constant = IrUtil.getConstant(operands[0]);
-                    if (constant != null) {
-                        IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
-                        switch (subtractends.length) {
-                            case 0:
-                                return VariableFactory.fixed(constant - constants, solver);
-                            case 1:
-                                return VariableFactory.offset(VariableFactory.minus(subtractends[0]), constant - constants);
-                            case 2:
-                                return VariableFactory.offset(VariableFactory.minus(_sum(subtractends[0], subtractends[1])), constant - constants);
-                            default:
-                                IntVar diff = numIntVar("Diff", ir.getDomain());
-                                solver.post(_difference(diff, Util.cons(VariableFactory.fixed(constant - constants, solver), subtractends)));
-                                return VariableFactory.offset(diff, -constants);
-                        }
-                    }
-                    filter.add(operands[0].accept(this, a));
-                    IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
-                    switch (subtractends.length) {
-                        case 1:
-                            return VariableFactory.offset(subtractends[0], -constants);
-                        case 2:
-                            return VariableFactory.offset(_sum(subtractends[0],
-                                    VariableFactory.minus(subtractends[1])), -constants);
-                        default:
-                            IntVar diff = numIntVar("Diff", ir.getDomain());
-                            solver.post(_difference(diff, subtractends));
-                            return VariableFactory.offset(diff, -constants);
-                    }
-                }
-                case Mul: {
-                    // TODO: assert operands.length == 2
-                    constants = 1;
-                    for (IrIntExpr operand : operands) {
-                        Integer constant = IrUtil.getConstant(operand);
-                        if (constant != null) {
-                            constants *= constant.intValue();
-                        } else {
-                            filter.add(operand.accept(this, a));
-                        }
-                    }
-                    if (filter.isEmpty()) {
-                        // This case should have already been optimized earlier.
-                        return VariableFactory.fixed(constants, solver);
-                    }
-                    if (constants < -1) {
-                        filter.add(VariableFactory.fixed(constants, solver));
-                    }
-                    IntVar[] multiplicands = filter.toArray(new IntVar[filter.size()]);
-                    switch (multiplicands.length) {
-                        case 1:
-                            return constants < -1 ? multiplicands[0]
-                                    : VariableFactory.scale(multiplicands[0], constants);
-                        default:
-                            IntVar multiplicand = multiplicands[0];
-                            for (int i = 1; i < multiplicands.length; i++) {
-                                IntVar product = numIntVar("Mul", ir.getDomain());
-                                solver.post(_times(multiplicand, multiplicands[i], product));
-                                multiplicand = product;
-                            }
-                            return constants < -1 ? multiplicand : VariableFactory.scale(multiplicand, constants);
-                    }
-                }
-                case Div: {
-                    // TODO: assert operands.length == 2
-                    IntVar divisor = operands[0].accept(this, a);
-                    for (int i = 1; i < operands.length; i++) {
-                        IntVar quotient = numIntVar("Div", ir.getDomain());
-                        solver.post(_times(divisor, operands[i].accept(this, a), quotient));
-                        divisor = quotient;
-                    }
-                    return divisor;
+            for (IrIntExpr addend : ir.getAddends()) {
+                Integer constant = IrUtil.getConstant(addend);
+                if (constant != null) {
+                    constants += constant.intValue();
+                } else {
+                    filter.add(compile(addend));
                 }
             }
-            throw new IrException();
+            IntVar[] addends = filter.toArray(new IntVar[filter.size()]);
+            switch (addends.length) {
+                case 0:
+                    // This case should have already been optimized earlier.
+                    return VariableFactory.fixed(constants, solver);
+                case 1:
+                    return VariableFactory.offset(addends[0], constants);
+                case 2:
+                    return VariableFactory.offset(_sum(addends[0], addends[1]), constants);
+                default:
+                    IntVar sum = numIntVar("Sum", ir.getDomain());
+                    solver.post(_sum(sum, addends));
+                    return VariableFactory.offset(sum, constants);
+            }
+        }
+
+        @Override
+        public IntVar visit(IrSub ir, Void a) {
+            int constants = 0;
+            IrIntExpr[] operands = ir.getSubtrahends();
+            Deque<IntVar> filter = new LinkedList<IntVar>();
+            for (int i = 1; i < operands.length; i++) {
+                Integer constant = IrUtil.getConstant(operands[i]);
+                if (constant != null) {
+                    constants += constant.intValue();
+                } else {
+                    filter.add(compile(operands[i]));
+                }
+            }
+            Integer constant = IrUtil.getConstant(operands[0]);
+            int minuend;
+            if (constant != null) {
+                minuend = constant - constants;
+            } else {
+                minuend = -constants;
+            }
+            filter.addFirst(compile(operands[0]));
+            IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
+            switch (subtractends.length) {
+                case 0:
+                    return VariableFactory.fixed(minuend, solver);
+                case 1:
+                    return VariableFactory.offset(subtractends[0], -constants);
+                case 2:
+                    return VariableFactory.offset(_sum(subtractends[0],
+                            VariableFactory.minus(subtractends[1])), -constants);
+                default:
+                    IntVar diff = numIntVar("Diff", ir.getDomain());
+                    solver.post(_difference(diff, subtractends));
+                    return VariableFactory.offset(diff, -constants);
+            }
+        }
+
+        @Override
+        public IntVar visit(IrMul ir, Void a) {
+            IrIntExpr multiplicand = ir.getMultiplicand();
+            IrIntExpr multiplier = ir.getMultiplier();
+            Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
+            Integer multiplierConstant = IrUtil.getConstant(multiplier);
+            if (multiplicandConstant != null) {
+                switch (multiplicandConstant.intValue()) {
+                    case 0:
+                        return compile(multiplicand);
+                    case 1:
+                        return compile(multiplier);
+                    default:
+                        if (multiplicandConstant.intValue() >= -1) {
+                            return VariableFactory.scale(compile(multiplier), multiplicandConstant.intValue());
+                        }
+                }
+            }
+            if (multiplierConstant != null) {
+                switch (multiplierConstant.intValue()) {
+                    case 0:
+                        return compile(multiplier);
+                    case 1:
+                        return compile(multiplicand);
+                    default:
+                        if (multiplierConstant.intValue() >= -1) {
+                            return VariableFactory.scale(compile(multiplicand), multiplierConstant.intValue());
+                        }
+                }
+            }
+            IntVar product = numIntVar("Mul", ir.getDomain());
+            solver.post(_times(compile(multiplicand), compile(multiplier), product));
+            return product;
+        }
+
+        @Override
+        public IntVar visit(IrDiv ir, Void a) {
+            IrIntExpr dividend = ir.getDividend();
+            IrIntExpr divisor = ir.getDivisor();
+            IntVar quotient = numIntVar("Div", ir.getDomain());
+            solver.post(_div(compile(dividend), compile(divisor), quotient));
+            return quotient;
         }
 
         @Override
@@ -668,10 +659,14 @@ public class IrCompiler {
         return IntConstraintFactory.sum(vars, sum);
     }
 
-    private static Constraint _times(IntVar var1, IntVar var2, IntVar product) {
-        return IntConstraintFactory.times(var1, var2, product);
+    private static Constraint _times(IntVar multiplicand, IntVar multiplier, IntVar product) {
+        return IntConstraintFactory.times(multiplicand, multiplier, product);
+    }
+    private static Constraint _div(IntVar dividend, IntVar divisor, IntVar quotient) {
+        return IntConstraintFactory.eucl_div(dividend, divisor, quotient);
     }
 
+    
     private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {
         return IntConstraintFactory.arithm(var1, op1, var2, op2, cste);
     }

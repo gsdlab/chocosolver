@@ -586,150 +586,139 @@ public class Irs {
         return new IrCard(set, domain);
     }
 
-    public static IrIntExpr arithm(IrArithm.Op op, IrIntExpr... operands) {
-        int constants;
+    public static IrIntExpr add(IrIntExpr addend1, int addend2) {
+        return add(addend1, $(constant(addend2)));
+    }
+
+    public static IrIntExpr add(IrIntExpr... addends) {
+        int constants = 0;
         Deque<IrIntExpr> filter = new LinkedList<IrIntExpr>();
-        IrDomain domain = operands[0].getDomain();
+        for (IrIntExpr operand : addends) {
+            Integer constant = IrUtil.getConstant(operand);
+            if (constant != null) {
+                constants += constant.intValue();
+            } else {
+                filter.add(operand);
+            }
+        }
+        if (constants != 0) {
+            filter.add($(constant(constants)));
+        }
+        if (filter.isEmpty()) {
+            return $(Zero);
+        }
+        if (filter.size() == 1) {
+            return filter.getFirst();
+        }
+        IrDomain domain = addends[0].getDomain();
         int low = domain.getLowerBound();
         int high = domain.getUpperBound();
-        switch (op) {
-            case Add:
-                constants = 0;
-                for (IrIntExpr operand : operands) {
-                    Integer constant = IrUtil.getConstant(operand);
-                    if (constant != null) {
-                        constants += constant.intValue();
-                    } else {
-                        filter.add(operand);
-                    }
-                }
-                if (constants != 0) {
-                    filter.add($(constant(constants)));
-                }
-                if (filter.isEmpty()) {
-                    return $(Zero);
-                }
-                if (filter.size() == 1) {
-                    return filter.getFirst();
-                }
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low += domain.getLowerBound();
-                    high += domain.getUpperBound();
-                }
-                domain = boundDomain(low, high);
-                break;
-            case Sub:
-                constants = 0;
-                for (int i = 1; i < operands.length; i++) {
-                    IrIntExpr operand = operands[i];
-                    Integer constant = IrUtil.getConstant(operand);
-                    if (constant != null) {
-                        constants += constant.intValue();
-                    } else {
-                        filter.add(operand);
-                    }
-                }
-                Integer head = IrUtil.getConstant(operands[0]);
-                if (head != null && filter.isEmpty()) {
-                    return $(constant(head - constants));
-                }
-                filter.addFirst(operands[0]);
-                if (constants != 0) {
-                    filter.add($(constant(constants)));
-                }
-                if (filter.size() == 1) {
-                    return filter.getFirst();
-                }
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low -= domain.getUpperBound();
-                    high -= domain.getLowerBound();
-                }
-                domain = boundDomain(low, high);
-                break;
-            case Mul:
-                constants = 1;
-                for (IrIntExpr operand : operands) {
-                    Integer constant = IrUtil.getConstant(operand);
-                    if (constant != null) {
-                        constants *= constant.intValue();
-                    } else {
-                        filter.add(operand);
-                    }
-                }
-                if (constants == 0) {
-                    return $(Zero);
-                }
-                if (constants != 1) {
-                    filter.add($(constant(constants)));
-                }
-                if (filter.isEmpty()) {
-                    return $(One);
-                }
-                if (filter.size() == 1) {
-                    return filter.getFirst();
-                }
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low = Util.min(low * domain.getLowerBound(), low * domain.getUpperBound(),
-                            high * domain.getLowerBound(), high * domain.getUpperBound());
-                    high = Util.max(low * domain.getLowerBound(), low * domain.getUpperBound(),
-                            high * domain.getLowerBound(), high * domain.getUpperBound());
-                }
-                domain = boundDomain(low, high);
-                break;
-            case Div:
-                // TODO: optimize
-                filter.addAll(Arrays.asList(operands));
-                if (filter.size() == 1) {
-                    return filter.getFirst();
-                }
-                for (int i = 1; i < operands.length; i++) {
-                    domain = operands[i].getDomain();
-                    low = Util.min(low / domain.getLowerBound(), low / domain.getUpperBound(),
-                            high * domain.getLowerBound(), high * domain.getUpperBound());
-                    high = Util.max(low / domain.getLowerBound(), low / domain.getUpperBound(),
-                            high / domain.getLowerBound(), high / domain.getUpperBound());
-                }
-                domain = boundDomain(low, high);
-                break;
-            default:
-                throw new IllegalArgumentException();
+        for (int i = 1; i < addends.length; i++) {
+            domain = addends[i].getDomain();
+            low += domain.getLowerBound();
+            high += domain.getUpperBound();
         }
-        return new IrArithm(op, filter.toArray(new IrIntExpr[filter.size()]), domain);
+        domain = boundDomain(low, high);
+        return new IrAdd(filter.toArray(new IrIntExpr[filter.size()]), domain);
     }
 
-    public static IrIntExpr add(IrIntExpr left, int right) {
-        return add(left, $(constant(right)));
+    public static IrIntExpr sub(IrIntExpr minuend, int subtrahend) {
+        return sub(minuend, $(constant(subtrahend)));
     }
 
-    public static IrIntExpr add(IrIntExpr... operands) {
-        return arithm(IrArithm.Op.Add, operands);
+    public static IrIntExpr sub(IrIntExpr... subtrahends) {
+        int constants = 0;
+        Deque<IrIntExpr> filter = new LinkedList<IrIntExpr>();
+        for (int i = 1; i < subtrahends.length; i++) {
+            IrIntExpr operand = subtrahends[i];
+            Integer constant = IrUtil.getConstant(operand);
+            if (constant != null) {
+                constants += constant.intValue();
+            } else {
+                filter.add(operand);
+            }
+        }
+        Integer head = IrUtil.getConstant(subtrahends[0]);
+        if (head != null && filter.isEmpty()) {
+            return $(constant(head - constants));
+        }
+        filter.addFirst(subtrahends[0]);
+        if (constants != 0) {
+            filter.add($(constant(constants)));
+        }
+        if (filter.size() == 1) {
+            return filter.getFirst();
+        }
+        IrDomain domain = subtrahends[0].getDomain();
+        int low = domain.getLowerBound();
+        int high = domain.getUpperBound();
+        for (int i = 1; i < subtrahends.length; i++) {
+            domain = subtrahends[i].getDomain();
+            low -= domain.getUpperBound();
+            high -= domain.getLowerBound();
+        }
+        domain = boundDomain(low, high);
+        return new IrSub(filter.toArray(new IrIntExpr[filter.size()]), domain);
     }
 
-    public static IrIntExpr sub(IrIntExpr left, int right) {
-        return sub(left, $(constant(right)));
+    public static IrIntExpr mul(IrIntExpr multiplicand, int multiplier) {
+        return mul(multiplicand, $(constant(multiplier)));
     }
 
-    public static IrIntExpr sub(IrIntExpr... operands) {
-        return arithm(IrArithm.Op.Sub, operands);
+    public static IrIntExpr mul(IrIntExpr multiplicand, IrIntExpr multiplier) {
+        Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
+        Integer multiplierConstant = IrUtil.getConstant(multiplier);
+        if (multiplicandConstant != null) {
+            switch (multiplicandConstant.intValue()) {
+                case 0:
+                    return multiplicand;
+                case 1:
+                    return multiplier;
+            }
+        }
+        if (multiplierConstant != null) {
+            switch (multiplierConstant.intValue()) {
+                case 0:
+                    return multiplier;
+                case 1:
+                    return multiplicand;
+            }
+        }
+        if (multiplicandConstant != null && multiplierConstant != null) {
+            return $(constant(multiplicandConstant.intValue() * multiplierConstant.intValue()));
+        }
+        int low1 = multiplicand.getDomain().getLowerBound();
+        int high1 = multiplicand.getDomain().getUpperBound();
+        int low2 = multiplier.getDomain().getLowerBound();
+        int high2 = multiplier.getDomain().getUpperBound();
+        int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
+        int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
+        return new IrMul(multiplicand, multiplier, boundDomain(min, max));
     }
 
-    public static IrIntExpr mul(IrIntExpr left, int right) {
-        return mul(left, $(constant(right)));
+    public static IrIntExpr div(IrIntExpr dividend, int divisor) {
+        return div(dividend, $(constant(divisor)));
     }
 
-    public static IrIntExpr mul(IrIntExpr... operands) {
-        return arithm(IrArithm.Op.Mul, operands);
-    }
-
-    public static IrIntExpr div(IrIntExpr left, int right) {
-        return div(left, $(constant(right)));
-    }
-
-    public static IrIntExpr div(IrIntExpr... operands) {
-        return arithm(IrArithm.Op.Div, operands);
+    public static IrIntExpr div(IrIntExpr dividend, IrIntExpr divisor) {
+        Integer dividendConstant = IrUtil.getConstant(dividend);
+        Integer divisorConstant = IrUtil.getConstant(divisor);
+        if (dividendConstant != null && dividendConstant.intValue() == 0) {
+            return dividend;
+        }
+        if (divisorConstant != null && divisorConstant.intValue() == 1) {
+            return dividend;
+        }
+        if (dividendConstant != null && divisorConstant != null) {
+            return $(constant(dividendConstant.intValue() / divisorConstant.intValue()));
+        }
+        int low1 = dividend.getDomain().getLowerBound();
+        int high1 = dividend.getDomain().getUpperBound();
+        int low2 = divisor.getDomain().getLowerBound();
+        int high2 = divisor.getDomain().getUpperBound();
+        int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
+        int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
+        return new IrMul(dividend, divisor, boundDomain(min, max));
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {
