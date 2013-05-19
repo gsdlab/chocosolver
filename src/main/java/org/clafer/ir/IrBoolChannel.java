@@ -7,13 +7,14 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrBoolChannel implements IrConstraint {
+public class IrBoolChannel extends IrAbstractBool implements IrBoolExpr {
 
     private final IrBoolExpr[] bools;
     private final IrSetExpr set;
 
-    IrBoolChannel(IrBoolExpr[] bools, IrSetExpr set) {
-        this.bools = Check.noNulls(bools);
+    IrBoolChannel(IrBoolExpr[] bools, IrSetExpr set, IrBoolDomain domain) {
+        super(domain);
+        this.bools = Check.noNullsNotEmpty(bools);
         this.set = Check.notNull(set);
     }
 
@@ -26,7 +27,17 @@ public class IrBoolChannel implements IrConstraint {
     }
 
     @Override
-    public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
+    public IrBoolExpr negate() {
+        return new IrNot(this, getDomain().invert());
+    }
+
+    @Override
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 

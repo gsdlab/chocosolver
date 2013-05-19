@@ -21,7 +21,7 @@ public class IrBoolLiteral extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrNot(var, getDomain().invert());
+        return new IrNot(this, getDomain().invert());
     }
 
     @Override

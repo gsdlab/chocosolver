@@ -28,13 +28,10 @@ import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
-import org.clafer.ir.IrConstraint;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
-import org.clafer.choco.constraint.propagator.PropUtil;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrBoolChannel;
-import org.clafer.ir.IrBoolConstraint;
 import org.clafer.ir.IrIntChannel;
 import org.clafer.ir.IrJoin;
 import org.clafer.ir.IrJoinRef;
@@ -45,7 +42,6 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
 import org.clafer.ir.IrBoolLiteral;
 import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrConstraintVisitor;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
@@ -67,7 +63,6 @@ import solver.constraints.nary.cnf.LogOp;
 import solver.constraints.set.SetConstraintsFactory;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VF;
 import solver.variables.VariableFactory;
 
 /**
@@ -89,19 +84,19 @@ public class IrCompiler {
         return compiler.compile(in);
     }
 
-    private IrSolutionMap compile(IrModule module) {
-        module = ExpressionAnalysis.analyze(module);
-        for (IrBoolVar var : module.getBoolVars()) {
+    private IrSolutionMap compile(IrModule optModule) {
+        optModule = ExpressionAnalysis.analyze(optModule);
+        for (IrBoolVar var : optModule.getBoolVars()) {
             boolVar.get(var);
         }
-        for (IrIntVar var : module.getIntVars()) {
+        for (IrIntVar var : optModule.getIntVars()) {
             intVar.get(var);
         }
-        for (IrSetVar var : module.getSetVars()) {
+        for (IrSetVar var : optModule.getSetVars()) {
             setVar.get(var);
         }
-        for (IrConstraint constraint : module.getConstraints()) {
-            solver.post(constraint.accept(constraintCompiler, null));
+        for (IrBoolExpr constraint : optModule.getConstraints()) {
+            solver.post(compileAsConstraint(constraint));
         }
         return new IrSolutionMap(boolVar, intVar, setVar);
     }
@@ -132,18 +127,10 @@ public class IrCompiler {
         return VariableFactory.enumerated(name + "#" + varNum++, dom, solver);
     }
 
-    private SetVar numSetVar(String name, IrSetExpr expr) {
-        IrDomain env = expr.getEnv();
-        return VariableFactory.set(name + "#" + varNum++, env.getValues(), solver);
+    private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
+        return VariableFactory.set(name + "#" + varNum++, env.getValues(), ker.getValues(), solver);
     }
 
-    private SetVar numSetVar(String name, int low, int high) {
-        return VariableFactory.set(name + "#" + varNum++, Util.range(low, high), solver);
-    }
-
-    private SetVar numSetVar(String name, int[] env) {
-        return VariableFactory.set(name + "#" + varNum++, env, solver);
-    }
     private final CacheMap<IrBoolVar, BoolVar> boolVar = new CacheMap<IrBoolVar, BoolVar>() {
         @Override
         protected BoolVar cache(IrBoolVar ir) {
@@ -203,76 +190,6 @@ public class IrCompiler {
             return card;
         }
     };
-    private final IrConstraintVisitor<Void, Constraint> constraintCompiler = new IrConstraintVisitor<Void, Constraint>() {
-        @Override
-        public Constraint visit(IrBoolConstraint ir, Void a) {
-            return compileAsConstraint(ir.getExpr());
-        }
-
-        @Override
-        public Constraint visit(IrBoolChannel ir, Void a) {
-            IrBoolExpr[] bools = ir.getBools();
-            IrSetExpr set = ir.getSet();
-
-            BoolVar[] $bools = new BoolVar[bools.length];
-            for (int i = 0; i < $bools.length; i++) {
-                $bools[i] = compileAsBoolVar(bools[i]);
-            }
-            SetVar $set = set.accept(setExprCompiler, a);
-            return SetConstraintsFactory.bool_channel($bools, $set, 0);
-        }
-
-        @Override
-        public Constraint visit(IrIntChannel ir, Void a) {
-            IrIntExpr[] ints = ir.getInts();
-            IrSetExpr[] sets = ir.getSets();
-
-            IntVar[] $ints = new IntVar[ints.length];
-            for (int i = 0; i < $ints.length; i++) {
-                $ints[i] = ints[i].accept(intExprCompiler, a);
-            }
-            SetVar[] $sets = new SetVar[sets.length];
-            for (int i = 0; i < $sets.length; i++) {
-                $sets[i] = sets[i].accept(setExprCompiler, a);
-            }
-            return Constraints.intChannel($sets, $ints);
-        }
-
-        @Override
-        public Constraint visit(IrSortInts ir, Void a) {
-            IrIntExpr[] array = ir.getArray();
-
-            IntVar[] $array = new IntVar[array.length];
-            for (int i = 0; i < $array.length; i++) {
-                $array[i] = array[i].accept(intExprCompiler, a);
-            }
-            return Constraints.increasing($array);
-        }
-
-        @Override
-        public Constraint visit(IrAllDifferent ir, Void a) {
-            IrIntExpr[] operands = ir.getOperands();
-
-            IntVar[] $operands = new IntVar[operands.length];
-            for (int i = 0; i < $operands.length; i++) {
-                $operands[i] = operands[i].accept(intExprCompiler, a);
-            }
-            return _all_different($operands);
-        }
-
-        @Override
-        public Constraint visit(IrSelectN ir, Void a) {
-            IrBoolExpr[] bools = ir.getBools();
-            IrIntExpr n = ir.getN();
-
-            BoolVar[] $bools = new BoolVar[bools.length];
-            for (int i = 0; i < $bools.length; i++) {
-                $bools[i] = compileAsBoolVar(bools[i]);
-            }
-            IntVar $n = n.accept(intExprCompiler, a);
-            return Constraints.selectN($bools, $n);
-        }
-    };
 
     private BoolVar asBoolVar(Object obj) {
         if (obj instanceof Constraint) {
@@ -303,23 +220,14 @@ public class IrCompiler {
     private Constraint compileAsConstraint(IrBoolExpr expr) {
         return asConstraint(expr.accept(boolExprCompiler1, Preference.Constraint));
     }
-    /**
-     * <p>
-     * How does this boolean expression compiler work?
-     * </p>
-     * <p>
-     * Each expression is compiled to one of:
-     * <ol>
-     * <li>BoolVar</li>
-     * <li>ILogical</li>
-     * <li>Constraint</li>
-     * </ol>
-     * </p>
-     * <p>
-     * The method invoking the compiler can state its preference of return type,
-     * although the preference is NOT GUARANTEED to be respected.
-     * </p>
-     */
+
+    private IntVar compile(IrIntExpr expr) {
+        return expr.accept(intExprCompiler, null);
+    }
+
+    private SetVar compile(IrSetExpr expr) {
+        return expr.accept(setExprCompiler, null);
+    }
     private final IrBoolExprVisitor<Preference, Object> boolExprCompiler1 = new IrBoolExprVisitor<Preference, Object>() {
         @Override
         public Object visit(IrBoolLiteral ir, Preference a) {
@@ -328,7 +236,7 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrNot ir, Preference a) {
-            return boolVar.get(ir.getVar()).not();
+            return compileAsBoolVar(ir.getExpr()).not();
         }
 
         @Override
@@ -422,19 +330,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrSortStrings ir, Preference a) {
-            IrIntExpr[][] strings = ir.getStrings();
-            IntVar[][] $strings = new IntVar[strings.length][];
-            for (int i = 0; i < $strings.length; i++) {
-                $strings[i] = new IntVar[strings[i].length];
-                for (int j = 0; j < $strings[i].length; j++) {
-                    $strings[i][j] = strings[i][j].accept(intExprCompiler, null);
-                }
-            }
-            return _lex_chain_less_eq($strings);
-        }
-
-        @Override
         public Object visit(IrMember ir, Preference a) {
             IntVar $element = ir.getElement().accept(intExprCompiler, null);
             SetVar $set = ir.getSet().accept(setExprCompiler, null);
@@ -452,6 +347,80 @@ public class IrCompiler {
         public Object visit(IrBoolCast ir, Preference a) {
             BoolVar $expr = (BoolVar) ir.getExpr().accept(intExprCompiler, null);
             return ir.isFlipped() ? $expr.not() : $expr;
+        }
+
+        @Override
+        public Constraint visit(IrBoolChannel ir, Preference a) {
+            IrBoolExpr[] bools = ir.getBools();
+            IrSetExpr set = ir.getSet();
+
+            BoolVar[] $bools = new BoolVar[bools.length];
+            for (int i = 0; i < $bools.length; i++) {
+                $bools[i] = compileAsBoolVar(bools[i]);
+            }
+            SetVar $set = compile(set);
+            return SetConstraintsFactory.bool_channel($bools, $set, 0);
+        }
+
+        @Override
+        public Constraint visit(IrIntChannel ir, Preference a) {
+            IrIntExpr[] ints = ir.getInts();
+            IrSetExpr[] sets = ir.getSets();
+            IntVar[] $ints = new IntVar[ints.length];
+            for (int i = 0; i < $ints.length; i++) {
+                $ints[i] = compile(ints[i]);
+            }
+            SetVar[] $sets = new SetVar[sets.length];
+            for (int i = 0; i < $sets.length; i++) {
+                $sets[i] = compile(sets[i]);
+            }
+            return Constraints.intChannel($sets, $ints);
+        }
+
+        @Override
+        public Constraint visit(IrSortInts ir, Preference a) {
+            IrIntExpr[] array = ir.getArray();
+            IntVar[] $array = new IntVar[array.length];
+            for (int i = 0; i < $array.length; i++) {
+                $array[i] = compile(array[i]);
+            }
+            return Constraints.increasing($array);
+        }
+
+        @Override
+        public Object visit(IrSortStrings ir, Preference a) {
+            IrIntExpr[][] strings = ir.getStrings();
+            IntVar[][] $strings = new IntVar[strings.length][];
+            for (int i = 0; i < $strings.length; i++) {
+                $strings[i] = new IntVar[strings[i].length];
+                for (int j = 0; j < $strings[i].length; j++) {
+                    $strings[i][j] = compile(strings[i][j]);
+                }
+            }
+            return _lex_chain_less_eq($strings);
+        }
+
+        @Override
+        public Constraint visit(IrAllDifferent ir, Preference a) {
+            IrIntExpr[] operands = ir.getOperands();
+
+            IntVar[] $operands = new IntVar[operands.length];
+            for (int i = 0; i < $operands.length; i++) {
+                $operands[i] = compile(operands[i]);
+            }
+            return _all_different($operands);
+        }
+
+        @Override
+        public Constraint visit(IrSelectN ir, Preference a) {
+            IrBoolExpr[] bools = ir.getBools();
+            IrIntExpr n = ir.getN();
+            BoolVar[] $bools = new BoolVar[bools.length];
+            for (int i = 0; i < $bools.length; i++) {
+                $bools[i] = compileAsBoolVar(bools[i]);
+            }
+            IntVar $n = compile(n);
+            return Constraints.selectN($bools, $n);
         }
     };
     private final IrIntExprVisitor<Void, IntVar> intExprCompiler = new IrIntExprVisitor<Void, IntVar>() {
@@ -616,9 +585,8 @@ public class IrCompiler {
         @Override
         public SetVar visit(IrSingleton ir, Void a) {
             IrIntExpr value = ir.getValue();
-
             IntVar $value = value.accept(intExprCompiler, a);
-            SetVar singleton = numSetVar("Singleton", $value.getLB(), $value.getUB());
+            SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
             solver.post(Constraints.singleton($value, singleton));
             return singleton;
         }
@@ -626,12 +594,11 @@ public class IrCompiler {
         @Override
         public SetVar visit(IrArrayToSet ir, Void a) {
             IrIntExpr[] array = ir.getArray();
-
             IntVar[] $array = new IntVar[array.length];
             for (int i = 0; i < $array.length; i++) {
                 $array[i] = array[i].accept(intExprCompiler, a);
             }
-            SetVar set = numSetVar("Singleton", ir);
+            SetVar set = numSetVar("ArrayToSet", ir.getEnv(), ir.getKer());
             solver.post(Constraints.arrayToSet($array, set));
             return set;
         }
@@ -640,15 +607,12 @@ public class IrCompiler {
         public SetVar visit(IrJoin ir, Void a) {
             IrSetExpr take = ir.getTake();
             IrSetExpr[] children = ir.getChildren();
-
-            TIntHashSet env = new TIntHashSet();
             SetVar $take = take.accept(this, a);
             SetVar[] $children = new SetVar[children.length];
             for (int i = 0; i < $children.length; i++) {
                 $children[i] = children[i].accept(this, a);
-                PropUtil.iterateEnv($children[i], env);
             }
-            SetVar join = numSetVar("Join", env.toArray());
+            SetVar join = numSetVar("Join", ir.getEnv(), ir.getKer());
             solver.post(Constraints.join($take, $children, join));
             return join;
         }
@@ -661,14 +625,11 @@ public class IrCompiler {
         @Override
         public SetVar visit(IrUnion ir, Void a) {
             IrSetExpr[] operands = ir.getOperands();
-
-            TIntHashSet env = new TIntHashSet();
             SetVar[] $operands = new SetVar[operands.length];
             for (int i = 0; i < operands.length; i++) {
                 $operands[i] = operands[i].accept(setExprCompiler, a);
-                PropUtil.iterateEnv($operands[i], env);
             }
-            SetVar union = numSetVar("Union", env.toArray());
+            SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
             solver.post(_union($operands, union));
             return union;
         }

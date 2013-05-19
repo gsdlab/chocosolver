@@ -8,12 +8,13 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrAllDifferent implements IrConstraint {
+public class IrAllDifferent extends IrAbstractBool implements IrBoolExpr {
 
     private final IrIntExpr[] operands;
 
-    IrAllDifferent(IrIntExpr[] operands) {
-        this.operands = Check.noNulls(operands);
+    IrAllDifferent(IrIntExpr[] operands, IrBoolDomain domain) {
+        super(domain);
+        this.operands = Check.noNullsNotEmpty(operands);
     }
 
     public IrIntExpr[] getOperands() {
@@ -21,13 +22,23 @@ public class IrAllDifferent implements IrConstraint {
     }
 
     @Override
-    public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
+    public IrBoolExpr negate() {
+        return new IrNot(this, getDomain().invert());
+    }
+
+    @Override
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof IrAllDifferent) {
+        if (obj instanceof IrAllDifferent) {
             IrAllDifferent other = (IrAllDifferent) obj;
             return Arrays.equals(operands, other.operands);
         }

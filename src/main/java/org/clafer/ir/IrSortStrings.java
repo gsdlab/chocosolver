@@ -14,7 +14,7 @@ public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
 
     IrSortStrings(IrIntExpr[][] strings, IrBoolDomain domain) {
         super(domain);
-        this.strings = Check.noNulls(strings);
+        this.strings = Check.noNullsNotEmpty(strings);
     }
 
     public IrIntExpr[][] getStrings() {

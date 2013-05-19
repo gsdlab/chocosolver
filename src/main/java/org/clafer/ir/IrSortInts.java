@@ -8,12 +8,13 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrSortInts implements IrConstraint {
+public class IrSortInts extends IrAbstractBool implements IrBoolExpr {
 
     private final IrIntExpr[] array;
 
-    IrSortInts(IrIntExpr[] array) {
-        this.array = Check.noNulls(array);
+    IrSortInts(IrIntExpr[] array, IrBoolDomain domain) {
+        super(domain);
+        this.array = Check.noNullsNotEmpty(array);
     }
 
     public IrIntExpr[] getArray() {
@@ -21,7 +22,17 @@ public class IrSortInts implements IrConstraint {
     }
 
     @Override
-    public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
+    public IrBoolExpr negate() {
+        return new IrNot(this, getDomain().invert());
+    }
+
+    @Override
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 

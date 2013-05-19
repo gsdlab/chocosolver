@@ -8,20 +8,20 @@ import org.clafer.common.Check;
  */
 public class IrNot extends IrAbstractBool implements IrBoolExpr {
 
-    private final IrBoolVar var;
+    private final IrBoolExpr expr;
 
-    public IrNot(IrBoolVar var, IrBoolDomain domain) {
+    public IrNot(IrBoolExpr expr, IrBoolDomain domain) {
         super(domain);
-        this.var = Check.notNull(var);
+        this.expr = Check.notNull(expr);
     }
 
-    public IrBoolVar getVar() {
-        return var;
+    public IrBoolExpr getExpr() {
+        return expr;
     }
 
     @Override
     public IrBoolExpr negate() {
-        return new IrBoolLiteral(var, getDomain().invert());
+        return expr;
     }
 
     @Override
@@ -38,18 +38,18 @@ public class IrNot extends IrAbstractBool implements IrBoolExpr {
     public boolean equals(Object obj) {
         if (obj instanceof IrNot) {
             IrNot other = (IrNot) obj;
-            return var.equals(other.var) && super.equals(other);
+            return expr.equals(other.expr) && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return ~var.hashCode();
+        return ~expr.hashCode();
     }
 
     @Override
     public String toString() {
-        return "!" + var;
+        return "!(" + expr + ")";
     }
 }

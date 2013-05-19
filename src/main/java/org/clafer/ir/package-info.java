@@ -6,11 +6,9 @@
  * </p>
  * <p>
  * <ol>
- * <li> Constraints cannot be nested. In Choco, constraints can be nested but requires
- *      reifying the constraints which is inefficient. I have not found a use for
- *      nesting constraints for compiling Clafer, hence the IR API forbids the case
- *      for efficiency. The IR compiler will reify some constraints when deemed to be
- *      necessary.
+ * <li> Boolean expressions in the IR unify Choco Constraints, BoolVars, and LogOps.
+ *      The IR will try to optimally compile to whichever Choco construct is most
+ *      efficient.
  * </li>
  * <li> Expressions can be nested. In Choco, expressions cannot be nested. This
  *      simplifies compiling the AST since expressions are Clafer are nested. Having

@@ -2,7 +2,6 @@ package org.clafer.ir;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
-import org.clafer.ir.IrBoundDomain;
 
 /**
  *
@@ -10,27 +9,14 @@ import org.clafer.ir.IrBoundDomain;
  */
 public class IrUtil {
 
+    private IrUtil() {
+    }
+
     public static <T> T notNull(String message, T t) {
         if (t == null) {
             throw new IrException(message);
         }
         return t;
-    }
-
-    public static boolean isTrue(IrConstraint c) {
-        if (c instanceof IrBoolConstraint) {
-            IrBoolConstraint boolConstraint = (IrBoolConstraint) c;
-            return isTrue(boolConstraint.getExpr());
-        }
-        return false;
-    }
-
-    public static boolean isFalse(IrConstraint c) {
-        if (c instanceof IrBoolConstraint) {
-            IrBoolConstraint boolConstraint = (IrBoolConstraint) c;
-            return isFalse(boolConstraint.getExpr());
-        }
-        return false;
     }
 
     public static boolean isTrue(IrBool b) {

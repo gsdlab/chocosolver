@@ -3,6 +3,7 @@ package org.clafer.ir;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.clafer.common.Check;
 
@@ -17,9 +18,9 @@ public class IrModule {
     private final List<IrBoolVar> boolVars;
     private final List<IrIntVar> intVars;
     private final List<IrSetVar> setVars;
-    private final List<IrConstraint> constraints;
+    private final List<IrBoolExpr> constraints;
 
-    private IrModule(List<IrBoolVar> boolVars, List<IrIntVar> intVars, List<IrSetVar> setVars, List<IrConstraint> constraints) {
+    private IrModule(List<IrBoolVar> boolVars, List<IrIntVar> intVars, List<IrSetVar> setVars, List<IrBoolExpr> constraints) {
         this.boolVars = boolVars;
         this.intVars = intVars;
         this.setVars = setVars;
@@ -27,7 +28,7 @@ public class IrModule {
     }
 
     public IrModule() {
-        this(new ArrayList<IrBoolVar>(), new ArrayList<IrIntVar>(), new ArrayList<IrSetVar>(), new ArrayList<IrConstraint>());
+        this(new ArrayList<IrBoolVar>(), new ArrayList<IrIntVar>(), new ArrayList<IrSetVar>(), new ArrayList<IrBoolExpr>());
     }
 
     public void addBoolVar(IrBoolVar var) {
@@ -78,31 +79,26 @@ public class IrModule {
         return setVars.toArray(new IrSetVar[setVars.size()]);
     }
 
-    public void addConstraint(IrConstraint constraint) {
-        if (!IrUtil.isTrue(constraint)) {
-            constraints.add(Check.notNull(constraint));
-        }
-    }
-
     public void addConstraint(IrBoolExpr expr) {
+        Check.notNull(expr);
         if (expr instanceof IrAnd) {
             IrAnd and = (IrAnd) expr;
             for (IrBoolExpr operand : and.getOperands()) {
                 addConstraint(operand);
             }
         } else if (!IrUtil.isTrue(expr)) {
-            constraints.add(Irs.boolConstraint(Check.notNull(expr)));
+            constraints.add(expr);
         }
     }
 
-    public List<IrConstraint> getConstraints() {
-        return constraints;
+    public List<IrBoolExpr> getConstraints() {
+        return Collections.unmodifiableList(constraints);
     }
 
-    public IrModule withConstraints(Collection<IrConstraint> constraints) {
-        List<IrConstraint> filter = new ArrayList<IrConstraint>();
-        for(IrConstraint constraint : constraints) {
-            if(!IrUtil.isTrue(constraint)) {
+    public IrModule withConstraints(Collection<IrBoolExpr> constraints) {
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>();
+        for (IrBoolExpr constraint : constraints) {
+            if (!IrUtil.isTrue(constraint)) {
                 filter.add(constraint);
             }
         }
@@ -113,7 +109,7 @@ public class IrModule {
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append("IrModule").append('\n');
-        for (IrConstraint constraint : constraints) {
+        for (IrBoolExpr constraint : constraints) {
             result.append("--").append(constraint).append('\n');
         }
         return result.toString();

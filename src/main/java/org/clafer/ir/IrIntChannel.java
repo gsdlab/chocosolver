@@ -7,14 +7,15 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrIntChannel implements IrConstraint {
+public class IrIntChannel extends IrAbstractBool implements IrBoolExpr {
 
     private final IrIntExpr[] ints;
     private final IrSetExpr[] sets;
 
-    IrIntChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
-        this.ints = Check.noNulls(ints);
-        this.sets = Check.noNulls(sets);
+    IrIntChannel(IrIntExpr[] ints, IrSetExpr[] sets, IrBoolDomain domain) {
+        super(domain);
+        this.ints = Check.noNullsNotEmpty(ints);
+        this.sets = Check.noNullsNotEmpty(sets);
     }
 
     public IrIntExpr[] getInts() {
@@ -26,7 +27,17 @@ public class IrIntChannel implements IrConstraint {
     }
 
     @Override
-    public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
+    public IrBoolExpr negate() {
+        return new IrNot(this, getDomain().invert());
+    }
+
+    @Override
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 

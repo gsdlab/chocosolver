@@ -30,11 +30,21 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrSetEquality ir, A a);
 
-    public B visit(IrSortStrings ir, A a);
-
     public B visit(IrMember ir, A a);
 
     public B visit(IrNotMember ir, A a);
 
     public B visit(IrBoolCast ir, A a);
+
+    public B visit(IrBoolChannel ir, A a);
+
+    public B visit(IrIntChannel ir, A a);
+
+    public B visit(IrSortInts ir, A a);
+
+    public B visit(IrSortStrings ir, A a);
+
+    public B visit(IrAllDifferent ir, A a);
+
+    public B visit(IrSelectN ir, A a);
 }

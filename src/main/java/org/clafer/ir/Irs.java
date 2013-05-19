@@ -413,13 +413,6 @@ public class Irs {
         return compare(left, IrCompare.Op.GreaterThanEqual, right);
     }
 
-    public static IrBoolExpr sort(IrIntExpr[]... strings) {
-        if (strings.length < 2) {
-            return $(True);
-        }
-        return new IrSortStrings(strings, BoolDomain);
-    }
-
     public static IrBoolExpr member(IrIntExpr element, IrSetExpr set) {
         if (IrUtil.isSubsetOf(element.getDomain(), set.getKer())) {
             return $(True);
@@ -451,6 +444,104 @@ public class Irs {
             }
         }
         return new IrBoolCast(expr, BoolDomain);
+    }
+
+    public static IrBoolExpr boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
+        IrDomain env = set.getEnv();
+        IrDomain ker = set.getKer();
+        boolean entailed = true;
+        for (int i = 0; i < bools.length; i++) {
+            Boolean constant = IrUtil.getConstant(bools[i]);
+            if (Boolean.TRUE.equals(constant)) {
+                if (!env.contains(i)) {
+                    return $(False);
+                }
+                if (!ker.contains(i)) {
+                    entailed = false;
+                }
+            } else if (Boolean.FALSE.equals(constant)) {
+                if (ker.contains(i)) {
+                    return $(False);
+                }
+                if (env.contains(i)) {
+                    entailed = false;
+                }
+            } else {
+                entailed = false;
+            }
+        }
+        if (entailed) {
+            return $(True);
+        }
+        return new IrBoolChannel(bools, set, BoolDomain);
+    }
+
+    public static IrBoolExpr intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
+        return new IrIntChannel(ints, sets, BoolDomain);
+    }
+
+    public static IrBoolExpr sort(IrIntExpr... array) {
+        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
+        for (int i = 0; i < array.length - 1; i++) {
+            if (array[i].getDomain().getUpperBound() > array[i + 1].getDomain().getLowerBound()) {
+                filter.add(array[i]);
+            }
+        }
+        if (array.length > 0) {
+            filter.add(array[array.length - 1]);
+        }
+        switch (filter.size()) {
+            case 0:
+            case 1:
+                return $(True);
+            case 2:
+                return lessThanEqual(filter.get(0), filter.get(1));
+            default:
+                return new IrSortInts(filter.toArray(new IrIntExpr[filter.size()]), BoolDomain);
+        }
+    }
+
+    public static IrBoolExpr sort(IrIntExpr[]... strings) {
+        if (strings.length < 2) {
+            return $(True);
+        }
+        return new IrSortStrings(strings, BoolDomain);
+    }
+
+    public static IrBoolExpr allDifferent(IrIntExpr[] ints) {
+        if (ints.length < 2) {
+            return $(True);
+        }
+        return new IrAllDifferent(ints, BoolDomain);
+    }
+
+    public static IrBoolExpr selectN(IrBoolExpr[] bools, IrIntExpr n) {
+        boolean entailed = true;
+        IrDomain nDomain = n.getDomain();
+        for (int i = 0; i < bools.length; i++) {
+            Boolean constant = IrUtil.getConstant(bools[i]);
+            if (Boolean.TRUE.equals(constant)) {
+                if (i >= nDomain.getUpperBound()) {
+                    return $(False);
+                }
+                if (i >= nDomain.getLowerBound()) {
+                    entailed = false;
+                }
+            } else if (Boolean.FALSE.equals(constant)) {
+                if (i < nDomain.getLowerBound()) {
+                    return $(False);
+                }
+                if (i < nDomain.getUpperBound()) {
+                    entailed = false;
+                }
+            } else {
+                entailed = false;
+            }
+        }
+        if (entailed) {
+            return $(True);
+        }
+        return new IrSelectN(bools, n, BoolDomain);
     }
     /**
      * ******************
@@ -890,111 +981,5 @@ public class Irs {
                         Math.min(high, env.size()));
                 return new IrUnion(operands, env, ker, card);
         }
-    }
-    /**
-     * Constraints
-     */
-    public static final IrBoolConstraint Tautalogy = new IrBoolConstraint($(True));
-    public static final IrBoolConstraint FalseTautalogy = new IrBoolConstraint($(False));
-
-    public static IrBoolConstraint boolConstraint(IrBoolExpr expr) {
-        if (IrUtil.isTrue(expr)) {
-            return Tautalogy;
-        }
-        if (IrUtil.isFalse(expr)) {
-            return FalseTautalogy;
-        }
-        return new IrBoolConstraint(expr);
-    }
-
-    public static IrConstraint boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
-        IrDomain env = set.getEnv();
-        IrDomain ker = set.getKer();
-        boolean entailed = true;
-        for (int i = 0; i < bools.length; i++) {
-            Boolean constant = IrUtil.getConstant(bools[i]);
-            if (Boolean.TRUE.equals(constant)) {
-                if (!env.contains(i)) {
-                    return FalseTautalogy;
-                }
-                if (!ker.contains(i)) {
-                    entailed = false;
-                }
-            } else if (Boolean.FALSE.equals(constant)) {
-                if (ker.contains(i)) {
-                    return FalseTautalogy;
-                }
-                if (env.contains(i)) {
-                    entailed = false;
-                }
-            } else {
-                entailed = false;
-            }
-        }
-        if (entailed) {
-            return Tautalogy;
-        }
-        return new IrBoolChannel(bools, set);
-    }
-
-    public static IrIntChannel intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
-        return new IrIntChannel(ints, sets);
-    }
-
-    public static IrConstraint sort(IrIntExpr... array) {
-        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
-        for (int i = 0; i < array.length - 1; i++) {
-            if (array[i].getDomain().getUpperBound() > array[i + 1].getDomain().getLowerBound()) {
-                filter.add(array[i]);
-            }
-        }
-        if (array.length > 0) {
-            filter.add(array[array.length - 1]);
-        }
-        switch (filter.size()) {
-            case 0:
-            case 1:
-                return Tautalogy;
-//            case 2:
-//                return boolConstraint(lessThanEqual(filter.get(0), filter.get(1)));
-            default:
-                return new IrSortInts(filter.toArray(new IrIntExpr[filter.size()]));
-        }
-    }
-
-    public static IrConstraint allDifferent(IrIntExpr[] ints) {
-        if (ints.length < 2) {
-            return Tautalogy;
-        }
-        return new IrAllDifferent(ints);
-    }
-
-    public static IrConstraint selectN(IrBoolExpr[] bools, IrIntExpr n) {
-        boolean entailed = true;
-        IrDomain nDomain = n.getDomain();
-        for (int i = 0; i < bools.length; i++) {
-            Boolean constant = IrUtil.getConstant(bools[i]);
-            if (Boolean.TRUE.equals(constant)) {
-                if (i >= nDomain.getUpperBound()) {
-                    return FalseTautalogy;
-                }
-                if (i >= nDomain.getLowerBound()) {
-                    entailed = false;
-                }
-            } else if (Boolean.FALSE.equals(constant)) {
-                if (i < nDomain.getLowerBound()) {
-                    return FalseTautalogy;
-                }
-                if (i < nDomain.getUpperBound()) {
-                    entailed = false;
-                }
-            } else {
-                entailed = false;
-            }
-        }
-        if (entailed) {
-            return Tautalogy;
-        }
-        return new IrSelectN(bools, n);
     }
 }
