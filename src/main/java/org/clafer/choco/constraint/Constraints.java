@@ -102,4 +102,8 @@ public class Constraints {
         constraint.setPropagators(new PropIntNotMemberSet(element, set));
         return constraint;
     }
+
+    public static Constraint and(Constraint... constraints) {
+        return new AndConstraint(constraints);
+    }
 }

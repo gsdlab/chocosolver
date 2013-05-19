@@ -28,23 +28,6 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
         this.set = set;
         this.setD = set.monitorDelta(aCause);
     }
-//    public void setActive() {
-//        throw new Error();
-//    }
-//
-//    public void setReifiedTrue() {
-//        throw new Error();
-//    }
-//
-//    public void setReifiedSilent() {
-//        throw new Error();
-//    }
-//
-//    @SuppressWarnings({"unchecked"})
-//    public void setPassive() {
-//        throw new Error();
-//    }
-
 
     private boolean isElementVar(int idx) {
         return idx == 0;

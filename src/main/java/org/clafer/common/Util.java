@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Reader;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,12 +31,7 @@ import util.iterators.IntIterator;
  * @author jimmy
  */
 public class Util {
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-        BoolVar v = VF.bool("v", solver);
-        IntVar i1 = VF.enumerated("i1", 0, 10, solver);
-        IntVar i2 = VF.enumerated("i2", 0, 10, solver);
-    }
+
     private Util() {
     }
 
@@ -331,8 +327,9 @@ public class Util {
         for (T[] array : arrays) {
             length += array.length;
         }
-        T[] concat = Arrays.copyOf(arrays[0], length);
         int offset = 0;
+        @SuppressWarnings("unchecked")
+        T[] concat = (T[]) Array.newInstance(arrays.getClass().getComponentType().getComponentType(), length);
         for (T[] array : arrays) {
             System.arraycopy(array, 0, concat, offset, array.length);
             offset += array.length;
@@ -464,7 +461,6 @@ public class Util {
      * @param obj an object
      * @return a copy of the object
      */
-    @SuppressWarnings("unchecked")
     public static <T extends Serializable> T copy(T obj) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out;
@@ -476,7 +472,9 @@ public class Util {
 
             ByteArrayInputStream bin = new ByteArrayInputStream(buf);
             ObjectInputStream in = new ObjectInputStream(bin);
-            return (T) in.readObject();
+            @SuppressWarnings("unchecked")
+            T copy = (T) in.readObject();
+            return copy;
         } catch (IOException e) {
             // ByteArrayOutputStream should not throw IOException.
             throw new Error(e);
@@ -593,5 +591,14 @@ public class Util {
             result.append(buffer, 0, l);
         }
         return result.toString();
+    }
+    
+    public static void main(String[] args) {
+        Solver solver = new Solver();
+        BoolVar b1 = VF.bool("b1", solver);
+        BoolVar b2 = VF.bool("b2", solver);
+        IntVar i = VF.enumerated("i", 0, 2, solver);
+        
+        
     }
 }

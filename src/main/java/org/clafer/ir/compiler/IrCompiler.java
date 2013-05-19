@@ -6,7 +6,6 @@ import org.clafer.ir.IrArithm;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolCast;
 import org.clafer.ir.IrElement;
-import org.clafer.ir.IrHalfReification;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIfThenElse;
 import org.clafer.ir.IrIntExpr;
@@ -20,9 +19,7 @@ import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSingleton;
@@ -70,11 +67,12 @@ import solver.constraints.nary.cnf.LogOp;
 import solver.constraints.set.SetConstraintsFactory;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
+import solver.variables.VF;
 import solver.variables.VariableFactory;
 
 /**
  * Compile from IR to Choco.
- * 
+ *
  * @author jimmy
  */
 public class IrCompiler {
@@ -147,7 +145,6 @@ public class IrCompiler {
         return VariableFactory.set(name + "#" + varNum++, env, solver);
     }
     private final CacheMap<IrBoolVar, BoolVar> boolVar = new CacheMap<IrBoolVar, BoolVar>() {
-
         @Override
         protected BoolVar cache(IrBoolVar ir) {
             Boolean constant = IrUtil.getConstant(ir);
@@ -158,12 +155,11 @@ public class IrCompiler {
         }
     };
     private final CacheMap<IrIntVar, IntVar> intVar = new CacheMap<IrIntVar, IntVar>() {
-
         @Override
         protected IntVar cache(IrIntVar ir) {
             Integer constant = IrUtil.getConstant(ir);
             if (constant != null) {
-                switch(constant.intValue()) {
+                switch (constant.intValue()) {
                     case 0:
                         return VariableFactory.zero(solver);
                     case 1:
@@ -176,7 +172,6 @@ public class IrCompiler {
         }
     };
     private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
-
         @Override
         protected SetVar cache(IrSetVar a) {
             int[] constant = IrUtil.getConstant(a);
@@ -201,7 +196,6 @@ public class IrCompiler {
         }
     };
     private final CacheMap<SetVar, IntVar> setCardVar = new CacheMap<SetVar, IntVar>() {
-
         @Override
         protected IntVar cache(SetVar a) {
             IntVar card = VariableFactory.enumerated("|" + a.getName() + "|", a.getKernelSize(), a.getEnvelopeSize(), solver);
@@ -210,17 +204,9 @@ public class IrCompiler {
         }
     };
     private final IrConstraintVisitor<Void, Constraint> constraintCompiler = new IrConstraintVisitor<Void, Constraint>() {
-
         @Override
         public Constraint visit(IrBoolConstraint ir, Void a) {
-            return ir.getExpr().accept(boolExprConstraintCompiler, a);
-        }
-
-        @Override
-        public Constraint visit(IrHalfReification ir, Void a) {
-            BoolVar $antecedent = ir.getAntecedent().accept(boolExprCompiler, a);
-            Constraint $consequent = ir.getConsequent().accept(this, a);
-            return _implies($antecedent, $consequent);
+            return compileAsConstraint(ir.getExpr());
         }
 
         @Override
@@ -230,7 +216,7 @@ public class IrCompiler {
 
             BoolVar[] $bools = new BoolVar[bools.length];
             for (int i = 0; i < $bools.length; i++) {
-                $bools[i] = bools[i].accept(boolExprCompiler, a);
+                $bools[i] = compileAsBoolVar(bools[i]);
             }
             SetVar $set = set.accept(setExprCompiler, a);
             return SetConstraintsFactory.bool_channel($bools, $set, 0);
@@ -264,20 +250,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrSortStrings ir, Void a) {
-            IrIntExpr[][] strings = ir.getStrings();
-
-            IntVar[][] $strings = new IntVar[strings.length][];
-            for (int i = 0; i < $strings.length; i++) {
-                $strings[i] = new IntVar[strings[i].length];
-                for (int j = 0; j < $strings[i].length; j++) {
-                    $strings[i][j] = strings[i][j].accept(intExprCompiler, a);
-                }
-            }
-            return _lex_chain_less_eq($strings);
-        }
-
-        @Override
         public Constraint visit(IrAllDifferent ir, Void a) {
             IrIntExpr[] operands = ir.getOperands();
 
@@ -295,260 +267,150 @@ public class IrCompiler {
 
             BoolVar[] $bools = new BoolVar[bools.length];
             for (int i = 0; i < $bools.length; i++) {
-                $bools[i] = bools[i].accept(boolExprCompiler, a);
+                $bools[i] = compileAsBoolVar(bools[i]);
             }
             IntVar $n = n.accept(intExprCompiler, a);
             return Constraints.selectN($bools, $n);
         }
     };
-    private final IrBoolExprVisitor<Void, BoolVar> boolExprCompiler = new IrBoolExprVisitor<Void, BoolVar>() {
 
-        private final Map<BoolVar, BoolVar> notCache = new HashMap<BoolVar, BoolVar>();
-
-        private BoolVar not(BoolVar var) {
-            BoolVar not = notCache.get(var);
-            if (not == null) {
-                not = VariableFactory.not(var);
-                notCache.put(var, not);
-            }
-            return not;
+    private BoolVar asBoolVar(Object obj) {
+        if (obj instanceof Constraint) {
+            return asBoolVar((Constraint) obj);
         }
+        return (BoolVar) obj;
+    }
 
+    private BoolVar asBoolVar(Constraint op) {
+        return op.reif();
+    }
+
+    private BoolVar compileAsBoolVar(IrBoolExpr expr) {
+        return asBoolVar(expr.accept(boolExprCompiler1, Preference.BoolVar));
+    }
+
+    private Constraint asConstraint(Object obj) {
+        if (obj instanceof BoolVar) {
+            return asConstraint((BoolVar) obj);
+        }
+        return (Constraint) obj;
+    }
+
+    private Constraint asConstraint(BoolVar var) {
+        return _arithm(var, "=", 1);
+    }
+
+    private Constraint compileAsConstraint(IrBoolExpr expr) {
+        return asConstraint(expr.accept(boolExprCompiler1, Preference.Constraint));
+    }
+    /**
+     * <p>
+     * How does this boolean expression compiler work?
+     * </p>
+     * <p>
+     * Each expression is compiled to one of:
+     * <ol>
+     * <li>BoolVar</li>
+     * <li>ILogical</li>
+     * <li>Constraint</li>
+     * </ol>
+     * </p>
+     * <p>
+     * The method invoking the compiler can state its preference of return type,
+     * although the preference is NOT GUARANTEED to be respected.
+     * </p>
+     */
+    private final IrBoolExprVisitor<Preference, Object> boolExprCompiler1 = new IrBoolExprVisitor<Preference, Object>() {
         @Override
-        public BoolVar visit(IrBoolLiteral ir, Void a) {
+        public Object visit(IrBoolLiteral ir, Preference a) {
             return boolVar.get(ir.getVar());
         }
 
         @Override
-        public BoolVar visit(IrNot ir, Void a) {
-            return not(boolVar.get(ir.getVar()));
+        public Object visit(IrNot ir, Preference a) {
+            return boolVar.get(ir.getVar()).not();
         }
 
         @Override
-        public BoolVar visit(IrAnd ir, Void a) {
+        public Object visit(IrAnd ir, Preference a) {
             IrBoolExpr[] operands = ir.getOperands();
-
+            if (operands.length == 1) {
+                return operands[0].accept(this, a);
+            }
             BoolVar[] $operands = new BoolVar[operands.length];
             for (int i = 0; i < $operands.length; i++) {
-                $operands[i] = operands[i].accept(boolExprCompiler, a);
+                $operands[i] = compileAsBoolVar(operands[i]);
             }
-            switch ($operands.length) {
-                case 1:
-                    return $operands[0];
-                case 2:
-                    BoolVar reified = numBoolVar("And");
-                    solver.post(_implies(reified, _arithm($operands[0], "+", $operands[1], "=", 2)));
-                    solver.post(_implies(reified.not(), _arithm($operands[0], "+", $operands[1], "!=", 2)));
-                    return reified;
-                default:
-                    reified = numBoolVar("And");
-                    solver.post(_clauses(LogOp.reified(reified, LogOp.and($operands))));
-                    return reified;
-            }
+            return _and($operands);
         }
 
         @Override
-        public BoolVar visit(IrOr ir, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public BoolVar visit(IrImplies ir, Void a) {
-            BoolVar $antecedent = ir.getAntecedent().accept(this, a);
-            BoolVar $consequent = ir.getConsequent().accept(this, a);
-            BoolVar reified = numBoolVar("Implies");
-            solver.post(_clauses(LogOp.reified(reified, LogOp.implies($antecedent, $consequent))));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrNotImplies ir, Void a) {
-            BoolVar $antecedent = ir.getAntecedent().accept(this, a);
-            BoolVar $consequent = ir.getConsequent().accept(this, a);
-            BoolVar reified = numBoolVar("NotImplies");
-            solver.post(_clauses(LogOp.reified(reified.not(), LogOp.implies($antecedent, $consequent))));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrIfThenElse ir, Void a) {
-            BoolVar $antecedent = ir.getAntecedent().accept(this, a);
-            BoolVar $consequent = ir.getConsequent().accept(this, a);
-            BoolVar $alternative = ir.getAlternative().accept(this, a);
-            BoolVar reified = numBoolVar("IfThenElse");
-            solver.post(_clauses(LogOp.reified(reified, LogOp.ifThenElse(
-                    $antecedent, $consequent, $alternative))));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrIfOnlyIf ir, Void a) {
-            BoolVar $left = ir.getLeft().accept(this, a);
-            BoolVar $right = ir.getRight().accept(this, a);
-            BoolVar reified = numBoolVar("IfOnlyIf");
-            solver.post(_implies(reified, _arithm($left, "=", $right)));
-            solver.post(_implies(reified.not(), _arithm($left, "!=", $right)));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrBetween ir, Void a) {
-            IntVar $var = ir.getVar().accept(intExprCompiler, a);
-            BoolVar reified = numBoolVar("Between");
-            solver.post(_implies(reified, _between($var, ir.getLow(), ir.getHigh())));
-            solver.post(_implies(reified.not(), _not_between($var, ir.getLow(), ir.getHigh())));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrNotBetween ir, Void a) {
-            IntVar $var = ir.getVar().accept(intExprCompiler, a);
-            BoolVar reified = numBoolVar("NotBetween");
-            solver.post(_implies(reified, _not_between($var, ir.getLow(), ir.getHigh())));
-            solver.post(_implies(reified.not(), _between($var, ir.getLow(), ir.getHigh())));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrCompare ir, Void a) {
-            IntVar $left = ir.getLeft().accept(intExprCompiler, a);
-            IntVar $right = ir.getRight().accept(intExprCompiler, a);
-            BoolVar reified = numBoolVar("IntCompare");
-            solver.post(_implies(reified, _arithm($left, ir.getOp().getSyntax(), $right)));
-            solver.post(_implies(reified.not(), _arithm($left, ir.getOp().getOpposite().getSyntax(), $right)));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrSetEquality ir, Void a) {
-            SetVar $left = ir.getLeft().accept(setExprCompiler, a);
-            SetVar $right = ir.getRight().accept(setExprCompiler, a);
-            BoolVar reified = numBoolVar("SetCompare");
-            switch (ir.getOp()) {
-                case Equal:
-                    solver.post(_implies(reified, _equal($left, $right)));
-                    solver.post(_implies(reified.not(), _all_different($left, $right)));
-                    return reified;
-                case NotEqual:
-                    solver.post(_implies(reified, _all_different($left, $right)));
-                    solver.post(_implies(reified.not(), _equal($left, $right)));
-                    return reified;
-                default:
-                    throw new IrException();
-            }
-        }
-
-        @Override
-        public BoolVar visit(IrMember ir, Void a) {
-            IntVar $element = ir.getElement().accept(intExprCompiler, a);
-            SetVar $set = ir.getSet().accept(setExprCompiler, a);
-            BoolVar reified = numBoolVar("Member");
-            solver.post(_implies(reified, _member($element, $set)));
-            solver.post(_implies(reified.not(), _not_member($element, $set)));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrNotMember ir, Void a) {
-            IntVar $element = ir.getElement().accept(intExprCompiler, a);
-            SetVar $set = ir.getSet().accept(setExprCompiler, a);
-            BoolVar reified = numBoolVar("NotMember");
-            solver.post(_implies(reified, _not_member($element, $set)));
-            solver.post(_implies(reified.not(), _member($element, $set)));
-            return reified;
-        }
-
-        @Override
-        public BoolVar visit(IrBoolCast ir, Void a) {
-            BoolVar $expr = (BoolVar) ir.getExpr().accept(intExprCompiler, a);
-            return ir.isFlipped() ? not($expr) : $expr;
-        }
-    };
-    private final IrBoolExprVisitor<Void, Constraint> boolExprConstraintCompiler = new IrBoolExprVisitor<Void, Constraint>() {
-
-        @Override
-        public Constraint visit(IrBoolLiteral ir, Void a) {
-            return _arithm(boolVar.get(ir.getVar()), "=", VariableFactory.fixed(1, solver));
-        }
-
-        @Override
-        public Constraint visit(IrNot ir, Void a) {
-            return _arithm(boolVar.get(ir.getVar()), "=", VariableFactory.fixed(0, solver));
-        }
-
-        @Override
-        public Constraint visit(IrAnd ir, Void a) {
+        public Object visit(IrOr ir, Preference a) {
             IrBoolExpr[] operands = ir.getOperands();
-
+            if (operands.length == 1) {
+                return operands[0].accept(this, a);
+            }
             BoolVar[] $operands = new BoolVar[operands.length];
             for (int i = 0; i < $operands.length; i++) {
-                $operands[i] = operands[i].accept(boolExprCompiler, a);
+                $operands[i] = compileAsBoolVar(operands[i]);
             }
-            switch ($operands.length) {
-                case 1:
-                    return _arithm($operands[0], "=", 1);
-                case 2:
-                    return _arithm($operands[0], "+", $operands[1], "=", 2);
-                default:
-                    return _sum(VariableFactory.fixed($operands.length, solver), $operands);
-            }
+            return _or($operands);
         }
 
         @Override
-        public Constraint visit(IrOr ir, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Constraint visit(IrImplies ir, Void a) {
-            BoolVar $antecedent = ir.getAntecedent().accept(boolExprCompiler, a);
-            Constraint $consequent = ir.getConsequent().accept(this, a);
+        public Object visit(IrImplies ir, Preference a) {
+            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
+            BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
             return _implies($antecedent, $consequent);
         }
 
         @Override
-        public Constraint visit(IrNotImplies ir, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        public Object visit(IrNotImplies ir, Preference a) {
+            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
+            BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
+            return _not_implies($antecedent, $consequent);
         }
 
         @Override
-        public Constraint visit(IrIfThenElse ir, Void a) {
-            BoolVar $antecedent = ir.getAntecedent().accept(boolExprCompiler, a);
-            Constraint $consequent = ir.getConsequent().accept(this, a);
-            Constraint $alternative = ir.getAlternative().accept(this, a);
-            return _ifThenElse($antecedent, $consequent, $alternative);
+        public Object visit(IrIfThenElse ir, Preference a) {
+            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
+            BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
+            BoolVar $alternative = compileAsBoolVar(ir.getAlternative());
+            Constraint thenClause = _implies($antecedent, $consequent);
+            Constraint elseClause = _implies($antecedent.not(), $alternative);
+            return _and(thenClause.reif(), elseClause.reif());
         }
 
         @Override
-        public Constraint visit(IrIfOnlyIf ir, Void a) {
-            BoolVar $left = ir.getLeft().accept(boolExprCompiler, a);
-            BoolVar $right = ir.getRight().accept(boolExprCompiler, a);
+        public Object visit(IrIfOnlyIf ir, Preference a) {
+            BoolVar $left = compileAsBoolVar(ir.getLeft());
+            BoolVar $right = compileAsBoolVar(ir.getRight());
             return _arithm($left, "=", $right);
         }
 
         @Override
-        public Constraint visit(IrBetween ir, Void a) {
-            IntVar $var = ir.getVar().accept(intExprCompiler, a);
+        public Object visit(IrBetween ir, Preference a) {
+            IntVar $var = ir.getVar().accept(intExprCompiler, null);
             return _between($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
-        public Constraint visit(IrNotBetween ir, Void a) {
-            IntVar $var = ir.getVar().accept(intExprCompiler, a);
+        public Object visit(IrNotBetween ir, Preference a) {
+            IntVar $var = ir.getVar().accept(intExprCompiler, null);
             return _not_between($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
-        public Constraint visit(IrCompare ir, Void a) {
-            IntVar $left = ir.getLeft().accept(intExprCompiler, a);
-            IntVar $right = ir.getRight().accept(intExprCompiler, a);
+        public Object visit(IrCompare ir, Preference a) {
+            IntVar $left = ir.getLeft().accept(intExprCompiler, null);
+            IntVar $right = ir.getRight().accept(intExprCompiler, null);
             return _arithm($left, ir.getOp().getSyntax(), $right);
         }
 
         @Override
-        public Constraint visit(IrSetEquality ir, Void a) {
-            SetVar $left = ir.getLeft().accept(setExprCompiler, a);
-            SetVar $right = ir.getRight().accept(setExprCompiler, a);
+        public Object visit(IrSetEquality ir, Preference a) {
+            SetVar $left = ir.getLeft().accept(setExprCompiler, null);
+            SetVar $right = ir.getRight().accept(setExprCompiler, null);
             switch (ir.getOp()) {
                 case Equal:
                     return _equal($left, $right);
@@ -560,97 +422,47 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrMember ir, Void a) {
-            IntVar $element = ir.getElement().accept(intExprCompiler, a);
-            SetVar $set = ir.getSet().accept(setExprCompiler, a);
+        public Object visit(IrSortStrings ir, Preference a) {
+            IrIntExpr[][] strings = ir.getStrings();
+            IntVar[][] $strings = new IntVar[strings.length][];
+            for (int i = 0; i < $strings.length; i++) {
+                $strings[i] = new IntVar[strings[i].length];
+                for (int j = 0; j < $strings[i].length; j++) {
+                    $strings[i][j] = strings[i][j].accept(intExprCompiler, null);
+                }
+            }
+            return _lex_chain_less_eq($strings);
+        }
+
+        @Override
+        public Object visit(IrMember ir, Preference a) {
+            IntVar $element = ir.getElement().accept(intExprCompiler, null);
+            SetVar $set = ir.getSet().accept(setExprCompiler, null);
             return _member($element, $set);
         }
 
         @Override
-        public Constraint visit(IrNotMember ir, Void a) {
-            IntVar $element = ir.getElement().accept(intExprCompiler, a);
-            SetVar $set = ir.getSet().accept(setExprCompiler, a);
+        public Object visit(IrNotMember ir, Preference a) {
+            IntVar $element = ir.getElement().accept(intExprCompiler, null);
+            SetVar $set = ir.getSet().accept(setExprCompiler, null);
             return _not_member($element, $set);
         }
 
         @Override
-        public Constraint visit(IrBoolCast ir, Void a) {
-            IntVar $expr = ir.getExpr().accept(intExprCompiler, a);
-            return _arithm($expr, "=", ir.isFlipped() ? 0 : 1);
+        public Object visit(IrBoolCast ir, Preference a) {
+            BoolVar $expr = (BoolVar) ir.getExpr().accept(intExprCompiler, null);
+            return ir.isFlipped() ? $expr.not() : $expr;
         }
     };
-//    private final IrBoolExprVisitor<Void, ALogicTree> boolExprTreeCompiler = new IrBoolExprVisitor<Void, ALogicTree>() {
-//
-//        @Override
-//        public ALogicTree visit(IrBoolVar ir, Void a) {
-//            if (ir.isConstant()) {
-//                return ir.isTrue() ? Singleton.TRUE : Singleton.FALSE;
-//            }
-//            return Literal.pos(boolVar.get(ir));
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrNot ir, Void a) {
-//            return Node.nor(ir.getProposition().accept(this, a));
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrAnd ir, Void a) {
-//            IrBoolExpr[] operands = ir.getOperands();
-//
-//            ALogicTree[] $operands = new ALogicTree[operands.length];
-//            for (int i = 0; i < operands.length; i++) {
-//                $operands[i] = operands[i].accept(this, a);
-//            }
-//            return _and($operands);
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrImplies ir, Void a) {
-//            ALogicTree $antecedent = ir.getAntecedent().accept(this, a);
-//            ALogicTree $consequent = ir.getConsequent().accept(this, a);
-//            return Node.implies($antecedent, $consequent);
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrIfOnlyIf ir, Void a) {
-//            ALogicTree $left = ir.getLeft().accept(this, a);
-//            ALogicTree $right = ir.getRight().accept(this, a);
-//            return Node.ifOnlyIf($left, $right);
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrBetween ir, Void a) {
-//            return Literal.pos(ir.accept(boolExprCompiler, a));
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrNotBetween ir, Void a) {
-//            return Literal.pos(ir.accept(boolExprCompiler, a));
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrCompare ir, Void a) {
-//            return Literal.pos(ir.accept(boolExprCompiler, a));
-//        }
-//
-//        @Override
-//        public ALogicTree visit(IrSetEquality ir, Void a) {
-//            return Literal.pos(ir.accept(boolExprCompiler, a));
-//        }
-//    };
     private final IrIntExprVisitor<Void, IntVar> intExprCompiler = new IrIntExprVisitor<Void, IntVar>() {
-
         /**
          * TODO: optimize
-         * 
+         *
          * 5 = x + y
-         * 
-         * sum([x,y], newVar)
-         * newVar = 5
-         * 
-         * Instead pass "5" in the Void param so
-         * sum([x,y], 5)
+         *
+         * sum([x,y], newVar) newVar = 5
+         *
+         * Instead pass "5" in the Void param so sum([x,y], 5)
          */
         @Override
         public IntVar visit(IrIntLiteral ir, Void a) {
@@ -796,7 +608,6 @@ public class IrCompiler {
         }
     };
     private final IrSetExprVisitor<Void, SetVar> setExprCompiler = new IrSetExprVisitor<Void, SetVar>() {
-
         @Override
         public SetVar visit(IrSetLiteral ir, Void a) {
             return setVar.get(ir.getVar());
@@ -904,6 +715,37 @@ public class IrCompiler {
         return IntConstraintFactory.arithm(var1, op1, var2, op2, cste);
     }
 
+    private static Constraint _and(BoolVar... vars) {
+        switch (vars.length) {
+            case 1:
+                return _arithm(vars[0], "=", 1);
+            case 2:
+                return _arithm(vars[0], "+", vars[1], "=", 2);
+            default:
+                // Better than the one provided by the library.
+                return _sum(VariableFactory.fixed(vars.length, vars[0].getSolver()), vars);
+        }
+    }
+
+    private static Constraint _or(BoolVar... vars) {
+        switch (vars.length) {
+            case 1:
+                return _arithm(vars[0], "=", 1);
+            case 2:
+                return _arithm(vars[0], "+", vars[1], ">=", 1);
+            default:
+                return LogicalConstraintFactory.or(vars);
+        }
+    }
+
+    private static Constraint _implies(BoolVar antecedent, BoolVar consequent) {
+        return _arithm(antecedent, "<=", consequent);
+    }
+
+    private static Constraint _not_implies(BoolVar antecedent, BoolVar consequent) {
+        return _arithm(antecedent, ">", consequent);
+    }
+
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
         if (var2.instantiated()) {
             return IntConstraintFactory.arithm(var1, op, var2.getValue());
@@ -978,6 +820,12 @@ public class IrCompiler {
             ub = Math.max(ub, vars[i].getUB());
         }
         return ub;
+    }
+
+    private static enum Preference {
+
+        Constraint,
+        BoolVar;
     }
 
     public static void main(String[] args) {

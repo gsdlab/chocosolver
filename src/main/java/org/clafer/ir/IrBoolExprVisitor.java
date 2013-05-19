@@ -30,6 +30,8 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrSetEquality ir, A a);
 
+    public B visit(IrSortStrings ir, A a);
+
     public B visit(IrMember ir, A a);
 
     public B visit(IrNotMember ir, A a);

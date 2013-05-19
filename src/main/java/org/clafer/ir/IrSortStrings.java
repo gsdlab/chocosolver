@@ -2,16 +2,18 @@ package org.clafer.ir;
 
 import java.util.Arrays;
 import org.clafer.common.Check;
+import org.clafer.common.Util;
 
 /**
  *
  * @author jimmy
  */
-public class IrSortStrings implements IrConstraint {
+public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
 
     private final IrIntExpr[][] strings;
 
-    IrSortStrings(IrIntExpr[][] strings) {
+    IrSortStrings(IrIntExpr[][] strings, IrBoolDomain domain) {
+        super(domain);
         this.strings = Check.noNulls(strings);
     }
 
@@ -20,7 +22,19 @@ public class IrSortStrings implements IrConstraint {
     }
 
     @Override
-    public <A, B> B accept(IrConstraintVisitor<A, B> visitor, A a) {
+    public IrBoolExpr negate() {
+        IrIntExpr[][] reverse = strings;
+        Util.reverse(reverse);
+        return new IrSortStrings(reverse, getDomain().invert());
+    }
+
+    @Override
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 

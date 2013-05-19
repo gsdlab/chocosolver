@@ -3,6 +3,7 @@ package org.clafer.choco.constraint;
 import org.clafer.common.Util;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import solver.constraints.Constraint;
+import solver.constraints.ImplicationConstraint;
 import solver.constraints.propagators.Propagator;
 import solver.variables.Variable;
 import util.ESat;
@@ -20,8 +21,8 @@ public class AndConstraint extends Constraint<Variable, Propagator<Variable>> {
         this.operands = operands;
         Propagator[] props = getPropagators(operands);
         PropAnd reifProp = new PropAnd(props);
-        props = Util.cons(reifProp, props);
-        setPropagators(props);
+        addPropagators(reifProp);
+        addPropagators(props);
         for (Propagator prop : props) {
             prop.setReifiedSilent();
         }

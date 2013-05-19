@@ -32,6 +32,7 @@ public class PropAnd extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         for (Propagator<? extends Variable> operand : operands) {
             assert (operand.isReifiedAndSilent());
+            System.out.println(operand + " : " + operand.getClass());
             operand.setReifiedTrue();
             operand.propagate(EventType.FULL_PROPAGATION.strengthened_mask);
             solver.getEngine().onPropagatorExecution(operand);

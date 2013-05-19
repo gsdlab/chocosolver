@@ -9,7 +9,7 @@ import org.clafer.common.Check;
 /**
  * The compiled model in IR. A module contains variables and constraints. Adding
  * variables is only required for unconstrained variables.
- * 
+ *
  * @author jimmy
  */
 public class IrModule {
@@ -100,7 +100,13 @@ public class IrModule {
     }
 
     public IrModule withConstraints(Collection<IrConstraint> constraints) {
-        return new IrModule(boolVars, intVars, setVars, new ArrayList<IrConstraint>(constraints));
+        List<IrConstraint> filter = new ArrayList<IrConstraint>();
+        for(IrConstraint constraint : constraints) {
+            if(!IrUtil.isTrue(constraint)) {
+                filter.add(constraint);
+            }
+        }
+        return new IrModule(boolVars, intVars, setVars, filter);
     }
 
     @Override

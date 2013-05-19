@@ -6,16 +6,14 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import org.clafer.common.Util;
-import org.clafer.ir.IrBoundDomain;
-import org.clafer.ir.IrEmptyDomain;
-import org.clafer.ir.IrEnumDomain;
 
 /**
- * 
+ *
  * @author jimmy
  */
 public class Irs {
@@ -82,11 +80,13 @@ public class Irs {
         }
         return exprs;
     }
-    /********************
-     * 
+    /**
+     * ******************
+     *
      * Domain
-     * 
-     ********************/
+     *
+     *******************
+     */
     public static final IrBoolDomain TrueDomain = IrBoolDomain.TrueDomain;
     public static final IrBoolDomain FalseDomain = IrBoolDomain.FalseDomain;
     public static final IrBoolDomain BoolDomain = IrBoolDomain.BoolDomain;
@@ -140,11 +140,13 @@ public class Irs {
                 return new IrBoundDomain(low, array[array.length - 1]);
         }
     }
-    /********************
-     * 
+    /**
+     * ******************
+     *
      * Boolean
-     * 
-     ********************/
+     *
+     *******************
+     */
     public static final IrBoolVar True = new IrBoolConstant(true);
     public static final IrBoolVar False = new IrBoolConstant(false);
 
@@ -163,6 +165,10 @@ public class Irs {
             return constant.booleanValue() ? $(False) : $(True);
         }
         return proposition.negate();
+    }
+
+    public static IrBoolExpr and(Collection<IrBoolExpr> operands) {
+        return and(operands.toArray(new IrBoolExpr[operands.size()]));
     }
 
     public static IrBoolExpr and(IrBoolExpr... operands) {
@@ -241,22 +247,6 @@ public class Irs {
             return and(antecedent, consequent);
         }
         return new IrIfThenElse(antecedent, consequent, alternative, BoolDomain);
-    }
-
-    public static IrConstraint implies(IrBoolExpr antecedent, IrConstraint consequent) {
-        if (IrUtil.isTrue(antecedent)) {
-            return consequent;
-        }
-        if (IrUtil.isFalse(antecedent)) {
-            return Tautalogy;
-        }
-        if (IrUtil.isTrue(consequent)) {
-            return Tautalogy;
-        }
-        if (IrUtil.isFalse(consequent)) {
-            return boolConstraint(not(antecedent));
-        }
-        return new IrHalfReification(antecedent, consequent);
     }
 
     public static IrBoolExpr ifOnlyIf(IrBoolExpr left, IrBoolExpr right) {
@@ -423,6 +413,13 @@ public class Irs {
         return compare(left, IrCompare.Op.GreaterThanEqual, right);
     }
 
+    public static IrBoolExpr sort(IrIntExpr[]... strings) {
+        if (strings.length < 2) {
+            return $(True);
+        }
+        return new IrSortStrings(strings, BoolDomain);
+    }
+
     public static IrBoolExpr member(IrIntExpr element, IrSetExpr set) {
         if (IrUtil.isSubsetOf(element.getDomain(), set.getKer())) {
             return $(True);
@@ -455,11 +452,13 @@ public class Irs {
         }
         return new IrBoolCast(expr, BoolDomain);
     }
-    /********************
-     * 
+    /**
+     * ******************
+     *
      * Integers
-     * 
-     ********************/
+     *
+     *******************
+     */
     public static IrIntVar Zero = new IrIntConstant(0);
     public static IrIntVar One = new IrIntConstant(1);
 
@@ -603,6 +602,7 @@ public class Irs {
                             high / domain.getLowerBound(), high / domain.getUpperBound());
                 }
                 domain = boundDomain(low, high);
+                break;
             default:
                 throw new IllegalArgumentException();
         }
@@ -661,11 +661,13 @@ public class Irs {
         return new IrElement(array, index, domain);
     }
 
-    /********************
-     * 
+    /**
+     * ******************
+     *
      * Set
-     * 
-     ********************/
+     *
+     *******************
+     */
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
         return set(name, boundDomain(lowEnv, highEnv), EmptyDomain);
     }
@@ -747,9 +749,9 @@ public class Irs {
 
     /**
      * Relational join, Clafer version.
-     * 
-     *   Union{for all i in take} children[i]
-     * 
+     *
+     * Union{for all i in take} children[i]
+     *
      * @param take
      * @param children
      * @return the join expression take.children
@@ -958,13 +960,6 @@ public class Irs {
             default:
                 return new IrSortInts(filter.toArray(new IrIntExpr[filter.size()]));
         }
-    }
-
-    public static IrConstraint sort(IrIntExpr[]... strings) {
-        if (strings.length < 2) {
-            return Tautalogy;
-        }
-        return new IrSortStrings(strings);
     }
 
     public static IrConstraint allDifferent(IrIntExpr[] ints) {
