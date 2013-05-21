@@ -107,7 +107,7 @@ public class PartialIntAnalysis {
             }
             if (transition instanceof AssignmentAutomata) {
                 AssignmentAutomata next = (AssignmentAutomata) transition;
-                assert concreteClafer.hasParent();
+                assert !AstUtil.isTop(concreteClafer);
                 TIntHashSet parentIds = new TIntHashSet();
                 for (int id : ids) {
                     parentIds.addAll(partialSolutions.get(clafer).getPossibleParents(id));

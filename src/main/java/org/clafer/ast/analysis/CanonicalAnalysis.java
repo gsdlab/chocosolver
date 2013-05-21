@@ -103,7 +103,7 @@ public class CanonicalAnalysis {
             AstClafer leftType = getType(ast.getLeft());
             AstConcreteClafer rightType = ast.getRight();
 
-            if (rightType.hasParent()) {
+            if (!AstUtil.isTop(rightType)) {
                 AstClafer joinType = rightType.getParent();
                 if (leftType.equals(joinType)) {
                     return join(left, rightType);

@@ -18,13 +18,14 @@ public class AstUtil {
     }
 
     /**
-     * Find all the Clafers nested below the root in no specific order.
+     * Find all the nested Clafers in no specific order.
      * 
      * @param model the Clafer model
      * @return the Clafers in the model
      */
     public static List<AstClafer> getClafers(AstModel model) {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
+        clafers.add(model);
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             clafers.add(abstractClafer);
             getNestedChildClafers(abstractClafer, clafers);
@@ -37,13 +38,14 @@ public class AstUtil {
     }
 
     /**
-     * Find all the concrete Clafers nested below the root in no specific order.
+     * Find all the nested concrete Clafers in no specific order.
      * 
      * @param model the Clafer model
      * @return the Clafers in the model excluding the root
      */
     public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
         List<AstConcreteClafer> clafers = new ArrayList<AstConcreteClafer>();
+        clafers.add(model);
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             getNestedChildClafers(abstractClafer, clafers);
         }

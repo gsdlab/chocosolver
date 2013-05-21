@@ -25,6 +25,7 @@ import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNone;
+import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
@@ -43,11 +44,10 @@ public class TypeAnalysis {
 
     public static Map<AstExpr, AstClafer> analyze(AstModel model) {
         Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
-        List<AstClafer> clafers = AstUtil.getClafers(model);
-        for (AstClafer clafer : clafers) {
+        for (AstClafer clafer : AstUtil.getClafers(model)) {
             TypeVisitor visitor = new TypeVisitor(clafer, types);
             for (AstConstraint constraint : clafer.getConstraints()) {
-                constraint.getExpr().accept(visitor, null);
+                visitor.typeCheck(constraint.getExpr());
             }
         }
         return types;
@@ -57,7 +57,7 @@ public class TypeAnalysis {
         Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
         TypeVisitor visitor = new TypeVisitor(clafer, types);
         for (AstConstraint constraint : clafer.getConstraints()) {
-            constraint.getExpr().accept(visitor, null);
+            visitor.typeCheck(constraint.getExpr());
         }
         return types;
     }
@@ -106,9 +106,9 @@ public class TypeAnalysis {
 
         @Override
         public AstClafer visit(AstJoin ast, Void a) {
-            AstClafer leftType = ast.getLeft().accept(this, a);
+            AstClafer leftType = typeCheck(ast.getLeft());
             AstConcreteClafer rightType = ast.getRight();
-            if (rightType.hasParent()) {
+            if (!AstUtil.isTop(rightType)) {
                 AstClafer joinType = rightType.getParent();
                 if (AstUtil.isAssignable(leftType, joinType)) {
                     return put(rightType, ast);
@@ -119,12 +119,12 @@ public class TypeAnalysis {
 
         @Override
         public AstClafer visit(AstJoinParent ast, Void a) {
-            AstClafer childrenType = ast.getChildren().accept(this, a);
+            AstClafer childrenType = typeCheck(ast.getChildren());
             if (!(childrenType instanceof AstConcreteClafer)) {
                 throw new AnalysisException("Cannot join " + childrenType.getName() + " . parent");
             }
             AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
-            if (!concreteChildrenType.hasParent()) {
+            if (AstUtil.isTop(concreteChildrenType)) {
                 throw new AnalysisException("Cannot join " + childrenType.getName() + " . parent");
             }
             return put(concreteChildrenType.getParent(), ast);
@@ -132,7 +132,7 @@ public class TypeAnalysis {
 
         @Override
         public AstClafer visit(AstJoinRef ast, Void a) {
-            AstClafer derefType = ast.getDeref().accept(this, a);
+            AstClafer derefType = typeCheck(ast.getDeref());
             if (!derefType.hasRef()) {
                 throw new AnalysisException("Cannot join " + derefType.getName() + " . ref");
             }
@@ -141,14 +141,17 @@ public class TypeAnalysis {
 
         @Override
         public AstClafer visit(AstCard ast, Void a) {
-            ast.getSet().accept(this, a);
+            AstClafer setType = typeCheck(ast.getSet());
+            if (setType instanceof AstPrimClafer) {
+                throw new AnalysisException("Cannot |" + setType.getName() + "|");
+            }
             return put(IntType, ast);
         }
 
         @Override
         public AstClafer visit(AstEqual ast, Void a) {
-            AstClafer leftType = ast.getLeft().accept(this, a);
-            AstClafer rightType = ast.getRight().accept(this, a);
+            AstClafer leftType = typeCheck(ast.getLeft());
+            AstClafer rightType = typeCheck(ast.getRight());
             if (!AstUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
                 throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
             }
@@ -157,8 +160,8 @@ public class TypeAnalysis {
 
         @Override
         public AstClafer visit(AstCompare ast, Void a) {
-            AstClafer leftType = ast.getLeft().accept(this, a);
-            AstClafer rightType = ast.getRight().accept(this, a);
+            AstClafer leftType = typeCheck(ast.getLeft());
+            AstClafer rightType = typeCheck(ast.getRight());
             if (!(leftType instanceof AstIntClafer) || !(rightType instanceof AstIntClafer)) {
                 throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
             }
@@ -170,8 +173,8 @@ public class TypeAnalysis {
             AstClafer[] operandTypes = typeCheck(ast.getOperands());
             for (AstClafer operandType : operandTypes) {
                 if (!(operandType instanceof AstIntClafer)) {
-                    throw new AnalysisException("Cannot " + 
-                            Util.intercalate(" " + ast.getOp().getSyntax() + " ", AnalysisUtil.getNames(operandTypes)));
+                    throw new AnalysisException("Cannot "
+                            + Util.intercalate(" " + ast.getOp().getSyntax() + " ", AnalysisUtil.getNames(operandTypes)));
                 }
             }
             return put(IntType, ast);
@@ -179,7 +182,7 @@ public class TypeAnalysis {
 
         @Override
         public AstClafer visit(AstUpcast ast, Void a) {
-            AstClafer baseType = ast.getBase().accept(this, a);
+            AstClafer baseType = typeCheck(ast.getBase());;
             AstAbstractClafer to = ast.getTarget();
             if (!AstUtil.isAssignable(baseType, to)) {
                 throw new AnalysisException("Cannot upcast from " + baseType + " to " + to);
@@ -189,7 +192,7 @@ public class TypeAnalysis {
 
         @Override
         public AstClafer visit(AstNone ast, Void a) {
-            ast.getSet().accept(this, a);
+            typeCheck(ast.getSet());
             return put(BoolType, ast);
         }
 
@@ -201,12 +204,12 @@ public class TypeAnalysis {
         @Override
         public AstClafer visit(AstQuantify ast, Void a) {
             for (AstDecl decl : ast.getDecls()) {
-                AstClafer bodyType = decl.getBody().accept(this, a);
+                AstClafer bodyType = typeCheck(decl.getBody());
                 for (AstLocal local : decl.getLocals()) {
                     put(bodyType, local);
                 }
             }
-            ast.getBody().accept(this, a);
+            typeCheck(ast.getBody());
             return put(BoolType, ast);
         }
     }

@@ -21,7 +21,6 @@ import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ir.IrExpr;
 import org.clafer.collection.ReadWriteHashMap;
-import java.util.Arrays;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.common.Util;
@@ -83,6 +82,9 @@ public class AstCompiler {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = AstUtil.getConcreteClafers(model);
 
+        IrSetVar rootSet = constant(new int[]{0});
+        set.put(model, $(rootSet));
+        childrenSet.put(model, new IrSetVar[]{rootSet});
         membership.put(model, new IrBoolExpr[]{$(True)});
 
         KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
@@ -316,7 +318,8 @@ public class AstCompiler {
             terms[i] = string.toArray(new IrIntExpr[string.size()]);
         }
         if (terms[0] != null) {
-            if (!clafer.hasParent()) {
+            // TODO: Do not need to separte in two different steps with optimzations.
+            if (AstUtil.isTop(clafer)) {
                 /*
                  * Reversing is so that earlier children have higher scores. Not necessary,
                  * but the solutions will have instances that are similar closer together.
@@ -404,18 +407,14 @@ public class AstCompiler {
     private void constrainLowGroupConcrete(AstConcreteClafer clafer) {
         IrBoolExpr[] members = membership.get(clafer);
 
-        if (!clafer.hasParent()) {
-            module.addConstraint(selectN(members, card(set.get(clafer))));
-        }
+        module.addConstraint(selectN(members, card(set.get(clafer))));
 
-        PartialSolution partialParentSolution = getPartialParentSolution(clafer);
+        IrBoolExpr[] parentMembership = membership.get(clafer.getParent());
         Card card = clafer.getCard();
 
         IrSetVar[] childSet = childrenSet.get(clafer);
-        for (int i = 0; i < partialParentSolution.size(); i++) {
-            IrBoolExpr parentMember = clafer.hasParent()
-                    ? membership.get(clafer.getParent())[i]
-                    : $(True);
+        for (int i = 0; i < parentMembership.length; i++) {
+            IrBoolExpr parentMember = parentMembership[i];
             if (card.isBounded()) {
                 // Enforce cardinality.
                 module.addConstraint(implies(parentMember, constrainCard(card($(childSet[i])), card)));

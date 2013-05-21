@@ -77,39 +77,35 @@ public class PartialSolutionAnalysis {
             parents[i] = new TIntArrayList();
         }
 
-        if (!clafer.hasParent()) {
-            Arrays.fill(solution, 0, globalCard.getLow(), true);
-        } else {
-            PartialSolution partialParentSolution = partialSolutions.get(clafer.getParent());
-            int lowCard = clafer.getCard().getLow();
-            int highCard = clafer.getCard().getHigh();
-            switch (format) {
-                case LowGroup:
-                    Arrays.fill(solution, 0, globalCard.getLow(), true);
-                    int low = 0;
-                    int high = highCard;
-                    for (int i = 0; i < partialParentSolution.size(); i++) {
-                        for (int j = low; j < high && j < parents.length; j++) {
-                            parents[j].add(i);
-                        }
-                        if (partialParentSolution.hasClafer(i)) {
-                            low += lowCard;
-                        }
-                        high += highCard;
+        PartialSolution partialParentSolution = partialSolutions.get(clafer.getParent());
+        int lowCard = clafer.getCard().getLow();
+        int highCard = clafer.getCard().getHigh();
+        switch (format) {
+            case LowGroup:
+                Arrays.fill(solution, 0, globalCard.getLow(), true);
+                int low = 0;
+                int high = highCard;
+                for (int i = 0; i < partialParentSolution.size(); i++) {
+                    for (int j = low; j < high && j < parents.length; j++) {
+                        parents[j].add(i);
                     }
-                    break;
-                case ParentGroup:
-                    assert lowCard == highCard;
-                    for (int i = 0; i < partialParentSolution.size(); i++) {
-                        for (int j = 0; j < lowCard; j++) {
-                            solution[i * lowCard + j] = partialParentSolution.hasClafer(i);
-                            parents[i * lowCard + j].add(i);
-                        }
+                    if (partialParentSolution.hasClafer(i)) {
+                        low += lowCard;
                     }
-                    break;
-                default:
-                    throw new AnalysisException();
-            }
+                    high += highCard;
+                }
+                break;
+            case ParentGroup:
+                assert lowCard == highCard;
+                for (int i = 0; i < partialParentSolution.size(); i++) {
+                    for (int j = 0; j < lowCard; j++) {
+                        solution[i * lowCard + j] = partialParentSolution.hasClafer(i);
+                        parents[i * lowCard + j].add(i);
+                    }
+                }
+                break;
+            default:
+                throw new AnalysisException();
         }
         partialSolutions.put(clafer, new PartialSolution(solution, toArray(parents)));
 
