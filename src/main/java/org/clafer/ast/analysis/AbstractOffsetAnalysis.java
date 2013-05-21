@@ -16,12 +16,9 @@ import org.clafer.ast.Card;
  */
 public class AbstractOffsetAnalysis {
 
-    /**
-     * What is this optimization?
-     * 
-     * This optimization is to put more "stable" clafers near the beginning, to reduce
-     * the number of backtracking for LowGroups.
-     */
+    private AbstractOffsetAnalysis() {
+    }
+
     public static Map<AstAbstractClafer, Offsets> analyze(AstModel model, Map<AstClafer, Card> globalCards) {
         Map<AstAbstractClafer, Offsets> offsetMap = new HashMap<AstAbstractClafer, Offsets>();
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
@@ -29,6 +26,12 @@ public class AbstractOffsetAnalysis {
             List<AstClafer> reverseOffsets = new ArrayList<AstClafer>();
             int offset = 0;
             List<AstClafer> subs = new ArrayList<AstClafer>(abstractClafer.getSubs());
+            /*
+             * What is this optimization?
+             *
+             * This optimization is to put more "stable" Clafers near the
+             * beginning, to reduce the number of backtracking for LowGroups.
+             */
             AnalysisUtil.descendingGlobalCardRatio(subs, globalCards);
             List<AstClafer> greedy = subs;
             for (AstClafer sub : greedy) {
@@ -42,32 +45,5 @@ public class AbstractOffsetAnalysis {
             offsetMap.put(abstractClafer, new Offsets(abstractClafer, offsets, reverseOffsets.toArray(new AstClafer[reverseOffsets.size()])));
         }
         return offsetMap;
-    }
-
-    public static class Offsets {
-
-        private final AstAbstractClafer sup;
-        private final Map<AstClafer, Integer> offsets;
-        private final AstClafer[] reverseOffsets;
-
-        Offsets(AstAbstractClafer sup, Map<AstClafer, Integer> offsets, AstClafer[] reverseOffsets) {
-            this.sup = Check.notNull(sup);
-            this.offsets = Check.notNull(offsets);
-            this.reverseOffsets = Check.noNulls(reverseOffsets);
-
-        }
-
-        public int getOffset(AstClafer sub) {
-            return AnalysisUtil.notNull(sub + " is not a direct sub clafer of " + sup, offsets.get(sub)).intValue();
-        }
-
-        public AstClafer getClafer(int offset) {
-            return reverseOffsets[offset];
-        }
-
-        @Override
-        public String toString() {
-            return sup + "=>" + offsets;
-        }
     }
 }

@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.clafer.ast.scope.Scope;
-import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
-import org.clafer.ast.analysis.PartialSolutionAnalysis.PartialSolution;
+import org.clafer.ast.analysis.PartialSolution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
@@ -37,6 +36,9 @@ import org.clafer.collection.Pair;
  */
 public class PartialIntAnalysis {
 
+    private PartialIntAnalysis() {
+    }
+
     public static Map<AstRef, int[][]> analyze(
             AstModel model,
             Map<AstClafer, PartialSolution> partialSolutions,
@@ -56,11 +58,9 @@ public class PartialIntAnalysis {
                     Pair<FList<AstConcreteClafer>, Integer> assignment = analyze(constraint.getExpr());
                     FList<AstConcreteClafer> path = assignment.getFst();
                     Integer value = assignment.getSnd();
-                    if (assignment != null) {
-                        for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
-                            assignments.add(new Pair<FList<AstConcreteClafer>, Integer>(
-                                    snoc(path, concreteClafer), value));
-                        }
+                    for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
+                        assignments.add(new Pair<FList<AstConcreteClafer>, Integer>(
+                                snoc(path, concreteClafer), value));
                     }
                 } catch (NotAssignmentException e) {
                     // Only analyze assignments

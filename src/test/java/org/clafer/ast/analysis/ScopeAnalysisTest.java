@@ -27,8 +27,8 @@ public class ScopeAnalysisTest {
         AstConcreteClafer hash = object.addChild("hash").withCard(new Card(1, 1));
         AstConcreteClafer lock = object.addChild("lock").withCard(new Card(1, 1));
         
-        AstConcreteClafer parrot = model.addTopClafer("parrot").extending(object);
-        AstConcreteClafer robin = model.addTopClafer("robin").extending(object);
+        AstConcreteClafer parrot = model.addChild("parrot").extending(object);
+        AstConcreteClafer robin = model.addChild("robin").extending(object);
 
         Map<AstClafer, Integer> scope = new HashMap<AstClafer, Integer>();
         scope.put(id, 3);

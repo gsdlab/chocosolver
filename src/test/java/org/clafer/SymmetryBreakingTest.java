@@ -19,7 +19,7 @@ public class SymmetryBreakingTest {
     public void breakChildrenSwap() {
         AstModel model = Asts.newModel();
 
-        AstConcreteClafer patron = model.addTopClafer("Patron").withCard(2, 2);
+        AstConcreteClafer patron = model.addChild("Patron").withCard(2, 2);
         AstConcreteClafer food = patron.addChild("Food").withCard(1, 2);
         AstConcreteClafer drink = patron.addChild("Drink").withCard(1, 2);
 
@@ -30,14 +30,12 @@ public class SymmetryBreakingTest {
 
     /**
      * Currently fails.
-     * 
-     * 
      */
     @Test
     public void breakGrandChildrenSwap() {
         /*
          * 19 nonisomorphic solutions:
-         * Run "length $ nubBy isomorphic $  makeModel 3" with the Haskell code below.
+         * Run "length $ nubBy isomorphic $ makeModel 3" with the Haskell code below.
          * 
          *   import Control.Monad
          *   import Data.Functor
@@ -106,7 +104,7 @@ public class SymmetryBreakingTest {
          */
         AstModel model = Asts.newModel();
 
-        AstConcreteClafer patron = model.addTopClafer("Patron").withCard(2, 2);
+        AstConcreteClafer patron = model.addChild("Patron").withCard(2, 2);
         AstConcreteClafer food = patron.addChild("Food").withCard(1);
         AstConcreteClafer cheese = food.addChild("Cheese").withCard(0);
 

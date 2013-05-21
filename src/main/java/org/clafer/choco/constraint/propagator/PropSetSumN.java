@@ -96,7 +96,7 @@ public class PropSetSumN extends Propagator<Variable> {
                 }
             }
         }
-System.out.println("low: " + low + ", high: "+  high);
+
         sum.updateLowerBound(low, aCause);
         sum.updateUpperBound(high, aCause);
 
@@ -115,7 +115,6 @@ System.out.println("low: " + low + ", high: "+  high);
                         lowNMinusOne + i > ub) {
                     // With i, it is impossible to stay below the upper bound.
                     // Remove it from the envelope.
-                    System.out.println("remove: " + i);
                     again |= set.removeFromEnvelope(i, aCause);
                 }
                 index++;

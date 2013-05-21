@@ -20,6 +20,7 @@ public class ScopeAnalysis {
      */
     public static Scope analyze(AstModel model, Scope scope, Map<AstClafer, Card> globalCards) {
         Map<AstClafer, Integer> optimizedScope = new HashMap<AstClafer, Integer>();
+        optimizedScope.put(model, 1);
 
         for (AstClafer clafer : globalCards.keySet()) {
             Card globalCard = globalCards.get(clafer);

@@ -8,19 +8,22 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.Card;
 
 /**
- * Rewrites the model replacing unbounded high cardinalities with bounded effecitive
- * high cardinalities.
- * 
+ * Rewrites the model replacing unbounded high cardinalities with bounded
+ * effective high cardinalities.
+ *
  * @author jimmy
  */
 public class CardAnalysis {
+
+    private CardAnalysis() {
+    }
 
     public static void analyze(AstModel model, Map<AstClafer, Card> globalCards) {
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             analyze(abstractClafer, globalCards);
         }
-        for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            analyze(topClafer, 1, globalCards);
+        for (AstConcreteClafer child : model.getChildren()) {
+            analyze(child, 1, globalCards);
         }
     }
 

@@ -29,8 +29,8 @@ public class SimpleStructureTest {
         AstAbstractClafer primate = model.addAbstractClafer("Primate").extending(animal);
         primate.addChild("Bipedal").withCard(0, 1);
 
-        model.addTopClafer("Human").withCard(1, 1).extending(primate);
-        model.addTopClafer("Beaver").withCard(1, 1).extending(animal);
+        model.addChild("Human").withCard(1, 1).extending(primate);
+        model.addChild("Beaver").withCard(1, 1).extending(animal);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(32, solver.allInstances().length);
@@ -40,7 +40,7 @@ public class SimpleStructureTest {
     public void testGroupCardinality() {
         AstModel model = newModel();
 
-        AstConcreteClafer type = model.addTopClafer("Type").withCard(1, 1).withGroupCard(1, 1);
+        AstConcreteClafer type = model.addChild("Type").withCard(1, 1).withGroupCard(1, 1);
         type.addChild("Car").withCard(0, 1);
         type.addChild("Truck").withCard(0, 1);
         type.addChild("Van").withCard(0, 1);
@@ -53,7 +53,7 @@ public class SimpleStructureTest {
     public void testRefs() {
         AstModel model = newModel();
 
-        AstConcreteClafer person = model.addTopClafer("Person").withCard(1, 1);
+        AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
         person.addChild("Age").withCard(2, 2).refTo(IntType);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
@@ -64,7 +64,7 @@ public class SimpleStructureTest {
     public void testUniqueRefs() {
         AstModel model = newModel();
 
-        AstConcreteClafer person = model.addTopClafer("Person").withCard(1, 1);
+        AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
         person.addChild("Age").withCard(2, 2).refToUnique(IntType);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
@@ -75,7 +75,7 @@ public class SimpleStructureTest {
     public void testTopLevelRefs() {
         AstModel model = newModel();
 
-        model.addTopClafer("Age").withCard(2, 2).refTo(IntType);
+        model.addChild("Age").withCard(2, 2).refTo(IntType);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
         assertEquals(25, solver.allInstances().length);
@@ -85,7 +85,7 @@ public class SimpleStructureTest {
     public void testTopLevelUniqueRefs() {
         AstModel model = newModel();
 
-        model.addTopClafer("Age").withCard(2, 2).refToUnique(IntType);
+        model.addChild("Age").withCard(2, 2).refToUnique(IntType);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
         assertEquals(20, solver.allInstances().length);

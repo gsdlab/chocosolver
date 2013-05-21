@@ -15,10 +15,13 @@ import org.clafer.ast.Card;
  */
 public class GlobalCardAnalysis {
 
+    private GlobalCardAnalysis() {
+    }
+
     public static Map<AstClafer, Card> analyze(AstModel model, Scope scope) {
         Map<AstClafer, Card> globalCards = new HashMap<AstClafer, Card>();
-        for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            analyze(topClafer, new Card(1, 1), scope, globalCards);
+        for (AstConcreteClafer child : model.getChildren()) {
+            analyze(child, new Card(1, 1), scope, globalCards);
         }
         // Abstract clafers that are the super clafer of other abstract clafers are
         // analyzed last. Higher depth clafers go first.

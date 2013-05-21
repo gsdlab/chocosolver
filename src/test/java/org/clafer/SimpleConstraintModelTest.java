@@ -20,7 +20,7 @@ public class SimpleConstraintModelTest {
     public void testGlobal() {
         AstModel model = newModel();
 
-        AstConcreteClafer age = model.addTopClafer("Age").withCard(2, 2).refTo(IntType);
+        AstConcreteClafer age = model.addChild("Age").withCard(2, 2).refTo(IntType);
         age.addConstraint(equal(joinRef(global(age)), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
@@ -31,7 +31,7 @@ public class SimpleConstraintModelTest {
     public void testVariableJoin() {
         AstModel model = newModel();
 
-        AstConcreteClafer person = model.addTopClafer("Person").withCard(1, 1);
+        AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
         AstConcreteClafer hand = person.addChild("Hand");
         AstConcreteClafer finger = hand.addChild("Finger");
         person.addConstraint(equal(card(join(join($this(), hand), finger)), constant(3)));
@@ -44,7 +44,7 @@ public class SimpleConstraintModelTest {
     public void testFixedJoinRef() {
         AstModel model = newModel();
 
-        AstConcreteClafer age = model.addTopClafer("Age").withCard(2, 2).refTo(IntType);
+        AstConcreteClafer age = model.addChild("Age").withCard(2, 2).refTo(IntType);
         age.addConstraint(equal(joinRef($this()), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
@@ -57,8 +57,8 @@ public class SimpleConstraintModelTest {
 
         AstAbstractClafer feature = model.addAbstractClafer("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refToUnique(IntType);
-        AstConcreteClafer backup = model.addTopClafer("Backup").withCard(0, 1).extending(feature);
-        AstConcreteClafer firewall = model.addTopClafer("Firewall").withCard(0, 1).extending(feature);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(0, 1).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
         backup.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
@@ -70,7 +70,7 @@ public class SimpleConstraintModelTest {
     public void testMaybeJoinRef() {
         AstModel model = newModel();
 
-        AstConcreteClafer feature = model.addTopClafer("Feature").withCard(0, 1);
+        AstConcreteClafer feature = model.addChild("Feature").withCard(0, 1);
         AstConcreteClafer cost = feature.addChild("Cost").withCard(0, 1).refToUnique(IntType);
         feature.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
 
@@ -82,7 +82,7 @@ public class SimpleConstraintModelTest {
     public void testJoinRefSingleValue() {
         AstModel model = newModel();
 
-        AstConcreteClafer feature = model.addTopClafer("Feature").withCard(1, 1);
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
         AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 3).refTo(IntType);
         feature.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 

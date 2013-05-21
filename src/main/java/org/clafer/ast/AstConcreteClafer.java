@@ -80,25 +80,4 @@ public class AstConcreteClafer extends AstClafer {
         super.refToUnique(targetType);
         return this;
     }
-
-    @Override
-    public AstConcreteClafer withChildren(List<AstConcreteClafer> newChildren) {
-        super.withChildren(newChildren);
-        return this;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return this == obj;
-    }
-
-    @Override
-    public int hashCode() {
-        return getName().hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return getName();
-    }
 }

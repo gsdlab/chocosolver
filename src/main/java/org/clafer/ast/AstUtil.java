@@ -29,9 +29,9 @@ public class AstUtil {
             clafers.add(abstractClafer);
             getNestedChildClafers(abstractClafer, clafers);
         }
-        for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            clafers.add(topClafer);
-            getNestedChildClafers(topClafer, clafers);
+        for (AstConcreteClafer child : model.getChildren()) {
+            clafers.add(child);
+            getNestedChildClafers(child, clafers);
         }
         return clafers;
     }
@@ -40,18 +40,44 @@ public class AstUtil {
      * Find all the concrete Clafers nested below the root in no specific order.
      * 
      * @param model the Clafer model
-     * @return the Clafers in the model
+     * @return the Clafers in the model excluding the root
      */
     public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
         List<AstConcreteClafer> clafers = new ArrayList<AstConcreteClafer>();
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             getNestedChildClafers(abstractClafer, clafers);
         }
-        for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            clafers.add(topClafer);
-            getNestedChildClafers(topClafer, clafers);
+        for (AstConcreteClafer child : model.getChildren()) {
+            clafers.add(child);
+            getNestedChildClafers(child, clafers);
         }
         return clafers;
+    }
+    
+    /**
+     * Detects if the Clafer is the implicit root of the model.
+     * 
+     * @param clafer the Clafer
+     * @return {@code true} if and only if the Clafer is the root, {@code false}
+     *         otherwise
+     */
+    public static boolean isRoot(AstClafer clafer) {
+       return clafer instanceof AstModel;
+    }
+    
+    /**
+     * Detects if the Clafer is directly under the root.
+     * 
+     * @param clafer the Clafer
+     * @return {@code true} if and only if the Clafer is a top Clafer, {@code false}
+     *         otherwise
+     */
+    public static boolean isTop(AstClafer clafer) {
+       if(clafer instanceof AstConcreteClafer) {
+           AstConcreteClafer concrete = (AstConcreteClafer) clafer;
+           return isRoot(concrete.getParent());
+       }
+       return clafer instanceof AstAbstractClafer;
     }
 
     /**
@@ -63,7 +89,10 @@ public class AstUtil {
     public static AstClafer getTopParent(AstClafer clafer) {
         if (clafer instanceof AstConcreteClafer) {
             AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-            if (concrete.hasParent()) {
+            if(!concrete.hasParent()) {
+                throw new IllegalArgumentException("Root does not have a non-root parent.");
+            }
+            if (!isRoot(concrete.getParent())) {
                 return getTopParent(concrete.getParent());
             }
         }

@@ -30,7 +30,7 @@ public class ArithmeticModelTest {
     public void testAdd() {
         AstModel model = newModel();
 
-        AstConcreteClafer feature = model.addTopClafer("Feature").withCard(1, 1);
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)), constant(5)));
 
@@ -60,7 +60,7 @@ public class ArithmeticModelTest {
          */
         AstModel model = newModel();
 
-        AstConcreteClafer feature = model.addTopClafer("Feature").withCard(1, 1);
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
         AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)), constant(5)));
 
@@ -94,7 +94,7 @@ public class ArithmeticModelTest {
          */
         AstModel model = newModel();
 
-        AstConcreteClafer feature = model.addTopClafer("Feature").withCard(1, 1);
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
         AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
         AstConcreteClafer profit = feature.addChild("Profit").withCard(2, 2).refTo(IntType);
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)),

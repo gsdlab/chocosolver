@@ -24,7 +24,7 @@ public class CardAnalysisTest {
         AstAbstractClafer animal = model.addAbstractClafer("animal");
         AstConcreteClafer limb = animal.addChild("limb").withCard(4);
         AstConcreteClafer digit = limb.addChild("digit").withCard(3);
-        AstConcreteClafer parrot = model.addTopClafer("parrot").withCard(3).extending(animal);
+        AstConcreteClafer parrot = model.addChild("parrot").withCard(3).extending(animal);
         AstConcreteClafer beak = parrot.addChild("beak").withCard(1, 1);
 
         Map<AstClafer, Card> globalCards = new HashMap<AstClafer, Card>();

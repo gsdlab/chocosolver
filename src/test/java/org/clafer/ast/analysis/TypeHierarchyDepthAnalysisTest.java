@@ -23,7 +23,7 @@ public class TypeHierarchyDepthAnalysisTest {
         AstAbstractClafer mammal = model.addAbstractClafer("mammal").extending(animal);
         AstAbstractClafer primate = model.addAbstractClafer("primate").extending(mammal);
         AstAbstractClafer human = model.addAbstractClafer("human").extending(primate);
-        model.addTopClafer("Jimmy").extending(human);
+        model.addChild("Jimmy").extending(human);
 
         AstAbstractClafer art = model.addAbstractClafer("art").extending(object);
 

@@ -30,12 +30,12 @@ public class ClaferSolutionMap {
 
     public InstanceModel getInstance() {
         List<InstanceClafer> topInstances = new ArrayList<InstanceClafer>();
-        for (AstConcreteClafer topClafer : astSolution.getModel().getTopClafers()) {
+        for (AstConcreteClafer child : astSolution.getModel().getChildren()) {
             // [0] because top clafers only have exactly one children set
-            IrSetVar topSetIrVar = astSolution.getChildrenVars(topClafer)[0];
+            IrSetVar topSetIrVar = astSolution.getChildrenVars(child)[0];
             int[] topIds = irSolution.getSetValue(topSetIrVar);
             for (int topId : topIds) {
-                topInstances.add(getInstanceClafer(topClafer, topId));
+                topInstances.add(getInstanceClafer(child, topId));
             }
         }
         return new InstanceModel(topInstances.toArray(new InstanceClafer[topInstances.size()]));

@@ -4,7 +4,6 @@ import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
-import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VariableFactory;
@@ -44,7 +43,6 @@ public class SetSumNTest extends ConstraintTest {
         IntVar sum = VariableFactory.enumerated("sum", -4, 13, solver);
         int n = 8;
 
-        SearchMonitorFactory.log(solver, true, true);
         solver.post(Constraints.setSumN(set, sum, n));
 
         assertEquals(14, randomizeStrategy(solver).findAllSolutions());

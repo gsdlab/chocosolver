@@ -13,6 +13,9 @@ import org.clafer.ast.AstModel;
  */
 public class TypeHierarchyDepthAnalysis {
 
+    private TypeHierarchyDepthAnalysis() {
+    }
+
     public static Map<AstAbstractClafer, Integer> analyze(AstModel model) {
         Map<AstAbstractClafer, Integer> depths = new HashMap<AstAbstractClafer, Integer>();
 
@@ -27,7 +30,9 @@ public class TypeHierarchyDepthAnalysis {
             depths.put(clafer, hierarchy.size());
         }
 
-        AnalysisUtil.descendingDepths(model.getAbstractClafers(), depths);
+        List<AstAbstractClafer> abstractClafers = new ArrayList<AstAbstractClafer>(model.getAbstractClafers());
+        AnalysisUtil.descendingDepths(abstractClafers, depths);
+        model.withAbstractClafers(abstractClafers);
 
         return depths;
     }

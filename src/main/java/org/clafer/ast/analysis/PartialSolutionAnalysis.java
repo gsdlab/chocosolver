@@ -4,9 +4,6 @@ import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.clafer.common.Util;
-import org.clafer.ast.analysis.AbstractOffsetAnalysis.Offsets;
-import org.clafer.ast.analysis.FormatAnalysis.Format;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -19,6 +16,9 @@ import org.clafer.ast.Card;
  */
 public class PartialSolutionAnalysis {
 
+    private PartialSolutionAnalysis() {
+    }
+
     public static Map<AstClafer, PartialSolution> analyze(
             AstModel model,
             Map<AstClafer, Card> globalCards,
@@ -26,8 +26,9 @@ public class PartialSolutionAnalysis {
             Map<AstAbstractClafer, Offsets> offsets) {
         Map<AstClafer, PartialSolution> partialSolutions = new HashMap<AstClafer, PartialSolution>();
 
-        for (AstConcreteClafer topClafer : model.getTopClafers()) {
-            analyze(topClafer, globalCards, formats, partialSolutions);
+        partialSolutions.put(model, new PartialSolution(new boolean[]{true}, new int[0][]));
+        for (AstConcreteClafer child : model.getChildren()) {
+            analyze(child, globalCards, formats, partialSolutions);
         }
         for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
             analyze(abstractClafer, globalCards, formats, offsets, partialSolutions);
@@ -52,7 +53,7 @@ public class PartialSolutionAnalysis {
             // This is possible for partialSubSolution to be null if a child of an abstract
             // extends the abstract. Assume the worst possible case by assuming it is empty.
             if (partialSubSolution != null) {
-                System.arraycopy(partialSubSolution.solution, 0, solution, offset, partialSubSolution.solution.length);
+                System.arraycopy(partialSubSolution.getSolution(), 0, solution, offset, partialSubSolution.size());
             }
         }
         partialSolutions.put(clafer, new PartialSolution(solution, parents));
@@ -123,51 +124,5 @@ public class PartialSolutionAnalysis {
             array[i] = list[i].toArray();
         }
         return array;
-    }
-
-    public static class PartialSolution {
-        // solution[i] = True <=> i exists
-        // solution[i] = null <=> i unknown
-
-        private final boolean[] solution;
-        // parent[i] = the list of possible parents
-        private final int[][] parent;
-
-        private PartialSolution(boolean[] solution, int[][] parent) {
-            this.solution = solution;
-            this.parent = parent;
-        }
-
-        /**
-         * @param id
-         * @return true if id exists, false if unknown.
-         */
-        public boolean hasClafer(int id) {
-            return solution[id];
-        }
-
-        public int[] getKnownClafers() {
-            return Util.trues(solution);
-        }
-
-        public int[] getUnknownClafers() {
-            return Util.falses(solution);
-        }
-
-        /**
-         * @param id
-         * @return id's possible parents
-         */
-        public int[] getPossibleParents(int id) {
-            return parent[id];
-        }
-
-        public int size() {
-            return solution.length;
-        }
-
-        public static PartialSolution rootSolution() {
-            return new PartialSolution(new boolean[]{true}, new int[0][]);
-        }
     }
 }

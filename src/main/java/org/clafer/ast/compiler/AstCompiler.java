@@ -31,8 +31,8 @@ import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.ast.scope.Scope;
 import org.clafer.ast.analysis.Analysis;
-import org.clafer.ast.analysis.FormatAnalysis.Format;
-import org.clafer.ast.analysis.PartialSolutionAnalysis.PartialSolution;
+import org.clafer.ast.analysis.Format;
+import org.clafer.ast.analysis.PartialSolution;
 import org.clafer.ast.analysis.TypeAnalysis;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
@@ -83,6 +83,8 @@ public class AstCompiler {
         List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = AstUtil.getConcreteClafers(model);
 
+        membership.put(model, new IrBoolExpr[]{$(True)});
+
         KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
         for (AstAbstractClafer abstractClafer : abstractClafers) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
@@ -106,6 +108,9 @@ public class AstCompiler {
         }
 
         for (AstClafer clafer : clafers) {
+            if (AstUtil.isRoot(clafer)) {
+                continue;
+            }
             if (clafer instanceof AstConcreteClafer) {
                 initConcrete((AstConcreteClafer) clafer);
             } else if (clafer instanceof AstAbstractClafer) {
@@ -115,6 +120,9 @@ public class AstCompiler {
             }
         }
         for (AstClafer clafer : clafers) {
+            if (AstUtil.isRoot(clafer)) {
+                continue;
+            }
             if (clafer instanceof AstConcreteClafer) {
                 constrainConcrete((AstConcreteClafer) clafer);
             } else if (clafer instanceof AstAbstractClafer) {
@@ -156,9 +164,7 @@ public class AstCompiler {
     }
 
     private void initConcrete(AstConcreteClafer clafer) {
-        if (clafer.hasParent()) {
-            parentPointers.put(clafer, buildParentPointers(clafer));
-        }
+        parentPointers.put(clafer, buildParentPointers(clafer));
         if (clafer.hasRef()) {
             refPointers.put(clafer.getRef(), buildRefPointers(clafer.getRef()));
         }
@@ -175,23 +181,21 @@ public class AstCompiler {
     }
 
     private void constrainConcrete(AstConcreteClafer clafer) {
-        if (clafer.hasParent()) {
-            IrIntVar[] parents = parentPointers.get(clafer);
-            Card globalCard = getGlobalCard(clafer);
-            if (globalCard.isExact()) {
-                // No unused
-                module.addConstraint(intChannel($(parents), $(childrenSet.get(clafer))));
-            } else {
-                IrSetExpr[] childSet = $(childrenSet.get(clafer));
-                IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
-                module.addConstraint(intChannel($(parents), Util.snoc(childSet, $(unused))));
-            }
+        IrIntVar[] parents = parentPointers.get(clafer);
+        Card globalCard = getGlobalCard(clafer);
+        if (globalCard.isExact()) {
+            // No unused
+            module.addConstraint(intChannel($(parents), $(childrenSet.get(clafer))));
+        } else {
+            IrSetExpr[] childSet = $(childrenSet.get(clafer));
+            IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
+            module.addConstraint(intChannel($(parents), Util.snoc(childSet, $(unused))));
         }
         if (clafer.hasRef()) {
             AstRef ref = clafer.getRef();
             IrIntVar[] refs = refPointers.get(ref);
             if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
-                if (!clafer.hasParent()) {
+                if (AstUtil.isTop(clafer)) {
                     if (clafer.getCard().isExact()) {
                         assert clafer.getCard().getLow() == refs.length;
                         module.addConstraint(allDifferent($(refs)));
@@ -206,7 +210,6 @@ public class AstCompiler {
                         }
                     }
                 } else {
-                    IrIntVar[] parents = parentPointers.get(clafer);
                     int unused = getScope(clafer.getParent());
                     for (int i = 0; i < refs.length; i++) {
                         for (int j = i + 1; j < refs.length; j++) {
@@ -321,7 +324,6 @@ public class AstCompiler {
                 Util.reverse(terms);
                 module.addConstraint(sort(terms));
             } else {
-                IrIntVar[] parents = parentPointers.get(clafer);
                 for (int i = 0; i < getScope(clafer) - 1; i++) {
                     module.addConstraint(
                             implies(equal($(parents[i]), $(parents[i + 1])),
@@ -439,9 +441,7 @@ public class AstCompiler {
          * Hand1 belongs to Person0. Otherwise, the children can swap around
          * creating many isomorphic solutions.
          */
-        if (clafer.hasParent()) {
-            module.addConstraint(sort($(parentPointers.get(clafer))));
-        }
+        module.addConstraint(sort($(parentPointers.get(clafer))));
     }
 
     private void initParentGroupConcrete(AstConcreteClafer clafer) {
@@ -462,18 +462,13 @@ public class AstCompiler {
         set.put(clafer, union($(children)));
 
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
-        if (!clafer.hasParent()) {
-            Arrays.fill(members, 0, lowCard, True);
-            Arrays.fill(members, lowCard, members.length, False);
+        IrBoolExpr[] parentMembership = membership.get(clafer.getParent());
+        if (lowCard == 1) {
+            members = parentMembership;
         } else {
-            IrBoolExpr[] parentMembership = membership.get(clafer.getParent());
-            if (lowCard == 1) {
-                members = parentMembership;
-            } else {
-                for (int i = 0; i < parentMembership.length; i++) {
-                    for (int j = 0; j < lowCard; j++) {
-                        members[i * lowCard + j] = parentMembership[i];
-                    }
+            for (int i = 0; i < parentMembership.length; i++) {
+                for (int j = 0; j < lowCard; j++) {
+                    members[i * lowCard + j] = parentMembership[i];
                 }
             }
         }
@@ -756,8 +751,8 @@ public class AstCompiler {
     private IrSetVar[] skipCards(AstConcreteClafer clafer) {
         assert Format.LowGroup.equals(getFormat(clafer));
 
-        int parentScope = clafer.hasParent() ? getScope(clafer.getParent()) : 1;
-        PartialSolution partialParentSolution = clafer.hasParent() ? getPartialSolution(clafer.getParent()) : PartialSolution.rootSolution();
+        int parentScope = getScope(clafer.getParent());
+        PartialSolution partialParentSolution = getPartialSolution(clafer.getParent());
 
         int claferScope = getScope(clafer);
         Card card = clafer.getCard();
@@ -853,7 +848,7 @@ public class AstCompiler {
     }
 
     public PartialSolution getPartialParentSolution(AstConcreteClafer clafer) {
-        return clafer.hasParent() ? getPartialSolution(clafer.getParent()) : PartialSolution.rootSolution();
+        return getPartialSolution(clafer.getParent());
     }
 
     public int[][] getPartialInts(AstRef ref) {

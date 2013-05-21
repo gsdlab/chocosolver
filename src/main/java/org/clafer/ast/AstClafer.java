@@ -115,4 +115,19 @@ public abstract class AstClafer {
     public void addConstraint(AstBoolExpr constraint) {
         constraints.add(new AstConstraint(this, constraint));
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
+
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

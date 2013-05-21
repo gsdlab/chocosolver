@@ -25,7 +25,7 @@ public class FeatureModelTest {
 
         int n = 50;
         for (int i = 0; i < n; i++) {
-            AstConcreteClafer f = model.addTopClafer("f" + i).withCard(0, 1).extending(feature);
+            AstConcreteClafer f = model.addChild("f" + i).withCard(0, 1).extending(feature);
             f.addConstraint(equal(joinRef(join($this(), footprint)), constant(n - i * 2 + 1)));
         }
 
@@ -316,7 +316,7 @@ public class FeatureModelTest {
         AstConcreteClafer c547_SQLITE_OMIT_XFER_OPT = c174_OmitFeatures.addChild("c547_SQLITE_OMIT_XFER_OPT").withCard(0, 1).extending(c1_IMeasurable);
         AstConcreteClafer c554_SQLITE_DEBUG = c3_SQLite.addChild("c554_SQLITE_DEBUG").withCard(0, 1).extending(c1_IMeasurable);
         AstConcreteClafer c560_SQLITE_MEMDEBUG = c3_SQLite.addChild("c560_SQLITE_MEMDEBUG").withCard(0, 1).extending(c1_IMeasurable);
-        AstConcreteClafer c566_simpleConfig = model.addTopClafer("c566_simpleConfig").withCard(1, 1).extending(c3_SQLite);
+        AstConcreteClafer c566_simpleConfig = model.addChild("c566_simpleConfig").withCard(1, 1).extending(c3_SQLite);
         c2_footprint.refToUnique(IntType);
         c4_OperatingSystemCharacteristics.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(888)));
         c10_SQLITE_4_BYTE_ALIGNED_MALLOC.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));
