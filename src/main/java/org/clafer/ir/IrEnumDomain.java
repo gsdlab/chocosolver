@@ -3,12 +3,13 @@ package org.clafer.ir;
 import gnu.trove.iterator.TIntIterator;
 import java.util.Arrays;
 import org.clafer.collection.ArrayIntIterator;
+import org.clafer.collection.ReverseArrayIntIterator;
 
 /**
  *
  * @author jimmy
  */
-public class IrEnumDomain extends IrDomain {
+public class IrEnumDomain implements IrDomain {
 
     private final int[] values;
 
@@ -60,6 +61,11 @@ public class IrEnumDomain extends IrDomain {
     @Override
     public TIntIterator iterator() {
         return new ArrayIntIterator(values);
+    }
+
+    @Override
+    public TIntIterator iterator(boolean increasing) {
+        return increasing ? new ArrayIntIterator(values) : new ReverseArrayIntIterator(values);
     }
 
     @Override

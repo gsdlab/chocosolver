@@ -1,6 +1,7 @@
 package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.set.hash.TIntHashSet;
+import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -116,7 +117,6 @@ public class PropArrayToSet extends Propagator<Variable> {
         }
     }
     private final IntProcedure pruneAOnSEnv = new IntProcedure() {
-
         @Override
         public void execute(int sEnv) throws ContradictionException {
             for (IntVar a : as) {
@@ -127,7 +127,6 @@ public class PropArrayToSet extends Propagator<Variable> {
         }
     };
     private final IntProcedure pruneSOnARem = new IntProcedure() {
-
         @Override
         public void execute(int aRem) throws ContradictionException {
             if (s.envelopeContains(aRem)) {
@@ -168,5 +167,10 @@ public class PropArrayToSet extends Propagator<Variable> {
                     : ESat.FALSE;
         }
         return ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return "{" + Util.commaSeparate(as) + "} = " + s;
     }
 }

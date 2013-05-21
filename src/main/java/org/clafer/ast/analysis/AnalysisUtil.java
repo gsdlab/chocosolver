@@ -25,6 +25,21 @@ public class AnalysisUtil {
         return t;
     }
 
+    /**
+     * Retrieve the names of the Clafers. Use the names for error messages
+     * rather than {@link AstClafer#toString}.
+     *
+     * @param clafers the Clafers
+     * @return the names of the Clafers
+     */
+    public static String[] getNames(AstClafer... clafers) {
+        String[] names = new String[clafers.length];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = clafers[i].getName();
+        }
+        return names;
+    }
+
     public static void descendingDepths(
             List<AstAbstractClafer> abstractClafers,
             Map<AstAbstractClafer, Integer> depths) {
@@ -41,7 +56,7 @@ public class AnalysisUtil {
 
         private final Map<AstAbstractClafer, Integer> depths;
 
-        public DepthComparator(Map<AstAbstractClafer, Integer> depths) {
+        DepthComparator(Map<AstAbstractClafer, Integer> depths) {
             this.depths = Check.notNull(depths);
         }
 
@@ -57,7 +72,7 @@ public class AnalysisUtil {
 
         private final Map<AstClafer, Card> globalCards;
 
-        public GlobalCardRatioComparator(Map<AstClafer, Card> globalCards) {
+        GlobalCardRatioComparator(Map<AstClafer, Card> globalCards) {
             this.globalCards = Check.notNull(globalCards);
         }
 

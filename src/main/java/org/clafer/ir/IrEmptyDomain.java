@@ -7,7 +7,7 @@ import org.clafer.collection.EmptyIntIterator;
  *
  * @author jimmy
  */
-public class IrEmptyDomain extends IrDomain {
+public class IrEmptyDomain implements IrDomain {
 
     @Override
     public boolean isBounded() {
@@ -46,6 +46,11 @@ public class IrEmptyDomain extends IrDomain {
 
     @Override
     public TIntIterator iterator() {
+        return EmptyIntIterator.getIterator();
+    }
+
+    @Override
+    public TIntIterator iterator(boolean increasing) {
         return EmptyIntIterator.getIterator();
     }
 

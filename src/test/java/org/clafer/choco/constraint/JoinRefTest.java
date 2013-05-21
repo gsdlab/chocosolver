@@ -44,13 +44,29 @@ public class JoinRefTest extends ConstraintTest {
             SetVar to = VariableFactory.set("to", Util.fromTo(0, nextInt(10)), solver);
 
             solver.post(Constraints.joinRef(take, refs, to));
-            
+
             assertTrue(randomizeStrategy(solver).findSolution());
             checkCorrectness(take, refs, to);
             for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
                 checkCorrectness(take, refs, to);
             }
         }
+    }
+
+    @Test
+    public void testJoinRefSingleValue() {
+        Solver solver = new Solver();
+
+        SetVar take = VariableFactory.set("take", Util.fromTo(0, 2), solver);
+        IntVar[] refs = new IntVar[2];
+        for (int i = 0; i < refs.length; i++) {
+            refs[i] = VariableFactory.enumerated("ref" + i, 5, 5, solver);
+        }
+        SetVar to = VariableFactory.set("to", Util.range(0, 5), solver);
+
+        solver.post(Constraints.joinRef(take, refs, to));
+
+        assertEquals(4, randomizeStrategy(solver).findAllSolutions());
     }
 
 //    @Test(timeout = 60000)

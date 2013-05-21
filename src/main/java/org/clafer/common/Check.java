@@ -4,7 +4,7 @@ import java.util.Iterator;
 
 /**
  * Various static utility functions for checking input.
- * 
+ *
  * @author jimmy
  */
 public class Check {
@@ -14,9 +14,9 @@ public class Check {
 
     /**
      * Check that the item is non-null.
-     * 
+     *
      * @param <T> the type of the object
-     * @param message the message ofthe exception if thrown
+     * @param message the message of the exception if thrown
      * @param obj the object to check
      * @return the original object
      * @throws NullPointerException if the object is null
@@ -30,7 +30,7 @@ public class Check {
 
     /**
      * Check that the item is non-null.
-     * 
+     *
      * @param <T> the type of the object
      * @param obj the item to check
      * @return the original object
@@ -47,7 +47,8 @@ public class Check {
      * @param <T> the type of the elements
      * @param array not null and cannot contain null
      * @return the original array
-     * @throws NullPointerException if the array is null or contains a null element
+     * @throws NullPointerException if the array is null or contains a null
+     * element
      */
     public static <T> T[] noNulls(T... array) throws NullPointerException {
         Check.notNull(array);
@@ -61,7 +62,8 @@ public class Check {
      * @param <T> the type of the elements
      * @param items not null and cannot contain null
      * @return the original items
-     * @throws NullPointerException if the items is null or contains a null element
+     * @throws NullPointerException if the items is null or contains a null
+     * element
      */
     public static <T extends Iterable<T>> T noNulls(T items) throws NullPointerException {
         Check.notNull(items);
@@ -72,27 +74,12 @@ public class Check {
     }
 
     /**
-     * @param <T> the type of the elements' elements
-     * @param arrays not null, cannot contain null, and none of its elements can
-     *          contain null
-     * @return the original array
-     * @throws NullPointerException if the array is null, contains a null element,
-     *          or one of its elements contains a null
-     */
-    public static <T> T[][] noNulls(T[]... arrays) throws NullPointerException {
-        Check.notNull(arrays);
-        for (T[] t : arrays) {
-            Check.noNulls(t);
-        }
-        return arrays;
-    }
-
-    /**
      * @param <T> the type of the elements
      * @param array not null, cannot contain null, and is non-empty
      * @return the original array
      * @throws IllegalArgumentException if the array is empty
-     * @throws NullPointerException if the array is null or contains a null element
+     * @throws NullPointerException if the array is null or contains a null
+     * element
      */
     public static <T> T[] noNullsNotEmpty(T... array)
             throws IllegalArgumentException, NullPointerException {
@@ -111,7 +98,8 @@ public class Check {
      * @param items not null, cannot contain null, and is non-empty
      * @return the original items
      * @throws IllegalArgumentException if the items is empty
-     * @throws NullPointerException if the items is null or contains a null element
+     * @throws NullPointerException if the items is null or contains a null
+     * element
      */
     public static <T extends Iterable<T>> T noNullsNotEmpty(T items)
             throws IllegalArgumentException, NullPointerException {
@@ -124,26 +112,5 @@ public class Check {
             Check.notNull(iter.next());
         } while (iter.hasNext());
         return items;
-    }
-
-    /**
-     * @param <T> the type of the elements' elements
-     * @param arrays not null, cannot contain null, none of its elements can
-     *          contain null, and is non-empty
-     * @return the original array
-     * @throws IllegalArgumentException if the arrays is empty
-     * @throws NullPointerException if the array is null, contains a null element,
-     *          or one of its elements contains a null
-     */
-    public static <T> T[][] noNullsNotEmpty(T[]... arrays)
-            throws IllegalArgumentException, NullPointerException {
-        Check.notNull(arrays);
-        if (arrays.length == 0) {
-            throw new IllegalArgumentException();
-        }
-        for (T[] t : arrays) {
-            Check.noNulls(t);
-        }
-        return arrays;
     }
 }

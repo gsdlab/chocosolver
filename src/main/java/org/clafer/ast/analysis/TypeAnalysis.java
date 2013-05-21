@@ -8,6 +8,7 @@ import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstGlobal;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
@@ -28,10 +29,11 @@ import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
+import org.clafer.common.Util;
 
 /**
  * Type checks and creates explicit upcast nodes in the ast.
- * 
+ *
  * @author jimmy
  */
 public class TypeAnalysis {
@@ -68,6 +70,18 @@ public class TypeAnalysis {
         TypeVisitor(AstClafer context, Map<AstExpr, AstClafer> typeMap) {
             this.context = context;
             this.types = typeMap;
+        }
+
+        private AstClafer typeCheck(AstExpr expr) {
+            return expr.accept(this, null);
+        }
+
+        private AstClafer[] typeCheck(AstExpr[] exprs) {
+            AstClafer[] typeChecked = new AstClafer[exprs.length];
+            for (int i = 0; i < exprs.length; i++) {
+                typeChecked[i] = typeCheck(exprs[i]);
+            }
+            return typeChecked;
         }
 
         AstClafer put(AstClafer type, AstExpr expression) {
@@ -149,6 +163,18 @@ public class TypeAnalysis {
                 throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
             }
             return put(BoolType, ast);
+        }
+
+        @Override
+        public AstClafer visit(AstArithm ast, Void a) {
+            AstClafer[] operandTypes = typeCheck(ast.getOperands());
+            for (AstClafer operandType : operandTypes) {
+                if (!(operandType instanceof AstIntClafer)) {
+                    throw new AnalysisException("Cannot " + 
+                            Util.intercalate(" " + ast.getOp().getSyntax() + " ", AnalysisUtil.getNames(operandTypes)));
+                }
+            }
+            return put(IntType, ast);
         }
 
         @Override

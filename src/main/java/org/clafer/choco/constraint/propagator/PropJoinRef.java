@@ -1,6 +1,7 @@
 package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -15,7 +16,7 @@ import util.procedure.IntProcedure;
 
 /**
  * Assumptions: Take set is over a small domain. Ref.length is small.
- * 
+ *
  * @author jimmy
  */
 public class PropJoinRef extends Propagator<Variable> {
@@ -164,7 +165,6 @@ public class PropJoinRef extends Propagator<Variable> {
         }
     }
     private final IntProcedure pruneRefAndPickToOnTakeKer = new IntProcedure() {
-
         @Override
         public void execute(int takeKer) throws ContradictionException {
             PropUtil.intSubsetEnv(refs[takeKer], to, aCause);
@@ -174,7 +174,6 @@ public class PropJoinRef extends Propagator<Variable> {
         }
     };
     private final IntProcedure pruneRefAndPickToOnToEnv = new IntProcedure() {
-
         @Override
         public void execute(int toEnv) throws ContradictionException {
             for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
@@ -186,7 +185,6 @@ public class PropJoinRef extends Propagator<Variable> {
         }
     };
     private final IntProcedure pruneToOnRefRem = new IntProcedure() {
-
         @Override
         public void execute(int refRem) throws ContradictionException {
             for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
@@ -216,5 +214,10 @@ public class PropJoinRef extends Propagator<Variable> {
             values.add(ref.getValue());
         }
         return values.containsAll(to.getValue()) ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return take + " . " + Arrays.toString(refs) + " = " + to;
     }
 }

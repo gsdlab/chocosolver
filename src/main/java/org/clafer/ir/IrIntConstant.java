@@ -1,7 +1,5 @@
 package org.clafer.ir;
 
-import org.clafer.ir.IrBoundDomain;
-
 /**
  *
  * @author jimmy

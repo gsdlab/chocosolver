@@ -1,36 +1,28 @@
 package org.clafer.ir;
 
 import gnu.trove.iterator.TIntIterator;
-import java.util.Arrays;
-import org.clafer.collection.ArrayIntIterator;
-import org.clafer.collection.BoundIntIterator;
-import org.clafer.collection.EmptyIntIterator;
 
 /**
  *
  * @author jimmy
  */
-public abstract class IrDomain {
+public interface IrDomain {
 
-    public abstract boolean isBounded();
+    public boolean isBounded();
 
-    public abstract boolean contains(int value);
+    public boolean contains(int value);
 
-    public abstract int getLowerBound();
+    public int getLowerBound();
 
-    public abstract int getUpperBound();
+    public int getUpperBound();
 
-    public abstract boolean isEmpty();
+    public boolean isEmpty();
 
-    public abstract int size();
+    public int size();
 
-    public abstract int[] getValues();
+    public int[] getValues();
 
-    public abstract TIntIterator iterator();
+    public TIntIterator iterator();
 
-    @Override
-    public abstract boolean equals(Object obj);
-
-    @Override
-    public abstract int hashCode();
+    public TIntIterator iterator(boolean increasing);
 }

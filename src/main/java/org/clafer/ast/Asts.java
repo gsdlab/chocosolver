@@ -77,6 +77,29 @@ public class Asts {
         return compare(left, AstCompare.Op.GreaterThanEqual, right);
     }
 
+    public static AstSetExpr arithm(AstArithm.Op op, AstSetExpr... operands) {
+        if (operands.length == 1) {
+            return operands[0];
+        }
+        return new AstArithm(op, operands);
+    }
+
+    public static AstSetExpr add(AstSetExpr... addends) {
+        return arithm(AstArithm.Op.Add, addends);
+    }
+
+    public static AstSetExpr sub(AstSetExpr... subtrahends) {
+        return arithm(AstArithm.Op.Sub, subtrahends);
+    }
+
+    public static AstSetExpr mul(AstSetExpr... multipliers) {
+        return arithm(AstArithm.Op.Mul, multipliers);
+    }
+
+    public static AstSetExpr div(AstSetExpr... divisors) {
+        return arithm(AstArithm.Op.Div, divisors);
+    }
+
     public static AstUpcast upcast(AstSetExpr base, AstAbstractClafer target) {
         return new AstUpcast(base, target);
     }

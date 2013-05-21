@@ -12,7 +12,7 @@ import solver.variables.VariableFactory;
  *
  * @author jimmy
  */
-public class SumSetNTest extends ConstraintTest {
+public class SetSumNTest extends ConstraintTest {
 
     private void checkCorrectness(SetVar set, IntVar sum, int n) {
         int[] $set = set.getValue();
@@ -36,7 +36,7 @@ public class SumSetNTest extends ConstraintTest {
             IntVar sum = VariableFactory.enumerated("sum", -nextInt(100), nextInt(100), solver);
             int n = nextInt(10) + 1;
 
-            solver.post(Constraints.sumSetN(set, sum, n));
+            solver.post(Constraints.setSumN(set, sum, n));
 
             assertTrue(solver.toString(), randomizeStrategy(solver).findSolution());
             checkCorrectness(set, sum, n);
@@ -53,7 +53,7 @@ public class SumSetNTest extends ConstraintTest {
         SetVar set = VariableFactory.set("set", Util.range(-4, 5), solver);
         IntVar sum = VariableFactory.enumerated("sum", -120, 120, solver);
 
-        solver.post(Constraints.sumSetN(set, sum, 7));
+        solver.post(Constraints.setSumN(set, sum, 7));
 
         assertEquals(968, randomizeStrategy(solver).findAllSolutions());
     }

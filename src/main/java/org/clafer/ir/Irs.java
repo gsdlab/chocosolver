@@ -741,6 +741,43 @@ public class Irs {
         return new IrElement(array, index, domain);
     }
 
+    public static IrIntExpr setSum(IrSetExpr set) {
+        int sum = Util.sum(set.getKer().iterator());
+        int count = set.getKer().size();
+
+        // Calculate low
+        int low = sum;
+        int lowCount = count;
+        TIntIterator envIter = set.getEnv().iterator();
+        while (lowCount < set.getCard().getUpperBound() && envIter.hasNext()) {
+            int env = envIter.next();
+            if (env >= 0 && lowCount >= set.getCard().getLowerBound()) {
+                break;
+            }
+            if (!set.getKer().contains(env)) {
+                low += env;
+                lowCount++;
+            }
+        }
+
+        // Calculate high
+        int high = sum;
+        int highCount = count;
+        envIter = set.getEnv().iterator(false);
+        while (highCount < set.getCard().getUpperBound() && envIter.hasNext()) {
+            int env = envIter.next();
+            if (env <= 0 && highCount >= set.getCard().getLowerBound()) {
+                break;
+            }
+            if (!set.getKer().contains(env)) {
+                high += env;
+                highCount++;
+            }
+        }
+        
+        return new IrSetSum(set, boundDomain(low, high));
+    }
+
     /**
      * ******************
      *

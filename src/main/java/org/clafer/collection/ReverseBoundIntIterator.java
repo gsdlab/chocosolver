@@ -3,42 +3,46 @@ package org.clafer.collection;
 import gnu.trove.iterator.TIntIterator;
 
 /**
- * An iterator over an interval in increasing order.
+ * An iterator over an interval in decreasing order.
  * 
  * @author jimmy
  */
-public class BoundIntIterator implements TIntIterator {
+public class ReverseBoundIntIterator implements TIntIterator {
 
     private int index;
-    private final int high;
+    private final int low;
 
     /**
-     * Iterate in increasing order starting from low (inclusive) and ending in
-     * high (inclusive).
-     * 
+     * Iterate in decreasing order starting from high (inclusive) and ending in
+     * low (inclusive).
+     *
      * @param low the lowest value
      * @param high the highest value
      */
-    public BoundIntIterator(int low, int high) {
-        this.index = low;
-        this.high = high;
+    public ReverseBoundIntIterator(int low, int high) {
+        this.index = high;
+        this.low = low;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean hasNext() {
-        return index <= high;
+        return index >= low;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int next() {
-        return index++;
+        return index--;
     }
 
     /**
      * Not supported.
-     * 
+     *
      * @throws UnsupportedOperationException if invoked
      */
     @Override

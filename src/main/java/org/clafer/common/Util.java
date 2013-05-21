@@ -1,5 +1,6 @@
 package org.clafer.common;
 
+import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +28,7 @@ import util.iterators.IntIterator;
 
 /**
  * Various static utility functions.
- * 
+ *
  * @author jimmy
  */
 public class Util {
@@ -37,7 +38,7 @@ public class Util {
 
     /**
      * Check equality in a null-friendly fashion.
-     * 
+     *
      * @param a an object
      * @param b an object to compare with a
      * @return true if and only if a equals b, false otherwise
@@ -48,7 +49,7 @@ public class Util {
 
     /**
      * Compute a hash code in a null-friendly fashion.
-     * 
+     *
      * @param o the object to compute the hash for
      * @return the hash code of the object or 0 if null
      */
@@ -59,7 +60,8 @@ public class Util {
     /**
      * @param low the lowest integer in the range
      * @param high the highest integer in the range
-     * @return an array of all the values between low (inclusive) and high (inclusive) in order
+     * @return an array of all the values between low (inclusive) and high
+     * (inclusive) in order
      */
     public static int[] range(int low, int high) {
         if (low > high) {
@@ -75,7 +77,8 @@ public class Util {
     /**
      * @param from the lowest integer in the range
      * @param to the integer after the highest integer in the range
-     * @return an array of all the values between from (inclusive) and to (exclusive) in order
+     * @return an array of all the values between from (inclusive) and to
+     * (exclusive) in order
      */
     public static int[] fromTo(int from, int to) {
         if (from > to) {
@@ -91,7 +94,7 @@ public class Util {
     /**
      * Returns the position of all the {@code true} elements in the array. The
      * positions are returned in sorted order.
-     * 
+     *
      * @param array the array
      * @return the position of all the {@code true} elements
      */
@@ -102,7 +105,7 @@ public class Util {
     /**
      * Returns the position of all the {@code false} elements in the array. The
      * positions are returned in sorted order.
-     * 
+     *
      * @param array the array
      * @return the position of all the {@code false} elements
      */
@@ -130,7 +133,7 @@ public class Util {
 
     /**
      * Reverse part of an array in place.
-     * 
+     *
      * @param array the array to reverse
      * @param to reverse from index 0 to here
      */
@@ -144,7 +147,7 @@ public class Util {
 
     /**
      * Reverse an array in place.
-     * 
+     *
      * @param array the array to reverse
      */
     public static void reverse(int[] array) {
@@ -153,7 +156,7 @@ public class Util {
 
     /**
      * Reverse part of an array in place.
-     * 
+     *
      * @param <T> the type of the elements
      * @param array the array to reverse
      * @param to reverse from index 0 to here
@@ -168,7 +171,7 @@ public class Util {
 
     /**
      * Reverse an array in place.
-     * 
+     *
      * @param <T> the type of the elements
      * @param array the array to reverse
      */
@@ -178,7 +181,7 @@ public class Util {
 
     /**
      * Sort a list using the comparator. Nondestructive.
-     * 
+     *
      * @param <T> the type of the elements
      * @param list the list of items to be sorted
      * @param comparator induces the order of the sort
@@ -192,7 +195,7 @@ public class Util {
 
     /**
      * Check if the array contains the item at least once.
-     * 
+     *
      * @param item check if this item exists in the array
      * @param array the array that may contain the item
      * @return true if and only if item s in array, false otherwise
@@ -208,7 +211,7 @@ public class Util {
 
     /**
      * Check if the array contains the item at least once.
-     * 
+     *
      * @param <T> the type of the elements
      * @param item check if this item exists in the array
      * @param array the array that may contain the item
@@ -225,7 +228,7 @@ public class Util {
 
     /**
      * Functional-programming cons. Nondestructive.
-     * 
+     *
      * @param <T> the type of the elements
      * @param head the beginning of the new list
      * @param tail the end of the new list
@@ -240,7 +243,7 @@ public class Util {
 
     /**
      * Functional-programming snoc. Nondestructive.
-     * 
+     *
      * @param <T> the type of the elements
      * @param head the beginning of the new list
      * @param tail the end of the new list
@@ -255,7 +258,7 @@ public class Util {
 
     /**
      * Append the item at the start of the array. Nondestructive.
-     * 
+     *
      * @param <T> the type of the elements
      * @param item the beginning of the new array
      * @param array the end of the new array
@@ -272,7 +275,7 @@ public class Util {
 
     /**
      * Append the item at the end of the array. Nondestructive.
-     * 
+     *
      * @param <T> the type of the elements
      * @param array the beginning of the new array
      * @param item the end of the new array
@@ -286,7 +289,7 @@ public class Util {
 
     /**
      * Append the item at the start of the array. Nondestructive.
-     * 
+     *
      * @param item the beginning of the new array
      * @param array the end of the new array
      * @return a copy of the original array with item appended at the start
@@ -300,7 +303,7 @@ public class Util {
 
     /**
      * Append the item at the end of the array. Nondestructive.
-     * 
+     *
      * @param array the beginning of the new array
      * @param item the end of the new array
      * @return a copy of the original array with item appended at the end
@@ -312,9 +315,9 @@ public class Util {
     }
 
     /**
-     * Concatenates all the arrays in the given order into one array. Must be supplied
-     * at least one array. Nondestructive.
-     * 
+     * Concatenates all the arrays in the given order into one array. Must be
+     * supplied at least one array. Nondestructive.
+     *
      * @param <T> the type of the elements
      * @param arrays the array of arrays
      * @return the concatenation of all the arrays
@@ -338,8 +341,9 @@ public class Util {
     }
 
     /**
-     * Compute the greatest common divisor between two numbers usingFermat's algorithm.
-     * 
+     * Compute the greatest common divisor between two numbers usingFermat's
+     * algorithm.
+     *
      * @param a a non-negative integer
      * @param b a non-negative integer
      * @return the greatest common divisor
@@ -360,14 +364,14 @@ public class Util {
     }
 
     /**
-     * Shift in place every element towards the start of the array, wrapping around to the
-     * end. For example:
+     * Shift in place every element towards the start of the array, wrapping
+     * around to the end. For example:
      * <pre>
      * int[] array = new int[]{0,1,2,3,4};
      * shiftLeft(new int[]{0,1,2,3,4}, 2);
      * assertArrayEquals(new int[]{2,3,4,0,1}, array);
      * </pre>
-     * 
+     *
      * @param array the array to shift
      * @param shift the number of indices to shift each element
      */
@@ -399,7 +403,7 @@ public class Util {
 
     /**
      * @param array an array of integers
-     * @return the sum of the integers in the array.
+     * @return the sum of the integers in the array
      */
     public static int sum(int... array) {
         int sum = 0;
@@ -410,8 +414,20 @@ public class Util {
     }
 
     /**
+     * @param iter an iterator of integers
+     * @return the sum of the integers in the iterator
+     */
+    public static int sum(TIntIterator iter) {
+        int sum = 0;
+        while (iter.hasNext()) {
+            sum += iter.next();
+        }
+        return sum;
+    }
+
+    /**
      * @param array an array of integers
-     * @return the minimum integer in the array.
+     * @return the minimum integer in the array
      */
     public static int min(int... array) {
         if (array.length == 0) {
@@ -425,8 +441,23 @@ public class Util {
     }
 
     /**
+     * @param iter an iterator of integers
+     * @return the minimum integer in the iterator
+     */
+    public static int min(TIntIterator iter) {
+        if (!iter.hasNext()) {
+            throw new IllegalArgumentException();
+        }
+        int min = iter.next();
+        while (iter.hasNext()) {
+            min = Math.min(min, iter.next());
+        }
+        return min;
+    }
+
+    /**
      * @param array an array of integers
-     * @return the maximum integer in the array.
+     * @return the maximum integer in the array
      */
     public static int max(int... array) {
         if (array.length == 0) {
@@ -440,9 +471,24 @@ public class Util {
     }
 
     /**
+     * @param iter an iterator of integers
+     * @return the maximum integer in the iterator
+     */
+    public static int max(TIntIterator iter) {
+        if (!iter.hasNext()) {
+            throw new IllegalArgumentException();
+        }
+        int max = iter.next();
+        while (iter.hasNext()) {
+            max = Math.max(max, iter.next());
+        }
+        return max;
+    }
+
+    /**
      * Enumerate the iterator and return the values discovered. The iterator is
      * exhausted on return.
-     * 
+     *
      * @param iter an iterator
      * @return the values found in the iterator
      */
@@ -456,7 +502,7 @@ public class Util {
 
     /**
      * Returns a deep copy of the object.
-     * 
+     *
      * @param <T> the type of the object
      * @param obj an object
      * @return a copy of the object
@@ -485,9 +531,9 @@ public class Util {
     }
 
     /**
-     * Concatenate the string representation of the items with a comma separating
-     * each item.
-     * 
+     * Concatenate the string representation of the items with a comma
+     * separating each item.
+     *
      * @param <T> the type of the elements
      * @param items the items to display
      * @return the items string form separated by commas
@@ -497,9 +543,9 @@ public class Util {
     }
 
     /**
-     * Concatenate the string representation of the items with a comma separating
-     * each item.
-     * 
+     * Concatenate the string representation of the items with a comma
+     * separating each item.
+     *
      * @param items the items to display
      * @return the items string form separated by commas
      */
@@ -508,9 +554,9 @@ public class Util {
     }
 
     /**
-     * Concatenate the string representation of the items with a separator separating
-     * each item.
-     * 
+     * Concatenate the string representation of the items with a separator
+     * separating each item.
+     *
      * @param <T> the type of the elements
      * @param separator the string to separate each item
      * @param items the items to display
@@ -528,9 +574,9 @@ public class Util {
     }
 
     /**
-     * Concatenate the string representation of the items with a separator separating
-     * each item.
-     * 
+     * Concatenate the string representation of the items with a separator
+     * separating each item.
+     *
      * @param separator the string to separate each item
      * @param items the items to display
      * @return the items string form separated by the separatpr
@@ -549,7 +595,7 @@ public class Util {
 
     /**
      * Read the entire contents of a file into a string.
-     * 
+     *
      * @param in the file to read
      * @return the contents of the file
      * @throws IOException an I/O error occured while reading the file
@@ -564,9 +610,9 @@ public class Util {
     }
 
     /**
-     * Read the entire contents of a stream into a string. The stream is left opened,
-     * but exhausted.
-     * 
+     * Read the entire contents of a stream into a string. The stream is left
+     * opened, but exhausted.
+     *
      * @param in the stream to read
      * @return the contents of the stream
      * @throws IOException an I/O error occured while reading the stream
@@ -576,9 +622,9 @@ public class Util {
     }
 
     /**
-     * Read the entire contents of a reader into a string. The reader is left opened,
-     * but exhausted.
-     * 
+     * Read the entire contents of a reader into a string. The reader is left
+     * opened, but exhausted.
+     *
      * @param in the reader to read
      * @return the contents of the reader
      * @throws IOException an I/O error occured while reading the reader
@@ -592,13 +638,13 @@ public class Util {
         }
         return result.toString();
     }
-    
+
     public static void main(String[] args) {
         Solver solver = new Solver();
         BoolVar b1 = VF.bool("b1", solver);
         BoolVar b2 = VF.bool("b2", solver);
         IntVar i = VF.enumerated("i", 0, 2, solver);
-        
-        
+
+
     }
 }

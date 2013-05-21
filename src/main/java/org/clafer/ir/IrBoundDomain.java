@@ -2,12 +2,13 @@ package org.clafer.ir;
 
 import gnu.trove.iterator.TIntIterator;
 import org.clafer.collection.BoundIntIterator;
+import org.clafer.collection.ReverseBoundIntIterator;
 
 /**
  *
  * @author jimmy
  */
-public class IrBoundDomain extends IrDomain {
+public class IrBoundDomain implements IrDomain {
 
     private final int low;
     private final int high;
@@ -65,7 +66,12 @@ public class IrBoundDomain extends IrDomain {
 
     @Override
     public TIntIterator iterator() {
-        return new BoundIntIterator(low, high);
+        return iterator(true);
+    }
+
+    @Override
+    public TIntIterator iterator(boolean increasing) {
+        return increasing ? new BoundIntIterator(low, high) : new ReverseBoundIntIterator(low, high);
     }
 
     @Override

@@ -35,6 +35,7 @@ import org.clafer.ast.analysis.FormatAnalysis.Format;
 import org.clafer.ast.analysis.PartialSolutionAnalysis.PartialSolution;
 import org.clafer.ast.analysis.TypeAnalysis;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstException;
@@ -56,7 +57,7 @@ import static org.clafer.ir.Irs.*;
 
 /**
  * Compile from AST -> IR
- * 
+ *
  * @author jimmy
  */
 public class AstCompiler {
@@ -226,64 +227,61 @@ public class AstCompiler {
         }
         /**
          * What is this optimization?
-         * 
-         * This optimization is to remove isomorphic solutions due to swapping of children.
-         * 
+         *
+         * This optimization is to remove isomorphic solutions due to swapping
+         * of children.
+         *
          * Consider the following Clafer model.
-         * 
-         *   Diner 2
-         *     Burger 1..*
-         * 
-         * Let the scope be {Diner=2, Food=3}. What this says is that we have 2 Diners and 3
-         * Burgers but each Diner gets at least one serving. Logically, there are two solutions:
-         * 
-         *   1. Each Diner gets 1 Burger each (the last Burger is unused)
-         *   2. One Diner gets 2 Burgers and the other Diner gets 1 Burger
-         * 
-         * There are two unique solutions, other isomorphic solutions may arise from the solver,
-         * but ideally we want to eliminate the isomorphic duplicates. For example, here are
-         * two isomorphic instances that will arrise with symmetry breaking:
-         * 
-         *   Diner0
-         *     Burger0
-         *     Burger1
-         *   Diner1
-         *     Burger2
-         * 
-         *  
-         *   Diner0
-         *     Burger0
-         *   Diner1
-         *     Burger1
-         *     Burger2
-         * 
-         * We add the constraint |Diner0.Burger| >= |Diner1.Burger| to break the symmetry.
-         * This is how it works when Diner only has one type as a child. This optimization
-         * generalizes to multi-children. For example, consider the Clafer model:
-         * 
-         *   Diner 2
-         *     Burger 1..*
-         *     Drink 1..*
-         * 
-         * Let the scope be {Diner=2, Food=3, Drink=4}. First we'll see a wrong generalization.
-         * Adding the two constraints DO NOT WORK:
-         * 
-         *   1. |Diner0.Burger| >= |Diner1.Burger|
-         *   2. |Diner0.Drink| >= |Diner1.Drink|
-         * 
-         * The two constraints above DO NOT WORK because it rules out the case where one Diner has
-         * more Burgers but the other Diner has more drinks. Instead, we want tuple comparison like
-         * the following constraint (tuple comparision as implemented in Haskell, ie. compare the
-         * first indices, then use the second index to break ties, then use the third index to break
-         * the next tie, etc.):
-         * 
-         *   (|Diner0.Burger|, |Diner0.Drink|) >= (|Diner1.Burger|, |Diner1.Drink|)
-         * 
-         * However, Choco does not implement tuple comparision but it's we can simulate it with
-         * the equation constraint since the size of the sets are bounded.
-         * 
-         *   5 * |Diner0.Burger| + 1 * |Diner0.Drink| >= 5 * |Diner1.Burger| + 1 * |Diner1.Drink|
-         * 
+         *
+         * Diner 2 Burger 1..*
+         *
+         * Let the scope be {Diner=2, Food=3}. What this says is that we have 2
+         * Diners and 3 Burgers but each Diner gets at least one serving.
+         * Logically, there are two solutions:
+         *
+         * 1. Each Diner gets 1 Burger each (the last Burger is unused) 2. One
+         * Diner gets 2 Burgers and the other Diner gets 1 Burger
+         *
+         * There are two unique solutions, other isomorphic solutions may arise
+         * from the solver, but ideally we want to eliminate the isomorphic
+         * duplicates. For example, here are two isomorphic instances that will
+         * arrise with symmetry breaking:
+         *
+         * Diner0 Burger0 Burger1 Diner1 Burger2
+         *
+         *
+         * Diner0 Burger0 Diner1 Burger1 Burger2
+         *
+         * We add the constraint |Diner0.Burger| >= |Diner1.Burger| to break the
+         * symmetry. This is how it works when Diner only has one type as a
+         * child. This optimization generalizes to multi-children. For example,
+         * consider the Clafer model:
+         *
+         * Diner 2 Burger 1..* Drink 1..*
+         *
+         * Let the scope be {Diner=2, Food=3, Drink=4}. First we'll see a wrong
+         * generalization. Adding the two constraints DO NOT WORK:
+         *
+         * 1. |Diner0.Burger| >= |Diner1.Burger| 2. |Diner0.Drink| >=
+         * |Diner1.Drink|
+         *
+         * The two constraints above DO NOT WORK because it rules out the case
+         * where one Diner has more Burgers but the other Diner has more drinks.
+         * Instead, we want tuple comparison like the following constraint
+         * (tuple comparision as implemented in Haskell, ie. compare the first
+         * indices, then use the second index to break ties, then use the third
+         * index to break the next tie, etc.):
+         *
+         * (|Diner0.Burger|, |Diner0.Drink|) >= (|Diner1.Burger|,
+         * |Diner1.Drink|)
+         *
+         * However, Choco does not implement tuple comparision but it's we can
+         * simulate it with the equation constraint since the size of the sets
+         * are bounded.
+         *
+         * 5 * |Diner0.Burger| + 1 * |Diner0.Drink| >= 5 * |Diner1.Burger| + 1 *
+         * |Diner1.Drink|
+         *
          * The "5" is coefficient comes from the fact that scope(Drink) = 4.
          */
         IrIntExpr[][] terms = new IrIntExpr[getScope(clafer)][];
@@ -431,16 +429,15 @@ public class AstCompiler {
 
         /**
          * What is this optimization?
-         * 
-         * Force the lower number atoms to choose lower number parents. For example consider
-         * the following clafer model:
-         * 
-         *   Person 2
-         *     Hand 2
-         * 
-         * The constraint forbids the case where Hand0 belongs to Person1 and Hand1 belongs
-         * to Person0. Otherwise, the children can swap around creating many isomorphic
-         * solutions.
+         *
+         * Force the lower number atoms to choose lower number parents. For
+         * example consider the following clafer model:
+         *
+         * Person 2 Hand 2
+         *
+         * The constraint forbids the case where Hand0 belongs to Person1 and
+         * Hand1 belongs to Person0. Otherwise, the children can swap around
+         * creating many isomorphic solutions.
          */
         if (clafer.hasParent()) {
             module.addConstraint(sort($(parentPointers.get(clafer))));
@@ -536,6 +533,36 @@ public class AstCompiler {
         private ExpressionCompiler(AstClafer thisType, int thisId) {
             this.thisId = thisId;
             this.types = TypeAnalysis.analyze(thisType);
+        }
+
+        private IrExpr compile(AstExpr expr) {
+            return expr.accept(this, null);
+        }
+
+        private IrExpr[] compile(AstExpr[] exprs) {
+            IrExpr[] compiled = new IrExpr[exprs.length];
+            for (int i = 0; i < compiled.length; i++) {
+                compiled[i] = compile(exprs[i]);
+            }
+            return compiled;
+        }
+
+        private IrIntExpr asInt(IrExpr expr) {
+            if (expr instanceof IrIntExpr) {
+                return (IrIntExpr) expr;
+            }
+            if (expr instanceof IrSetExpr) {
+                return setSum((IrSetExpr) expr);
+            }
+            throw new IllegalArgumentException();
+        }
+
+        private IrIntExpr[] asInts(IrExpr[] exprs) {
+            IrIntExpr[] ints = new IrIntExpr[exprs.length];
+            for (int i = 0; i < ints.length; i++) {
+                ints[i] = asInt(exprs[i]);
+            }
+            return ints;
         }
 
         @Override
@@ -658,13 +685,39 @@ public class AstCompiler {
                     return equal(setLeft, setRight);
                 case NotEqual:
                     return notEqual(setLeft, setRight);
+                default:
+                    throw new AstException();
             }
-            throw new AstException();
         }
 
         @Override
         public IrExpr visit(AstCompare ast, Void a) {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public IrExpr visit(AstArithm ast, Void a) {
+            IrIntExpr[] operands = asInts(compile(ast.getOperands()));
+            switch (ast.getOp()) {
+                case Add:
+                    return add(operands);
+                case Sub:
+                    return sub(operands);
+                case Mul:
+                    IrIntExpr product = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        product = mul(product, operands[i]);
+                    }
+                    return product;
+                case Div:
+                    IrIntExpr quotient = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        quotient = div(quotient, operands[i]);
+                    }
+                    return quotient;
+                default:
+                    throw new AstException();
+            }
         }
 
         @Override
@@ -695,9 +748,10 @@ public class AstCompiler {
         }
     };
 
-    /*************************
-     * Optimization functions.
-     *************************/
+    /**
+     * ***********************
+     * Optimization functions. ***********************
+     */
     private IrSetVar[] skipCards(AstConcreteClafer clafer) {
         assert Format.LowGroup.equals(getFormat(clafer));
 
@@ -773,9 +827,10 @@ public class AstCompiler {
         return ivs;
     }
 
-    /*************************
-     * Convenience functions.
-     *************************/
+    /**
+     * ***********************
+     * Convenience functions. ***********************
+     */
     int getScopeLow(AstClafer clafer) {
         return clafer instanceof AstIntClafer ? analysis.getScope().getIntLow() : 0;
     }

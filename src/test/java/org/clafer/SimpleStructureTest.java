@@ -33,7 +33,6 @@ public class SimpleStructureTest {
         model.addTopClafer("Beaver").withCard(1, 1).extending(animal);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
-        System.out.println(solver.solver);
         assertEquals(32, solver.allInstances().length);
     }
 

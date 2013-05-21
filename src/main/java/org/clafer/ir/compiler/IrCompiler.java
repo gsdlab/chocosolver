@@ -52,6 +52,7 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetLiteral;
+import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSub;
 import org.clafer.ir.IrUtil;
@@ -566,6 +567,14 @@ public class IrCompiler {
             solver.post(_element($index, $array, element));
             return element;
         }
+
+        @Override
+        public IntVar visit(IrSetSum ir, Void a) {
+            IntVar sum = intVar("SetSum", ir.getDomain());
+            int n = ir.getSet().getCard().getUpperBound();
+            solver.post(Constraints.setSumN(compile(ir.getSet()), sum, n));
+            return sum;
+        }
     };
     private final IrSetExprVisitor<Void, SetVar> setExprCompiler = new IrSetExprVisitor<Void, SetVar>() {
         @Override
@@ -598,10 +607,10 @@ public class IrCompiler {
         public SetVar visit(IrJoin ir, Void a) {
             IrSetExpr take = ir.getTake();
             IrSetExpr[] children = ir.getChildren();
-            SetVar $take = take.accept(this, a);
+            SetVar $take = compile(take);
             SetVar[] $children = new SetVar[children.length];
             for (int i = 0; i < $children.length; i++) {
-                $children[i] = children[i].accept(this, a);
+                $children[i] = compile(children[i]);
             }
             SetVar join = numSetVar("Join", ir.getEnv(), ir.getKer());
             solver.post(Constraints.join($take, $children, join));
@@ -610,7 +619,16 @@ public class IrCompiler {
 
         @Override
         public SetVar visit(IrJoinRef ir, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            IrSetExpr take = ir.getTake();
+            IrIntExpr[] refs = ir.getRefs();
+            SetVar $take = compile(take);
+            IntVar[] $refs = new IntVar[refs.length];
+            for(int i = 0; i < $refs.length;i++) {
+                $refs[i] = compile(refs[i]);
+            }
+            SetVar joinRef = numSetVar("JoinRef", ir.getEnv(), ir.getKer());
+            solver.post(Constraints.joinRef($take, $refs, joinRef));
+            return joinRef;
         }
 
         @Override
@@ -662,11 +680,11 @@ public class IrCompiler {
     private static Constraint _times(IntVar multiplicand, IntVar multiplier, IntVar product) {
         return IntConstraintFactory.times(multiplicand, multiplier, product);
     }
+
     private static Constraint _div(IntVar dividend, IntVar divisor, IntVar quotient) {
         return IntConstraintFactory.eucl_div(dividend, divisor, quotient);
     }
 
-    
     private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {
         return IntConstraintFactory.arithm(var1, op1, var2, op2, cste);
     }

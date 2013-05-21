@@ -1,6 +1,5 @@
 package org.clafer.ast;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,7 +9,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public abstract class AstClafer implements Serializable {
+public abstract class AstClafer {
 
     private final String name;
     private AstAbstractClafer superClafer;

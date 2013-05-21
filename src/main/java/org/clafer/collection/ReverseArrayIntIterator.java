@@ -4,34 +4,35 @@ import gnu.trove.iterator.TIntIterator;
 import org.clafer.common.Check;
 
 /**
- * In iterator for an array of integers in order of increasing index.
+ * In iterator for an array of integers in order of decreasing index.
  *
  * @author jimmy
  */
-public class ArrayIntIterator implements TIntIterator {
+public class ReverseArrayIntIterator implements TIntIterator {
 
     private final int[] array;
     private int index;
-    private final int to;
+    private final int from;
 
     /**
-     * Iterate an array in order from the first to last element of the array.
+     * Iterate an array in reverse order from the last to first element of the
+     * array.
      *
      * @param array
      */
-    public ArrayIntIterator(int[] array) {
+    public ReverseArrayIntIterator(int[] array) {
         this(array, 0, array.length);
     }
 
     /**
-     * Iterate an array in order starting in position from (inclusive) and
-     * ending in position to (exclusive).
+     * Iterate an array in reverse order starting in position to (exclusive) and
+     * ending in position from (inclusive).
      *
      * @param array iterate this array
-     * @param from start iterating from this index
-     * @param to stop before this index
+     * @param from stop iterating at this index
+     * @param to start after this index
      */
-    public ArrayIntIterator(int[] array, int from, int to) {
+    public ReverseArrayIntIterator(int[] array, int from, int to) {
         if (to < from) {
             throw new IllegalArgumentException();
         }
@@ -42,8 +43,8 @@ public class ArrayIntIterator implements TIntIterator {
             throw new IllegalArgumentException();
         }
         this.array = Check.notNull(array);
-        this.index = from;
-        this.to = to;
+        this.index = to;
+        this.from = from;
     }
 
     /**
@@ -51,7 +52,7 @@ public class ArrayIntIterator implements TIntIterator {
      */
     @Override
     public boolean hasNext() {
-        return index < to;
+        return index > from;
     }
 
     /**
@@ -59,7 +60,7 @@ public class ArrayIntIterator implements TIntIterator {
      */
     @Override
     public int next() {
-        return array[index++];
+        return array[--index];
     }
 
     /**

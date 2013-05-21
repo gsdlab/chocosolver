@@ -65,4 +65,28 @@ public class SimpleConstraintModelTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(4, solver.allInstances().length);
     }
+
+    @Test
+    public void testMaybeJoinRef() {
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addTopClafer("Feature").withCard(0, 1);
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(0, 1).refToUnique(IntType);
+        feature.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        assertEquals(2, solver.allInstances().length);
+    }
+
+    @Test
+    public void testJoinRefSingleValue() {
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addTopClafer("Feature").withCard(1, 1);
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 3).refTo(IntType);
+        feature.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
+        assertEquals(2, solver.allInstances().length);
+    }
 }

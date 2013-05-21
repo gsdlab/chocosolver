@@ -1,12 +1,15 @@
 package org.clafer.ast.analysis;
 
+import java.lang.reflect.Array;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstEqual;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
@@ -31,7 +34,7 @@ import static org.clafer.ast.Asts.*;
 
 /**
  * Inserts explicit upcasts.
- * 
+ *
  * @author jimmy
  */
 public class CanonicalAnalysis {
@@ -64,6 +67,21 @@ public class CanonicalAnalysis {
                 throw new AnalysisException(ast + " type not analyzed yet");
             }
             return type;
+        }
+
+        private <T extends AstExpr> T canonicalize(T expr) {
+            @SuppressWarnings("unchecked")
+            T canonical = (T) expr.accept(this, null);
+            return canonical;
+        }
+
+        private <T extends AstExpr> T[] canonicalize(T[] exprs) {
+            @SuppressWarnings("unchecked")
+            T[] canonical = (T[]) Array.newInstance(exprs.getClass().getComponentType(), exprs.length);
+            for (int i = 0; i < canonical.length; i++) {
+                canonical[i] = canonicalize(exprs[i]);
+            }
+            return canonical;
         }
 
         @Override
@@ -130,6 +148,11 @@ public class CanonicalAnalysis {
             AstSetExpr left = (AstSetExpr) ast.getLeft().accept(this, a);
             AstSetExpr right = (AstSetExpr) ast.getRight().accept(this, a);
             return compare(left, ast.getOp(), right);
+        }
+
+        @Override
+        public AstExpr visit(AstArithm ast, Void a) {
+            return arithm(ast.getOp(), canonicalize(ast.getOperands()));
         }
 
         @Override

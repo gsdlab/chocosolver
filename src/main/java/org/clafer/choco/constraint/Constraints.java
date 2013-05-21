@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint;
 
+import java.util.ArrayList;
 import org.clafer.choco.constraint.propagator.PropJoin;
 import org.clafer.choco.constraint.propagator.PropJoinRef;
 import org.clafer.choco.constraint.propagator.PropSelectN;
@@ -8,7 +9,7 @@ import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
-import org.clafer.choco.constraint.propagator.PropSumSetN;
+import org.clafer.choco.constraint.propagator.PropSetSumN;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -91,9 +92,36 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint sumSetN(SetVar set, IntVar sum, int n) {
+    /**
+     * <p>
+     * Sum the set with a maximum cardinality. More efficient than the standard
+     * operation in the Choco library when n is relatively small.
+     * </p>
+     * <p>
+     * For example:
+     * <pre>
+     *   Animal 2
+     *     Age -> integer
+     *   [Animal.Age = 1000]
+     * </pre>
+     * </p>
+     * <p>
+     * {@code Animal.Age} is a set with a very large envelope. However, due to
+     * static analysis of the model, it is easy to see that the cardinality can
+     * be no larger than 2, hence n=2. Once the first integer x is selected for
+     * the set, the second integer 1000 - x is already determined due to n=2.
+     * Since the Choco library's setSum constraint is not given n, it cannot
+     * make this deduction.
+     * </p>
+     * 
+     * @param set the set of integers
+     * @param sum the sum of the set
+     * @param n the maximum cardinality of the set
+     * @return a constraint where |set| &le n and sum = Σ set
+     */
+    public static Constraint setSumN(SetVar set, IntVar sum, int n) {
         Constraint constraint = new Constraint(new Variable[]{set, sum}, set.getSolver());
-        constraint.setPropagators(new PropSumSetN(set, sum, n));
+        constraint.setPropagators(new PropSetSumN(set, sum, n));
         return constraint;
     }
 

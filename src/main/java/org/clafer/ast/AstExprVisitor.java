@@ -24,6 +24,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstCompare ast, A a);
 
+    public B visit(AstArithm ast, A a);
+
     public B visit(AstUpcast ast, A a);
 
     public B visit(AstNone ast, A a);
