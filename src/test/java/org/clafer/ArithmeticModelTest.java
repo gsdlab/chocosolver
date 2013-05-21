@@ -22,8 +22,8 @@ public class ArithmeticModelTest {
     /**
      * <pre>
      * Feature
-     *   Cost -> Int
-     *   [this.Cost + 3 = 5]
+     *     Cost -> Int
+     *     [this.Cost + 3 = 5]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -41,8 +41,8 @@ public class ArithmeticModelTest {
     /**
      * <pre>
      * Feature
-     *   Cost -> Int 2
-     *   [this.Cost + 3 = 5]
+     *     Cost -> Int 2
+     *     [this.Cost + 3 = 5]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -71,9 +71,9 @@ public class ArithmeticModelTest {
     /**
      * <pre>
      * Feature
-     *   Cost -> Int 2
-     *   Profit -> Int 2
-     *   [this.Cost + 3 = this.Profit - 2]
+     *     Cost -> Int 2
+     *     Profit -> Int 2
+     *     [this.Cost + 3 = this.Profit - 2]
      * </pre>
      */
     @Test(timeout = 60000)

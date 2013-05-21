@@ -1,20 +1,13 @@
 package org.clafer;
 
 import org.clafer.ast.scope.Scope;
-import solver.Solver;
-import solver.constraints.IntConstraintFactory;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.VariableFactory;
 import org.clafer.compiler.ClaferObjective;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.choco.constraint.AndConstraint;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.constraints.LogicalConstraintFactory;
 import static org.clafer.ast.Asts.*;
 
 /**
@@ -23,30 +16,6 @@ import static org.clafer.ast.Asts.*;
  */
 public class FeatureModelTest {
 
-//    @Test(timeout = 10000)
-//    public void testSmall() {
-//        Solver solver = new Solver();
-//
-//        int n = 50;
-//        BoolVar[] members = VariableFactory.boolArray("member", n, solver);
-//        IntVar[] footprints = new IntVar[n];
-//
-//        for (int i = 0; i < n; i++) {
-//            int[] values = new int[]{0, n - i * 2 + 1};
-//            Arrays.sort(values);
-//            footprints[i] = VariableFactory.enumerated("footprint#" + i, values, solver);
-//            solver.post(IntConstraintFactory.implies(members[i],
-//                    IntConstraintFactory.arithm(footprints[i], "=", VariableFactory.fixed(n - i * 2 + 1, solver))));
-//            solver.post(IntConstraintFactory.implies(VariableFactory.not(members[i]),
-//                    IntConstraintFactory.arithm(footprints[i], "=", VariableFactory.fixed(0, solver))));
-//        }
-//        IntVar score = VariableFactory.enumerated("score", -10000, 10000, solver);
-//        solver.post(IntConstraintFactory.sum(footprints, score));
-//        solver.set(IntStrategyFactory.firstFail_InDomainMax(members));
-//        SearchMonitorFactory.log(solver, true, true);
-//        int[] answ = solver.findOptimalSolution(ResolutionPolicy.MINIMIZE, score);
-//        System.out.println(Arrays.toString(answ));
-//    }
     @Test(timeout = 60000)
     public void testSmallFeatureModel() {
         AstModel model = newModel();
@@ -65,6 +34,197 @@ public class FeatureModelTest {
         assertEquals(-576, solver.optimal().getFst().intValue());
     }
 
+    /**
+     * Adapated from Scalable Prediction of Non-functional Properties in
+     * Software Product Lines. Scaled down by dividing numbers by 2000 and
+     * rounding.
+     * 
+     * <pre>
+     * abstract IMeasurable
+     *     footprint : integer
+     *
+     *
+     * abstract SQLite
+     *     OperatingSystemCharacteristics : IMeasurable
+     *         [ this.footprint = 888]
+     *         SQLITE_4_BYTE_ALIGNED_MALLOC : IMeasurable
+     *             [ this.footprint = 0]
+     *         SQLITE_CASE_SENSITIVE_LIKE : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_HAVE_ISNAN : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_SECURE_DELETE : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         xor ChooseSQLITE_TEMP_STORE : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *             SQLITE_TEMP_STORE_EQ_0 : IMeasurable
+     *                 [ this.footprint = 0]
+     *             SQLITE_TEMP_STORE_EQ_1 : IMeasurable
+     *                 [ this.footprint = 0]
+     *             SQLITE_TEMP_STORE_EQ_2 : IMeasurable
+     *                 [ this.footprint = 0]
+     *             SQLITE_TEMP_STORE_EQ_3 : IMeasurable
+     *                 [ this.footprint = 0]
+     *     EnableFeatures : IMeasurable
+     *         [ this.footprint = 0]
+     *         SQLITE_ENABLE_ATOMIC_WRITE : IMeasurable  ?
+     *             [ this.footprint = 3]
+     *         SQLITE_ENABLE_COLUMN_METADATA : IMeasurable  ?
+     *             [ !SQLITE_OMIT_DECLTYPE ]
+     *             [ this.footprint = 2]
+     *         SQLITE_ENABLE_FTS3 : IMeasurable  ?
+     *             [ this.footprint = 100]
+     *         SQLITE_ENABLE_FTS3_PARENTHESIS : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_ENABLE_MEMORY_MANAGEMENT : IMeasurable  ?
+     *             [ this.footprint = 1]
+     *         xor ChooseMemSys : IMeasurable  ?
+     *             [ this.footprint = 3]
+     *             SQLITE_ENABLE_MEMSYS3 : IMeasurable
+     *                 [ this.footprint = 2]
+     *             SQLITE_ENABLE_MEMSYS5 : IMeasurable
+     *                 [ this.footprint = 0]
+     *         SQLITE_ENABLE_RTREE : IMeasurable  ?
+     *             [ this.footprint = 33]
+     *         SQLITE_ENABLE_STAT2 : IMeasurable  ?
+     *             [ this.footprint = 4]
+     *         SQLITE_ENABLE_UPDATE_DELETE_LIMIT : IMeasurable  ?
+     *             [ this.footprint = 1]
+     *         SQLITE_ENABLE_UNLOCK_NOTIFY : IMeasurable  ?
+     *             [ this.footprint = 3]
+     *         SQLITE_SOUNDEX : IMeasurable  ?
+     *             [ this.footprint = 1]
+     *         YYTRACKMAXSTACKDEPTH : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *     DisableFeatures : IMeasurable
+     *         [ this.footprint = 0]
+     *         SQLITE_DISABLE_LFS : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_DISABLE_DIRSYNC : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *     OmitFeatures : IMeasurable
+     *         [ this.footprint = 0]
+     *         SQLITE_OMIT_ALTERTABLE : IMeasurable  ?
+     *             [ this.footprint = -7]
+     *         SQLITE_OMIT_ANALYZE : IMeasurable  ?
+     *             [ this.footprint = -5]
+     *         SQLITE_OMIT_ATTACH : IMeasurable  ?
+     *             [ this.footprint = -8]
+     *         SQLITE_OMIT_AUTHORIZATION : IMeasurable  ?
+     *             [ this.footprint = -5]
+     *         SQLITE_OMIT_AUTOINCREMENT : IMeasurable  ?
+     *             [ this.footprint = -3]
+     *         SQLITE_OMIT_AUTOMATIC_INDEX : IMeasurable  ?
+     *             [ this.footprint = -4]
+     *         SQLITE_OMIT_AUTOINIT : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_OMIT_AUTOVACUUM : IMeasurable  ?
+     *             [ this.footprint = -14]
+     *         SQLITE_OMIT_BETWEEN_OPTIMIZATION : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_OMIT_BLOB_LITERAL : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_BTREECOUNT : IMeasurable  ?
+     *             [ this.footprint = -2]
+     *         SQLITE_OMIT_BUILTIN_TEST : IMeasurable  ?
+     *             [ this.footprint = -2]
+     *         SQLITE_OMIT_CAST : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_CHECK : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_COMPILEOPTION_DIAGS : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_COMPLETE : IMeasurable  ?
+     *             [ this.footprint = -888]
+     *         SQLITE_OMIT_COMPOUND_SELECT : IMeasurable  ?
+     *             [ this.footprint = -10]
+     *         SQLITE_OMIT_CONFLICT_CLAUSE : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_OMIT_DATETIME_FUNCS : IMeasurable  ?
+     *             [ this.footprint = -10]
+     *         SQLITE_OMIT_DECLTYPE : IMeasurable  ?
+     *             [ !SQLITE_ENABLE_COLUMN_METADATA ]
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_DEPRECATED : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_EXPLAIN : IMeasurable  ?
+     *             [ this.footprint = -10]
+     *         SQLITE_OMIT_FLAG_PRAGMAS : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_FLOATING_POINT : IMeasurable  ?
+     *             [ this.footprint = -18]
+     *         SQLITE_OMIT_FOREIGN_KEY : IMeasurable  ?
+     *             [ this.footprint = -15]
+     *         SQLITE_OMIT_GET_TABLE : IMeasurable  ?
+     *             [ this.footprint = -3]
+     *         SQLITE_OMIT_INCRBLOB : IMeasurable  ?
+     *             [ this.footprint = -7]
+     *         SQLITE_OMIT_INTEGRITY_CHECK : IMeasurable  ?
+     *             [ this.footprint = -9]
+     *         SQLITE_OMIT_LIKE_OPTIMIZATION : IMeasurable  ?
+     *             [ this.footprint = -2]
+     *         SQLITE_OMIT_LOAD_EXTENSION : IMeasurable  ?
+     *             [ this.footprint = -3]
+     *         SQLITE_OMIT_LOCALTIME : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_LOOKASIDE : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_MEMORYDB : IMeasurable  ?
+     *             [ this.footprint = -2]
+     *         SQLITE_OMIT_OR_OPTIMIZATION : IMeasurable  ?
+     *             [ this.footprint = -5]
+     *         SQLITE_OMIT_PAGER_PRAGMAS : IMeasurable  ?
+     *             [ this.footprint = -5]
+     *         SQLITE_OMIT_PRAGMA : IMeasurable  ?
+     *             [ this.footprint = -16]
+     *         SQLITE_OMIT_PROGRESS_CALLBACK : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_QUICKBALANCE : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_REINDEX : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_SCHEMA_PRAGMAS : IMeasurable  ?
+     *             [ this.footprint = -2]
+     *         SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS : IMeasurable  ?
+     *             [ this.footprint = -1]
+     *         SQLITE_OMIT_SHARED_CACHE : IMeasurable  ?
+     *             [ this.footprint = -10]
+     *         SQLITE_OMIT_SUBQUERY : IMeasurable  ?
+     *             [ this.footprint = -11]
+     *         SQLITE_OMIT_TCL_VARIABLE : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_OMIT_TEMPDB : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_OMIT_TRACE : IMeasurable  ?
+     *             [ this.footprint = -3]
+     *         SQLITE_OMIT_TRIGGER : IMeasurable  ?
+     *             [ this.footprint = -27]
+     *         SQLITE_OMIT_TRUNCATE_OPTIMIZATION : IMeasurable  ?
+     *             [ this.footprint = 0]
+     *         SQLITE_OMIT_UTF16 : IMeasurable  ?
+     *             [ this.footprint = -8]
+     *         SQLITE_OMIT_VACUUM : IMeasurable  ?
+     *             [ this.footprint = -4]
+     *         SQLITE_OMIT_VIEW : IMeasurable  ?
+     *             [ this.footprint = -3]
+     *         SQLITE_OMIT_VIRTUALTABLE : IMeasurable  ?
+     *             [ this.footprint = -20]
+     *         SQLITE_OMIT_WAL : IMeasurable  ?
+     *             [ this.footprint = -30]
+     *         SQLITE_OMIT_XFER_OPT : IMeasurable  ?
+     *             [ this.footprint = -3]
+     *     SQLITE_DEBUG : IMeasurable  ?
+     *         [ this.footprint = 9]
+     *     SQLITE_MEMDEBUG : IMeasurable  ?
+     *         [ this.footprint = 2]
+     *     total_footprint : integer
+     *         [ total_footprint =  sum IMeasurable.footprint ]
+     *
+     * simpleConfig : SQLite
+     *
+     * << min simpleConfig.total_footprint >>
+     * </pre>
+     */
     @Test(timeout = 60000)
     public void testSqlLite() {
         AstModel model = newModel();

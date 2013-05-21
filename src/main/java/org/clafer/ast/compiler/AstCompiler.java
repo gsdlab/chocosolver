@@ -134,7 +134,7 @@ public class AstCompiler {
                 if (constraint.isHard()) {
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
-                        IrBoolExpr thisConstraint = (IrBoolExpr) constraint.getExpr().accept(expressionCompiler, null);
+                        IrBoolExpr thisConstraint = (IrBoolExpr) expressionCompiler.compile(constraint.getExpr());
                         module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
                     }
                 } else {
@@ -142,7 +142,7 @@ public class AstCompiler {
                     softVars.add(soft);
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
-                        IrBoolExpr thisConstraint = (IrBoolExpr) constraint.getExpr().accept(expressionCompiler, null);
+                        IrBoolExpr thisConstraint = (IrBoolExpr) expressionCompiler.compile(constraint.getExpr());
                         module.addConstraint(implies($(soft), implies(membership.get(clafer)[j], thisConstraint)));
                     }
                 }
@@ -554,7 +554,8 @@ public class AstCompiler {
             if (expr instanceof IrSetExpr) {
                 return setSum((IrSetExpr) expr);
             }
-            throw new IllegalArgumentException();
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
         }
 
         private IrIntExpr[] asInts(IrExpr[] exprs) {
@@ -585,7 +586,7 @@ public class AstCompiler {
             AstSetExpr left = ast.getLeft();
             AstConcreteClafer right = ast.getRight();
 
-            IrExpr $left = left.accept(this, a);
+            IrExpr $left = compile(left);
             if ($left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) $left;
                 switch (getFormat(right)) {
@@ -611,7 +612,7 @@ public class AstCompiler {
             AstSetExpr children = ast.getChildren();
             AstConcreteClafer childrenType = (AstConcreteClafer) types.get(children);
 
-            IrExpr $children = children.accept(this, a);
+            IrExpr $children = compile(children);
             if ($children instanceof IrIntExpr) {
                 // TODO: remove this, and do this as an optimization step
                 if (getScope(childrenType.getParent()) == 1) {
@@ -639,7 +640,7 @@ public class AstCompiler {
             AstSetExpr deref = ast.getDeref();
             AstClafer derefType = types.get(deref);
 
-            IrExpr $deref = deref.accept(this, a);
+            IrExpr $deref = compile(deref);
             if ($deref instanceof IrIntExpr) {
                 IrIntExpr $intDeref = (IrIntExpr) $deref;
                 return element($(refPointers.get(derefType.getRef())), $intDeref);
@@ -654,7 +655,7 @@ public class AstCompiler {
         public IrExpr visit(AstCard ast, Void a) {
             AstSetExpr set = ast.getSet();
 
-            IrSetExpr setExpr = (IrSetExpr) set.accept(this, a);
+            IrSetExpr setExpr = (IrSetExpr) compile(set);
             return card(setExpr);
         }
 
@@ -663,8 +664,8 @@ public class AstCompiler {
             AstSetExpr left = ast.getLeft();
             AstSetExpr right = ast.getRight();
 
-            IrExpr $left = left.accept(this, a);
-            IrExpr $right = right.accept(this, a);
+            IrExpr $left = compile(left);
+            IrExpr $right = compile(right);
 
             if ($left instanceof IrIntExpr && $right instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) $left;
@@ -724,7 +725,7 @@ public class AstCompiler {
         public IrExpr visit(AstUpcast ast, Void a) {
             AstSetExpr base = ast.getBase();
 
-            IrExpr $base = ast.getBase().accept(this, a);
+            IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
                 return add(intBase, $(constant(getOffset(ast.getTarget(), getType(base)))));
@@ -734,7 +735,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstNone ast, Void a) {
-            return equality((IrSetExpr) ast.getSet().accept(this, a), Op.Equal, $(EmptySet));
+            return equality((IrSetExpr) compile(ast.getSet()), Op.Equal, $(EmptySet));
         }
 
         @Override

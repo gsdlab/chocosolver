@@ -5,7 +5,6 @@ import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstEqual;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.clafer.ast.AstAbstractClafer;
@@ -47,8 +46,7 @@ public class CanonicalAnalysis {
         CanonicalVisitor visitor = new CanonicalVisitor(types);
         for (AstClafer clafer : clafers) {
             for (AstConstraint constraint : clafer.getConstraints()) {
-                AstBoolExpr canonicalConstraint = (AstBoolExpr) constraint.getExpr().accept(visitor, null);
-                constraint.setExpr(canonicalConstraint);
+                constraint.setExpr(visitor.canonicalize(constraint.getExpr()));
             }
         }
     }
@@ -101,7 +99,7 @@ public class CanonicalAnalysis {
 
         @Override
         public AstExpr visit(AstJoin ast, Void a) {
-            AstSetExpr left = (AstSetExpr) ast.getLeft().accept(this, a);
+            AstSetExpr left = canonicalize(ast.getLeft());
             AstClafer leftType = getType(ast.getLeft());
             AstConcreteClafer rightType = ast.getRight();
 
@@ -120,34 +118,27 @@ public class CanonicalAnalysis {
 
         @Override
         public AstExpr visit(AstJoinParent ast, Void a) {
-            AstSetExpr children = (AstSetExpr) ast.getChildren().accept(this, a);
-            return joinParent(children);
+            return joinParent(canonicalize(ast.getChildren()));
         }
 
         @Override
         public AstExpr visit(AstJoinRef ast, Void a) {
-            AstSetExpr deref = (AstSetExpr) ast.getDeref().accept(this, a);
-            return joinRef(deref);
+            return joinRef(canonicalize(ast.getDeref()));
         }
 
         @Override
         public AstExpr visit(AstCard ast, Void a) {
-            AstSetExpr set = (AstSetExpr) ast.getSet().accept(this, a);
-            return card(set);
+            return card(canonicalize(ast.getSet()));
         }
 
         @Override
         public AstExpr visit(AstEqual ast, Void a) {
-            AstSetExpr left = (AstSetExpr) ast.getLeft().accept(this, a);
-            AstSetExpr right = (AstSetExpr) ast.getRight().accept(this, a);
-            return equal(left, ast.getOp(), right);
+            return equal(canonicalize(ast.getLeft()), ast.getOp(), canonicalize(ast.getRight()));
         }
 
         @Override
         public AstExpr visit(AstCompare ast, Void a) {
-            AstSetExpr left = (AstSetExpr) ast.getLeft().accept(this, a);
-            AstSetExpr right = (AstSetExpr) ast.getRight().accept(this, a);
-            return compare(left, ast.getOp(), right);
+            return compare(canonicalize(ast.getLeft()), ast.getOp(), canonicalize(ast.getRight()));
         }
 
         @Override
@@ -157,15 +148,12 @@ public class CanonicalAnalysis {
 
         @Override
         public AstExpr visit(AstUpcast ast, Void a) {
-            AstSetExpr base = (AstSetExpr) ast.getBase().accept(this, a);
-            AstAbstractClafer to = ast.getTarget();
-            return upcast(base, to);
+            return upcast(canonicalize(ast.getBase()), ast.getTarget());
         }
 
         @Override
         public AstExpr visit(AstNone ast, Void a) {
-            AstSetExpr set = (AstSetExpr) ast.getSet().accept(this, a);
-            return none(set);
+            return none(canonicalize(ast.getSet()));
         }
 
         @Override
@@ -177,11 +165,9 @@ public class CanonicalAnalysis {
         public AstExpr visit(AstQuantify ast, Void a) {
             List<AstDecl> decls = new ArrayList<AstDecl>();
             for (AstDecl decl : ast.getDecls()) {
-                AstSetExpr body = (AstSetExpr) decl.getBody().accept(this, a);
-                decls.add(decl.withBody(body));
+                decls.add(decl.withBody(canonicalize(decl.getBody())));
             }
-            AstBoolExpr body = (AstBoolExpr) ast.getBody().accept(this, a);
-            return quantify(ast.getQuantifier(), decls.toArray(new AstDecl[decls.size()]), body);
+            return quantify(ast.getQuantifier(), decls.toArray(new AstDecl[decls.size()]), canonicalize(ast.getBody()));
         }
     }
 }

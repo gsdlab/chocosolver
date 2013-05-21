@@ -560,7 +560,7 @@ public class Util {
      * @param <T> the type of the elements
      * @param separator the string to separate each item
      * @param items the items to display
-     * @return the items string form separated by the separatpr
+     * @return the items string form separated by the separator
      */
     public static <T> String intercalate(String separator, T... items) {
         StringBuilder result = new StringBuilder();
@@ -637,14 +637,5 @@ public class Util {
             result.append(buffer, 0, l);
         }
         return result.toString();
-    }
-
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-        BoolVar b1 = VF.bool("b1", solver);
-        BoolVar b2 = VF.bool("b2", solver);
-        IntVar i = VF.enumerated("i", 0, 2, solver);
-
-
     }
 }

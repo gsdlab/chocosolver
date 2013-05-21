@@ -71,8 +71,11 @@ public class PropSetSumN extends Propagator<Variable> {
         int high = kerSum;
         // The number of elements seen in env but not in ker.
         int index = 0;
+        // The size of the set of integers to still choose from.
         int chooseSize = envSize - kerSize;
+        // The [0-lowEnd) integers in env-ker are the lowest integers.
         int lowEnd = Math.min(n, envSize) - kerSize;
+        // The [highStart-choosSize) integers in env-ker are the highest integers.
         int highStart = chooseSize - lowEnd;
         // The n + 1 highest integer, or 0 if not positive.
         int highCandidate = 0;
@@ -93,7 +96,7 @@ public class PropSetSumN extends Propagator<Variable> {
                 }
             }
         }
-
+System.out.println("low: " + low + ", high: "+  high);
         sum.updateLowerBound(low, aCause);
         sum.updateUpperBound(high, aCause);
 
@@ -112,6 +115,7 @@ public class PropSetSumN extends Propagator<Variable> {
                         lowNMinusOne + i > ub) {
                     // With i, it is impossible to stay below the upper bound.
                     // Remove it from the envelope.
+                    System.out.println("remove: " + i);
                     again |= set.removeFromEnvelope(i, aCause);
                 }
                 index++;
@@ -120,13 +124,14 @@ public class PropSetSumN extends Propagator<Variable> {
         for (int i = highChoose.length - 1; i >= 0
                 // Is it possible to leave i out of the kernel?
                 // Replace i with the candidate.
-                && high - i + highCandidate < lb;
+                && high - highChoose[i] + highCandidate < lb;
                 i--) {
             // Without i, it is impossible to reach the lower bound.
             // Add it to the kernel.
-            again |= set.addToKernel(i, aCause);
+            again |= set.addToKernel(highChoose[i], aCause);
         }
         if (again) {
+            // Changed some values, need to repropagate.
             propagate(0, 0);
         }
     }
