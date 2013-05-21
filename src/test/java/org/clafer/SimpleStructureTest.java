@@ -105,31 +105,69 @@ public class SimpleStructureTest {
 
     /**
      * <pre>
-     * Age ->> integer 2
+     * Age ->> integer 2..3
      * </pre>
      */
     @Test(timeout = 60000)
     public void testTopLevelRefs() {
         AstModel model = newModel();
 
-        model.addChild("Age").withCard(2, 2).refTo(IntType);
+        model.addChild("Age").withCard(2, 3).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
-        assertEquals(25, solver.allInstances().length);
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2).toScope());
+        assertEquals(150, solver.allInstances().length);
     }
 
     /**
      * <pre>
-     * Age -> integer 2
+     * Age -> integer 2..3
      * </pre>
      */
     @Test(timeout = 60000)
     public void testTopLevelUniqueRefs() {
         AstModel model = newModel();
 
-        model.addChild("Age").withCard(2, 2).refToUnique(IntType);
+        model.addChild("Age").withCard(2, 3).refToUnique(IntType);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2).toScope());
+        assertEquals(80, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature -> integer
+     * Backup : Feature
+     * Firewall : Feature 1..2
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testAbstractRefs() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature").refTo(IntType);
+        model.addChild("Backup").withCard(1, 1).extending(feature);
+        model.addChild("Firewall").withCard(1, 2).extending(feature);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
-        assertEquals(20, solver.allInstances().length);
+        assertEquals(150, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature ->> integer
+     * Backup : Feature
+     * Firewall : Feature 1..2
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testAbstractUniqueRefs() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature").refToUnique(IntType);
+        model.addChild("Backup").withCard(1, 1).extending(feature);
+        model.addChild("Firewall").withCard(1, 2).extending(feature);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
+        assertEquals(125, solver.allInstances().length);
     }
 }

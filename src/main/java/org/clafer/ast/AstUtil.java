@@ -6,10 +6,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.clafer.common.Check;
 
 /**
  * Various static utility functions for working with AST.
- * 
+ *
  * @author jimmy
  */
 public class AstUtil {
@@ -19,7 +20,7 @@ public class AstUtil {
 
     /**
      * Find all the nested Clafers in no specific order.
-     * 
+     *
      * @param model the Clafer model
      * @return the Clafers in the model
      */
@@ -39,7 +40,7 @@ public class AstUtil {
 
     /**
      * Find all the nested concrete Clafers in no specific order.
-     * 
+     *
      * @param model the Clafer model
      * @return the Clafers in the model excluding the root
      */
@@ -55,43 +56,43 @@ public class AstUtil {
         }
         return clafers;
     }
-    
+
     /**
      * Detects if the Clafer is the implicit root of the model.
-     * 
+     *
      * @param clafer the Clafer
      * @return {@code true} if and only if the Clafer is the root, {@code false}
-     *         otherwise
+     * otherwise
      */
     public static boolean isRoot(AstClafer clafer) {
-       return clafer instanceof AstModel;
+        return clafer instanceof AstModel;
     }
-    
+
     /**
      * Detects if the Clafer is directly under the root.
-     * 
+     *
      * @param clafer the Clafer
-     * @return {@code true} if and only if the Clafer is a top Clafer, {@code false}
-     *         otherwise
+     * @return {@code true} if and only if the Clafer is a top Clafer,
+     * {@code false} otherwise
      */
     public static boolean isTop(AstClafer clafer) {
-       if(clafer instanceof AstConcreteClafer) {
-           AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-           return isRoot(concrete.getParent());
-       }
-       return clafer instanceof AstAbstractClafer;
+        if (clafer instanceof AstConcreteClafer) {
+            AstConcreteClafer concrete = (AstConcreteClafer) clafer;
+            return isRoot(concrete.getParent());
+        }
+        return clafer instanceof AstAbstractClafer;
     }
 
     /**
      * Find the highest non-root Clafer above the supplied one.
-     * 
+     *
      * @param clafer the Clafer
      * @return the highest non-root ancestor
      */
     public static AstClafer getTopParent(AstClafer clafer) {
         if (clafer instanceof AstConcreteClafer) {
             AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-            if(!concrete.hasParent()) {
+            if (!concrete.hasParent()) {
                 throw new IllegalArgumentException("Root does not have a non-root parent.");
             }
             if (!isRoot(concrete.getParent())) {
@@ -103,7 +104,7 @@ public class AstUtil {
 
     /**
      * Find all the Clafers below the supplied one, including itself.
-     * 
+     *
      * @param clafer the Clafer
      * @return the nested Clafers
      */
@@ -124,7 +125,7 @@ public class AstUtil {
     /**
      * Find all the concrete subtypes of the supplied Clafer, including itself
      * if it is concrete.
-     * 
+     *
      * @param clafer the Clafer
      * @return the concrete sub-Clafers.
      */
@@ -149,9 +150,9 @@ public class AstUtil {
     }
 
     /**
-     * 
+     *
      * @param clafer
-     * @return 
+     * @return
      */
     public static List<AstAbstractClafer> getSupers(final AstClafer clafer) {
         List<AstAbstractClafer> supers = new ArrayList<AstAbstractClafer>();
@@ -165,11 +166,11 @@ public class AstUtil {
 
     /**
      * Detects if a set of {@code from} is also a set of {@code to}.
-     * 
+     *
      * @param from the subtype
      * @param to the supertype
      * @return {@code true} if and only if to is a supertype of from,
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
     public static boolean isAssignable(AstClafer from, AstClafer to) {
         return to.equals(from)
@@ -178,12 +179,13 @@ public class AstUtil {
     }
 
     /**
-     * Detects if a set of {@code t1} can share elements with a set of {@code t2}.
-     * 
+     * Detects if a set of {@code t1} can share elements with a set of
+     * {@code t2}.
+     *
      * @param t1 first type
      * @param t2 second type
      * @return {@code true} if and only if the first and second type intersect,
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
     public static boolean hasNonEmptyIntersectionType(AstClafer t1, AstClafer t2) {
         if (t1.equals(t2)) {
@@ -201,15 +203,16 @@ public class AstUtil {
     }
 
     /**
-     * Detects if the union type is fully covered by the partitions. For example,
+     * Detects if the union type is fully covered by the partitions. For
+     * example,
      * {@code isUnionType(Animal, Arrays.asList(Primate, Human, Dolphin))} would
      * return {@code true} if and only if primates, humans, and dolphins are the
      * only animals. If humans are primates, the result would still hold.
-     * 
+     *
      * @param union the union type
      * @param partitions the partition of the union type
      * @return {@code true} if and only if the partitions fully cover the union
-     *         type, {@code false} otherwise
+     * type, {@code false} otherwise
      */
     public static boolean isUnionType(AstClafer union, Collection<AstClafer> partitions) {
         Set<AstConcreteClafer> unionSubs = new HashSet<AstConcreteClafer>();
@@ -223,17 +226,18 @@ public class AstUtil {
 
     /**
      * Find the reference belonging to the Clafer or the reference it inherited.
-     * 
+     *
      * @param clafer the Clafer
      * @return the reference, or {@code null} if none exist
      */
     public static AstRef getInheritedRef(AstClafer clafer) {
-        if (clafer.hasRef()) {
-            return clafer.getRef();
-        }
-        if (clafer.hasSuperClafer()) {
-            return getInheritedRef(clafer.getSuperClafer());
-        }
+        AstClafer superClafer = Check.notNull(clafer);
+        do {
+            if (superClafer.hasRef()) {
+                return superClafer.getRef();
+            }
+            superClafer = superClafer.getSuperClafer();
+        } while (superClafer != null);
         return null;
     }
 }

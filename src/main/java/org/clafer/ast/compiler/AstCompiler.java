@@ -26,6 +26,7 @@ import org.clafer.ir.IrSetExpr;
 import org.clafer.common.Util;
 import org.clafer.ir.IrBoolVar;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.ast.scope.Scope;
@@ -193,9 +194,23 @@ public class AstCompiler {
             IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
             module.addConstraint(intChannel($(parents), Util.snoc(childSet, $(unused))));
         }
-        if (clafer.hasRef()) {
-            AstRef ref = clafer.getRef();
-            IrIntVar[] refs = refPointers.get(ref);
+        AstClafer superClafer = clafer;
+        AstRef ref = null;
+        int refOffset = 0;
+        do {
+            if (superClafer.hasRef()) {
+                ref = superClafer.getRef();
+                break;
+            }
+            if (superClafer.hasSuperClafer()) {
+                refOffset += getOffset(superClafer.getSuperClafer(), superClafer);
+            }
+            superClafer = superClafer.getSuperClafer();
+        } while (superClafer != null);
+
+        if (ref != null) {
+            IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
+                    refOffset, refOffset + getScope(clafer));
             if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
                 if (AstUtil.isTop(clafer)) {
                     if (clafer.getCard().isExact()) {
@@ -222,12 +237,11 @@ public class AstCompiler {
                         }
                     }
                 }
-            } else {
-                IrBoolExpr[] members = membership.get(clafer);
-                assert refs.length == members.length;
-                for (int i = 0; i < members.length; i++) {
-                    module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
-                }
+            }
+            IrBoolExpr[] members = membership.get(clafer);
+            assert refs.length == members.length;
+            for (int i = 0; i < members.length; i++) {
+                module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
             }
         }
         /**
@@ -511,7 +525,15 @@ public class AstCompiler {
     }
 
     private void constrainAbstract(AstAbstractClafer clafer) {
-        // Do nothing
+//        if(clafer.hasRef()) {
+//            AstRef ref = clafer.getRef();
+//            IrIntVar[] refs = refPointers.get(ref);
+//            IrBoolExpr[] members = membership.get(clafer);
+//            assert refs.length == members.length;
+//            for (int i = 0; i < members.length; i++) {
+//                module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
+//            }
+//        }
     }
     private final ReadWriteHashMap<AstClafer, IrSetExpr> set = new ReadWriteHashMap<AstClafer, IrSetExpr>();
     private final ReadWriteHashMap<AstClafer, IrSetVar[]> childrenSet = new ReadWriteHashMap<AstClafer, IrSetVar[]>();
