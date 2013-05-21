@@ -20,8 +20,8 @@ public class FeatureModelTest {
     public void testSmallFeatureModel() {
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("feature");
-        AstConcreteClafer footprint = feature.addChild("footprint").withCard(1, 1).refTo(IntType);
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer footprint = feature.addChild("Footprint").withCard(1, 1).refTo(IntType);
 
         int n = 50;
         for (int i = 0; i < n; i++) {
@@ -35,7 +35,7 @@ public class FeatureModelTest {
     }
 
     /**
-     * Adapated from Scalable Prediction of Non-functional Properties in
+     * Adapted from Scalable Prediction of Non-functional Properties in
      * Software Product Lines. Scaled down by dividing numbers by 2000 and
      * rounding.
      * 

@@ -16,6 +16,12 @@ import org.junit.Test;
  */
 public class SimpleConstraintModelTest {
 
+    /**
+     * <pre>
+     * Age ->> integer 2
+     * [Age.ref = 3]
+     * </pre>
+     */
     @Test
     public void testGlobal() {
         AstModel model = newModel();
@@ -27,6 +33,14 @@ public class SimpleConstraintModelTest {
         assertEquals(1, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * Person
+     *     Hand *
+     *         Finger *
+     *     [#this.Hand.Finger = 3]
+     * </pre>
+     */
     @Test
     public void testVariableJoin() {
         AstModel model = newModel();
@@ -40,6 +54,10 @@ public class SimpleConstraintModelTest {
         assertEquals(6, solver.allInstances().length);
     }
 
+    /**
+     * Age ->> integer 2
+     *     [this.ref = 3]
+     */
     @Test
     public void testFixedJoinRef() {
         AstModel model = newModel();
@@ -51,6 +69,16 @@ public class SimpleConstraintModelTest {
         assertEquals(1, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost -> integer
+     * Backup : Feature ?
+     *     [this.cost.ref = 3]
+     * Firewall : Feature ?
+     *     [this.cost.ref = 5]
+     * </pre>
+     */
     @Test
     public void testFixedJoinAndJoinRefOverAbstract() {
         AstModel model = newModel();
@@ -66,6 +94,13 @@ public class SimpleConstraintModelTest {
         assertEquals(4, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * Feature ?
+     *     Cost -> integer ?
+     *     [this.cost.ref = 3]
+     * </pre>
+     */
     @Test
     public void testMaybeJoinRef() {
         AstModel model = newModel();
@@ -78,6 +113,13 @@ public class SimpleConstraintModelTest {
         assertEquals(2, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * Feature
+     *     Cost ->> integer 2..3
+     *     [this.cost.ref = 5]
+     * </pre>
+     */
     @Test
     public void testJoinRefSingleValue() {
         AstModel model = newModel();

@@ -15,6 +15,13 @@ import org.junit.Test;
  */
 public class SymmetryBreakingTest {
 
+    /**
+     * <pre>
+     * Patron 2
+     *     Food 1..2
+     *     Drink 1..2
+     * </pre>
+     */
     @Test
     public void breakChildrenSwap() {
         AstModel model = Asts.newModel();
@@ -29,6 +36,12 @@ public class SymmetryBreakingTest {
     }
 
     /**
+     * <pre>
+     * Patron 2
+     *     Food +
+     *         Cheese *
+     * </pre>
+     * 
      * Currently fails.
      */
     @Test

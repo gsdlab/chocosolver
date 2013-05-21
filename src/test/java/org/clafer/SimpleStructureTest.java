@@ -16,6 +16,18 @@ import org.junit.Test;
  */
 public class SimpleStructureTest {
 
+    /**
+     * <pre>
+     * abstract Object
+     *     Name ?
+     * abstract Animal : Object
+     *     Tail ?
+     * abstract Primate : Animal
+     *     Bipedal ?
+     * Human : Primate
+     * Beaver : Animal
+     * </pre>
+     */
     @Test(timeout = 60000)
     public void testMultiLevelAbstract() {
         AstModel model = newModel();
@@ -36,6 +48,14 @@ public class SimpleStructureTest {
         assertEquals(32, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * xor Type
+     *     Car ?
+     *     Truck ?
+     *     Van ?
+     * </pre>
+     */
     @Test(timeout = 60000)
     public void testGroupCardinality() {
         AstModel model = newModel();
@@ -49,6 +69,12 @@ public class SimpleStructureTest {
         assertEquals(3, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * Person
+     *     Age ->> integer 2
+     * </pre>
+     */
     @Test(timeout = 60000)
     public void testRefs() {
         AstModel model = newModel();
@@ -60,6 +86,12 @@ public class SimpleStructureTest {
         assertEquals(25, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * Person
+     *     Age -> integer 2
+     * </pre>
+     */
     @Test(timeout = 60000)
     public void testUniqueRefs() {
         AstModel model = newModel();
@@ -71,6 +103,11 @@ public class SimpleStructureTest {
         assertEquals(20, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * Age ->> integer 2
+     * </pre>
+     */
     @Test(timeout = 60000)
     public void testTopLevelRefs() {
         AstModel model = newModel();
@@ -81,6 +118,11 @@ public class SimpleStructureTest {
         assertEquals(25, solver.allInstances().length);
     }
 
+    /**
+     * <pre>
+     * Age -> integer 2
+     * </pre>
+     */
     @Test(timeout = 60000)
     public void testTopLevelUniqueRefs() {
         AstModel model = newModel();

@@ -8,10 +8,6 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.search.loop.monitors.SearchMonitorFactory;
-import solver.search.strategy.IntStrategyFactory;
-import solver.variables.IntVar;
-import solver.variables.Variable;
 
 /**
  *
@@ -101,29 +97,6 @@ public class ArithmeticModelTest {
                 sub(joinRef(join($this(), profit)), constant(2))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3).toScope());
-//        IntVar cost1 = null;
-//        IntVar cost2 = null;
-//        IntVar profit1 = null;
-//        IntVar profit2 = null;
-//        for (Variable v : solver.solver.getVars()) {
-//            if (v.getName().equals("Cost@Ref0")) {
-//                cost1 = (IntVar) v;
-//            } else if (v.getName().equals("Cost@Ref1")) {
-//                cost2 = (IntVar) v;
-//            } else if (v.getName().equals("Profit@Ref0")) {
-//                profit1 = (IntVar) v;
-//            } else if (v.getName().equals("Profit@Ref1")) {
-//                profit2 = (IntVar) v;
-//            }
-//        }
-//        solver.solver.set(IntStrategyFactory.firstFail_InDomainMin(
-//                new IntVar[]{profit1, profit2, cost2, cost1}));
-//        SearchMonitorFactory.log(solver.solver, true, true);
-//        int count = 0;
-//        while(solver.find()) {
-//            count ++;
-//        }
-//        assertEquals(106, count);
         assertEquals(106, solver.allInstances().length);
     }
 }
