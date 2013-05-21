@@ -21,7 +21,7 @@ public class SimpleConstraintModelTest {
         AstModel model = newModel();
 
         AstConcreteClafer age = model.addChild("Age").withCard(2, 2).refTo(IntType);
-        age.addConstraint(equal(joinRef(global(age)), constant(3)));
+        model.addConstraint(equal(joinRef(global(age)), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(1, solver.allInstances().length);
