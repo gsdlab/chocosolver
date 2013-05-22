@@ -29,51 +29,51 @@ public class Asts {
         return new AstConstant(value);
     }
 
-    public static AstJoin join(AstSetExpr left, AstConcreteClafer right) {
+    public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
         return new AstJoin(left, right);
     }
 
-    public static AstJoinParent joinParent(AstSetExpr children) {
+    public static AstSetExpr joinParent(AstSetExpr children) {
         return new AstJoinParent(children);
     }
 
-    public static AstJoinRef joinRef(AstSetExpr deref) {
+    public static AstSetExpr joinRef(AstSetExpr deref) {
         return new AstJoinRef(deref);
     }
 
-    public static AstCard card(AstSetExpr set) {
+    public static AstSetExpr card(AstSetExpr set) {
         return new AstCard(set);
     }
 
-    public static AstEqual equal(AstSetExpr left, AstEqual.Op op, AstSetExpr right) {
+    public static AstBoolExpr equal(AstSetExpr left, AstEqual.Op op, AstSetExpr right) {
         return new AstEqual(left, op, right);
     }
 
-    public static AstEqual equal(AstSetExpr left, AstSetExpr right) {
+    public static AstBoolExpr equal(AstSetExpr left, AstSetExpr right) {
         return equal(left, AstEqual.Op.Equal, right);
     }
 
-    public static AstEqual notEqual(AstSetExpr left, AstSetExpr right) {
+    public static AstBoolExpr notEqual(AstSetExpr left, AstSetExpr right) {
         return equal(left, AstEqual.Op.NotEqual, right);
     }
 
-    public static AstCompare compare(AstSetExpr left, AstCompare.Op op, AstSetExpr right) {
+    public static AstBoolExpr compare(AstSetExpr left, AstCompare.Op op, AstSetExpr right) {
         return new AstCompare(left, op, right);
     }
 
-    public static AstCompare lessThan(AstSetExpr left, AstSetExpr right) {
+    public static AstBoolExpr lessThan(AstSetExpr left, AstSetExpr right) {
         return compare(left, AstCompare.Op.LessThan, right);
     }
 
-    public static AstCompare lessThanEqual(AstSetExpr left, AstSetExpr right) {
+    public static AstBoolExpr lessThanEqual(AstSetExpr left, AstSetExpr right) {
         return compare(left, AstCompare.Op.LessThanEqual, right);
     }
 
-    public static AstCompare greaterThan(AstSetExpr left, AstSetExpr right) {
+    public static AstBoolExpr greaterThan(AstSetExpr left, AstSetExpr right) {
         return compare(left, AstCompare.Op.GreaterThan, right);
     }
 
-    public static AstCompare greaterThanEqual(AstSetExpr left, AstSetExpr right) {
+    public static AstBoolExpr greaterThanEqual(AstSetExpr left, AstSetExpr right) {
         return compare(left, AstCompare.Op.GreaterThanEqual, right);
     }
 
@@ -100,11 +100,30 @@ public class Asts {
         return arithm(AstArithm.Op.Div, divisors);
     }
 
-    public static AstUpcast upcast(AstSetExpr base, AstAbstractClafer target) {
+    public static AstSetExpr setArithm(AstSetArithm.Op op, AstSetExpr... operands) {
+        if (operands.length == 1) {
+            return operands[0];
+        }
+        return new AstSetArithm(op, operands);
+    }
+
+    public static AstSetExpr setUnion(AstSetExpr... addends) {
+        return setArithm(AstSetArithm.Op.Union, addends);
+    }
+
+    public static AstSetExpr setDiff(AstSetExpr... addends) {
+        return setArithm(AstSetArithm.Op.Difference, addends);
+    }
+
+    public static AstSetExpr setInter(AstSetExpr... addends) {
+        return setArithm(AstSetArithm.Op.Intersection, addends);
+    }
+
+    public static AstSetExpr upcast(AstSetExpr base, AstAbstractClafer target) {
         return new AstUpcast(base, target);
     }
 
-    public static AstNone none(AstSetExpr set) {
+    public static AstBoolExpr none(AstSetExpr set) {
         return new AstNone(set);
     }
 

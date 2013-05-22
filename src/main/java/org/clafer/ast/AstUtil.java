@@ -150,12 +150,31 @@ public class AstUtil {
     }
 
     /**
+     * Finds all the supertypes of the Clafer in order of lowest to highest.
      *
-     * @param clafer
-     * @return
+     * @param clafer the Clafer
+     * @return the supertypes
      */
     public static List<AstAbstractClafer> getSupers(final AstClafer clafer) {
         List<AstAbstractClafer> supers = new ArrayList<AstAbstractClafer>();
+        AstAbstractClafer sup = clafer.getSuperClafer();
+        while (sup != null) {
+            supers.add(sup);
+            sup = sup.getSuperClafer();
+        }
+        return supers;
+    }
+
+    /**
+     * Finds the supertype hierarchy of the Clafer. Equivalent to the Haskell
+     * code {@code clafer : getSupers clafer}.
+     *
+     * @param clafer the Clafer
+     * @return the supertype hierarchy
+     */
+    public static List<AstClafer> getSuperHierarchy(final AstClafer clafer) {
+        List<AstClafer> supers = new ArrayList<AstClafer>();
+        supers.add(clafer);
         AstAbstractClafer sup = clafer.getSuperClafer();
         while (sup != null) {
             supers.add(sup);
@@ -214,7 +233,7 @@ public class AstUtil {
      * @return {@code true} if and only if the partitions fully cover the union
      * type, {@code false} otherwise
      */
-    public static boolean isUnionType(AstClafer union, Collection<AstClafer> partitions) {
+    public static boolean isUnionType(AstClafer union, AstClafer[] partitions) {
         Set<AstConcreteClafer> unionSubs = new HashSet<AstConcreteClafer>();
         getConcreteSubs(union, unionSubs);
         Set<AstConcreteClafer> partitionSubs = new HashSet<AstConcreteClafer>();
@@ -222,6 +241,37 @@ public class AstUtil {
             getConcreteSubs(partition, partitionSubs);
         }
         return unionSubs.equals(partitionSubs);
+    }
+
+    private static List<AstClafer> getUnionTypeHierarchy(
+            List<AstClafer> typeHierarchy1, List<AstClafer> typeHierarchy2) {
+        if (typeHierarchy1.size() > typeHierarchy2.size()) {
+            return getUnionTypeHierarchy(typeHierarchy2, typeHierarchy1);
+        }
+        for (int i = typeHierarchy1.size() ; i > 0; i--) {
+            if(!typeHierarchy1.get(i - 1).equals(typeHierarchy2.get(i - 1))) {
+                return typeHierarchy1.subList(i, typeHierarchy1.size());
+            }
+        }
+        return typeHierarchy1;
+    }
+
+    /**
+     * Finds the lowest common supertype or null if none.
+     *
+     * @param partitions the partitions of the union type
+     * @return the lowest common supertype of {@code partitions}
+     */
+    public static AstClafer getUnionType(AstClafer[] partitions) {
+        List<AstClafer> supers = getSuperHierarchy(partitions[0]);
+        for (int i = 1; i < partitions.length; i++) {
+            List<AstClafer> otherSupers = getSuperHierarchy(partitions[i]);
+            supers = getUnionTypeHierarchy(supers, otherSupers);
+            if(supers.isEmpty()) {
+                return null;
+            }
+        }
+        return supers.get(0);
     }
 
     /**

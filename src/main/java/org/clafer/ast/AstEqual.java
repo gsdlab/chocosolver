@@ -3,9 +3,10 @@ package org.clafer.ast;
 import org.clafer.common.Check;
 
 /**
- *
+ * TODO: Rename
  * @author jimmy
  */
+@Deprecated
 public class AstEqual implements AstBoolExpr {
 
     private final AstSetExpr left;

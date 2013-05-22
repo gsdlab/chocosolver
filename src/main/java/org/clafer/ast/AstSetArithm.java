@@ -7,12 +7,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstArithm implements AstSetExpr {
+public class AstSetArithm implements AstSetExpr {
 
     private final Op op;
     private final AstSetExpr[] operands;
 
-    AstArithm(Op op, AstSetExpr[] operands) {
+    AstSetArithm(Op op, AstSetExpr[] operands) {
         this.op = Check.notNull(op);
         this.operands = Check.noNullsNotEmpty(operands);
     }
@@ -32,8 +32,8 @@ public class AstArithm implements AstSetExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof AstArithm) {
-            AstArithm other = (AstArithm) obj;
+        if (obj instanceof AstSetArithm) {
+            AstSetArithm other = (AstSetArithm) obj;
             return op.equals(other.op) && Arrays.equals(operands, other.operands);
         }
         return false;
@@ -46,10 +46,9 @@ public class AstArithm implements AstSetExpr {
 
     public static enum Op {
 
-        Add("+"),
-        Sub("-"),
-        Mul("*"),
-        Div("/");
+        Union("++"),
+        Difference("--"),
+        Intersection("&");
         private final String syntax;
 
         private Op(String syntax) {

@@ -880,7 +880,7 @@ public class Irs {
             for (int i = 0; i < to.length; i++) {
                 to[i] = children[constant[i]];
             }
-            return union(to);
+            return setUnion(to);
         }
 
         // Compute env
@@ -985,7 +985,7 @@ public class Irs {
         return new IrJoinRef(take, refs, env, ker, card);
     }
 
-    public static IrSetExpr union(IrSetExpr... operands) {
+    public static IrSetExpr setUnion(IrSetExpr... operands) {
         switch (operands.length) {
             case 0:
                 return $(EmptySet);

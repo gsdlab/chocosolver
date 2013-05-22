@@ -1,5 +1,6 @@
 package org.clafer.graph;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.clafer.common.Check;
@@ -7,6 +8,7 @@ import org.clafer.common.Check;
 /**
  * A mutable directed vertex.
  * 
+ * @param <V> the type of the data
  * @author jimmy
  */
 public class Vertex<V> {
@@ -34,7 +36,7 @@ public class Vertex<V> {
      * @return the neighbours of this vertex
      */
     public Set<Vertex<V>> getNeighbours() {
-        return neighbours;
+        return Collections.unmodifiableSet(neighbours);
     }
 
     /**

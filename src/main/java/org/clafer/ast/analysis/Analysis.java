@@ -12,7 +12,7 @@ import org.clafer.ast.Card;
 
 /**
  * Analyzes and optimizes the AST.
- * 
+ *
  * @author jimmy
  */
 public class Analysis {
@@ -47,8 +47,6 @@ public class Analysis {
     public static Analysis analyze(AstModel model, Scope scope) {
         Check.notNull(model);
         Check.notNull(scope);
-        Map<AstExpr, AstClafer> types = TypeAnalysis.analyze(model);
-        CanonicalAnalysis.analyze(model, types);
 
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
 
@@ -62,7 +60,7 @@ public class Analysis {
         Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, offsets);
 
         // Reanalyze types.
-        types = TypeAnalysis.analyze(model);
+        Map<AstExpr, AstClafer> types = TypeAnalysis.analyze(model);
         Map<AstRef, int[][]> partialInts = PartialIntAnalysis.analyze(model, partialSolutions, offsets, optimizedScope);
 
         return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, types);

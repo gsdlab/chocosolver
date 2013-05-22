@@ -1,7 +1,8 @@
 package org.clafer;
 
+import java.util.Arrays;
+import java.util.List;
 import org.clafer.common.Util;
-import java.util.Random;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -11,36 +12,53 @@ import org.junit.Test;
  */
 public class UtilTest {
 
-    private final Random rand = new Random();
-
-    @Test
-    public void testGcd() {
-        for (int repeat = 0; repeat < 100; repeat++) {
-            int a = Math.abs(rand.nextInt());
-            int b = Math.abs(rand.nextInt());
-            if (a == 0) {
-                a = 1;
-            }
-            if (b == 0) {
-                b = 1;
-            }
-            int gcd = Util.gcd(a, b);
-            assertEquals(0, a % gcd);
-            assertEquals(0, b % gcd);
-            assertEquals(1, Util.gcd(a / gcd, b / gcd));
-        }
+    private static List<Integer> list(Integer... items) {
+        return Arrays.asList(items);
     }
 
     @Test
-    public void testShiftLeft() {
-        for (int repeat = 0; repeat < 100000; repeat++) {
-            int[] array = Util.range(0, rand.nextInt(50) );
-            int shift = rand.nextInt(array.length);
-            Util.shiftLeft(array, shift);
+    public void testTakeUntil() {
+        assertEquals(Util.takeUntil(1, list(1, 2, 3, 4, 2)), list(1));
+        assertEquals(Util.takeUntil(2, list(1, 2, 3, 4, 2)), list(1, 2));
+        assertEquals(Util.takeUntil(3, list(1, 2, 3, 4, 2)), list(1, 2, 3));
+        assertEquals(Util.takeUntil(4, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4));
+        assertEquals(Util.takeUntil(5, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4, 2));
+    }
 
-            for (int i = 0; i < array.length; i++) {
-                assertEquals((i + shift) % array.length, array[i]);
-            }
-        }
+    @Test
+    public void testDropUntil() {
+        assertEquals(Util.dropUntil(1, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4, 2));
+        assertEquals(Util.dropUntil(2, list(1, 2, 3, 4, 2)), list(2, 3, 4, 2));
+        assertEquals(Util.dropUntil(3, list(1, 2, 3, 4, 2)), list(3, 4, 2));
+        assertEquals(Util.dropUntil(4, list(1, 2, 3, 4, 2)), list(4, 2));
+        assertEquals(Util.dropUntil(5, list(1, 2, 3, 4, 2)), list());
+    }
+
+    @Test
+    public void testStartsWith() {
+        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list()));
+        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1)));
+        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2)));
+        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3)));
+        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4)));
+        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2)));
+
+        assertFalse(Util.startsWith(list(1, 2, 3, 4, 2), list(2)));
+        assertFalse(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 3)));
+        assertFalse(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2, 3)));
+    }
+
+    @Test
+    public void testEndsWith() {
+        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list()));
+        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(2)));
+        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(4, 2)));
+        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(3, 4, 2)));
+        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(2, 3, 4, 2)));
+        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2)));
+
+        assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(1)));
+        assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(2, 4, 2)));
+        assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(1, 1, 2, 3, 4, 2)));
     }
 }

@@ -55,8 +55,7 @@ public class SimpleConstraintModelTest {
     }
 
     /**
-     * Age ->> integer 2
-     *     [this.ref = 3]
+     * Age ->> integer 2 [this.ref = 3]
      */
     @Test
     public void testFixedJoinRef() {
@@ -74,9 +73,9 @@ public class SimpleConstraintModelTest {
      * abstract Feature
      *     Cost -> integer
      * Backup : Feature ?
-     *     [this.cost.ref = 3]
+     *     [this.Cost.ref = 3]
      * Firewall : Feature ?
-     *     [this.cost.ref = 5]
+     *     [this.Cost.ref = 5]
      * </pre>
      */
     @Test
@@ -96,9 +95,88 @@ public class SimpleConstraintModelTest {
 
     /**
      * <pre>
+     * abstract Product
+     *     Cost -> integer
+     * abstract Feature : Product
+     * Backup : Feature ?
+     *     [this.Cost.ref = 3]
+     * Firewall : Feature ?
+     *     [this.Cost.ref = 5]
+     * </pre>
+     */
+    @Test
+    public void testFixedJoinAndJoinRefOverMultipleAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer product = model.addAbstractClafer("Product");
+        AstConcreteClafer cost = product.addChild("Cost").withCard(1, 1).refToUnique(IntType);
+        AstAbstractClafer feature = model.addAbstractClafer("Feature").extending(product);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(0, 1).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        backup.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
+        firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 2..3
+     * [Backup.Cost.ref = 3]
+     * Firewall : Feature ?
+     *     [this.Cost.ref = 5]
+     * </pre>
+     */
+    @Test
+    public void testVariableJoinAndJoinRefOverAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
+        firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Product
+     *     Cost ->> integer
+     * abstract Feature : Product
+     * Backup : Feature 2..3
+     * [Backup.Cost.ref = 3]
+     * Firewall : Feature ?
+     *     [this.Cost.ref = 5]
+     * </pre>
+     */
+    @Test
+    public void testVariableJoinAndJoinRefOverMultipleAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer product = model.addAbstractClafer("Product");
+        AstConcreteClafer cost = product.addChild("Cost").withCard(1, 1).refToUnique(IntType);
+        AstAbstractClafer feature = model.addAbstractClafer("Feature").extending(product);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
+        firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * Feature ?
      *     Cost -> integer ?
-     *     [this.cost.ref = 3]
+     *     [this.Cost.ref = 3]
      * </pre>
      */
     @Test
@@ -117,7 +195,7 @@ public class SimpleConstraintModelTest {
      * <pre>
      * Feature
      *     Cost ->> integer 2..3
-     *     [this.cost.ref = 5]
+     *     [this.Cost.ref = 5]
      * </pre>
      */
     @Test

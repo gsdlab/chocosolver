@@ -43,6 +43,7 @@ import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstSetArithm;
 import org.clafer.ast.Card;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
@@ -144,7 +145,7 @@ public class AstCompiler {
                 AstConstraint constraint = constraints.get(i);
                 if (constraint.isHard()) {
                     for (int j = 0; j < scope; j++) {
-                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
+                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
                         IrBoolExpr thisConstraint = (IrBoolExpr) expressionCompiler.compile(constraint.getExpr());
                         module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
                     }
@@ -152,7 +153,7 @@ public class AstCompiler {
                     IrBoolVar soft = bool("Constraint#" + i + " under " + clafer + i);
                     softVars.add(soft);
                     for (int j = 0; j < scope; j++) {
-                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
+                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
                         IrBoolExpr thisConstraint = (IrBoolExpr) expressionCompiler.compile(constraint.getExpr());
                         module.addConstraint(implies($(soft), implies(membership.get(clafer)[j], thisConstraint)));
                     }
@@ -402,7 +403,7 @@ public class AstCompiler {
 
         IrSetVar[] childSet = skipCards(clafer);
         childrenSet.put(clafer, childSet);
-        set.put(clafer, union($(childSet)));
+        set.put(clafer, setUnion($(childSet)));
 
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         for (int i = 0; i < members.length; i++) {
@@ -472,7 +473,7 @@ public class AstCompiler {
         }
 
         childrenSet.put(clafer, children);
-        set.put(clafer, union($(children)));
+        set.put(clafer, setUnion($(children)));
 
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         IrBoolExpr[] parentMembership = membership.get(clafer.getParent());
@@ -544,11 +545,9 @@ public class AstCompiler {
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 
         private final int thisId;
-        private final Map<AstExpr, AstClafer> types;
 
-        private ExpressionCompiler(AstClafer thisType, int thisId) {
+        private ExpressionCompiler(int thisId) {
             this.thisId = thisId;
-            this.types = TypeAnalysis.analyze(thisType);
         }
 
         private IrExpr compile(AstExpr expr) {
@@ -580,6 +579,25 @@ public class AstCompiler {
                 ints[i] = asInt(exprs[i]);
             }
             return ints;
+        }
+
+        private IrSetExpr asSet(IrExpr expr) {
+            if (expr instanceof IrIntExpr) {
+                return singleton((IrIntExpr) expr);
+            }
+            if (expr instanceof IrSetExpr) {
+                return (IrSetExpr) expr;
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
+
+        private IrSetExpr[] asSets(IrExpr[] exprs) {
+            IrSetExpr[] sets = new IrSetExpr[exprs.length];
+            for (int i = 0; i < sets.length; i++) {
+                sets[i] = asSet(exprs[i]);
+            }
+            return sets;
         }
 
         @Override
@@ -626,7 +644,7 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstJoinParent ast, Void a) {
             AstSetExpr children = ast.getChildren();
-            AstConcreteClafer childrenType = (AstConcreteClafer) types.get(children);
+            AstConcreteClafer childrenType = (AstConcreteClafer) getType(children);
 
             IrExpr $children = compile(children);
             if ($children instanceof IrIntExpr) {
@@ -654,7 +672,7 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstJoinRef ast, Void a) {
             AstSetExpr deref = ast.getDeref();
-            AstClafer derefType = types.get(deref);
+            AstClafer derefType = getType(deref);
 
             IrExpr $deref = compile(deref);
             if ($deref instanceof IrIntExpr) {
@@ -732,6 +750,19 @@ public class AstCompiler {
                         quotient = div(quotient, operands[i]);
                     }
                     return quotient;
+                default:
+                    throw new AstException();
+            }
+        }
+
+        @Override
+        public IrExpr visit(AstSetArithm ast, Void a) {
+            IrSetExpr[] operands = asSets(compile(ast.getOperands()));
+            switch (ast.getOp()) {
+                case Union:
+                    return setUnion(operands);
+                case Difference:
+                case Intersection:
                 default:
                     throw new AstException();
             }

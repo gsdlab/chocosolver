@@ -9,6 +9,7 @@ import org.clafer.ast.AstGlobal;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
@@ -27,6 +28,8 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNone;
 import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
+import org.clafer.ast.AstSetArithm;
+import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
@@ -47,22 +50,14 @@ public class TypeAnalysis {
         for (AstClafer clafer : AstUtil.getClafers(model)) {
             TypeVisitor visitor = new TypeVisitor(clafer, types);
             for (AstConstraint constraint : clafer.getConstraints()) {
-                visitor.typeCheck(constraint.getExpr());
+                TypedExpr<AstBoolExpr> expr = visitor.typeCheck(constraint.getExpr());
+                constraint.setExpr(expr.getExpr());
             }
         }
         return types;
     }
 
-    public static Map<AstExpr, AstClafer> analyze(AstClafer clafer) {
-        Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
-        TypeVisitor visitor = new TypeVisitor(clafer, types);
-        for (AstConstraint constraint : clafer.getConstraints()) {
-            visitor.typeCheck(constraint.getExpr());
-        }
-        return types;
-    }
-
-    private static class TypeVisitor implements AstExprVisitor<Void, AstClafer> {
+    private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {
 
         private final AstClafer context;
         private final Map<AstExpr, AstClafer> types;
@@ -72,164 +67,250 @@ public class TypeAnalysis {
             this.types = typeMap;
         }
 
-        private AstClafer typeCheck(AstExpr expr) {
-            return expr.accept(this, null);
+        private <T extends AstExpr> TypedExpr<T> typeCheck(T expr) {
+            @SuppressWarnings("unchecked")
+            TypedExpr<T> typedExpr = (TypedExpr<T>) expr.accept(this, null);
+            return typedExpr;
         }
 
-        private AstClafer[] typeCheck(AstExpr[] exprs) {
-            AstClafer[] typeChecked = new AstClafer[exprs.length];
+        private <T extends AstExpr> TypedExpr<T>[] typeCheck(T[] exprs) {
+            @SuppressWarnings("unchecked")
+            TypedExpr<T>[] typeChecked = new TypedExpr[exprs.length];
             for (int i = 0; i < exprs.length; i++) {
                 typeChecked[i] = typeCheck(exprs[i]);
             }
             return typeChecked;
         }
 
-        AstClafer put(AstClafer type, AstExpr expression) {
-            types.put(expression, type);
-            return type;
+        /**
+         * Multilevel upcast.
+         *
+         * @param expr the expression
+         * @param target the target type
+         * @return the same expression but with the target type or {@code null}
+         * if the upcast is illegal
+         */
+        private TypedExpr<AstSetExpr> upcastTo(TypedExpr<AstSetExpr> expr, AstClafer target) {
+            AstClafer exprType = expr.getType();
+            if (exprType.equals(target)) {
+                return expr;
+            }
+            AstSetExpr superExpr = expr.getExpr();
+            List<AstAbstractClafer> superTypes = AstUtil.getSupers(exprType);
+            for (AstAbstractClafer superType : superTypes) {
+                superExpr = upcast(superExpr, superType);
+                TypedExpr<AstSetExpr> typedSuper = put(superType, superExpr);
+                if (superType.equals(target)) {
+                    return typedSuper;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Multilevel upcast.
+         *
+         * @param exprs the expressions
+         * @param target the target type
+         * @return the same expressions but with the target type or {@code null}
+         * if the upcast is illegal
+         */
+        private TypedExpr<AstSetExpr>[] upcastTo(TypedExpr<AstSetExpr>[] exprs, AstClafer target) {
+            @SuppressWarnings("unchecked")
+            TypedExpr<AstSetExpr>[] upcasts = new TypedExpr[exprs.length];
+            for (int i = 0; i < upcasts.length; i++) {
+                TypedExpr<AstSetExpr> upcast = upcastTo(exprs[i], target);
+                if (upcast == null) {
+                    return null;
+                }
+                upcasts[i] = upcast;
+            }
+            return upcasts;
+        }
+
+        private <T extends AstExpr> TypedExpr<T> put(AstClafer type, T expr) {
+            types.put(expr, type);
+            return new TypedExpr<T>(type, expr);
         }
 
         @Override
-        public AstClafer visit(AstThis ast, Void a) {
+        public TypedExpr<AstThis> visit(AstThis ast, Void a) {
             return put(context, ast);
         }
 
         @Override
-        public AstClafer visit(AstGlobal ast, Void a) {
+        public TypedExpr<AstGlobal> visit(AstGlobal ast, Void a) {
             return put(ast.getType(), ast);
         }
 
         @Override
-        public AstClafer visit(AstConstant ast, Void a) {
+        public TypedExpr<AstConstant> visit(AstConstant ast, Void a) {
             return put(IntType, ast);
         }
 
         @Override
-        public AstClafer visit(AstJoin ast, Void a) {
-            AstClafer leftType = typeCheck(ast.getLeft());
+        public TypedExpr<AstSetExpr> visit(AstJoin ast, Void a) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             AstConcreteClafer rightType = ast.getRight();
             if (!AstUtil.isTop(rightType)) {
                 AstClafer joinType = rightType.getParent();
-                if (AstUtil.isAssignable(leftType, joinType)) {
-                    return put(rightType, ast);
+                TypedExpr<AstSetExpr> upcast = upcastTo(left, joinType);
+                if (upcast != null) {
+                    return put(rightType, join(upcast.getExpr(), rightType));
                 }
             }
-            throw new AnalysisException("Cannot join " + leftType.getName() + " . " + rightType.getName());
+            throw new AnalysisException("Cannot join " + left.getType().getName() + " . " + rightType.getName());
         }
 
         @Override
-        public AstClafer visit(AstJoinParent ast, Void a) {
-            AstClafer childrenType = typeCheck(ast.getChildren());
-            if (!(childrenType instanceof AstConcreteClafer)) {
-                throw new AnalysisException("Cannot join " + childrenType.getName() + " . parent");
+        public TypedExpr<AstSetExpr> visit(AstJoinParent ast, Void a) {
+            TypedExpr<AstSetExpr> children = typeCheck(ast.getChildren());
+            if (!(children.getType() instanceof AstConcreteClafer)) {
+                throw new AnalysisException("Cannot join " + children.getType().getName() + " . parent");
             }
-            AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
+            AstConcreteClafer concreteChildrenType = (AstConcreteClafer) children.getType();
             if (AstUtil.isTop(concreteChildrenType)) {
-                throw new AnalysisException("Cannot join " + childrenType.getName() + " . parent");
+                throw new AnalysisException("Cannot join " + children.getType().getName() + " . parent");
             }
-            return put(concreteChildrenType.getParent(), ast);
+            return put(concreteChildrenType.getParent(), joinParent(children.getExpr()));
         }
 
         @Override
-        public AstClafer visit(AstJoinRef ast, Void a) {
-            AstClafer derefType = typeCheck(ast.getDeref());
-            if (!derefType.hasRef()) {
-                throw new AnalysisException("Cannot join " + derefType.getName() + " . ref");
+        public TypedExpr<AstSetExpr> visit(AstJoinRef ast, Void a) {
+            // TODO upcast for abstract refs
+            TypedExpr<AstSetExpr> deref = typeCheck(ast.getDeref());
+            if (!deref.getType().hasRef()) {
+                throw new AnalysisException("Cannot join " + deref.getType().getName() + " . ref");
             }
-            return put(derefType.getRef().getTargetType(), ast);
+            return put(deref.getType().getRef().getTargetType(), joinRef(deref.getExpr()));
         }
 
         @Override
-        public AstClafer visit(AstCard ast, Void a) {
-            AstClafer setType = typeCheck(ast.getSet());
-            if (setType instanceof AstPrimClafer) {
-                throw new AnalysisException("Cannot |" + setType.getName() + "|");
+        public TypedExpr<AstSetExpr> visit(AstCard ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            if (set.getType() instanceof AstPrimClafer) {
+                throw new AnalysisException("Cannot |" + set.getType().getName() + "|");
             }
-            return put(IntType, ast);
+            return put(IntType, card(set.getExpr()));
         }
 
         @Override
-        public AstClafer visit(AstEqual ast, Void a) {
-            AstClafer leftType = typeCheck(ast.getLeft());
-            AstClafer rightType = typeCheck(ast.getRight());
-            if (!AstUtil.hasNonEmptyIntersectionType(leftType, rightType)) {
-                throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
+        public TypedExpr<AstBoolExpr> visit(AstEqual ast, Void a) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (!AstUtil.hasNonEmptyIntersectionType(left.getType(), right.getType())) {
+                throw new AnalysisException("Cannot " + left.getType().getName() + " "
+                        + ast.getOp().getSyntax() + " " + right.getType().getName());
             }
-            return put(BoolType, ast);
+            return put(BoolType, equal(left.getExpr(), ast.getOp(), right.getExpr()));
         }
 
         @Override
-        public AstClafer visit(AstCompare ast, Void a) {
-            AstClafer leftType = typeCheck(ast.getLeft());
-            AstClafer rightType = typeCheck(ast.getRight());
-            if (!(leftType instanceof AstIntClafer) || !(rightType instanceof AstIntClafer)) {
-                throw new AnalysisException("Cannot " + leftType.getName() + " " + ast.getOp().getSyntax() + " " + rightType.getName());
+        public TypedExpr<AstBoolExpr> visit(AstCompare ast, Void a) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (!(left.getType() instanceof AstIntClafer) || !(right.getType() instanceof AstIntClafer)) {
+                throw new AnalysisException("Cannot " + left.getType().getName() + " "
+                        + ast.getOp().getSyntax() + " " + right.getType().getName());
             }
-            return put(BoolType, ast);
+            return put(BoolType, compare(left.getExpr(), ast.getOp(), right.getExpr()));
         }
 
         @Override
-        public AstClafer visit(AstArithm ast, Void a) {
-            AstClafer[] operandTypes = typeCheck(ast.getOperands());
-            for (AstClafer operandType : operandTypes) {
-                if (!(operandType instanceof AstIntClafer)) {
+        public TypedExpr<AstSetExpr> visit(AstArithm ast, Void a) {
+            TypedExpr<AstSetExpr>[] operands = typeCheck(ast.getOperands());
+            for (TypedExpr<AstSetExpr> operand : operands) {
+                if (!(operand.getType() instanceof AstIntClafer)) {
                     throw new AnalysisException("Cannot "
-                            + Util.intercalate(" " + ast.getOp().getSyntax() + " ", AnalysisUtil.getNames(operandTypes)));
+                            + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
+                            AnalysisUtil.getNames(getTypes(operands))));
                 }
             }
-            return put(IntType, ast);
+            return put(IntType, arithm(ast.getOp(), getExprs(operands)));
         }
 
         @Override
-        public AstClafer visit(AstUpcast ast, Void a) {
-            AstClafer baseType = typeCheck(ast.getBase());;
-            AstAbstractClafer to = ast.getTarget();
-            if (!AstUtil.isAssignable(baseType, to)) {
-                throw new AnalysisException("Cannot upcast from " + baseType + " to " + to);
+        public TypedExpr<AstSetExpr> visit(AstSetArithm ast, Void a) {
+            TypedExpr<AstSetExpr>[] operands = typeCheck(ast.getOperands());
+            AstClafer unionType = AstUtil.getUnionType(getTypes(operands));
+            if (unionType == null) {
+                throw new AnalysisException("Cannot "
+                        + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
+                        AnalysisUtil.getNames(getTypes(operands))));
             }
-            return put(to, ast);
+            TypedExpr<AstSetExpr>[] upcasts = upcastTo(operands, unionType);
+            assert upcasts != null;
+            return put(unionType, setArithm(ast.getOp(), getExprs(upcasts)));
         }
 
         @Override
-        public AstClafer visit(AstNone ast, Void a) {
-            typeCheck(ast.getSet());
-            return put(BoolType, ast);
+        public TypedExpr<AstSetExpr> visit(AstUpcast ast, Void a) {
+            TypedExpr<AstSetExpr> base = typeCheck(ast.getBase());
+            AstAbstractClafer to = ast.getTarget();
+            if (!AstUtil.isAssignable(base.getType(), to)) {
+                throw new AnalysisException("Cannot upcast from " + base.getType().getName() + " to " + to);
+            }
+            return put(to, upcast(base.getExpr(), ast.getTarget()));
         }
 
         @Override
-        public AstClafer visit(AstLocal ast, Void a) {
+        public TypedExpr<AstBoolExpr> visit(AstNone ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            return put(BoolType, none(set.getExpr()));
+        }
+
+        @Override
+        public TypedExpr<AstLocal> visit(AstLocal ast, Void a) {
             return put(AnalysisUtil.notNull(ast + " type not analyzed yet", types.get(ast)), ast);
         }
 
         @Override
-        public AstClafer visit(AstQuantify ast, Void a) {
-            for (AstDecl decl : ast.getDecls()) {
-                AstClafer bodyType = typeCheck(decl.getBody());
-                for (AstLocal local : decl.getLocals()) {
-                    put(bodyType, local);
-                }
-            }
-            typeCheck(ast.getBody());
-            return put(BoolType, ast);
+        public TypedExpr<AstBoolExpr> visit(AstQuantify ast, Void a) {
+            throw new Error();
+//            AstDecl[] decls = new AstDecl[ast.getDecls().length];
+//            for (AstDecl decl : ast.getDecls()) {
+//                TypedExpr<AstSetExpr> body = typeCheck(decl.getBody());
+//                for (AstLocal local : decl.getLocals()) {
+//                    put(body.getType(), local);
+//                }
+//            }
+//            typeCheck(ast.getBody());
+//            return put(BoolType,);
         }
     }
 
-    private static class TypedExpression {
+    private static AstClafer[] getTypes(TypedExpr<?>... exprs) {
+        AstClafer[] types = new AstClafer[exprs.length];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = exprs[i].getType();
+        }
+        return types;
+    }
+
+    private static <T extends AstSetExpr> AstSetExpr[] getExprs(TypedExpr<T>... exprs) {
+        AstSetExpr[] setExprs = new AstSetExpr[exprs.length];
+        for (int i = 0; i < setExprs.length; i++) {
+            setExprs[i] = exprs[i].getExpr();
+        }
+        return setExprs;
+    }
+
+    private static class TypedExpr<T extends AstExpr> {
 
         private final AstClafer type;
-        private final AstExpr expression;
+        private final T expr;
 
-        TypedExpression(AstClafer type, AstExpr expression) {
+        TypedExpr(AstClafer type, T expr) {
             this.type = Check.notNull(type);
-            this.expression = Check.notNull(expression);
+            this.expr = Check.notNull(expr);
         }
 
         public AstClafer getType() {
             return type;
         }
 
-        public AstExpr getExpression() {
-            return expression;
+        public T getExpr() {
+            return expr;
         }
     }
 }

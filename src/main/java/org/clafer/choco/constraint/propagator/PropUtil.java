@@ -7,12 +7,12 @@ import solver.ICause;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.delta.IDeltaMonitor;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 
 /**
- * 
+ * Various static utility functions for writing Choco propagators.
+ *
  * @author jimmy
  */
 public class PropUtil {
@@ -20,32 +20,34 @@ public class PropUtil {
     private PropUtil() {
     }
 
-    public static IIntDeltaMonitor[] monitorDeltas(IntVar[] vars, ICause propogator) {
+    /**
+     * Monitor the deltas for all the variables.
+     *
+     * @param vars the variables
+     * @param propagator the propagator
+     * @return the variables delta monitors
+     */
+    public static IIntDeltaMonitor[] monitorDeltas(IntVar[] vars, ICause propagator) {
         IIntDeltaMonitor[] deltas = new IIntDeltaMonitor[vars.length];
         for (int i = 0; i < vars.length; i++) {
-            deltas[i] = vars[i].monitorDelta(propogator);
+            deltas[i] = vars[i].monitorDelta(propagator);
         }
         return deltas;
     }
 
-    public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propogator) {
+    /**
+     * Monitor the deltas for all the variables.
+     *
+     * @param vars the variables
+     * @param propagator the propagator
+     * @return the variables delta monitors
+     */
+    public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propagator) {
         SetDeltaMonitor[] deltas = new SetDeltaMonitor[vars.length];
         for (int i = 0; i < vars.length; i++) {
-            deltas[i] = vars[i].monitorDelta(propogator);
+            deltas[i] = vars[i].monitorDelta(propagator);
         }
         return deltas;
-    }
-
-    public static void freezeAll(IDeltaMonitor[] deltas) {
-        for (IDeltaMonitor delta : deltas) {
-            delta.freeze();
-        }
-    }
-
-    public static void unfreezeAll(IDeltaMonitor[] deltas) {
-        for (IDeltaMonitor delta : deltas) {
-            delta.unfreeze();
-        }
     }
 
     public static boolean approxCanIntersect(IntVar e1, SetVar e2, boolean otherwise) {
@@ -59,23 +61,27 @@ public class PropUtil {
     }
 
     /**
-     * @param e1
-     * @param e2
-     * @return true if and only if e1 in e2 is possible, false otherwise
+     * Checks if it is possible for an integer variable to instantiate to a
+     * value in the set variable.
+     *
+     * @param ivar the integer variable
+     * @param svar the set variable
+     * @return {@code true} if and only if {@code (dom(ivar) intersect env(svar)) !=
+     *         empty set}, {@code false} otherwise
      */
-    public static boolean canIntersect(IntVar e1, SetVar e2) {
-        if (e1.getDomainSize() < e2.getEnvelopeSize()) {
-            int ub = e1.getUB();
-            for (int i = Math.max(e1.getLB(), e2.getEnvelopeFirst()); i <= ub; i = e1.nextValue(i)) {
-                if (e2.envelopeContains(i)) {
+    public static boolean canIntersect(IntVar ivar, SetVar svar) {
+        if (ivar.getDomainSize() < svar.getEnvelopeSize()) {
+            int ub = ivar.getUB();
+            for (int i = Math.max(ivar.getLB(), svar.getEnvelopeFirst()); i <= ub; i = ivar.nextValue(i)) {
+                if (svar.envelopeContains(i)) {
                     return true;
                 }
             }
         } else {
-            for (int i = e2.getEnvelopeFirst(); i != SetVar.END;) {
-                int next = e1.nextValue(i - 1);
+            for (int i = svar.getEnvelopeFirst(); i != SetVar.END;) {
+                int next = ivar.nextValue(i - 1);
                 while (i < next && i != SetVar.END) {
-                    i = e2.getEnvelopeNext();
+                    i = svar.getEnvelopeNext();
                 }
                 if (i == next) {
                     return true;
@@ -86,23 +92,27 @@ public class PropUtil {
     }
 
     /**
-     * @param e1
-     * @param e2
-     * @return true if and only if e1 in e2 is guaranteed, false otherwise
+     * Checks if it is guaranteed that an integer variable instantiates to a
+     * value in the set variable.
+     *
+     * @param ivar the integer variable
+     * @param svar the set variable
+     * @return {@code true} if and only if {@code dom(ivar) subsetof env(svar)},
+     *         {@code false} otherwise
      */
-    public static boolean intersects(IntVar e1, SetVar e2) {
-        if (e1.getDomainSize() < e2.getKernelSize()) {
-            int ub = e1.getUB();
-            for (int i = Math.max(e1.getLB(), e2.getKernelFirst()); i <= ub; i = e1.nextValue(i)) {
-                if (!e2.kernelContains(i)) {
+    public static boolean intersects(IntVar ivar, SetVar svar) {
+        if (ivar.getDomainSize() < svar.getKernelSize()) {
+            int ub = ivar.getUB();
+            for (int i = Math.max(ivar.getLB(), svar.getKernelFirst()); i <= ub; i = ivar.nextValue(i)) {
+                if (!svar.kernelContains(i)) {
                     return false;
                 }
             }
         } else {
-            for (int i = e2.getKernelFirst(); i != SetVar.END;) {
-                int next = e1.nextValue(i - 1);
+            for (int i = svar.getKernelFirst(); i != SetVar.END;) {
+                int next = ivar.nextValue(i - 1);
                 while (i < next && i != SetVar.END) {
-                    i = e2.getKernelNext();
+                    i = svar.getKernelNext();
                 }
                 if (i == next) {
                     return false;
@@ -112,6 +122,15 @@ public class PropUtil {
         return true;
     }
 
+    /**
+     * Checks if a collection is contained entirely in a set variable's
+     * envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if and only if {@code sub subsetof env(sup)},
+     *         {@code false} otherwise
+     */
     public static boolean isSubsetOfEnv(TIntCollection sub, SetVar sup) {
         TIntIterator iter = sub.iterator();
         while (iter.hasNext()) {
@@ -122,6 +141,15 @@ public class PropUtil {
         return true;
     }
 
+    /**
+     * Checks if a set variable's envelope is contained entirely in another set
+     * variable's envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if and only if {@code env(sub) subsetof env(sup)},
+     *         {@code false} otherwise
+     */
     public static boolean isEnvSubsetEnv(SetVar sub, SetVar sup) {
         for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
             if (!sup.envelopeContains(i)) {
@@ -131,6 +159,15 @@ public class PropUtil {
         return true;
     }
 
+    /**
+     * Checks if a set variable's kernel is contained entirely in another set
+     * variable's envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if and only if {@code ker(sub) subsetof env(sup)},
+     *         {@code false} otherwise
+     */
     public static boolean isKerSubsetEnv(SetVar sub, SetVar sup) {
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
             if (!sup.envelopeContains(i)) {
@@ -140,6 +177,15 @@ public class PropUtil {
         return true;
     }
 
+    /**
+     * Checks if a set variable's envelope is contained entirely in a
+     * collection.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if and only if {@code ker(sub) subsetof sup},
+     *         {@code false} otherwise
+     */
     public static boolean isKerSubsetOf(SetVar sub, TIntCollection sup) {
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
             if (!sup.contains(i)) {
@@ -149,28 +195,63 @@ public class PropUtil {
         return true;
     }
 
-    public static void kerSubsetKer(SetVar sub, SetVar sup, ICause propogator) throws ContradictionException {
+    /**
+     * Adds every element in the subset's kernel to the superset's kernel.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
+    public static void kerSubsetKer(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            sup.addToKernel(i, propogator);
+            sup.addToKernel(i, propagator);
         }
     }
 
-    public static void subsetEnv(SetVar sub, TIntHashSet sup, ICause propogator) throws ContradictionException {
+    /**
+     * Removes every element in the subset's envelope that is not in the
+     * collection.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
+    public static void subsetEnv(SetVar sub, TIntHashSet sup, ICause propagator) throws ContradictionException {
         for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
             if (!sup.contains(i)) {
-                sub.removeFromEnvelope(i, propogator);
+                sub.removeFromEnvelope(i, propagator);
             }
         }
     }
 
-    public static void envSubsetEnv(SetVar sub, SetVar sup, ICause propogator) throws ContradictionException {
+    /**
+     * Removes every element in the subset's envelope that is not the superset's
+     * envelope.
+     *
+     * @param sub
+     * @param sup
+     * @param propagator
+     * @throws ContradictionException
+     */
+    public static void envSubsetEnv(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
         for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
             if (!sup.envelopeContains(i)) {
-                sub.removeFromEnvelope(i, propogator);
+                sub.removeFromEnvelope(i, propagator);
             }
         }
     }
 
+    /**
+     * Removes every element in the integer variable's domain that is not in the
+     * envelope of the set variable.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
     public static void intSubsetEnv(IntVar sub, SetVar sup, ICause propagator) throws ContradictionException {
         int left = Integer.MIN_VALUE;
         int right = left;
@@ -189,12 +270,30 @@ public class PropUtil {
         sub.removeInterval(left, right, propagator);
     }
 
+    /**
+     * Removes every element in the integer variables' domain that is not in the
+     * envelope of the set variable.
+     *
+     * @param subs the subsets
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
     public static void intsSubsetEnv(IntVar[] subs, SetVar sup, ICause propagator) throws ContradictionException {
         for (IntVar sub : subs) {
             intSubsetEnv(sub, sup, propagator);
         }
     }
 
+    /**
+     * Removes every element in the set variable's envelope that is not in the
+     * integer variable's domain.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
     public static void envSubsetInt(SetVar sub, IntVar sup, ICause propagator) throws ContradictionException {
         for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
             if (!sup.contains(val)) {
@@ -203,6 +302,15 @@ public class PropUtil {
         }
     }
 
+    /**
+     * Removes every element in the set variable's envelope that is not in any
+     * of integer variables' domain.
+     *
+     * @param sub the subset
+     * @param sup the superset union
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
     public static void envSubsetInts(SetVar sub, IntVar[] sup, ICause propagator) throws ContradictionException {
         for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
             if (!contains(sup, val)) {
@@ -214,7 +322,8 @@ public class PropUtil {
     /**
      * @param union
      * @param val
-     * @return - true if and only if one of the IntVar contains val, false otherwise
+     * @return {@code true} if and only if one of the integer variables contain
+     * val, {@code false} otherwise
      */
     public static boolean contains(IntVar[] union, int val) {
         for (IntVar var : union) {
@@ -225,6 +334,12 @@ public class PropUtil {
         return false;
     }
 
+    /**
+     * Enumerate the envelope of a set variable.
+     *
+     * @param set the set variable
+     * @return {@code env(set)}
+     */
     public static int[] iterateEnv(SetVar set) {
         int[] iterate = new int[set.getEnvelopeSize()];
         int count = 0;
@@ -235,12 +350,24 @@ public class PropUtil {
         return iterate;
     }
 
+    /**
+     * Enumerate the envelope of a set variable.
+     *
+     * @param set the set variable
+     * @param collection add {@code env(set)} into here
+     */
     public static void iterateEnv(SetVar set, TIntCollection collection) {
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             collection.add(i);
         }
     }
 
+    /**
+     * Enumerate the kernel of a set variable.
+     *
+     * @param set the set variable
+     * @return {@code ker(set)}
+     */
     public static int[] iterateKer(SetVar set) {
         int[] iterate = new int[set.getKernelSize()];
         int count = 0;
@@ -251,23 +378,45 @@ public class PropUtil {
         return iterate;
     }
 
+    /**
+     * Enumerate the kernel of a set variable.
+     *
+     * @param set the set variable
+     * @param collection add {@code ker(set)} into here
+     */
     public static void iterateKer(SetVar set, TIntCollection collection) {
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
             collection.add(i);
         }
     }
 
+    /**
+     * Returns the integer variables' values. Assumes the variables are
+     * instantiated.
+     *
+     * @param vars the variables
+     * @return the variables' values
+     */
     public static int[] getValues(IntVar[] vars) {
         int[] values = new int[vars.length];
         for (int i = 0; i < values.length; i++) {
+            assert vars[i].instantiated();
             values[i] = vars[i].getValue();
         }
         return values;
     }
 
+    /**
+     * Returns the integer variables' values. Assumes the variables are
+     * instantiated.
+     *
+     * @param vars the variables
+     * @return the variables' values
+     */
     public static int[][] getValues(SetVar[] vars) {
         int[][] values = new int[vars.length][];
         for (int i = 0; i < values.length; i++) {
+            assert vars[i].instantiated();
             values[i] = vars[i].getValue();
         }
         return values;

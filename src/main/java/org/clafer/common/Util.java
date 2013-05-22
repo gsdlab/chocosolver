@@ -20,10 +20,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import solver.Solver;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.VF;
 import util.iterators.IntIterator;
 
 /**
@@ -341,64 +337,80 @@ public class Util {
     }
 
     /**
-     * Compute the greatest common divisor between two numbers usingFermat's
-     * algorithm.
+     * Returns a sublist from index 0 to the index of the item (inclusive).
+     * Equivalent to the Haskell code {@code takeWhile (== item) list}
      *
-     * @param a a non-negative integer
-     * @param b a non-negative integer
-     * @return the greatest common divisor
+     * @param <T> the element type
+     * @param item the item to find
+     * @param list the list of items
+     * @return a prefix of the {@code list} ending at the first {@code item} if
+     *         found, otherwise the entire list
      */
-    public static int gcd(int a, int b) {
-        if (a <= 0) {
-            throw new IllegalArgumentException();
+    public static <T> List<T> takeUntil(T item, List<T> list) {
+        int index = 0;
+        for (T t : list) {
+            index++;
+            if (item.equals(t)) {
+                return list.subList(0, index);
+            }
         }
-        if (b <= 0) {
-            throw new IllegalArgumentException();
+        return list;
+    }
+    /**
+     * Returns a sublist from the index of the item (inclusive) to the end of the
+     * list. Equivalent to the Haskell code {@code dropWhile (/= item) list}
+     *
+     * @param <T> the element type
+     * @param item the item to find
+     * @param list the list of items
+     * @return a suffix of the {@code list} starting at the first {@code item} if
+     *         found, otherwise the entire list
+     */
+    public static <T> List<T> dropUntil(T item, List<T> list) {
+        int index = 0;
+        for (T t : list) {
+            if (item.equals(t)) {
+                return list.subList(index, list.size());
+            }
+            index++;
         }
-        do {
-            int r = a % b;
-            a = b;
-            b = r;
-        } while (b != 0);
-        return a;
+        return Collections.emptyList();
     }
 
     /**
-     * Shift in place every element towards the start of the array, wrapping
-     * around to the end. For example:
-     * <pre>
-     * int[] array = new int[]{0,1,2,3,4};
-     * shiftLeft(new int[]{0,1,2,3,4}, 2);
-     * assertArrayEquals(new int[]{2,3,4,0,1}, array);
-     * </pre>
+     * Checks if the list starts with specific elements.
      *
-     * @param array the array to shift
-     * @param shift the number of indices to shift each element
+     * @param <T> the element type
+     * @param string the list
+     * @param prefix the starting elements of the list
+     * @return {@code true} if and only if {@code string} starts with {@code prefix},
+     *         {@code false} otherwise
      */
-    public static void shiftLeft(final int[] array, final int shift) {
-        if (array.length < shift) {
-            throw new IllegalArgumentException();
+    public static <T> boolean startsWith(List<T> string, List<T> prefix) {
+        final int stringSize = string.size();
+        final int prefixSize = prefix.size();
+        if (prefixSize > stringSize) {
+            return false;
         }
-        if (shift < 0) {
-            throw new IllegalArgumentException();
-        }
-        if (shift > 0) {
-            int gcd = gcd(array.length, shift);
-            int div = array.length / gcd;
-            for (int i = 0; i < gcd; i++) {
-                int index = i;
-                int place = i + shift;
-                int temp = array[i];
+        return prefix.equals(string.subList(0, prefixSize));
+    }
 
-                for (int j = 0; j < div - 1; j++) {
-                    array[index] = array[place];
-                    index = place;
-                    place = (index + shift) % array.length;
-                }
-
-                array[index] = temp;
-            }
+    /**
+     * Checks if the list ends with specific elements.
+     *
+     * @param <T> the element type
+     * @param string the list
+     * @param suffix the ending elements of the list
+     * @return {@code true} if and only if {@code string} ends with {@code suffix},
+     *         {@code false} otherwise
+     */
+    public static <T> boolean endsWith(List<T> string, List<T> suffix) {
+        final int stringSize = string.size();
+        final int suffixSize = suffix.size();
+        if (suffixSize > stringSize) {
+            return false;
         }
+        return suffix.equals(string.subList(stringSize - suffixSize, stringSize));
     }
 
     /**
