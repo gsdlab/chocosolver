@@ -141,7 +141,7 @@ public class SimpleConstraintModelTest {
         model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -168,7 +168,7 @@ public class SimpleConstraintModelTest {
         model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
         assertEquals(4, solver.allInstances().length);
     }
 

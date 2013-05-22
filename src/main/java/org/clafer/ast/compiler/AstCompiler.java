@@ -5,7 +5,6 @@ import org.clafer.ast.AstConstraint;
 import java.util.Set;
 import org.clafer.ast.AstEqual;
 import org.clafer.ast.AstExpr;
-import java.util.Map;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstCard;
@@ -33,7 +32,6 @@ import org.clafer.ast.scope.Scope;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.PartialSolution;
-import org.clafer.ast.analysis.TypeAnalysis;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstClafer;
@@ -55,6 +53,8 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetEquality.Op;
 import org.clafer.ir.IrSetVar;
 import static org.clafer.ir.Irs.*;
+import solver.constraints.set.SetConstraintsFactory;
+import solver.variables.VF;
 
 /**
  * Compile from AST -> IR
@@ -771,13 +771,14 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstUpcast ast, Void a) {
             AstSetExpr base = ast.getBase();
-
+            int offset = getOffset(ast.getTarget(), getType(base));
+            
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
-                return add(intBase, $(constant(getOffset(ast.getTarget(), getType(base)))));
+                return add(intBase, $(constant(offset)));
             }
-            throw new AstException("TODO: upcast set");
+            return offset((IrSetExpr) $base, offset);
         }
 
         @Override

@@ -50,6 +50,7 @@ import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
+import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetSum;
@@ -86,8 +87,8 @@ public class IrCompiler {
         return compiler.compile(in);
     }
 
-    private IrSolutionMap compile(IrModule optModule) {
-        optModule = ExpressionAnalysis.analyze(optModule);
+    private IrSolutionMap compile(IrModule module) {
+        IrModule optModule = ExpressionAnalysis.analyze(module);
         for (IrBoolVar var : optModule.getBoolVars()) {
             boolVar.get(var);
         }
@@ -623,7 +624,7 @@ public class IrCompiler {
             IrIntExpr[] refs = ir.getRefs();
             SetVar $take = compile(take);
             IntVar[] $refs = new IntVar[refs.length];
-            for(int i = 0; i < $refs.length;i++) {
+            for (int i = 0; i < $refs.length; i++) {
                 $refs[i] = compile(refs[i]);
             }
             SetVar joinRef = numSetVar("JoinRef", ir.getEnv(), ir.getKer());
@@ -641,6 +642,14 @@ public class IrCompiler {
             SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
             solver.post(_union($operands, union));
             return union;
+        }
+
+        @Override
+        public SetVar visit(IrOffset ir, Void a) {
+            SetVar set = compile(ir.getSet());
+            SetVar offset = numSetVar("Offset", ir.getEnv(), ir.getKer());
+            solver.post(_offset(set, offset, ir.getOffset()));
+            return offset;
         }
     };
 
@@ -772,6 +781,9 @@ public class IrCompiler {
 
     private static Constraint _union(SetVar[] operands, SetVar union) {
         return SetConstraintsFactory.union(operands, union);
+    }
+    private static Constraint _offset(SetVar set, SetVar offseted, int offset) {
+        return SetConstraintsFactory.offSet(set, offseted, offset);
     }
 
     private int getLB(IntVar... vars) {

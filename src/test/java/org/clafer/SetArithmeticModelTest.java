@@ -36,7 +36,7 @@ public class SetArithmeticModelTest {
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
         model.addConstraint(equal(joinRef(join(setUnion(global(backup), global(firewall)), cost)), constant(4)));
         
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
-        assertEquals(1, solver.allInstances().length);
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        assertEquals(4, solver.allInstances().length);
     }
 }

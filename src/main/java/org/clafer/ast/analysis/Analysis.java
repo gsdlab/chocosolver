@@ -59,7 +59,6 @@ public class Analysis {
         Map<AstAbstractClafer, Offsets> offsets = AbstractOffsetAnalysis.analyze(model, globalCards);
         Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, offsets);
 
-        // Reanalyze types.
         Map<AstExpr, AstClafer> types = TypeAnalysis.analyze(model);
         Map<AstRef, int[][]> partialInts = PartialIntAnalysis.analyze(model, partialSolutions, offsets, optimizedScope);
 

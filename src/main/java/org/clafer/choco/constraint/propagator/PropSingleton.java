@@ -120,7 +120,7 @@ public class PropSingleton extends Propagator<Variable> {
         if (s.getEnvelopeSize() < 1) {
             return ESat.FALSE;
         }
-        if (PropUtil.canIntersect(i, s)) {
+        if (PropUtil.domainIntersectEnv(i, s)) {
             return i.instantiated() && s.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
         }
         return ESat.FALSE;

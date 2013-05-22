@@ -61,7 +61,7 @@ public class PropUtilTest {
             IntVar iv = randIntVar("iv" + i, solver);
             SetVar sv = randSetVar("sv" + i, solver);
 
-            assertEquals(canIntersectBruteForce(iv, sv), PropUtil.canIntersect(iv, sv));
+            assertEquals(canIntersectBruteForce(iv, sv), PropUtil.domainIntersectEnv(iv, sv));
         }
     }
 }

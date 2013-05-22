@@ -50,12 +50,12 @@ public class PropUtil {
         return deltas;
     }
 
-    public static boolean approxCanIntersect(IntVar e1, SetVar e2, boolean otherwise) {
+    public static boolean approxDomainIntersectEnv(IntVar e1, SetVar e2, boolean otherwise) {
         if (e1.instantiated()) {
             return e2.envelopeContains(e1.getValue());
         }
         if (Math.min(e1.getDomainSize(), e2.getEnvelopeSize()) < 100) {
-            return canIntersect(e1, e2);
+            return domainIntersectEnv(e1, e2);
         }
         return otherwise;
     }
@@ -69,7 +69,7 @@ public class PropUtil {
      * @return {@code true} if and only if {@code (dom(ivar) intersect env(svar)) !=
      *         empty set}, {@code false} otherwise
      */
-    public static boolean canIntersect(IntVar ivar, SetVar svar) {
+    public static boolean domainIntersectEnv(IntVar ivar, SetVar svar) {
         if (ivar.getDomainSize() < svar.getEnvelopeSize()) {
             int ub = ivar.getUB();
             for (int i = Math.max(ivar.getLB(), svar.getEnvelopeFirst()); i <= ub; i = ivar.nextValue(i)) {
@@ -100,7 +100,7 @@ public class PropUtil {
      * @return {@code true} if and only if {@code dom(ivar) subsetof env(svar)},
      *         {@code false} otherwise
      */
-    public static boolean intersects(IntVar ivar, SetVar svar) {
+    public static boolean domainSubsetEnv(IntVar ivar, SetVar svar) {
         if (ivar.getDomainSize() < svar.getKernelSize()) {
             int ub = ivar.getUB();
             for (int i = Math.max(ivar.getLB(), svar.getKernelFirst()); i <= ub; i = ivar.nextValue(i)) {

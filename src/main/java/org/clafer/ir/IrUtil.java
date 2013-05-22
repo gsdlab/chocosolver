@@ -2,35 +2,36 @@ package org.clafer.ir;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.Arrays;
 
 /**
  *
  * @author jimmy
  */
 public class IrUtil {
-
+    
     private IrUtil() {
     }
-
+    
     public static <T> T notNull(String message, T t) {
         if (t == null) {
             throw new IrException(message);
         }
         return t;
     }
-
+    
     public static boolean isTrue(IrBool b) {
         return IrBoolDomain.TrueDomain.equals(b.getDomain());
     }
-
+    
     public static boolean isFalse(IrBool b) {
         return IrBoolDomain.FalseDomain.equals(b.getDomain());
     }
-
+    
     public static Boolean isConstant(IrBool b) {
         return !IrBoolDomain.BoolDomain.equals(b.getDomain());
     }
-
+    
     public static Boolean getConstant(IrBool b) {
         switch (b.getDomain()) {
             case TrueDomain:
@@ -43,7 +44,7 @@ public class IrUtil {
                 throw new IllegalArgumentException();
         }
     }
-
+    
     public static IrBoolVar asConstant(IrBoolVar b) {
         switch (b.getDomain()) {
             case TrueDomain:
@@ -56,40 +57,40 @@ public class IrUtil {
                 throw new IllegalArgumentException();
         }
     }
-
+    
     public static boolean isConstant(IrInt i) {
         IrDomain domain = i.getDomain();
         return domain.size() == 1;
     }
-
+    
     public static Integer getConstant(IrInt i) {
         IrDomain domain = i.getDomain();
         return domain.size() == 1 ? domain.getLowerBound() : null;
     }
-
+    
     public static IrIntVar asConstant(IrIntVar i) {
         IrDomain domain = i.getDomain();
         return domain.size() == 1 ? Irs.constant(domain.getLowerBound()) : i;
     }
-
+    
     public static boolean isConstant(IrSet s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
         return env.equals(ker);
     }
-
+    
     public static int[] getConstant(IrSet s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
         return env.equals(ker) ? ker.getValues() : null;
     }
-
+    
     public static IrSetVar asConstant(IrSetVar s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
         return env.equals(ker) ? Irs.constant(ker.getValues()) : s;
     }
-
+    
     public static boolean intersects(IrDomain d1, IrDomain d2) {
         if (d1.isEmpty() || d2.isEmpty()) {
             return false;
@@ -121,7 +122,7 @@ public class IrUtil {
         }
         return false;
     }
-
+    
     public static boolean isSubsetOf(IrDomain sub, IrDomain sup) {
         if (sub.isEmpty()) {
             return true;
@@ -147,7 +148,7 @@ public class IrUtil {
         }
         return true;
     }
-
+    
     public static IrDomain union(IrDomain d1, IrDomain d2) {
         if (isSubsetOf(d1, d2)) {
             return d2;
@@ -170,7 +171,7 @@ public class IrUtil {
         values.addAll(d2.getValues());
         return Irs.enumDomain(values);
     }
-
+    
     public static IrDomain unionEnvs(IrSetExpr... sets) {
         if (sets.length == 0) {
             return Irs.EmptyDomain;
@@ -181,7 +182,7 @@ public class IrUtil {
         }
         return domain;
     }
-
+    
     public static IrDomain unionKers(IrSetExpr... sets) {
         if (sets.length == 0) {
             return Irs.EmptyDomain;
@@ -191,5 +192,19 @@ public class IrUtil {
             domain = union(domain, sets[i].getKer());
         }
         return domain;
+    }
+    
+    public static IrDomain offset(IrDomain domain, int offset) {
+        if (domain.isEmpty()) {
+            return Irs.EmptyDomain;
+        }
+        if (domain.isBounded()) {
+            return Irs.boundDomain(domain.getLowerBound() + offset, domain.getUpperBound() + offset);
+        }
+        int[] values = Arrays.copyOf(domain.getValues(), domain.size());
+        for (int i = 0; i < values.length; i++) {
+            values[i] += offset;
+        }
+        return Irs.enumDomain(values);
     }
 }

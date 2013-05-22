@@ -7,6 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
+@Deprecated // TODO rename
 public class IrUnion extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr[] operands;

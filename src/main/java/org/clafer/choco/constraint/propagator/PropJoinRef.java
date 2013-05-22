@@ -105,7 +105,7 @@ public class PropJoinRef extends Propagator<Variable> {
 
         // Prune take
         for (int i : takeEnv) {
-            if (!PropUtil.canIntersect(refs[i], to)) {
+            if (!PropUtil.domainIntersectEnv(refs[i], to)) {
                 take.removeFromEnvelope(i, aCause);
             }
         }
@@ -133,7 +133,7 @@ public class PropJoinRef extends Propagator<Variable> {
             if ((mask & EventType.REMOVE_FROM_ENVELOPE.mask) != 0) {
                 // Prune take
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-                    if (!PropUtil.canIntersect(refs[i], to)) {
+                    if (!PropUtil.domainIntersectEnv(refs[i], to)) {
                         take.removeFromEnvelope(i, aCause);
                     }
                 }
@@ -158,7 +158,7 @@ public class PropJoinRef extends Propagator<Variable> {
 
             // Prune take
             for (int i : PropUtil.iterateEnv(take)) {
-                if (!PropUtil.canIntersect(refs[i], to)) {
+                if (!PropUtil.domainIntersectEnv(refs[i], to)) {
                     take.removeFromEnvelope(i, aCause);
                 }
             }
@@ -199,7 +199,7 @@ public class PropJoinRef extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            if (!PropUtil.approxCanIntersect(refs[i], to, true)) {
+            if (!PropUtil.approxDomainIntersectEnv(refs[i], to, true)) {
                 return ESat.FALSE;
             }
         }

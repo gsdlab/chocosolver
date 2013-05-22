@@ -774,7 +774,7 @@ public class Irs {
                 highCount++;
             }
         }
-        
+
         return new IrSetSum(set, boundDomain(low, high));
     }
 
@@ -1007,5 +1007,15 @@ public class Irs {
                         Math.min(high, env.size()));
                 return new IrUnion(operands, env, ker, card);
         }
+    }
+
+    public static IrSetExpr offset(IrSetExpr set, int offset) {
+        if (offset == 0) {
+            return set;
+        }
+        IrDomain env = IrUtil.offset(set.getEnv(), offset);
+        IrDomain ker = IrUtil.offset(set.getKer(), offset);
+        IrDomain card = set.getCard();
+        return new IrOffset(set, offset, env, ker, card);
     }
 }

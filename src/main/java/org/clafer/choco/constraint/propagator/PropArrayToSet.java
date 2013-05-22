@@ -148,7 +148,7 @@ public class PropArrayToSet extends Propagator<Variable> {
         boolean tsInstantiated = true;
         TIntHashSet values = new TIntHashSet();
         for (IntVar a : as) {
-            if (!PropUtil.canIntersect(a, s)) {
+            if (!PropUtil.domainIntersectEnv(a, s)) {
                 return ESat.FALSE;
             }
             if (a.instantiated()) {
