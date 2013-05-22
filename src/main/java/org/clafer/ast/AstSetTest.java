@@ -3,17 +3,16 @@ package org.clafer.ast;
 import org.clafer.common.Check;
 
 /**
- * TODO: Rename
+ * 
  * @author jimmy
  */
-@Deprecated
-public class AstEqual implements AstBoolExpr {
+public class AstSetTest implements AstBoolExpr {
 
     private final AstSetExpr left;
     private final Op op;
     private final AstSetExpr right;
 
-    AstEqual(AstSetExpr left, Op op, AstSetExpr right) {
+    AstSetTest(AstSetExpr left, Op op, AstSetExpr right) {
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);

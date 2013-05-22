@@ -1005,7 +1005,7 @@ public class Irs {
                 IrDomain card = boundDomain(
                         Math.max(low, ker.size()),
                         Math.min(high, env.size()));
-                return new IrUnion(operands, env, ker, card);
+                return new IrSetUnion(operands, env, ker, card);
         }
     }
 

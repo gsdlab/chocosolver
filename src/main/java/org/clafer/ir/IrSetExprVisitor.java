@@ -16,7 +16,7 @@ public interface IrSetExprVisitor<A, B> {
 
     public B visit(IrJoinRef ir, A a);
 
-    public B visit(IrUnion ir, A a);
+    public B visit(IrSetUnion ir, A a);
 
     public B visit(IrOffset ir, A a);
 }

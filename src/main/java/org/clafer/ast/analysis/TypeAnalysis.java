@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.clafer.common.Check;
-import org.clafer.ast.AstEqual;
+import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstGlobal;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
@@ -195,14 +195,14 @@ public class TypeAnalysis {
         }
 
         @Override
-        public TypedExpr<AstBoolExpr> visit(AstEqual ast, Void a) {
+        public TypedExpr<AstBoolExpr> visit(AstSetTest ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
             if (!AstUtil.hasNonEmptyIntersectionType(left.getType(), right.getType())) {
                 throw new AnalysisException("Cannot " + left.getType().getName() + " "
                         + ast.getOp().getSyntax() + " " + right.getType().getName());
             }
-            return put(BoolType, equal(left.getExpr(), ast.getOp(), right.getExpr()));
+            return put(BoolType, test(left.getExpr(), ast.getOp(), right.getExpr()));
         }
 
         @Override

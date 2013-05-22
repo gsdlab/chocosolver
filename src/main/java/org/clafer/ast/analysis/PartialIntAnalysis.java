@@ -15,8 +15,8 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
-import org.clafer.ast.AstEqual;
-import org.clafer.ast.AstEqual.Op;
+import org.clafer.ast.AstSetTest;
+import org.clafer.ast.AstSetTest.Op;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
@@ -145,8 +145,8 @@ public class PartialIntAnalysis {
 
     private static Pair< FList<AstConcreteClafer>, Integer> analyze(
             AstBoolExpr exp) throws NotAssignmentException {
-        if (exp instanceof AstEqual) {
-            AstEqual compare = (AstEqual) exp;
+        if (exp instanceof AstSetTest) {
+            AstSetTest compare = (AstSetTest) exp;
             if (Op.Equal.equals(compare.getOp())) {
                 if (compare.getLeft() instanceof AstJoinRef && compare.getRight() instanceof AstConstant) {
                     return analyzeEqual((AstJoinRef) compare.getLeft(), (AstConstant) compare.getRight());

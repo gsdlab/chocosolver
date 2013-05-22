@@ -3,7 +3,7 @@ package org.clafer.ast.compiler;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import java.util.Set;
-import org.clafer.ast.AstEqual;
+import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstSetExpr;
@@ -694,7 +694,7 @@ public class AstCompiler {
         }
 
         @Override
-        public IrExpr visit(AstEqual ast, Void a) {
+        public IrExpr visit(AstSetTest ast, Void a) {
             AstSetExpr left = ast.getLeft();
             AstSetExpr right = ast.getRight();
 

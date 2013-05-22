@@ -23,7 +23,7 @@ import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortInts;
 import org.clafer.ir.IrSortStrings;
-import org.clafer.ir.IrUnion;
+import org.clafer.ir.IrSetUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.common.Check;
@@ -633,7 +633,7 @@ public class IrCompiler {
         }
 
         @Override
-        public SetVar visit(IrUnion ir, Void a) {
+        public SetVar visit(IrSetUnion ir, Void a) {
             IrSetExpr[] operands = ir.getOperands();
             SetVar[] $operands = new SetVar[operands.length];
             for (int i = 0; i < operands.length; i++) {

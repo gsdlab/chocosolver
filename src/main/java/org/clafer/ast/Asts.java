@@ -45,16 +45,16 @@ public class Asts {
         return new AstCard(set);
     }
 
-    public static AstBoolExpr equal(AstSetExpr left, AstEqual.Op op, AstSetExpr right) {
-        return new AstEqual(left, op, right);
+    public static AstBoolExpr test(AstSetExpr left, AstSetTest.Op op, AstSetExpr right) {
+        return new AstSetTest(left, op, right);
     }
 
     public static AstBoolExpr equal(AstSetExpr left, AstSetExpr right) {
-        return equal(left, AstEqual.Op.Equal, right);
+        return test(left, AstSetTest.Op.Equal, right);
     }
 
     public static AstBoolExpr notEqual(AstSetExpr left, AstSetExpr right) {
-        return equal(left, AstEqual.Op.NotEqual, right);
+        return test(left, AstSetTest.Op.NotEqual, right);
     }
 
     public static AstBoolExpr compare(AstSetExpr left, AstCompare.Op op, AstSetExpr right) {

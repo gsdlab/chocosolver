@@ -7,12 +7,11 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-@Deprecated // TODO rename
-public class IrUnion extends IrAbstractSet implements IrSetExpr {
+public class IrSetUnion extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr[] operands;
 
-    IrUnion(IrSetExpr[] operands, IrDomain env, IrDomain ker, IrDomain card) {
+    IrSetUnion(IrSetExpr[] operands, IrDomain env, IrDomain ker, IrDomain card) {
         super(env, ker, card);
         this.operands = Check.noNullsNotEmpty(operands);
     }
@@ -28,8 +27,8 @@ public class IrUnion extends IrAbstractSet implements IrSetExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrUnion) {
-            IrUnion other = (IrUnion) obj;
+        if (obj instanceof IrSetUnion) {
+            IrSetUnion other = (IrSetUnion) obj;
             return Arrays.equals(operands, other.operands) && super.equals(other);
         }
         return false;
