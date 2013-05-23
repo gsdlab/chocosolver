@@ -60,6 +60,23 @@ public class JoinTest extends ConstraintTest {
 
     @Test(timeout = 60000)
     public void testJoin() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * powerset = filterM (const [True, False])
+         *
+         * disjoint [] ys = True
+         * disjoint (x:xs) ys = x `notElem` ys && disjoint xs ys
+         *
+         * solutions = do
+         *     take   <- powerset [0..2]
+         *     child0 <- powerset [0..4]
+         *     child1 <- powerset [0..4]
+         *     child2 <- powerset [0..4]
+         *     guard $ child0 `disjoint` child1 && child0 `disjoint` child2 && child1 `disjoint` child2
+         *     return (take, child0, child1, child2)
+         */
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
@@ -73,5 +90,34 @@ public class JoinTest extends ConstraintTest {
         solver.post(SCF.all_disjoint(children));
 
         assertEquals(8192, randomizeStrategy(solver).findAllSolutions());
+    }
+
+    @Test(timeout = 60000)
+    public void testJoinNonDisjoint() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * powerset = filterM (const [True, False])
+         *
+         * solutions = do
+         *     take   <- powerset [0..2]
+         *     child0 <- powerset [0..2]
+         *     child1 <- powerset [0..2]
+         *     child2 <- powerset [0..2]
+         *     return (take, child0, child1, child2)
+         */
+        Solver solver = new Solver();
+
+        SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
+        SetVar[] children = new SetVar[3];
+        for (int i = 0; i < children.length; i++) {
+            children[i] = VF.set("child" + i, new int[]{0, 1, 2}, solver);
+        }
+        SetVar to = VF.set("to", new int[]{0, 1, 2}, solver);
+
+        solver.post(Constraints.join(take, children, to));
+
+        assertEquals(4096, randomizeStrategy(solver).findAllSolutions());
     }
 }

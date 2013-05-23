@@ -861,7 +861,4 @@ public class IrCompiler {
         Constraint,
         BoolVar;
     }
-
-    public static void main(String[] args) {
-    }
 }

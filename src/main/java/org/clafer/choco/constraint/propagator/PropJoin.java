@@ -14,8 +14,6 @@ import util.ESat;
 import util.procedure.IntProcedure;
 
 /**
- * Assumptions: Children are disjoint, undefined behaviour otherwise.
- * 
  * @author jimmy
  */
 public class PropJoin extends Propagator<SetVar> {
@@ -170,7 +168,6 @@ public class PropJoin extends Propagator<SetVar> {
                     childrenD[id].forEach(pickToOnChildKer, EventType.ADD_TO_KER);
                 } else {
                     IntProcedure pruneTakeOnChildKer = new IntProcedure() {
-
                         @Override
                         public void execute(int childKer) throws ContradictionException {
                             if (!to.envelopeContains(childKer)) {
@@ -189,11 +186,7 @@ public class PropJoin extends Propagator<SetVar> {
             childrenD[id].unfreeze();
         }
     }
-
-    public static void main(String[] args) {
-    }
     private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
-
         @Override
         public void execute(int takeEnv) throws ContradictionException {
             assert !take.envelopeContains(takeEnv);
@@ -206,7 +199,6 @@ public class PropJoin extends Propagator<SetVar> {
         }
     };
     private final IntProcedure pickToAndPruneChildOnTakeKer = new IntProcedure() {
-
         @Override
         public void execute(int takeKer) throws ContradictionException {
             assert take.kernelContains(takeKer);
@@ -217,7 +209,6 @@ public class PropJoin extends Propagator<SetVar> {
         }
     };
     private final IntProcedure pruneToOnChildEnv = new IntProcedure() {
-
         @Override
         public void execute(int childEnv) throws ContradictionException {
             if (to.envelopeContains(childEnv)) {
@@ -226,7 +217,6 @@ public class PropJoin extends Propagator<SetVar> {
         }
     };
     private final IntProcedure pickToOnChildKer = new IntProcedure() {
-
         @Override
         public void execute(int childKer) throws ContradictionException {
             // assert id in ker(take)
@@ -234,7 +224,6 @@ public class PropJoin extends Propagator<SetVar> {
         }
     };
     private final IntProcedure pruneChildOnToEnv = new IntProcedure() {
-
         @Override
         public void execute(int toEnv) throws ContradictionException {
             assert !to.envelopeContains(toEnv);
@@ -245,7 +234,6 @@ public class PropJoin extends Propagator<SetVar> {
         }
     };
     private final IntProcedure pickTakeOnToKer = new IntProcedure() {
-
         @Override
         public void execute(int toVal) throws ContradictionException {
             assert to.kernelContains(toVal);
