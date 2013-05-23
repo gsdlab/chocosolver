@@ -40,6 +40,10 @@ public class AstAbstractClafer extends AstClafer {
         this.subs.add(sub);
     }
 
+    void removeSub(AstClafer sub) {
+        this.subs.remove(sub);
+    }
+
     @Override
     public AstAbstractClafer extending(AstAbstractClafer superClafer) {
         super.extending(superClafer);

@@ -16,7 +16,6 @@ import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
-import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIntClafer;
@@ -203,11 +202,13 @@ public class TypeAnalysis {
         public TypedExpr<AstBoolExpr> visit(AstSetTest ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
-            if (!AstUtil.hasNonEmptyIntersectionType(left.getType(), right.getType())) {
+            AstClafer unionType = AstUtil.getUnionType(left.getType(), right.getType());
+            if (unionType == null) {
                 throw new AnalysisException("Cannot " + left.getType().getName() + " "
                         + ast.getOp().getSyntax() + " " + right.getType().getName());
             }
-            return put(BoolType, test(left.getExpr(), ast.getOp(), right.getExpr()));
+            return put(BoolType, test(upcastTo(left, unionType).getExpr(), ast.getOp(), 
+                    upcastTo(right, unionType).getExpr()));
         }
 
         @Override

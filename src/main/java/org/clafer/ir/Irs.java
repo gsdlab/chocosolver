@@ -347,7 +347,7 @@ public class Irs {
         return compare(left, IrCompare.Op.Equal, right);
     }
 
-    public static IrBoolExpr equality(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
+    public static IrBoolExpr equality(IrSetExpr left, IrSetTest.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
                 if (left.equals(right)) {
@@ -362,11 +362,11 @@ public class Irs {
             default:
                 throw new IllegalArgumentException();
         }
-        return new IrSetEquality(left, op, right, BoolDomain);
+        return new IrSetTest(left, op, right, BoolDomain);
     }
 
     public static IrBoolExpr equal(IrSetExpr left, IrSetExpr right) {
-        return equality(left, IrSetEquality.Op.Equal, right);
+        return equality(left, IrSetTest.Op.Equal, right);
     }
 
     public static IrBoolExpr notEqual(IrIntExpr left, int right) {
@@ -378,7 +378,7 @@ public class Irs {
     }
 
     public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
-        return equality(left, IrSetEquality.Op.NotEqual, right);
+        return equality(left, IrSetTest.Op.NotEqual, right);
     }
 
     public static IrBoolExpr lessThan(IrIntExpr left, int right) {

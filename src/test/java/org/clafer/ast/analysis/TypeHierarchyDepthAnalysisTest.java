@@ -29,10 +29,10 @@ public class TypeHierarchyDepthAnalysisTest {
 
         Map<AstAbstractClafer, Integer> analysis = TypeHierarchyDepthAnalysis.analyze(model);
 
-        assertEquals(new Integer(0), analysis.get(object));
-        assertEquals(new Integer(1), analysis.get(animal));
-        assertEquals(new Integer(2), analysis.get(mammal));
-        assertEquals(new Integer(3), analysis.get(primate));
-        assertEquals(new Integer(1), analysis.get(art));
+        assertEquals(1, analysis.get(object).intValue());
+        assertEquals(2, analysis.get(animal).intValue());
+        assertEquals(3, analysis.get(mammal).intValue());
+        assertEquals(4, analysis.get(primate).intValue());
+        assertEquals(2, analysis.get(art).intValue());
     }
 }

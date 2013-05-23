@@ -50,7 +50,7 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrSetEquality.Op;
+import org.clafer.ir.IrSetTest.Op;
 import org.clafer.ir.IrSetVar;
 import static org.clafer.ir.Irs.*;
 import solver.constraints.set.SetConstraintsFactory;

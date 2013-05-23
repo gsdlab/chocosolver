@@ -29,12 +29,24 @@ import java.util.List;
  */
 public class AstModel extends AstConcreteClafer {
 
+    // The topmost Clafer in the type hierarchy.
+    private final AstAbstractClafer claferClafer = new AstAbstractClafer("#clafer#");
     private final List<AstAbstractClafer> abstractClafers;
 
     AstModel() {
         super("#root#");
         super.withCard(new Card(1, 1));
         this.abstractClafers = new ArrayList<AstAbstractClafer>();
+        this.abstractClafers.add(claferClafer);
+    }
+
+    /**
+     * Returns the type every non-primitive type extends from.
+     * 
+     * @return the Clafer named "clafer"
+     */
+    public AstAbstractClafer getTypeHierarchyRoot() {
+        return claferClafer;
     }
 
     public List<AstAbstractClafer> getAbstractClafers() {
@@ -42,7 +54,7 @@ public class AstModel extends AstConcreteClafer {
     }
 
     public AstAbstractClafer addAbstractClafer(String name) {
-        AstAbstractClafer abstractClafer = new AstAbstractClafer(name);
+        AstAbstractClafer abstractClafer = new AstAbstractClafer(name).extending(claferClafer);
         abstractClafers.add(abstractClafer);
         return abstractClafer;
     }
@@ -51,6 +63,11 @@ public class AstModel extends AstConcreteClafer {
         this.abstractClafers.clear();
         this.abstractClafers.addAll(abstractClafers);
         return this;
+    }
+
+    @Override
+    public AstConcreteClafer addChild(String name) {
+        return super.addChild(name).extending(claferClafer);
     }
 
     @Override

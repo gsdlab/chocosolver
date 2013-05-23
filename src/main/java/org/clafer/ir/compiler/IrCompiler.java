@@ -19,7 +19,7 @@ import org.clafer.ir.IrSetExpr;
 import java.util.Deque;
 import java.util.LinkedList;
 import org.clafer.ir.IrNot;
-import org.clafer.ir.IrSetEquality;
+import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortInts;
 import org.clafer.ir.IrSortStrings;
@@ -333,7 +333,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrSetEquality ir, Preference a) {
+        public Object visit(IrSetTest ir, Preference a) {
             SetVar $left = ir.getLeft().accept(setExprCompiler, null);
             SetVar $right = ir.getRight().accept(setExprCompiler, null);
             switch (ir.getOp()) {

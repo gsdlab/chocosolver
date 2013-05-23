@@ -248,9 +248,10 @@ public class AstUtil {
         if (typeHierarchy1.size() > typeHierarchy2.size()) {
             return getUnionTypeHierarchy(typeHierarchy2, typeHierarchy1);
         }
-        for (int i = typeHierarchy1.size() ; i > 0; i--) {
-            if(!typeHierarchy1.get(i - 1).equals(typeHierarchy2.get(i - 1))) {
-                return typeHierarchy1.subList(i, typeHierarchy1.size());
+        for (int i = 1; i <= typeHierarchy1.size(); i++) {
+            if (!typeHierarchy1.get(typeHierarchy1.size() - i).equals(
+                    typeHierarchy2.get(typeHierarchy2.size() - i))) {
+                return typeHierarchy1.subList(typeHierarchy1.size() - i + 1, typeHierarchy1.size());
             }
         }
         return typeHierarchy1;
@@ -262,12 +263,12 @@ public class AstUtil {
      * @param partitions the partitions of the union type
      * @return the lowest common supertype of {@code partitions}
      */
-    public static AstClafer getUnionType(AstClafer[] partitions) {
+    public static AstClafer getUnionType(AstClafer... partitions) {
         List<AstClafer> supers = getSuperHierarchy(partitions[0]);
         for (int i = 1; i < partitions.length; i++) {
             List<AstClafer> otherSupers = getSuperHierarchy(partitions[i]);
             supers = getUnionTypeHierarchy(supers, otherSupers);
-            if(supers.isEmpty()) {
+            if (supers.isEmpty()) {
                 return null;
             }
         }

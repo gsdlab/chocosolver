@@ -29,14 +29,54 @@ public class SetArithmeticModelTest {
     @Test(timeout = 60000)
     public void testUnion() {
         AstModel model = newModel();
-        
+
         AstAbstractClafer feature = model.addAbstractClafer("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
         model.addConstraint(equal(joinRef(join(setUnion(global(backup), global(firewall)), cost)), constant(4)));
-        
+
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
         assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Backup 1..2
+     * Firewall 1..2
+     * [|Backup ++ Firewall| = 3]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testUnionOnClaferType() {
+        AstModel model = newModel();
+
+        AstConcreteClafer backup = model.addChild("Backup").withCard(1, 2);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(1, 2);
+        model.addConstraint(equal(card(setUnion(global(backup), global(firewall))), constant(3)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        assertEquals(2, solver.allInstances().length);
+    }
+    /**
+     * <pre>
+     * abstract Feature
+     * Backup : Feature 1..2
+     * Firewall : Feature *
+     * [(Backup ++ Firewall) = Backup]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testEqualityOnSubTypes() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
+        AstConcreteClafer firewall = model.addChild("Firewall").extending(feature);
+        model.addConstraint(equal(setUnion(global(backup), global(firewall)), global(backup)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        System.out.println(solver.solver);
+        assertEquals(2, solver.allInstances().length);
     }
 }

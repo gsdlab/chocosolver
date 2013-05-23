@@ -35,10 +35,15 @@ public abstract class AstClafer {
     }
 
     public AstClafer extending(AstAbstractClafer superClafer) {
+        Check.notNull(superClafer);
         if (hasSuperClafer()) {
-            throw new IllegalArgumentException(this + " already has a super clafer");
+            // Allowed to specialize.
+            if (!AstUtil.getSupers(superClafer).contains(getSuperClafer())) {
+                throw new IllegalArgumentException(this + " already has a super clafer");
+            }
+            getSuperClafer().removeSub(this);
         }
-        Check.notNull(superClafer).addSub(this);
+        superClafer.addSub(this);
         this.superClafer = superClafer;
         return this;
     }
