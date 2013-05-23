@@ -88,7 +88,7 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        IrModule optModule = ExpressionAnalysis.analyze(module);
+        IrModule optModule = module;// ExpressionAnalysis.analyze(module);
         for (IrBoolVar var : optModule.getBoolVars()) {
             boolVar.get(var);
         }
@@ -797,6 +797,7 @@ public class IrCompiler {
     private static Constraint _union(SetVar[] operands, SetVar union) {
         return SetConstraintsFactory.union(operands, union);
     }
+
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {
         return SetConstraintsFactory.offSet(set, offseted, offset);
     }

@@ -58,6 +58,7 @@ public class SetArithmeticModelTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
         assertEquals(2, solver.allInstances().length);
     }
+
     /**
      * <pre>
      * abstract Feature
@@ -76,7 +77,26 @@ public class SetArithmeticModelTest {
         model.addConstraint(equal(setUnion(global(backup), global(firewall)), global(backup)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
-        System.out.println(solver.solver);
         assertEquals(2, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Backup 1..2
+     * Feature ->> Backup 3..4
+     * [Feature.ref = Backup]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testEqualityOnRefs() {
+        AstModel model = newModel();
+
+        AstConcreteClafer backup = model.addChild("Backup").withCard(1, 2);
+        AstConcreteClafer feature = model.addChild("Feature").withCard(3, 4).refTo(backup);
+        model.addConstraint(equal(joinRef(global(feature)), global(backup)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        // Assuming no reference symmetry breaking.
+        assertEquals(22, solver.allInstances().length);
     }
 }

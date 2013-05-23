@@ -169,7 +169,6 @@ public class SimpleConstraintModelTest {
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
-        System.out.println(solver.solver);
         assertEquals(4, solver.allInstances().length);
     }
 
