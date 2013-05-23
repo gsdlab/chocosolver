@@ -58,7 +58,6 @@ public class QuantifierTest {
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
-        System.out.println(solver.solver);
         assertEquals(432, solver.allInstances().length);
     }
 }

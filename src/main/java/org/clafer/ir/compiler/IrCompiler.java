@@ -720,8 +720,7 @@ public class IrCompiler {
             case 2:
                 return _arithm(vars[0], "+", vars[1], "=", 2);
             default:
-                // Better than the one provided by the library.
-                return _sum(VariableFactory.fixed(vars.length, vars[0].getSolver()), vars);
+                return Constraints.and(vars);
         }
     }
 
@@ -732,7 +731,7 @@ public class IrCompiler {
             case 2:
                 return _arithm(vars[0], "+", vars[1], ">=", 1);
             default:
-                return LogicalConstraintFactory.or(vars);
+                return Constraints.or(vars);
         }
     }
 

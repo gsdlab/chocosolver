@@ -1,6 +1,6 @@
 package org.clafer.choco.constraint;
 
-import java.util.ArrayList;
+import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropJoin;
 import org.clafer.choco.constraint.propagator.PropJoinRef;
 import org.clafer.choco.constraint.propagator.PropSelectN;
@@ -8,6 +8,9 @@ import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
+import org.clafer.choco.constraint.propagator.PropLone;
+import org.clafer.choco.constraint.propagator.PropOne;
+import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
 import solver.constraints.Constraint;
@@ -105,15 +108,14 @@ public class Constraints {
      *   [Animal.Age = 1000]
      * </pre>
      * </p>
-     * <p>
-     * {@code Animal.Age} is a set with a very large envelope. However, due to
-     * static analysis of the model, it is easy to see that the cardinality can
-     * be no larger than 2, hence n=2. Once the first integer x is selected for
-     * the set, the second integer 1000 - x is already determined due to n=2.
-     * Since the Choco library's setSum constraint is not given n, it cannot
-     * make this deduction.
+     * <p> {@code Animal.Age} is a set with a very large envelope. However, due
+     * to static analysis of the model, it is easy to see that the cardinality
+     * can be no larger than 2, hence n=2. Once the first integer x is selected
+     * for the set, the second integer 1000 - x is already determined due to
+     * n=2. Since the Choco library's setSum constraint is not given n, it
+     * cannot make this deduction.
      * </p>
-     * 
+     *
      * @param set the set of integers
      * @param sum the sum of the set
      * @param n the maximum cardinality of the set
@@ -131,7 +133,27 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint and(Constraint... constraints) {
-        return new AndConstraint(constraints);
+    public static Constraint and(BoolVar... vars) {
+        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        constraint.setPropagators(new PropAnd(vars));
+        return constraint;
+    }
+
+    public static Constraint lone(BoolVar... vars) {
+        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        constraint.setPropagators(new PropLone(vars));
+        return constraint;
+    }
+
+    public static Constraint one(BoolVar... vars) {
+        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        constraint.setPropagators(new PropOne(vars));
+        return constraint;
+    }
+
+    public static Constraint or(BoolVar... vars) {
+        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        constraint.setPropagators(new PropOr(vars));
+        return constraint;
     }
 }

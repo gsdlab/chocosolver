@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
+import java.util.Arrays;
 import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
@@ -12,10 +13,10 @@ import util.ESat;
  *
  * @author jimmy
  */
-public class PropAnd extends Propagator<BoolVar> {
+public class PropLone extends Propagator<BoolVar> {
 
-    public PropAnd(BoolVar[] vars) {
-        super(vars, PropagatorPriority.UNARY);
+    public PropLone(BoolVar[] vars) {
+        super(vars, PropagatorPriority.BINARY);
     }
 
     @Override
@@ -23,25 +24,46 @@ public class PropAnd extends Propagator<BoolVar> {
         return EventType.INSTANTIATE.mask;
     }
 
+    private void clearAllBut(int exclude) throws ContradictionException {
+        for (int i = 0; i < vars.length; i++) {
+            if (i != exclude) {
+                vars[i].setToFalse(aCause);
+            }
+        }
+    }
+
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        for (BoolVar var : vars) {
-            var.setToTrue(aCause);
+        for (int i = 0; i < vars.length; i++) {
+            BoolVar var = vars[i];
+            if (var.instantiated()) {
+                if (var.getValue() == 1) {
+                    clearAllBut(i);
+                    return;
+                }
+            }
         }
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        propagate(mask);
+        assert EventType.isInstantiate(mask);
+        if (vars[idxVarInProp].getValue() == 1) {
+            clearAllBut(idxVarInProp);
+        }
     }
 
     @Override
     public ESat isEntailed() {
+        int count = 0;
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
             if (var.instantiated()) {
-                if (var.getValue() == 0) {
-                    return ESat.FALSE;
+                if (var.getValue() == 1) {
+                    count++;
+                    if (count > 1) {
+                        return ESat.FALSE;
+                    }
                 }
             } else {
                 allInstantiated = false;
@@ -52,6 +74,6 @@ public class PropAnd extends Propagator<BoolVar> {
 
     @Override
     public String toString() {
-        return Util.intercalate(" && ", vars);
+        return "lone(" + Arrays.toString(vars) + ")";
     }
 }

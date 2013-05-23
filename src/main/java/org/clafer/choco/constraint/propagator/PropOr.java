@@ -12,10 +12,10 @@ import util.ESat;
  *
  * @author jimmy
  */
-public class PropAnd extends Propagator<BoolVar> {
+public class PropOr extends Propagator<BoolVar> {
 
-    public PropAnd(BoolVar[] vars) {
-        super(vars, PropagatorPriority.UNARY);
+    public PropOr(BoolVar[] vars) {
+        super(vars, PropagatorPriority.BINARY);
     }
 
     @Override
@@ -25,14 +25,33 @@ public class PropAnd extends Propagator<BoolVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        int count = 0;
+        BoolVar last = null;
         for (BoolVar var : vars) {
-            var.setToTrue(aCause);
+            if (var.instantiated()) {
+                if (var.getValue() == 1) {
+                    setPassive();
+                    return;
+                }
+            } else {
+                count++;
+                last = var;
+            }
+        }
+        // Every variable if false except for last.
+        if (count == 1) {
+            last.setToTrue(aCause);
         }
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        propagate(mask);
+        assert EventType.isInstantiate(mask);
+        if (vars[idxVarInProp].getValue() == 1) {
+            setPassive();
+        } else {
+            propagate(mask);
+        }
     }
 
     @Override
@@ -40,18 +59,18 @@ public class PropAnd extends Propagator<BoolVar> {
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
             if (var.instantiated()) {
-                if (var.getValue() == 0) {
-                    return ESat.FALSE;
+                if (var.getValue() == 1) {
+                    return ESat.TRUE;
                 }
             } else {
                 allInstantiated = false;
             }
         }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        return allInstantiated ? ESat.FALSE : ESat.UNDEFINED;
     }
 
     @Override
     public String toString() {
-        return Util.intercalate(" && ", vars);
+        return Util.intercalate(" or ", vars);
     }
 }
