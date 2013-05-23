@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.Random;
 import solver.ResolutionPolicy;
 import solver.Solver;
-import solver.constraints.IntConstraintFactory;
-import solver.constraints.LogicalConstraintFactory;
+import solver.constraints.ICF;
+import solver.constraints.LCF;
 import solver.constraints.nary.cnf.ILogical;
 import solver.constraints.nary.cnf.LogOp;
 import solver.explanations.ExplanationFactory;
@@ -15,7 +15,7 @@ import solver.search.strategy.selectors.variables.FirstFail;
 import solver.search.strategy.strategy.Assignment;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 import util.tools.ArrayUtils;
 
 /**
@@ -47,8 +47,8 @@ public class Feature {
         SearchMonitorFactory.log(solver, false, true);
         ExplanationFactory.CBJ.plugin(solver, true);
         
-        IntVar objective = VariableFactory.bounded("objective", -100, 100, solver);
-        BoolVar[] features = VariableFactory.boolArray("feature", 10, solver);
+        IntVar objective = VF.bounded("objective", -100, 100, solver);
+        BoolVar[] features = VF.boolArray("feature", 10, solver);
         
         ILogical f = features[0];
         LogOp.or(features);
@@ -59,13 +59,13 @@ public class Feature {
             int val = rand.nextBoolean() ? rand.nextInt(100) : -rand.nextInt(100);
             int[] e = new int[]{0, val};
             Arrays.sort(e);
-            footprint[i] = VariableFactory.enumerated("footprint#" + i, e, solver);
-            solver.post(LogicalConstraintFactory.ifThen(features[i],
-                    IntConstraintFactory.arithm(footprint[i], "=", VariableFactory.fixed(val, solver))));
-            solver.post(LogicalConstraintFactory.ifThen(VariableFactory.not(features[i]),
-                    IntConstraintFactory.arithm(footprint[i], "=", VariableFactory.fixed(0, solver))));
+            footprint[i] = VF.enumerated("footprint#" + i, e, solver);
+            solver.post(LCF.ifThen(features[i],
+                    ICF.arithm(footprint[i], "=", VF.fixed(val, solver))));
+            solver.post(LCF.ifThen(VF.not(features[i]),
+                    ICF.arithm(footprint[i], "=", VF.fixed(0, solver))));
         }
-        solver.post(IntConstraintFactory.sum(footprint, objective));
+        solver.post(ICF.sum(footprint, objective));
         solver.set(new Assignment(new FirstFail(ArrayUtils.append(features, footprint)), new InDomainMin()));
         
         System.out.println(solver);

@@ -6,7 +6,7 @@ import org.junit.Test;
 import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -19,13 +19,13 @@ public class NotMemberTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testNotMember() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
             int num = nextInt(10);
 
-            IntVar element = VariableFactory.enumerated("element", -nextInt(10), nextInt(10), solver);
-            SetVar set = VariableFactory.set("set", Util.range(-nextInt(10), nextInt(10)), solver);
+            IntVar element = VF.enumerated("element", -nextInt(10), nextInt(10), solver);
+            SetVar set = VF.set("set", Util.range(-nextInt(10), nextInt(10)), solver);
 
             solver.post(Constraints.notMember(element, set));
 
@@ -38,11 +38,11 @@ public class NotMemberTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testNotMember() {
         Solver solver = new Solver();
 
-        IntVar element = VariableFactory.enumerated("element", -1, 3, solver);
-        SetVar set = VariableFactory.set("set", new int[]{0, 1, 2, 3, 4, 5}, solver);
+        IntVar element = VF.enumerated("element", -1, 3, solver);
+        SetVar set = VF.set("set", new int[]{0, 1, 2, 3, 4, 5}, solver);
 
         solver.post(Constraints.notMember(element, set));
 

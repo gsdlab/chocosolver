@@ -7,7 +7,7 @@ import org.junit.Test;
 import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -30,7 +30,7 @@ public class IntChannelTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testIntChannel() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
@@ -39,9 +39,9 @@ public class IntChannelTest extends ConstraintTest {
 
             SetVar[] sets = new SetVar[x];
             for (int i = 0; i < sets.length; i++) {
-                sets[i] = VariableFactory.set("set_" + i, Util.fromTo(0, y), solver);
+                sets[i] = VF.set("set_" + i, Util.fromTo(0, y), solver);
             }
-            IntVar[] ints = VariableFactory.enumeratedArray("int", y, Util.fromTo(0, x), solver);
+            IntVar[] ints = VF.enumeratedArray("int", y, Util.fromTo(0, x), solver);
 
             solver.post(Constraints.intChannel(sets, ints));
 
@@ -54,14 +54,14 @@ public class IntChannelTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testIntChannel() {
         Solver solver = new Solver();
 
         SetVar[] sets = new SetVar[3];
         for (int i = 0; i < sets.length; i++) {
-            sets[i] = VariableFactory.set("set_" + i, Util.fromTo(0, 5), solver);
+            sets[i] = VF.set("set_" + i, Util.fromTo(0, 5), solver);
         }
-        IntVar[] ints = VariableFactory.enumeratedArray("int", 5, Util.fromTo(0, 3), solver);
+        IntVar[] ints = VF.enumeratedArray("int", 5, Util.fromTo(0, 3), solver);
 
         solver.post(Constraints.intChannel(sets, ints));
 

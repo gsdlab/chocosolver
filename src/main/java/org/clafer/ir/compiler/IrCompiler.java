@@ -60,14 +60,14 @@ import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSub;
 import org.clafer.ir.IrUtil;
 import solver.Solver;
-import solver.constraints.IntConstraintFactory;
-import solver.constraints.LogicalConstraintFactory;
+import solver.constraints.ICF;
+import solver.constraints.LCF;
 import solver.constraints.nary.Sum;
 import solver.constraints.nary.cnf.LogOp;
-import solver.constraints.set.SetConstraintsFactory;
+import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  * Compile from IR to Choco.
@@ -106,17 +106,17 @@ public class IrCompiler {
     }
 
     private BoolVar numBoolVar(String name) {
-        return VariableFactory.bool(name + "#" + varNum++, solver);
+        return VF.bool(name + "#" + varNum++, solver);
     }
 
     private IntVar intVar(String name, IrDomain domain) {
         if (domain.getLowerBound() == 0 && domain.getUpperBound() == 1) {
-            return VariableFactory.bool(name, solver);
+            return VF.bool(name, solver);
         }
         if (domain.isBounded()) {
-            return VariableFactory.enumerated(name, domain.getLowerBound(), domain.getUpperBound(), solver);
+            return VF.enumerated(name, domain.getLowerBound(), domain.getUpperBound(), solver);
         }
-        return VariableFactory.enumerated(name, domain.getValues(), solver);
+        return VF.enumerated(name, domain.getValues(), solver);
     }
 
     private IntVar numIntVar(String name, IrDomain domain) {
@@ -124,24 +124,24 @@ public class IrCompiler {
     }
 
     private IntVar numIntVar(String name, int low, int high) {
-        return VariableFactory.enumerated(name + "#" + varNum++, low, high, solver);
+        return VF.enumerated(name + "#" + varNum++, low, high, solver);
     }
 
     private IntVar numIntVar(String name, int[] dom) {
-        return VariableFactory.enumerated(name + "#" + varNum++, dom, solver);
+        return VF.enumerated(name + "#" + varNum++, dom, solver);
     }
 
     private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
-        return VariableFactory.set(name + "#" + varNum++, env.getValues(), ker.getValues(), solver);
+        return VF.set(name + "#" + varNum++, env.getValues(), ker.getValues(), solver);
     }
     private final CacheMap<IrBoolVar, BoolVar> boolVar = new CacheMap<IrBoolVar, BoolVar>() {
         @Override
         protected BoolVar cache(IrBoolVar ir) {
             Boolean constant = IrUtil.getConstant(ir);
             if (constant != null) {
-                return constant.booleanValue() ? VariableFactory.one(solver) : VariableFactory.zero(solver);
+                return constant.booleanValue() ? VF.one(solver) : VF.zero(solver);
             }
-            return VariableFactory.bool(ir.getName(), solver);
+            return VF.bool(ir.getName(), solver);
         }
     };
     private final CacheMap<IrIntVar, IntVar> intVar = new CacheMap<IrIntVar, IntVar>() {
@@ -151,11 +151,11 @@ public class IrCompiler {
             if (constant != null) {
                 switch (constant.intValue()) {
                     case 0:
-                        return VariableFactory.zero(solver);
+                        return VF.zero(solver);
                     case 1:
-                        return VariableFactory.one(solver);
+                        return VF.one(solver);
                     default:
-                        return VariableFactory.fixed(constant, solver);
+                        return VF.fixed(constant, solver);
                 }
             }
             return intVar(ir.getName(), ir.getDomain());
@@ -166,12 +166,12 @@ public class IrCompiler {
         protected SetVar cache(IrSetVar a) {
             int[] constant = IrUtil.getConstant(a);
             if (constant != null) {
-                return VariableFactory.set(a.toString(), constant, constant, solver);
+                return VF.set(a.toString(), constant, constant, solver);
             }
             IrDomain env = a.getEnv();
             IrDomain ker = a.getKer();
             IrDomain card = a.getCard();
-            SetVar set = VariableFactory.set(a.getName(), env.getValues(), ker.getValues(), solver);
+            SetVar set = VF.set(a.getName(), env.getValues(), ker.getValues(), solver);
 
             if (card.getUpperBound() < env.size()) {
                 IntVar setCard = setCardVar.get(set);
@@ -188,8 +188,8 @@ public class IrCompiler {
     private final CacheMap<SetVar, IntVar> setCardVar = new CacheMap<SetVar, IntVar>() {
         @Override
         protected IntVar cache(SetVar a) {
-            IntVar card = VariableFactory.enumerated("|" + a.getName() + "|", a.getKernelSize(), a.getEnvelopeSize(), solver);
-            solver.post(SetConstraintsFactory.cardinality(a, card));
+            IntVar card = VF.enumerated("|" + a.getName() + "|", a.getKernelSize(), a.getEnvelopeSize(), solver);
+            solver.post(SCF.cardinality(a, card));
             return card;
         }
     };
@@ -387,7 +387,7 @@ public class IrCompiler {
                 $bools[i] = compileAsBoolVar(bools[i]);
             }
             SetVar $set = compile(set);
-            return SetConstraintsFactory.bool_channel($bools, $set, 0);
+            return SCF.bool_channel($bools, $set, 0);
         }
 
         @Override
@@ -487,15 +487,15 @@ public class IrCompiler {
             switch (addends.length) {
                 case 0:
                     // This case should have already been optimized earlier.
-                    return VariableFactory.fixed(constants, solver);
+                    return VF.fixed(constants, solver);
                 case 1:
-                    return VariableFactory.offset(addends[0], constants);
+                    return VF.offset(addends[0], constants);
                 case 2:
-                    return VariableFactory.offset(_sum(addends[0], addends[1]), constants);
+                    return VF.offset(_sum(addends[0], addends[1]), constants);
                 default:
                     IntVar sum = numIntVar("Sum", ir.getDomain());
                     solver.post(_sum(sum, addends));
-                    return VariableFactory.offset(sum, constants);
+                    return VF.offset(sum, constants);
             }
         }
 
@@ -523,16 +523,16 @@ public class IrCompiler {
             IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
             switch (subtractends.length) {
                 case 0:
-                    return VariableFactory.fixed(minuend, solver);
+                    return VF.fixed(minuend, solver);
                 case 1:
-                    return VariableFactory.offset(subtractends[0], -constants);
+                    return VF.offset(subtractends[0], -constants);
                 case 2:
-                    return VariableFactory.offset(_sum(subtractends[0],
-                            VariableFactory.minus(subtractends[1])), -constants);
+                    return VF.offset(_sum(subtractends[0],
+                            VF.minus(subtractends[1])), -constants);
                 default:
                     IntVar diff = numIntVar("Diff", ir.getDomain());
                     solver.post(_difference(diff, subtractends));
-                    return VariableFactory.offset(diff, -constants);
+                    return VF.offset(diff, -constants);
             }
         }
 
@@ -550,7 +550,7 @@ public class IrCompiler {
                         return compile(multiplier);
                     default:
                         if (multiplicandConstant.intValue() >= -1) {
-                            return VariableFactory.scale(compile(multiplier), multiplicandConstant.intValue());
+                            return VF.scale(compile(multiplier), multiplicandConstant.intValue());
                         }
                 }
             }
@@ -562,7 +562,7 @@ public class IrCompiler {
                         return compile(multiplicand);
                     default:
                         if (multiplierConstant.intValue() >= -1) {
-                            return VariableFactory.scale(compile(multiplicand), multiplierConstant.intValue());
+                            return VF.scale(compile(multiplicand), multiplierConstant.intValue());
                         }
                 }
             }
@@ -680,15 +680,15 @@ public class IrCompiler {
     };
 
     private ConjunctiveNormalForm _clauses(LogOp tree) {
-        return IntConstraintFactory.clauses(tree, solver);
+        return ICF.clauses(tree, solver);
     }
 
     private static Constraint _implies(BoolVar b, Constraint c) {
-        return LogicalConstraintFactory.ifThen(b, c);
+        return LCF.ifThen(b, c);
     }
 
     private static Constraint _ifThenElse(BoolVar b, Constraint c, Constraint d) {
-        return LogicalConstraintFactory.ifThenElse(b, c, d);
+        return LCF.ifThenElse(b, c, d);
     }
 
     private static IntVar _sum(IntVar var1, IntVar var2) {
@@ -701,27 +701,27 @@ public class IrCompiler {
         for (int i = 1; i < coeffiecients.length; i++) {
             coeffiecients[i] = -1;
         }
-        return IntConstraintFactory.scalar(vars, coeffiecients, difference);
+        return ICF.scalar(vars, coeffiecients, difference);
     }
 
     private static Constraint _sum(IntVar sum, IntVar... vars) {
-        return IntConstraintFactory.sum(vars, sum);
+        return ICF.sum(vars, sum);
     }
 
     private static Constraint _sum(IntVar sum, BoolVar... vars) {
-        return IntConstraintFactory.sum(vars, sum);
+        return ICF.sum(vars, sum);
     }
 
     private static Constraint _times(IntVar multiplicand, IntVar multiplier, IntVar product) {
-        return IntConstraintFactory.times(multiplicand, multiplier, product);
+        return ICF.times(multiplicand, multiplier, product);
     }
 
     private static Constraint _div(IntVar dividend, IntVar divisor, IntVar quotient) {
-        return IntConstraintFactory.eucl_div(dividend, divisor, quotient);
+        return ICF.eucl_div(dividend, divisor, quotient);
     }
 
     private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {
-        return IntConstraintFactory.arithm(var1, op1, var2, op2, cste);
+        return ICF.arithm(var1, op1, var2, op2, cste);
     }
 
     private static Constraint _and(BoolVar... vars) {
@@ -778,17 +778,17 @@ public class IrCompiler {
 
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
         if (var2.instantiated()) {
-            return IntConstraintFactory.arithm(var1, op, var2.getValue());
+            return ICF.arithm(var1, op, var2.getValue());
         }
-        return IntConstraintFactory.arithm(var1, op, var2);
+        return ICF.arithm(var1, op, var2);
     }
 
     private static Constraint _arithm(IntVar var1, String op, int c) {
-        return IntConstraintFactory.arithm(var1, op, c);
+        return ICF.arithm(var1, op, c);
     }
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
-        return IntConstraintFactory.element(value, array, index, 0);
+        return ICF.element(value, array, index, 0);
     }
 
     private static Constraint _equal(SetVar var1, SetVar var2) {
@@ -796,23 +796,23 @@ public class IrCompiler {
     }
 
     private static Constraint _all_different(SetVar... vars) {
-        return SetConstraintsFactory.all_different(vars);
+        return SCF.all_different(vars);
     }
 
     private static Constraint _all_different(IntVar... vars) {
-        return IntConstraintFactory.alldifferent(vars, "AC");
+        return ICF.alldifferent(vars, "AC");
     }
 
     private static Constraint _between(IntVar var, int low, int high) {
-        return IntConstraintFactory.member(var, low, high);
+        return ICF.member(var, low, high);
     }
 
     private static Constraint _not_between(IntVar var, int low, int high) {
-        return IntConstraintFactory.not_member(var, low, high);
+        return ICF.not_member(var, low, high);
     }
 
     private static Constraint _member(IntVar element, SetVar set) {
-        return SetConstraintsFactory.member(element, set);
+        return SCF.member(element, set);
     }
 
     private static Constraint _not_member(IntVar element, SetVar set) {
@@ -821,17 +821,17 @@ public class IrCompiler {
 
     private static Constraint _lex_chain_less_eq(IntVar[]... vars) {
         if (vars.length == 2) {
-            return IntConstraintFactory.lex_less_eq(vars[0], vars[1]);
+            return ICF.lex_less_eq(vars[0], vars[1]);
         }
-        return IntConstraintFactory.lex_chain_less_eq(vars);
+        return ICF.lex_chain_less_eq(vars);
     }
 
     private static Constraint _union(SetVar[] operands, SetVar union) {
-        return SetConstraintsFactory.union(operands, union);
+        return SCF.union(operands, union);
     }
 
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {
-        return SetConstraintsFactory.offSet(set, offseted, offset);
+        return SCF.offSet(set, offseted, offset);
     }
 
     private int getLB(IntVar... vars) {

@@ -6,7 +6,7 @@ import org.junit.Test;
 import solver.Solver;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -27,13 +27,13 @@ public class SelectNTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testSelectN() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
             int num = nextInt(100) + 1;
 
-            BoolVar[] bools = VariableFactory.boolArray("bool", num, solver);
-            IntVar n = VariableFactory.enumerated("n", 0, num, solver);
+            BoolVar[] bools = VF.boolArray("bool", num, solver);
+            IntVar n = VF.enumerated("n", 0, num, solver);
 
             solver.post(Constraints.selectN(bools, n));
 
@@ -46,11 +46,11 @@ public class SelectNTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSelectN() {
         Solver solver = new Solver();
 
-        BoolVar[] bools = VariableFactory.boolArray("bool", 20, solver);
-        IntVar n = VariableFactory.enumerated("n", 0, 20, solver);
+        BoolVar[] bools = VF.boolArray("bool", 20, solver);
+        IntVar n = VF.enumerated("n", 0, 20, solver);
 
         solver.post(Constraints.selectN(bools, n));
 

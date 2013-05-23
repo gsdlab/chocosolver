@@ -6,7 +6,7 @@ import org.junit.Test;
 import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -27,34 +27,13 @@ public class SetSumNTest extends ConstraintTest {
         assertEquals(sumSet, $sum);
     }
 
-    @Test
-    public void testSumNonPositiveSet() {
-        /*
-         * import Control.Monad
-         *
-         * solutions = do
-         *     set <- filterM (const $ [True, False]) [-7..0]
-         *     guard $ -4 <= sum set && sum set <= 13
-         *     return set
-         */
-        Solver solver = new Solver();
-
-        SetVar set = VariableFactory.set("set", Util.range(-7, 0), solver);
-        IntVar sum = VariableFactory.enumerated("sum", -4, 13, solver);
-        int n = 8;
-
-        solver.post(Constraints.setSumN(set, sum, n));
-
-        assertEquals(14, randomizeStrategy(solver).findAllSolutions());
-    }
-
     @Test(timeout = 60000)
-    public void testSumSetN() throws Throwable {
+    public void quickTest() throws Throwable {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
-            SetVar set = VariableFactory.set("set", Util.range(-nextInt(10), nextInt(10)), solver);
-            IntVar sum = VariableFactory.enumerated("sum", -nextInt(100), nextInt(100), solver);
+            SetVar set = VF.set("set", Util.range(-nextInt(10), nextInt(10)), solver);
+            IntVar sum = VF.enumerated("sum", -nextInt(100), nextInt(100), solver);
             int n = nextInt(10) + 1;
 
             solver.post(Constraints.setSumN(set, sum, n));
@@ -68,7 +47,7 @@ public class SetSumNTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSumSetN() {
         /*
          * import Control.Monad
          *
@@ -80,11 +59,32 @@ public class SetSumNTest extends ConstraintTest {
          */
         Solver solver = new Solver();
 
-        SetVar set = VariableFactory.set("set", Util.range(-4, 5), solver);
-        IntVar sum = VariableFactory.enumerated("sum", -120, 120, solver);
+        SetVar set = VF.set("set", Util.range(-4, 5), solver);
+        IntVar sum = VF.enumerated("sum", -120, 120, solver);
 
         solver.post(Constraints.setSumN(set, sum, 7));
 
         assertEquals(968, randomizeStrategy(solver).findAllSolutions());
+    }
+
+    @Test
+    public void testSumNonPositiveSet() {
+        /*
+         * import Control.Monad
+         *
+         * solutions = do
+         *     set <- filterM (const $ [True, False]) [-7..0]
+         *     guard $ -4 <= sum set && sum set <= 13
+         *     return set
+         */
+        Solver solver = new Solver();
+
+        SetVar set = VF.set("set", Util.range(-7, 0), solver);
+        IntVar sum = VF.enumerated("sum", -4, 13, solver);
+        int n = 8;
+
+        solver.post(Constraints.setSumN(set, sum, n));
+
+        assertEquals(14, randomizeStrategy(solver).findAllSolutions());
     }
 }

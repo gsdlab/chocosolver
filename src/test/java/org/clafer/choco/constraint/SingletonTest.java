@@ -5,7 +5,7 @@ import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import org.junit.Test;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 import static org.junit.Assert.*;
 
 /**
@@ -23,12 +23,12 @@ public class SingletonTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testSingleton() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
-            IntVar i = VariableFactory.enumerated("i", -nextInt(1000), nextInt(1000), solver);
-            SetVar s = VariableFactory.set("s", Util.range(-nextInt(1000), nextInt(1000)), solver);
+            IntVar i = VF.enumerated("i", -nextInt(1000), nextInt(1000), solver);
+            SetVar s = VF.set("s", Util.range(-nextInt(1000), nextInt(1000)), solver);
 
             solver.post(Constraints.singleton(i, s));
 
@@ -41,11 +41,11 @@ public class SingletonTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSingleton() {
         Solver solver = new Solver();
 
-        IntVar i = VariableFactory.enumerated("i", -120, 10, solver);
-        SetVar s = VariableFactory.set("s", Util.range(-10, 110), solver);
+        IntVar i = VF.enumerated("i", -120, 10, solver);
+        SetVar s = VF.set("s", Util.range(-10, 110), solver);
 
         solver.post(Constraints.singleton(i, s));
 

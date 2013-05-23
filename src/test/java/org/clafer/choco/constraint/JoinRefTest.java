@@ -8,7 +8,7 @@ import org.junit.Test;
 import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -31,17 +31,17 @@ public class JoinRefTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testJoinRef() throws Throwable {
+    public void quickTest() throws Throwable {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
             int num = nextInt(10);
 
-            SetVar take = VariableFactory.set("take", Util.fromTo(0, num), solver);
+            SetVar take = VF.set("take", Util.fromTo(0, num), solver);
             IntVar[] refs = new IntVar[num];
             for (int i = 0; i < refs.length; i++) {
-                refs[i] = VariableFactory.enumerated("ref" + i, 0, nextInt(10), solver);
+                refs[i] = VF.enumerated("ref" + i, 0, nextInt(10), solver);
             }
-            SetVar to = VariableFactory.set("to", Util.fromTo(0, nextInt(10)), solver);
+            SetVar to = VF.set("to", Util.fromTo(0, nextInt(10)), solver);
 
             solver.post(Constraints.joinRef(take, refs, to));
 
@@ -54,15 +54,15 @@ public class JoinRefTest extends ConstraintTest {
     }
 
     @Test
-    public void testJoinRefSingleValue() {
+    public void quickTestSingleValue() {
         Solver solver = new Solver();
 
-        SetVar take = VariableFactory.set("take", Util.fromTo(0, 2), solver);
+        SetVar take = VF.set("take", Util.fromTo(0, 2), solver);
         IntVar[] refs = new IntVar[2];
         for (int i = 0; i < refs.length; i++) {
-            refs[i] = VariableFactory.enumerated("ref" + i, 5, 5, solver);
+            refs[i] = VF.enumerated("ref" + i, 5, 5, solver);
         }
-        SetVar to = VariableFactory.set("to", Util.range(0, 5), solver);
+        SetVar to = VF.set("to", Util.range(0, 5), solver);
 
         solver.post(Constraints.joinRef(take, refs, to));
 
@@ -84,15 +84,15 @@ public class JoinRefTest extends ConstraintTest {
 //        checkCorrectness(solver, take, refs, to);
 //    }
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testJoinRef() {
         Solver solver = new Solver();
 
-        SetVar take = VariableFactory.set("take", new int[]{0, 1, 2}, solver);
+        SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
         IntVar[] refs = new IntVar[3];
         for (int i = 0; i < refs.length; i++) {
-            refs[i] = VariableFactory.enumerated("ref" + i, 0, 4, solver);
+            refs[i] = VF.enumerated("ref" + i, 0, 4, solver);
         }
-        SetVar to = VariableFactory.set("to", new int[]{0, 1, 2, 3, 4}, solver);
+        SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
 
         solver.post(Constraints.joinRef(take, refs, to));
 

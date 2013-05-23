@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.variables.SetVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -21,12 +21,12 @@ public class SetEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testSetEqual() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
-            SetVar s1 = VariableFactory.set("s1", Util.range(-nextInt(10), nextInt(10)), solver);
-            SetVar s2 = VariableFactory.set("s2", Util.range(-nextInt(10), nextInt(10)), solver);
+            SetVar s1 = VF.set("s1", Util.range(-nextInt(10), nextInt(10)), solver);
+            SetVar s2 = VF.set("s2", Util.range(-nextInt(10), nextInt(10)), solver);
 
             solver.post(Constraints.equal(s1, s2));
 
@@ -39,11 +39,11 @@ public class SetEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSetTest() {
         Solver solver = new Solver();
 
-        SetVar s1 = VariableFactory.set("s1", Util.range(-5, 10), solver);
-        SetVar s2 = VariableFactory.set("s2", Util.range(-10, 5), solver);
+        SetVar s1 = VF.set("s1", Util.range(-5, 10), solver);
+        SetVar s2 = VF.set("s2", Util.range(-10, 5), solver);
 
         solver.post(Constraints.equal(s1, s2));
 

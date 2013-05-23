@@ -8,7 +8,7 @@ import org.junit.Test;
 import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -40,7 +40,7 @@ public class PropUtilTest {
         }
         int[] domainArray = domain.toArray();
         Arrays.sort(domainArray);
-        return VariableFactory.enumerated(name, domainArray, solver);
+        return VF.enumerated(name, domainArray, solver);
     }
 
     private SetVar randSetVar(String name, Solver solver) {
@@ -51,7 +51,7 @@ public class PropUtilTest {
         }
         int[] domainArray = domain.toArray();
         Arrays.sort(domainArray);
-        return VariableFactory.set(name, domainArray, solver);
+        return VF.set(name, domainArray, solver);
     }
 
     @Test

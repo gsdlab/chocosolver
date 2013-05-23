@@ -13,14 +13,14 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import solver.Solver;
-import solver.constraints.IntConstraintFactory;
+import solver.constraints.ICF;
 import solver.constraints.nary.Sum;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  * Compiles from AST -> Choco
@@ -54,8 +54,8 @@ public class ClaferCompiler {
 
         IntVar[] score = irSolution.getIntVars(astSolution.getRefVars(ref));
         int[] bounds = Sum.getSumBounds(score);
-        IntVar sum = VariableFactory.bounded("Score", bounds[0], bounds[1], solver);
-        solver.post(IntConstraintFactory.sum(score, sum));
+        IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
+        solver.post(ICF.sum(score, sum));
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
@@ -81,8 +81,8 @@ public class ClaferCompiler {
 
         BoolVar[] softVars = irSolution.getBoolVars(astSolution.getSoftVars());
         int[] bounds = Sum.getSumBounds(softVars);
-        IntVar sum = VariableFactory.bounded("Score", bounds[0], bounds[1], solver);
-        solver.post(IntConstraintFactory.sum(softVars, sum));
+        IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
+        solver.post(ICF.sum(softVars, sum));
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 IntStrategyFactory.firstFail_InDomainMax(softVars),

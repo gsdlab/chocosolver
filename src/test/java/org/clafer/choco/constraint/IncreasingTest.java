@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.variables.IntVar;
-import solver.variables.VariableFactory;
+import solver.variables.VF;
 
 /**
  *
@@ -22,14 +22,14 @@ public class IncreasingTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testIncreasing() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
             int sup = nextInt(10) + 1;
             int inf = nextInt(sup);
 
-            IntVar[] vars = VariableFactory.enumeratedArray("var", nextInt(10) + 1, inf, sup, solver);
+            IntVar[] vars = VF.enumeratedArray("var", nextInt(10) + 1, inf, sup, solver);
 
             solver.post(Constraints.increasing(vars));
 
@@ -42,10 +42,10 @@ public class IncreasingTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testIncreasing() {
         Solver solver = new Solver();
 
-        IntVar[] vars = VariableFactory.enumeratedArray("var", 5, 0, 10, solver);
+        IntVar[] vars = VF.enumeratedArray("var", 5, 0, 10, solver);
 
         solver.post(Constraints.increasing(vars));
 
