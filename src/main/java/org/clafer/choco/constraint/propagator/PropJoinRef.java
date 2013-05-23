@@ -199,7 +199,7 @@ public class PropJoinRef extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            if (!PropUtil.approxDomainIntersectEnv(refs[i], to, true)) {
+            if (!PropUtil.domainIntersectEnv(refs[i], to)) {
                 return ESat.FALSE;
             }
         }

@@ -1,6 +1,7 @@
 package org.clafer.ir;
 
 /**
+ * Boolean domain.
  *
  * @author jimmy
  */
@@ -17,21 +18,27 @@ public enum IrBoolDomain {
         this.hasFalse = hasFalse;
     }
 
+    /**
+     * @param value test this value
+     * @return {@code true} if and only if the domain contains the {@code value},
+     *         {@code false} otherwise
+     */
     public boolean contains(boolean value) {
         return value ? hasTrue : hasFalse;
     }
 
-    public boolean isConstant() {
-        return hasTrue != hasFalse;
-    }
-
+    /**
+     * @return the size of the domain
+     */
     public int size() {
-        if (hasTrue) {
-            return hasFalse ? 2 : 1;
-        }
-        return 1;
+        return hasTrue && hasFalse ? 2 : 1;
     }
 
+    /**
+     * Reverse the domain. Maps {0}->{1}, {1}->{0}, and {0,1}->{0,1}.
+     *
+     * @return the inverted domain
+     */
     public IrBoolDomain invert() {
         switch (this) {
             case TrueDomain:

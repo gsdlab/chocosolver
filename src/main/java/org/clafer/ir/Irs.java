@@ -329,10 +329,10 @@ public class Irs {
 
     public static IrBoolExpr between(IrIntExpr var, int low, int high) {
         IrDomain domain = var.getDomain();
-        if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
+        if (domain.getLowBound() >= low && domain.getHighBound() <= high) {
             return $(True);
         }
-        if (domain.getLowerBound() > high || domain.getUpperBound() < low) {
+        if (domain.getLowBound() > high || domain.getHighBound() < low) {
             return $(False);
         }
         return new IrBetween(var, low, high, BoolDomain);
@@ -340,10 +340,10 @@ public class Irs {
 
     public static IrBoolExpr notBetween(IrIntExpr var, int low, int high) {
         IrDomain domain = var.getDomain();
-        if (domain.getLowerBound() >= low && domain.getUpperBound() <= high) {
+        if (domain.getLowBound() >= low && domain.getHighBound() <= high) {
             return $(False);
         }
-        if (domain.getLowerBound() > high || domain.getUpperBound() < low) {
+        if (domain.getLowBound() > high || domain.getHighBound() < low) {
             return $(True);
         }
         return new IrNotBetween(var, low, high, BoolDomain);
@@ -355,43 +355,43 @@ public class Irs {
         switch (op) {
             case Equal:
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
-                    return $(constant(leftDomain.getLowerBound() == rightDomain.getLowerBound()));
+                    return $(constant(leftDomain.getLowBound() == rightDomain.getLowBound()));
                 }
                 break;
             case NotEqual:
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
-                    return $(constant(leftDomain.getLowerBound() != rightDomain.getLowerBound()));
+                    return $(constant(leftDomain.getLowBound() != rightDomain.getLowBound()));
                 }
                 break;
             case LessThan:
-                if (leftDomain.getUpperBound() < rightDomain.getLowerBound()) {
+                if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
                     return $(True);
                 }
-                if (leftDomain.getLowerBound() >= rightDomain.getUpperBound()) {
+                if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
                     return $(False);
                 }
                 break;
             case LessThanEqual:
-                if (leftDomain.getUpperBound() <= rightDomain.getLowerBound()) {
+                if (leftDomain.getHighBound() <= rightDomain.getLowBound()) {
                     return $(True);
                 }
-                if (leftDomain.getLowerBound() > rightDomain.getUpperBound()) {
+                if (leftDomain.getLowBound() > rightDomain.getHighBound()) {
                     return $(False);
                 }
                 break;
             case GreaterThan:
-                if (leftDomain.getLowerBound() > rightDomain.getUpperBound()) {
+                if (leftDomain.getLowBound() > rightDomain.getHighBound()) {
                     return $(True);
                 }
-                if (leftDomain.getUpperBound() <= rightDomain.getLowerBound()) {
+                if (leftDomain.getHighBound() <= rightDomain.getLowBound()) {
                     return $(False);
                 }
                 break;
             case GreaterThanEqual:
-                if (leftDomain.getLowerBound() >= rightDomain.getUpperBound()) {
+                if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
                     return $(True);
                 }
-                if (leftDomain.getUpperBound() < rightDomain.getLowerBound()) {
+                if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
                     return $(False);
                 }
                 break;
@@ -557,7 +557,7 @@ public class Irs {
     public static IrBoolExpr sort(IrIntExpr... array) {
         List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
         for (int i = 0; i < array.length - 1; i++) {
-            if (array[i].getDomain().getUpperBound() > array[i + 1].getDomain().getLowerBound()) {
+            if (array[i].getDomain().getHighBound() > array[i + 1].getDomain().getLowBound()) {
                 filter.add(array[i]);
             }
         }
@@ -595,17 +595,17 @@ public class Irs {
         for (int i = 0; i < bools.length; i++) {
             Boolean constant = IrUtil.getConstant(bools[i]);
             if (Boolean.TRUE.equals(constant)) {
-                if (i >= nDomain.getUpperBound()) {
+                if (i >= nDomain.getHighBound()) {
                     return $(False);
                 }
-                if (i >= nDomain.getLowerBound()) {
+                if (i >= nDomain.getLowBound()) {
                     entailed = false;
                 }
             } else if (Boolean.FALSE.equals(constant)) {
-                if (i < nDomain.getLowerBound()) {
+                if (i < nDomain.getLowBound()) {
                     return $(False);
                 }
-                if (i < nDomain.getUpperBound()) {
+                if (i < nDomain.getHighBound()) {
                     entailed = false;
                 }
             } else {
@@ -655,7 +655,7 @@ public class Irs {
     public static IrIntExpr card(IrSetExpr set) {
         IrDomain domain = set.getCard();
         if (domain.size() == 1) {
-            return $(constant(domain.getLowerBound()));
+            return $(constant(domain.getLowBound()));
         }
         return new IrCard(set, domain);
     }
@@ -685,12 +685,12 @@ public class Irs {
             return filter.getFirst();
         }
         IrDomain domain = addends[0].getDomain();
-        int low = domain.getLowerBound();
-        int high = domain.getUpperBound();
+        int low = domain.getLowBound();
+        int high = domain.getHighBound();
         for (int i = 1; i < addends.length; i++) {
             domain = addends[i].getDomain();
-            low += domain.getLowerBound();
-            high += domain.getUpperBound();
+            low += domain.getLowBound();
+            high += domain.getHighBound();
         }
         domain = boundDomain(low, high);
         return new IrAdd(filter.toArray(new IrIntExpr[filter.size()]), domain);
@@ -724,12 +724,12 @@ public class Irs {
             return filter.getFirst();
         }
         IrDomain domain = subtrahends[0].getDomain();
-        int low = domain.getLowerBound();
-        int high = domain.getUpperBound();
+        int low = domain.getLowBound();
+        int high = domain.getHighBound();
         for (int i = 1; i < subtrahends.length; i++) {
             domain = subtrahends[i].getDomain();
-            low -= domain.getUpperBound();
-            high -= domain.getLowerBound();
+            low -= domain.getHighBound();
+            high -= domain.getLowBound();
         }
         domain = boundDomain(low, high);
         return new IrSub(filter.toArray(new IrIntExpr[filter.size()]), domain);
@@ -761,10 +761,10 @@ public class Irs {
         if (multiplicandConstant != null && multiplierConstant != null) {
             return $(constant(multiplicandConstant.intValue() * multiplierConstant.intValue()));
         }
-        int low1 = multiplicand.getDomain().getLowerBound();
-        int high1 = multiplicand.getDomain().getUpperBound();
-        int low2 = multiplier.getDomain().getLowerBound();
-        int high2 = multiplier.getDomain().getUpperBound();
+        int low1 = multiplicand.getDomain().getLowBound();
+        int high1 = multiplicand.getDomain().getHighBound();
+        int low2 = multiplier.getDomain().getLowBound();
+        int high2 = multiplier.getDomain().getHighBound();
         int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         return new IrMul(multiplicand, multiplier, boundDomain(min, max));
@@ -786,10 +786,10 @@ public class Irs {
         if (dividendConstant != null && divisorConstant != null) {
             return $(constant(dividendConstant.intValue() / divisorConstant.intValue()));
         }
-        int low1 = dividend.getDomain().getLowerBound();
-        int high1 = dividend.getDomain().getUpperBound();
-        int low2 = divisor.getDomain().getLowerBound();
-        int high2 = divisor.getDomain().getUpperBound();
+        int low1 = dividend.getDomain().getLowBound();
+        int high1 = dividend.getDomain().getHighBound();
+        int low2 = divisor.getDomain().getLowBound();
+        int high2 = divisor.getDomain().getHighBound();
         int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         return new IrMul(dividend, divisor, boundDomain(min, max));
@@ -804,12 +804,12 @@ public class Irs {
         assert iter.hasNext();
 
         IrDomain domain = array[iter.next()].getDomain();
-        int low = domain.getLowerBound();
-        int high = domain.getUpperBound();
+        int low = domain.getLowBound();
+        int high = domain.getHighBound();
         while (iter.hasNext()) {
             domain = array[iter.next()].getDomain();
-            low = Math.min(low, domain.getLowerBound());
-            high = Math.max(high, domain.getUpperBound());
+            low = Math.min(low, domain.getLowBound());
+            high = Math.max(high, domain.getHighBound());
         }
         domain = boundDomain(low, high);
         return new IrElement(array, index, domain);
@@ -823,9 +823,9 @@ public class Irs {
         int low = sum;
         int lowCount = count;
         TIntIterator envIter = set.getEnv().iterator();
-        while (lowCount < set.getCard().getUpperBound() && envIter.hasNext()) {
+        while (lowCount < set.getCard().getHighBound() && envIter.hasNext()) {
             int env = envIter.next();
-            if (env >= 0 && lowCount >= set.getCard().getLowerBound()) {
+            if (env >= 0 && lowCount >= set.getCard().getLowBound()) {
                 break;
             }
             if (!set.getKer().contains(env)) {
@@ -838,9 +838,9 @@ public class Irs {
         int high = sum;
         int highCount = count;
         envIter = set.getEnv().iterator(false);
-        while (highCount < set.getCard().getUpperBound() && envIter.hasNext()) {
+        while (highCount < set.getCard().getHighBound() && envIter.hasNext()) {
             int env = envIter.next();
-            if (env <= 0 && highCount >= set.getCard().getLowerBound()) {
+            if (env <= 0 && highCount >= set.getCard().getLowBound()) {
                 break;
             }
             if (!set.getKer().contains(env)) {
@@ -987,11 +987,11 @@ public class Irs {
             int val = iter.next();
             IrDomain childDomain = children[val].getCard();
             if (takeKer.contains(val)) {
-                cardLow += childDomain.getLowerBound();
-                cardHigh += childDomain.getUpperBound();
+                cardLow += childDomain.getLowBound();
+                cardHigh += childDomain.getHighBound();
             } else {
-                childrenLowCards[index] = childDomain.getLowerBound();
-                childrenHighCards[index] = childDomain.getUpperBound();
+                childrenLowCards[index] = childDomain.getLowBound();
+                childrenHighCards[index] = childDomain.getHighBound();
                 index++;
             }
         }
@@ -1001,10 +1001,10 @@ public class Irs {
         Arrays.sort(childrenLowCards);
         Arrays.sort(childrenHighCards);
 
-        for (int i = 0; i < takeCard.getLowerBound() - takeKer.size(); i++) {
+        for (int i = 0; i < takeCard.getLowBound() - takeKer.size(); i++) {
             cardLow += childrenLowCards[i];
         }
-        for (int i = 0; i < takeCard.getUpperBound() - takeKer.size(); i++) {
+        for (int i = 0; i < takeCard.getHighBound() - takeKer.size(); i++) {
             cardHigh += childrenHighCards[childrenHighCards.length - 1 - i];
         }
         cardLow = Math.max(cardLow, ker.size());
@@ -1050,8 +1050,8 @@ public class Irs {
 
         // Compute card
         IrDomain takeCard = take.getCard();
-        int lowTakeCard = takeCard.getLowerBound();
-        int highTakeCard = takeCard.getUpperBound();
+        int lowTakeCard = takeCard.getLowBound();
+        int highTakeCard = takeCard.getHighBound();
         IrDomain card = lowTakeCard == 0
                 ? boundDomain(Math.max(0, ker.size()), Math.min(highTakeCard, env.size()))
                 : boundDomain(Math.max(1, ker.size()), Math.min(highTakeCard, env.size()));
@@ -1069,12 +1069,12 @@ public class Irs {
                 IrDomain env = IrUtil.unionEnvs(operands);
                 IrDomain ker = IrUtil.unionKers(operands);
                 IrDomain operandCard = operands[0].getCard();
-                int low = operandCard.getLowerBound();
-                int high = operandCard.getUpperBound();
+                int low = operandCard.getLowBound();
+                int high = operandCard.getHighBound();
                 for (int i = 1; i < operands.length; i++) {
                     operandCard = operands[i].getCard();
-                    low = Math.max(low, operandCard.getLowerBound());
-                    high += operandCard.getUpperBound();
+                    low = Math.max(low, operandCard.getLowBound());
+                    high += operandCard.getHighBound();
                 }
                 IrDomain card = boundDomain(
                         Math.max(low, ker.size()),

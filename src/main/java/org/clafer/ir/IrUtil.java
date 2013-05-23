@@ -65,12 +65,12 @@ public class IrUtil {
     
     public static Integer getConstant(IrInt i) {
         IrDomain domain = i.getDomain();
-        return domain.size() == 1 ? domain.getLowerBound() : null;
+        return domain.size() == 1 ? domain.getLowBound() : null;
     }
     
     public static IrIntVar asConstant(IrIntVar i) {
         IrDomain domain = i.getDomain();
-        return domain.size() == 1 ? Irs.constant(domain.getLowerBound()) : i;
+        return domain.size() == 1 ? Irs.constant(domain.getLowBound()) : i;
     }
     
     public static boolean isConstant(IrSet s) {
@@ -95,10 +95,10 @@ public class IrUtil {
         if (d1.isEmpty() || d2.isEmpty()) {
             return false;
         }
-        if (d1.getLowerBound() > d2.getUpperBound()) {
+        if (d1.getLowBound() > d2.getHighBound()) {
             return false;
         }
-        if (d1.getUpperBound() < d2.getLowerBound()) {
+        if (d1.getHighBound() < d2.getLowBound()) {
             return false;
         }
         if (d1.isBounded() && d2.isBounded()) {
@@ -130,10 +130,10 @@ public class IrUtil {
         if (sub.size() > sup.size()) {
             return false;
         }
-        if (sub.getLowerBound() < sup.getLowerBound()) {
+        if (sub.getLowBound() < sup.getLowBound()) {
             return false;
         }
-        if (sub.getUpperBound() > sup.getUpperBound()) {
+        if (sub.getHighBound() > sup.getHighBound()) {
             return false;
         }
         if (sub.isBounded() && sup.isBounded()) {
@@ -157,13 +157,13 @@ public class IrUtil {
             return d1;
         }
         if (d1.isBounded() && d2.isBounded()) {
-            if (d1.getLowerBound() <= d2.getLowerBound()
-                    && d1.getUpperBound() >= d2.getLowerBound()) {
-                return Irs.boundDomain(d1.getLowerBound(), d2.getUpperBound());
+            if (d1.getLowBound() <= d2.getLowBound()
+                    && d1.getHighBound() >= d2.getLowBound()) {
+                return Irs.boundDomain(d1.getLowBound(), d2.getHighBound());
             }
-            if (d2.getLowerBound() <= d1.getLowerBound()
-                    && d2.getUpperBound() >= d1.getUpperBound()) {
-                return Irs.boundDomain(d2.getLowerBound(), d1.getUpperBound());
+            if (d2.getLowBound() <= d1.getLowBound()
+                    && d2.getHighBound() >= d1.getHighBound()) {
+                return Irs.boundDomain(d2.getLowBound(), d1.getHighBound());
             }
         }
         TIntHashSet values = new TIntHashSet();
@@ -199,7 +199,7 @@ public class IrUtil {
             return Irs.EmptyDomain;
         }
         if (domain.isBounded()) {
-            return Irs.boundDomain(domain.getLowerBound() + offset, domain.getUpperBound() + offset);
+            return Irs.boundDomain(domain.getLowBound() + offset, domain.getHighBound() + offset);
         }
         int[] values = Arrays.copyOf(domain.getValues(), domain.size());
         for (int i = 0; i < values.length; i++) {

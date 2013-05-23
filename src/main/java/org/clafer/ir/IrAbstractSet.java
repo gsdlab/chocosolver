@@ -19,17 +19,17 @@ public abstract class IrAbstractSet implements IrSet {
         if (card.isEmpty()) {
             throw new IllegalArgumentException();
         }
-        if (card.getLowerBound() > env.size()) {
-            throw new IllegalArgumentException(card.getLowerBound() + " > " + env.size());
+        if (card.getLowBound() > env.size()) {
+            throw new IllegalArgumentException(card.getLowBound() + " > " + env.size());
         }
-        if (card.getUpperBound() > env.size()) {
-            throw new IllegalArgumentException(card.getUpperBound() + " > " + env.size());
+        if (card.getHighBound() > env.size()) {
+            throw new IllegalArgumentException(card.getHighBound() + " > " + env.size());
         }
-        if (card.getLowerBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getLowerBound() + " < " + ker.size());
+        if (card.getLowBound() < ker.size()) {
+            throw new IllegalArgumentException(card.getLowBound() + " < " + ker.size());
         }
-        if (card.getUpperBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getUpperBound() + " < " + ker.size());
+        if (card.getHighBound() < ker.size()) {
+            throw new IllegalArgumentException(card.getHighBound() + " < " + ker.size());
         }
     }
 

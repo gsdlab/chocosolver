@@ -110,11 +110,11 @@ public class IrCompiler {
     }
 
     private IntVar intVar(String name, IrDomain domain) {
-        if (domain.getLowerBound() == 0 && domain.getUpperBound() == 1) {
+        if (domain.getLowBound() == 0 && domain.getHighBound() == 1) {
             return VF.bool(name, solver);
         }
         if (domain.isBounded()) {
-            return VF.enumerated(name, domain.getLowerBound(), domain.getUpperBound(), solver);
+            return VF.enumerated(name, domain.getLowBound(), domain.getHighBound(), solver);
         }
         return VF.enumerated(name, domain.getValues(), solver);
     }
@@ -173,13 +173,13 @@ public class IrCompiler {
             IrDomain card = a.getCard();
             SetVar set = VF.set(a.getName(), env.getValues(), ker.getValues(), solver);
 
-            if (card.getUpperBound() < env.size()) {
+            if (card.getHighBound() < env.size()) {
                 IntVar setCard = setCardVar.get(set);
-                solver.post(_arithm(setCard, "<=", card.getUpperBound()));
+                solver.post(_arithm(setCard, "<=", card.getHighBound()));
             }
-            if (card.getLowerBound() > ker.size()) {
+            if (card.getLowBound() > ker.size()) {
                 IntVar setCard = setCardVar.get(set);
-                solver.post(_arithm(setCard, ">=", card.getLowerBound()));
+                solver.post(_arithm(setCard, ">=", card.getLowBound()));
             }
 
             return set;
@@ -598,7 +598,7 @@ public class IrCompiler {
         @Override
         public IntVar visit(IrSetSum ir, Void a) {
             IntVar sum = intVar("SetSum", ir.getDomain());
-            int n = ir.getSet().getCard().getUpperBound();
+            int n = ir.getSet().getCard().getHighBound();
             solver.post(Constraints.setSumN(compile(ir.getSet()), sum, n));
             return sum;
         }

@@ -826,13 +826,13 @@ public class AstCompiler {
                 IrDomain env = setBody.getEnv();
                 IrDomain ker = setBody.getKer();
                 // TODO: need a different strategy otherwise
-                assert env.getLowerBound() >= 0;
+                assert env.getLowBound() >= 0;
                 @SuppressWarnings("unchecked")
-                Pair<IrIntExpr, IrBoolExpr>[] members = new Pair[env.getUpperBound() + 1];
-                for (int i = 0; i < env.getLowerBound(); i++) {
+                Pair<IrIntExpr, IrBoolExpr>[] members = new Pair[env.getHighBound() + 1];
+                for (int i = 0; i < env.getLowBound(); i++) {
                     members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)), $(False));
                 }
-                for (int i = env.getLowerBound(); i <= env.getUpperBound(); i++) {
+                for (int i = env.getLowBound(); i <= env.getHighBound(); i++) {
                     members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)),
                             $(ker.contains(i) ? True
                             : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i)));
@@ -858,6 +858,7 @@ public class AstCompiler {
             throw new AstException();
         }
 
+        // TODO optimize SOME
         @Override
         public IrExpr visit(AstQuantify ast, Void a) {
             AstDecl decls[] = ast.getDecls();

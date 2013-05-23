@@ -3,8 +3,8 @@ package org.clafer.ast;
 import java.io.Serializable;
 
 /**
- * Immutable cardinality.
- * 
+ * Low and high cardinality. Immutable.
+ *
  * @author jimmy
  */
 public class Card implements Serializable {
@@ -22,7 +22,7 @@ public class Card implements Serializable {
 
     /**
      * Construct a cardinality bounded from below, unbounded above.
-     * 
+     *
      * @param low the low cardinality
      */
     public Card(int low) {
@@ -31,7 +31,7 @@ public class Card implements Serializable {
 
     /**
      * Construct a cardinality bounded from below and above.
-     * 
+     *
      * @param low the low cardinality
      * @param high the high cardinality
      */
@@ -50,11 +50,11 @@ public class Card implements Serializable {
     }
 
     /**
-     * Detects if this cardinality is so restrictive that only one possible value is
-     * allowed.
-     * 
+     * Detects if this cardinality is so restrictive that only one possible
+     * value is allowed.
+     *
      * @return {@code true} if and only if low and high cardinality is the same,
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
     public boolean isExact() {
         return low == high;
@@ -62,9 +62,9 @@ public class Card implements Serializable {
 
     /**
      * Detects if this cardinality is either bounded below and/or above.
-     * 
+     *
      * @return {@code true} if and only if this cardinality is not unbounded,
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
     public boolean isBounded() {
         return hasLow() || hasHigh();
@@ -72,9 +72,9 @@ public class Card implements Serializable {
 
     /**
      * Detects if this cardinality is bounded below.
-     * 
+     *
      * @return {@code true} if and only if this cardinality is bounded below,
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
     public boolean hasLow() {
         return low != 0;
@@ -82,7 +82,7 @@ public class Card implements Serializable {
 
     /**
      * Returns the low cardinality or 0 if unbounded from below.
-     * 
+     *
      * @return the low cardinality
      */
     public int getLow() {
@@ -91,16 +91,18 @@ public class Card implements Serializable {
 
     /**
      * Detects if this cardinality is bounded above.
-     * 
+     *
      * @return {@code true} if and only if this cardinality is bounded above,
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
     public boolean hasHigh() {
         return high != UNBOUNDED_HIGH;
     }
 
     /**
-     * Returns the high cardinality or Integer.MAX_VALUE if unbounded form above.
+     * Returns the high cardinality or Integer.MAX_VALUE if unbounded form
+     * above.
+     *
      * @return the high cardinality
      */
     public int getHigh() {
@@ -109,7 +111,7 @@ public class Card implements Serializable {
 
     /**
      * Add two cardinalities together.
-     * 
+     *
      * @param addend the other cardinality
      * @return the sum of this and the other cardinality
      */
@@ -122,7 +124,7 @@ public class Card implements Serializable {
 
     /**
      * Multiply two cardinalities toegether.
-     * 
+     *
      * @param factor the other cardinality
      * @return the product of this and the other cardinality
      */
@@ -133,7 +135,9 @@ public class Card implements Serializable {
         return new Card(low * factor.low);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Card) {
@@ -143,13 +147,17 @@ public class Card implements Serializable {
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return low ^ high;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         if (!hasHigh()) {

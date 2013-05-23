@@ -6,7 +6,8 @@ import org.clafer.collection.ArrayIntIterator;
 import org.clafer.collection.ReverseArrayIntIterator;
 
 /**
- *
+ * A domain over explicitly defined values.
+ * 
  * @author jimmy
  */
 public class IrEnumDomain implements IrDomain {
@@ -14,7 +15,7 @@ public class IrEnumDomain implements IrDomain {
     private final int[] values;
 
     /**
-     * @param values - sorted, unique, and immutable integers
+     * @param values sorted, unique, and immutable integers
      */
     public IrEnumDomain(int[] values) {
         if (values.length == 0) {
@@ -23,51 +24,83 @@ public class IrEnumDomain implements IrDomain {
         this.values = values;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isBounded() {
+        // Although technically the domain might be contigious, it is too expensive
+        // to check.
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean contains(int value) {
         return Arrays.binarySearch(values, value) >= 0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public int getLowerBound() {
+    public int getLowBound() {
         return values[0];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public int getUpperBound() {
+    public int getHighBound() {
         return values[values.length - 1];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isEmpty() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         return values.length;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int[] getValues() {
         return values;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TIntIterator iterator() {
         return new ArrayIntIterator(values);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TIntIterator iterator(boolean increasing) {
         return increasing ? new ArrayIntIterator(values) : new ReverseArrayIntIterator(values);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -82,7 +115,7 @@ public class IrEnumDomain implements IrDomain {
                 if (size() != size()) {
                     return false;
                 }
-                int otherLow = other.getLowerBound();
+                int otherLow = other.getLowBound();
                 for (int i = 0; i < values.length; i++) {
                     if (values[i] != otherLow + i) {
                         return false;
@@ -95,11 +128,17 @@ public class IrEnumDomain implements IrDomain {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return Arrays.hashCode(values);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();

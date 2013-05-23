@@ -22,10 +22,10 @@ public class IrBoolCast extends IrAbstractBool implements IrBoolExpr {
         super(domain);
         this.flipped = flip;
         this.expr = Check.notNull(expr);
-        if (expr.getDomain().getLowerBound() < 0) {
+        if (expr.getDomain().getLowBound() < 0) {
             throw new IllegalArgumentException();
         }
-        if (expr.getDomain().getUpperBound() > 1) {
+        if (expr.getDomain().getHighBound() > 1) {
             throw new IllegalArgumentException();
         }
     }
