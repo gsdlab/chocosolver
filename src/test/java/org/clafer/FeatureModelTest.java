@@ -408,6 +408,6 @@ public class FeatureModelTest {
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model, Scope.defaultScope(200)
                 .intLow(-10000).intHigh(10000).toScope(), c2_footprint.getRef());
-        assertEquals(-296, solver.optimal().getFst().intValue());
+        assertEquals(-299, solver.optimal().getFst().intValue());
     }
 }

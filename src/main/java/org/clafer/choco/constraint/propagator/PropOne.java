@@ -1,6 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
-import java.util.Arrays;
+import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -33,7 +33,8 @@ public class PropOne extends Propagator<BoolVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        int count = -1;
+        // The number of uninstantiated variables.
+        int count = 0;
         BoolVar last = null;
         for (int i = 0; i < vars.length; i++) {
             BoolVar var = vars[i];
@@ -43,14 +44,16 @@ public class PropOne extends Propagator<BoolVar> {
                     return;
                 }
             } else {
-                count = count == -1 ? i : -2;
+                count++;
                 last = var;
             }
         }
-        // Every variable if false except for last.
-        if (count >= 0) {
+        // Every variable is false except for last.
+        if (count == 1) {
             last.setToTrue(aCause);
-            clearAllBut(count);
+        }
+        if (count == 0) {
+            contradiction(vars[0], "All false.");
         }
     }
 
@@ -86,6 +89,6 @@ public class PropOne extends Propagator<BoolVar> {
 
     @Override
     public String toString() {
-        return "one(" + Arrays.toString(vars) + ")";
+        return "one(" + Util.commaSeparate(vars) + ")";
     }
 }

@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import java.util.Arrays;
 import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
@@ -74,6 +73,6 @@ public class PropLone extends Propagator<BoolVar> {
 
     @Override
     public String toString() {
-        return "lone(" + Arrays.toString(vars) + ")";
+        return "lone(" + Util.commaSeparate(vars) + ")";
     }
 }

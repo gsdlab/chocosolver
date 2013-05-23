@@ -243,7 +243,7 @@ public class Irs {
             case 1:
                 return filter.get(0);
             case 2:
-                // TODO: XOR
+            // TODO: XOR
             default:
                 return new IrOne(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
         }
@@ -506,6 +506,14 @@ public class Irs {
             }
         }
         return new IrBoolCast(expr, BoolDomain);
+    }
+
+    public static IrBoolExpr[] asBools(IrIntExpr... expr) {
+        IrBoolExpr[] bools = new IrBoolExpr[expr.length];
+        for (int i = 0; i < bools.length; i++) {
+            bools[i] = asBool(expr[i]);
+        }
+        return bools;
     }
 
     public static IrBoolExpr boolChannel(Collection<IrBoolExpr> bools, IrSetExpr set) {

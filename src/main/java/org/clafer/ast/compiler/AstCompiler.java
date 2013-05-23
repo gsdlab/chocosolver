@@ -365,38 +365,43 @@ public class AstCompiler {
         }
     }
 
-    // TODO: optimize xor, or
     private void constrainGroupCardinality(AstClafer clafer) {
         Card groupCard = clafer.getGroupCard();
         List<AstConcreteClafer> children = clafer.getChildren();
         if (groupCard.isBounded()) {
+            IrBoolExpr[] members = membership.get(clafer);
             IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
-            IrBoolExpr[][] childrenMembership = new IrBoolExpr[children.size()][];
             boolean featureGroup = true;
             for (int i = 0; i < childrenSets.length; i++) {
                 AstConcreteClafer child = children.get(i);
                 childrenSets[i] = childrenSet.get(child);
-                childrenMembership[i] = membership.get(child);
                 featureGroup &= child.getCard().getHigh() == 1;
             }
             int scope = getScope(clafer);
             for (int i = 0; i < scope; i++) {
-                if (featureGroup) {
-                    // Translate common cases more efficiently.
-                    if (groupCard.isExact()) {
-                        // "xor"
-                        if (groupCard.getLow() == 1) {
-                            // TODO
-                        }
-                    }
-                }
                 IrIntExpr[] cards = new IrIntExpr[childrenSets.length];
                 for (int j = 0; j < cards.length; j++) {
                     cards[j] = card($(childrenSets[j][i]));
                 }
-                IrIntExpr sumCards = add(cards);
-                module.addConstraint(greaterThanEqual(sumCards, groupCard.getLow()));
-                module.addConstraint(lessThanEqual(sumCards, groupCard.getHigh()));
+                if (featureGroup) {
+                    // Translate common cases more efficiently.
+                    if (groupCard.getLow() == 0 && groupCard.getHigh() == 1) {
+                        // "lone"
+                        module.addConstraint(implies(members[i], lone(asBools(cards))));
+                        continue;
+                    }
+                    if (groupCard.getLow() == 1 && !groupCard.hasHigh()) {
+                        // "or"
+                        module.addConstraint(implies(members[i], or(asBools(cards))));
+                        continue;
+                    }
+                    if (groupCard.isExact() && groupCard.getLow() == 1) {
+                        // "xor"
+                        module.addConstraint(implies(members[i], one(asBools(cards))));
+                        continue;
+                    }
+                }
+                module.addConstraint(implies(members[i], constrainCard(add(cards), groupCard)));
             }
         }
     }

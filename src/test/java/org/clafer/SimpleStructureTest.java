@@ -57,7 +57,7 @@ public class SimpleStructureTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testGroupCardinality() {
+    public void testXorGroupCardinality() {
         AstModel model = newModel();
 
         AstConcreteClafer type = model.addChild("Type").withCard(1, 1).withGroupCard(1, 1);
@@ -67,6 +67,48 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
         assertEquals(3, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * xor Type
+     *     Car ?
+     *     Truck ?
+     *     Van ?
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testCustomGroupCardinality() {
+        AstModel model = newModel();
+
+        AstConcreteClafer type = model.addChild("Type").withCard(1, 1).withGroupCard(2, 3);
+        type.addChild("Car").withCard(0, 1);
+        type.addChild("Truck").withCard(0, 1);
+        type.addChild("Van").withCard(0, 1);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * xor Type ?
+     *     Car ?
+     *     Truck ?
+     *     Van ?
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testMaybeGroupCardinality() {
+        AstModel model = newModel();
+
+        AstConcreteClafer type = model.addChild("Type").withCard(0, 1).withGroupCard(1, 1);
+        type.addChild("Car").withCard(0, 1);
+        type.addChild("Truck").withCard(0, 1);
+        type.addChild("Van").withCard(0, 1);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        assertEquals(4, solver.allInstances().length);
     }
 
     /**
