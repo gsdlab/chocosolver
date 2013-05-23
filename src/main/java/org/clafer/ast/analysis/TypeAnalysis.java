@@ -177,12 +177,17 @@ public class TypeAnalysis {
 
         @Override
         public TypedExpr<AstSetExpr> visit(AstJoinRef ast, Void a) {
-            // TODO upcast for abstract refs
             TypedExpr<AstSetExpr> deref = typeCheck(ast.getDeref());
-            if (!deref.getType().hasRef()) {
+            AstClafer derefType = deref.getType();
+            while (derefType != null && !derefType.hasRef()) {
+                derefType = derefType.getSuperClafer();
+            }
+            if (derefType == null) {
                 throw new AnalysisException("Cannot join " + deref.getType().getName() + " . ref");
             }
-            return put(deref.getType().getRef().getTargetType(), joinRef(deref.getExpr()));
+            TypedExpr<AstSetExpr> upcast = upcastTo(deref, derefType);
+            assert upcast != null;
+            return put(derefType.getRef().getTargetType(), joinRef(upcast.getExpr()));
         }
 
         @Override

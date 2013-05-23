@@ -169,6 +169,7 @@ public class SimpleConstraintModelTest {
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        System.out.println(solver.solver);
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -208,5 +209,28 @@ public class SimpleConstraintModelTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
         assertEquals(2, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature ->> integer
+     * Backup : Feature 2..3
+     * [Backup.Feature.ref = 4]
+     * FireWall : Feature ?
+     *     [this.ref = 5]
+     * </pre>
+     */
+    @Test
+    public void testVariableJoinAbstractRef() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature").refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        model.addConstraint(equal(joinRef(global(backup)), constant(3)));
+        firewall.addConstraint(equal(joinRef($this()), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        assertEquals(4, solver.allInstances().length);
     }
 }

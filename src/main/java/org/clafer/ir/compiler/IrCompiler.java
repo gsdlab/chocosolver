@@ -272,6 +272,12 @@ public class IrCompiler {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
             BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
             return _implies($antecedent, $consequent);
+//            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
+//            Object $consequent = compile(ir.getConsequent(), a);
+//            if ($consequent instanceof Constraint) {
+//                return Sneak.implies($antecedent, (Constraint) $consequent);
+//            }
+//            return _implies($antecedent, (BoolVar) $consequent);
         }
 
         @Override
@@ -289,6 +295,15 @@ public class IrCompiler {
             Constraint thenClause = _implies($antecedent, $consequent);
             Constraint elseClause = _implies($antecedent.not(), $alternative);
             return _and(thenClause.reif(), elseClause.reif());
+//            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
+//            Object $consequent = compile(ir.getConsequent(), a);
+//            Object $alternative = compile(ir.getAlternative(), a);
+//            if ($consequent instanceof Constraint && $alternative instanceof Constraint) {
+//                return Sneak.ifThenElse($antecedent, (Constraint) $consequent, (Constraint) $alternative);
+//            }
+//            Constraint thenClause = _implies(asBoolVar($antecedent), asBoolVar($consequent));
+//            Constraint elseClause = _implies(asBoolVar($antecedent.not()), asBoolVar($alternative));
+//            return _and(thenClause.reif(), elseClause.reif());
         }
 
         @Override

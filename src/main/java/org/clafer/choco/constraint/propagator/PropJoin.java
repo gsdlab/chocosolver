@@ -90,6 +90,7 @@ public class PropJoin extends Propagator<SetVar> {
             take.addToKernel(mate, aCause);
             PropUtil.kerSubsetKer(children[mate], to, aCause);
             PropUtil.envSubsetEnv(children[mate], to, aCause);
+            // TODO not idempotent?
             children[mate].addToKernel(toEnv, aCause);
         }
     }

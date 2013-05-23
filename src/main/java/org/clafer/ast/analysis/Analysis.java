@@ -47,6 +47,8 @@ public class Analysis {
     public static Analysis analyze(AstModel model, Scope scope) {
         Check.notNull(model);
         Check.notNull(scope);
+        
+        Map<AstExpr, AstClafer> types = TypeAnalysis.analyze(model);
 
         Map<AstAbstractClafer, Integer> depths = TypeHierarchyDepthAnalysis.analyze(model);
 
@@ -59,7 +61,6 @@ public class Analysis {
         Map<AstAbstractClafer, Offsets> offsets = AbstractOffsetAnalysis.analyze(model, globalCards);
         Map<AstClafer, PartialSolution> partialSolutions = PartialSolutionAnalysis.analyze(model, globalCards, formats, offsets);
 
-        Map<AstExpr, AstClafer> types = TypeAnalysis.analyze(model);
         Map<AstRef, int[][]> partialInts = PartialIntAnalysis.analyze(model, partialSolutions, offsets, optimizedScope);
 
         return new Analysis(depths, globalCards, optimizedScope, formats, offsets, partialSolutions, partialInts, types);
