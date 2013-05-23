@@ -123,8 +123,24 @@ public class Asts {
         return new AstUpcast(base, target);
     }
 
+    public static AstBoolExpr lone(AstSetExpr set) {
+        // Syntactic sugar.
+        return lessThanEqual(card(set), constant(1));
+    }
+
     public static AstBoolExpr none(AstSetExpr set) {
-        return new AstNone(set);
+        // Syntactic sugar.
+        return equal(card(set), constant(0));
+    }
+
+    public static AstBoolExpr one(AstSetExpr set) {
+        // Syntactic sugar.
+        return equal(card(set), constant(1));
+    }
+
+    public static AstBoolExpr some(AstSetExpr set) {
+        // Syntactic sugar.
+        return greaterThanEqual(card(set), constant(1));
     }
 
     public static AstLocal local(String name) {
@@ -165,6 +181,14 @@ public class Asts {
 
     public static AstBoolExpr lone(AstDecl decl, AstBoolExpr body) {
         return quantify(Quantifier.Lone, decl, body);
+    }
+
+    public static AstBoolExpr none(AstDecl[] decls, AstBoolExpr body) {
+        return quantify(Quantifier.None, decls, body);
+    }
+
+    public static AstBoolExpr none(AstDecl decl, AstBoolExpr body) {
+        return quantify(Quantifier.None, decl, body);
     }
 
     public static AstBoolExpr one(AstDecl[] decls, AstBoolExpr body) {

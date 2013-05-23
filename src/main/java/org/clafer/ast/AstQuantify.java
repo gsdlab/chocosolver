@@ -39,6 +39,7 @@ public class AstQuantify implements AstBoolExpr {
 
         All("all"),
         Lone("lone"),
+        None("no"),
         One("one"),
         Some("some");
         private final String syntax;

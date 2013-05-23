@@ -2,7 +2,7 @@ package org.clafer.ast;
 
 /**
  * Dynamic dispatch for AST expressions.
- * 
+ *
  * @param <A> parameter type
  * @param <B> return type
  * @author jimmy
@@ -32,8 +32,6 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstSetArithm ast, A a);
 
     public B visit(AstUpcast ast, A a);
-
-    public B visit(AstNone ast, A a);
 
     public B visit(AstLocal ast, A a);
 

@@ -191,9 +191,68 @@ public class Irs {
         }
     }
 
+    public static IrBoolExpr lone(Collection<IrBoolExpr> operands) {
+        return lone(operands.toArray(new IrBoolExpr[operands.size()]));
+    }
+
+    public static IrBoolExpr lone(IrBoolExpr... operands) {
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
+        int count = 0;
+        for (IrBoolExpr operand : operands) {
+            if (IrUtil.isTrue(operand)) {
+                count++;
+                if (count > 1) {
+                    return $(False);
+                }
+            }
+            if (!IrUtil.isFalse(operand)) {
+                filter.add(operand);
+            }
+        }
+        switch (filter.size()) {
+            case 0:
+                return $(True);
+            case 1:
+                return filter.get(0);
+            default:
+                return new IrLone(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
+        }
+    }
+
+    public static IrBoolExpr one(Collection<IrBoolExpr> operands) {
+        return one(operands.toArray(new IrBoolExpr[operands.size()]));
+    }
+
+    public static IrBoolExpr one(IrBoolExpr... operands) {
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
+        int count = 0;
+        for (IrBoolExpr operand : operands) {
+            if (IrUtil.isTrue(operand)) {
+                count++;
+                if (count > 1) {
+                    return $(False);
+                }
+            }
+            if (!IrUtil.isFalse(operand)) {
+                filter.add(operand);
+            }
+        }
+        switch (filter.size()) {
+            case 0:
+                return $(count == 1 ? True : False);
+            case 1:
+                return filter.get(0);
+            case 2:
+                // TODO: XOR
+            default:
+                return new IrOne(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
+        }
+    }
+
     public static IrBoolExpr or(Collection<IrBoolExpr> operands) {
         return or(operands.toArray(new IrBoolExpr[operands.size()]));
     }
+
     public static IrBoolExpr or(IrBoolExpr... operands) {
         List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {

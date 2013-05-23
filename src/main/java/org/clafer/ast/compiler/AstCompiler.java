@@ -14,7 +14,6 @@ import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLocal;
-import org.clafer.ast.AstNone;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
@@ -26,7 +25,6 @@ import org.clafer.common.Util;
 import org.clafer.ir.IrBoolVar;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +43,7 @@ import org.clafer.ast.AstException;
 import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetArithm;
 import org.clafer.ast.Card;
@@ -57,7 +56,6 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrSetTest.Op;
 import org.clafer.ir.IrSetVar;
 import static org.clafer.ir.Irs.*;
 
@@ -151,7 +149,7 @@ public class AstCompiler {
                 if (constraint.isHard()) {
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                        IrBoolExpr thisConstraint = (IrBoolExpr) expressionCompiler.compile(constraint.getExpr());
+                        IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
                         module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
                     }
                 } else {
@@ -159,7 +157,7 @@ public class AstCompiler {
                     softVars.add(soft);
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                        IrBoolExpr thisConstraint = (IrBoolExpr) expressionCompiler.compile(constraint.getExpr());
+                        IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
                         module.addConstraint(implies($(soft), implies(membership.get(clafer)[j], thisConstraint)));
                     }
                 }
@@ -800,11 +798,6 @@ public class AstCompiler {
         }
 
         @Override
-        public IrExpr visit(AstNone ast, Void a) {
-            return equality((IrSetExpr) compile(ast.getSet()), Op.Equal, $(EmptySet));
-        }
-
-        @Override
         public IrExpr visit(AstLocal ast, Void a) {
             return locals.get(ast);
         }
@@ -879,15 +872,24 @@ public class AstCompiler {
                         locals.put(quantLocals.getFst(), quantLocals.getSnd());
                     }
                 }
-                constraints.add(compile(ast.getBody()));
-                compiled.add(and(constraints));
+                IrBoolExpr compiledBody = compile(ast.getBody());
+                if (Quantifier.All.equals(ast.getQuantifier())) {
+                    compiled.add(implies(and(constraints), compiledBody));
+                } else {
+                    constraints.add(compiledBody);
+                    compiled.add(and(constraints));
+                }
             }
 
             switch (ast.getQuantifier()) {
                 case All:
                     return and(compiled);
-//                case Lone:
-//                case One:
+                case Lone:
+                    return lone(compiled);
+                case None:
+                    return not(or(compiled));
+                case One:
+                    return one(compiled);
                 case Some:
                     return or(compiled);
                 default:

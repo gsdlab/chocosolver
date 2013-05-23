@@ -48,16 +48,17 @@ import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntVar;
+import org.clafer.ir.IrLone;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import org.clafer.ir.IrOffset;
+import org.clafer.ir.IrOne;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSub;
 import org.clafer.ir.IrUtil;
-import org.clafer.ir.analysis.ExpressionAnalysis;
 import solver.Solver;
 import solver.constraints.IntConstraintFactory;
 import solver.constraints.LogicalConstraintFactory;
@@ -208,6 +209,14 @@ public class IrCompiler {
         return asBoolVar(expr.accept(boolExprCompiler1, Preference.BoolVar));
     }
 
+    private BoolVar[] compileAsBoolVars(IrBoolExpr... expr) {
+        BoolVar[] vars = new BoolVar[expr.length];
+        for (int i = 0; i < vars.length; i++) {
+            vars[i] = compileAsBoolVar(expr[i]);
+        }
+        return vars;
+    }
+
     private Constraint asConstraint(Object obj) {
         if (obj instanceof BoolVar) {
             return asConstraint((BoolVar) obj);
@@ -221,6 +230,14 @@ public class IrCompiler {
 
     private Constraint compileAsConstraint(IrBoolExpr expr) {
         return asConstraint(expr.accept(boolExprCompiler1, Preference.Constraint));
+    }
+
+    private Constraint[] compileAsConstraints(IrBoolExpr... expr) {
+        Constraint[] constraints = new Constraint[expr.length];
+        for (int i = 0; i < constraints.length; i++) {
+            constraints[i] = compileAsConstraint(expr[i]);
+        }
+        return constraints;
     }
 
     private IntVar compile(IrIntExpr expr) {
@@ -243,28 +260,22 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrAnd ir, Preference a) {
-            IrBoolExpr[] operands = ir.getOperands();
-            if (operands.length == 1) {
-                return operands[0].accept(this, a);
-            }
-            BoolVar[] $operands = new BoolVar[operands.length];
-            for (int i = 0; i < $operands.length; i++) {
-                $operands[i] = compileAsBoolVar(operands[i]);
-            }
-            return _and($operands);
+            return _and(compileAsBoolVars(ir.getOperands()));
+        }
+
+        @Override
+        public Object visit(IrLone ir, Preference a) {
+            return _lone(compileAsBoolVars(ir.getOperands()));
+        }
+
+        @Override
+        public Object visit(IrOne ir, Preference a) {
+            return _one(compileAsBoolVars(ir.getOperands()));
         }
 
         @Override
         public Object visit(IrOr ir, Preference a) {
-            IrBoolExpr[] operands = ir.getOperands();
-            if (operands.length == 1) {
-                return operands[0].accept(this, a);
-            }
-            BoolVar[] $operands = new BoolVar[operands.length];
-            for (int i = 0; i < $operands.length; i++) {
-                $operands[i] = compileAsBoolVar(operands[i]);
-            }
-            return _or($operands);
+            return _or(compileAsBoolVars(ir.getOperands()));
         }
 
         @Override
@@ -721,6 +732,28 @@ public class IrCompiler {
                 return _arithm(vars[0], "+", vars[1], "=", 2);
             default:
                 return Constraints.and(vars);
+        }
+    }
+
+    private static Constraint _lone(BoolVar... vars) {
+        switch (vars.length) {
+            case 1:
+                return vars[0].getSolver().TRUE;
+            case 2:
+                return _arithm(vars[0], "+", vars[1], ">=", 1);
+            default:
+                return Constraints.lone(vars);
+        }
+    }
+
+    private static Constraint _one(BoolVar... vars) {
+        switch (vars.length) {
+            case 1:
+                return _arithm(vars[0], "=", 1);
+            case 2:
+                return _arithm(vars[0], "+", vars[1], "=", 1);
+            default:
+                return Constraints.one(vars);
         }
     }
 

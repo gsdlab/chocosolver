@@ -26,7 +26,6 @@ import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
-import org.clafer.ast.AstNone;
 import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstSetArithm;
@@ -259,12 +258,6 @@ public class TypeAnalysis {
                 throw new AnalysisException("Cannot upcast from " + base.getType().getName() + " to " + to);
             }
             return put(to, upcast(base.getExpr(), ast.getTarget()));
-        }
-
-        @Override
-        public TypedExpr<AstBoolExpr> visit(AstNone ast, Void a) {
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
-            return put(BoolType, none(set.getExpr()));
         }
 
         @Override

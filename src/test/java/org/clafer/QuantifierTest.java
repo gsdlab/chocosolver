@@ -24,6 +24,182 @@ public class QuantifierTest {
      * Backup : Feature 2..3
      * Firewall : Feature ?
      * Guard : Feature ?
+     * [all a : Backup ++ Firewall | a.Cost.ref = 2]
+     * </pre>
+     */
+    @Test
+    public void testAll() {
+        /*
+         * import Control.Monad
+         *
+         * solutions = do
+         *     backupCard <- [2..3]
+         *     backup <- sequence $ replicate backupCard [-1..1]
+         *     
+         *     firewallCard <- [0, 1]
+         *     firewall <- sequence $ replicate firewallCard [-1..1]
+         *     
+         *     guarddCard <- [0, 1]
+         *     guardd <- sequence $ replicate guarddCard [-1..1]
+         *     
+         *     guard $ all (== 1) (backup ++ firewall)
+         *     
+         *     return (backup, firewall)
+         */
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
+        AstLocal x = local("x");
+        model.addConstraint(all(decl(x, setUnion(global(backup), global(firewall))),
+                equal(joinRef(join(x, cost)), constant(1))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        assertEquals(16, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 2..3
+     * Firewall : Feature ?
+     * Guard : Feature ?
+     * [lone a : Backup ++ Firewall | a.Cost.ref = 2]
+     * </pre>
+     */
+    @Test
+    public void testLone() {
+        /*
+         * import Control.Monad
+         *
+         * solutions = do
+         *     backupCard <- [2..3]
+         *     backup <- sequence $ replicate backupCard [-1..1]
+         *     
+         *     firewallCard <- [0, 1]
+         *     firewall <- sequence $ replicate firewallCard [-1..1]
+         *     
+         *     guarddCard <- [0, 1]
+         *     guardd <- sequence $ replicate guarddCard [-1..1]
+         *     
+         *     guard $ length (filter (== 1) (backup ++ firewall)) <= 1
+         *     
+         *     return (backup, firewall)
+         */
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
+        AstLocal x = local("x");
+        model.addConstraint(lone(decl(x, setUnion(global(backup), global(firewall))),
+                equal(joinRef(join(x, cost)), constant(1))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        assertEquals(384, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 2..3
+     * Firewall : Feature ?
+     * Guard : Feature ?
+     * [no a : Backup ++ Firewall | a.Cost.ref = 2]
+     * </pre>
+     */
+    @Test
+    public void testNone() {
+        /*
+         * import Control.Monad
+         *
+         * solutions = do
+         *     backupCard <- [2..3]
+         *     backup <- sequence $ replicate backupCard [-1..1]
+         *     
+         *     firewallCard <- [0, 1]
+         *     firewall <- sequence $ replicate firewallCard [-1..1]
+         *     
+         *     guarddCard <- [0, 1]
+         *     guardd <- sequence $ replicate guarddCard [-1..1]
+         *     
+         *     guard $ all (/= 1) (backup ++ firewall)
+         *     
+         *     return (backup, firewall)
+         */
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
+        AstLocal x = local("x");
+        model.addConstraint(none(decl(x, setUnion(global(backup), global(firewall))),
+                equal(joinRef(join(x, cost)), constant(1))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        assertEquals(144, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 2..3
+     * Firewall : Feature ?
+     * Guard : Feature ?
+     * [one a : Backup ++ Firewall | a.Cost.ref = 2]
+     * </pre>
+     */
+    @Test
+    public void testOne() {
+        /*
+         * import Control.Monad
+         *
+         * solutions = do
+         *     backupCard <- [2..3]
+         *     backup <- sequence $ replicate backupCard [-1..1]
+         *     
+         *     firewallCard <- [0, 1]
+         *     firewall <- sequence $ replicate firewallCard [-1..1]
+         *     
+         *     guarddCard <- [0, 1]
+         *     guardd <- sequence $ replicate guarddCard [-1..1]
+         *     
+         *     guard $ length (filter (== 1) (backup ++ firewall)) == 1
+         *     
+         *     return (backup, firewall)
+         */
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
+        AstLocal x = local("x");
+        model.addConstraint(one(decl(x, setUnion(global(backup), global(firewall))),
+                equal(joinRef(join(x, cost)), constant(1))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        assertEquals(240, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 2..3
+     * Firewall : Feature ?
+     * Guard : Feature ?
      * [some a : Backup ++ Firewall | a.Cost.ref = 2]
      * </pre>
      */

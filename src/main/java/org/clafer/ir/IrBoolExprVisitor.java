@@ -12,6 +12,10 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrAnd ir, A a);
 
+    public B visit(IrLone ir, A a);
+
+    public B visit(IrOne ir, A a);
+
     public B visit(IrOr ir, A a);
 
     public B visit(IrImplies ir, A a);
