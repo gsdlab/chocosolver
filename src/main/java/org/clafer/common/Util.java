@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import org.clafer.collection.Pair;
+import org.clafer.ir.IrBoolExpr;
 import util.iterators.IntIterator;
 
 /**
@@ -51,6 +53,17 @@ public class Util {
      */
     public static int hashCode(Object o) {
         return o != null ? o.hashCode() : 0;
+    }
+
+    public static int permutation(int n, int r) {
+        if (n < 0) {
+            throw new IllegalArgumentException();
+        }
+        int permutation = 1;
+        for (int i = 0; i < r; i++) {
+            permutation *= n - i;
+        }
+        return permutation;
     }
 
     /**
@@ -194,7 +207,8 @@ public class Util {
      *
      * @param item check if this item exists in the array
      * @param array the array that may contain the item
-     * @return true if and only if item s in array, false otherwise
+     * @return {@code true} if and only if item is in array, {@code false}
+     * otherwise
      */
     public static boolean in(int item, int[] array) {
         for (int a : array) {
@@ -211,15 +225,53 @@ public class Util {
      * @param <T> the type of the elements
      * @param item check if this item exists in the array
      * @param array the array that may contain the item
-     * @return true if and only if item s in array, false otherwise
+     * @return {@code true} if and only if item is in array, {@code false}
+     * otherwise
      */
     public static <T> boolean in(T item, T[] array) {
         for (T a : array) {
-            if (a.equals(item)) {
+            if (equals(item, a)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Check if every element in the array is unique.
+     *
+     * @param array the array
+     * @return {@code true} if and only if the elements in the array never
+     * repeat, {@code false} otherwise
+     */
+    public static boolean isUnique(int[] array) {
+        for (int i = 0; i < array.length; i++) {
+            for (int j = i + 1; j < array.length; j++) {
+                if (array[i] == array[j]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if every element in the array is unique.
+     *
+     * @param <T> the type of the elements
+     * @param array the array
+     * @return {@code true} if and only if the elements in the array never
+     * repeat, {@code false} otherwise
+     */
+    public static <T> boolean isUnique(T[] array) {
+        for (int i = 0; i < array.length; i++) {
+            for (int j = i + 1; j < array.length; j++) {
+                if (equals(array[i], array[j])) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -311,6 +363,40 @@ public class Util {
     }
 
     /**
+     * Returns the first element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map fst}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param pairs the tuples
+     * @return the first element of the tuples
+     */
+    public static <A, B> List<A> mapFst(List<Pair<A, B>> pairs) {
+        List<A> fsts = new ArrayList<A>(pairs.size());
+        for (Pair<A, ?> pair : pairs) {
+            fsts.add(pair.getFst());
+        }
+        return fsts;
+    }
+
+    /**
+     * Returns the second element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map snd}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param pairs the tuples
+     * @return the second element of the tuples
+     */
+    public static <A, B> List<B> mapSnd(List<Pair<A, B>> pairs) {
+        List<B> fsts = new ArrayList<B>(pairs.size());
+        for (Pair<?, B> pair : pairs) {
+            fsts.add(pair.getSnd());
+        }
+        return fsts;
+    }
+
+    /**
      * Concatenates all the arrays in the given order into one array. Must be
      * supplied at least one array. Nondestructive.
      *
@@ -319,21 +405,148 @@ public class Util {
      * @return the concatenation of all the arrays
      */
     public static <T> T[] concat(T[]... arrays) {
-        if (arrays.length == 0) {
+        switch (arrays.length) {
+            case 0:
+                @SuppressWarnings("unchecked") T[] empty = (T[]) Array.newInstance(arrays.getClass().getComponentType().getComponentType(), 0);
+                return empty;
+            case 1:
+                return arrays[0];
+            default:
+                int length = 0;
+                for (T[] array : arrays) {
+                    length += array.length;
+                }
+                int offset = 0;
+                @SuppressWarnings("unchecked") T[] concat = (T[]) Array.newInstance(arrays.getClass().getComponentType().getComponentType(), length);
+                for (T[] array : arrays) {
+                    System.arraycopy(array, 0, concat, offset, array.length);
+                    offset += array.length;
+                }
+                return concat;
+        }
+    }
+
+    /**
+     * Repeat the item.
+     *
+     * @param <T> the type of the item
+     * @param item the item
+     * @param times the number of times to repeat
+     * @return an array containing only the item
+     */
+    public static <T> T[] replicate(T item, int times) {
+        @SuppressWarnings("unchecked")
+        T[] array = (T[]) Array.newInstance(item.getClass(), times);
+        for (int i = 0; i < array.length; i++) {
+            array[i] = item;
+        }
+        return array;
+    }
+
+    /**
+     * Returns all permutations of picking a fixed number of distinct elements
+     * in the array.
+     *
+     * @param <T> the type of the elements
+     * @param array the array
+     * @param choose the number of elements to pick
+     * @return the permutations
+     */
+    public static <T> T[][] permutations(T[] array, int choose) {
+        if (choose > array.length) {
             throw new IllegalArgumentException();
         }
-        int length = 0;
-        for (T[] array : arrays) {
-            length += array.length;
+        if (choose == 0) {
+            @SuppressWarnings("unchecked")
+            T[][] permutations = (T[][]) Array.newInstance(array.getClass(), 1);
+            @SuppressWarnings("unchecked")
+            T[] permutation = (T[]) Array.newInstance(array.getClass().getComponentType(), 0);
+            permutations[0] = permutation;
+            return permutations;
         }
-        int offset = 0;
+
         @SuppressWarnings("unchecked")
-        T[] concat = (T[]) Array.newInstance(arrays.getClass().getComponentType().getComponentType(), length);
-        for (T[] array : arrays) {
-            System.arraycopy(array, 0, concat, offset, array.length);
-            offset += array.length;
+        T[][] permutations = (T[][]) Array.newInstance(
+                array.getClass().getComponentType(),
+                permutation(array.length, choose), choose);
+
+        int[] indices = new int[choose];
+        indices[indices.length - 1]--;
+        for (int i = 0; i < permutations.length; i++) {
+            do {
+                int j = indices.length - 1;
+                indices[j]++;
+                while (indices[j] >= array.length) {
+                    indices[j] = 0;
+                    j--;
+                    indices[j]++;
+                }
+            } while (!isUnique(indices));
+            for (int k = 0; k < indices.length; k++) {
+                permutations[i][k] = array[indices[k]];
+            }
         }
-        return concat;
+        return permutations;
+    }
+
+    /**
+     * Returns all possibilities of picking a fixed number of elements in the
+     * array.
+     *
+     * @param <T> the type of the elements
+     * @param array the array
+     * @param choose the number of elements to pick
+     * @return the sequence
+     */
+    public static <T> T[][] sequence(T[] array, int choose) {
+        if (choose <= 0) {
+            throw new IllegalArgumentException();
+        }
+        return sequence(replicate(array, choose));
+    }
+
+    /**
+     * Returns all possibilities of picking one element in each array. Similar
+     * to Haskell's {@code sequence} for lists, except for edge cases.
+     *
+     * @param <T> the type of the elements
+     * @param arrays the arrays
+     * @return the sequence
+     */
+    public static <T> T[][] sequence(T[]... arrays) {
+        if (arrays.length == 0) {
+            @SuppressWarnings("unchecked")
+            T[][] sequence = (T[][]) Array.newInstance(arrays.getClass().getComponentType(), 1);
+            @SuppressWarnings("unchecked")
+            T[] permutation = (T[]) Array.newInstance(arrays.getClass().getComponentType().getComponentType(), 0);
+            sequence[0] = permutation;
+            return sequence;
+        }
+
+        int product = 1;
+        for (T[] array : arrays) {
+            product *= array.length;
+        }
+        @SuppressWarnings("unchecked")
+        T[][] sequence = (T[][]) Array.newInstance(
+                arrays.getClass().getComponentType().getComponentType(),
+                product, arrays.length);
+
+        int[] indices = new int[arrays.length];
+        indices[indices.length - 1]--;
+        for (int i = 0; i < sequence.length; i++) {
+            int j = indices.length - 1;
+            indices[j]++;
+            while (indices[j] >= arrays[j].length) {
+                indices[j] = 0;
+                j--;
+                indices[j]++;
+            }
+            for (int k = 0; k < indices.length; k++) {
+                sequence[i][k] = arrays[k][indices[k]];
+            }
+        }
+        return sequence;
     }
 
     /**
@@ -344,7 +557,7 @@ public class Util {
      * @param item the item to find
      * @param list the list of items
      * @return a prefix of the {@code list} ending at the first {@code item} if
-     *         found, otherwise the entire list
+     * found, otherwise the entire list
      */
     public static <T> List<T> takeUntil(T item, List<T> list) {
         int index = 0;
@@ -356,15 +569,16 @@ public class Util {
         }
         return list;
     }
+
     /**
-     * Returns a sublist from the index of the item (inclusive) to the end of the
-     * list. Equivalent to the Haskell code {@code dropWhile (/= item) list}
+     * Returns a sublist from the index of the item (inclusive) to the end of
+     * the list. Equivalent to the Haskell code {@code dropWhile (/= item) list}
      *
      * @param <T> the element type
      * @param item the item to find
      * @param list the list of items
-     * @return a suffix of the {@code list} starting at the first {@code item} if
-     *         found, otherwise the entire list
+     * @return a suffix of the {@code list} starting at the first {@code item}
+     * if found, otherwise the entire list
      */
     public static <T> List<T> dropUntil(T item, List<T> list) {
         int index = 0;

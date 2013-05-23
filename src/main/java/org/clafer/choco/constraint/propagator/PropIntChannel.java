@@ -1,18 +1,13 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import solver.Solver;
-import solver.constraints.Constraint;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
-import solver.constraints.set.SetConstraintsFactory;
 import solver.exception.ContradictionException;
-import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
-import solver.variables.VariableFactory;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;

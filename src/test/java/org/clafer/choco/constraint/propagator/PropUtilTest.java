@@ -55,13 +55,15 @@ public class PropUtilTest {
     }
 
     @Test
-    public void testCanIntersect() {
+    public void testDomainIntersectEnv() {
         Solver solver = new Solver();
         for (int i = 0; i < 100; i++) {
             IntVar iv = randIntVar("iv" + i, solver);
             SetVar sv = randSetVar("sv" + i, solver);
 
-            assertEquals(canIntersectBruteForce(iv, sv), PropUtil.domainIntersectEnv(iv, sv));
+            assertEquals(
+                    iv + " intersect " + sv,
+                    canIntersectBruteForce(iv, sv), PropUtil.domainIntersectEnv(iv, sv));
         }
     }
 }

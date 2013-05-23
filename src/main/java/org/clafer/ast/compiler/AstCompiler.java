@@ -26,7 +26,10 @@ import org.clafer.common.Util;
 import org.clafer.ir.IrBoolVar;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.clafer.common.Check;
 import org.clafer.ast.scope.Scope;
 import org.clafer.ast.analysis.Analysis;
@@ -34,8 +37,10 @@ import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.PartialSolution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIntClafer;
@@ -43,6 +48,8 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetArithm;
 import org.clafer.ast.Card;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
 import org.clafer.graph.TopologicalSort;
@@ -53,8 +60,6 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetTest.Op;
 import org.clafer.ir.IrSetVar;
 import static org.clafer.ir.Irs.*;
-import solver.constraints.set.SetConstraintsFactory;
-import solver.variables.VF;
 
 /**
  * Compile from AST -> IR
@@ -545,6 +550,7 @@ public class AstCompiler {
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 
         private final int thisId;
+        private final Map<AstLocal, IrIntExpr> locals = new HashMap<AstLocal, IrIntExpr>();
 
         private ExpressionCompiler(int thisId) {
             this.thisId = thisId;
@@ -556,6 +562,18 @@ public class AstCompiler {
 
         private IrExpr[] compile(AstExpr[] exprs) {
             IrExpr[] compiled = new IrExpr[exprs.length];
+            for (int i = 0; i < compiled.length; i++) {
+                compiled[i] = compile(exprs[i]);
+            }
+            return compiled;
+        }
+
+        private IrBoolExpr compile(AstBoolExpr expr) {
+            return (IrBoolExpr) compile((AstExpr) expr);
+        }
+
+        private IrBoolExpr[] compile(AstBoolExpr[] exprs) {
+            IrBoolExpr[] compiled = new IrBoolExpr[exprs.length];
             for (int i = 0; i < compiled.length; i++) {
                 compiled[i] = compile(exprs[i]);
             }
@@ -772,7 +790,7 @@ public class AstCompiler {
         public IrExpr visit(AstUpcast ast, Void a) {
             AstSetExpr base = ast.getBase();
             int offset = getOffset(ast.getTarget(), getType(base));
-            
+
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
@@ -788,12 +806,94 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstLocal ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return locals.get(ast);
+        }
+
+        private Triple<AstLocal, IrIntExpr, IrBoolExpr>[][] compileDecl(AstDecl decl) {
+            IrExpr body = compile(decl.getBody());
+            if (body instanceof IrIntExpr) {
+                IrIntExpr intBody = (IrIntExpr) body;
+                @SuppressWarnings("unchecked")
+                Triple<AstLocal, IrIntExpr, IrBoolExpr>[] labeledPermutation = new Triple[decl.getLocals().length];
+                for (int i = 0; i < labeledPermutation.length; i++) {
+                    labeledPermutation[i] = new Triple<AstLocal, IrIntExpr, IrBoolExpr>(
+                            decl.getLocals()[i], intBody, $(True));
+                }
+                @SuppressWarnings("unchecked")
+                Triple<AstLocal, IrIntExpr, IrBoolExpr>[][] labeledSequence = new Triple[][]{labeledPermutation};
+                return labeledSequence;
+            }
+            if (body instanceof IrSetExpr) {
+                IrSetExpr setBody = (IrSetExpr) body;
+                IrDomain env = setBody.getEnv();
+                IrDomain ker = setBody.getKer();
+                // TODO: need a different strategy otherwise
+                assert env.getLowerBound() >= 0;
+                @SuppressWarnings("unchecked")
+                Pair<IrIntExpr, IrBoolExpr>[] members = new Pair[env.getUpperBound() + 1];
+                for (int i = 0; i < env.getLowerBound(); i++) {
+                    members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)), $(False));
+                }
+                for (int i = env.getLowerBound(); i <= env.getUpperBound(); i++) {
+                    members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)),
+                            $(ker.contains(i) ? True
+                            : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i)));
+                }
+                module.addConstraint(boolChannel(Util.mapSnd(Arrays.asList(members)), setBody));
+                Pair<IrIntExpr, IrBoolExpr>[][] sequence = decl.isDisjoint() ? Util.permutations(members,
+                        decl.getLocals().length) : Util.sequence(members, decl.getLocals().length);
+
+                @SuppressWarnings("unchecked")
+                Triple<AstLocal, IrIntExpr, IrBoolExpr>[][] labeledSequence = new Triple[sequence.length][];
+                for (int i = 0; i < labeledSequence.length; i++) {
+                    Pair<IrIntExpr, IrBoolExpr>[] permutation = sequence[i];
+                    @SuppressWarnings("unchecked")
+                    Triple<AstLocal, IrIntExpr, IrBoolExpr>[] labeledPermutation = new Triple[permutation.length];
+                    for (int j = 0; j < labeledPermutation.length; j++) {
+                        labeledPermutation[j] = new Triple<AstLocal, IrIntExpr, IrBoolExpr>(
+                                decl.getLocals()[j], permutation[j]);
+                    }
+                    labeledSequence[i] = labeledPermutation;
+                }
+                return labeledSequence;
+            }
+            throw new AstException();
         }
 
         @Override
         public IrExpr visit(AstQuantify ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            AstDecl decls[] = ast.getDecls();
+            @SuppressWarnings("unchecked")
+            Triple<AstLocal, IrIntExpr, IrBoolExpr>[][][] compiledDecls = new Triple[decls.length][][];
+            for (int i = 0; i < compiledDecls.length; i++) {
+                compiledDecls[i] = compileDecl(decls[i]);
+            }
+            compiledDecls = Util.sequence(compiledDecls);
+
+            List<IrBoolExpr> compiled = new ArrayList<IrBoolExpr>();
+            for (Triple<AstLocal, IrIntExpr, IrBoolExpr>[][] quants : compiledDecls) {
+                List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>();
+                for (Triple<AstLocal, IrIntExpr, IrBoolExpr>[] quantDecls : quants) {
+                    for (Triple<AstLocal, IrIntExpr, IrBoolExpr> quantLocals : quantDecls) {
+                        constraints.add(quantLocals.getThd());
+                        locals.put(quantLocals.getFst(), quantLocals.getSnd());
+                    }
+                }
+                constraints.add(compile(ast.getBody()));
+                compiled.add(and(constraints));
+            }
+
+            switch (ast.getQuantifier()) {
+                case All:
+                    return and(compiled);
+//                case Lone:
+//                case One:
+                case Some:
+                    return or(compiled);
+                default:
+                    throw new AstException();
+
+            }
         }
     };
 

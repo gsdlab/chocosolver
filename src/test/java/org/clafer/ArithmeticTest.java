@@ -13,7 +13,7 @@ import org.junit.Test;
  *
  * @author jimmy
  */
-public class ArithmeticModelTest {
+public class ArithmeticTest {
 
     /**
      * <pre>

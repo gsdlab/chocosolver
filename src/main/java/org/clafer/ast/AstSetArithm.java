@@ -2,6 +2,7 @@ package org.clafer.ast;
 
 import java.util.Arrays;
 import org.clafer.common.Check;
+import org.clafer.common.Util;
 
 /**
  *
@@ -42,6 +43,11 @@ public class AstSetArithm implements AstSetExpr {
     @Override
     public int hashCode() {
         return op.hashCode() ^ Arrays.hashCode(operands);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + Util.intercalate(") " + op.getSyntax() + " (", operands) + ")";
     }
 
     public static enum Op {

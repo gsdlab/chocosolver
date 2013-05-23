@@ -127,27 +127,59 @@ public class Asts {
         return new AstNone(set);
     }
 
-    public static AstLocal local() {
-        return new AstLocal();
+    public static AstLocal local(String name) {
+        return new AstLocal(name);
     }
 
     public static AstDecl decl(AstLocal[] locals, AstSetExpr body) {
         return new AstDecl(false, locals, body);
     }
 
+    public static AstDecl decl(AstLocal local, AstSetExpr body) {
+        return decl(new AstLocal[]{local}, body);
+    }
+
     public static AstDecl disjointDecl(AstLocal[] locals, AstSetExpr body) {
         return new AstDecl(true, locals, body);
     }
 
-    public static AstQuantify quantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpr body) {
+    public static AstBoolExpr quantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpr body) {
         return new AstQuantify(quantifier, decls, body);
     }
 
-    public static AstQuantify some(AstDecl[] decls, AstBoolExpr body) {
-        return new AstQuantify(Quantifier.Some, decls, body);
+    public static AstBoolExpr quantify(Quantifier quantifier, AstDecl decl, AstBoolExpr body) {
+        return quantify(quantifier, new AstDecl[]{decl}, body);
     }
 
-    public static AstQuantify all(AstDecl[] decls, AstBoolExpr body) {
-        return new AstQuantify(Quantifier.All, decls, body);
+    public static AstBoolExpr all(AstDecl[] decls, AstBoolExpr body) {
+        return quantify(Quantifier.All, decls, body);
+    }
+
+    public static AstBoolExpr all(AstDecl decl, AstBoolExpr body) {
+        return quantify(Quantifier.All, decl, body);
+    }
+
+    public static AstBoolExpr lone(AstDecl[] decls, AstBoolExpr body) {
+        return quantify(Quantifier.Lone, decls, body);
+    }
+
+    public static AstBoolExpr lone(AstDecl decl, AstBoolExpr body) {
+        return quantify(Quantifier.Lone, decl, body);
+    }
+
+    public static AstBoolExpr one(AstDecl[] decls, AstBoolExpr body) {
+        return quantify(Quantifier.One, decls, body);
+    }
+
+    public static AstBoolExpr one(AstDecl decl, AstBoolExpr body) {
+        return quantify(Quantifier.One, decl, body);
+    }
+
+    public static AstBoolExpr some(AstDecl[] decls, AstBoolExpr body) {
+        return quantify(Quantifier.Some, decls, body);
+    }
+
+    public static AstBoolExpr some(AstDecl decl, AstBoolExpr body) {
+        return quantify(Quantifier.Some, decl, body);
     }
 }

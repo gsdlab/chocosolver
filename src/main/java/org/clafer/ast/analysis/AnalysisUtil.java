@@ -25,21 +25,6 @@ public class AnalysisUtil {
         return t;
     }
 
-    /**
-     * Retrieve the names of the Clafers. Use the names for error messages
-     * rather than {@link AstClafer#toString}.
-     *
-     * @param clafers the Clafers
-     * @return the names of the Clafers
-     */
-    public static String[] getNames(AstClafer... clafers) {
-        String[] names = new String[clafers.length];
-        for (int i = 0; i < names.length; i++) {
-            names[i] = clafers[i].getName();
-        }
-        return names;
-    }
-
     public static void descendingDepths(
             List<AstAbstractClafer> abstractClafers,
             Map<AstAbstractClafer, Integer> depths) {

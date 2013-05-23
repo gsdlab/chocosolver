@@ -291,4 +291,19 @@ public class AstUtil {
         } while (superClafer != null);
         return null;
     }
+    /**
+     * Retrieve the names of the Clafers. Use the names for error messages
+     * rather than {@link Object#toString}.
+     *
+     * @param vars the variables
+     * @return the names of the variables
+     */
+    public static String[] getNames(AstVar... vars) {
+        String[] names = new String[vars.length];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = vars[i].getName();
+        }
+        return names;
+    }
+
 }

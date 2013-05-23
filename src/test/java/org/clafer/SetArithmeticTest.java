@@ -15,7 +15,7 @@ import org.junit.Test;
  *
  * @author jimmy
  */
-public class SetArithmeticModelTest {
+public class SetArithmeticTest {
 
     /**
      * <pre>

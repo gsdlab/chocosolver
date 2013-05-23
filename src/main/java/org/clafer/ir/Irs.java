@@ -191,6 +191,9 @@ public class Irs {
         }
     }
 
+    public static IrBoolExpr or(Collection<IrBoolExpr> operands) {
+        return or(operands.toArray(new IrBoolExpr[operands.size()]));
+    }
     public static IrBoolExpr or(IrBoolExpr... operands) {
         List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {
@@ -444,6 +447,10 @@ public class Irs {
             }
         }
         return new IrBoolCast(expr, BoolDomain);
+    }
+
+    public static IrBoolExpr boolChannel(Collection<IrBoolExpr> bools, IrSetExpr set) {
+        return boolChannel(bools.toArray(new IrBoolExpr[bools.size()]), set);
     }
 
     public static IrBoolExpr boolChannel(IrBoolExpr[] bools, IrSetExpr set) {

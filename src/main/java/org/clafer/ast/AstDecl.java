@@ -14,10 +14,7 @@ public class AstDecl {
 
     public AstDecl(boolean disjoint, AstLocal[] locals, AstSetExpr body) {
         this.disjoint = disjoint;
-        this.locals = Check.notNull(locals);
-        if (locals.length < 1) {
-            throw new IllegalArgumentException();
-        }
+        this.locals = Check.noNullsNotEmpty(locals);
         this.body = Check.notNull(body);
     }
 

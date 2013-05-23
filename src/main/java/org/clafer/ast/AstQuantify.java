@@ -14,10 +14,7 @@ public class AstQuantify implements AstBoolExpr {
 
     public AstQuantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpr body) {
         this.quantifier = Check.notNull(quantifier);
-        this.decls = Check.notNull(decls);
-        if (decls.length < 1) {
-            throw new IllegalArgumentException();
-        }
+        this.decls = Check.noNullsNotEmpty(decls);
         this.body = Check.notNull(body);
     }
 
@@ -40,7 +37,18 @@ public class AstQuantify implements AstBoolExpr {
 
     public static enum Quantifier {
 
-        Some,
-        All
+        All("all"),
+        Lone("lone"),
+        One("one"),
+        Some("some");
+        private final String syntax;
+
+        private Quantifier(String syntax) {
+            this.syntax = syntax;
+        }
+
+        public String getSyntax() {
+            return syntax;
+        }
     }
 }

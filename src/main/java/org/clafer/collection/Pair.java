@@ -4,7 +4,10 @@ import org.clafer.common.Util;
 
 /**
  * A 2-tuple.
- * 
+ *
+ *
+ * @param <A> the type of fst
+ * @param <B> the type of snd
  * @author jimmy
  */
 public class Pair<A, B> {
@@ -14,9 +17,9 @@ public class Pair<A, B> {
 
     /**
      * Construct a tuple.
-     * 
+     *
      * @param fst
-     * @param snd 
+     * @param snd
      */
     public Pair(A fst, B snd) {
         this.fst = fst;
@@ -40,7 +43,6 @@ public class Pair<A, B> {
     public boolean equals(Object obj) {
         if (obj instanceof Pair<?, ?>) {
             Pair<?, ?> other = (Pair<?, ?>) obj;
-
             return Util.equals(fst, other.fst) && Util.equals(snd, other.snd);
         }
         return false;

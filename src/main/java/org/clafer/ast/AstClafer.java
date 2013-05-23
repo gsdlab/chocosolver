@@ -9,7 +9,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public abstract class AstClafer {
+public abstract class AstClafer implements AstVar {
 
     private final String name;
     private AstAbstractClafer superClafer;
@@ -22,6 +22,7 @@ public abstract class AstClafer {
         this.name = Check.notNull(name);
     }
 
+    @Override
     public String getName() {
         return name;
     }

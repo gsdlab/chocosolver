@@ -14,7 +14,7 @@ import org.junit.Test;
  *
  * @author jimmy
  */
-public class SimpleConstraintModelTest {
+public class SimpleConstraintTest {
 
     /**
      * <pre>

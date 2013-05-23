@@ -9,6 +9,7 @@ import org.clafer.ast.AstGlobal;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
+import org.clafer.ast.AstBoolClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
@@ -16,6 +17,7 @@ import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
+import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIntClafer;
@@ -207,7 +209,7 @@ public class TypeAnalysis {
                 throw new AnalysisException("Cannot " + left.getType().getName() + " "
                         + ast.getOp().getSyntax() + " " + right.getType().getName());
             }
-            return put(BoolType, test(upcastTo(left, unionType).getExpr(), ast.getOp(), 
+            return put(BoolType, test(upcastTo(left, unionType).getExpr(), ast.getOp(),
                     upcastTo(right, unionType).getExpr()));
         }
 
@@ -229,7 +231,7 @@ public class TypeAnalysis {
                 if (!(operand.getType() instanceof AstIntClafer)) {
                     throw new AnalysisException("Cannot "
                             + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
-                            AnalysisUtil.getNames(getTypes(operands))));
+                            AstUtil.getNames(getTypes(operands))));
                 }
             }
             return put(IntType, arithm(ast.getOp(), getExprs(operands)));
@@ -242,7 +244,7 @@ public class TypeAnalysis {
             if (unionType == null) {
                 throw new AnalysisException("Cannot "
                         + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
-                        AnalysisUtil.getNames(getTypes(operands))));
+                        AstUtil.getNames(getTypes(operands))));
             }
             TypedExpr<AstSetExpr>[] upcasts = upcastTo(operands, unionType);
             assert upcasts != null;
@@ -272,16 +274,20 @@ public class TypeAnalysis {
 
         @Override
         public TypedExpr<AstBoolExpr> visit(AstQuantify ast, Void a) {
-            throw new Error();
-//            AstDecl[] decls = new AstDecl[ast.getDecls().length];
-//            for (AstDecl decl : ast.getDecls()) {
-//                TypedExpr<AstSetExpr> body = typeCheck(decl.getBody());
-//                for (AstLocal local : decl.getLocals()) {
-//                    put(body.getType(), local);
-//                }
-//            }
-//            typeCheck(ast.getBody());
-//            return put(BoolType,);
+            AstDecl[] decls = new AstDecl[ast.getDecls().length];
+            for (int i = 0; i < ast.getDecls().length; i++) {
+                AstDecl decl = ast.getDecls()[i];
+                TypedExpr<AstSetExpr> body = typeCheck(decl.getBody());
+                for (AstLocal local : decl.getLocals()) {
+                    put(body.getType(), local);
+                }
+                decls[i] = decl(decl.getLocals(), body.getExpr());
+            }
+            TypedExpr<AstBoolExpr> body = typeCheck(ast.getBody());
+            if (body.getType() instanceof AstBoolClafer) {
+                return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
+            }
+            throw new AnalysisException();
         }
     }
 
