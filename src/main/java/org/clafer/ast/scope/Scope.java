@@ -35,10 +35,11 @@ import org.clafer.ast.AstClafer;
  * <p>
  * Both examples construct the same scope.
  * </p>
- * 
+ *
  * <p>
- * What is scope? Because of the expressiveness of Clafer, reasoning is too difficult
- * in general. The scope is a limitation of the solver so that reasoning feasible.
+ * What is scope? Because of the expressiveness of Clafer, reasoning is too
+ * difficult in general. The scope is a limitation of the solver so that
+ * reasoning feasible.
  * <p>
  * Example 1:
  * <pre>
@@ -58,13 +59,14 @@ import org.clafer.ast.AstClafer;
  * </pre>
  * </p>
  * Both examples are attempting to prove/disprove Fermat's last theorem for k=3,
- * although this easily generalizes for any k. Unfortunately this is too difficult,
- * so the solver only attempts to prove/disprove upto a certain scope. In example 1,
- * a scope of {@code Scope.intLow(-16).intHigh(16).toScope()} would only attempt
- * the proof for integers between negative and positive 16. In example 2, a scope
- * of {@code Scope.defaultScope(16)} would only attemp the proof for integers
+ * although this easily generalizes for any k. Unfortunately this is too
+ * difficult, so the solver only attempts to prove/disprove upto a certain
+ * scope. In example 1, a scope of
+ * {@code Scope.intLow(-16).intHigh(16).toScope()} would only attempt the proof
+ * for integers between negative and positive 16. In example 2, a scope of
+ * {@code Scope.defaultScope(16)} would only attemp the proof for integers
  * between 0 and positive 16.
- * 
+ *
  * @author jimmy
  * @see ScopeBuilder
  */
@@ -77,7 +79,7 @@ public class Scope {
     /**
      * Construct a new scope. Altering the map has no affect once the scope is
      * constructed.
-     * 
+     *
      * @param scopes a map of Clafers to their scopes
      * @param defaultScope the scope for unspecified Clafers
      * @param intLow the lowest (inclusive) integer used for solving
@@ -87,9 +89,9 @@ public class Scope {
         if (defaultScope <= 0) {
             throw new IllegalArgumentException("Default scope must be positive");
         }
-        for (Integer value : scopes.values()) {
-            if (value <= 0) {
-                throw new IllegalArgumentException("Scope must be positive");
+        for (Entry<AstClafer, Integer> entry : scopes.entrySet()) {
+            if (entry.getValue() <= 0) {
+                throw new IllegalArgumentException(entry.getKey().getName() + " scope set to " + entry.getValue() + ". Scope must be positive.");
             }
         }
         if (intLow > intHigh) {
@@ -102,9 +104,10 @@ public class Scope {
     }
 
     /**
-     * Returns the scope of the Clafer. If the Clafer is not specified a specific scope
-     * during the construction of this object, then the default scope is returned.
-     * 
+     * Returns the scope of the Clafer. If the Clafer is not specified a
+     * specific scope during the construction of this object, then the default
+     * scope is returned.
+     *
      * @param clafer the Clafer
      * @return the scope of the Clafer
      */
@@ -118,7 +121,7 @@ public class Scope {
 
     /**
      * The scope for unspecified Clafers.
-     * 
+     *
      * @return the default scope
      */
     public int getDefaultScope() {
@@ -127,7 +130,7 @@ public class Scope {
 
     /**
      * Returns the lowest (inclusive) integer used for solving.
-     * 
+     *
      * @return the lowest integer
      */
     public int getIntLow() {
@@ -136,7 +139,7 @@ public class Scope {
 
     /**
      * Returns the highest (inclusive) integer used for solving.
-     * 
+     *
      * @return the highest integer
      */
     public int getIntHigh() {
@@ -145,7 +148,7 @@ public class Scope {
 
     /**
      * Construct the scope using the builder pattern.
-     * 
+     *
      * @see ScopeBuilder
      * @return a new builder
      */
@@ -155,7 +158,7 @@ public class Scope {
 
     /**
      * Equivalent to {@code builder().set(clafer, scope)}.
-     * 
+     *
      * @param clafer the Clafer
      * @param scope the scope of the clafer
      * @return a new builder
@@ -166,7 +169,7 @@ public class Scope {
 
     /**
      * Equivalent to {@code builder().defaultScope(defaultScope)}.
-     * 
+     *
      * @param defaultScope the default scope
      * @return a new builder
      */
@@ -176,7 +179,7 @@ public class Scope {
 
     /**
      * Equivalent to {@code builder().intLow(intLow)}.
-     * 
+     *
      * @param intLow the lowest integer
      * @return a new builder
      */
@@ -186,7 +189,7 @@ public class Scope {
 
     /**
      * Equivalent to {@code builder().intHigh(intHigh)}.
-     * 
+     *
      * @param intHigh the highest integer
      * @return a new builder
      */
@@ -194,7 +197,9 @@ public class Scope {
         return builder().intHigh(intHigh);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder().append('{');

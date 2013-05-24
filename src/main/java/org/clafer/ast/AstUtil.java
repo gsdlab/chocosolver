@@ -291,6 +291,7 @@ public class AstUtil {
         } while (superClafer != null);
         return null;
     }
+
     /**
      * Retrieve the names of the Clafers. Use the names for error messages
      * rather than {@link Object#toString}.
@@ -306,4 +307,18 @@ public class AstUtil {
         return names;
     }
 
+    /**
+     * Retrieve the names of the Clafers. Use the names for error messages
+     * rather than {@link Object#toString}.
+     *
+     * @param vars the variables
+     * @return the names of the variables
+     */
+    public static List<String> getNames(Iterable<? extends AstVar> vars) {
+        List<String> names = new ArrayList<String>();
+        for (AstVar var : vars) {
+            names.add(var.getName());
+        }
+        return names;
+    }
 }

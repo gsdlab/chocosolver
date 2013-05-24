@@ -39,9 +39,6 @@ public class Card implements Serializable {
         if (low < 0) {
             throw new IllegalArgumentException("low(" + low + ") < 0");
         }
-        if (high == 0) {
-            throw new IllegalArgumentException("high(" + high + ") = 0");
-        }
         if (high < low) {
             throw new IllegalArgumentException("high(" + high + ") > low(" + low + ")");
         }

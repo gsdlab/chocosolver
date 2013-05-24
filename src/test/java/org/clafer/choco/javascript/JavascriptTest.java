@@ -20,11 +20,11 @@ public class JavascriptTest {
         AstModel model = Javascript.readModel(
                 "a = clafer('A').withCard(1,1)\n"
                 + "b = abstract('B')\n"
-                + "c = b.addChild('C').extending(b).withGroupCard(0, 1)");
+                + "c = b.addChild('C').extending(b).withGroupCard(0, 1)").getFst();
         assertEquals(1, model.getChildren().size());
         // The first is the implicit "clafer" Clafer
         assertEquals(2, model.getAbstractClafers().size());
-        
+
 
         AstConcreteClafer a = model.getChildren().get(0);
         assertEquals("A", a.getName());

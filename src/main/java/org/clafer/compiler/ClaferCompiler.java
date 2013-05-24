@@ -24,7 +24,7 @@ import solver.variables.VF;
 
 /**
  * Compiles from AST -> Choco
- * 
+ *
  * @author jimmy
  */
 public class ClaferCompiler {
@@ -42,6 +42,27 @@ public class ClaferCompiler {
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
         return new ClaferSolver(solver, solution);
+    }
+
+    public static ClaferObjective compileMaximize(AstModel in, Scope scope, AstRef ref) {
+        Solver solver = new Solver();
+        IrModule module = new IrModule();
+
+        AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
+        IrSolutionMap irSolution = IrCompiler.compile(module, solver);
+        ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
+
+        IntVar[] score = irSolution.getIntVars(astSolution.getRefVars(ref));
+        int[] bounds = Sum.getSumBounds(score);
+        IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
+        solver.post(ICF.sum(score, sum));
+
+        solver.set(new StrategiesSequencer(solver.getEnvironment(),
+                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
+                IntStrategyFactory.firstFail_InDomainMin(score),
+                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolVars())));
+        return new ClaferObjective(solver, solution, Objective.Maximize, sum);
     }
 
     public static ClaferObjective compileMinimize(AstModel in, Scope scope, AstRef ref) {

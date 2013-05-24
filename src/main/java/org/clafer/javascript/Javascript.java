@@ -9,6 +9,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.scope.Scope;
+import org.clafer.collection.Pair;
 
 /**
  *
@@ -28,47 +30,47 @@ public class Javascript {
         return engine;
     }
 
-    public static AstModel readModel(String in) throws ScriptException {
+    public static Pair<AstModel, Scope> readModel(String in) throws ScriptException {
         return readModel(in, newEngine());
     }
 
-    public static AstModel readModel(File in) throws FileNotFoundException, ScriptException {
+    public static Pair<AstModel, Scope> readModel(File in) throws FileNotFoundException, ScriptException {
         return readModel(in, newEngine());
     }
 
-    public static AstModel readModel(Reader in) throws ScriptException {
+    public static Pair<AstModel, Scope> readModel(Reader in) throws ScriptException {
         return readModel(in, newEngine());
     }
 
-    public static AstModel readModel(String in, ScriptEngine engine) throws ScriptException {
+    public static Pair<AstModel, Scope> readModel(String in, ScriptEngine engine) throws ScriptException {
         return readModel("<unknown>", in, engine);
     }
 
-    public static AstModel readModel(File in, ScriptEngine engine) throws FileNotFoundException, ScriptException {
+    public static Pair<AstModel, Scope> readModel(File in, ScriptEngine engine) throws FileNotFoundException, ScriptException {
         return readModel(in.getName(), new FileReader(in), engine);
     }
 
-    public static AstModel readModel(Reader in, ScriptEngine engine) throws ScriptException {
+    public static Pair<AstModel, Scope> readModel(Reader in, ScriptEngine engine) throws ScriptException {
         return readModel("<unknown>", in, engine);
     }
 
-    public static AstModel readModel(String name, String in, ScriptEngine engine) throws ScriptException {
-        RhinoContext context = new RhinoContext();
+    public static Pair<AstModel, Scope> readModel(String name, String in, ScriptEngine engine) throws ScriptException {
+        JavascriptContext context = new JavascriptContext();
         engine.put("rc", context);
         engine.put(ScriptEngine.FILENAME, "header.js");
         engine.eval(new InputStreamReader(Javascript.class.getResourceAsStream("header.js")));
         engine.put(ScriptEngine.FILENAME, name);
         engine.eval(in);
-        return context.getModel();
+        return new Pair<AstModel, Scope>(context.getModel(), context.getScope());
     }
 
-    public static AstModel readModel(String name, Reader in, ScriptEngine engine) throws ScriptException {
-        RhinoContext context = new RhinoContext();
+    public static Pair<AstModel, Scope> readModel(String name, Reader in, ScriptEngine engine) throws ScriptException {
+        JavascriptContext context = new JavascriptContext();
         engine.put("rc", context);
         engine.put(ScriptEngine.FILENAME, "header.js");
         engine.eval(new InputStreamReader(Javascript.class.getResourceAsStream("header.js")));
         engine.put(ScriptEngine.FILENAME, name);
         engine.eval(in);
-        return context.getModel();
+        return new Pair<AstModel, Scope>(context.getModel(), context.getScope());
     }
 }

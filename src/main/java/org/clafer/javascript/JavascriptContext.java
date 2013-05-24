@@ -14,7 +14,7 @@ import org.clafer.ast.AstUtil;
  *
  * @author jimmy
  */
-public class RhinoContext {
+public class JavascriptContext {
 
     private final Map<String, Integer> scope = new HashMap<String, Integer>();
     private int defaultScope = 1;
@@ -51,6 +51,7 @@ public class RhinoContext {
             String key = entry.getKey();
             AstClafer clafer = resolvedClafers.get(key);
             if (clafer == null) {
+                System.out.println(resolvedClafers);
                 throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\"");
             }
             resolvedScope.put(clafer, entry.getValue());
