@@ -55,7 +55,9 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
+import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExprVisitor;
+import org.clafer.ir.IrSetIntersection;
 import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetVar;
@@ -269,6 +271,14 @@ public class IrCompiler {
 
     private SetVar compile(IrSetExpr expr) {
         return expr.accept(setExprCompiler, null);
+    }
+
+    private SetVar[] compile(IrSetExpr[] expr) {
+        SetVar[] vars = new SetVar[expr.length];
+        for (int i = 0; i < vars.length; i++) {
+            vars[i] = compile(expr[i]);
+        }
+        return vars;
     }
     private final IrBoolExprVisitor<Preference, Object> boolExprCompiler1 = new IrBoolExprVisitor<Preference, Object>() {
         @Override
@@ -726,14 +736,27 @@ public class IrCompiler {
         }
 
         @Override
+        public SetVar visit(IrSetDifference ir, Void a) {
+            SetVar minuend = compile(ir.getMinuend());
+            SetVar subtrahend = compile(ir.getSubtrahend());
+            SetVar difference = numSetVar("Difference", ir.getEnv(), ir.getKer());
+            solver.post(_difference(minuend, subtrahend, difference));
+            return difference;
+        }
+
+        @Override
+        public SetVar visit(IrSetIntersection ir, Void a) {
+            SetVar[] operands = compile(ir.getOperands());
+            SetVar union = numSetVar("Intersection", ir.getEnv(), ir.getKer());
+            solver.post(_intersection(operands, union));
+            return union;
+        }
+
+        @Override
         public SetVar visit(IrSetUnion ir, Void a) {
-            IrSetExpr[] operands = ir.getOperands();
-            SetVar[] $operands = new SetVar[operands.length];
-            for (int i = 0; i < operands.length; i++) {
-                $operands[i] = operands[i].accept(setExprCompiler, a);
-            }
+            SetVar[] operands = compile(ir.getOperands());
             SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
-            solver.post(_union($operands, union));
+            solver.post(_union(operands, union));
             return union;
         }
 
@@ -899,6 +922,14 @@ public class IrCompiler {
             return ICF.lex_less_eq(vars[0], vars[1]);
         }
         return ICF.lex_chain_less_eq(vars);
+    }
+
+    private static Constraint _difference(SetVar minuend, SetVar subtrahend, SetVar difference) {
+        return Constraints.difference(minuend, subtrahend, difference);
+    }
+
+    private static Constraint _intersection(SetVar[] operands, SetVar union) {
+        return SCF.intersection(operands, union);
     }
 
     private static Constraint _union(SetVar[] operands, SetVar union) {

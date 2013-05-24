@@ -21,7 +21,7 @@ public class SetEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSetEqual() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
@@ -39,7 +39,7 @@ public class SetEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testSetTest() {
+    public void quickTest() {
         Solver solver = new Solver();
 
         SetVar s1 = VF.set("s1", Util.range(-5, 10), solver);

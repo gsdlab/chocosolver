@@ -11,9 +11,10 @@ import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
+import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
-import org.clafer.choco.constraint.propagator.PropUnion;
+import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
@@ -158,10 +159,16 @@ public class Constraints {
         constraint.setPropagators(new PropOr(vars));
         return constraint;
     }
-    
-        public static Constraint union(SetVar[] sets, SetVar union) {
+
+    public static Constraint difference(SetVar minuend, SetVar subtrahend, SetVar difference) {
+        Constraint constraint = new Constraint(new Variable[]{minuend, subtrahend, difference}, minuend.getSolver());
+        constraint.setPropagators(new PropSetDifference(minuend, subtrahend, difference));
+        return constraint;
+    }
+
+    public static Constraint union(SetVar[] sets, SetVar union) {
         Constraint constraint = new Constraint(Util.cons(union, sets), union.getSolver());
-        constraint.setPropagators(new PropUnion(sets, union));
+        constraint.setPropagators(new PropSetUnion(sets, union));
         return constraint;
     }
 }

@@ -158,6 +158,71 @@ public class IrUtil {
         return true;
     }
 
+    public static IrDomain difference(IrDomain minuend, IrDomain subtrahend) {
+        if (!intersects(minuend, subtrahend)) {
+            return minuend;
+        }
+        if (minuend.isBounded() && subtrahend.isBounded()) {
+            if (minuend.getLowBound() <= subtrahend.getLowBound()
+                    && minuend.getHighBound() >= subtrahend.getLowBound()) {
+                return Irs.boundDomain(minuend.getLowBound(), subtrahend.getLowBound());
+            }
+            if (subtrahend.getLowBound() <= minuend.getLowBound()
+                    && subtrahend.getHighBound() >= minuend.getLowBound()) {
+                return Irs.boundDomain(subtrahend.getHighBound(), minuend.getHighBound());
+            }
+        }
+        TIntHashSet values = new TIntHashSet();
+        values.addAll(minuend.getValues());
+        values.removeAll(subtrahend.getValues());
+        return Irs.enumDomain(values);
+    }
+
+    public static IrDomain intersection(IrDomain d1, IrDomain d2) {
+        if (isSubsetOf(d1, d2)) {
+            return d1;
+        }
+        if (isSubsetOf(d2, d1)) {
+            return d2;
+        }
+        if (d1.isBounded() && d2.isBounded()) {
+            if (d1.getLowBound() <= d2.getLowBound()
+                    && d1.getHighBound() >= d2.getLowBound()) {
+                return Irs.boundDomain(d2.getLowBound(), d1.getHighBound());
+            }
+            if (d2.getLowBound() <= d1.getLowBound()
+                    && d2.getHighBound() >= d1.getLowBound()) {
+                return Irs.boundDomain(d1.getLowBound(), d2.getHighBound());
+            }
+        }
+        TIntHashSet values = new TIntHashSet();
+        values.addAll(d1.getValues());
+        values.retainAll(d2.getValues());
+        return Irs.enumDomain(values);
+    }
+
+    public static IrDomain intersectionEnvs(IrSetExpr... sets) {
+        if (sets.length == 0) {
+            return Irs.EmptyDomain;
+        }
+        IrDomain domain = sets[0].getEnv();
+        for (int i = 1; i < sets.length; i++) {
+            domain = intersection(domain, sets[i].getEnv());
+        }
+        return domain;
+    }
+
+    public static IrDomain intersectionKers(IrSetExpr... sets) {
+        if (sets.length == 0) {
+            return Irs.EmptyDomain;
+        }
+        IrDomain domain = sets[0].getKer();
+        for (int i = 1; i < sets.length; i++) {
+            domain = intersection(domain, sets[i].getKer());
+        }
+        return domain;
+    }
+
     public static IrDomain union(IrDomain d1, IrDomain d2) {
         if (isSubsetOf(d1, d2)) {
             return d2;
@@ -171,7 +236,7 @@ public class IrUtil {
                 return Irs.boundDomain(d1.getLowBound(), d2.getHighBound());
             }
             if (d2.getLowBound() <= d1.getLowBound()
-                    && d2.getHighBound() >= d1.getHighBound()) {
+                    && d2.getHighBound() >= d1.getLowBound()) {
                 return Irs.boundDomain(d2.getLowBound(), d1.getHighBound());
             }
         }

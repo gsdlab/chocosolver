@@ -130,7 +130,7 @@ public class Irs {
             default:
                 int[] array = values.toArray();
                 Arrays.sort(array);
-                // If the values are over an interval, then return a bound domain.
+                // If the values are over a contiguous interval, then return a bound domain.
                 int low = array[0];
                 for (int i = 1; i < array.length; i++) {
                     if (low + i != array[i]) {
@@ -1185,6 +1185,36 @@ public class Irs {
                 : boundDomain(Math.max(1, ker.size()), Math.min(highTakeCard, env.size()));
 
         return new IrJoinRef(take, refs, env, ker, card);
+    }
+
+    public static IrSetExpr setDifference(IrSetExpr minuend, IrSetExpr subtrahend) {
+        IrDomain env = IrUtil.difference(minuend.getEnv(), subtrahend.getKer());
+        IrDomain ker = IrUtil.difference(minuend.getKer(), subtrahend.getEnv());
+        int low = Math.max(0, minuend.getCard().getLowBound() - subtrahend.getCard().getHighBound());
+        int high = Math.max(0, minuend.getCard().getHighBound() - subtrahend.getCard().getLowBound());
+        IrDomain card = boundDomain(Math.max(low, ker.size()), Math.min(high, env.size()));
+        return new IrSetDifference(minuend, subtrahend, env, ker, card);
+    }
+
+    public static IrSetExpr setIntersection(IrSetExpr... operands) {
+        switch (operands.length) {
+            case 0:
+                return $(EmptySet);
+            case 1:
+                return operands[0];
+            default:
+                IrDomain env = IrUtil.intersectionEnvs(operands);
+                IrDomain ker = IrUtil.intersectionKers(operands);
+                int low = 0;
+                int high = operands[0].getCard().getHighBound();
+                for (int i = 1; i < operands.length; i++) {
+                    high = Math.max(high, operands[0].getCard().getHighBound());
+                }
+                IrDomain card = boundDomain(
+                        Math.max(low, ker.size()),
+                        Math.min(high, env.size()));
+                return new IrSetUnion(operands, env, ker, card);
+        }
     }
 
     public static IrSetExpr setUnion(IrSetExpr... operands) {

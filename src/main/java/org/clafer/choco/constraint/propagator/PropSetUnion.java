@@ -15,14 +15,14 @@ import util.procedure.IntProcedure;
  *
  * @author jimmy
  */
-public class PropUnion extends Propagator<SetVar> {
+public class PropSetUnion extends Propagator<SetVar> {
 
     private final SetVar[] sets;
     private final SetDeltaMonitor[] setsD;
     private final SetVar union;
     private final SetDeltaMonitor unionD;
 
-    public PropUnion(SetVar[] sets, SetVar union) {
+    public PropSetUnion(SetVar[] sets, SetVar union) {
         super(Util.cons(union, sets), PropagatorPriority.LINEAR);
         this.sets = sets;
         this.setsD = PropUtil.monitorDeltas(sets, aCause);

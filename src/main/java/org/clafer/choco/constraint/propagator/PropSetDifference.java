@@ -1,0 +1,151 @@
+package org.clafer.choco.constraint.propagator;
+
+import org.clafer.common.Check;
+import solver.constraints.propagators.Propagator;
+import solver.constraints.propagators.PropagatorPriority;
+import solver.exception.ContradictionException;
+import solver.variables.EventType;
+import solver.variables.SetVar;
+import solver.variables.delta.monitor.SetDeltaMonitor;
+import util.ESat;
+import util.procedure.IntProcedure;
+
+/**
+ *
+ * @author jimmy
+ */
+public class PropSetDifference extends Propagator<SetVar> {
+
+    private final SetVar minuend, subtrahend, difference;
+    private final SetDeltaMonitor minuendD, subtrahendD, differenceD;
+
+    public PropSetDifference(SetVar minuend, SetVar subtrahend, SetVar difference) {
+        super(new SetVar[]{minuend, subtrahend, difference}, PropagatorPriority.LINEAR);
+        this.minuend = Check.notNull(minuend);
+        this.subtrahend = Check.notNull(subtrahend);
+        this.difference = Check.notNull(difference);
+        this.minuendD = minuend.monitorDelta(aCause);
+        this.subtrahendD = subtrahend.monitorDelta(aCause);
+        this.differenceD = difference.monitorDelta(aCause);
+    }
+
+    @Override
+    public int getPropagationConditions(int vIdx) {
+        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+    }
+
+    @Override
+    public void propagate(int evtmask) throws ContradictionException {
+        for (int i = minuend.getEnvelopeFirst(); i != SetVar.END; i = minuend.getEnvelopeNext()) {
+            if (!subtrahend.envelopeContains(i) && !minuend.envelopeContains(i)) {
+                minuend.removeFromEnvelope(i, aCause);
+            }
+        }
+        for (int i = difference.getKernelFirst(); i != SetVar.END; i = difference.getKernelNext()) {
+            minuend.addToKernel(i, aCause);
+            subtrahend.removeFromEnvelope(i, aCause);
+        }
+
+        PropUtil.envSubsetEnv(difference, minuend, aCause);
+        for (int i = subtrahend.getKernelFirst(); i != SetVar.END; i = subtrahend.getKernelNext()) {
+            difference.removeFromEnvelope(i, aCause);
+        }
+        for (int i = minuend.getKernelFirst(); i != SetVar.END; i = minuend.getKernelNext()) {
+            if (!subtrahend.envelopeContains(i)) {
+                difference.addToKernel(i, aCause);
+            }
+        }
+    }
+
+    @Override
+    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
+        switch (idxVarInProp) {
+            case 0:
+                // minuend
+                minuendD.freeze();
+                minuendD.forEach(pruneDifferenceOnMinuendEnv, EventType.REMOVE_FROM_ENVELOPE);
+                minuendD.forEach(pickDifferenceOnMinuendKer, EventType.ADD_TO_KER);
+                minuendD.unfreeze();
+                break;
+            case 1:
+                // subtrahend
+                subtrahendD.freeze();
+                subtrahendD.forEach(pickMinuendPickDiffrenceOnSubtrahendEnv, EventType.REMOVE_FROM_ENVELOPE);
+                subtrahendD.forEach(pruneDifferenceOnSubtrahendKer, EventType.ADD_TO_KER);
+                subtrahendD.unfreeze();
+                break;
+            case 2:
+                // difference
+                differenceD.freeze();
+                differenceD.forEach(pruneMinuendOnDifferenceEnv, EventType.REMOVE_FROM_ENVELOPE);
+                differenceD.forEach(pickMinuendPruneSubtrahendOnDifferenceKer, EventType.ADD_TO_KER);
+                differenceD.unfreeze();
+                break;
+        }
+    }
+    private final IntProcedure pruneDifferenceOnMinuendEnv = new IntProcedure() {
+        @Override
+        public void execute(int minuendEnv) throws ContradictionException {
+            difference.removeFromEnvelope(minuendEnv, aCause);
+        }
+    };
+    private final IntProcedure pickDifferenceOnMinuendKer = new IntProcedure() {
+        @Override
+        public void execute(int minuendKer) throws ContradictionException {
+            if (!subtrahend.envelopeContains(minuendKer)) {
+                difference.addToKernel(minuendKer, aCause);
+            }
+        }
+    };
+    private final IntProcedure pickMinuendPickDiffrenceOnSubtrahendEnv = new IntProcedure() {
+        @Override
+        public void execute(int subtrahendEnv) throws ContradictionException {
+            if (minuend.kernelContains(subtrahendEnv)) {
+                difference.addToKernel(subtrahendEnv, aCause);
+            } else if (difference.kernelContains(subtrahendEnv)) {
+                minuend.addToKernel(subtrahendEnv, aCause);
+            }
+        }
+    };
+    private final IntProcedure pruneDifferenceOnSubtrahendKer = new IntProcedure() {
+        @Override
+        public void execute(int subtrahendKer) throws ContradictionException {
+            difference.removeFromEnvelope(subtrahendKer, aCause);
+        }
+    };
+    private final IntProcedure pruneMinuendOnDifferenceEnv = new IntProcedure() {
+        @Override
+        public void execute(int differenceEnv) throws ContradictionException {
+            if (!subtrahend.envelopeContains(differenceEnv)) {
+                minuend.removeFromEnvelope(differenceEnv, aCause);
+            }
+        }
+    };
+    private final IntProcedure pickMinuendPruneSubtrahendOnDifferenceKer = new IntProcedure() {
+        @Override
+        public void execute(int differenceKer) throws ContradictionException {
+            minuend.addToKernel(differenceKer, aCause);
+            subtrahend.removeFromEnvelope(differenceKer, aCause);
+        }
+    };
+
+    @Override
+    public ESat isEntailed() {
+        for (int i = minuend.getKernelFirst(); i != SetVar.END; i = minuend.getKernelNext()) {
+            if (!subtrahend.envelopeContains(i) && !difference.envelopeContains(i)) {
+                return ESat.FALSE;
+            }
+        }
+        for (int i = difference.getKernelFirst(); i != SetVar.END; i = difference.getKernelNext()) {
+            if (!minuend.envelopeContains(i) || subtrahend.kernelContains(i)) {
+                return ESat.FALSE;
+            }
+        }
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return minuend + " - " + subtrahend + " = " + difference;
+    }
+}
