@@ -5,7 +5,7 @@ import solver.constraints.IntConstraintFactory;
 
 /**
  * left `op` right + offset
- * 
+ *
  * @author jimmy
  */
 public class IrCompare extends IrAbstractBool implements IrBoolExpr {
@@ -35,7 +35,7 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrCompare(left, op.getOpposite(), right, getDomain().invert());
+        return new IrCompare(left, op.negate(), right, getDomain().invert());
     }
 
     @Override
@@ -85,7 +85,26 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
             return syntax;
         }
 
-        public Op getOpposite() {
+        public Op reverse() {
+            switch (this) {
+                case Equal:
+                    return Equal;
+                case NotEqual:
+                    return NotEqual;
+                case LessThan:
+                    return GreaterThan;
+                case LessThanEqual:
+                    return GreaterThanEqual;
+                case GreaterThan:
+                    return LessThan;
+                case GreaterThanEqual:
+                    return LessThanEqual;
+                default:
+                    throw new IllegalStateException();
+            }
+        }
+
+        public Op negate() {
             switch (this) {
                 case Equal:
                     return NotEqual;

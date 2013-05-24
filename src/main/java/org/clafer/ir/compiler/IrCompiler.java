@@ -45,6 +45,12 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
+import static org.clafer.ir.IrCompare.Op.Equal;
+import static org.clafer.ir.IrCompare.Op.GreaterThan;
+import static org.clafer.ir.IrCompare.Op.GreaterThanEqual;
+import static org.clafer.ir.IrCompare.Op.LessThan;
+import static org.clafer.ir.IrCompare.Op.LessThanEqual;
+import static org.clafer.ir.IrCompare.Op.NotEqual;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrIntCast;
 import org.clafer.ir.IrIntExprVisitor;
@@ -345,6 +351,13 @@ public class IrCompiler {
                 return _arithm(compile(ir.getLeft()), offset.getFst(),
                         compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
             }
+            BoolVar boolVar = getBoolVar(ir.getLeft(), ir.getOp(), ir.getRight());
+            if (boolVar == null) {
+                boolVar = getBoolVar(ir.getRight(), ir.getOp().reverse(), ir.getLeft());
+            }
+            if (boolVar != null) {
+                return boolVar;
+            }
             return _arithm(compile(ir.getLeft()), ir.getOp().getSyntax(), compile(ir.getRight()));
         }
 
@@ -373,6 +386,33 @@ public class IrCompiler {
                     constant = IrUtil.getConstant(subtrahends[1]);
                     if (constant != null) {
                         return new Triple<String, IrIntExpr, Integer>("-", subtrahends[0], -constant);
+                    }
+                }
+            }
+            return null;
+        }
+
+        private BoolVar getBoolVar(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+            Integer leftConstant = IrUtil.getConstant(left);
+            if (leftConstant != null && leftConstant.intValue() >= 0 && leftConstant.intValue() <= 1) {
+                IntVar $right = compile(right);
+                if ($right instanceof BoolVar) {
+                    BoolVar rightBool = (BoolVar) $right;
+                    switch (op) {
+                        case Equal:
+                            return leftConstant.intValue() == 1 ? rightBool : rightBool.not();
+                        case NotEqual:
+                            return leftConstant.intValue() == 1 ? rightBool.not() : rightBool;
+                        case LessThan:
+                            return leftConstant.intValue() == 1 ? rightBool.getSolver().ZERO : rightBool;
+                        case LessThanEqual:
+                            return leftConstant.intValue() == 1 ? rightBool : rightBool.getSolver().ONE;
+                        case GreaterThan:
+                            return leftConstant.intValue() == 1 ? rightBool.not() : rightBool.getSolver().ZERO;
+                        case GreaterThanEqual:
+                            return leftConstant.intValue() == 1 ? rightBool.getSolver().ONE : rightBool.not();
+                        default:
+                            throw new IrException();
                     }
                 }
             }

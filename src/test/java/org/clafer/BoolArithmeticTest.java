@@ -175,6 +175,7 @@ public class BoolArithmeticTest {
                 equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2).toScope());
+        System.out.println(solver.solver);
         assertEquals(33, solver.allInstances().length);
     }
 }
