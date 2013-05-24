@@ -54,7 +54,7 @@ public class QuantifierTest {
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
         AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
         AstLocal x = local("x");
-        model.addConstraint(all(decl(x, setUnion(global(backup), global(firewall))),
+        model.addConstraint(all(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
@@ -98,7 +98,7 @@ public class QuantifierTest {
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
         AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
         AstLocal x = local("x");
-        model.addConstraint(lone(decl(x, setUnion(global(backup), global(firewall))),
+        model.addConstraint(lone(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
@@ -142,7 +142,7 @@ public class QuantifierTest {
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
         AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
         AstLocal x = local("x");
-        model.addConstraint(none(decl(x, setUnion(global(backup), global(firewall))),
+        model.addConstraint(none(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
@@ -186,7 +186,7 @@ public class QuantifierTest {
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
         AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
         AstLocal x = local("x");
-        model.addConstraint(one(decl(x, setUnion(global(backup), global(firewall))),
+        model.addConstraint(one(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
@@ -230,7 +230,7 @@ public class QuantifierTest {
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
         AstConcreteClafer guard = model.addChild("Guard").withCard(0, 1).extending(feature);
         AstLocal x = local("x");
-        model.addConstraint(some(decl(x, setUnion(global(backup), global(firewall))),
+        model.addConstraint(some(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());

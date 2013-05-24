@@ -28,7 +28,6 @@ import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.common.Check;
 import org.clafer.choco.constraint.Constraints;
-import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolChannel;
@@ -62,6 +61,7 @@ import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSub;
 import org.clafer.ir.IrUtil;
+import org.clafer.ir.IrXor;
 import org.clafer.ir.analysis.ExprOptimizer;
 import solver.Solver;
 import solver.constraints.ICF;
@@ -288,12 +288,6 @@ public class IrCompiler {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
             BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
             return _implies($antecedent, $consequent);
-//            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-//            Object $consequent = compile(ir.getConsequent(), a);
-//            if ($consequent instanceof Constraint) {
-//                return Sneak.implies($antecedent, (Constraint) $consequent);
-//            }
-//            return _implies($antecedent, (BoolVar) $consequent);
         }
 
         @Override
@@ -311,15 +305,6 @@ public class IrCompiler {
             Constraint thenClause = _implies($antecedent, $consequent);
             Constraint elseClause = _implies($antecedent.not(), $alternative);
             return _and(thenClause.reif(), elseClause.reif());
-//            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-//            Object $consequent = compile(ir.getConsequent(), a);
-//            Object $alternative = compile(ir.getAlternative(), a);
-//            if ($consequent instanceof Constraint && $alternative instanceof Constraint) {
-//                return Sneak.ifThenElse($antecedent, (Constraint) $consequent, (Constraint) $alternative);
-//            }
-//            Constraint thenClause = _implies(asBoolVar($antecedent), asBoolVar($consequent));
-//            Constraint elseClause = _implies(asBoolVar($antecedent.not()), asBoolVar($alternative));
-//            return _and(thenClause.reif(), elseClause.reif());
         }
 
         @Override
@@ -327,6 +312,13 @@ public class IrCompiler {
             BoolVar $left = compileAsBoolVar(ir.getLeft());
             BoolVar $right = compileAsBoolVar(ir.getRight());
             return _arithm($left, "=", $right);
+        }
+
+        @Override
+        public Object visit(IrXor ir, Preference a) {
+            BoolVar $left = compileAsBoolVar(ir.getLeft());
+            BoolVar $right = compileAsBoolVar(ir.getRight());
+            return _arithm($left, "!=", $right);
         }
 
         @Override
@@ -770,6 +762,14 @@ public class IrCompiler {
     }
 
     private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {
+        if (cste == 0) {
+            switch (Operator.get(op2)) {
+                case PL:
+                    return ICF.arithm(var1, op1, var2);
+                case MN:
+                    return ICF.arithm(var1, op1, var2);
+            }
+        }
         return ICF.arithm(var1, op1, var2, op2, cste);
     }
 

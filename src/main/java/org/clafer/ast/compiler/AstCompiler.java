@@ -35,6 +35,7 @@ import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.PartialSolution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
+import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -783,6 +784,37 @@ public class AstCompiler {
                         quotient = div(quotient, operands[i]);
                     }
                     return quotient;
+                default:
+                    throw new AstException();
+            }
+        }
+
+        @Override
+        public IrExpr visit(AstBoolArithm ast, Void a) {
+            IrBoolExpr[] operands = compile(ast.getOperands());
+            switch (ast.getOp()) {
+                case And:
+                    return and(operands);
+                case IfOnlyIf:
+                    IrBoolExpr ifOnlyIf = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        ifOnlyIf = ifOnlyIf(ifOnlyIf, operands[i]);
+                    }
+                    return ifOnlyIf;
+                case Implies:
+                    IrBoolExpr implies = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        implies = implies(implies, operands[i]);
+                    }
+                    return implies;
+                case Or:
+                    return or(operands);
+                case Xor:
+                    IrBoolExpr xor = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        xor = xor(xor, operands[i]);
+                    }
+                    return xor;
                 default:
                     throw new AstException();
             }

@@ -244,7 +244,7 @@ public class Irs {
             case 1:
                 return filter.get(0);
             case 2:
-            // TODO: XOR
+                return xor(filter.get(0), filter.get(1));
             default:
                 return new IrOne(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
         }
@@ -326,6 +326,22 @@ public class Irs {
             return not(left);
         }
         return new IrIfOnlyIf(left, right, BoolDomain);
+    }
+
+    public static IrBoolExpr xor(IrBoolExpr left, IrBoolExpr right) {
+        if (IrUtil.isTrue(left)) {
+            return not(right);
+        }
+        if (IrUtil.isFalse(left)) {
+            return right;
+        }
+        if (IrUtil.isTrue(right)) {
+            return not(left);
+        }
+        if (IrUtil.isFalse(right)) {
+            return left;
+        }
+        return new IrXor(left, right, BoolDomain);
     }
 
     public static IrBoolExpr between(IrIntExpr var, int low, int high) {

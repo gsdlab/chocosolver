@@ -5,16 +5,16 @@ import org.clafer.common.Check;
 import org.clafer.common.Util;
 
 /**
- * foldl1 op operands.
+ * foldl1 op operands. Note that even implies is left-associative.
  *
  * @author jimmy
  */
-public class AstArithm implements AstSetExpr {
+public class AstBoolArithm implements AstBoolExpr {
 
     private final Op op;
-    private final AstSetExpr[] operands;
+    private final AstBoolExpr[] operands;
 
-    AstArithm(Op op, AstSetExpr[] operands) {
+    AstBoolArithm(Op op, AstBoolExpr[] operands) {
         this.op = Check.notNull(op);
         this.operands = Check.noNullsNotEmpty(operands);
     }
@@ -23,7 +23,7 @@ public class AstArithm implements AstSetExpr {
         return op;
     }
 
-    public AstSetExpr[] getOperands() {
+    public AstBoolExpr[] getOperands() {
         return operands;
     }
 
@@ -34,8 +34,8 @@ public class AstArithm implements AstSetExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof AstArithm) {
-            AstArithm other = (AstArithm) obj;
+        if (obj instanceof AstBoolArithm) {
+            AstBoolArithm other = (AstBoolArithm) obj;
             return op.equals(other.op) && Arrays.equals(operands, other.operands);
         }
         return false;
@@ -53,10 +53,11 @@ public class AstArithm implements AstSetExpr {
 
     public static enum Op {
 
-        Add("+"),
-        Sub("-"),
-        Mul("*"),
-        Div("/");
+        And("&&"),
+        IfOnlyIf("<=>"),
+        Implies("=>"),
+        Or("||"),
+        Xor("xor");
         private final String syntax;
 
         private Op(String syntax) {

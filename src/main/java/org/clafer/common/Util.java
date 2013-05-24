@@ -17,11 +17,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import org.clafer.collection.Pair;
-import org.clafer.ir.IrBoolExpr;
 import util.iterators.IntIterator;
 
 /**
@@ -186,20 +184,6 @@ public class Util {
      */
     public static <T> void reverse(T[] array) {
         reverse(array, array.length);
-    }
-
-    /**
-     * Sort a list using the comparator. Nondestructive.
-     *
-     * @param <T> the type of the elements
-     * @param list the list of items to be sorted
-     * @param comparator induces the order of the sort
-     * @return a new sorted list
-     */
-    public static <T> List<T> sorted(List<T> list, Comparator<? super T> comparator) {
-        List<T> sorted = new ArrayList<T>(list);
-        Collections.sort(sorted, comparator);
-        return sorted;
     }
 
     /**
@@ -805,7 +789,7 @@ public class Util {
      *
      * @param separator the string to separate each item
      * @param items the items to display
-     * @return the items string form separated by the separatpr
+     * @return the items string form separated by the separator
      */
     public static String intercalate(String separator, Iterable<?> items) {
         StringBuilder result = new StringBuilder();
@@ -824,7 +808,7 @@ public class Util {
      *
      * @param in the file to read
      * @return the contents of the file
-     * @throws IOException an I/O error occured while reading the file
+     * @throws IOException an I/O error occurred while reading the file
      */
     public static String readAll(File in) throws IOException {
         Reader reader = new FileReader(in);
@@ -841,7 +825,7 @@ public class Util {
      *
      * @param in the stream to read
      * @return the contents of the stream
-     * @throws IOException an I/O error occured while reading the stream
+     * @throws IOException an I/O error occurred while reading the stream
      */
     public static String readAll(InputStream in) throws IOException {
         return readAll(new InputStreamReader(in));
@@ -853,7 +837,7 @@ public class Util {
      *
      * @param in the reader to read
      * @return the contents of the reader
-     * @throws IOException an I/O error occured while reading the reader
+     * @throws IOException an I/O error occurred while reading the reader
      */
     public static String readAll(Reader in) throws IOException {
         StringBuilder result = new StringBuilder();

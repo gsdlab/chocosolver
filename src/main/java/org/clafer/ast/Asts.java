@@ -100,23 +100,50 @@ public class Asts {
         return arithm(AstArithm.Op.Div, divisors);
     }
 
-    public static AstSetExpr setArithm(AstSetArithm.Op op, AstSetExpr... operands) {
+    public static AstBoolExpr arithm(AstBoolArithm.Op op, AstBoolExpr... operands) {
+        if (operands.length == 1) {
+            return operands[0];
+        }
+        return new AstBoolArithm(op, operands);
+    }
+
+    public static AstBoolExpr and(AstBoolExpr... operands) {
+        return arithm(AstBoolArithm.Op.And, operands);
+    }
+
+    public static AstBoolExpr ifOnlyIf(AstBoolExpr... operands) {
+        return arithm(AstBoolArithm.Op.IfOnlyIf, operands);
+    }
+
+    public static AstBoolExpr implies(AstBoolExpr... operands) {
+        return arithm(AstBoolArithm.Op.Implies, operands);
+    }
+
+    public static AstBoolExpr or(AstBoolExpr... operands) {
+        return arithm(AstBoolArithm.Op.Or, operands);
+    }
+
+    public static AstBoolExpr xor(AstBoolExpr... operands) {
+        return arithm(AstBoolArithm.Op.Xor, operands);
+    }
+
+    public static AstSetExpr arithm(AstSetArithm.Op op, AstSetExpr... operands) {
         if (operands.length == 1) {
             return operands[0];
         }
         return new AstSetArithm(op, operands);
     }
 
-    public static AstSetExpr setUnion(AstSetExpr... addends) {
-        return setArithm(AstSetArithm.Op.Union, addends);
+    public static AstSetExpr union(AstSetExpr... addends) {
+        return arithm(AstSetArithm.Op.Union, addends);
     }
 
-    public static AstSetExpr setDiff(AstSetExpr... addends) {
-        return setArithm(AstSetArithm.Op.Difference, addends);
+    public static AstSetExpr diff(AstSetExpr... addends) {
+        return arithm(AstSetArithm.Op.Difference, addends);
     }
 
-    public static AstSetExpr setInter(AstSetExpr... addends) {
-        return setArithm(AstSetArithm.Op.Intersection, addends);
+    public static AstSetExpr inter(AstSetExpr... addends) {
+        return arithm(AstSetArithm.Op.Intersection, addends);
     }
 
     public static AstSetExpr upcast(AstSetExpr base, AstAbstractClafer target) {

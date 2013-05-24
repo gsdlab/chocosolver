@@ -5,7 +5,8 @@ import org.clafer.common.Check;
 import org.clafer.common.Util;
 
 /**
- *
+ * foldl1 op operands.
+ * 
  * @author jimmy
  */
 public class AstSetArithm implements AstSetExpr {

@@ -9,6 +9,7 @@ import org.clafer.ast.AstGlobal;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
+import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
@@ -233,7 +234,13 @@ public class TypeAnalysis {
                             AstUtil.getNames(getTypes(operands))));
                 }
             }
-            return put(IntType, arithm(ast.getOp(), getExprs(operands)));
+            return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstBoolArithm ast, Void a) {
+            TypedExpr<AstBoolExpr>[] operands = typeCheck(ast.getOperands());
+            return put(BoolType, arithm(ast.getOp(), getBoolExprs(operands)));
         }
 
         @Override
@@ -247,7 +254,7 @@ public class TypeAnalysis {
             }
             TypedExpr<AstSetExpr>[] upcasts = upcastTo(operands, unionType);
             assert upcasts != null;
-            return put(unionType, setArithm(ast.getOp(), getExprs(upcasts)));
+            return put(unionType, arithm(ast.getOp(), getSetExprs(upcasts)));
         }
 
         @Override
@@ -292,7 +299,15 @@ public class TypeAnalysis {
         return types;
     }
 
-    private static <T extends AstSetExpr> AstSetExpr[] getExprs(TypedExpr<T>... exprs) {
+    private static <T extends AstBoolExpr> AstBoolExpr[] getBoolExprs(TypedExpr<T>... exprs) {
+        AstBoolExpr[] boolExprs = new AstBoolExpr[exprs.length];
+        for (int i = 0; i < boolExprs.length; i++) {
+            boolExprs[i] = exprs[i].getExpr();
+        }
+        return boolExprs;
+    }
+
+    private static <T extends AstSetExpr> AstSetExpr[] getSetExprs(TypedExpr<T>... exprs) {
         AstSetExpr[] setExprs = new AstSetExpr[exprs.length];
         for (int i = 0; i < setExprs.length; i++) {
             setExprs[i] = exprs[i].getExpr();

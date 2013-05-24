@@ -29,6 +29,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstArithm ast, A a);
 
+    public B visit(AstBoolArithm ast, A a);
+
     public B visit(AstSetArithm ast, A a);
 
     public B visit(AstUpcast ast, A a);

@@ -6,55 +6,55 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrIfOnlyIf extends IrAbstractBool implements IrBoolExpr {
-    
+public class IrXor extends IrAbstractBool implements IrBoolExpr {
+
     private final IrBoolExpr left, right;
-    
-    IrIfOnlyIf(IrBoolExpr left, IrBoolExpr right, IrBoolDomain domain) {
+
+    public IrXor(IrBoolExpr left, IrBoolExpr right, IrBoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);
     }
-    
+
     public IrBoolExpr getLeft() {
         return left;
     }
-    
+
     public IrBoolExpr getRight() {
         return right;
     }
-    
+
     @Override
     public IrBoolExpr negate() {
-        return new IrXor(left, right, getDomain().invert());
+        return new IrIfOnlyIf(left, right, getDomain().invert());
     }
-    
+
     @Override
     public boolean isNegative() {
-        return false;
+        return true;
     }
-    
+
     @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrIfOnlyIf) {
-            IrIfOnlyIf other = (IrIfOnlyIf) obj;
+        if (obj instanceof IrXor) {
+            IrXor other = (IrXor) obj;
             return left.equals(other.left) && right.equals(other.right) && super.equals(other);
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return left.hashCode() ^ right.hashCode();
     }
-    
+
     @Override
     public String toString() {
-        return left + " <=> " + right;
+        return left + " ^ " + right;
     }
 }
