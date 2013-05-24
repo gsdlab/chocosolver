@@ -2,7 +2,6 @@ package org.clafer.ir;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.Arrays;
 
 /**
  *
@@ -268,6 +267,21 @@ public class IrUtil {
         return domain;
     }
 
+    public static IrDomain minus(IrDomain domain) {
+        if (domain.isEmpty()) {
+            return Irs.EmptyDomain;
+        }
+        if (domain.isBounded()) {
+            return Irs.boundDomain(-domain.getHighBound(), -domain.getLowBound());
+        }
+        int[] values = domain.getValues();
+        int[] minusValues = new int[values.length];
+        for (int i = 0; i < minusValues.length; i++) {
+            minusValues[i] = -values[i];
+        }
+        return Irs.enumDomain(minusValues);
+    }
+
     public static IrDomain offset(IrDomain domain, int offset) {
         if (domain.isEmpty()) {
             return Irs.EmptyDomain;
@@ -275,10 +289,11 @@ public class IrUtil {
         if (domain.isBounded()) {
             return Irs.boundDomain(domain.getLowBound() + offset, domain.getHighBound() + offset);
         }
-        int[] values = Arrays.copyOf(domain.getValues(), domain.size());
-        for (int i = 0; i < values.length; i++) {
-            values[i] += offset;
+        int[] values = domain.getValues();
+        int[] offsetValues = new int[values.length];
+        for (int i = 0; i < offsetValues.length; i++) {
+            offsetValues[i] = values[i] + offset;
         }
-        return Irs.enumDomain(values);
+        return Irs.enumDomain(offsetValues);
     }
 }

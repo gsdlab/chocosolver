@@ -41,6 +41,14 @@ public class Asts {
         return new AstJoinRef(deref);
     }
 
+    public static AstBoolExpr not(AstBoolExpr expr) {
+        return new AstNot(expr);
+    }
+
+    public static AstSetExpr minus(AstSetExpr expr) {
+        return new AstMinus(expr);
+    }
+
     public static AstSetExpr card(AstSetExpr set) {
         return new AstCard(set);
     }
@@ -144,6 +152,26 @@ public class Asts {
 
     public static AstSetExpr inter(AstSetExpr... addends) {
         return arithm(AstSetArithm.Op.Intersection, addends);
+    }
+
+    public static AstBoolExpr membership(AstSetExpr member, AstMembership.Op op, AstSetExpr set) {
+        return new AstMembership(member, op, set);
+    }
+
+    public static AstBoolExpr in(AstSetExpr member, AstSetExpr set) {
+        return membership(member, AstMembership.Op.In, set);
+    }
+
+    public static AstBoolExpr notIn(AstSetExpr member, AstSetExpr set) {
+        return membership(member, AstMembership.Op.NotIn, set);
+    }
+
+    public static AstSetExpr ifThenElse(AstBoolExpr antecedent, AstSetExpr consequent, AstSetExpr alternative) {
+        return new AstTernary(antecedent, consequent, alternative);
+    }
+
+    public static AstBoolExpr ifThenElse(AstBoolExpr antecedent, AstBoolExpr consequent, AstBoolExpr alternative) {
+        return new AstIfThenElse(antecedent, consequent, alternative);
     }
 
     public static AstSetExpr upcast(AstSetExpr base, AstAbstractClafer target) {

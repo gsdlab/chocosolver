@@ -51,6 +51,7 @@ import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrLone;
+import org.clafer.ir.IrMinus;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import org.clafer.ir.IrOffset;
@@ -60,8 +61,11 @@ import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
 import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetSum;
+import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSub;
+import org.clafer.ir.IrSubsetEq;
+import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.analysis.ExprOptimizer;
@@ -213,7 +217,7 @@ public class IrCompiler {
     }
 
     private BoolVar compileAsBoolVar(IrBoolExpr expr) {
-        return asBoolVar(expr.accept(boolExprCompiler1, Preference.BoolVar));
+        return asBoolVar(expr.accept(boolExprCompiler, Preference.BoolVar));
     }
 
     private BoolVar[] compileAsBoolVars(IrBoolExpr... expr) {
@@ -231,7 +235,7 @@ public class IrCompiler {
                 return compile(cast.getExpr());
             }
         }
-        return asBoolVar(expr.accept(boolExprCompiler1, Preference.BoolVar));
+        return asBoolVar(expr.accept(boolExprCompiler, Preference.BoolVar));
     }
 
     private IntVar[] compileAsIntVars(IrBoolExpr... expr) {
@@ -254,7 +258,7 @@ public class IrCompiler {
     }
 
     private Constraint compileAsConstraint(IrBoolExpr expr) {
-        return asConstraint(expr.accept(boolExprCompiler1, Preference.Constraint));
+        return asConstraint(expr.accept(boolExprCompiler, Preference.Constraint));
     }
 
     private Constraint[] compileAsConstraints(IrBoolExpr... expr) {
@@ -280,7 +284,7 @@ public class IrCompiler {
         }
         return vars;
     }
-    private final IrBoolExprVisitor<Preference, Object> boolExprCompiler1 = new IrBoolExprVisitor<Preference, Object>() {
+    private final IrBoolExprVisitor<Preference, Object> boolExprCompiler = new IrBoolExprVisitor<Preference, Object>() {
         @Override
         public Object visit(IrBoolLiteral ir, Preference a) {
             return boolVar.get(ir.getVar());
@@ -409,13 +413,11 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrSetTest ir, Preference a) {
-            SetVar $left = ir.getLeft().accept(setExprCompiler, null);
-            SetVar $right = ir.getRight().accept(setExprCompiler, null);
             switch (ir.getOp()) {
                 case Equal:
-                    return _equal($left, $right);
+                    return _equal(compile(ir.getLeft()), compile(ir.getRight()));
                 case NotEqual:
-                    return _all_different($left, $right);
+                    return _all_different(compile(ir.getLeft()), compile(ir.getRight()));
                 default:
                     throw new IrException();
             }
@@ -423,16 +425,17 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrMember ir, Preference a) {
-            IntVar $element = ir.getElement().accept(intExprCompiler, null);
-            SetVar $set = ir.getSet().accept(setExprCompiler, null);
-            return _member($element, $set);
+            return _member(compile(ir.getElement()), compile(ir.getSet()));
         }
 
         @Override
         public Object visit(IrNotMember ir, Preference a) {
-            IntVar $element = ir.getElement().accept(intExprCompiler, null);
-            SetVar $set = ir.getSet().accept(setExprCompiler, null);
-            return _not_member($element, $set);
+            return _not_member(compile(ir.getElement()), compile(ir.getSet()));
+        }
+
+        @Override
+        public Object visit(IrSubsetEq ir, Preference a) {
+            return _subset_eq(compile(ir.getSubset()), compile(ir.getSuperset()));
         }
 
         @Override
@@ -541,6 +544,11 @@ public class IrCompiler {
         @Override
         public IntVar visit(IrIntCast ir, Void a) {
             return compileAsBoolVar(ir.getExpr());
+        }
+
+        @Override
+        public IntVar visit(IrMinus ir, Void a) {
+            return VF.minus(compile(ir.getExpr()));
         }
 
         @Override
@@ -679,6 +687,16 @@ public class IrCompiler {
             solver.post(Constraints.setSumN(compile(ir.getSet()), sum, n));
             return sum;
         }
+
+        @Override
+        public IntVar visit(IrTernary ir, Void a) {
+            BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
+            IntVar ternary = numIntVar("Ternary", ir.getDomain());
+            solver.post(_ifThenElse(antecedent,
+                    _arithm(ternary, "=", compile(ir.getConsequent())),
+                    _arithm(ternary, "=", compile(ir.getAlternative()))));
+            return ternary;
+        }
     };
     private final IrSetExprVisitor<Void, SetVar> setExprCompiler = new IrSetExprVisitor<Void, SetVar>() {
         @Override
@@ -766,6 +784,16 @@ public class IrCompiler {
             SetVar offset = numSetVar("Offset", ir.getEnv(), ir.getKer());
             solver.post(_offset(set, offset, ir.getOffset()));
             return offset;
+        }
+
+        @Override
+        public SetVar visit(IrSetTernary ir, Void a) {
+            BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
+            SetVar ternary = numSetVar("Ternary", ir.getEnv(), ir.getKer());
+            solver.post(_ifThenElse(antecedent,
+                    _equal(ternary, compile(ir.getConsequent())),
+                    _equal(ternary, compile(ir.getAlternative()))));
+            return ternary;
         }
     };
 
@@ -938,6 +966,10 @@ public class IrCompiler {
 
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {
         return SCF.offSet(set, offseted, offset);
+    }
+
+    private static Constraint _subset_eq(SetVar... sets) {
+        return SCF.subsetEq(sets);
     }
 
     private int getLB(IntVar... vars) {

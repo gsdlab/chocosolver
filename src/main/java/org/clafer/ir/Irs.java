@@ -572,6 +572,16 @@ public class Irs {
         return new IrNotMember(element, set, BoolDomain);
     }
 
+    public static IrBoolExpr subsetEq(IrSetExpr subset, IrSetExpr superset) {
+        if (IrUtil.isSubsetOf(subset.getEnv(), superset.getKer())) {
+            return $(True);
+        }
+        if (subset.getCard().getLowBound() == superset.getCard().getHighBound()) {
+            return equal(subset, superset);
+        }
+        return subsetEq(subset, superset);
+    }
+
     public static IrBoolExpr asBool(IrIntExpr expr) {
         Integer constant = IrUtil.getConstant(expr);
         if (constant != null) {
@@ -757,6 +767,19 @@ public class Irs {
             return constant.booleanValue() ? $(One) : $(Zero);
         }
         return new IrIntCast(expr, ZeroOneDomain);
+    }
+
+    public static IrIntExpr minus(IrIntExpr expr) {
+        Integer constant = IrUtil.getConstant(expr);
+        if (constant != null) {
+            return $(constant(-constant.intValue()));
+        }
+        if (expr instanceof IrMinus) {
+            IrMinus minus = (IrMinus) expr;
+            return minus.getExpr();
+        }
+        return new IrMinus(expr, IrUtil.minus(expr.getDomain()));
+
     }
 
     public static IrIntExpr card(IrSetExpr set) {
@@ -973,6 +996,22 @@ public class Irs {
         }
 
         return new IrSetSum(set, boundDomain(low, high));
+    }
+
+    public static IrIntExpr ternary(IrBoolExpr antecedent, IrIntExpr consequent, IrIntExpr alternative) {
+        if (IrUtil.isTrue(antecedent)) {
+            return consequent;
+        }
+        if (IrUtil.isFalse(antecedent)) {
+            return alternative;
+        }
+        Integer consequentConstant = IrUtil.getConstant(consequent);
+        Integer alternativeConstant = IrUtil.getConstant(alternative);
+        if (Util.equals(consequentConstant, alternativeConstant)) {
+            return $(constant(consequentConstant));
+        }
+        IrDomain domain = IrUtil.union(consequent.getDomain(), alternative.getDomain());
+        return new IrTernary(antecedent, consequent, alternative, domain);
     }
 
     /**
@@ -1245,9 +1284,36 @@ public class Irs {
         if (offset == 0) {
             return set;
         }
+        int[] constant = IrUtil.getConstant(set);
+        if (constant != null) {
+            for (int i = 0; i < constant.length; i++) {
+                constant[i] += offset;
+            }
+            return $(constant(constant));
+        }
         IrDomain env = IrUtil.offset(set.getEnv(), offset);
         IrDomain ker = IrUtil.offset(set.getKer(), offset);
         IrDomain card = set.getCard();
         return new IrOffset(set, offset, env, ker, card);
+    }
+
+    public static IrSetExpr ternary(IrBoolExpr antecedent, IrSetExpr consequent, IrSetExpr alternative) {
+        if (IrUtil.isTrue(antecedent)) {
+            return consequent;
+        }
+        if (IrUtil.isFalse(antecedent)) {
+            return alternative;
+        }
+        int[] consequentConstant = IrUtil.getConstant(consequent);
+        int[] alternativeConstant = IrUtil.getConstant(alternative);
+        if (consequentConstant != null && alternativeConstant != null && Arrays.equals(consequentConstant, alternativeConstant)) {
+            return $(constant(consequentConstant));
+        }
+        IrDomain env = IrUtil.union(consequent.getEnv(), alternative.getEnv());
+        IrDomain ker = IrUtil.intersection(consequent.getKer(), alternative.getKer());
+        int low = Math.min(consequent.getCard().getLowBound(), alternative.getCard().getLowBound());
+        int high = Math.min(consequent.getCard().getHighBound(), alternative.getCard().getHighBound());
+        IrDomain card = boundDomain(Math.max(low, ker.size()), Math.min(high, env.size()));
+        return new IrSetTernary(antecedent, consequent, alternative, env, ker, card);
     }
 }

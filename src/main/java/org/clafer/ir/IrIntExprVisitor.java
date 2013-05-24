@@ -10,6 +10,8 @@ public interface IrIntExprVisitor<A, B> {
 
     public B visit(IrIntCast ir, A a);
 
+    public B visit(IrMinus ir, A a);
+
     public B visit(IrCard ir, A a);
 
     public B visit(IrAdd ir, A a);
@@ -23,4 +25,6 @@ public interface IrIntExprVisitor<A, B> {
     public B visit(IrElement ir, A a);
 
     public B visit(IrSetSum ir, A a);
+
+    public B visit(IrTernary ir, A a);
 }

@@ -42,11 +42,16 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstExprVisitor;
+import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
+import org.clafer.ast.AstMembership;
+import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstNot;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetArithm;
+import org.clafer.ast.AstTernary;
 import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
@@ -646,18 +651,12 @@ public class AstCompiler {
             IrExpr $left = compile(left);
             if ($left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) $left;
-                switch (getFormat(right)) {
-                    case ParentGroup:
-                        assert right.getCard().isExact();
-                        int lowCard = right.getCard().getLow();
-                        if (lowCard == 1) {
-                            return $intLeft;
-                        }
-                    // fallthrough
-                    case LowGroup:
-                        // Why empty set? The "take" var can contain unused.
-                        return join(singleton($intLeft), $(Util.snoc(childrenSet.get(right), EmptySet)));
+                if (Format.ParentGroup.equals(getFormat(right)) && right.getCard().getLow() == 1) {
+                    assert right.getCard().isExact();
+                    return $intLeft;
                 }
+                // Why empty set? The "take" var can contain unused.
+                return join(singleton($intLeft), $(Util.snoc(childrenSet.get(right), EmptySet)));
             } else if ($left instanceof IrSetExpr) {
                 IrSetExpr $setLeft = (IrSetExpr) $left;
                 // Why empty set? The "take" var can contain unused.
@@ -716,6 +715,16 @@ public class AstCompiler {
 
             IrSetExpr setExpr = (IrSetExpr) compile(set);
             return card(setExpr);
+        }
+
+        @Override
+        public IrExpr visit(AstNot ast, Void a) {
+            return not(compile(ast.getExpr()));
+        }
+
+        @Override
+        public IrExpr visit(AstMinus ast, Void a) {
+            return minus(asInt(compile(ast)));
         }
 
         @Override
@@ -833,6 +842,46 @@ public class AstCompiler {
                 default:
                     throw new AstException();
             }
+        }
+
+        @Override
+        public IrExpr visit(AstMembership ast, Void a) {
+            IrExpr member = compile(ast.getMember());
+            IrExpr set = compile(ast.getSet());
+            if (member instanceof IrIntExpr && set instanceof IrIntExpr) {
+                return AstMembership.Op.In.equals(ast.getOp())
+                        ? equal((IrIntExpr) member, (IrIntExpr) set)
+                        : notEqual((IrIntExpr) member, (IrIntExpr) set);
+            }
+            if (member instanceof IrIntExpr && set instanceof IrSetExpr) {
+                return AstMembership.Op.In.equals(ast.getOp())
+                        ? member((IrIntExpr) member, (IrSetExpr) set)
+                        : notMember((IrIntExpr) member, (IrSetExpr) set);
+            }
+            if (member instanceof IrSetExpr && set instanceof IrIntExpr) {
+                return AstMembership.Op.In.equals(ast.getOp())
+                        ? equal((IrSetExpr) member, singleton((IrIntExpr) set))
+                        : notEqual((IrSetExpr) member, singleton((IrIntExpr) set));
+            }
+            return AstMembership.Op.In.equals(ast.getOp())
+                    ? subsetEq(asSet(member), asSet(set))
+                    : not(subsetEq(asSet(member), asSet(set)));
+        }
+
+        @Override
+        public IrExpr visit(AstTernary ast, Void a) {
+            IrBoolExpr antecedent = compile(ast.getAntecedent());
+            IrExpr consequent = compile(ast.getConsequent());
+            IrExpr alternative = compile(ast.getAlternative());
+            if (consequent instanceof IrIntExpr && alternative instanceof IrIntExpr) {
+                return ternary(antecedent, (IrIntExpr) consequent, (IrIntExpr) alternative);
+            }
+            return ternary(antecedent, asSet(consequent), asSet(alternative));
+        }
+
+        @Override
+        public IrExpr visit(AstIfThenElse ast, Void a) {
+            return ifThenElse(compile(ast.getAntecedent()), compile(ast.getConsequent()), compile(ast.getAlternative()));
         }
 
         @Override

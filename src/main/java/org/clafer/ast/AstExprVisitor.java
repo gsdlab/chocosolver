@@ -21,6 +21,10 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstJoinRef ast, A a);
 
+    public B visit(AstNot ast, A a);
+
+    public B visit(AstMinus ast, A a);
+
     public B visit(AstCard ast, A a);
 
     public B visit(AstSetTest ast, A a);
@@ -32,6 +36,12 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstBoolArithm ast, A a);
 
     public B visit(AstSetArithm ast, A a);
+
+    public B visit(AstMembership ast, A a);
+
+    public B visit(AstTernary ast, A a);
+
+    public B visit(AstIfThenElse ast, A a);
 
     public B visit(AstUpcast ast, A a);
 

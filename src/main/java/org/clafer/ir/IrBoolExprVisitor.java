@@ -40,6 +40,8 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrNotMember ir, A a);
 
+    public B visit(IrSubsetEq ir, A a);
+
     public B visit(IrBoolCast ir, A a);
 
     public B visit(IrBoolChannel ir, A a);
