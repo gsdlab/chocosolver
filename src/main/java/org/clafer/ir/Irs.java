@@ -91,9 +91,9 @@ public class Irs {
     public static final IrBoolDomain FalseDomain = IrBoolDomain.FalseDomain;
     public static final IrBoolDomain BoolDomain = IrBoolDomain.BoolDomain;
     public static final IrDomain EmptyDomain = new IrEmptyDomain();
-    public static final IrDomain ZeroDomain = new IrEnumDomain(new int[]{0});
-    public static final IrDomain OneDomain = new IrEnumDomain(new int[]{1});
-    public static final IrDomain ZeroOneDomain = new IrEnumDomain(new int[]{0, 1});
+    public static final IrDomain ZeroDomain = new IrBoundDomain(0, 0);
+    public static final IrDomain OneDomain = new IrBoundDomain(1, 1);
+    public static final IrDomain ZeroOneDomain = new IrBoundDomain(0, 1);
     public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
 
     public static IrBoolDomain domain(boolean value) {

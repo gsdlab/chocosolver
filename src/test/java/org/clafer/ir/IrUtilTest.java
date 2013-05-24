@@ -46,12 +46,28 @@ public class IrUtilTest {
     }
 
     @Test
+    public void testIntersects() {
+        IrDomain d1 = randDomain();
+        IrDomain d2 = randDomain();
+        assertEquals(!IrUtil.intersection(d1, d2).isEmpty(), IrUtil.intersects(d1, d2));
+    }
+    
+    @Test
+    public void testIsSubsetOf() {
+        IrDomain d1 = randDomain();
+        IrDomain d2 = randDomain();
+        assertEquals(IrUtil.intersection(d1, d2).equals(d1), IrUtil.isSubsetOf(d1, d2));
+    }
+
+    @Test
     public void testDifference() {
         IrDomain d1 = randDomain();
         IrDomain d2 = randDomain();
         IrDomain difference = IrUtil.difference(d1, d2);
         for (int i = -100; i <= 200; i++) {
-            assertEquals(d1.contains(i) && !d2.contains(i), difference.contains(i));
+            assertEquals(
+                    i + " : " + d1 + " : " + d2,
+                    d1.contains(i) && !d2.contains(i), difference.contains(i));
         }
     }
 
@@ -72,6 +88,24 @@ public class IrUtilTest {
         IrDomain union = IrUtil.union(d1, d2);
         for (int i = -100; i <= 200; i++) {
             assertEquals(d1.contains(i) || d2.contains(i), union.contains(i));
+        }
+    }
+
+    @Test
+    public void testMinus() {
+        IrDomain d = randDomain();
+        IrDomain minus = IrUtil.minus(d);
+        for (int i = -100; i <= 200; i++) {
+            assertEquals(d.contains(i), minus.contains(-i));
+        }
+    }
+
+    @Test
+    public void testOffset() {
+        IrDomain d = randDomain();
+        IrDomain offset = IrUtil.offset(d, 3);
+        for (int i = -100; i <= 200; i++) {
+            assertEquals(d.contains(i), offset.contains(i + 3));
         }
     }
 }

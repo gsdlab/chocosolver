@@ -210,7 +210,7 @@ public class Asts {
         return decl(new AstLocal[]{local}, body);
     }
 
-    public static AstDecl disjointDecl(AstLocal[] locals, AstSetExpr body) {
+    public static AstDecl disjDecl(AstLocal[] locals, AstSetExpr body) {
         return new AstDecl(true, locals, body);
     }
 

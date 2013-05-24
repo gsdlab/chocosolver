@@ -162,13 +162,13 @@ public class IrUtil {
             return minuend;
         }
         if (minuend.isBounded() && subtrahend.isBounded()) {
-            if (minuend.getLowBound() <= subtrahend.getLowBound()
-                    && minuend.getHighBound() >= subtrahend.getLowBound()) {
-                return Irs.boundDomain(minuend.getLowBound(), subtrahend.getLowBound());
+            if (minuend.getLowBound() < subtrahend.getLowBound()
+                    && minuend.getHighBound() <= subtrahend.getHighBound()) {
+                return Irs.boundDomain(minuend.getLowBound(), subtrahend.getLowBound() - 1);
             }
-            if (subtrahend.getLowBound() <= minuend.getLowBound()
-                    && subtrahend.getHighBound() >= minuend.getLowBound()) {
-                return Irs.boundDomain(subtrahend.getHighBound(), minuend.getHighBound());
+            if (minuend.getHighBound() > subtrahend.getHighBound()
+                    && minuend.getLowBound() >= subtrahend.getLowBound()) {
+                return Irs.boundDomain(subtrahend.getHighBound() + 1, minuend.getHighBound());
             }
         }
         TIntHashSet values = new TIntHashSet();

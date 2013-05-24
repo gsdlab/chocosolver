@@ -51,7 +51,7 @@ public class RhinoContext {
             String key = entry.getKey();
             AstClafer clafer = resolvedClafers.get(key);
             if (clafer == null) {
-                throw new IllegalStateException("Cannot set scope for unknown clafer \"" + key + "\"");
+                throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\"");
             }
             resolvedScope.put(clafer, entry.getValue());
         }
@@ -61,8 +61,7 @@ public class RhinoContext {
     public AstModel getModel() {
         return model;
     }
-    
-    
+
     private static Map<String, AstClafer> getClafersMap(AstModel model) {
         List<AstClafer> clafers = AstUtil.getClafers(model);
         Map<String, AstClafer> map = new HashMap<String, AstClafer>();
@@ -72,5 +71,4 @@ public class RhinoContext {
         assert map.size() == clafers.size() : "Duplicate Clafer name";
         return map;
     }
-
 }
