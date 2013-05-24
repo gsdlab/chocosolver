@@ -397,6 +397,7 @@ public class AstCompiler {
                     }
                     if (groupCard.isExact() && groupCard.getLow() == 1) {
                         // "xor"
+                        // TODO constrain as sum(cards) = card(this)
                         module.addConstraint(implies(members[i], one(asBools(cards))));
                         continue;
                     }

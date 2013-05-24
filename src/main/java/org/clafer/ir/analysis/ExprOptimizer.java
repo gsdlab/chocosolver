@@ -46,7 +46,7 @@ public class ExprOptimizer {
     }
 
     /**
-     * {@code antecedent => (left `op` right)
+     * Optimize {@code antecedent => (left `op` right)} where `op` is = or !=.
      */
     private static IrBoolExpr optimize(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
         IrDomain domain = left.getDomain();
@@ -72,7 +72,23 @@ public class ExprOptimizer {
                     }
                     break;
                 case NotEqual:
-                    throw new IrException("TODO");
+                    //   bool => int != 888
+                    //     where dom(int) = {-3, 888}
+                    // optimize as
+                    //   asInt(bool) <= 888 - int
+                    if (domain.getHighBound() == constant.intValue()) {
+                        return lessThanEqual(asInt(antecedent),
+                                sub(domain.getLowBound(), left));
+                    }
+                    //   bool => int != -3
+                    //     where dom(int) = {-3, 888}
+                    // optimize as
+                    //   asInt(bool) <= int - (-3)
+                    if (domain.getLowBound() == constant.intValue()) {
+                        return lessThanEqual(asInt(antecedent),
+                                sub(left, domain.getHighBound()));
+                    }
+                    break;
             }
         }
         return null;

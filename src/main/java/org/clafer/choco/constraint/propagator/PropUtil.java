@@ -218,7 +218,7 @@ public class PropUtil {
      * @param propagator the propagator
      * @throws ContradictionException
      */
-    public static void subsetEnv(SetVar sub, TIntHashSet sup, ICause propagator) throws ContradictionException {
+    public static void envSubsetOf(SetVar sub, TIntHashSet sup, ICause propagator) throws ContradictionException {
         for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
             if (!sup.contains(i)) {
                 sub.removeFromEnvelope(i, propagator);

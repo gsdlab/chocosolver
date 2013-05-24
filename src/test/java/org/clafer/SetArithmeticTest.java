@@ -10,6 +10,7 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
  *

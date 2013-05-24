@@ -66,8 +66,6 @@ public class PropJoin extends Propagator<SetVar> {
     }
 
     private void findMate(int toEnv) throws ContradictionException {
-        assert to.envelopeContains(toEnv);
-
         boolean inKer = to.kernelContains(toEnv);
         int mate = -1;
         for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
@@ -113,7 +111,7 @@ public class PropJoin extends Propagator<SetVar> {
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             PropUtil.iterateEnv(children[i], viableTo);
         }
-        PropUtil.subsetEnv(to, viableTo, aCause);
+        PropUtil.envSubsetOf(to, viableTo, aCause);
 
         // Pick take, pick child, pick take, prune to
         for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
@@ -162,8 +160,8 @@ public class PropJoin extends Propagator<SetVar> {
             assert isChildVar(idxVarInProp);
             final int id = getChildVarIndex(idxVarInProp);
             childrenD[id].freeze();
+            childrenD[id].forEach(pruneToOnChildEnv, EventType.REMOVE_FROM_ENVELOPE);
             if (take.envelopeContains(id)) {
-                childrenD[id].forEach(pruneToOnChildEnv, EventType.REMOVE_FROM_ENVELOPE);
                 if (take.kernelContains(id)) {
                     childrenD[id].forEach(pickToOnChildKer, EventType.ADD_TO_KER);
                 } else {
@@ -211,9 +209,14 @@ public class PropJoin extends Propagator<SetVar> {
     private final IntProcedure pruneToOnChildEnv = new IntProcedure() {
         @Override
         public void execute(int childEnv) throws ContradictionException {
-            if (to.envelopeContains(childEnv)) {
-                findMate(childEnv);
-            }
+            // Note the the child may no longer be in take, but still need to find mate.
+            // For example:
+            //     take = {0,1,2}, child0 = {0}, child1 = {1}, child2 = {2}, to = {0,1,2}
+            //   remove 2 from take and 2 from child2
+            //     take = {0,1}, child0 = {0}, child1 = {1}, child2 = {}, to = {0,1,2}
+            // Need to find mate for 2 on child2 or else to will keep 2, and break
+            // idempotency.
+            findMate(childEnv);
         }
     };
     private final IntProcedure pickToOnChildKer = new IntProcedure() {

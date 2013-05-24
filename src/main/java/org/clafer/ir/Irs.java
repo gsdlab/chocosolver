@@ -437,6 +437,28 @@ public class Irs {
                 }
                 break;
             case NotEqual:
+                constant = IrUtil.getConstant(left);
+                if (constant != null) {
+                    if (constant.length == 0) {
+                        return equal(card(right), 0);
+                    }
+                    if (constant.length == right.getEnv().size()) {
+                        if (IrUtil.containsAll(constant, right.getEnv())) {
+                            return notEqual(card(right), constant.length);
+                        }
+                    }
+                }
+                constant = IrUtil.getConstant(right);
+                if (constant != null) {
+                    if (constant.length == 0) {
+                        return equal(card(left), 0);
+                    }
+                    if (constant.length == left.getEnv().size()) {
+                        if (IrUtil.containsAll(constant, left.getEnv())) {
+                            return notEqual(card(left), constant.length);
+                        }
+                    }
+                }
                 break;
             default:
                 throw new IllegalArgumentException();
