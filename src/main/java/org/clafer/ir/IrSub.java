@@ -43,6 +43,6 @@ public class IrSub extends IrAbstractInt implements IrIntExpr {
 
     @Override
     public String toString() {
-        return "(" + Util.intercalate(") + (", getSubtrahends()) + ")";
+        return "(" + Util.intercalate(") - (", getSubtrahends()) + ")";
     }
 }

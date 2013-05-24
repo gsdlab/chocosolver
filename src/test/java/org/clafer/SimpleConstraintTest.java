@@ -55,7 +55,10 @@ public class SimpleConstraintTest {
     }
 
     /**
-     * Age ->> integer 2 [this.ref = 3]
+     * <pre>
+     * Age ->> integer 2
+     *     [this.ref = 3]
+     * </pre>
      */
     @Test
     public void testFixedJoinRef() {

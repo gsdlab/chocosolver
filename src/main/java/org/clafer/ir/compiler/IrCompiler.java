@@ -28,6 +28,8 @@ import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.common.Check;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrIntChannel;
@@ -45,6 +47,7 @@ import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDiv;
+import org.clafer.ir.IrIntCast;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntVar;
@@ -59,9 +62,11 @@ import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSub;
 import org.clafer.ir.IrUtil;
+import org.clafer.ir.analysis.ExprOptimizer;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.constraints.LCF;
+import solver.constraints.Operator;
 import solver.constraints.nary.Sum;
 import solver.constraints.nary.cnf.LogOp;
 import solver.constraints.set.SCF;
@@ -89,7 +94,7 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        IrModule optModule = module;// ExpressionAnalysis.analyze(module);
+        IrModule optModule = ExprOptimizer.analyze(module);
         for (IrBoolVar var : optModule.getBoolVars()) {
             boolVar.get(var);
         }
@@ -338,9 +343,48 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrCompare ir, Preference a) {
-            IntVar $left = ir.getLeft().accept(intExprCompiler, null);
-            IntVar $right = ir.getRight().accept(intExprCompiler, null);
-            return _arithm($left, ir.getOp().getSyntax(), $right);
+            Triple<String, IrIntExpr, Integer> offset = getOffset(ir.getLeft());
+            if (offset != null) {
+                return _arithm(compile(ir.getRight()), offset.getFst(),
+                        compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
+            }
+            offset = getOffset(ir.getRight());
+            if (offset != null) {
+                return _arithm(compile(ir.getLeft()), offset.getFst(),
+                        compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
+            }
+            return _arithm(compile(ir.getLeft()), ir.getOp().getSyntax(), compile(ir.getRight()));
+        }
+
+        private Triple<String, IrIntExpr, Integer> getOffset(IrIntExpr expr) {
+            if (expr instanceof IrAdd) {
+                IrAdd add = (IrAdd) expr;
+                IrIntExpr[] addends = add.getAddends();
+                if (addends.length == 2) {
+                    Integer constant = IrUtil.getConstant(addends[0]);
+                    if (constant != null) {
+                        return new Triple<String, IrIntExpr, Integer>("-", addends[1], constant);
+                    }
+                    constant = IrUtil.getConstant(addends[1]);
+                    if (constant != null) {
+                        return new Triple<String, IrIntExpr, Integer>("-", addends[0], constant);
+                    }
+                }
+            } else if (expr instanceof IrSub) {
+                IrSub sub = (IrSub) expr;
+                IrIntExpr[] subtrahends = sub.getSubtrahends();
+                if (subtrahends.length == 2) {
+                    Integer constant = IrUtil.getConstant(subtrahends[0]);
+                    if (constant != null) {
+                        return new Triple<String, IrIntExpr, Integer>("+", subtrahends[1], constant);
+                    }
+                    constant = IrUtil.getConstant(subtrahends[1]);
+                    if (constant != null) {
+                        return new Triple<String, IrIntExpr, Integer>("-", subtrahends[0], -constant);
+                    }
+                }
+            }
+            return null;
         }
 
         @Override
@@ -464,6 +508,11 @@ public class IrCompiler {
         @Override
         public IntVar visit(IrIntLiteral ir, Void a) {
             return intVar.get(ir.getVar());
+        }
+
+        @Override
+        public IntVar visit(IrIntCast ir, Void a) {
+            return compileAsBoolVar(ir.getExpr());
         }
 
         @Override

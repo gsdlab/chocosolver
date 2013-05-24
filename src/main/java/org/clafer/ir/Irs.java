@@ -93,6 +93,7 @@ public class Irs {
     public static final IrDomain EmptyDomain = new IrEmptyDomain();
     public static final IrDomain ZeroDomain = new IrEnumDomain(new int[]{0});
     public static final IrDomain OneDomain = new IrEnumDomain(new int[]{1});
+    public static final IrDomain ZeroOneDomain = new IrEnumDomain(new int[]{0, 1});
     public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
 
     public static IrBoolDomain domain(boolean value) {
@@ -412,14 +413,30 @@ public class Irs {
     public static IrBoolExpr equality(IrSetExpr left, IrSetTest.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
-                if (left.equals(right)) {
-                    return $(True);
+                int[] constant = IrUtil.getConstant(left);
+                if (constant != null) {
+                    if (constant.length == 0) {
+                        return equal(card(right), 0);
+                    }
+                    if (constant.length == right.getEnv().size()) {
+                        if (IrUtil.containsAll(constant, right.getEnv())) {
+                            return equal(card(right), constant.length);
+                        }
+                    }
+                }
+                constant = IrUtil.getConstant(right);
+                if (constant != null) {
+                    if (constant.length == 0) {
+                        return equal(card(left), 0);
+                    }
+                    if (constant.length == left.getEnv().size()) {
+                        if (IrUtil.containsAll(constant, left.getEnv())) {
+                            return equal(card(left), constant.length);
+                        }
+                    }
                 }
                 break;
             case NotEqual:
-                if (left.equals(right)) {
-                    return $(False);
-                }
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -652,12 +669,24 @@ public class Irs {
         }
     }
 
+    public static IrIntExpr asInt(IrBoolExpr expr) {
+        Boolean constant = IrUtil.getConstant(expr);
+        if (constant != null) {
+            return constant.booleanValue() ? $(One) : $(Zero);
+        }
+        return new IrIntCast(expr, ZeroOneDomain);
+    }
+
     public static IrIntExpr card(IrSetExpr set) {
         IrDomain domain = set.getCard();
         if (domain.size() == 1) {
             return $(constant(domain.getLowBound()));
         }
         return new IrCard(set, domain);
+    }
+
+    public static IrIntExpr add(int addend1, IrIntExpr addend2) {
+        return add($(constant(addend1)), addend2);
     }
 
     public static IrIntExpr add(IrIntExpr addend1, int addend2) {
@@ -694,6 +723,10 @@ public class Irs {
         }
         domain = boundDomain(low, high);
         return new IrAdd(filter.toArray(new IrIntExpr[filter.size()]), domain);
+    }
+
+    public static IrIntExpr sub(int minuend, IrIntExpr subtrahend) {
+        return sub($(constant(minuend)), subtrahend);
     }
 
     public static IrIntExpr sub(IrIntExpr minuend, int subtrahend) {
@@ -735,6 +768,10 @@ public class Irs {
         return new IrSub(filter.toArray(new IrIntExpr[filter.size()]), domain);
     }
 
+    public static IrIntExpr mul(int multiplicand, IrIntExpr multiplier) {
+        return mul($(constant(multiplicand)), multiplier);
+    }
+
     public static IrIntExpr mul(IrIntExpr multiplicand, int multiplier) {
         return mul(multiplicand, $(constant(multiplier)));
     }
@@ -768,6 +805,10 @@ public class Irs {
         int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         return new IrMul(multiplicand, multiplier, boundDomain(min, max));
+    }
+
+    public static IrIntExpr div(int dividend, IrIntExpr divisor) {
+        return div($(constant(dividend)), divisor);
     }
 
     public static IrIntExpr div(IrIntExpr dividend, int divisor) {

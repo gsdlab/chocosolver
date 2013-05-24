@@ -8,6 +8,8 @@ public interface IrIntExprVisitor<A, B> {
 
     public B visit(IrIntLiteral ir, A a);
 
+    public B visit(IrIntCast ir, A a);
+
     public B visit(IrCard ir, A a);
 
     public B visit(IrAdd ir, A a);
