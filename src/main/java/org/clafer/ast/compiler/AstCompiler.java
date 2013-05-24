@@ -734,13 +734,11 @@ public class AstCompiler {
                 }
             }
 
-            IrSetExpr setLeft = $left instanceof IrSetExpr ? (IrSetExpr) $left : singleton((IrIntExpr) $left);
-            IrSetExpr setRight = $right instanceof IrSetExpr ? (IrSetExpr) $right : singleton((IrIntExpr) $right);
             switch (ast.getOp()) {
                 case Equal:
-                    return equal(setLeft, setRight);
+                    return equal(asSet($left), asSet($right));
                 case NotEqual:
-                    return notEqual(setLeft, setRight);
+                    return notEqual(asSet($left), asSet($right));
                 default:
                     throw new AstException();
             }
@@ -748,7 +746,20 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstCompare ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            IrIntExpr left = asInt(compile(ast.getLeft()));
+            IrIntExpr right = asInt(compile(ast.getRight()));
+            switch (ast.getOp()) {
+                case LessThan:
+                    return lessThan(left, right);
+                case LessThanEqual:
+                    return lessThanEqual(left, right);
+                case GreaterThan:
+                    return greaterThan(left, right);
+                case GreaterThanEqual:
+                    return greaterThanEqual(left, right);
+                default:
+                    throw new AstException();
+            }
         }
 
         @Override

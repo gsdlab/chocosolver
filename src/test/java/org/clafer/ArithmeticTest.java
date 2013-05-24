@@ -99,4 +99,34 @@ public class ArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3).toScope());
         assertEquals(106, solver.allInstances().length);
     }
+    
+    /**
+     * <pre>
+     * Feature
+     *     Cost -> Int 2
+     *     [this.Cost > 5]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSumSetGreaterThan() {
+        /*
+         * import Control.Monad
+         * 
+         * solutions = do
+         *     cost1 <- [-10 .. 10]
+         *     cost2 <- [-10 .. 10]
+         *     -- Set sum
+         *     let sum = if cost1 == cost2 then cost1 else cost1 + cost2
+         *     guard $ sum > 5
+         *     return (cost1, cost2)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
+        feature.addConstraint(greaterThan(joinRef(join($this(), cost)), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10).toScope());
+        assertEquals(117, solver.allInstances().length);
+    }
 }
