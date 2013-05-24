@@ -13,6 +13,8 @@ import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
+import org.clafer.choco.constraint.propagator.PropUnion;
+import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -154,6 +156,12 @@ public class Constraints {
     public static Constraint or(BoolVar... vars) {
         Constraint constraint = new Constraint(vars, vars[0].getSolver());
         constraint.setPropagators(new PropOr(vars));
+        return constraint;
+    }
+    
+        public static Constraint union(SetVar[] sets, SetVar union) {
+        Constraint constraint = new Constraint(Util.cons(union, sets), union.getSolver());
+        constraint.setPropagators(new PropUnion(sets, union));
         return constraint;
     }
 }

@@ -1071,25 +1071,30 @@ public class Irs {
      * @return the join expression take.children
      */
     public static IrSetExpr join(IrSetExpr take, IrSetExpr[] children) {
+        IrSetExpr[] $children = children;
+        if (take.getEnv().getHighBound() + 1 < $children.length) {
+            $children = Arrays.copyOf(children, take.getEnv().getHighBound() + 1);
+        }
+
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
             IrSetExpr[] to = new IrSetExpr[constant.length];
             for (int i = 0; i < to.length; i++) {
-                to[i] = children[constant[i]];
+                to[i] = $children[constant[i]];
             }
             return setUnion(to);
         }
 
         // Compute env
-        IrDomain env = IrUtil.unionEnvs(children);
+        IrDomain env = IrUtil.unionEnvs($children);
 
         // Compute ker
         TIntIterator iter = take.getKer().iterator();
         IrDomain ker;
         if (iter.hasNext()) {
-            IrDomain domain = children[iter.next()].getEnv();
+            IrDomain domain = $children[iter.next()].getEnv();
             while (iter.hasNext()) {
-                domain = IrUtil.union(domain, children[iter.next()].getEnv());
+                domain = IrUtil.union(domain, $children[iter.next()].getEnv());
             }
             ker = domain;
         } else {
@@ -1108,7 +1113,7 @@ public class Irs {
         iter = takeEnv.iterator();
         while (iter.hasNext()) {
             int val = iter.next();
-            IrDomain childDomain = children[val].getCard();
+            IrDomain childDomain = $children[val].getCard();
             if (takeKer.contains(val)) {
                 cardLow += childDomain.getLowBound();
                 cardHigh += childDomain.getHighBound();
@@ -1134,7 +1139,7 @@ public class Irs {
         cardHigh = Math.min(cardHigh, env.size());
         IrDomain card = boundDomain(cardLow, cardHigh);
 
-        return new IrJoin(take, children, env, ker, card);
+        return new IrJoin(take, $children, env, ker, card);
     }
 
     public static IrSetExpr joinRef(IrSetExpr take, IrIntExpr[] refs) {

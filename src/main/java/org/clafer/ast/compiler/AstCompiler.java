@@ -655,11 +655,13 @@ public class AstCompiler {
                         }
                     // fallthrough
                     case LowGroup:
-                        return join(singleton($intLeft), $(childrenSet.get(right)));
+                        // Why empty set? The "take" var can contain unused.
+                        return join(singleton($intLeft), $(Util.snoc(childrenSet.get(right), EmptySet)));
                 }
             } else if ($left instanceof IrSetExpr) {
                 IrSetExpr $setLeft = (IrSetExpr) $left;
-                return join($setLeft, $(childrenSet.get(right)));
+                // Why empty set? The "take" var can contain unused.
+                return join($setLeft, $(Util.snoc(childrenSet.get(right), EmptySet)));
             }
             throw new AstException();
         }

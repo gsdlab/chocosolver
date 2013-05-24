@@ -2,6 +2,7 @@ package org.clafer.ir;
 
 import java.util.Arrays;
 import org.clafer.common.Check;
+import org.clafer.common.Util;
 
 /**
  *
@@ -41,13 +42,6 @@ public class IrSetUnion extends IrAbstractSet implements IrSetExpr {
 
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < operands.length; i++) {
-            if (i > 0) {
-                result.append(" ∪ ");
-            }
-            result.append('(').append(operands[i]).append(')');
-        }
-        return result.toString();
+        return "(" + Util.intercalate(") ∪ (", operands) + ")";
     }
 }

@@ -45,12 +45,6 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
-import static org.clafer.ir.IrCompare.Op.Equal;
-import static org.clafer.ir.IrCompare.Op.GreaterThan;
-import static org.clafer.ir.IrCompare.Op.GreaterThanEqual;
-import static org.clafer.ir.IrCompare.Op.LessThan;
-import static org.clafer.ir.IrCompare.Op.LessThanEqual;
-import static org.clafer.ir.IrCompare.Op.NotEqual;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrIntCast;
 import org.clafer.ir.IrIntExprVisitor;
@@ -908,7 +902,7 @@ public class IrCompiler {
     }
 
     private static Constraint _union(SetVar[] operands, SetVar union) {
-        return SCF.union(operands, union);
+        return Constraints.union(operands, union);
     }
 
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {

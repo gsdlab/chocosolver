@@ -160,6 +160,24 @@ public class PropUtil {
     }
 
     /**
+     * Checks if a set variable's envelope is contained entirely in the union of
+     * other set variables' envelope.
+     *
+     * @param sub the subset
+     * @param sups the superset union
+     * @return {@code true} if and only if {@code env(sub) subsetof env(union(sups))},
+     *         {@code false} otherwise
+     */
+    public static boolean isEnvSubsetEnvs(SetVar sub, SetVar[] sups) {
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!envsContain(sups, i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Checks if a set variable's kernel is contained entirely in another set
      * variable's envelope.
      *
@@ -230,9 +248,9 @@ public class PropUtil {
      * Removes every element in the subset's envelope that is not the superset's
      * envelope.
      *
-     * @param sub
-     * @param sup
-     * @param propagator
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
      * @throws ContradictionException
      */
     public static void envSubsetEnv(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
@@ -241,6 +259,39 @@ public class PropUtil {
                 sub.removeFromEnvelope(i, propagator);
             }
         }
+    }
+
+    /**
+     * Removes every element in the subset's envelope that is not in any of the
+     * supersets' envelope.
+     *
+     * @param sub the subset
+     * @param sups the superset union
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
+    public static void envSubsetEnvs(SetVar sub, SetVar[] sups, ICause propagator) throws ContradictionException {
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!envsContain(sups, i)) {
+                sub.removeFromEnvelope(i, propagator);
+            }
+        }
+    }
+
+    /**
+     * @param union
+     * @param val
+     * @return {@code true} if and only if one of the set variables' envelope
+     * contain {@code val},
+     *         {@code false} otherwise
+     */
+    public static boolean envsContain(SetVar[] union, int val) {
+        for (SetVar var : union) {
+            if (var.envelopeContains(val)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -307,13 +358,13 @@ public class PropUtil {
      * of integer variables' domain.
      *
      * @param sub the subset
-     * @param sup the superset union
+     * @param sups the superset union
      * @param propagator the propagator
      * @throws ContradictionException
      */
-    public static void envSubsetInts(SetVar sub, IntVar[] sup, ICause propagator) throws ContradictionException {
+    public static void envSubsetInts(SetVar sub, IntVar[] sups, ICause propagator) throws ContradictionException {
         for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
-            if (!contains(sup, val)) {
+            if (!domainsContain(sups, val)) {
                 sub.removeFromEnvelope(val, propagator);
             }
         }
@@ -322,10 +373,10 @@ public class PropUtil {
     /**
      * @param union
      * @param val
-     * @return {@code true} if and only if one of the integer variables contain
-     * val, {@code false} otherwise
+     * @return {@code true} if and only if one of the integer variables contain {@code val},
+     *         {@code false} otherwise
      */
-    public static boolean contains(IntVar[] union, int val) {
+    public static boolean domainsContain(IntVar[] union, int val) {
         for (IntVar var : union) {
             if (var.contains(val)) {
                 return true;

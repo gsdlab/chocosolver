@@ -2,7 +2,6 @@ package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
@@ -86,7 +85,6 @@ public class PropJoin extends Propagator<SetVar> {
             take.addToKernel(mate, aCause);
             PropUtil.kerSubsetKer(children[mate], to, aCause);
             PropUtil.envSubsetEnv(children[mate], to, aCause);
-            // TODO not idempotent?
             children[mate].addToKernel(toEnv, aCause);
         }
     }
@@ -107,11 +105,7 @@ public class PropJoin extends Propagator<SetVar> {
         }
 
         // Prune to
-        TIntHashSet viableTo = new TIntHashSet();
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            PropUtil.iterateEnv(children[i], viableTo);
-        }
-        PropUtil.envSubsetOf(to, viableTo, aCause);
+        PropUtil.envSubsetEnvs(to, children, aCause);
 
         // Pick take, pick child, pick take, prune to
         for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {

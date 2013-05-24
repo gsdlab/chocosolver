@@ -9,6 +9,7 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
  *
@@ -234,5 +235,69 @@ public class SimpleConstraintTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
         assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 2
+     *     B ?
+     *     C ?
+     *         [some this.parent.B]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testFixedJoinParent() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(2, 2);
+        AstConcreteClafer b = a.addChild("B").withCard(0, 1);
+        AstConcreteClafer c = a.addChild("C").withCard(0, 1);
+        c.addConstraint(some(join(joinParent($this()), b)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        // Due to symmetry breaking.
+        assertEquals(6, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 4
+     *     B 0..2
+     * [#B.parent = 3]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testVariableJoinParent() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(4, 4);
+        AstConcreteClafer b = a.addChild("B").withCard(0, 2);
+        model.addConstraint(equal(card(joinParent(global(b))), constant(3)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8).toScope());
+        // Due to symmetry breaking.
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 4
+     *     B 0..2
+     *     C ?
+     * [#B.parent.C = 3]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testVariableJoinParentAndJoin() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(4, 4);
+        AstConcreteClafer b = a.addChild("B").withCard(0, 2);
+        AstConcreteClafer c = a.addChild("C").withCard(0, 1);
+        model.addConstraint(equal(card(join(joinParent(global(b)), c)), constant(3)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8).toScope());
+        // Due to symmetry breaking.
+        assertEquals(16, solver.allInstances().length);
     }
 }
