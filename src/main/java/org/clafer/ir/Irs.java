@@ -366,6 +366,10 @@ public class Irs {
         return new IrNotBetween(var, low, high, BoolDomain);
     }
 
+    private static boolean isBoolDomain(IrDomain domain) {
+        return domain.getLowBound() >= 0 && domain.getHighBound() <= 1;
+    }
+
     public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
         IrDomain leftDomain = left.getDomain();
         IrDomain rightDomain = right.getDomain();
@@ -374,10 +378,16 @@ public class Irs {
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return $(constant(leftDomain.getLowBound() == rightDomain.getLowBound()));
                 }
+                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
+                    return ifOnlyIf(asBool(left), asBool(right));
+                }
                 break;
             case NotEqual:
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return $(constant(leftDomain.getLowBound() != rightDomain.getLowBound()));
+                }
+                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
+                    return xor(asBool(left), asBool(right));
                 }
                 break;
             case LessThan:
@@ -387,6 +397,9 @@ public class Irs {
                 if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
                     return $(False);
                 }
+                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
+                    return not(implies(asBool(right), asBool(left)));
+                }
                 break;
             case LessThanEqual:
                 if (leftDomain.getHighBound() <= rightDomain.getLowBound()) {
@@ -394,6 +407,9 @@ public class Irs {
                 }
                 if (leftDomain.getLowBound() > rightDomain.getHighBound()) {
                     return $(False);
+                }
+                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
+                    return implies(asBool(left), asBool(right));
                 }
                 break;
             case GreaterThan:
@@ -403,6 +419,9 @@ public class Irs {
                 if (leftDomain.getHighBound() <= rightDomain.getLowBound()) {
                     return $(False);
                 }
+                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
+                    return not(implies(asBool(left), asBool(right)));
+                }
                 break;
             case GreaterThanEqual:
                 if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
@@ -410,6 +429,9 @@ public class Irs {
                 }
                 if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
                     return $(False);
+                }
+                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
+                    return implies(asBool(right), asBool(left));
                 }
                 break;
             default:
@@ -606,6 +628,23 @@ public class Irs {
     }
 
     public static IrBoolExpr intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
+        boolean entailed = true;
+        for (int i = 0; i < ints.length; i++) {
+            Integer constant = IrUtil.getConstant(ints[i]);
+            if (constant != null) {
+                IrSetExpr set = sets[constant.intValue()];
+                if (!set.getEnv().contains(i)) {
+                    return $(False);
+                } else if (!set.getKer().contains(i)) {
+                    entailed = false;
+                }
+            } else {
+                entailed = false;
+            }
+        }
+        if (entailed) {
+            return $(True);
+        }
         return new IrIntChannel(ints, sets, BoolDomain);
     }
 
@@ -645,6 +684,11 @@ public class Irs {
     }
 
     public static IrBoolExpr selectN(IrBoolExpr[] bools, IrIntExpr n) {
+        if (bools.length == 1) {
+            if (bools[0].equals(asBool(n))) {
+                return $(True);
+            }
+        }
         boolean entailed = true;
         IrDomain nDomain = n.getDomain();
         for (int i = 0; i < bools.length; i++) {

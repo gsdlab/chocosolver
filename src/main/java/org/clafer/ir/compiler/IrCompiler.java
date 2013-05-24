@@ -228,6 +228,24 @@ public class IrCompiler {
         return vars;
     }
 
+    private IntVar compileAsIntVar(IrBoolExpr expr) {
+        if (expr instanceof IrBoolCast) {
+            IrBoolCast cast = (IrBoolCast) expr;
+            if (!cast.isFlipped()) {
+                return compile(cast.getExpr());
+            }
+        }
+        return asBoolVar(expr.accept(boolExprCompiler1, Preference.BoolVar));
+    }
+
+    private IntVar[] compileAsIntVars(IrBoolExpr... expr) {
+        IntVar[] vars = new IntVar[expr.length];
+        for (int i = 0; i < vars.length; i++) {
+            vars[i] = compileAsIntVar(expr[i]);
+        }
+        return vars;
+    }
+
     private Constraint asConstraint(Object obj) {
         if (obj instanceof BoolVar) {
             return asConstraint((BoolVar) obj);
@@ -292,22 +310,22 @@ public class IrCompiler {
         @Override
         public Object visit(IrImplies ir, Preference a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-            BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
+            IntVar $consequent = compileAsIntVar(ir.getConsequent());
             return _implies($antecedent, $consequent);
         }
 
         @Override
         public Object visit(IrNotImplies ir, Preference a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-            BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
+            IntVar $consequent = compileAsIntVar(ir.getConsequent());
             return _not_implies($antecedent, $consequent);
         }
 
         @Override
         public Object visit(IrIfThenElse ir, Preference a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-            BoolVar $consequent = compileAsBoolVar(ir.getConsequent());
-            BoolVar $alternative = compileAsBoolVar(ir.getAlternative());
+            IntVar $consequent = compileAsIntVar(ir.getConsequent());
+            IntVar $alternative = compileAsIntVar(ir.getAlternative());
             Constraint thenClause = _implies($antecedent, $consequent);
             Constraint elseClause = _implies($antecedent.not(), $alternative);
             return _and(thenClause.reif(), elseClause.reif());
@@ -315,15 +333,15 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrIfOnlyIf ir, Preference a) {
-            BoolVar $left = compileAsBoolVar(ir.getLeft());
-            BoolVar $right = compileAsBoolVar(ir.getRight());
+            IntVar $left = compileAsIntVar(ir.getLeft());
+            IntVar $right = compileAsIntVar(ir.getRight());
             return _arithm($left, "=", $right);
         }
 
         @Override
         public Object visit(IrXor ir, Preference a) {
-            BoolVar $left = compileAsBoolVar(ir.getLeft());
-            BoolVar $right = compileAsBoolVar(ir.getRight());
+            IntVar $left = compileAsIntVar(ir.getLeft());
+            IntVar $right = compileAsIntVar(ir.getRight());
             return _arithm($left, "!=", $right);
         }
 
@@ -350,13 +368,6 @@ public class IrCompiler {
             if (offset != null) {
                 return _arithm(compile(ir.getLeft()), offset.getFst(),
                         compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
-            }
-            BoolVar boolVar = getBoolVar(ir.getLeft(), ir.getOp(), ir.getRight());
-            if (boolVar == null) {
-                boolVar = getBoolVar(ir.getRight(), ir.getOp().reverse(), ir.getLeft());
-            }
-            if (boolVar != null) {
-                return boolVar;
             }
             return _arithm(compile(ir.getLeft()), ir.getOp().getSyntax(), compile(ir.getRight()));
         }
@@ -386,33 +397,6 @@ public class IrCompiler {
                     constant = IrUtil.getConstant(subtrahends[1]);
                     if (constant != null) {
                         return new Triple<String, IrIntExpr, Integer>("-", subtrahends[0], -constant);
-                    }
-                }
-            }
-            return null;
-        }
-
-        private BoolVar getBoolVar(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
-            Integer leftConstant = IrUtil.getConstant(left);
-            if (leftConstant != null && leftConstant.intValue() >= 0 && leftConstant.intValue() <= 1) {
-                IntVar $right = compile(right);
-                if ($right instanceof BoolVar) {
-                    BoolVar rightBool = (BoolVar) $right;
-                    switch (op) {
-                        case Equal:
-                            return leftConstant.intValue() == 1 ? rightBool : rightBool.not();
-                        case NotEqual:
-                            return leftConstant.intValue() == 1 ? rightBool.not() : rightBool;
-                        case LessThan:
-                            return leftConstant.intValue() == 1 ? rightBool.getSolver().ZERO : rightBool;
-                        case LessThanEqual:
-                            return leftConstant.intValue() == 1 ? rightBool : rightBool.getSolver().ONE;
-                        case GreaterThan:
-                            return leftConstant.intValue() == 1 ? rightBool.not() : rightBool.getSolver().ZERO;
-                        case GreaterThanEqual:
-                            return leftConstant.intValue() == 1 ? rightBool.getSolver().ONE : rightBool.not();
-                        default:
-                            throw new IrException();
                     }
                 }
             }
@@ -449,8 +433,16 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrBoolCast ir, Preference a) {
-            BoolVar $expr = (BoolVar) ir.getExpr().accept(intExprCompiler, null);
-            return ir.isFlipped() ? $expr.not() : $expr;
+            IntVar expr = compile(ir.getExpr());
+            BoolVar boolExpr;
+            if (expr instanceof BoolVar) {
+                boolExpr = (BoolVar) expr;
+            } else {
+                // TODO: View?
+                boolExpr = numBoolVar("BoolCast");
+                solver.post(_arithm(expr, "=", boolExpr));
+            }
+            return ir.isFlipped() ? boolExpr.not() : boolExpr;
         }
 
         @Override
@@ -857,11 +849,11 @@ public class IrCompiler {
         }
     }
 
-    private static Constraint _implies(BoolVar antecedent, BoolVar consequent) {
+    private static Constraint _implies(BoolVar antecedent, IntVar consequent) {
         return _arithm(antecedent, "<=", consequent);
     }
 
-    private static Constraint _not_implies(BoolVar antecedent, BoolVar consequent) {
+    private static Constraint _not_implies(BoolVar antecedent, IntVar consequent) {
         return _arithm(antecedent, ">", consequent);
     }
 
