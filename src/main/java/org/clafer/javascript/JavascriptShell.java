@@ -12,7 +12,7 @@ import javax.script.ScriptException;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstUtil;
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferObjective;

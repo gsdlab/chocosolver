@@ -1,6 +1,6 @@
 package org.clafer.compiler;
 
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstModel;

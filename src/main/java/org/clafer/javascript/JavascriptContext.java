@@ -1,6 +1,6 @@
 package org.clafer.javascript;
 
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

@@ -1,6 +1,6 @@
 package org.clafer;
 
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.Asts;

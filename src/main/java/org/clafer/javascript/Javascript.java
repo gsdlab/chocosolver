@@ -9,7 +9,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import org.clafer.ast.AstModel;
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import org.clafer.collection.Pair;
 
 /**

@@ -1,6 +1,6 @@
 package org.clafer;
 
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstConcreteClafer;

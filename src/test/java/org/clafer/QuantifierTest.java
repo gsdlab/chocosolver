@@ -5,7 +5,7 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.assertEquals;

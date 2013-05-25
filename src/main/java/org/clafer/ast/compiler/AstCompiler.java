@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.clafer.common.Check;
-import org.clafer.ast.scope.Scope;
+import org.clafer.scope.Scope;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.PartialSolution;
