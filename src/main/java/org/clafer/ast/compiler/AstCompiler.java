@@ -159,7 +159,8 @@ public class AstCompiler {
                         module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
                     }
                 } else {
-                    IrBoolVar soft = bool("Constraint#" + i + " under " + clafer + i);
+//                    IrBoolVar soft = bool("Constraint#" + i + " under " + clafer + i);
+                    IrBoolVar soft = bool(constraint.toString());
                     softVars.add(soft);
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);

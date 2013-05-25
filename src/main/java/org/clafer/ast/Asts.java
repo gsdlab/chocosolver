@@ -178,9 +178,19 @@ public class Asts {
         return new AstUpcast(base, target);
     }
 
+    public static AstBoolExpr lone(AstClafer clafer) {
+        // Syntactic sugar.
+        return lone(global(clafer));
+    }
+
     public static AstBoolExpr lone(AstSetExpr set) {
         // Syntactic sugar.
         return lessThanEqual(card(set), constant(1));
+    }
+
+    public static AstBoolExpr none(AstClafer clafer) {
+        // Syntactic sugar.
+        return none(global(clafer));
     }
 
     public static AstBoolExpr none(AstSetExpr set) {
@@ -188,9 +198,19 @@ public class Asts {
         return equal(card(set), constant(0));
     }
 
+    public static AstBoolExpr one(AstClafer clafer) {
+        // Syntactic sugar.
+        return one(global(clafer));
+    }
+
     public static AstBoolExpr one(AstSetExpr set) {
         // Syntactic sugar.
         return equal(card(set), constant(1));
+    }
+
+    public static AstBoolExpr some(AstClafer clafer) {
+        // Syntactic sugar.
+        return some(global(clafer));
     }
 
     public static AstBoolExpr some(AstSetExpr set) {

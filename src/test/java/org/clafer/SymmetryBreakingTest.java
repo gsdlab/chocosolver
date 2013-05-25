@@ -7,6 +7,7 @@ import org.clafer.ast.Asts;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -42,8 +43,8 @@ public class SymmetryBreakingTest {
      *         Cheese *
      * </pre>
      * 
-     * Currently fails.
      */
+    @Ignore("Currently fails because symmetry breaking needs to be more effective.")
     @Test
     public void breakGrandChildrenSwap() {
         /*

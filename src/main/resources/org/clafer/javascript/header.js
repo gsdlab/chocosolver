@@ -5,6 +5,7 @@ var defaultScope = rc.setDefaultScope.bind(rc);
 var intRange = rc.setIntRange.bind(rc);
 var clafer = rc.getModel().addChild.bind(rc.getModel());
 var abstract = rc.getModel().addAbstractClafer.bind(rc.getModel());
+var constraint = rc.getModel().addConstraint.bind(rc.getModel());
 
 var int = Asts.IntType;
 var bool = Asts.BoolType;

@@ -25,6 +25,6 @@ public class AstCard implements AstSetExpr {
 
     @Override
     public String toString() {
-        return "|" + set + "|";
+        return "#(" + set + ")";
     }
 }

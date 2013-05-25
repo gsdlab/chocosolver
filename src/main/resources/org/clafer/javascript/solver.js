@@ -4,3 +4,6 @@ var maximize = rsc.maximize.bind(rsc);
 var minimize = rsc.minimize.bind(rsc);
 var minUnsat = rsc.minUnsat.bind(rsc);
 var exit = rsc.exit.bind(rsc);
+
+// Debugging
+var __internals__ = rsc.internals.bind(rsc);

@@ -1,19 +1,186 @@
 chocosolver
 ===========
 
-Alternative backend for Clafer using the Choco solver.
+A backend for [Clafer](http://clafer.org) using the Choco 3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
 
 Prerequisites
-Choco 3
-Java 6+
-Maven
+-------------
+* [Choco 3](https://github.com/chocoteam/choco3.git) - The project is currently in the beta stage and changes are occurring very rapidly. The build in the Maven repository is too out-of-date so please build the library from source.
+```bash
+git clone https://github.com/chocoteam/choco3.git
+cd choco3
+mvn install -DskipTests
+```
+* [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - OpenJDK is fine too.
+* Maven 2+ - Required for building the project.
 
 Optional
-Clafer compiler
-Rhino Javascript engine
-
+--------
+* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below).
+```bash
+git clone https://github.com/gsdlab/clafer.git
+cd clafer
+git checkout choco3
+make
 ```
-clafer -m choco MyModel.cfr
-java -jar target/chocosolver-1.0-SNAPSHOT.jar MyModel.js
+Rhino Javascript engine - The Rhino Javascript engine is needed Javascript support. Rhino should come bundled with most Java 6+ installations.
+
+Installation
+------------
+Install the API.
+```bash
+git clone https://github.com/gsdlab/chocosolver.git
+cd chocosolver
+mvn install
+```
+Install the CLI after installing the API.
+```bash
+mvn assembly:single
+```
+The CLI is installed to target/chocosolver-<version>-jar-with-dependencies.jar.
+
+Getting Started with the API
+----------------------------
+The most important part of using the API is properly building the AST to feed as input to the solver. Consider the following Clafer model.
+```clafer
+Installation
+    xor Status
+        Ok
+        Bad
+    Time ->> integer
+        [this > 2]
+```
+Below is an example of using the API to build the model above. [AstModel] represents the implicit "root" of the model. Every Clafer in the model nests below it.
+```java
+import org.clafer.ast.*;
+import static org.clafer.ast.Asts.*;
+
+public static void main(String[] args) {
+    AstModel model = newModel();
+    
+    AstConcreteClafer installation = model.addChild("Installation").withCard(1, 1);
+        AstConcreteClafer status = installation.addChild("Status").withCard(1, 1).withGroupCard(1, 1);
+            AstConcreteClafer ok = status.addChild("Ok").withCard(0, 1);
+            AstConcreteClafer bad = status.addChild("Bad").withCard(0, 1);
+            // Note that ok and bad have an explicit optional cardinality, whereas
+            // it was implicit in the oringal model.
+        AstConcreteClafer time = installation.addChild("Time").withCard(1, 1).refTo(IntType);
+            time.addConstraint(greaterThan(joinRef($this()), constant(2)));
+            // Note that joinRef is explicit whereas it was implicit in the original model.
+}
+```
+More examples of building models [here](link).
+
+Finding Instances
+-----------------
+The next step is to solve the model.
+```java
+import org.clafer.compiler.*;
+import org.clafer.scope.*;
+
+public static void main(String[] args) {
+    ...
+    ClaferSolver solver = ClaferCompiler.compile(model, 
+        Scope.set(installation, 1).set(status, 1).set(ok, 1).set(bad, 1).set(time, 1)
+        // Set the scope of every Clafer to 1. The code above could be replaced with
+        // "Scope.defaultScope(1)".
+        .intLow(-16).intHigh(16)
+        // intLow is the "suggested" lowest integer for solving. intHigh is the "suggested"
+        // highest integer.
+        .toScope());
+    // find will return true when the solver finds another instance.
+    while(solver.find()) {
+        // Print the solution in a format similar to ClaferIG.
+        System.out.println(solver.instance());
+    }
+}
 ```
 
+Finding Optimal Instances
+-------------------------
+Optimizing on a single objective is supported.
+```java
+ClaferObjective solver = ClaferCompiler.compileMaximize(model, 
+    Scope.defaultScope(1).intLow(-16).intHigh(16).toScope(), 
+    time.getRef());
+// The instance where time is minimal.
+System.out.println(solver.optimal());
+
+ClaferObjective solver = ClaferCompiler.compileMaximize(model, 
+    Scope.defaultScope(1).intLow(-16).intHigh(16).toScope(), 
+    time.getRef());
+// The instance where time is maximal.
+System.out.println(solver.optimal());
+```
+
+Finding MinUnsat
+----------------
+Consider the following Clafer model.
+```clafer
+Mob
+Duck ?
+Witch ?
+Floats ?
+[Floats => Duck]
+[Floats <=> Witch]
+[!Duck]
+[Witch]
+```
+The model is overconstraint and has no solutions. The solver can help here as well.
+```java
+AstModel model = newModel();
+model.addChild("Mob").withCard(1);
+AstConcreteClafer duck = model.addChild("Duck").withCard(0, 1);
+AstConcreteClafer witch = model.addChild("Witch").withCard(0, 1);
+AstConcreteClafer floats = model.addChild("Floats").withCard(0, 1);
+model.addConstraint(implies(some(floats), some(duck)));
+model.addConstraint(ifOnlyIf(some(floats), some(witch)));
+model.addConstraint(none(duck));
+model.addConstraint(some(witch));
+
+ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1).toScope());
+// Print the min Unsat and near-miss example.
+System.out.println(unsat.minUnsat());
+```
+The above code will print two things. First it will print "#(Witch) >= 1" which is the constraint that is unsatisfiable in the model, ie. the last constraint that enforces there to be some witch. Next it will print the near-miss example "Mob#0". What this means is that removing the "some(witch)" constraint would make the model satisfiable and an example of a solution (after removing the constraint), is the instance with exactly one mob and nothing else.
+
+Getting Started with the CLI
+----------------------------
+The CLI provides a more interactive approach to solving instances. The input of the CLI uses the Javascript API, whose syntax looks similar to the Java API.
+```javascript
+// Save the contents here to mymodel.js
+
+scope({Installation:1, Status:1, Ok:1, Bad:1, Time:1})
+// Alternatively "defaultScope(1)"
+intRange(-16, 16)
+Installation = clafer("Installation").withCard(1, 1);
+    Status = installation.addChild("Status").withCard(1, 1).withGroupCard(1, 1);
+        Ok = status.addChild("Ok").withCard(0, 1);
+        Bad = status.addChild("Bad").withCard(0, 1);
+    Time = installation.addChild("Time").withCard(1, 1).refTo(int);
+        Time.addConstraint(greaterThan(joinRef($this()), constant(2)));
+```
+Now execute the CLI: "java -jar chocosolver-<version>-jar-with-dependencies.jar mymodel.js". The entire implementation of the CLI is here [JavascriptShell](link). The CLI is a very basic Javacsript REPL. It accepts any one-line Javacsript at a time. For example, "for(var i = 0; i < 10; i++) { println(solve()); }" would print the next 10 solutions. The mapping from Javascript to the Java API is defined [here] and [here].
+
+Javascript vs Java
+------------------
+If you prefer to use the Javascript API over the Java API:
+```java
+import org.clafer.javascript.Javascript;
+
+public static void main(String[] args) {
+    Javascript.readModel(
+                "scope({Installation:1, Status:1, Ok:1, Bad:1, Time:1})\n" +
+                "intRange(-16, 16)" +
+                "Installation = clafer('Installation').withCard(1, 1);" +
+                ...
+}
+```
+
+Semantic Differences with the Alloy Backend
+-------------------------------------------
+Consider the following constraint.
+```clafer
+[5 + 5 = -6]
+```
+For this backend, the constraint is always unsatisfiable. For the Alloy backend, the constraint can be satisfied, depending on the set bitwidth. Why? In the default bitwidth of 4, the number succeeding 7 is -8. Hence 5 + 5 is translated to 5 -> 6 -> 7 -> -8 -> -7 -> -6, hence the constraint is true. For any other bitwidth, the constraint is false. Overflow can be a problem for low bitwidths when dealing with arithmetic. This backend can also suffer from overflow. It essentially, in regards to overflow, has a fixed bitwidth of 32.

@@ -199,9 +199,9 @@ public class Feature {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(200).intLow(-10000).intHigh(10000).toScope());
 //        ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());
-        System.out.println(solver.solver);
+        System.out.println(solver.getInternalSolver());
         Set<String> names = new HashSet<String>();
-        for(Variable var : solver.solver.getVars()) {
+        for(Variable var : solver.getInternalSolver().getVars()) {
             if(names.contains(var.getName())) {
                 System.out.println(var);
                 throw new Error(var.getName());

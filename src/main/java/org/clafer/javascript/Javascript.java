@@ -13,7 +13,9 @@ import org.clafer.scope.Scope;
 import org.clafer.collection.Pair;
 
 /**
- *
+ * This class provides various methods of loading models and scopes via the
+ * Javascript API.
+ * 
  * @author jimmy
  */
 public class Javascript {
@@ -21,6 +23,9 @@ public class Javascript {
     private Javascript() {
     }
 
+    /**
+     * @return a new Javascript engine.
+     */
     public static ScriptEngine newEngine() {
         // The Rhino engine is currently the only supported engine.
         ScriptEngine engine = new ScriptEngineManager().getEngineByName("rhino");
