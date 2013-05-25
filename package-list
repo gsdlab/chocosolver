@@ -1,0 +1,16 @@
+org.clafer.ast
+org.clafer.ast.analysis
+org.clafer.ast.compiler
+org.clafer.choco.constraint
+org.clafer.choco.constraint.propagator
+org.clafer.collection
+org.clafer.common
+org.clafer.compiler
+org.clafer.graph
+org.clafer.instance
+org.clafer.ir
+org.clafer.ir.analysis
+org.clafer.ir.compiler
+org.clafer.javascript
+org.clafer.scope
+solver.constraints
