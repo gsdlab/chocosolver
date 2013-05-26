@@ -38,7 +38,7 @@ public class ReifyEqualTest extends ConstraintTest {
         }
     }
 
-    @Test()
+    @Test(timeout = 60000)
     public void testReifyEqual() {
         Solver solver = new Solver();
 

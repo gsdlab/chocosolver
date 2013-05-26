@@ -53,7 +53,7 @@ public class JoinRefTest extends ConstraintTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void quickTestSingleValue() {
         Solver solver = new Solver();
 

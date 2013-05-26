@@ -67,7 +67,7 @@ public class SetSumNTest extends ConstraintTest {
         assertEquals(968, randomizeStrategy(solver).findAllSolutions());
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSumNonPositiveSet() {
         /*
          * import Control.Monad
