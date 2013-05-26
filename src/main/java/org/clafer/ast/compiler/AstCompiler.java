@@ -63,6 +63,7 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -1094,8 +1095,13 @@ public class AstCompiler {
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
         for (int i = 0; i < ivs.length; i++) {
             if (partialInts[i] == null) {
-                // BUG: TODO: what if '0' is not between intlow and inthigh
-                ivs[i] = boundInt(src.getName() + "@Ref" + i, getScopeLow(tar), getScopeHigh(tar));
+                IrDomain domain = boundDomain(getScopeLow(tar), getScopeHigh(tar));
+                if (!partialSolution.hasClafer(i) // <-- this means that ref may need to be zeroed out.
+                        && !domain.contains(0) // <-- this means that the domain doesn't allow zeroing out.
+                        ) {
+                    domain = IrUtil.union(ZeroDomain, domain); // <-- add zero to the domain.
+                }
+                ivs[i] = domainInt(src.getName() + "@Ref" + i, domain);
             } else {
                 if (partialSolution.hasClafer(i)) {
                     ivs[i] = enumInt(src.getName() + "@Ref" + i, partialInts[i]);

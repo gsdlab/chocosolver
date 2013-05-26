@@ -230,4 +230,18 @@ public class SimpleStructureTest {
         // Can be reduced to 2 with better symmetry breaking
          assertEquals(3, solver.allInstances().length);
     }
+    
+    /**
+     * Age -> integer ?
+     */
+    @Test(timeout = 60000)
+    public void testRefZeroOutsideIntRange() {
+        AstModel model = newModel();
+
+        model.addChild("Age").withCard(0, 1).refTo(IntType);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(1).intHigh(2).toScope());
+        // Even though it should be "3", the current compiler will add "0" to the int range.
+        assertEquals(4, solver.allInstances().length);
+    }
 }
