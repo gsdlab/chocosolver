@@ -419,7 +419,7 @@ public class AstCompiler {
     private void initLowGroupConcrete(AstConcreteClafer clafer) {
         PartialSolution partialSolution = getPartialSolution(clafer);
 
-        IrSetVar[] childSet = skipCards(clafer);
+        IrSetVar[] childSet = buildChildSet(clafer);
         childrenSet.put(clafer, childSet);
         set.put(clafer, setUnion($(childSet)));
 
@@ -465,7 +465,7 @@ public class AstCompiler {
          * What is this optimization?
          *
          * Force the lower number atoms to choose lower number parents. For
-         * example consider the following clafer model:
+         * example consider the following Clafer model:
          *
          * Person 2 Hand 2
          *
@@ -544,15 +544,7 @@ public class AstCompiler {
     }
 
     private void constrainAbstract(AstAbstractClafer clafer) {
-//        if(clafer.hasRef()) {
-//            AstRef ref = clafer.getRef();
-//            IrIntVar[] refs = refPointers.get(ref);
-//            IrBoolExpr[] members = membership.get(clafer);
-//            assert refs.length == members.length;
-//            for (int i = 0; i < members.length; i++) {
-//                module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
-//            }
-//        }
+        // Do nothing.
     }
     private final ReadWriteHashMap<AstClafer, IrSetExpr> set = new ReadWriteHashMap<AstClafer, IrSetExpr>();
     private final ReadWriteHashMap<AstClafer, IrSetVar[]> childrenSet = new ReadWriteHashMap<AstClafer, IrSetVar[]>();
@@ -714,10 +706,11 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstCard ast, Void a) {
-            AstSetExpr set = ast.getSet();
-
-            IrSetExpr setExpr = (IrSetExpr) compile(set);
-            return card(setExpr);
+            IrExpr set = compile(ast.getSet());
+            if (set instanceof IrIntExpr) {
+                return $(One);
+            }
+            return card((IrSetExpr) set);
         }
 
         @Override
@@ -732,15 +725,12 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstSetTest ast, Void a) {
-            AstSetExpr left = ast.getLeft();
-            AstSetExpr right = ast.getRight();
+            IrExpr left = compile(ast.getLeft());
+            IrExpr right = compile(ast.getRight());
 
-            IrExpr $left = compile(left);
-            IrExpr $right = compile(right);
-
-            if ($left instanceof IrIntExpr && $right instanceof IrIntExpr) {
-                IrIntExpr $intLeft = (IrIntExpr) $left;
-                IrIntExpr $intRight = (IrIntExpr) $right;
+            if (left instanceof IrIntExpr && right instanceof IrIntExpr) {
+                IrIntExpr $intLeft = (IrIntExpr) left;
+                IrIntExpr $intRight = (IrIntExpr) right;
 
                 switch (ast.getOp()) {
                     case Equal:
@@ -752,9 +742,9 @@ public class AstCompiler {
 
             switch (ast.getOp()) {
                 case Equal:
-                    return equal(asSet($left), asSet($right));
+                    return equal(asSet(left), asSet(right));
                 case NotEqual:
-                    return notEqual(asSet($left), asSet($right));
+                    return notEqual(asSet(left), asSet(right));
                 default:
                     throw new AstException();
             }
@@ -841,7 +831,13 @@ public class AstCompiler {
                 case Union:
                     return setUnion(operands);
                 case Difference:
+                    IrSetExpr difference = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        difference = setDifference(difference, operands[i]);
+                    }
+                    return difference;
                 case Intersection:
+                    return setIntersection(operands);
                 default:
                     throw new AstException();
             }
@@ -1003,11 +999,18 @@ public class AstCompiler {
         }
     };
 
-    /**
-     * ***********************
-     * Optimization functions. ***********************
+    /*
+     ******************
+     * Build functions.
+     ******************
      */
-    private IrSetVar[] skipCards(AstConcreteClafer clafer) {
+    /**
+     * Build the child set for the Clafer.
+     *
+     * @param clafer the Clafer
+     * @return the variables to represent the child relation
+     */
+    private IrSetVar[] buildChildSet(AstConcreteClafer clafer) {
         assert Format.LowGroup.equals(getFormat(clafer));
 
         int parentScope = getScope(clafer.getParent());
@@ -1047,6 +1050,12 @@ public class AstCompiler {
         return skip;
     }
 
+    /**
+     * Create the parent pointers for the Clafer.
+     *
+     * @param clafer the Clafer
+     * @return the variables to represent the parent relation
+     */
     private IrIntVar[] buildParentPointers(AstConcreteClafer clafer) {
         PartialSolution solution = getPartialSolution(clafer);
         boolean known = solution.parentSolutionKnown();
@@ -1061,6 +1070,12 @@ public class AstCompiler {
         return pointers;
     }
 
+    /**
+     * Create the references pointers for the Clafer.
+     *
+     * @param ref the reference Clafer
+     * @return the variables to represent the reference relation
+     */
     private IrIntVar[] buildRefPointers(AstRef ref) {
         AstClafer src = ref.getSourceType();
         AstClafer tar = ref.getTargetType();
@@ -1085,53 +1100,12 @@ public class AstCompiler {
     }
 
     /**
-     * ***********************
-     * Convenience functions. ***********************
+     * Enforce the size of a set to be within the cardinality.
+     *
+     * @param setCard the set to constrain
+     * @param card the cardinality
+     * @return card.low &le; |setCard| &le; card.high
      */
-    int getScopeLow(AstClafer clafer) {
-        return clafer instanceof AstIntClafer ? analysis.getScope().getIntLow() : 0;
-    }
-
-    int getScopeHigh(AstClafer clafer) {
-        return clafer instanceof AstIntClafer ? analysis.getScope().getIntHigh() : getScope(clafer) - 1;
-    }
-
-    public int getScope(AstClafer clafer) {
-        return analysis.getScope().getScope(clafer);
-    }
-
-    public Format getFormat(AstClafer clafer) {
-        return analysis.getFormat(clafer);
-    }
-
-    public PartialSolution getPartialSolution(AstClafer clafer) {
-        return analysis.getPartialSolution(clafer);
-    }
-
-    public PartialSolution getPartialParentSolution(AstConcreteClafer clafer) {
-        return getPartialSolution(clafer.getParent());
-    }
-
-    public int[][] getPartialInts(AstRef ref) {
-        return analysis.getPartialInts(ref);
-    }
-
-    public int getOffset(AstAbstractClafer sup, AstClafer sub) {
-        return analysis.getOffset(sup, sub);
-    }
-
-    public Card getGlobalCard(AstClafer clafer) {
-        return analysis.getGlobalCard(clafer);
-    }
-
-    public int getDepth(AstAbstractClafer clafer) {
-        return analysis.getDepth(clafer);
-    }
-
-    public AstClafer getType(AstExpr expr) {
-        return analysis.getType(expr);
-    }
-
     private IrBoolExpr constrainCard(IrIntExpr setCard, Card card) {
         if (card.isExact()) {
             return equal(setCard, card.getLow());
@@ -1146,5 +1120,54 @@ public class AstCompiler {
             return lessThanEqual(setCard, card.getHigh());
         }
         return $(True);
+    }
+
+    /*
+     ************************
+     * Convenience functions.
+     ************************
+     */
+    private int getScopeLow(AstClafer clafer) {
+        return clafer instanceof AstIntClafer ? analysis.getScope().getIntLow() : 0;
+    }
+
+    private int getScopeHigh(AstClafer clafer) {
+        return clafer instanceof AstIntClafer ? analysis.getScope().getIntHigh() : getScope(clafer) - 1;
+    }
+
+    private int getScope(AstClafer clafer) {
+        return analysis.getScope().getScope(clafer);
+    }
+
+    private Format getFormat(AstClafer clafer) {
+        return analysis.getFormat(clafer);
+    }
+
+    private PartialSolution getPartialSolution(AstClafer clafer) {
+        return analysis.getPartialSolution(clafer);
+    }
+
+    private PartialSolution getPartialParentSolution(AstConcreteClafer clafer) {
+        return getPartialSolution(clafer.getParent());
+    }
+
+    private int[][] getPartialInts(AstRef ref) {
+        return analysis.getPartialInts(ref);
+    }
+
+    private int getOffset(AstAbstractClafer sup, AstClafer sub) {
+        return analysis.getOffset(sup, sub);
+    }
+
+    private Card getGlobalCard(AstClafer clafer) {
+        return analysis.getGlobalCard(clafer);
+    }
+
+    private int getDepth(AstAbstractClafer clafer) {
+        return analysis.getDepth(clafer);
+    }
+
+    private AstClafer getType(AstExpr expr) {
+        return analysis.getType(expr);
     }
 }

@@ -1,7 +1,10 @@
 package org.clafer.ir;
 
 /**
+ * Dynamic dispatch for IR boolean expressions.
  *
+ * @param <A> the parameter type
+ * @param <B> the return type
  * @author jimmy
  */
 public interface IrBoolExprVisitor<A, B> {

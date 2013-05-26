@@ -7,7 +7,14 @@ package org.clafer.collection;
  */
 public class ReadWriteHashMap<K, V> extends ReadHashMap<K, V> {
 
-    public void put(K key, V value) {
+    /**
+     * Bind the key to the value.
+     *
+     * @param key the key
+     * @param value the value
+     * @throws IllegalStateException if the key already has a binding
+     */
+    public void put(K key, V value) throws IllegalStateException {
         if (map.put(key, value) != null) {
             throw new IllegalStateException(key + " already contained in the map.");
         }

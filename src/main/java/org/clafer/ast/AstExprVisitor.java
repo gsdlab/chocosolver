@@ -3,8 +3,8 @@ package org.clafer.ast;
 /**
  * Dynamic dispatch for AST expressions.
  *
- * @param <A> parameter type
- * @param <B> return type
+ * @param <A> the parameter type
+ * @param <B> the return type
  * @author jimmy
  */
 public interface AstExprVisitor<A, B> {
