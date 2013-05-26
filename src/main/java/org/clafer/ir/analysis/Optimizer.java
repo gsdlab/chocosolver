@@ -34,9 +34,19 @@ public class Optimizer {
     private static final IrRewriter<Void> optimizer = new IrRewriter<Void>() {
         @Override
         public IrBoolExpr visit(IrImplies ir, Void a) {
-            // Rewrite !a => !b to b => a
-            if(ir.getAntecedent().isNegative() && ir.getConsequent().isNegative()) {
+            // Rewrite
+            //     !a => !b
+            // to
+            //     b => a
+            if (ir.getAntecedent().isNegative() && ir.getConsequent().isNegative()) {
                 return rewrite(implies(not(ir.getConsequent()), not(ir.getAntecedent())), a);
+            }
+            // Rewrite
+            //     a => !b
+            // to
+            //     a + b <= 1
+            if (ir.getConsequent().isNegative()) {
+                return rewrite(lone(ir.getAntecedent(), not(ir.getConsequent())), a);
             }
             IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
             IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
