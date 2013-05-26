@@ -256,6 +256,13 @@ public class AstCompiler {
             for (int i = 0; i < members.length; i++) {
                 module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
             }
+
+            if (!(ref.getTargetType() instanceof AstIntClafer)) {
+                IrSetExpr targetSet = set.get(ref.getTargetType());
+                for (IrIntVar refPointer : refs) {
+                    module.addConstraint(member($(refPointer), targetSet));
+                }
+            }
         }
         /**
          * What is this optimization?
@@ -524,17 +531,19 @@ public class AstCompiler {
     }
 
     private void initAbstract(AstAbstractClafer clafer) {
-        set.put(clafer, $(set(clafer.getName(), 0, getScope(clafer) - 1)));
-
+        IrSetExpr[] subSets = new IrSetExpr[clafer.getSubs().size()];
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
-        for (AstClafer sub : clafer.getSubs()) {
+        for (int i = 0; i < subSets.length; i++) {
+            AstClafer sub = clafer.getSubs().get(i);
+            subSets[i] = set.get(sub);
             IrBoolExpr[] subMembers = membership.get(sub);
             int offset = getOffset(clafer, sub);
-            for (int i = 0; i < subMembers.length; i++) {
-                assert members[offset + i] == null;
-                members[offset + i] = Check.notNull(subMembers[i]);
+            for (int j = 0; j < subMembers.length; j++) {
+                assert members[offset + j] == null;
+                members[offset + j] = Check.notNull(subMembers[j]);
             }
         }
+        set.put(clafer, union(subSets));
         Check.noNulls(members);
         membership.put(clafer, members);
 

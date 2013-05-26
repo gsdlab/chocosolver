@@ -212,4 +212,22 @@ public class SimpleStructureTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
         assertEquals(125, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * Feature 1..2
+     * Free -> Feature
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRefToVariableClafer() {
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 2);
+        model.addChild("Free").withCard(1, 1).refTo(feature);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        // Can be reduced to 2 with better symmetry breaking
+         assertEquals(3, solver.allInstances().length);
+    }
 }

@@ -177,4 +177,48 @@ public class BoolArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2).toScope());
         assertEquals(33, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * A ?
+     * B ?
+     * C ?
+     * D ?
+     * E ?
+     * [(E xor ((A &lt;=&gt; B) && (A || C || D) && (B =&gt; C)))
+     *     && (D || ((A &lt;=&gt; D) xor ((B =&gt; C) =&gt; E)))]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testBooleanSpaghetti() {
+        /*
+         * Solver solver = new Solver();
+         * BoolVar a = VF.bool("A", solver);
+         * BoolVar b = VF.bool("B", solver);
+         * BoolVar c = VF.bool("C", solver);
+         * BoolVar d = VF.bool("D", solver);
+         * BoolVar e = VF.bool("E", solver);
+         * solver.post(ICF.clauses(
+         *     LogOp.and(LogOp.xor(e, LogOp.and(LogOp.ifOnlyIf(a, b), LogOp.or(a, c, d), LogOp.implies(b, c))),
+         *               LogOp.or(d, LogOp.xor(LogOp.ifOnlyIf(a, d), LogOp.implies(LogOp.implies(b, c), e)))),
+         *     solver));
+         * System.out.println(solver.findAllSolutions());
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(0, 1);
+        AstConcreteClafer b = model.addChild("B").withCard(0, 1);
+        AstConcreteClafer c = model.addChild("C").withCard(0, 1);
+        AstConcreteClafer d = model.addChild("D").withCard(0, 1);
+        AstConcreteClafer e = model.addChild("E").withCard(0, 1);
+        model.addConstraint(
+                and(
+                //
+                xor(some(e), and(ifOnlyIf(some(a), some(b)), or(some(a), some(c), some(d)), implies(some(b), some(c)))),
+                //
+                or(some(d), xor(ifOnlyIf(some(a), some(d)), implies(implies(some(b), some(c)), some(e))))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).toScope());
+        assertEquals(12, solver.allInstances().length);
+    }
 }

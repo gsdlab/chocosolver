@@ -8,8 +8,9 @@ import static org.clafer.ir.IrCompare.Op.NotEqual;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
+import org.clafer.ir.IrLone;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrNot;
+import org.clafer.ir.IrOr;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
@@ -32,6 +33,66 @@ public class Optimizer {
         return module.withConstraints(optimizer.rewrite(and(module.getConstraints()), null));
     }
     private static final IrRewriter<Void> optimizer = new IrRewriter<Void>() {
+        @Override
+        public IrBoolExpr visit(IrLone ir, Void a) {
+            IrBoolExpr[] operands = rewrite(ir.getOperands(), a);
+            if (operands.length == 2) {
+                if (operands[0] instanceof IrCompare) {
+                    IrBoolExpr antecedent = operands[1];
+                    IrCompare compare = (IrCompare) operands[0];
+                    IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                    if (opt == null) {
+                        opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
+                    }
+                    if (opt != null) {
+                        return opt;
+                    }
+                }
+                if (operands[1] instanceof IrCompare) {
+                    IrBoolExpr antecedent = operands[0];
+                    IrCompare compare = (IrCompare) operands[1];
+                    IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                    if (opt == null) {
+                        opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
+                    }
+                    if (opt != null) {
+                        return opt;
+                    }
+                }
+            }
+            return lone(operands);
+        }
+
+        @Override
+        public IrBoolExpr visit(IrOr ir, Void a) {
+            IrBoolExpr[] operands = rewrite(ir.getOperands(), a);
+            if (operands.length == 2) {
+                if (operands[0] instanceof IrCompare) {
+                    IrBoolExpr antecedent = operands[1];
+                    IrCompare compare = (IrCompare) operands[0];
+                    IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                    if (opt == null) {
+                        opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
+                    }
+                    if (opt != null) {
+                        return opt;
+                    }
+                }
+                if (operands[1] instanceof IrCompare) {
+                    IrBoolExpr antecedent = operands[0];
+                    IrCompare compare = (IrCompare) operands[1];
+                    IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                    if (opt == null) {
+                        opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
+                    }
+                    if (opt != null) {
+                        return opt;
+                    }
+                }
+            }
+            return or(operands);
+        }
+
         @Override
         public IrBoolExpr visit(IrImplies ir, Void a) {
             // Rewrite
@@ -72,6 +133,116 @@ public class Optimizer {
     };
 
     /**
+     * Optimize {@code lone(antecedent, left `op` right)} where `op` is = or !=.
+     */
+    private static IrBoolExpr optimizeLoneCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+        IrDomain domain = left.getDomain();
+        Integer constant = IrUtil.getConstant(right);
+        if (domain.size() == 2 && constant != null) {
+            switch (op) {
+                case Equal:
+                    // Rewrite
+                    //     lone(bool, int = 888)
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= 888 - int
+                    //     asInt(bool) + int <= 888
+                    if (domain.getHighBound() == constant.intValue()) {
+                        return lessThanEqual(add(asInt(antecedent), left),
+                                domain.getHighBound());
+                    }
+                    // Rewrite
+                    //     lone(bool, int = -3)
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= int - (-3)
+                    if (domain.getLowBound() == constant.intValue()) {
+                        return lessThanEqual(asInt(antecedent),
+                                sub(left, domain.getLowBound()));
+                    }
+                    break;
+                case NotEqual:
+                    // Rewrite
+                    //     lone(bool, int != 888)
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= int - (-3)
+                    if (domain.getHighBound() == constant.intValue()) {
+                        return lessThanEqual(asInt(antecedent),
+                                sub(left, domain.getLowBound()));
+                    }
+                    // Rewrite
+                    //     lone(bool, int != -3)
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= 888 - int
+                    //     asInt(bool) + int <= 888
+                    if (domain.getLowBound() == constant.intValue()) {
+                        return lessThanEqual(add(asInt(antecedent), left),
+                                domain.getHighBound());
+                    }
+                    break;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Optimize {@code antecedent or (left `op` right)} where `op` is = or !=.
+     */
+    private static IrBoolExpr optimizeOrCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+        IrDomain domain = left.getDomain();
+        Integer constant = IrUtil.getConstant(right);
+        if (domain.size() == 2 && constant != null) {
+            switch (op) {
+                case Equal:
+                    // Rewrite
+                    //     bool or int = 888
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) > (-3) - int
+                    //     asInt(bool) + int > (-3)
+                    if (domain.getHighBound() == constant.intValue()) {
+                        return greaterThan(add(asInt(antecedent), left),
+                                domain.getLowBound());
+                    }
+                    // Rewrite
+                    //     bool or int = -3
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) > int - 888
+                    if (domain.getLowBound() == constant.intValue()) {
+                        return greaterThan(asInt(antecedent),
+                                sub(left, domain.getHighBound()));
+                    }
+                    break;
+                case NotEqual:
+                    // Rewrite
+                    //     bool or int != 888
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) > int - 888
+                    if (domain.getHighBound() == constant.intValue()) {
+                        return greaterThan(asInt(antecedent),
+                                sub(left, domain.getHighBound()));
+                    }
+                    // Rewrite
+                    //     bool or int != -3
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) > (-3) - int
+                    //     asInt(bool) + int > (-3)
+                    if (domain.getLowBound() == constant.intValue()) {
+                        return greaterThan(add(asInt(antecedent), left),
+                                domain.getLowBound());
+                    }
+                    break;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Optimize {@code antecedent => (left `op` right)} where `op` is = or !=.
      */
     private static IrBoolExpr optimizeImplicationCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
@@ -80,38 +251,42 @@ public class Optimizer {
         if (domain.size() == 2 && constant != null) {
             switch (op) {
                 case Equal:
-                    //   bool => int = 888
-                    //     where dom(int) = {-3, 888}
-                    // optimize as
-                    //   asInt(bool) <= int - (-3)
+                    // Rewrite
+                    //     bool => int = 888
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= int - (-3)
                     if (domain.getHighBound() == constant.intValue()) {
                         return lessThanEqual(asInt(antecedent),
                                 sub(left, domain.getLowBound()));
                     }
-                    //   bool => int = -3
-                    //     where dom(int) = {-3, 888}
-                    // optimize as
-                    //   asInt(bool) <= 888 - int
-                    //   asInt(bool) + int <= 888
+                    // Rewrite
+                    //     bool => int = -3
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= 888 - int
+                    //     asInt(bool) + int <= 888
                     if (domain.getLowBound() == constant.intValue()) {
                         return lessThanEqual(add(asInt(antecedent), left),
                                 domain.getHighBound());
                     }
                     break;
                 case NotEqual:
-                    //   bool => int != 888
-                    //     where dom(int) = {-3, 888}
-                    // optimize as
-                    //   asInt(bool) <= 888 - int
-                    //   asInt(bool) + int <= 888
+                    // Rewrite
+                    //     bool => int != 888
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= 888 - int
+                    //     asInt(bool) + int <= 888
                     if (domain.getHighBound() == constant.intValue()) {
                         return lessThanEqual(add(asInt(antecedent), left),
                                 domain.getHighBound());
                     }
-                    //   bool => int != -3
-                    //     where dom(int) = {-3, 888}
-                    // optimize as
-                    //   asInt(bool) <= int - (-3)
+                    // Rewrite
+                    //     bool => int != -3
+                    //         where dom(int) = {-3, 888}
+                    // to
+                    //     asInt(bool) <= int - (-3)
                     if (domain.getLowBound() == constant.intValue()) {
                         return lessThanEqual(asInt(antecedent),
                                 sub(left, domain.getLowBound()));

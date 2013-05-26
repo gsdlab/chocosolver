@@ -822,6 +822,13 @@ public class Irs {
     public static IrIntVar Zero = new IrIntConstant(0);
     public static IrIntVar One = new IrIntConstant(1);
 
+    public static IrIntVar domainInt(String name, IrDomain domain) {
+        if (domain.size() == 1) {
+            return constant(domain.getLowBound());
+        }
+        return new IrIntVar(name, domain);
+    }
+
     public static IrIntVar boundInt(String name, int low, int high) {
         if (low == high) {
             return constant(low);
@@ -1344,7 +1351,7 @@ public class Irs {
                 IrDomain card = boundDomain(
                         Math.max(low, ker.size()),
                         Math.min(high, env.size()));
-                return new IrSetUnion(operands, env, ker, card);
+                return new IrSetIntersection(operands, env, ker, card);
         }
     }
 

@@ -10,13 +10,59 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
  *
  * @author jimmy
  */
 public class SetArithmeticTest {
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 1..2
+     * Firewall : Feature 1..2
+     * [(Feature -- Firewall).Cost.ref = 1]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testDifference() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
+        AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
+        model.addConstraint(equal(joinRef(join(diff(global(backup), global(firewall)), cost)), constant(1)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1).toScope());
+        assertEquals(24, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 1..2
+     * Free -> Feature 1..2
+     * [(Backup & Free.ref).Cost.ref = 0]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testIntersection() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
+        AstConcreteClafer free = model.addChild("Free").refToUnique(feature).withCard(1, 2);
+        model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), constant(0)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1).toScope());
+        // Can be reduced with better symmetry breaking
+        assertEquals(9, solver.allInstances().length);
+    }
 
     /**
      * <pre>
