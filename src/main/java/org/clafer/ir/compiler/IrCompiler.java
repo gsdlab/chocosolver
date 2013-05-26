@@ -68,6 +68,7 @@ import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
+import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.ICF;
@@ -100,7 +101,7 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        IrModule optModule = Optimizer.optimizeImplications(module);
+        IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
         for (IrBoolVar var : optModule.getBoolVars()) {
             boolVar.get(var);
         }
@@ -217,7 +218,7 @@ public class IrCompiler {
     }
 
     private BoolVar compileAsBoolVar(IrBoolExpr expr) {
-        return asBoolVar(expr.accept(boolExprCompiler, Preference.BoolVar));
+        return asBoolVar(expr.accept(boolExprCompiler, BoolVarNoReify));
     }
 
     private BoolVar[] compileAsBoolVars(IrBoolExpr... expr) {
@@ -234,8 +235,9 @@ public class IrCompiler {
             if (!cast.isFlipped()) {
                 return compile(cast.getExpr());
             }
+            // TODO: else view?
         }
-        return asBoolVar(expr.accept(boolExprCompiler, Preference.BoolVar));
+        return asBoolVar(expr.accept(boolExprCompiler, BoolVarNoReify));
     }
 
     private IntVar[] compileAsIntVars(IrBoolExpr... expr) {
@@ -258,7 +260,17 @@ public class IrCompiler {
     }
 
     private Constraint compileAsConstraint(IrBoolExpr expr) {
-        return asConstraint(expr.accept(boolExprCompiler, Preference.Constraint));
+        return asConstraint(expr.accept(boolExprCompiler, ConstraintNoReify));
+    }
+
+    private Constraint compileAsConstraint(IrBoolExpr expr, BoolVar reify) {
+        BoolArg arg = new BoolArg(reify, Preference.Constraint);
+        Constraint constraint = asConstraint(expr.accept(boolExprCompiler, arg));
+        if (arg.hasReify()) {
+            // The compliation failed to reify, explicitly reify now.
+            return _arithm(arg.useReify(), "=", constraint.reif());
+        }
+        return constraint;
     }
 
     private Constraint[] compileAsConstraints(IrBoolExpr... expr) {
@@ -284,53 +296,53 @@ public class IrCompiler {
         }
         return vars;
     }
-    private final IrBoolExprVisitor<Preference, Object> boolExprCompiler = new IrBoolExprVisitor<Preference, Object>() {
+    private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
         @Override
-        public Object visit(IrBoolLiteral ir, Preference a) {
+        public Object visit(IrBoolLiteral ir, BoolArg a) {
             return boolVar.get(ir.getVar());
         }
 
         @Override
-        public Object visit(IrNot ir, Preference a) {
+        public Object visit(IrNot ir, BoolArg a) {
             return compileAsBoolVar(ir.getExpr()).not();
         }
 
         @Override
-        public Object visit(IrAnd ir, Preference a) {
+        public Object visit(IrAnd ir, BoolArg a) {
             return _and(compileAsBoolVars(ir.getOperands()));
         }
 
         @Override
-        public Object visit(IrLone ir, Preference a) {
+        public Object visit(IrLone ir, BoolArg a) {
             return _lone(compileAsBoolVars(ir.getOperands()));
         }
 
         @Override
-        public Object visit(IrOne ir, Preference a) {
+        public Object visit(IrOne ir, BoolArg a) {
             return _one(compileAsBoolVars(ir.getOperands()));
         }
 
         @Override
-        public Object visit(IrOr ir, Preference a) {
+        public Object visit(IrOr ir, BoolArg a) {
             return _or(compileAsBoolVars(ir.getOperands()));
         }
 
         @Override
-        public Object visit(IrImplies ir, Preference a) {
+        public Object visit(IrImplies ir, BoolArg a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar $consequent = compileAsIntVar(ir.getConsequent());
             return _implies($antecedent, $consequent);
         }
 
         @Override
-        public Object visit(IrNotImplies ir, Preference a) {
+        public Object visit(IrNotImplies ir, BoolArg a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar $consequent = compileAsIntVar(ir.getConsequent());
             return _not_implies($antecedent, $consequent);
         }
 
         @Override
-        public Object visit(IrIfThenElse ir, Preference a) {
+        public Object visit(IrIfThenElse ir, BoolArg a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar $consequent = compileAsIntVar(ir.getConsequent());
             IntVar $alternative = compileAsIntVar(ir.getAlternative());
@@ -340,33 +352,48 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrIfOnlyIf ir, Preference a) {
+        public Object visit(IrIfOnlyIf ir, BoolArg a) {
+            if (ir.getLeft() instanceof IrCompare) {
+                BoolVar right = compileAsBoolVar(ir.getRight());
+                return compileAsConstraint(ir.getLeft(), right);
+            }
+            if (ir.getRight() instanceof IrCompare) {
+                BoolVar left = compileAsBoolVar(ir.getLeft());
+                return compileAsConstraint(ir.getRight(), left);
+            }
             IntVar $left = compileAsIntVar(ir.getLeft());
             IntVar $right = compileAsIntVar(ir.getRight());
             return _arithm($left, "=", $right);
         }
 
         @Override
-        public Object visit(IrXor ir, Preference a) {
+        public Object visit(IrXor ir, BoolArg a) {
             IntVar $left = compileAsIntVar(ir.getLeft());
             IntVar $right = compileAsIntVar(ir.getRight());
             return _arithm($left, "!=", $right);
         }
 
         @Override
-        public Object visit(IrBetween ir, Preference a) {
+        public Object visit(IrBetween ir, BoolArg a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, null);
             return _between($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
-        public Object visit(IrNotBetween ir, Preference a) {
+        public Object visit(IrNotBetween ir, BoolArg a) {
             IntVar $var = ir.getVar().accept(intExprCompiler, null);
             return _not_between($var, ir.getLow(), ir.getHigh());
         }
 
         @Override
-        public Object visit(IrCompare ir, Preference a) {
+        public Object visit(IrCompare ir, BoolArg a) {
+            Object opt = compileCompareConstant(ir.getLeft(), ir.getOp(), ir.getRight(), a);
+            if (opt == null) {
+                opt = compileCompareConstant(ir.getRight(), ir.getOp().reverse(), ir.getLeft(), a);
+            }
+            if (opt != null) {
+                return opt;
+            }
             Triple<String, IrIntExpr, Integer> offset = getOffset(ir.getLeft());
             if (offset != null) {
                 return _arithm(compile(ir.getRight()), offset.getFst(),
@@ -378,6 +405,30 @@ public class IrCompiler {
                         compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
             }
             return _arithm(compile(ir.getLeft()), ir.getOp().getSyntax(), compile(ir.getRight()));
+        }
+
+        /*
+         * Optimize when one of the operands is a constant.
+         */
+        private Object compileCompareConstant(IrIntExpr left, IrCompare.Op op, IrIntExpr right, BoolArg a) {
+            boolean preferBoolVar = Preference.BoolVar.equals(a.getPreference());
+            Integer constant = IrUtil.getConstant(right);
+            if (constant != null) {
+                if (op.isEquality() && (a.hasReify() || preferBoolVar)) {
+                    BoolVar reify = a.hasReify() ? a.useReify() : numBoolVar("ReifyEquality");
+                    Constraint constraint =
+                            IrCompare.Op.Equal.equals(op)
+                            ? Constraints.reifyEqual(reify, compile(left), constant.intValue())
+                            : Constraints.reifyNotEqual(reify, compile(left), constant.intValue());
+                    if (preferBoolVar) {
+                        solver.post(constraint);
+                        return reify;
+                    }
+                    return constraint;
+                }
+                return _arithm(compile(left), op.getSyntax(), constant.intValue());
+            }
+            return null;
         }
 
         private Triple<String, IrIntExpr, Integer> getOffset(IrIntExpr expr) {
@@ -412,7 +463,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrSetTest ir, Preference a) {
+        public Object visit(IrSetTest ir, BoolArg a) {
             switch (ir.getOp()) {
                 case Equal:
                     return _equal(compile(ir.getLeft()), compile(ir.getRight()));
@@ -424,22 +475,22 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrMember ir, Preference a) {
+        public Object visit(IrMember ir, BoolArg a) {
             return _member(compile(ir.getElement()), compile(ir.getSet()));
         }
 
         @Override
-        public Object visit(IrNotMember ir, Preference a) {
+        public Object visit(IrNotMember ir, BoolArg a) {
             return _not_member(compile(ir.getElement()), compile(ir.getSet()));
         }
 
         @Override
-        public Object visit(IrSubsetEq ir, Preference a) {
+        public Object visit(IrSubsetEq ir, BoolArg a) {
             return _subset_eq(compile(ir.getSubset()), compile(ir.getSuperset()));
         }
 
         @Override
-        public Object visit(IrBoolCast ir, Preference a) {
+        public Object visit(IrBoolCast ir, BoolArg a) {
             IntVar expr = compile(ir.getExpr());
             BoolVar boolExpr;
             if (expr instanceof BoolVar) {
@@ -453,7 +504,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrBoolChannel ir, Preference a) {
+        public Constraint visit(IrBoolChannel ir, BoolArg a) {
             IrBoolExpr[] bools = ir.getBools();
             IrSetExpr set = ir.getSet();
 
@@ -466,7 +517,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrIntChannel ir, Preference a) {
+        public Constraint visit(IrIntChannel ir, BoolArg a) {
             IrIntExpr[] ints = ir.getInts();
             IrSetExpr[] sets = ir.getSets();
             IntVar[] $ints = new IntVar[ints.length];
@@ -481,7 +532,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrSortInts ir, Preference a) {
+        public Constraint visit(IrSortInts ir, BoolArg a) {
             IrIntExpr[] array = ir.getArray();
             IntVar[] $array = new IntVar[array.length];
             for (int i = 0; i < $array.length; i++) {
@@ -491,7 +542,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrSortStrings ir, Preference a) {
+        public Object visit(IrSortStrings ir, BoolArg a) {
             IrIntExpr[][] strings = ir.getStrings();
             IntVar[][] $strings = new IntVar[strings.length][];
             for (int i = 0; i < $strings.length; i++) {
@@ -504,7 +555,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrAllDifferent ir, Preference a) {
+        public Constraint visit(IrAllDifferent ir, BoolArg a) {
             IrIntExpr[] operands = ir.getOperands();
 
             IntVar[] $operands = new IntVar[operands.length];
@@ -515,7 +566,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrSelectN ir, Preference a) {
+        public Constraint visit(IrSelectN ir, BoolArg a) {
             IrBoolExpr[] bools = ir.getBools();
             IrIntExpr n = ir.getN();
             BoolVar[] $bools = new BoolVar[bools.length];
@@ -992,6 +1043,36 @@ public class IrCompiler {
             ub = Math.max(ub, vars[i].getUB());
         }
         return ub;
+    }
+    private static final BoolArg ConstraintNoReify = new BoolArg(null, Preference.Constraint);
+    private static final BoolArg BoolVarNoReify = new BoolArg(null, Preference.BoolVar);
+
+    private static class BoolArg {
+
+        // The solution needs to be reified in this variable.
+        // Set to null if no reification needed.
+        private BoolVar reify;
+        // The prefered type of solution.
+        private final Preference preference;
+
+        private BoolArg(BoolVar reify, Preference preference) {
+            this.reify = reify;
+            this.preference = preference;
+        }
+
+        private boolean hasReify() {
+            return reify != null;
+        }
+
+        private BoolVar useReify() {
+            BoolVar tmp = reify;
+            reify = null;
+            return tmp;
+        }
+
+        private Preference getPreference() {
+            return preference;
+        }
     }
 
     private static enum Preference {

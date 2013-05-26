@@ -11,6 +11,8 @@ import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
+import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
+import org.clafer.choco.constraint.propagator.PropReifyNotEqualXC;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
@@ -47,6 +49,18 @@ public class Constraints {
         vars[ivars.length] = svar;
         Constraint constraint = new Constraint(vars, svar.getSolver());
         constraint.setPropagators(new PropArrayToSet(ivars, svar));
+        return constraint;
+    }
+
+    public static Constraint reifyEqual(BoolVar reify, IntVar i, int c) {
+        Constraint constraint = new Constraint(new IntVar[]{reify, i}, reify.getSolver());
+        constraint.setPropagators(new PropReifyEqualXC(reify, i, c));
+        return constraint;
+    }
+
+    public static Constraint reifyNotEqual(BoolVar reify, IntVar i, int c) {
+        Constraint constraint = new Constraint(new IntVar[]{reify, i}, reify.getSolver());
+        constraint.setPropagators(new PropReifyNotEqualXC(reify, i, c));
         return constraint;
     }
 

@@ -35,10 +35,10 @@ public abstract class ConstraintTest {
             }
         }
 //        if (rand.nextBoolean()) {
-            solver.set(
-                    new StrategiesSequencer(solver.getEnvironment(),
-                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
-                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
+        solver.set(
+                new StrategiesSequencer(solver.getEnvironment(),
+                new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
+                IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
 //        } else {
 //            solver.set(
 //                    new StrategiesSequencer(solver.getEnvironment(),

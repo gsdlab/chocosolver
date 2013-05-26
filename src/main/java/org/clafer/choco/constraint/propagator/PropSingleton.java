@@ -24,7 +24,7 @@ public class PropSingleton extends Propagator<Variable> {
     private final SetDeltaMonitor sD;
 
     public PropSingleton(IntVar ivar, SetVar svar) {
-        super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY);
+        super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY, false);
         this.i = ivar;
         this.iD = i.monitorDelta(aCause);
         this.s = svar;
@@ -98,14 +98,12 @@ public class PropSingleton extends Propagator<Variable> {
         }
     }
     private final IntProcedure pruneSOnIRem = new IntProcedure() {
-
         @Override
         public void execute(int i) throws ContradictionException {
             s.removeFromEnvelope(i, aCause);
         }
     };
     private final IntProcedure pruneIOnSEnv = new IntProcedure() {
-
         @Override
         public void execute(int sEnv) throws ContradictionException {
             i.removeValue(sEnv, aCause);

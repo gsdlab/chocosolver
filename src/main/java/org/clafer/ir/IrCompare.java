@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import org.clafer.common.Check;
-import solver.constraints.IntConstraintFactory;
 
 /**
  * left `op` right + offset

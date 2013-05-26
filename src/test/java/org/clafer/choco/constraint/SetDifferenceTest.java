@@ -25,7 +25,7 @@ public class SetDifferenceTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testSetDifference() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
@@ -44,7 +44,7 @@ public class SetDifferenceTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSetDifference() {
         /*
          * import Control.Monad
          * import Data.List
