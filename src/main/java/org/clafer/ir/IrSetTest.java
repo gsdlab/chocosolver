@@ -57,7 +57,9 @@ public class IrSetTest extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public int hashCode() {
-        return left.hashCode() ^ op.hashCode() ^ right.hashCode();
+        // op.hashCode() can change between runs which makes the output change
+        // every time.
+        return left.hashCode() ^ op.ordinal() ^ right.hashCode();
     }
 
     @Override

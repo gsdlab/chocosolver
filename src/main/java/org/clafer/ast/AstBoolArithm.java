@@ -43,7 +43,9 @@ public class AstBoolArithm implements AstBoolExpr {
 
     @Override
     public int hashCode() {
-        return op.hashCode() ^ Arrays.hashCode(operands);
+        // op.hashCode() can change between runs which makes the output change
+        // every time.
+        return op.ordinal() ^ Arrays.hashCode(operands);
     }
 
     @Override

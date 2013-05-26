@@ -6,7 +6,7 @@ import org.clafer.common.Util;
 
 /**
  * foldl1 op operands.
- * 
+ *
  * @author jimmy
  */
 public class AstSetArithm implements AstSetExpr {
@@ -43,7 +43,9 @@ public class AstSetArithm implements AstSetExpr {
 
     @Override
     public int hashCode() {
-        return op.hashCode() ^ Arrays.hashCode(operands);
+        // op.hashCode() can change between runs which makes the output change
+        // every time.
+        return op.ordinal() ^ Arrays.hashCode(operands);
     }
 
     @Override
