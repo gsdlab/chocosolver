@@ -3,7 +3,8 @@ package org.clafer.collection;
 import java.util.Collection;
 
 /**
- *
+ * @param <K> the type of keys
+ * @param <V> the type of values
  * @author jimmy
  */
 public interface ReadMap<K, V> {
@@ -20,5 +21,5 @@ public interface ReadMap<K, V> {
 
     public int size();
 
-    public ReadMap readOnly();
+    public ReadMap<K, V> readOnly();
 }

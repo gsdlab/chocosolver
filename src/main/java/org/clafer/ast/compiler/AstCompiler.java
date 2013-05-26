@@ -72,8 +72,6 @@ import static org.clafer.ir.Irs.*;
  */
 public class AstCompiler {
 
-    public static void main(String[] args) {
-    }
     private final AstModel model;
     private final Analysis analysis;
     private final IrModule module;
@@ -170,6 +168,9 @@ public class AstCompiler {
                 }
             }
         }
+        for (IrSetVar[] childSet : childrenSet.getValues()) {
+            module.addSetVars(childSet);
+        }
         for (IrIntVar[] refs : refPointers.getValues()) {
             module.addIntVars(refs);
         }
@@ -196,14 +197,15 @@ public class AstCompiler {
 
     private void constrainConcrete(AstConcreteClafer clafer) {
         IrIntVar[] parents = parentPointers.get(clafer);
-        Card globalCard = getGlobalCard(clafer);
-        if (globalCard.isExact()) {
-            // No unused
-            module.addConstraint(intChannel($(parents), $(childrenSet.get(clafer))));
-        } else {
+        if (!getPartialSolution(clafer).parentSolutionKnown()) {
             IrSetExpr[] childSet = $(childrenSet.get(clafer));
-            IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
-            module.addConstraint(intChannel($(parents), Util.snoc(childSet, $(unused))));
+            if (getGlobalCard(clafer).isExact()) {
+                // No unused
+                module.addConstraint(intChannel($(parents), childSet));
+            } else {
+                IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
+                module.addConstraint(intChannel($(parents), Util.snoc(childSet, $(unused))));
+            }
         }
         AstClafer superClafer = clafer;
         AstRef ref = null;
@@ -1047,12 +1049,14 @@ public class AstCompiler {
 
     private IrIntVar[] buildParentPointers(AstConcreteClafer clafer) {
         PartialSolution solution = getPartialSolution(clafer);
+        boolean known = solution.parentSolutionKnown();
         IrIntVar[] pointers = new IrIntVar[solution.size()];
         for (int i = 0; i < pointers.length; i++) {
+            int[] possibleParents = solution.getPossibleParents(i);
             pointers[i] = enumInt(clafer.getName() + "@Parent#" + i,
-                    solution.hasClafer(i)
-                    ? solution.getPossibleParents(i)
-                    : Util.snoc(solution.getPossibleParents(i), getScope(clafer.getParent())));
+                    solution.hasClafer(i) || known
+                    ? possibleParents
+                    : Util.snoc(possibleParents, getScope(clafer.getParent())));
         }
         return pointers;
     }

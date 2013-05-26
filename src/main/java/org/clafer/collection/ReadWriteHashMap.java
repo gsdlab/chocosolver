@@ -1,7 +1,8 @@
 package org.clafer.collection;
 
 /**
- *
+ * @param <K> the type of keys
+ * @param <V> the type of values
  * @author jimmy
  */
 public class ReadWriteHashMap<K, V> extends ReadHashMap<K, V> {

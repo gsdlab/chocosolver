@@ -41,10 +41,23 @@ public class PartialSolution {
 
     /**
      * @param id
-     * @return id's possible parents
+     * @return possible parents of {@code id}
      */
     public int[] getPossibleParents(int id) {
         return parent[id];
+    }
+
+    /**
+     * @return {@code true} if and only if all parents are known, {@code false}
+     * otherwise
+     */
+    public boolean parentSolutionKnown() {
+        for (int[] p : parent) {
+            if (p.length != 1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public int size() {

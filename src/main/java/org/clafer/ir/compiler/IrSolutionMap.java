@@ -13,10 +13,10 @@ import solver.variables.IntVar;
 import solver.variables.SetVar;
 
 /**
- * Maps IR non-constant variables to their translated Choco variables. The get&lt;Type&gt;Var
- * methods fail on constants. The get&lt;Type&gt;Value methods handles constants, and is
- * the prefered way of lookup.
- * 
+ * Maps IR non-constant variables to their translated Choco variables. The
+ * get&lt;Type&gt;Var methods fail on constants. The get&lt;Type&gt;Value
+ * methods handles constants, and is the preferred way of lookup.
+ *
  * @author jimmy
  */
 public class IrSolutionMap {

@@ -6,6 +6,8 @@ import java.util.Map;
 
 /**
  *
+ * @param <K> the type of keys
+ * @param <V> the type of values
  * @author jimmy
  */
 public class ReadHashMap<K, V> implements ReadMap<K, V> {
@@ -51,7 +53,12 @@ public class ReadHashMap<K, V> implements ReadMap<K, V> {
     }
 
     @Override
-    public ReadHashMap readOnly() {
-        return new ReadHashMap(map);
+    public ReadHashMap<K, V> readOnly() {
+        return new ReadHashMap<K, V>(map);
+    }
+
+    @Override
+    public String toString() {
+        return map.toString();
     }
 }

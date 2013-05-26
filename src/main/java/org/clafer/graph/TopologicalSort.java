@@ -9,7 +9,8 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * 
+ *
+ * @param <V> the type of the data
  * @author jimmy
  */
 public class TopologicalSort<V> {
@@ -20,17 +21,19 @@ public class TopologicalSort<V> {
     private List<Set<V>> components = new ArrayList<Set<V>>();
 
     /**
-     * Compute the strongly connected components in the graph in topoloical order.
-     * 
-     * Algorithm from {@link http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm}.
-     * 
+     * Compute the strongly connected components in the graph in topological
+     * order. Implementation of Tarjan's algorithm.
+     *
      * @param <V>
      * @param graph
-     * @return 
+     * @return the strongly connected components in topological order.
+     * @see <a
+     * href="http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">Tarjan's
+     * algorithm</a>
      */
     public static <V> List<Set<V>> computeStronglyConnectedComponents(Graph<V> graph) {
         TopologicalSort<V> tarjan = new TopologicalSort<V>();
-        for (Vertex vertex : graph.getVertices()) {
+        for (Vertex<V> vertex : graph.getVertices()) {
             if (!tarjan.vertexIndices.containsKey(vertex)) {
                 tarjan.strongConnect(vertex);
             }
@@ -74,7 +77,7 @@ public class TopologicalSort<V> {
         private int index;
         private int lowIndex;
 
-        public Index(int index, int lowIndex) {
+        Index(int index, int lowIndex) {
             this.index = index;
             this.lowIndex = lowIndex;
         }
