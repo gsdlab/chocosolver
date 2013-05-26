@@ -10,6 +10,7 @@ import org.clafer.common.Check;
  * @author jimmy
  */
 public class Offsets {
+
     private final AstAbstractClafer sup;
     private final Map<AstClafer, Integer> offsets;
     private final AstClafer[] reverseOffsets;
@@ -32,5 +33,4 @@ public class Offsets {
     public String toString() {
         return sup + "=>" + offsets;
     }
-
 }

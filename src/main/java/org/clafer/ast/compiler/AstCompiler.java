@@ -63,6 +63,7 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
@@ -640,7 +641,14 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstGlobal ast, Void a) {
-            return set.get(ast.getType());
+            IrSetExpr global = set.get(ast.getType());
+            if(global.getEnv().size() == 1){
+                int[] constant = IrUtil.getConstant(global);
+                if(constant != null) {
+                    return $(constant(constant[0]));
+                }
+            }
+            return global;
         }
 
         @Override

@@ -1035,9 +1035,9 @@ public class Irs {
         int high1 = dividend.getDomain().getHighBound();
         int low2 = divisor.getDomain().getLowBound();
         int high2 = divisor.getDomain().getHighBound();
-        int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
-        int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
-        return new IrMul(dividend, divisor, boundDomain(min, max));
+        int min = Util.min(low1, -low1, high1, -high1);
+        int max = Util.max(low1, -low1, high1, -high1);
+        return new IrDiv(dividend, divisor, boundDomain(min, max));
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {

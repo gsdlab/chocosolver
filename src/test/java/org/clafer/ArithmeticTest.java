@@ -99,7 +99,59 @@ public class ArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3).toScope());
         assertEquals(106, solver.allInstances().length);
     }
-    
+
+    /**
+     * <pre>
+     * A -> integer
+     * B -> integer
+     * [ A.ref * B.ref = 12]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testMul() {
+        /*
+         * 1, 12
+         * 2, 6
+         * 3, 4
+         * 4, 3
+         * 6, 2
+         * 12, 1
+         * -1, -12
+         * -2, -6
+         * -3, -4
+         * -4, -3
+         * -6, -2
+         * -12, -1
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
+        model.addConstraint(equal(mul(joinRef(global(a)), joinRef(global(b))), constant(12)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).toScope());
+        assertEquals(12, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A -> integer
+     * B -> integer
+     * [ 12 * A.ref = B.ref]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testDiv() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
+        model.addConstraint(equal(div(constant(12), joinRef(global(a))), joinRef(global(b))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).toScope());
+        assertEquals(32, solver.allInstances().length);
+    }
+
     /**
      * <pre>
      * Feature
