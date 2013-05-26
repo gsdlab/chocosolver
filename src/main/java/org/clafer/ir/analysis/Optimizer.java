@@ -9,6 +9,7 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrNot;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
@@ -33,6 +34,10 @@ public class Optimizer {
     private static final IrRewriter<Void> optimizer = new IrRewriter<Void>() {
         @Override
         public IrBoolExpr visit(IrImplies ir, Void a) {
+            // Rewrite !a => !b to b => a
+            if(ir.getAntecedent().isNegative() && ir.getConsequent().isNegative()) {
+                return rewrite(implies(not(ir.getConsequent()), not(ir.getAntecedent())), a);
+            }
             IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
             IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
             if (consequent instanceof IrCompare) {
