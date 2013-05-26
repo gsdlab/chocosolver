@@ -33,7 +33,7 @@ public class IrSetTest extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrSetTest(left, op.getOpposite(), right, getDomain().invert());
+        return new IrSetTest(left, op.negate(), right, getDomain().invert());
     }
 
     @Override
@@ -79,7 +79,7 @@ public class IrSetTest extends IrAbstractBool implements IrBoolExpr {
             return syntax;
         }
 
-        public Op getOpposite() {
+        public Op negate() {
             switch (this) {
                 case Equal:
                     return NotEqual;

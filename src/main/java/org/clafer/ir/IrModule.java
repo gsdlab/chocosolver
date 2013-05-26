@@ -95,14 +95,20 @@ public class IrModule {
         return Collections.unmodifiableList(constraints);
     }
 
-    public IrModule withConstraints(Collection<IrBoolExpr> constraints) {
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>();
+    public IrModule withConstraints(IrBoolExpr... constraints) {
+        IrModule module = new IrModule(boolVars, intVars, setVars, new ArrayList<IrBoolExpr>());
         for (IrBoolExpr constraint : constraints) {
-            if (!IrUtil.isTrue(constraint)) {
-                filter.add(constraint);
-            }
+            module.addConstraint(constraint);
         }
-        return new IrModule(boolVars, intVars, setVars, filter);
+        return module;
+    }
+
+    public IrModule withConstraints(Collection<IrBoolExpr> constraints) {
+        IrModule module = new IrModule(boolVars, intVars, setVars, new ArrayList<IrBoolExpr>());
+        for (IrBoolExpr constraint : constraints) {
+            module.addConstraint(constraint);
+        }
+        return module;
     }
 
     @Override

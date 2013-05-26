@@ -4,7 +4,7 @@ import org.clafer.common.Check;
 
 /**
  * Casts an integer to a boolean.
- * 
+ *
  * @author jimmy
  */
 public class IrBoolCast extends IrAbstractBool implements IrBoolExpr {
@@ -13,10 +13,6 @@ public class IrBoolCast extends IrAbstractBool implements IrBoolExpr {
     // flipped => casts 1 to false and 0 to true
     private final boolean flipped;
     private final IrIntExpr expr;
-
-    IrBoolCast(IrIntExpr expr, IrBoolDomain domain) {
-        this(false, expr, domain);
-    }
 
     IrBoolCast(boolean flip, IrIntExpr expr, IrBoolDomain domain) {
         super(domain);

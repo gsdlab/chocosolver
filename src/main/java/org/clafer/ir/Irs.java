@@ -173,8 +173,12 @@ public class Irs {
     }
 
     public static IrBoolExpr and(IrBoolExpr... operands) {
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
+        List<IrBoolExpr> flatten = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {
+            flattenAnd(operand, flatten);
+        }
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(flatten.size());
+        for (IrBoolExpr operand : flatten) {
             if (IrUtil.isFalse(operand)) {
                 return $(False);
             }
@@ -189,6 +193,17 @@ public class Irs {
                 return filter.get(0);
             default:
                 return new IrAnd(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
+        }
+    }
+
+    private static void flattenAnd(IrBoolExpr expr, List<IrBoolExpr> flatten) {
+        if (expr instanceof IrAnd) {
+            IrAnd and = (IrAnd) expr;
+            for (IrBoolExpr subexpr : and.getOperands()) {
+                flattenAnd(subexpr, flatten);
+            }
+        } else {
+            flatten.add(expr);
         }
     }
 
@@ -255,8 +270,12 @@ public class Irs {
     }
 
     public static IrBoolExpr or(IrBoolExpr... operands) {
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
+        List<IrBoolExpr> flatten = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {
+            flattenOr(operand, flatten);
+        }
+        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(flatten.size());
+        for (IrBoolExpr operand : flatten) {
             if (IrUtil.isTrue(operand)) {
                 return $(True);
             }
@@ -274,6 +293,17 @@ public class Irs {
         }
     }
 
+    private static void flattenOr(IrBoolExpr expr, List<IrBoolExpr> flatten) {
+        if (expr instanceof IrOr) {
+            IrOr and = (IrOr) expr;
+            for (IrBoolExpr subexpr : and.getOperands()) {
+                flattenOr(subexpr, flatten);
+            }
+        } else {
+            flatten.add(expr);
+        }
+    }
+
     public static IrBoolExpr implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
         if (IrUtil.isTrue(antecedent)) {
             return consequent;
@@ -288,6 +318,22 @@ public class Irs {
             return not(antecedent);
         }
         return new IrImplies(antecedent, consequent, BoolDomain);
+    }
+
+    public static IrBoolExpr notImplies(IrBoolExpr antecedent, IrBoolExpr consequent) {
+        if (IrUtil.isTrue(antecedent)) {
+            return not(consequent);
+        }
+        if (IrUtil.isFalse(antecedent)) {
+            return $(False);
+        }
+        if (IrUtil.isTrue(consequent)) {
+            return $(False);
+        }
+        if (IrUtil.isFalse(consequent)) {
+            return antecedent;
+        }
+        return new IrNotImplies(antecedent, consequent, BoolDomain);
     }
 
     public static IrBoolExpr ifThenElse(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolExpr alternative) {
@@ -583,6 +629,10 @@ public class Irs {
     }
 
     public static IrBoolExpr asBool(IrIntExpr expr) {
+        return asBool(false, expr);
+    }
+
+    public static IrBoolExpr asBool(boolean flipped, IrIntExpr expr) {
         Integer constant = IrUtil.getConstant(expr);
         if (constant != null) {
             if (constant.intValue() == 0) {
@@ -592,7 +642,7 @@ public class Irs {
                 return $(True);
             }
         }
-        return new IrBoolCast(expr, BoolDomain);
+        return new IrBoolCast(flipped, expr, BoolDomain);
     }
 
     public static IrBoolExpr[] asBools(IrIntExpr... expr) {
@@ -961,7 +1011,7 @@ public class Irs {
         return new IrElement(array, index, domain);
     }
 
-    public static IrIntExpr setSum(IrSetExpr set) {
+    public static IrIntExpr sum(IrSetExpr set) {
         int sum = Util.sum(set.getKer().iterator());
         int count = set.getKer().size();
 
@@ -1121,7 +1171,7 @@ public class Irs {
             for (int i = 0; i < to.length; i++) {
                 to[i] = $children[constant[i]];
             }
-            return setUnion(to);
+            return union(to);
         }
 
         // Compute env
@@ -1226,7 +1276,7 @@ public class Irs {
         return new IrJoinRef(take, refs, env, ker, card);
     }
 
-    public static IrSetExpr setDifference(IrSetExpr minuend, IrSetExpr subtrahend) {
+    public static IrSetExpr difference(IrSetExpr minuend, IrSetExpr subtrahend) {
         IrDomain env = IrUtil.difference(minuend.getEnv(), subtrahend.getKer());
         IrDomain ker = IrUtil.difference(minuend.getKer(), subtrahend.getEnv());
         int low = Math.max(0, minuend.getCard().getLowBound() - subtrahend.getCard().getHighBound());
@@ -1235,7 +1285,7 @@ public class Irs {
         return new IrSetDifference(minuend, subtrahend, env, ker, card);
     }
 
-    public static IrSetExpr setIntersection(IrSetExpr... operands) {
+    public static IrSetExpr intersection(IrSetExpr... operands) {
         switch (operands.length) {
             case 0:
                 return $(EmptySet);
@@ -1256,7 +1306,7 @@ public class Irs {
         }
     }
 
-    public static IrSetExpr setUnion(IrSetExpr... operands) {
+    public static IrSetExpr union(IrSetExpr... operands) {
         switch (operands.length) {
             case 0:
                 return $(EmptySet);

@@ -421,7 +421,7 @@ public class AstCompiler {
 
         IrSetVar[] childSet = buildChildSet(clafer);
         childrenSet.put(clafer, childSet);
-        set.put(clafer, setUnion($(childSet)));
+        set.put(clafer, union($(childSet)));
 
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         for (int i = 0; i < members.length; i++) {
@@ -491,7 +491,7 @@ public class AstCompiler {
         }
 
         childrenSet.put(clafer, children);
-        set.put(clafer, setUnion($(children)));
+        set.put(clafer, union($(children)));
 
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         IrBoolExpr[] parentMembership = membership.get(clafer.getParent());
@@ -590,7 +590,7 @@ public class AstCompiler {
                 return (IrIntExpr) expr;
             }
             if (expr instanceof IrSetExpr) {
-                return setSum((IrSetExpr) expr);
+                return sum((IrSetExpr) expr);
             }
             // Bug.
             throw new AstException("Should not have passed type checking.");
@@ -829,15 +829,15 @@ public class AstCompiler {
             IrSetExpr[] operands = asSets(compile(ast.getOperands()));
             switch (ast.getOp()) {
                 case Union:
-                    return setUnion(operands);
+                    return union(operands);
                 case Difference:
                     IrSetExpr difference = operands[0];
                     for (int i = 1; i < operands.length; i++) {
-                        difference = setDifference(difference, operands[i]);
+                        difference = difference(difference, operands[i]);
                     }
                     return difference;
                 case Intersection:
-                    return setIntersection(operands);
+                    return intersection(operands);
                 default:
                     throw new AstException();
             }

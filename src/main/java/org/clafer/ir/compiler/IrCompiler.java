@@ -68,7 +68,7 @@ import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
-import org.clafer.ir.analysis.ExprOptimizer;
+import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.constraints.LCF;
@@ -100,7 +100,7 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        IrModule optModule = ExprOptimizer.analyze(module);
+        IrModule optModule = Optimizer.optimizeImplications(module);
         for (IrBoolVar var : optModule.getBoolVars()) {
             boolVar.get(var);
         }
