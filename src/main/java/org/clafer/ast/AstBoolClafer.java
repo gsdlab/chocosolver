@@ -1,6 +1,7 @@
 package org.clafer.ast;
 
 /**
+ * The primitive boolean Clafer.
  *
  * @author jimmy
  */

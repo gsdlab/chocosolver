@@ -15,7 +15,7 @@ import util.ESat;
 public class PropAnd extends Propagator<BoolVar> {
 
     public PropAnd(BoolVar[] vars) {
-        super(vars, PropagatorPriority.UNARY);
+        super(vars, PropagatorPriority.UNARY, false);
     }
 
     @Override

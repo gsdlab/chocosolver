@@ -23,7 +23,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
     private SetDeltaMonitor setD;
 
     public PropIntNotMemberSet(IntVar element, SetVar set) {
-        super(new Variable[]{element, set}, PropagatorPriority.BINARY);
+        super(new Variable[]{element, set}, PropagatorPriority.BINARY, false);
         this.element = element;
         this.set = set;
         this.setD = set.monitorDelta(aCause);

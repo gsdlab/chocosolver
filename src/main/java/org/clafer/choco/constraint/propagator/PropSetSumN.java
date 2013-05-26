@@ -3,6 +3,7 @@ package org.clafer.choco.constraint.propagator;
 import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
+import solver.constraints.propagators.set.PropSumOfElements;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.IntVar;
@@ -24,7 +25,7 @@ public class PropSetSumN extends Propagator<Variable> {
     private final int n;
 
     public PropSetSumN(SetVar set, IntVar sum, int n) {
-        super(new Variable[]{set, sum}, PropagatorPriority.LINEAR);
+        super(new Variable[]{set, sum}, PropagatorPriority.LINEAR, false);
         if (n <= 0) {
             throw new IllegalArgumentException();
         }

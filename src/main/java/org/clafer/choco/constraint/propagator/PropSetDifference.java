@@ -20,7 +20,7 @@ public class PropSetDifference extends Propagator<SetVar> {
     private final SetDeltaMonitor minuendD, subtrahendD, differenceD;
 
     public PropSetDifference(SetVar minuend, SetVar subtrahend, SetVar difference) {
-        super(new SetVar[]{minuend, subtrahend, difference}, PropagatorPriority.LINEAR);
+        super(new SetVar[]{minuend, subtrahend, difference}, PropagatorPriority.LINEAR, false);
         this.minuend = Check.notNull(minuend);
         this.subtrahend = Check.notNull(subtrahend);
         this.difference = Check.notNull(difference);

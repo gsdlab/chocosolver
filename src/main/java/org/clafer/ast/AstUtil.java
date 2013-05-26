@@ -293,7 +293,7 @@ public class AstUtil {
     }
 
     /**
-     * Retrieve the names of the Clafers. Use the names for error messages
+     * Retrieve the names of the variables. Use the names for error messages
      * rather than {@link Object#toString}.
      *
      * @param vars the variables

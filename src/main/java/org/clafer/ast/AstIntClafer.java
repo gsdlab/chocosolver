@@ -1,6 +1,7 @@
 package org.clafer.ast;
 
 /**
+ * The primitive integer Clafer.
  *
  * @author jimmy
  */

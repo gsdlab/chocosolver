@@ -27,7 +27,7 @@ public class PropIntChannel extends Propagator<Variable> {
     private IIntDeltaMonitor[] intsD;
 
     public PropIntChannel(SetVar[] sets, IntVar[] ints) {
-        super(buildArray(sets, ints), PropagatorPriority.LINEAR);
+        super(buildArray(sets, ints), PropagatorPriority.LINEAR, false);
         this.sets = sets;
         this.setsD = PropUtil.monitorDeltas(sets, aCause);
         this.ints = ints;

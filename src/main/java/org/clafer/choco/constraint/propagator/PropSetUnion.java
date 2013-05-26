@@ -23,7 +23,7 @@ public class PropSetUnion extends Propagator<SetVar> {
     private final SetDeltaMonitor unionD;
 
     public PropSetUnion(SetVar[] sets, SetVar union) {
-        super(Util.cons(union, sets), PropagatorPriority.LINEAR);
+        super(Util.cons(union, sets), PropagatorPriority.LINEAR, false);
         this.sets = sets;
         this.setsD = PropUtil.monitorDeltas(sets, aCause);
         this.union = union;

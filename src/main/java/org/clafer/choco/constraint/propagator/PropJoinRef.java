@@ -29,7 +29,7 @@ public class PropJoinRef extends Propagator<Variable> {
     private final SetDeltaMonitor toD;
 
     public PropJoinRef(SetVar take, IntVar[] refs, SetVar to) {
-        super(buildArray(take, to, refs), PropagatorPriority.LINEAR);
+        super(buildArray(take, to, refs), PropagatorPriority.LINEAR, false);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
         this.refs = refs;

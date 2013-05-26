@@ -25,7 +25,7 @@ public class PropJoin extends Propagator<SetVar> {
     private final SetDeltaMonitor toD;
 
     public PropJoin(SetVar take, SetVar[] children, SetVar to) {
-        super(buildArray(take, to, children), PropagatorPriority.LINEAR);
+        super(buildArray(take, to, children), PropagatorPriority.LINEAR, false);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
         this.children = children;
