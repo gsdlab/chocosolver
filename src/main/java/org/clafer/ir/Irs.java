@@ -416,6 +416,14 @@ public class Irs {
         return domain.getLowBound() >= 0 && domain.getHighBound() <= 1;
     }
 
+    public static IrBoolExpr compare(int left, IrCompare.Op op, IrIntExpr right) {
+        return compare($(constant(left)), op, right);
+    }
+
+    public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, int right) {
+        return compare(left, op, $(constant(right)));
+    }
+
     public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
         IrDomain leftDomain = left.getDomain();
         IrDomain rightDomain = right.getDomain();
@@ -486,6 +494,10 @@ public class Irs {
         return new IrCompare(left, op, right, BoolDomain);
     }
 
+    public static IrBoolExpr equal(int left, IrIntExpr right) {
+        return equal($(constant(left)), right);
+    }
+
     public static IrBoolExpr equal(IrIntExpr left, int right) {
         return equal(left, $(constant(right)));
     }
@@ -554,6 +566,10 @@ public class Irs {
         return equality(left, IrSetTest.Op.Equal, right);
     }
 
+    public static IrBoolExpr notEqual(int left, IrIntExpr right) {
+        return notEqual($(constant(left)), right);
+    }
+
     public static IrBoolExpr notEqual(IrIntExpr left, int right) {
         return notEqual(left, $(constant(right)));
     }
@@ -566,12 +582,20 @@ public class Irs {
         return equality(left, IrSetTest.Op.NotEqual, right);
     }
 
+    public static IrBoolExpr lessThan(int left, IrIntExpr right) {
+        return lessThan($(constant(left)), right);
+    }
+
     public static IrBoolExpr lessThan(IrIntExpr left, int right) {
         return lessThan(left, $(constant(right)));
     }
 
     public static IrBoolExpr lessThan(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.LessThan, right);
+    }
+
+    public static IrBoolExpr lessThanEqual(int left, IrIntExpr right) {
+        return lessThanEqual($(constant(left)), right);
     }
 
     public static IrBoolExpr lessThanEqual(IrIntExpr left, int right) {
@@ -582,12 +606,20 @@ public class Irs {
         return compare(left, IrCompare.Op.LessThanEqual, right);
     }
 
+    public static IrBoolExpr greaterThan(int left, IrIntExpr right) {
+        return greaterThan($(constant(left)), right);
+    }
+
     public static IrBoolExpr greaterThan(IrIntExpr left, int right) {
         return greaterThan(left, $(constant(right)));
     }
 
     public static IrBoolExpr greaterThan(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.GreaterThan, right);
+    }
+
+    public static IrBoolExpr greaterThanEqual(int left, IrIntExpr right) {
+        return greaterThanEqual($(constant(left)), right);
     }
 
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, int right) {
@@ -641,6 +673,10 @@ public class Irs {
             if (constant.intValue() == 1) {
                 return $(True);
             }
+        }
+        if (expr instanceof IrIntCast) {
+            IrIntCast intCast = (IrIntCast) expr;
+            return intCast.getExpr();
         }
         return new IrBoolCast(flipped, expr, BoolDomain);
     }
@@ -815,6 +851,12 @@ public class Irs {
         Boolean constant = IrUtil.getConstant(expr);
         if (constant != null) {
             return constant.booleanValue() ? $(One) : $(Zero);
+        }
+        if (expr instanceof IrBoolCast) {
+            IrBoolCast boolCast = (IrBoolCast) expr;
+            if (!boolCast.isFlipped()) {
+                return boolCast.getExpr();
+            }
         }
         return new IrIntCast(expr, ZeroOneDomain);
     }

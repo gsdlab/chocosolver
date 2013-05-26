@@ -85,6 +85,20 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
             return syntax;
         }
 
+        public boolean isEquality() {
+            switch (this) {
+                case Equal:
+                case NotEqual:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public boolean isInequality() {
+            return !isEquality();
+        }
+
         public Op reverse() {
             switch (this) {
                 case Equal:

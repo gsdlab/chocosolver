@@ -11,6 +11,10 @@ public class Sneak {
     private Sneak() {
     }
 
+    public static void setReify(Constraint c, BoolVar r) {
+        c.boolReif = r;
+    }
+
     public static ImplicationConstraint implies(BoolVar antecedent, Constraint consequent) {
         return new ImplicationConstraint(antecedent, consequent, antecedent.getSolver().TRUE);
     }
