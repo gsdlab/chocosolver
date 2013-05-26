@@ -917,7 +917,7 @@ public class IrCompiler {
             case 1:
                 return vars[0].getSolver().TRUE;
             case 2:
-                return _arithm(vars[0], "+", vars[1], ">=", 1);
+                return _arithm(vars[0], "+", vars[1], "<=", 1);
             default:
                 return Constraints.lone(vars);
         }
