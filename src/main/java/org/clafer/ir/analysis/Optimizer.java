@@ -42,6 +42,13 @@ public class Optimizer {
                 return rewrite(implies(not(ir.getConsequent()), not(ir.getAntecedent())), a);
             }
             // Rewrite
+            //     !a => b
+            // to
+            //     a or b
+            if (ir.getAntecedent().isNegative()) {
+                return rewrite(or(not(ir.getAntecedent()), ir.getConsequent()), a);
+            }
+            // Rewrite
             //     a => !b
             // to
             //     a + b <= 1
@@ -85,9 +92,10 @@ public class Optimizer {
                     //     where dom(int) = {-3, 888}
                     // optimize as
                     //   asInt(bool) <= 888 - int
+                    //   asInt(bool) + int <= 888
                     if (domain.getLowBound() == constant.intValue()) {
-                        return lessThanEqual(asInt(antecedent),
-                                sub(domain.getHighBound(), left));
+                        return lessThanEqual(add(asInt(antecedent), left),
+                                domain.getHighBound());
                     }
                     break;
                 case NotEqual:
@@ -95,9 +103,10 @@ public class Optimizer {
                     //     where dom(int) = {-3, 888}
                     // optimize as
                     //   asInt(bool) <= 888 - int
+                    //   asInt(bool) + int <= 888
                     if (domain.getHighBound() == constant.intValue()) {
-                        return lessThanEqual(asInt(antecedent),
-                                sub(domain.getHighBound(), left));
+                        return lessThanEqual(add(asInt(antecedent), left),
+                                domain.getHighBound());
                     }
                     //   bool => int != -3
                     //     where dom(int) = {-3, 888}
