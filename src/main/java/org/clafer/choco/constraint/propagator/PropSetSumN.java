@@ -12,9 +12,8 @@ import solver.variables.Variable;
 import util.ESat;
 
 /**
- * Sums a set. |set| &le n.
- *
- * Assumption: the env and ker are sorted.
+ * Sums a set and |set| &le n. This implementation <b>assumes</b> that the
+ * envelope and kernel are sorted, undefined behaviour otherwise.
  *
  * @author jimmy
  */
@@ -156,7 +155,7 @@ public class PropSetSumN extends Propagator<Variable> {
                 high += i;
             } else {
                 if (index < lowEnd && i < 0) {
-                    low -= i;
+                    low += i;
                 }
                 if (index >= highStart && i > 0) {
                     high += i;
@@ -170,86 +169,8 @@ public class PropSetSumN extends Propagator<Variable> {
         return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
-    private static int sumKer(SetVar set) {
-        int sum = 0;
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            sum += i;
-        }
-        return sum;
-    }
-
-    private static LowHigh lowHigh(SetVar set, int k) {
-        int envSize = set.getEnvelopeSize();
-        int kerSize = set.getKernelSize();
-
-        assert kerSize < k;
-        if (kerSize == Math.min(k, envSize)) {
-            int kerSum = sumKer(set);
-            int[] choose = new int[0];
-            return new LowHigh(kerSum, choose, choose);
-        }
-
-        int[] ker = PropUtil.iterateKer(set);
-        // The sum of the lowest, negative integers that can be chosen.
-        int low = 0;
-        // The sum of the highest, postiive integers that can be chosen.
-        int high = 0;
-        // The number of elements seen in env but not in ker.
-        int index = 0;
-        // The next lowest integer if negative, or 0.
-        int lowCandidate = 0;
-        // The next highest integer if positive, or 0.
-        int highCandidate = 0;
-        int chooseSize = envSize - kerSize;
-        int lowEnd = Math.min(k, chooseSize);
-        int highStart = chooseSize - lowEnd;
-        int[] lowChoose = new int[lowEnd];
-        int[] highChoose = new int[lowChoose.length];
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            if (!Util.in(i, ker)) {
-                if (index < lowEnd && i < 0) {
-                    // Found a min.
-                    lowChoose[index] = i;
-                }
-                index++;
-                if (index > highStart && i > 0) {
-                    highChoose[chooseSize - index] = i;
-                }
-            }
-        }
-        return new LowHigh(Util.sum(ker), lowChoose, highChoose);
-    }
-
     @Override
     public String toString() {
         return "sum(" + set + ") = " + sum + " where |" + set.getName() + "| <= " + n;
-    }
-
-    private static class LowHigh {
-
-        /**
-         * The sum of the integers already chosen.
-         */
-        private final int sumKer;
-        /**
-         * The set of negative integers that still can be chosen to make the sum
-         * as small as possible for |set| &le <b>k</b>. The elements are in
-         * ascending order. The end of the array may or may not be padded extra
-         * zeroes.
-         */
-        private final int[] lowChoose;
-        /**
-         * The set of positive integers that still can be chosen to make the sum
-         * as large as possible for |set| &le <b>k</b>. The elements are in
-         * ascending order. The end of the array may or may not be padded extra
-         * zeroes.
-         */
-        private final int[] highChoose;
-
-        LowHigh(int sumKer, int[] lowChoose, int[] highChoose) {
-            this.sumKer = sumKer;
-            this.lowChoose = lowChoose;
-            this.highChoose = highChoose;
-        }
     }
 }
