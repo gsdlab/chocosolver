@@ -42,23 +42,40 @@ public class AstModel extends AstConcreteClafer {
 
     /**
      * Returns the type every non-primitive type extends from.
-     * 
+     *
      * @return the Clafer named "clafer"
      */
     public AstAbstractClafer getTypeHierarchyRoot() {
         return claferClafer;
     }
 
+    /**
+     * Returns all the abstract Clafers
+     *
+     * @return all the abstract Clafers
+     */
     public List<AstAbstractClafer> getAbstractClafers() {
         return Collections.unmodifiableList(abstractClafers);
     }
 
+    /**
+     * Add a new abstract Clafer to the model. .
+     *
+     * @param name the name of the abtract Clafer
+     * @return the new abstract Clafer
+     */
     public AstAbstractClafer addAbstractClafer(String name) {
         AstAbstractClafer abstractClafer = new AstAbstractClafer(name).extending(claferClafer);
         abstractClafers.add(abstractClafer);
         return abstractClafer;
     }
 
+    /**
+     * Replace all the abstract Clafers.
+     *
+     * @param abstractClafers the new abstract Clafers
+     * @return this model
+     */
     public AstModel withAbstractClafers(List<AstAbstractClafer> abstractClafers) {
         this.abstractClafers.clear();
         this.abstractClafers.addAll(abstractClafers);

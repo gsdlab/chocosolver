@@ -5,6 +5,7 @@ import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
+import solver.constraints.propagators.extension.binary.BinRelation;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
@@ -13,9 +14,20 @@ import util.ESat;
 import util.procedure.IntProcedure;
 
 /**
+ * <p>
+ * Join a unary relation with a binary relation. The {@code take} variable is
+ * the unary relation and the {@code children} variables are the binary
+ * relation. The {@code to} variable is the result of the join.
+ * </p>
+ * <p>
+ * Here is how the binary relation is encoded. Consider the relation:
+ * {@code (0, 1), (0, 2), (1, 3), (2, 1)}. This is encoded as 3 different
+ * {@code children} variables: {@code child0={1, 2}, child1={3}, child2={1}}.
+ * </p>
+ *
  * @author jimmy
  */
-public class PropJoin extends Propagator<SetVar> {
+public class PropJoinRelation extends Propagator<SetVar> {
 
     private final SetVar take;
     private final SetDeltaMonitor takeD;
@@ -24,7 +36,7 @@ public class PropJoin extends Propagator<SetVar> {
     private final SetVar to;
     private final SetDeltaMonitor toD;
 
-    public PropJoin(SetVar take, SetVar[] children, SetVar to) {
+    public PropJoinRelation(SetVar take, SetVar[] children, SetVar to) {
         super(buildArray(take, to, children), PropagatorPriority.LINEAR, false);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
@@ -267,6 +279,6 @@ public class PropJoin extends Propagator<SetVar> {
 
     @Override
     public String toString() {
-        return "propJoin(" + take + ", " + Arrays.toString(children) + ", " + to + ")";
+        return "joinRelation(" + take + ", " + Arrays.toString(children) + ", " + to + ")";
     }
 }

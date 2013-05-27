@@ -1204,7 +1204,7 @@ public class Irs {
     }
 
     /**
-     * Relational join, Clafer version.
+     * Relational join.
      *
      * Union{for all i in take} children[i]
      *
@@ -1212,7 +1212,7 @@ public class Irs {
      * @param children
      * @return the join expression take.children
      */
-    public static IrSetExpr join(IrSetExpr take, IrSetExpr[] children) {
+    public static IrSetExpr joinRelation(IrSetExpr take, IrSetExpr[] children) {
         IrSetExpr[] $children = children;
         if (take.getEnv().getHighBound() + 1 < $children.length) {
             $children = Arrays.copyOf(children, take.getEnv().getHighBound() + 1);
@@ -1281,10 +1281,10 @@ public class Irs {
         cardHigh = Math.min(cardHigh, env.size());
         IrDomain card = boundDomain(cardLow, cardHigh);
 
-        return new IrJoin(take, $children, env, ker, card);
+        return new IrJoinRelation(take, $children, env, ker, card);
     }
 
-    public static IrSetExpr joinRef(IrSetExpr take, IrIntExpr[] refs) {
+    public static IrSetExpr joinFunction(IrSetExpr take, IrIntExpr[] refs) {
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
             IrIntExpr[] to = new IrIntExpr[constant.length];
@@ -1326,7 +1326,7 @@ public class Irs {
                 ? boundDomain(Math.max(0, ker.size()), Math.min(highTakeCard, env.size()))
                 : boundDomain(Math.max(1, ker.size()), Math.min(highTakeCard, env.size()));
 
-        return new IrJoinRef(take, refs, env, ker, card);
+        return new IrJoinFunction(take, refs, env, ker, card);
     }
 
     public static IrSetExpr difference(IrSetExpr minuend, IrSetExpr subtrahend) {

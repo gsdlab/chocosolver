@@ -249,13 +249,13 @@ public class IrRewriter<T>
     }
 
     @Override
-    public IrSetExpr visit(IrJoin ir, T a) {
-        return join(rewrite(ir.getTake(), a), rewrite(ir.getChildren(), a));
+    public IrSetExpr visit(IrJoinRelation ir, T a) {
+        return joinRelation(rewrite(ir.getTake(), a), rewrite(ir.getChildren(), a));
     }
 
     @Override
-    public IrSetExpr visit(IrJoinRef ir, T a) {
-        return joinRef(rewrite(ir.getTake(), a), rewrite(ir.getRefs(), a));
+    public IrSetExpr visit(IrJoinFunction ir, T a) {
+        return joinFunction(rewrite(ir.getTake(), a), rewrite(ir.getRefs(), a));
     }
 
     @Override

@@ -15,11 +15,21 @@ import util.ESat;
 import util.procedure.IntProcedure;
 
 /**
- * Assumptions: Take set is over a small domain. Ref.length is small.
+ * <p>
+ * Join a unary set relation with a binary function. This propagator is a
+ * specialized version of {@link PropJoinRelation}. The {@code take} variable is
+ * the unary relation and the {@code ref} variables are the function. The
+ * {@code to} variable is the result of the join.
+ * </p>
+ * <p>
+ * Here is how the binary function is encoded. Consider the function:
+ * {@code (0, 1), (1, 3), (2, 1)}. This is encoded as 3 different {@code ref}
+ * variables: {@code ref0={1}, ref1={3}, ref2={1}}.
+ * </p>
  *
  * @author jimmy
  */
-public class PropJoinRef extends Propagator<Variable> {
+public class PropJoinFunction extends Propagator<Variable> {
 
     private final SetVar take;
     private final SetDeltaMonitor takeD;
@@ -28,7 +38,7 @@ public class PropJoinRef extends Propagator<Variable> {
     private final SetVar to;
     private final SetDeltaMonitor toD;
 
-    public PropJoinRef(SetVar take, IntVar[] refs, SetVar to) {
+    public PropJoinFunction(SetVar take, IntVar[] refs, SetVar to) {
         super(buildArray(take, to, refs), PropagatorPriority.LINEAR, false);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
@@ -218,6 +228,6 @@ public class PropJoinRef extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return take + " . " + Arrays.toString(refs) + " = " + to;
+        return "joinFunction(" + take + ", " + Arrays.toString(refs) + ", " + to + ")";
     }
 }

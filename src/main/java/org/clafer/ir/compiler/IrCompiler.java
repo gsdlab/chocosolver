@@ -32,8 +32,8 @@ import org.clafer.collection.Triple;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrIntChannel;
-import org.clafer.ir.IrJoin;
-import org.clafer.ir.IrJoinRef;
+import org.clafer.ir.IrJoinRelation;
+import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrCard;
 import solver.variables.SetVar;
 import solver.constraints.Constraint;
@@ -777,7 +777,7 @@ public class IrCompiler {
         }
 
         @Override
-        public SetVar visit(IrJoin ir, Void a) {
+        public SetVar visit(IrJoinRelation ir, Void a) {
             IrSetExpr take = ir.getTake();
             IrSetExpr[] children = ir.getChildren();
             SetVar $take = compile(take);
@@ -785,13 +785,13 @@ public class IrCompiler {
             for (int i = 0; i < $children.length; i++) {
                 $children[i] = compile(children[i]);
             }
-            SetVar join = numSetVar("Join", ir.getEnv(), ir.getKer());
-            solver.post(Constraints.join($take, $children, join));
-            return join;
+            SetVar joinRelation = numSetVar("JoinRelation", ir.getEnv(), ir.getKer());
+            solver.post(Constraints.joinRelation($take, $children, joinRelation));
+            return joinRelation;
         }
 
         @Override
-        public SetVar visit(IrJoinRef ir, Void a) {
+        public SetVar visit(IrJoinFunction ir, Void a) {
             IrSetExpr take = ir.getTake();
             IrIntExpr[] refs = ir.getRefs();
             SetVar $take = compile(take);
@@ -799,9 +799,9 @@ public class IrCompiler {
             for (int i = 0; i < $refs.length; i++) {
                 $refs[i] = compile(refs[i]);
             }
-            SetVar joinRef = numSetVar("JoinRef", ir.getEnv(), ir.getKer());
-            solver.post(Constraints.joinRef($take, $refs, joinRef));
-            return joinRef;
+            SetVar joinFunction = numSetVar("JoinFunction", ir.getEnv(), ir.getKer());
+            solver.post(Constraints.joinFunction($take, $refs, joinFunction));
+            return joinFunction;
         }
 
         @Override

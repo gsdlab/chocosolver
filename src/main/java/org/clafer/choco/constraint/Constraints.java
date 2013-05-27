@@ -1,8 +1,8 @@
 package org.clafer.choco.constraint;
 
 import org.clafer.choco.constraint.propagator.PropAnd;
-import org.clafer.choco.constraint.propagator.PropJoin;
-import org.clafer.choco.constraint.propagator.PropJoinRef;
+import org.clafer.choco.constraint.propagator.PropJoinRelation;
+import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
@@ -70,23 +70,23 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint join(SetVar take, SetVar[] children, SetVar to) {
+    public static Constraint joinRelation(SetVar take, SetVar[] children, SetVar to) {
         SetVar[] vars = new SetVar[children.length + 2];
         vars[0] = take;
         vars[1] = to;
         System.arraycopy(children, 0, vars, 2, children.length);
         Constraint constraint = new Constraint(vars, take.getSolver());
-        constraint.setPropagators(new PropJoin(take, children, to));
+        constraint.setPropagators(new PropJoinRelation(take, children, to));
         return constraint;
     }
 
-    public static Constraint joinRef(SetVar take, IntVar[] refs, SetVar to) {
+    public static Constraint joinFunction(SetVar take, IntVar[] refs, SetVar to) {
         Variable[] vars = new Variable[refs.length + 2];
         vars[0] = take;
         vars[1] = to;
         System.arraycopy(refs, 0, vars, 2, refs.length);
         Constraint constraint = new Constraint(vars, take.getSolver());
-        constraint.setPropagators(new PropJoinRef(take, refs, to));
+        constraint.setPropagators(new PropJoinFunction(take, refs, to));
         return constraint;
     }
 

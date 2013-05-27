@@ -7,12 +7,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrJoinRef extends IrAbstractSet implements IrSetExpr {
+public class IrJoinFunction extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr take;
     private final IrIntExpr[] refs;
 
-    IrJoinRef(IrSetExpr take, IrIntExpr[] refs, IrDomain env, IrDomain ker, IrDomain card) {
+    IrJoinFunction(IrSetExpr take, IrIntExpr[] refs, IrDomain env, IrDomain ker, IrDomain card) {
         super(env, ker, card);
         this.take = Check.notNull(take);
         this.refs = Check.noNullsNotEmpty(refs);
@@ -33,8 +33,8 @@ public class IrJoinRef extends IrAbstractSet implements IrSetExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrJoinRef) {
-            IrJoinRef other = (IrJoinRef) obj;
+        if (obj instanceof IrJoinFunction) {
+            IrJoinFunction other = (IrJoinFunction) obj;
             return take.equals(other.take) && Arrays.equals(refs, other.refs) && super.equals(other);
         }
         return false;

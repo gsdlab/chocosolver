@@ -6,26 +6,28 @@ import java.util.List;
 import org.clafer.common.Util;
 
 /**
- * Persistent singly-linked list. Empty list is represented by {@code null}. Useful
- * for recursive algorithms.
- * 
+ * Persistent singly-linked list. Empty list is represented by {@code null}.
+ * Useful for recursive algorithms.
+ *
+ * @param <E> the type of the elements
  * @author jimmy
  */
 public class FList<E> implements Iterable<E> {
-    
+
     private final E head;
     private final FList<E> tail;
-    
+
     private FList(E head, FList<E> tail) {
         this.head = head;
         this.tail = tail;
     }
 
     /**
-     * Detects if the list is empty.
+     * Checks if the list is empty.
      *
      * @param list the list
-     * @return {@code true} if and only if the list is empty, {@code false} otherwise
+     * @return {@code true} if and only if the list is empty, {@code false}
+     * otherwise
      */
     public static <E> boolean isEmpty(FList<E> list) {
         return list == null;
@@ -33,7 +35,7 @@ public class FList<E> implements Iterable<E> {
 
     /**
      * Returns an empty list. The empty list is represented by null.
-     * 
+     *
      * @return null
      */
     public static <E> FList<E> empty() {
@@ -42,7 +44,7 @@ public class FList<E> implements Iterable<E> {
 
     /**
      * A list containing a single element.
-     * 
+     *
      * @param item the element of the list
      * @return a list of size 1
      */
@@ -52,7 +54,7 @@ public class FList<E> implements Iterable<E> {
 
     /**
      * Functional-programming cons. Nondestructive.
-     * 
+     *
      * @param head the beginning of the new list
      * @param tail the end of the new list
      * @return a copy of the original list with head appended at the start
@@ -63,7 +65,7 @@ public class FList<E> implements Iterable<E> {
 
     /**
      * Functional-programming snoc. Nondestructive.
-     * 
+     *
      * @param head the beginning of the new list
      * @param tail the end of the new list
      * @return a copy of the original list with tail appended at the end
@@ -76,13 +78,13 @@ public class FList<E> implements Iterable<E> {
     }
 
     /**
-     * Detects if two lists are equivalent. This function is prefered over
+     * Checks if two lists are equivalent. This function is preferred over
      * {@link FList#equals(Object)} because it safely handles the empty list.
-     * 
+     *
      * @param l1 the first list
      * @param l2 the second list
-     * @return {@code true} if and only if the first and second list are equivalent,
-     *         {@code false} otherwise
+     * @return {@code true} if and only if the first and second list are
+     * equivalent, {@code false} otherwise
      */
     public static <E> boolean equals(FList<E> l1, FList<E> l2) {
         if (isEmpty(l1)) {
@@ -102,7 +104,7 @@ public class FList<E> implements Iterable<E> {
 
     /**
      * Returns the first element of the list.
-     * 
+     *
      * @return the head of the list
      */
     public E getHead() {
@@ -110,15 +112,20 @@ public class FList<E> implements Iterable<E> {
     }
 
     /**
-     * Returns the a sublist of this list without the first element. If this list
-     * is of length 1, then tail is {@code null}
-     * 
+     * Returns the a sublist of this list without the first element. If this
+     * list is of length 1, then tail is {@code null}
+     *
      * @return the tail of the list
      */
     public FList<E> getTail() {
         return tail;
     }
-    
+
+    /**
+     * Converts this functional list to an imperative list.
+     * 
+     * @return a copy of this list
+     */
     public List<E> toList() {
         List<E> list = new ArrayList<E>();
         for (FList<E> current = this; current != null; current = current.tail) {
@@ -127,13 +134,17 @@ public class FList<E> implements Iterable<E> {
         return list;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Iterator<E> iterator() {
         return new FListIterator<E>(this);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof FList) {
@@ -143,7 +154,9 @@ public class FList<E> implements Iterable<E> {
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 1;
@@ -153,7 +166,9 @@ public class FList<E> implements Iterable<E> {
         return hash;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -165,27 +180,27 @@ public class FList<E> implements Iterable<E> {
         }
         return result.append(']').toString();
     }
-    
+
     private static class FListIterator<E> implements Iterator<E> {
-        
+
         private FList<E> current;
-        
+
         FListIterator(FList<E> current) {
             this.current = current;
         }
-        
+
         @Override
         public boolean hasNext() {
             return current != null;
         }
-        
+
         @Override
         public E next() {
             E head = current.getHead();
             current = current.getTail();
             return head;
         }
-        
+
         @Override
         public void remove() {
             throw new UnsupportedOperationException();

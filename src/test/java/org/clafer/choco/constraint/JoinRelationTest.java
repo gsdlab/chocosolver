@@ -14,7 +14,7 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class JoinTest extends ConstraintTest {
+public class JoinRelationTest extends ConstraintTest {
 
     private void checkCorrectness(SetVar take, SetVar[] children, SetVar to) {
         int[] $take = take.getValue();
@@ -45,7 +45,7 @@ public class JoinTest extends ConstraintTest {
             }
             SetVar to = VF.set("to", Util.range(0, nextInt(100)), solver);
 
-            solver.post(Constraints.join(take, children, to));
+            solver.post(Constraints.joinRelation(take, children, to));
             if (num > 1) {
                 solver.post(SCF.all_disjoint(children));
             }
@@ -59,7 +59,7 @@ public class JoinTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testJoin() {
+    public void testJoinRelation() {
         /*
          * import Control.Monad
          * import Data.List
@@ -86,7 +86,7 @@ public class JoinTest extends ConstraintTest {
         }
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
 
-        solver.post(Constraints.join(take, children, to));
+        solver.post(Constraints.joinRelation(take, children, to));
         solver.post(SCF.all_disjoint(children));
 
         assertEquals(8192, randomizeStrategy(solver).findAllSolutions());
@@ -116,7 +116,7 @@ public class JoinTest extends ConstraintTest {
         }
         SetVar to = VF.set("to", new int[]{0, 1, 2}, solver);
 
-        solver.post(Constraints.join(take, children, to));
+        solver.post(Constraints.joinRelation(take, children, to));
 
         assertEquals(4096, randomizeStrategy(solver).findAllSolutions());
     }

@@ -15,9 +15,9 @@ public interface IrSetExprVisitor<A, B> {
 
     public B visit(IrArrayToSet ir, A a);
 
-    public B visit(IrJoin ir, A a);
+    public B visit(IrJoinRelation ir, A a);
 
-    public B visit(IrJoinRef ir, A a);
+    public B visit(IrJoinFunction ir, A a);
 
     public B visit(IrSetDifference ir, A a);
 

@@ -14,7 +14,7 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class JoinRefTest extends ConstraintTest {
+public class JoinFunctionTest extends ConstraintTest {
 
     private void checkCorrectness(SetVar take, IntVar[] refs, SetVar to) {
         int[] $take = take.getValue();
@@ -43,7 +43,7 @@ public class JoinRefTest extends ConstraintTest {
             }
             SetVar to = VF.set("to", Util.fromTo(0, nextInt(10)), solver);
 
-            solver.post(Constraints.joinRef(take, refs, to));
+            solver.post(Constraints.joinFunction(take, refs, to));
 
             assertTrue(randomizeStrategy(solver).findSolution());
             checkCorrectness(take, refs, to);
@@ -64,7 +64,7 @@ public class JoinRefTest extends ConstraintTest {
         }
         SetVar to = VF.set("to", Util.range(0, 5), solver);
 
-        solver.post(Constraints.joinRef(take, refs, to));
+        solver.post(Constraints.joinFunction(take, refs, to));
 
         assertEquals(4, randomizeStrategy(solver).findAllSolutions());
     }
@@ -84,7 +84,7 @@ public class JoinRefTest extends ConstraintTest {
 //        checkCorrectness(solver, take, refs, to);
 //    }
     @Test(timeout = 60000)
-    public void testJoinRef() {
+    public void testJoinFunction() {
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
@@ -94,7 +94,7 @@ public class JoinRefTest extends ConstraintTest {
         }
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
 
-        solver.post(Constraints.joinRef(take, refs, to));
+        solver.post(Constraints.joinFunction(take, refs, to));
 
         assertEquals(1000, randomizeStrategy(solver).findAllSolutions());
     }

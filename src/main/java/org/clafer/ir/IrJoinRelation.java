@@ -4,16 +4,15 @@ import java.util.Arrays;
 import org.clafer.common.Check;
 
 /**
- * Assumption: children are disjoint
- * 
+ *
  * @author jimmy
  */
-public class IrJoin extends IrAbstractSet implements IrSetExpr {
+public class IrJoinRelation extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr take;
     private final IrSetExpr[] children;
 
-    IrJoin(IrSetExpr take, IrSetExpr[] children, IrDomain env, IrDomain ker, IrDomain card) {
+    IrJoinRelation(IrSetExpr take, IrSetExpr[] children, IrDomain env, IrDomain ker, IrDomain card) {
         super(env, ker, card);
         this.take = Check.notNull(take);
         this.children = Check.noNulls(children);
@@ -34,8 +33,8 @@ public class IrJoin extends IrAbstractSet implements IrSetExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrJoin) {
-            IrJoin other = (IrJoin) obj;
+        if (obj instanceof IrJoinRelation) {
+            IrJoinRelation other = (IrJoinRelation) obj;
             return take.equals(other.take) && Arrays.equals(children, other.children) && super.equals(other);
         }
         return false;

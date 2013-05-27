@@ -669,11 +669,11 @@ public class AstCompiler {
                     return $intLeft;
                 }
                 // Why empty set? The "take" var can contain unused.
-                return join(singleton($intLeft), $(Util.snoc(childrenSet.get(right), EmptySet)));
+                return joinRelation(singleton($intLeft), $(Util.snoc(childrenSet.get(right), EmptySet)));
             } else if ($left instanceof IrSetExpr) {
                 IrSetExpr $setLeft = (IrSetExpr) $left;
                 // Why empty set? The "take" var can contain unused.
-                return join($setLeft, $(Util.snoc(childrenSet.get(right), EmptySet)));
+                return joinRelation($setLeft, $(Util.snoc(childrenSet.get(right), EmptySet)));
             }
             throw new AstException();
         }
@@ -701,7 +701,7 @@ public class AstCompiler {
                 }
             } else if ($children instanceof IrSetExpr) {
                 IrSetExpr $setChildren = (IrSetExpr) $children;
-                return joinRef($setChildren, $(parentPointers.get(childrenType)));
+                return joinFunction($setChildren, $(parentPointers.get(childrenType)));
             }
             throw new AstException();
         }
@@ -717,7 +717,7 @@ public class AstCompiler {
                 return element($(refPointers.get(derefType.getRef())), $intDeref);
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
-                return joinRef($setDeref, $(refPointers.get(derefType.getRef())));
+                return joinFunction($setDeref, $(refPointers.get(derefType.getRef())));
             }
             throw new AstException();
         }

@@ -28,7 +28,7 @@ public class Canonicalizer {
     }
 
     /**
-     * Rewrites the module in a form that is easier to pattern.
+     * Rewrites the module in a form that is easier to pattern match.
      *
      * @param module the module to canonicalize
      * @return the canonicalized module
