@@ -29,6 +29,10 @@ public class ClaferUnsat {
         this.score = Check.notNull(score);
     }
 
+    public Solver getInternalSolver() {
+        return solver;
+    }
+
     public Pair<Set<String>, InstanceModel> minUnsat() {
         solver.findOptimalSolution(ResolutionPolicy.MAXIMIZE, score);
         if (ESat.TRUE.equals(solver.isFeasible())) {

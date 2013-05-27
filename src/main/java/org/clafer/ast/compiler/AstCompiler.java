@@ -63,7 +63,6 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
-import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
@@ -224,6 +223,7 @@ public class AstCompiler {
         } while (superClafer != null);
 
         if (ref != null) {
+            IrBoolExpr[] members = membership.get(clafer);
             IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
                     refOffset, refOffset + getScope(clafer));
             if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
@@ -232,7 +232,6 @@ public class AstCompiler {
                         assert clafer.getCard().getLow() == refs.length;
                         module.addConstraint(allDifferent($(refs)));
                     } else {
-                        IrBoolExpr[] members = membership.get(clafer);
                         for (int i = 0; i < refs.length; i++) {
                             for (int j = i + 1; j < refs.length; j++) {
                                 module.addConstraint(
@@ -246,14 +245,13 @@ public class AstCompiler {
                     for (int i = 0; i < refs.length; i++) {
                         for (int j = i + 1; j < refs.length; j++) {
                             module.addConstraint(
-                                    implies(and(notEqual($(parents[i]), unused),
+                                    implies(and(members[i], members[j],
                                     equal($(parents[i]), $(parents[j]))),
                                     notEqual($(refs[i]), $(refs[j]))));
                         }
                     }
                 }
             }
-            IrBoolExpr[] members = membership.get(clafer);
             assert refs.length == members.length;
             for (int i = 0; i < members.length; i++) {
                 module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
@@ -642,9 +640,9 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstGlobal ast, Void a) {
             IrSetExpr global = set.get(ast.getType());
-            if(global.getEnv().size() == 1){
+            if (global.getEnv().size() == 1) {
                 int[] constant = IrUtil.getConstant(global);
-                if(constant != null) {
+                if (constant != null) {
                     return $(constant(constant[0]));
                 }
             }

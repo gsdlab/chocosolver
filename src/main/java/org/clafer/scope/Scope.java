@@ -5,6 +5,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
+import solver.Solver;
+import solver.constraints.ICF;
+import solver.variables.BoolVar;
+import solver.variables.VF;
 
 /**
  * <p>
@@ -64,8 +68,9 @@ import org.clafer.ast.AstClafer;
  * scope. In example 1, a scope of
  * {@code Scope.intLow(-16).intHigh(16).toScope()} would only attempt the proof
  * for integers between negative and positive 16. In example 2, a scope of
- * {@code Scope.defaultScope(16)} would only attempt the proof for integers
- * between 0 and positive 16.
+ * {@code Scope.defaultScope(16).toScope()} would only attempt the proof for
+ * integers between 0 and positive 16 (the example uses encodes integers using
+ * cardinality).
  *
  * @author jimmy
  * @see ScopeBuilder
@@ -208,5 +213,12 @@ public class Scope {
             result.append(", ").append(entry.getKey()).append(':').append(entry.getValue());
         }
         return result.append('}').toString();
+    }
+    public static void main(String[] args) {
+        Solver solver = new Solver();
+        BoolVar a = VF.bool("a", solver);
+        BoolVar b = VF.bool("b", solver);
+        solver.post(ICF.arithm(a, "+", VF.not(b), "=", 2));
+        System.out.println(solver.findSolution());
     }
 }

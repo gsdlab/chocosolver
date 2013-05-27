@@ -114,35 +114,69 @@ public class SimpleStructureTest {
     /**
      * <pre>
      * Person
-     *     Age ->> integer 2
+     *     Age ->> integer 3
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testRefs() {
+    public void testFixedRefs() {
         AstModel model = newModel();
 
         AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
-        person.addChild("Age").withCard(2, 2).refTo(IntType);
+        person.addChild("Age").withCard(3, 3).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2));
-        assertEquals(25, solver.allInstances().length);
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(125, solver.allInstances().length);
     }
 
     /**
      * <pre>
      * Person
-     *     Age -> integer 2
+     *     Age ->> integer 2..3
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testUniqueRefs() {
+    public void testVariableRefs() {
         AstModel model = newModel();
 
         AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
-        person.addChild("Age").withCard(2, 2).refToUnique(IntType);
+        person.addChild("Age").withCard(2, 3).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2));
-        assertEquals(20, solver.allInstances().length);
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(150, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Person
+     *     Age -> integer 3
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testFixedUniqueRefs() {
+        AstModel model = newModel();
+
+        AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
+        person.addChild("Age").withCard(3, 3).refToUnique(IntType);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(60, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Person
+     *     Age ->> integer 2..3
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testVariableUniqueRefs() {
+        AstModel model = newModel();
+
+        AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
+        person.addChild("Age").withCard(2, 3).refToUnique(IntType);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(80, solver.allInstances().length);
     }
 
     /**
@@ -228,9 +262,9 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         // Can be reduced to 2 with better symmetry breaking
-         assertEquals(3, solver.allInstances().length);
+        assertEquals(3, solver.allInstances().length);
     }
-    
+
     /**
      * Age -> integer ?
      */

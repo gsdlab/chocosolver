@@ -30,6 +30,9 @@ import solver.variables.VF;
  */
 public class ClaferCompiler {
 
+    private ClaferCompiler() {
+    }
+
     public static ClaferSolver compile(AstModel in, ScopeBuilder scope) {
         return compile(in, scope.toScope());
     }
@@ -97,6 +100,10 @@ public class ClaferCompiler {
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
                 IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolVars())));
         return new ClaferObjective(solver, solution, Objective.Minimize, sum);
+    }
+
+    public static ClaferUnsat compileUnsat(AstModel in, ScopeBuilder scope) {
+        return compileUnsat(in, scope.toScope());
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scope scope) {
