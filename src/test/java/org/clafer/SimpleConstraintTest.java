@@ -9,6 +9,7 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import solver.Configuration;
 import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
@@ -99,6 +100,31 @@ public class SimpleConstraintTest {
 
     /**
      * <pre>
+     * abstract Feature
+     *     Cost ->> integer
+     * Backup : Feature 2..3
+     * [Backup.Cost.ref = 3]
+     * Firewall : Feature ?
+     *     [this.Cost.ref = 5]
+     * </pre>
+     */
+    @Test
+    public void testMaybeJoinAndJoinRefOverAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
+        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
+        model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
+        firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * abstract Product
      *     Cost -> integer
      * abstract Feature : Product
@@ -126,8 +152,9 @@ public class SimpleConstraintTest {
 
     /**
      * <pre>
-     * abstract Feature
+     * abstract Product
      *     Cost ->> integer
+     * abstract Feature : Product
      * Backup : Feature 2..3
      * [Backup.Cost.ref = 3]
      * Firewall : Feature ?
@@ -135,11 +162,12 @@ public class SimpleConstraintTest {
      * </pre>
      */
     @Test
-    public void testVariableJoinAndJoinRefOverAbstract() {
+    public void testMaybeJoinAndJoinRefOverMultipleAbstract() {
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
-        AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
+        AstAbstractClafer product = model.addAbstractClafer("Product");
+        AstConcreteClafer cost = product.addChild("Cost").withCard(1, 1).refToUnique(IntType);
+        AstAbstractClafer feature = model.addAbstractClafer("Feature").extending(product);
         AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
         model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
@@ -154,10 +182,14 @@ public class SimpleConstraintTest {
      * abstract Product
      *     Cost ->> integer
      * abstract Feature : Product
-     * Backup : Feature 2..3
-     * [Backup.Cost.ref = 3]
-     * Firewall : Feature ?
-     *     [this.Cost.ref = 5]
+     * abstract Service : Product
+     * TV : Feature
+     *     [this.Cost.ref = 2]
+     * Internet : Service
+     *     [this.Cost.ref = 2]
+     * Computer
+     *     Software : Feature 3..4 
+     *     [this.Software.Cost.ref = 3]
      * </pre>
      */
     @Test
@@ -165,15 +197,19 @@ public class SimpleConstraintTest {
         AstModel model = newModel();
 
         AstAbstractClafer product = model.addAbstractClafer("Product");
-        AstConcreteClafer cost = product.addChild("Cost").withCard(1, 1).refToUnique(IntType);
+        AstConcreteClafer cost = product.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstAbstractClafer feature = model.addAbstractClafer("Feature").extending(product);
-        AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
-        AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
-        model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
-        firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
+        AstAbstractClafer serivce = model.addAbstractClafer("Service").extending(product);
+        AstConcreteClafer tv = model.addChild("TV").withCard(1, 1).extending(feature);
+        AstConcreteClafer internet = model.addChild("Internet").withCard(1, 1).extending(serivce);
+        tv.addConstraint(equal(joinRef(join($this(), cost)), constant(2)));
+        internet.addConstraint(equal(joinRef(join($this(), cost)), constant(2)));
+        AstConcreteClafer computer = model.addChild("Computer").withCard(1, 1);
+        AstConcreteClafer software = computer.addChild("Software").withCard(3, 4).extending(feature);
+        computer.addConstraint(equal(joinRef(join(join($this(), software), cost)), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
-        assertEquals(4, solver.allInstances().length);
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(6));
+        assertEquals(2, solver.allInstances().length);
     }
 
     /**

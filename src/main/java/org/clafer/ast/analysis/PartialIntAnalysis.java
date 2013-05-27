@@ -3,6 +3,7 @@ package org.clafer.ast.analysis;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,18 +121,18 @@ public class PartialIntAnalysis {
         Map<AstConcreteClafer, TIntHashSet> parentIdsMap = new HashMap<AstConcreteClafer, TIntHashSet>();
         for (int id : ids) {
             AstClafer subClafer = clafer;
-            int unoffset = 0;
+            int curId = id;
             do {
                 Offsets offset = offsets.get((AstAbstractClafer) subClafer);
-                subClafer = offset.getClafer(id);
-                unoffset += offset.getOffset(subClafer);
+                subClafer = offset.getClafer(curId);
+                curId -= offset.getOffset(subClafer);
             } while (subClafer instanceof AstAbstractClafer);
             TIntHashSet parentIds = parentIdsMap.get((AstConcreteClafer) subClafer);
             if (parentIds == null) {
                 parentIds = new TIntHashSet();
                 parentIdsMap.put((AstConcreteClafer) subClafer, parentIds);
             }
-            parentIds.add(id - unoffset);
+            parentIds.add(curId);
         }
         for (Entry<AstConcreteClafer, TIntHashSet> entry : parentIdsMap.entrySet()) {
             if (!partialInts(entry.getValue().toArray(), entry.getKey(), automata,

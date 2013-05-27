@@ -10,7 +10,9 @@ import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOr;
+import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
@@ -130,6 +132,19 @@ public class Optimizer {
             }
             return implies(antecedent, consequent);
         }
+
+//        @Override
+//        public IrSetExpr visit(IrOffset ir, Void a) {
+//            if(ir.getSet() instanceof IrOffset) {
+                // Rewrite
+                //    offset(offset(set, a), b)
+                // to
+                //    offset(set, a + b)
+                // This optimization is important for going multiple steps up the
+                // hierarchy.
+//            }
+//            
+//        }
     };
 
     /**

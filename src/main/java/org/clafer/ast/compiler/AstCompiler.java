@@ -241,7 +241,6 @@ public class AstCompiler {
                         }
                     }
                 } else {
-                    int unused = getScope(clafer.getParent());
                     for (int i = 0; i < refs.length; i++) {
                         for (int j = i + 1; j < refs.length; j++) {
                             module.addConstraint(

@@ -2,10 +2,10 @@ package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
-import solver.constraints.propagators.extension.binary.BinRelation;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
@@ -117,7 +117,11 @@ public class PropJoinRelation extends Propagator<SetVar> {
         }
 
         // Prune to
-        PropUtil.envSubsetEnvs(to, children, aCause);
+        TIntHashSet viableTo = new TIntHashSet();
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            PropUtil.iterateEnv(children[i], viableTo);
+        }
+        PropUtil.envSubsetOf(to, viableTo, aCause);
 
         // Pick take, pick child, pick take, prune to
         for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
