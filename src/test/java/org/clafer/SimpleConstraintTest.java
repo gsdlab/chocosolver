@@ -30,7 +30,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer age = model.addChild("Age").withCard(2, 2).refTo(IntType);
         model.addConstraint(equal(joinRef(global(age)), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);
     }
 
@@ -51,7 +51,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer finger = hand.addChild("Finger");
         person.addConstraint(equal(card(join(join($this(), hand), finger)), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
         assertEquals(6, solver.allInstances().length);
     }
 
@@ -68,7 +68,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer age = model.addChild("Age").withCard(2, 2).refTo(IntType);
         age.addConstraint(equal(joinRef($this()), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);
     }
 
@@ -93,7 +93,7 @@ public class SimpleConstraintTest {
         backup.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -120,7 +120,7 @@ public class SimpleConstraintTest {
         backup.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -145,7 +145,7 @@ public class SimpleConstraintTest {
         model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -172,7 +172,7 @@ public class SimpleConstraintTest {
         model.addConstraint(equal(joinRef(join(global(backup), cost)), constant(3)));
         firewall.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -191,7 +191,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(0, 1).refToUnique(IntType);
         feature.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(2, solver.allInstances().length);
     }
 
@@ -210,7 +210,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 3).refTo(IntType);
         feature.addConstraint(equal(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
         assertEquals(2, solver.allInstances().length);
     }
 
@@ -233,7 +233,7 @@ public class SimpleConstraintTest {
         model.addConstraint(equal(joinRef(global(backup)), constant(3)));
         firewall.addConstraint(equal(joinRef($this()), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -254,7 +254,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer c = a.addChild("C").withCard(0, 1);
         c.addConstraint(some(join(joinParent($this()), b)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         // Due to symmetry breaking.
         assertEquals(6, solver.allInstances().length);
     }
@@ -274,7 +274,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer b = a.addChild("B").withCard(0, 2);
         model.addConstraint(equal(card(joinParent(global(b))), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8));
         // Due to symmetry breaking.
         assertEquals(4, solver.allInstances().length);
     }
@@ -296,7 +296,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer c = a.addChild("C").withCard(0, 1);
         model.addConstraint(equal(card(join(joinParent(global(b)), c)), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8));
         // Due to symmetry breaking.
         assertEquals(16, solver.allInstances().length);
     }

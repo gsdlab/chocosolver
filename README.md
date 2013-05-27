@@ -90,10 +90,9 @@ public static void main(String[] args) {
         Scope.set(installation, 1).set(status, 1).set(ok, 1).set(bad, 1).set(time, 1)
         // Set the scope of every Clafer to 1. The code above could be replaced with
         // "Scope.defaultScope(1)".
-        .intLow(-16).intHigh(16)
+        .intLow(-16).intHigh(16));
         // intLow is the "suggested" lowest integer for solving. intHigh is the "suggested"
         // highest integer.
-        .toScope());
     // find will return true when the solver finds another instance.
     while(solver.find()) {
         // Print the solution in a format similar to ClaferIG.
@@ -107,13 +106,13 @@ Finding Optimal Instances
 Optimizing on a single objective is supported.
 ```java
 ClaferObjective solver = ClaferCompiler.compileMaximize(model, 
-    Scope.defaultScope(1).intLow(-16).intHigh(16).toScope(), 
+    Scope.defaultScope(1).intLow(-16).intHigh(16), 
     time.getRef());
 // The instance where time is maximal.
 System.out.println(solver.optimal());
 
 solver = ClaferCompiler.compileMinimize(model, 
-    Scope.defaultScope(1).intLow(-16).intHigh(16).toScope(), 
+    Scope.defaultScope(1).intLow(-16).intHigh(16), 
     time.getRef());
 // The instance where time is minimal.
 System.out.println(solver.optimal());
@@ -144,7 +143,7 @@ model.addConstraint(ifOnlyIf(some(floats), some(witch)));
 model.addConstraint(none(duck));
 model.addConstraint(some(witch));
 
-ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1).toScope());
+ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
 // Print the min Unsat and near-miss example.
 System.out.println(unsat.minUnsat());
 ```

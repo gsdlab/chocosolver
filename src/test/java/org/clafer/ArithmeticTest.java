@@ -30,7 +30,7 @@ public class ArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10));
         assertEquals(1, solver.allInstances().length);
     }
 
@@ -60,7 +60,7 @@ public class ArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10));
         assertEquals(19, solver.allInstances().length);
     }
 
@@ -96,7 +96,7 @@ public class ArithmeticTest {
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)),
                 sub(joinRef(join($this(), profit)), constant(2))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
         assertEquals(106, solver.allInstances().length);
     }
 
@@ -129,7 +129,7 @@ public class ArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         model.addConstraint(equal(mul(joinRef(global(a)), joinRef(global(b))), constant(12)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(12, solver.allInstances().length);
     }
 
@@ -148,7 +148,7 @@ public class ArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         model.addConstraint(equal(div(constant(12), joinRef(global(a))), joinRef(global(b))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(32, solver.allInstances().length);
     }
 
@@ -178,7 +178,7 @@ public class ArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
         feature.addConstraint(greaterThan(joinRef(join($this(), cost)), constant(5)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10));
         assertEquals(117, solver.allInstances().length);
     }
 }

@@ -43,7 +43,7 @@ public class BoolArithmeticTest {
         model.addConstraint(implies(some(global(c)), and(
                 equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(26, solver.allInstances().length);
     }
 
@@ -75,7 +75,7 @@ public class BoolArithmeticTest {
         model.addConstraint(implies(some(global(c)), ifOnlyIf(
                 equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(42, solver.allInstances().length);
     }
 
@@ -110,7 +110,7 @@ public class BoolArithmeticTest {
         model.addConstraint(implies(some(global(c)), implies(
                 equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(46, solver.allInstances().length);
     }
 
@@ -142,7 +142,7 @@ public class BoolArithmeticTest {
         model.addConstraint(implies(some(global(c)), or(
                 equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(34, solver.allInstances().length);
     }
 
@@ -174,7 +174,7 @@ public class BoolArithmeticTest {
         model.addConstraint(implies(some(global(c)), xor(
                 equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(33, solver.allInstances().length);
     }
 
@@ -218,7 +218,7 @@ public class BoolArithmeticTest {
                 //
                 or(some(d), xor(ifOnlyIf(some(a), some(d)), implies(implies(some(b), some(c)), some(e))))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(12, solver.allInstances().length);
     }
 }

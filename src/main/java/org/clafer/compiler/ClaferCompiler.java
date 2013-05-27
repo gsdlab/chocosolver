@@ -12,6 +12,7 @@ import org.clafer.compiler.ClaferObjective.Objective;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
+import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.constraints.nary.Sum;
@@ -29,6 +30,10 @@ import solver.variables.VF;
  */
 public class ClaferCompiler {
 
+    public static ClaferSolver compile(AstModel in, ScopeBuilder scope) {
+        return compile(in, scope.toScope());
+    }
+
     public static ClaferSolver compile(AstModel in, Scope scope) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
@@ -42,6 +47,10 @@ public class ClaferCompiler {
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
         return new ClaferSolver(solver, solution);
+    }
+
+    public static ClaferObjective compileMaximize(AstModel in, ScopeBuilder scope, AstRef ref) {
+        return compileMaximize(in, scope.toScope(), ref);
     }
 
     public static ClaferObjective compileMaximize(AstModel in, Scope scope, AstRef ref) {
@@ -63,6 +72,10 @@ public class ClaferCompiler {
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
                 IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolVars())));
         return new ClaferObjective(solver, solution, Objective.Maximize, sum);
+    }
+
+    public static ClaferObjective compileMinimize(AstModel in, ScopeBuilder scope, AstRef ref) {
+        return compileMinimize(in, scope.toScope(), ref);
     }
 
     public static ClaferObjective compileMinimize(AstModel in, Scope scope, AstRef ref) {

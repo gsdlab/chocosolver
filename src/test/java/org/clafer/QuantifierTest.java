@@ -57,7 +57,7 @@ public class QuantifierTest {
         model.addConstraint(all(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
         assertEquals(16, solver.allInstances().length);
     }
 
@@ -101,7 +101,7 @@ public class QuantifierTest {
         model.addConstraint(lone(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
         assertEquals(384, solver.allInstances().length);
     }
 
@@ -145,7 +145,7 @@ public class QuantifierTest {
         model.addConstraint(none(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
         assertEquals(144, solver.allInstances().length);
     }
 
@@ -189,7 +189,7 @@ public class QuantifierTest {
         model.addConstraint(one(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
         assertEquals(240, solver.allInstances().length);
     }
 
@@ -233,7 +233,7 @@ public class QuantifierTest {
         model.addConstraint(some(decl(x, union(global(backup), global(firewall))),
                 equal(joinRef(join(x, cost)), constant(1))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
         assertEquals(432, solver.allInstances().length);
     }
 }

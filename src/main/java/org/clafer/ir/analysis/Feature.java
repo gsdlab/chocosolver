@@ -197,7 +197,7 @@ public class Feature {
         c554_SQLITE_DEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(9)));
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(200).intLow(-10000).intHigh(10000).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(200).intLow(-10000).intHigh(10000));
 //        ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());
         System.out.println(solver.getInternalSolver());
         Set<String> names = new HashSet<String>();

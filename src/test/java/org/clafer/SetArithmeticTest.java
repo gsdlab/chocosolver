@@ -36,7 +36,7 @@ public class SetArithmeticTest {
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
         model.addConstraint(equal(joinRef(join(diff(global(backup), global(firewall)), cost)), constant(1)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
         assertEquals(24, solver.allInstances().length);
     }
 
@@ -59,7 +59,7 @@ public class SetArithmeticTest {
         AstConcreteClafer free = model.addChild("Free").refToUnique(feature).withCard(1, 2);
         model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), constant(0)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
         // Can be reduced with better symmetry breaking
         assertEquals(9, solver.allInstances().length);
     }
@@ -83,7 +83,7 @@ public class SetArithmeticTest {
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
         model.addConstraint(equal(joinRef(join(union(global(backup), global(firewall)), cost)), constant(4)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -102,7 +102,7 @@ public class SetArithmeticTest {
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(1, 2);
         model.addConstraint(equal(card(union(global(backup), global(firewall))), constant(3)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(2, solver.allInstances().length);
     }
 
@@ -123,7 +123,7 @@ public class SetArithmeticTest {
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature);
         model.addConstraint(equal(union(global(backup), global(firewall)), global(backup)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(2, solver.allInstances().length);
     }
 
@@ -142,7 +142,7 @@ public class SetArithmeticTest {
         AstConcreteClafer feature = model.addChild("Feature").withCard(3, 4).refTo(backup);
         model.addConstraint(equal(joinRef(global(feature)), global(backup)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         // Assuming no reference symmetry breaking.
         assertEquals(22, solver.allInstances().length);
     }

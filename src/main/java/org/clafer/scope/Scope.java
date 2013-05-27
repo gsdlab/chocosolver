@@ -10,7 +10,7 @@ import org.clafer.ast.AstClafer;
  * <p>
  * An immutable mapping from Clafers to their scope. Also contains the scope of
  * integers for solving, like the bit-width in Alloy, but more flexible because
- * the lowest and highest integers can be set indepedently and does not have to
+ * the lowest and highest integers can be set independently and does not have to
  * be a power of 2.
  * </p>
  * <p>
@@ -29,7 +29,7 @@ import org.clafer.ast.AstClafer;
  * <p>
  * Example 2:
  * <pre>
- * Scope scope = Scope.set(claferA, 3).set(claferB).defaultScope(3).intLow(-16).intHigh(16);
+ * Scope scope = Scope.set(claferA, 3).set(claferB).defaultScope(3).intLow(-16).intHigh(16).toScope();
  * </pre>
  * </p>
  * <p>
@@ -64,7 +64,7 @@ import org.clafer.ast.AstClafer;
  * scope. In example 1, a scope of
  * {@code Scope.intLow(-16).intHigh(16).toScope()} would only attempt the proof
  * for integers between negative and positive 16. In example 2, a scope of
- * {@code Scope.defaultScope(16)} would only attemp the proof for integers
+ * {@code Scope.defaultScope(16)} would only attempt the proof for integers
  * between 0 and positive 16.
  *
  * @author jimmy

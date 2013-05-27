@@ -30,7 +30,7 @@ public class FeatureModelTest {
         }
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model,
-                Scope.defaultScope(100).intLow(-1000).intHigh(1000).toScope(), footprint.getRef());
+                Scope.defaultScope(100).intLow(-1000).intHigh(1000), footprint.getRef());
         assertEquals(-576, solver.optimal().getFst().intValue());
     }
 
@@ -407,7 +407,7 @@ public class FeatureModelTest {
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model, Scope.defaultScope(200)
-                .intLow(-10000).intHigh(10000).toScope(), c2_footprint.getRef());
+                .intLow(-10000).intHigh(10000), c2_footprint.getRef());
         assertEquals(-299, solver.optimal().getFst().intValue());
     }
 }

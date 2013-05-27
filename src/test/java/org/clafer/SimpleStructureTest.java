@@ -44,7 +44,7 @@ public class SimpleStructureTest {
         model.addChild("Human").withCard(1, 1).extending(primate);
         model.addChild("Beaver").withCard(1, 1).extending(animal);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(32, solver.allInstances().length);
     }
 
@@ -65,7 +65,7 @@ public class SimpleStructureTest {
         type.addChild("Truck").withCard(0, 1);
         type.addChild("Van").withCard(0, 1);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(3, solver.allInstances().length);
     }
 
@@ -86,7 +86,7 @@ public class SimpleStructureTest {
         type.addChild("Truck").withCard(0, 1);
         type.addChild("Van").withCard(0, 1);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -107,7 +107,7 @@ public class SimpleStructureTest {
         type.addChild("Truck").withCard(0, 1);
         type.addChild("Van").withCard(0, 1);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(4, solver.allInstances().length);
     }
 
@@ -124,7 +124,7 @@ public class SimpleStructureTest {
         AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
         person.addChild("Age").withCard(2, 2).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2));
         assertEquals(25, solver.allInstances().length);
     }
 
@@ -141,7 +141,7 @@ public class SimpleStructureTest {
         AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
         person.addChild("Age").withCard(2, 2).refToUnique(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2));
         assertEquals(20, solver.allInstances().length);
     }
 
@@ -156,7 +156,7 @@ public class SimpleStructureTest {
 
         model.addChild("Age").withCard(2, 3).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(150, solver.allInstances().length);
     }
 
@@ -171,7 +171,7 @@ public class SimpleStructureTest {
 
         model.addChild("Age").withCard(2, 3).refToUnique(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(80, solver.allInstances().length);
     }
 
@@ -190,7 +190,7 @@ public class SimpleStructureTest {
         model.addChild("Backup").withCard(1, 1).extending(feature);
         model.addChild("Firewall").withCard(1, 2).extending(feature);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2));
         assertEquals(150, solver.allInstances().length);
     }
 
@@ -209,7 +209,7 @@ public class SimpleStructureTest {
         model.addChild("Backup").withCard(1, 1).extending(feature);
         model.addChild("Firewall").withCard(1, 2).extending(feature);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2));
         assertEquals(125, solver.allInstances().length);
     }
 
@@ -226,7 +226,7 @@ public class SimpleStructureTest {
         AstConcreteClafer feature = model.addChild("Feature").withCard(1, 2);
         model.addChild("Free").withCard(1, 1).refTo(feature);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         // Can be reduced to 2 with better symmetry breaking
          assertEquals(3, solver.allInstances().length);
     }
@@ -240,7 +240,7 @@ public class SimpleStructureTest {
 
         model.addChild("Age").withCard(0, 1).refTo(IntType);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(1).intHigh(2).toScope());
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(1).intHigh(2));
         // Even though it should be "3", the current compiler will add "0" to the int range.
         assertEquals(4, solver.allInstances().length);
     }

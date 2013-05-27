@@ -10,6 +10,7 @@
 
     <name>chocosolver</name>
     <url>http://github.com/gsdlab/chocosolver</url>
+    <description>A backend for Clafer based on the Choco 3 constraint programming library.</description>
     
     <developers>
         <developer>
