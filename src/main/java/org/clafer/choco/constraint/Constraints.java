@@ -90,10 +90,6 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint increasing(IntVar[] vars) {
-        return new Increasing(vars, vars[0].getSolver());
-    }
-
     public static Constraint selectN(BoolVar[] bools, IntVar n) {
         IntVar[] vars = new IntVar[bools.length + 1];
         System.arraycopy(bools, 0, vars, 0, bools.length);

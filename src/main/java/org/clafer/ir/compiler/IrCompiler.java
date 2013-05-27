@@ -21,7 +21,6 @@ import java.util.LinkedList;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
-import org.clafer.ir.IrSortInts;
 import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSetUnion;
 import solver.constraints.nary.cnf.ConjunctiveNormalForm;
@@ -221,10 +220,10 @@ public class IrCompiler {
         return asBoolVar(expr.accept(boolExprCompiler, BoolVarNoReify));
     }
 
-    private BoolVar[] compileAsBoolVars(IrBoolExpr... expr) {
-        BoolVar[] vars = new BoolVar[expr.length];
+    private BoolVar[] compileAsBoolVars(IrBoolExpr[] exprs) {
+        BoolVar[] vars = new BoolVar[exprs.length];
         for (int i = 0; i < vars.length; i++) {
-            vars[i] = compileAsBoolVar(expr[i]);
+            vars[i] = compileAsBoolVar(exprs[i]);
         }
         return vars;
     }
@@ -240,10 +239,10 @@ public class IrCompiler {
         return asBoolVar(expr.accept(boolExprCompiler, BoolVarNoReify));
     }
 
-    private IntVar[] compileAsIntVars(IrBoolExpr... expr) {
-        IntVar[] vars = new IntVar[expr.length];
+    private IntVar[] compileAsIntVars(IrBoolExpr[] exprs) {
+        IntVar[] vars = new IntVar[exprs.length];
         for (int i = 0; i < vars.length; i++) {
-            vars[i] = compileAsIntVar(expr[i]);
+            vars[i] = compileAsIntVar(exprs[i]);
         }
         return vars;
     }
@@ -273,10 +272,10 @@ public class IrCompiler {
         return constraint;
     }
 
-    private Constraint[] compileAsConstraints(IrBoolExpr... expr) {
-        Constraint[] constraints = new Constraint[expr.length];
+    private Constraint[] compileAsConstraints(IrBoolExpr[] exprs) {
+        Constraint[] constraints = new Constraint[exprs.length];
         for (int i = 0; i < constraints.length; i++) {
-            constraints[i] = compileAsConstraint(expr[i]);
+            constraints[i] = compileAsConstraint(exprs[i]);
         }
         return constraints;
     }
@@ -285,14 +284,22 @@ public class IrCompiler {
         return expr.accept(intExprCompiler, null);
     }
 
+    private IntVar[] compile(IrIntExpr[] exprs) {
+        IntVar[] vars = new IntVar[exprs.length];
+        for (int i = 0; i < vars.length; i++) {
+            vars[i] = compile(exprs[i]);
+        }
+        return vars;
+    }
+
     private SetVar compile(IrSetExpr expr) {
         return expr.accept(setExprCompiler, null);
     }
 
-    private SetVar[] compile(IrSetExpr[] expr) {
-        SetVar[] vars = new SetVar[expr.length];
+    private SetVar[] compile(IrSetExpr[] exprs) {
+        SetVar[] vars = new SetVar[exprs.length];
         for (int i = 0; i < vars.length; i++) {
-            vars[i] = compile(expr[i]);
+            vars[i] = compile(exprs[i]);
         }
         return vars;
     }
@@ -532,16 +539,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Constraint visit(IrSortInts ir, BoolArg a) {
-            IrIntExpr[] array = ir.getArray();
-            IntVar[] $array = new IntVar[array.length];
-            for (int i = 0; i < $array.length; i++) {
-                $array[i] = compile(array[i]);
-            }
-            return Constraints.increasing($array);
-        }
-
-        @Override
         public Object visit(IrSortStrings ir, BoolArg a) {
             IrIntExpr[][] strings = ir.getStrings();
             IntVar[][] $strings = new IntVar[strings.length][];
@@ -766,11 +763,7 @@ public class IrCompiler {
 
         @Override
         public SetVar visit(IrArrayToSet ir, Void a) {
-            IrIntExpr[] array = ir.getArray();
-            IntVar[] $array = new IntVar[array.length];
-            for (int i = 0; i < $array.length; i++) {
-                $array[i] = array[i].accept(intExprCompiler, a);
-            }
+            IntVar[] $array = compile(ir.getArray());
             SetVar set = numSetVar("ArrayToSet", ir.getEnv(), ir.getKer());
             solver.post(Constraints.arrayToSet($array, set));
             return set;
@@ -778,13 +771,8 @@ public class IrCompiler {
 
         @Override
         public SetVar visit(IrJoinRelation ir, Void a) {
-            IrSetExpr take = ir.getTake();
-            IrSetExpr[] children = ir.getChildren();
-            SetVar $take = compile(take);
-            SetVar[] $children = new SetVar[children.length];
-            for (int i = 0; i < $children.length; i++) {
-                $children[i] = compile(children[i]);
-            }
+            SetVar $take = compile(ir.getTake());
+            SetVar[] $children = compile(ir.getChildren());
             SetVar joinRelation = numSetVar("JoinRelation", ir.getEnv(), ir.getKer());
             solver.post(Constraints.joinRelation($take, $children, joinRelation));
             return joinRelation;

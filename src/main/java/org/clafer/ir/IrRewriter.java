@@ -155,11 +155,6 @@ public class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrSortInts ir, T a) {
-        return sort(rewrite(ir.getArray(), a));
-    }
-
-    @Override
     public IrBoolExpr visit(IrSortStrings ir, T a) {
         IrIntExpr[][] rewritten = new IrIntExpr[ir.getStrings().length][];
         for (int i = 0; i < rewritten.length; i++) {

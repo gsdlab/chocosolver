@@ -133,18 +133,21 @@ public class Optimizer {
             return implies(antecedent, consequent);
         }
 
-//        @Override
-//        public IrSetExpr visit(IrOffset ir, Void a) {
-//            if(ir.getSet() instanceof IrOffset) {
+        @Override
+        public IrSetExpr visit(IrOffset ir, Void a) {
+            if (ir.getSet() instanceof IrOffset) {
                 // Rewrite
                 //    offset(offset(set, a), b)
                 // to
                 //    offset(set, a + b)
                 // This optimization is important for going multiple steps up the
                 // hierarchy.
-//            }
-//            
-//        }
+                IrOffset innerOffset = (IrOffset) ir.getSet();
+                return rewrite(offset(innerOffset.getSet(),
+                        ir.getOffset() + innerOffset.getOffset()), a);
+            }
+            return super.visit(ir, a);
+        }
     };
 
     /**

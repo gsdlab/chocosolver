@@ -749,24 +749,14 @@ public class Irs {
     }
 
     public static IrBoolExpr sort(IrIntExpr... array) {
-        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
+        if (array.length <= 1) {
+            return $(True);
+        }
+        IrBoolExpr[] sort = new IrBoolExpr[array.length - 1];
         for (int i = 0; i < array.length - 1; i++) {
-            if (array[i].getDomain().getHighBound() > array[i + 1].getDomain().getLowBound()) {
-                filter.add(array[i]);
-            }
+            sort[i] = lessThanEqual(array[i], array[i + 1]);
         }
-        if (array.length > 0) {
-            filter.add(array[array.length - 1]);
-        }
-        switch (filter.size()) {
-            case 0:
-            case 1:
-                return $(True);
-            case 2:
-                return lessThanEqual(filter.get(0), filter.get(1));
-            default:
-                return new IrSortInts(filter.toArray(new IrIntExpr[filter.size()]), BoolDomain);
-        }
+        return and(sort);
     }
 
     public static IrBoolExpr sort(IrIntExpr[]... strings) {
@@ -1228,15 +1218,25 @@ public class Irs {
         }
 
         // Compute env
-        IrDomain env = IrUtil.unionEnvs($children);
-
-        // Compute ker
-        TIntIterator iter = take.getKer().iterator();
-        IrDomain ker;
+        TIntIterator iter = take.getEnv().iterator();
+        IrDomain env;
         if (iter.hasNext()) {
             IrDomain domain = $children[iter.next()].getEnv();
             while (iter.hasNext()) {
                 domain = IrUtil.union(domain, $children[iter.next()].getEnv());
+            }
+            env = domain;
+        } else {
+            env = Irs.EmptyDomain;
+        }
+
+        // Compute ker
+        iter = take.getKer().iterator();
+        IrDomain ker;
+        if (iter.hasNext()) {
+            IrDomain domain = $children[iter.next()].getKer();
+            while (iter.hasNext()) {
+                domain = IrUtil.union(domain, $children[iter.next()].getKer());
             }
             ker = domain;
         } else {

@@ -9,8 +9,6 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.Configuration;
-import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
  *

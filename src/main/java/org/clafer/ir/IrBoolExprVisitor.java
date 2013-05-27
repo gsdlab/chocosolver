@@ -51,8 +51,6 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrIntChannel ir, A a);
 
-    public B visit(IrSortInts ir, A a);
-
     public B visit(IrSortStrings ir, A a);
 
     public B visit(IrAllDifferent ir, A a);
