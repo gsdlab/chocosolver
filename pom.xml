@@ -10,6 +10,13 @@
 
     <name>chocosolver</name>
     <url>http://github.com/gsdlab/chocosolver</url>
+    
+    <developers>
+        <developer>
+            <name>Jimmy Liang</name>
+            <email>jliang@gsd.uwaterloo.ca</email>
+        </developer>
+    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

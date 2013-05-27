@@ -1,6 +1,7 @@
 package org.clafer.ast;
 
 /**
+ * An expression in the AST language. Expressions are immutable.
  *
  * @author jimmy
  */

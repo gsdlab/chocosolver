@@ -68,7 +68,7 @@ import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
 /**
- * Compile from AST -> IR
+ * Compile from AST to IR.
  *
  * @author jimmy
  */

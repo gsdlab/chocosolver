@@ -3,7 +3,11 @@ package org.clafer.ast;
 import org.clafer.ast.AstQuantify.Quantifier;
 
 /**
- *
+ * Import this class to access all AST building functions.
+ * <pre>
+ * import static org.clafer.ast.Asts.*;
+ * </pre>
+ * 
  * @author jimmy
  */
 public class Asts {

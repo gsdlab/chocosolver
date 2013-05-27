@@ -13,6 +13,10 @@ import java.util.List;
 import org.clafer.common.Util;
 
 /**
+ * Import this class to access all IR building functions.
+ * <pre>
+ * import static org.clafer.ast.Asts.*;
+ * </pre>
  *
  * @author jimmy
  */
