@@ -1121,7 +1121,7 @@ public class AstCompiler {
             return equal(setCard, card.getLow());
         }
         if (card.hasLow() && card.hasHigh()) {
-            return between(setCard, card.getLow(), card.getHigh());
+            return within(setCard, boundDomain(card.getLow(), card.getHigh()));
         }
         if (card.hasLow()) {
             return greaterThanEqual(setCard, card.getLow());

@@ -394,26 +394,32 @@ public class Irs {
         return new IrXor(left, right, BoolDomain);
     }
 
-    public static IrBoolExpr between(IrIntExpr var, int low, int high) {
+    public static IrBoolExpr within(IrIntExpr var, IrDomain range) {
         IrDomain domain = var.getDomain();
-        if (domain.getLowBound() >= low && domain.getHighBound() <= high) {
+        if (range.isBounded()
+                && domain.getLowBound() >= range.getLowBound()
+                && domain.getHighBound() <= range.getHighBound()) {
             return $(True);
         }
-        if (domain.getLowBound() > high || domain.getHighBound() < low) {
+        if (domain.getLowBound() > range.getHighBound()
+                || domain.getHighBound() < range.getLowBound()) {
             return $(False);
         }
-        return new IrBetween(var, low, high, BoolDomain);
+        return new IrWithin(var, range, BoolDomain);
     }
 
-    public static IrBoolExpr notBetween(IrIntExpr var, int low, int high) {
+    public static IrBoolExpr notWithin(IrIntExpr var, IrDomain range) {
         IrDomain domain = var.getDomain();
-        if (domain.getLowBound() >= low && domain.getHighBound() <= high) {
+        if (range.isBounded()
+                && domain.getLowBound() >= range.getLowBound()
+                && domain.getHighBound() <= range.getHighBound()) {
             return $(False);
         }
-        if (domain.getLowBound() > high || domain.getHighBound() < low) {
+        if (domain.getLowBound() > range.getHighBound()
+                || domain.getHighBound() < range.getLowBound()) {
             return $(True);
         }
-        return new IrNotBetween(var, low, high, BoolDomain);
+        return new IrNotWithin(var, range, BoolDomain);
     }
 
     private static boolean isBoolDomain(IrDomain domain) {
@@ -641,6 +647,9 @@ public class Irs {
         if (!IrUtil.intersects(element.getDomain(), set.getEnv())) {
             return $(False);
         }
+        if (IrUtil.isConstant(set)) {
+            return within(element, set.getEnv());
+        }
         return new IrMember(element, set, BoolDomain);
     }
 
@@ -650,6 +659,9 @@ public class Irs {
         }
         if (IrUtil.isSubsetOf(element.getDomain(), set.getKer())) {
             return $(False);
+        }
+        if (IrUtil.isConstant(set)) {
+            return notWithin(element, set.getEnv());
         }
         return new IrNotMember(element, set, BoolDomain);
     }

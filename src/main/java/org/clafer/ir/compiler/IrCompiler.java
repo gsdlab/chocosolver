@@ -8,9 +8,9 @@ import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIfThenElse;
 import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrBetween;
+import org.clafer.ir.IrWithin;
 import org.clafer.ir.IrMember;
-import org.clafer.ir.IrNotBetween;
+import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrOr;
@@ -372,15 +372,23 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrBetween ir, BoolArg a) {
-            IntVar $var = ir.getVar().accept(intExprCompiler, null);
-            return _between($var, ir.getLow(), ir.getHigh());
+        public Object visit(IrWithin ir, BoolArg a) {
+            IntVar var = compile(ir.getVar());
+            IrDomain range = ir.getRange();
+            if (range.isBounded()) {
+                return _within(var, range.getLowBound(), range.getHighBound());
+            }
+            return _within(var, range.getValues());
         }
 
         @Override
-        public Object visit(IrNotBetween ir, BoolArg a) {
-            IntVar $var = ir.getVar().accept(intExprCompiler, null);
-            return _not_between($var, ir.getLow(), ir.getHigh());
+        public Object visit(IrNotWithin ir, BoolArg a) {
+            IntVar var = compile(ir.getVar());
+            IrDomain range = ir.getRange();
+            if (range.isBounded()) {
+                return _not_within(var, range.getLowBound(), range.getHighBound());
+            }
+            return _not_within(var, range.getValues());
         }
 
         @Override
@@ -961,12 +969,20 @@ public class IrCompiler {
         return ICF.alldifferent(vars, "AC");
     }
 
-    private static Constraint _between(IntVar var, int low, int high) {
+    private static Constraint _within(IntVar var, int low, int high) {
         return ICF.member(var, low, high);
     }
 
-    private static Constraint _not_between(IntVar var, int low, int high) {
+    private static Constraint _within(IntVar var, int[] values) {
+        return ICF.member(var, values);
+    }
+
+    private static Constraint _not_within(IntVar var, int low, int high) {
         return ICF.not_member(var, low, high);
+    }
+
+    private static Constraint _not_within(IntVar var, int[] values) {
+        return ICF.not_member(var, values);
     }
 
     private static Constraint _member(IntVar element, SetVar set) {

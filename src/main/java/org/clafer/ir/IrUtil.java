@@ -75,19 +75,22 @@ public class IrUtil {
     public static boolean isConstant(IrSet s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
-        return env.equals(ker);
+        assert IrUtil.isSubsetOf(ker, env);
+        return env.size() == ker.size();
     }
 
     public static int[] getConstant(IrSet s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
-        return env.equals(ker) ? ker.getValues() : null;
+        assert IrUtil.isSubsetOf(ker, env);
+        return env.size() == ker.size() ? ker.getValues() : null;
     }
 
     public static IrSetVar asConstant(IrSetVar s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
-        return env.equals(ker) ? Irs.constant(ker.getValues()) : s;
+        assert IrUtil.isSubsetOf(ker, env);
+        return env.size() == ker.size() ? Irs.constant(ker.getValues()) : s;
     }
 
     public static boolean containsAll(int[] values, IrDomain domain) {

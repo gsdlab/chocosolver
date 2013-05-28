@@ -83,12 +83,4 @@ public class UnsatTest {
         assertEquals(0, unsatInstance.getSnd().getTopClafers()[0].getId());
         assertEquals(2, unsatInstance.getSnd().getTopClafers()[0].getRef());
     }
-
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-        BoolVar a = VF.bool("a", solver);
-        BoolVar b = VF.bool("b", solver);
-        solver.post(ICF.arithm(a, "+", VF.not(b), "=", 2));
-        System.out.println(solver.findSolution());
-    }
 }

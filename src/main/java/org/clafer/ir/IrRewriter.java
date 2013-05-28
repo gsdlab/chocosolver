@@ -105,13 +105,13 @@ public class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrBetween ir, T a) {
-        return between(rewrite(ir.getVar(), a), ir.getLow(), ir.getHigh());
+    public IrBoolExpr visit(IrWithin ir, T a) {
+        return within(rewrite(ir.getVar(), a), ir.getRange());
     }
 
     @Override
-    public IrBoolExpr visit(IrNotBetween ir, T a) {
-        return notBetween(rewrite(ir.getVar(), a), ir.getLow(), ir.getHigh());
+    public IrBoolExpr visit(IrNotWithin ir, T a) {
+        return notWithin(rewrite(ir.getVar(), a), ir.getRange());
     }
 
     @Override

@@ -10,8 +10,9 @@ import gnu.trove.iterator.TIntIterator;
 public interface IrDomain {
 
     /**
-     * Checks if this domain is a contiguous interval. This domain is contiguous
-     * if it contains every value between its lower and upper bound.
+     * Checks if this domain is defined as a lower and upper bound. If the
+     * domain is bounded then it contains every value between its lower and
+     * upper bound.
      *
      * @return {@code true} if and only if this domain is a contiguous interval,
      * {@code false} otherwise
@@ -53,28 +54,28 @@ public interface IrDomain {
 
     /**
      * Returns how many values are contained in this domain.
-     * 
+     *
      * @return the size of this domain
      */
     public int size();
 
     /**
      * Returns all the values contained in this domain.
-     * 
+     *
      * @return values contained in this domain
      */
     public int[] getValues();
 
     /**
      * Iterate over the domain in increasing order.
-     * 
+     *
      * @return an iterator over the values in this domain in increasing order
      */
     public TIntIterator iterator();
 
     /**
      * * Iterate over the domain in the specified order.
-     * 
+     *
      * @param increasing increasing or decreasing order
      * @return an iterator over the values in this domain in the order specified
      */
