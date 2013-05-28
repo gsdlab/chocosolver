@@ -62,17 +62,25 @@ public class PropUtil {
 
     /**
      * Checks if it is possible for an integer variable to instantiate to a
-     * value in the set variable.
+     * value in the set variable. Assumes the set variables envelope is sorted.
      *
      * @param ivar the integer variable
-     * @param svar the set variable
+     * @param svar the set variable whose envelope is sorted
      * @return {@code true} if and only if {@code (dom(ivar) intersect env(svar)) !=
      *         empty set}, {@code false} otherwise
      */
     public static boolean domainIntersectEnv(IntVar ivar, SetVar svar) {
         if (ivar.getDomainSize() < svar.getEnvelopeSize()) {
+            int i = ivar.getLB();
+            int envFirst = svar.getEnvelopeFirst();
+            if (envFirst >= i) {
+                if (envFirst == i || ivar.contains(envFirst)) {
+                    return true;
+                }
+                i = ivar.nextValue(envFirst);
+            }
             int ub = ivar.getUB();
-            for (int i = Math.max(ivar.getLB(), svar.getEnvelopeFirst()); i <= ub; i = ivar.nextValue(i)) {
+            for (; i <= ub; i = ivar.nextValue(i)) {
                 if (svar.envelopeContains(i)) {
                     return true;
                 }

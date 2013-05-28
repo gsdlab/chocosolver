@@ -1,5 +1,6 @@
 package org.clafer;
 
+import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
@@ -151,34 +152,95 @@ public class ArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(32, solver.allInstances().length);
     }
+    /**
+     * <pre>
+     * A -> integer
+     * B -> integer
+     * [ A.ref = -B.ref]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testMinus() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
+        model.addConstraint(equal(joinRef(global(a)), minus(joinRef(global(b)))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-3).intHigh(3));
+        assertEquals(7, solver.allInstances().length);
+    }
 
     /**
      * <pre>
      * Feature
-     *     Cost -> Int 2
-     *     [this.Cost > 5]
+     *     Cost -> Int
+     *     Performance -> Int
+     *     Frugal ?
+     *     [(if Frugal then this.Cost.ref else this.Performance.ref) &lt; 2]
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testSumSetGreaterThan() {
+    public void testTernary() {
         /*
          * import Control.Monad
-         * 
+         * import Data.List
+         *
          * solutions = do
-         *     cost1 <- [-10 .. 10]
-         *     cost2 <- [-10 .. 10]
-         *     -- Set sum
-         *     let sum = if cost1 == cost2 then cost1 else cost1 + cost2
-         *     guard $ sum > 5
-         *     return (cost1, cost2)
+         *     cost <- [0..2]
+         *     performance <- [0..2]
+         *     frugal <- [True, False]
+         *     guard $ (if frugal then cost else performance) < 2
+         *     return (cost, performance, frugal)
          */
         AstModel model = newModel();
 
-        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
-        AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
-        feature.addConstraint(greaterThan(joinRef(join($this(), cost)), constant(5)));
+        AstConcreteClafer feature = model.addChild("Feature").withCard(Mandatory);
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(Mandatory).refTo(IntType);
+        AstConcreteClafer performance = feature.addChild("Performance").withCard(Mandatory).refTo(IntType);
+        AstConcreteClafer frugal = feature.addChild("Frugal").withCard(Optional);
+        feature.addConstraint(lessThan(ifThenElse(some(frugal),
+                joinRef(join($this(), cost)), joinRef(join($this(), performance))), constant(2)));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10));
-        assertEquals(117, solver.allInstances().length);
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(0).intHigh(2));
+        assertEquals(12, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     Cost -> Int
+     * Backup : Feature
+     * Firewall : Feature
+     * Frugal ?
+     * [(if Frugal then Backup else Firewall).Cost.ref &lt; 2]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testTernaryJoin() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * solutions = do
+         *     cost <- [0..2]
+         *     performance <- [0..2]
+         *     frugal <- [True, False]
+         *     guard $ (if frugal then cost else performance) < 2
+         *     return (cost, performance, frugal)
+         */
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(Mandatory).refTo(IntType);
+        AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(Mandatory);
+        AstConcreteClafer firewall = model.addChild("Fireall").extending(feature).withCard(Mandatory);
+        AstConcreteClafer frugal = model.addChild("Frugal").withCard(Optional);
+        feature.addConstraint(lessThan(
+                joinRef(join(ifThenElse(some(frugal), global(backup), global(firewall)), cost)),
+                constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(0).intHigh(2));
+        assertEquals(12, solver.allInstances().length);
     }
 }

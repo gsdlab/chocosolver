@@ -64,9 +64,11 @@ import static org.clafer.ast.Asts.*;
 public static void main(String[] args) {
     AstModel model = newModel();
     
-    AstConcreteClafer installation = model.addChild("Installation").withCard(1, 1);
+    AstConcreteClafer installation = model.addChild("Installation").withCard(Mandatory);
+        // withCard(Mandatory) and withCard(1, 1) is the same. Pick the one you find more readable.
         AstConcreteClafer status = installation.addChild("Status").withCard(1, 1).withGroupCard(1, 1);
-            AstConcreteClafer ok = status.addChild("Ok").withCard(0, 1);
+            AstConcreteClafer ok = status.addChild("Ok").withCard(Optional);
+            // withCard(Optional) and withCard(0, 1) is the same.
             AstConcreteClafer bad = status.addChild("Bad").withCard(0, 1);
             // Note that ok and bad have an explicit optional cardinality, whereas
             // it was implicit in the oringal model.

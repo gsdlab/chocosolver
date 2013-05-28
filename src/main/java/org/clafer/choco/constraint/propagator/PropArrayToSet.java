@@ -1,6 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
-import gnu.trove.set.hash.TIntHashSet;
+import org.clafer.collection.FixedCapacityIntSet;
 import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
@@ -146,7 +146,7 @@ public class PropArrayToSet extends Propagator<Variable> {
             return ESat.FALSE;
         }
         boolean tsInstantiated = true;
-        TIntHashSet values = new TIntHashSet();
+        FixedCapacityIntSet values = new FixedCapacityIntSet(as.length);
         for (IntVar a : as) {
             if (!PropUtil.domainIntersectEnv(a, s)) {
                 return ESat.FALSE;

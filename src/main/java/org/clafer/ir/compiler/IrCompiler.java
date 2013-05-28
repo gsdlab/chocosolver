@@ -71,7 +71,6 @@ import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.ICF;
-import solver.constraints.LCF;
 import solver.constraints.Operator;
 import solver.constraints.nary.Sum;
 import solver.constraints.nary.cnf.LogOp;
@@ -132,14 +131,6 @@ public class IrCompiler {
 
     private IntVar numIntVar(String name, IrDomain domain) {
         return intVar(name + "#" + varNum++, domain);
-    }
-
-    private IntVar numIntVar(String name, int low, int high) {
-        return VF.enumerated(name + "#" + varNum++, low, high, solver);
-    }
-
-    private IntVar numIntVar(String name, int[] dom) {
-        return VF.enumerated(name + "#" + varNum++, dom, solver);
     }
 
     private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
@@ -723,7 +714,7 @@ public class IrCompiler {
             for (int i = 0; i < $array.length; i++) {
                 $array[i] = array[i].accept(intExprCompiler, a);
             }
-            IntVar element = numIntVar("Element", getLB($array), getUB($array));
+            IntVar element = numIntVar("Element", ir.getDomain());
             solver.post(_element($index, $array, element));
             return element;
         }
@@ -840,12 +831,14 @@ public class IrCompiler {
         return ICF.clauses(tree, solver);
     }
 
-    private static Constraint _implies(BoolVar b, Constraint c) {
-        return LCF.ifThen(b, c);
+    private static Constraint _implies(BoolVar antecedent, Constraint consequent) {
+        return _implies(antecedent, consequent.reif());
     }
 
-    private static Constraint _ifThenElse(BoolVar b, Constraint c, Constraint d) {
-        return LCF.ifThenElse(b, c, d);
+    private static Constraint _ifThenElse(BoolVar antecedent, Constraint consequent, Constraint alternative) {
+        Constraint thenClause = _implies(antecedent, consequent);
+        Constraint elseClause = _implies(antecedent.not(), alternative);
+        return _and(thenClause.reif(), elseClause.reif());
     }
 
     private static IntVar _sum(IntVar var1, IntVar var2) {
@@ -1009,28 +1002,6 @@ public class IrCompiler {
 
     private static Constraint _subset_eq(SetVar... sets) {
         return SCF.subsetEq(sets);
-    }
-
-    private int getLB(IntVar... vars) {
-        if (vars.length < 0) {
-            throw new IllegalArgumentException();
-        }
-        int lb = vars[0].getLB();
-        for (int i = 1; i < vars.length; i++) {
-            lb = Math.min(lb, vars[i].getLB());
-        }
-        return lb;
-    }
-
-    private int getUB(IntVar... vars) {
-        if (vars.length < 0) {
-            throw new IllegalArgumentException();
-        }
-        int ub = vars[0].getUB();
-        for (int i = 1; i < vars.length; i++) {
-            ub = Math.max(ub, vars[i].getUB());
-        }
-        return ub;
     }
     private static final BoolArg ConstraintNoReify = new BoolArg(null, Preference.Constraint);
     private static final BoolArg BoolVarNoReify = new BoolArg(null, Preference.BoolVar);

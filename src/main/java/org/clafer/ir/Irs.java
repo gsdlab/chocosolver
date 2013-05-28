@@ -1100,7 +1100,7 @@ public class Irs {
         }
         Integer consequentConstant = IrUtil.getConstant(consequent);
         Integer alternativeConstant = IrUtil.getConstant(alternative);
-        if (Util.equals(consequentConstant, alternativeConstant)) {
+        if (consequentConstant != null && consequentConstant.equals(alternativeConstant)) {
             return $(constant(consequentConstant));
         }
         IrDomain domain = IrUtil.union(consequent.getDomain(), alternative.getDomain());
@@ -1414,9 +1414,7 @@ public class Irs {
         }
         IrDomain env = IrUtil.union(consequent.getEnv(), alternative.getEnv());
         IrDomain ker = IrUtil.intersection(consequent.getKer(), alternative.getKer());
-        int low = Math.min(consequent.getCard().getLowBound(), alternative.getCard().getLowBound());
-        int high = Math.min(consequent.getCard().getHighBound(), alternative.getCard().getHighBound());
-        IrDomain card = boundDomain(Math.max(low, ker.size()), Math.min(high, env.size()));
+        IrDomain card = IrUtil.union(consequent.getCard(), alternative.getCard());
         return new IrSetTernary(antecedent, consequent, alternative, env, ker, card);
     }
 }

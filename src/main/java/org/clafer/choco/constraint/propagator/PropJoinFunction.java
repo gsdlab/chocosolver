@@ -1,7 +1,7 @@
 package org.clafer.choco.constraint.propagator;
 
-import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
+import org.clafer.collection.FixedCapacityIntSet;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -216,7 +216,7 @@ public class PropJoinFunction extends Propagator<Variable> {
         if (!take.instantiated() || !to.instantiated()) {
             return ESat.UNDEFINED;
         }
-        TIntHashSet values = new TIntHashSet();
+        FixedCapacityIntSet values = new FixedCapacityIntSet(refs.length);
         for (IntVar ref : refs) {
             if (!ref.instantiated()) {
                 return ESat.UNDEFINED;

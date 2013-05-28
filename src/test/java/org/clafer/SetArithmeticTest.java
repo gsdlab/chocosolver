@@ -146,4 +146,72 @@ public class SetArithmeticTest {
         // Assuming no reference symmetry breaking.
         assertEquals(22, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * Feature
+     *     Cost ->> Int 2
+     *     Performance ->> Int 2..3
+     *     Frugal ?
+     *     [(if Frugal then this.Cost.ref else this.Performance.ref) &lt; 2]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testTernary() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * solutions = do
+         *     cost <- sequence $ replicate 2 [0..2]
+         *     numPerformance <- [2..3]
+         *     performance <- sequence $ replicate numPerformance [0..2]
+         *     frugal <- [True, False]
+         *     guard $ sum (if nub frugal then nub cost else performance) < 2
+         *     return (cost, performance, frugal)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
+        AstConcreteClafer performance = feature.addChild("Performance").withCard(2, 3).refTo(IntType);
+        AstConcreteClafer frugal = feature.addChild("Frugal").withCard(0, 1);
+        feature.addConstraint(lessThan(ifThenElse(some(frugal),
+                joinRef(join($this(), cost)), joinRef(join($this(), performance))), constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(0).intHigh(2));
+        assertEquals(252, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Feature
+     *     Cost ->> Int 2
+     *     Frugal ?
+     *     [(if Frugal then this.Cost.ref else 0) &lt; 2]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testTernaryWithConstant() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * solutions = do
+         *     cost <- sequence $ replicate 2 [0..2]
+         *     frugal <- [True, False]
+         *     guard $ sum (if frugal then nub cost else [0]) < 2
+         *     return (cost, frugal)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
+        AstConcreteClafer cost = feature.addChild("Cost").withCard(2, 2).refTo(IntType);
+        AstConcreteClafer frugal = feature.addChild("Frugal").withCard(0, 1);
+        feature.addConstraint(lessThan(ifThenElse(some(frugal),
+                joinRef(join($this(), cost)), constant(0)), constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(0).intHigh(2));
+        assertEquals(13, solver.allInstances().length);
+    }
 }

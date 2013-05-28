@@ -227,19 +227,9 @@ public class AstCompiler {
             IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
                     refOffset, refOffset + getScope(clafer));
             if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
-                if (AstUtil.isTop(clafer)) {
-                    if (clafer.getCard().isExact()) {
-                        assert clafer.getCard().getLow() == refs.length;
-                        module.addConstraint(allDifferent($(refs)));
-                    } else {
-                        for (int i = 0; i < refs.length; i++) {
-                            for (int j = i + 1; j < refs.length; j++) {
-                                module.addConstraint(
-                                        implies(and(members[i], members[j]),
-                                        notEqual($(refs[i]), $(refs[j]))));
-                            }
-                        }
-                    }
+                if (getGlobalCard(clafer).isExact()) {
+                    assert getGlobalCard(clafer).getLow() == refs.length;
+                    module.addConstraint(allDifferent($(refs)));
                 } else {
                     for (int i = 0; i < refs.length; i++) {
                         for (int j = i + 1; j < refs.length; j++) {

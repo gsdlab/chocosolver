@@ -23,6 +23,25 @@ public class FList<E> implements Iterable<E> {
     }
 
     /**
+     * Returns the first element of the list.
+     *
+     * @return the head of the list
+     */
+    public E getHead() {
+        return head;
+    }
+
+    /**
+     * Returns the a sublist of this list without the first element. If this
+     * list is of length 1, then tail is {@code null}
+     *
+     * @return the tail of the list
+     */
+    public FList<E> getTail() {
+        return tail;
+    }
+
+    /**
      * Checks if the list is empty.
      *
      * @param list the list
@@ -78,52 +97,8 @@ public class FList<E> implements Iterable<E> {
     }
 
     /**
-     * Checks if two lists are equivalent. This function is preferred over
-     * {@link FList#equals(Object)} because it safely handles the empty list.
-     *
-     * @param l1 the first list
-     * @param l2 the second list
-     * @return {@code true} if and only if the first and second list are
-     * equivalent, {@code false} otherwise
-     */
-    public static <E> boolean equals(FList<E> l1, FList<E> l2) {
-        if (isEmpty(l1)) {
-            return isEmpty(l2);
-        }
-        if (isEmpty(l2)) {
-            return isEmpty(l1);
-        }
-        if (isEmpty(l1.tail)) {
-            return isEmpty(l2.tail);
-        }
-        if (isEmpty(l2.tail)) {
-            return false;
-        }
-        return Util.equals(l1.head, l2.head) && equals(l1.tail, l2.tail);
-    }
-
-    /**
-     * Returns the first element of the list.
-     *
-     * @return the head of the list
-     */
-    public E getHead() {
-        return head;
-    }
-
-    /**
-     * Returns the a sublist of this list without the first element. If this
-     * list is of length 1, then tail is {@code null}
-     *
-     * @return the tail of the list
-     */
-    public FList<E> getTail() {
-        return tail;
-    }
-
-    /**
      * Converts this functional list to an imperative list.
-     * 
+     *
      * @return a copy of this list
      */
     public List<E> toList() {
@@ -148,8 +123,8 @@ public class FList<E> implements Iterable<E> {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof FList) {
-            FList<E> other = (FList) obj;
-            return equals(this, other);
+            FList<?> other = (FList<?>) obj;
+            return head.equals(other.head) && Util.equals(tail, other.tail);
         }
         return false;
     }
@@ -161,7 +136,7 @@ public class FList<E> implements Iterable<E> {
     public int hashCode() {
         int hash = 1;
         for (FList<E> current = this; current != null; current = current.tail) {
-            hash = 31 * hash + (current.head == null ? 0 : current.head.hashCode());
+            hash = 31 * hash + Util.hashCode(current.head);
         }
         return hash;
     }

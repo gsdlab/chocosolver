@@ -7,7 +7,7 @@ import org.clafer.ast.AstQuantify.Quantifier;
  * <pre>
  * import static org.clafer.ast.Asts.*;
  * </pre>
- * 
+ *
  * @author jimmy
  */
 public class Asts {
@@ -16,6 +16,27 @@ public class Asts {
     }
     public static final AstIntClafer IntType = AstIntClafer.Singleton;
     public static final AstBoolClafer BoolType = AstBoolClafer.Singleton;
+    // Cardinality keywords
+    public static final Card Any = new Card();
+    public static final Card Optional = new Card(0, 1);
+    public static final Card Mandatory = new Card(1, 1);
+    public static final Card Many = new Card(1);
+    // Not going to define group cardinality key words since they are confusing
+    // and they don't work like they do in the Clafer compiler. For example:
+    //   opt A
+    //       B
+    //       C
+    // is desugarred in the Clafer compiler to
+    //   opt A
+    //       B ?
+    //       C ?
+    // So the keywords implicitly affect the cardinalities of the children. If
+    // these keywords were defined in the API as below, they do not desugar the
+    // children and the behaviour is unexpected. Hence leave them undefined.
+    // public static final Card Opt = new Card();
+    // public static final Card Mux = new Card(0, 1);
+    // public static final Card Xor = new Card(1, 1);
+    // public static final Card Or = new Card(1);
 
     public static AstModel newModel() {
         return new AstModel();
