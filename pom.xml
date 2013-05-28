@@ -81,6 +81,7 @@
                 <version>0.6.2.201302030002</version>
                 <executions>
                     <execution>
+                        <phase>process-test-classes</phase>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>

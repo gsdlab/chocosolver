@@ -661,7 +661,7 @@ public class Irs {
         if (subset.getCard().getLowBound() == superset.getCard().getHighBound()) {
             return equal(subset, superset);
         }
-        return subsetEq(subset, superset);
+        return new IrSubsetEq(subset, superset, BoolDomain);
     }
 
     public static IrBoolExpr asBool(IrIntExpr expr) {

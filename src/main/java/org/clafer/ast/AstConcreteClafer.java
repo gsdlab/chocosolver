@@ -12,14 +12,24 @@ public class AstConcreteClafer extends AstClafer {
     private final AstClafer parent;
     private Card card = new Card();
 
-    AstConcreteClafer(String name) {
-        super(name);
+    AstConcreteClafer(String name, AstIdFactory idFactory) {
+        super(name, idFactory);
         this.parent = null;
     }
 
-    AstConcreteClafer(String name, AstClafer parent) {
-        super(name);
+    AstConcreteClafer(String name, AstClafer parent,  AstIdFactory idFactory) {
+        super(name, idFactory);
         this.parent = Check.notNull(parent);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AstId<AstConcreteClafer> getId() {
+        @SuppressWarnings("unchecked")
+        AstId<AstConcreteClafer> id = (AstId<AstConcreteClafer>) super.getId();
+        return id;
     }
 
     /**

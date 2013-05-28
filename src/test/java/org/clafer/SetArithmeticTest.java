@@ -310,4 +310,68 @@ public class SetArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(148, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * Cost ->> Int 2..3
+     * Payment ->> Int 2..3
+     * [Cost.ref in Payment.ref]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSetInSet() {
+        /*
+         * import Control.Monad
+         * 
+         * isSubsetOf = all . flip elem
+         * 
+         * solutions = do
+         *     numCost <- [2,3]
+         *     numPayment <- [2,3]
+         *     cost <- sequence $ replicate numCost [-1..1]
+         *     payment <- sequence $ replicate numPayment [-1..1]
+         *     guard $ cost `isSubsetOf` payment
+         *     return (cost, payment)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
+        AstConcreteClafer payment = model.addChild("Payment").withCard(2, 3).refTo(IntType);
+        model.addConstraint(in(joinRef(global(cost)), joinRef(global(payment))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
+        assertEquals(516, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Cost ->> Int 2..3
+     * Payment ->> Int 2..3
+     * [Cost.ref not in Payment.ref]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSetNotInSet() {
+        /*
+         * import Control.Monad
+         * 
+         * isSubsetOf = all . flip elem
+         * 
+         * solutions = do
+         *     numCost <- [2,3]
+         *     numPayment <- [2,3]
+         *     cost <- sequence $ replicate numCost [-1..1]
+         *     payment <- sequence $ replicate numPayment [-1..1]
+         *     guard $ not (cost `isSubsetOf` payment)
+         *     return (cost, payment)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
+        AstConcreteClafer payment = model.addChild("Payment").withCard(2, 3).refTo(IntType);
+        model.addConstraint(notIn(joinRef(global(cost)), joinRef(global(payment))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
+        assertEquals(780, solver.allInstances().length);
+    }
 }

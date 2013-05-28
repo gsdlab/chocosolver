@@ -13,8 +13,18 @@ public class AstAbstractClafer extends AstClafer {
 
     private final List<AstClafer> subs = new ArrayList<AstClafer>();
 
-    AstAbstractClafer(String name) {
-        super(name);
+    AstAbstractClafer(String name, AstIdFactory idFactory) {
+        super(name, idFactory);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AstId<AstAbstractClafer> getId() {
+        @SuppressWarnings("unchecked")
+        AstId<AstAbstractClafer> id = (AstId<AstAbstractClafer>) super.getId();
+        return id;
     }
 
     /**
@@ -44,7 +54,7 @@ public class AstAbstractClafer extends AstClafer {
 
     /**
      * Returns the Clafers that extend this Clafer
-     * 
+     *
      * @return this Clafers subtypes
      */
     public List<AstClafer> getSubs() {

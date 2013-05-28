@@ -466,7 +466,7 @@ public class IrCompiler {
                 case Equal:
                     return _equal(compile(ir.getLeft()), compile(ir.getRight()));
                 case NotEqual:
-                    return _all_different(compile(ir.getLeft()), compile(ir.getRight()));
+                    return _not_equal(compile(ir.getLeft()), compile(ir.getRight()));
                 default:
                     throw new IrException();
             }
@@ -953,8 +953,8 @@ public class IrCompiler {
         return Constraints.equal(var1, var2);
     }
 
-    private static Constraint _all_different(SetVar... vars) {
-        return SCF.all_different(vars);
+    private static Constraint _not_equal(SetVar var1, SetVar var2) {
+        return Constraints.notEqual(var1, var2);
     }
 
     private static Constraint _all_different(IntVar... vars) {

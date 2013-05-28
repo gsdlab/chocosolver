@@ -15,6 +15,7 @@ import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
 import org.clafer.choco.constraint.propagator.PropReifyNotEqualXC;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
+import org.clafer.choco.constraint.propagator.PropSetNotEqual;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.common.Util;
@@ -67,6 +68,12 @@ public class Constraints {
     public static Constraint equal(SetVar s1, SetVar s2) {
         Constraint constraint = new Constraint(new SetVar[]{s1, s2}, s1.getSolver());
         constraint.setPropagators(new PropSetEqual(s1, s2));
+        return constraint;
+    }
+
+    public static Constraint notEqual(SetVar s1, SetVar s2) {
+        Constraint constraint = new Constraint(new SetVar[]{s1, s2}, s1.getSolver());
+        constraint.setPropagators(new PropSetNotEqual(s1, s2));
         return constraint;
     }
 

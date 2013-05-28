@@ -6,22 +6,26 @@ import java.util.List;
 import org.clafer.common.Check;
 
 /**
- * A Clafer in the model. A Clafer represents both the set and the type. A concrete
- * is either abstract, concrete, or primitive.
- * 
+ * A Clafer in the model. A Clafer represents both the set and the type. A
+ * concrete is either abstract, concrete, or primitive.
+ *
  * @author jimmy
  */
 public abstract class AstClafer implements AstVar {
 
     private final String name;
+    protected final AstIdFactory idFactory;
+    private final AstId<? extends AstClafer> id;
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard = new Card();
     private final List<AstConcreteClafer> children = new ArrayList<AstConcreteClafer>();
     private final List<AstConstraint> constraints = new ArrayList<AstConstraint>();
 
-    AstClafer(String name) {
+    AstClafer(String name, AstIdFactory idFactory) {
         this.name = Check.notNull(name);
+        this.idFactory = Check.notNull(idFactory);
+        this.id = idFactory.newId();
     }
 
     /**
@@ -32,6 +36,15 @@ public abstract class AstClafer implements AstVar {
     @Override
     public String getName() {
         return name;
+    }
+
+    /**
+     * Returns the unique identifier for this Clafer.
+     * 
+     * @return the unique identifier for this Clafer
+     */
+    public AstId<? extends AstClafer> getId() {
+        return id;
     }
 
     /**
@@ -190,7 +203,7 @@ public abstract class AstClafer implements AstVar {
      * @return the new child
      */
     public AstConcreteClafer addChild(String name) {
-        AstConcreteClafer child = new AstConcreteClafer(name, this);
+        AstConcreteClafer child = new AstConcreteClafer(name, this, idFactory);
         children.add(child);
         return child;
     }
