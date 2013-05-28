@@ -214,11 +214,4 @@ public class Scope {
         }
         return result.append('}').toString();
     }
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-        BoolVar a = VF.bool("a", solver);
-        BoolVar b = VF.bool("b", solver);
-        solver.post(ICF.arithm(a, "+", VF.not(b), "=", 2));
-        System.out.println(solver.findSolution());
-    }
 }

@@ -51,8 +51,8 @@ public class JavascriptContext {
             String key = entry.getKey();
             AstClafer clafer = resolvedClafers.get(key);
             if (clafer == null) {
-                System.out.println(resolvedClafers);
-                throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\"");
+                throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\", "
+                        + "known Clafers " + resolvedClafers.keySet() + ".");
             }
             resolvedScope.put(clafer, entry.getValue());
         }

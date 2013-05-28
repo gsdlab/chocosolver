@@ -5,7 +5,9 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.Card;
+import org.clafer.collection.Pair;
 import org.clafer.javascript.Javascript;
+import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -17,14 +19,19 @@ public class JavascriptTest {
 
     @Test
     public void testReadModel() throws ScriptException {
-        AstModel model = Javascript.readModel(
-                "a = clafer('A').withCard(1,1)\n"
-                + "b = abstract('B')\n"
-                + "c = b.addChild('C').extending(b).withGroupCard(0, 1)").getFst();
+        Pair<AstModel, Scope> pair = Javascript.readModel(
+                "scope({A:3, B:2, C:1})\n"
+                + "defaultScope(2)\n"
+                + "intRange(-10, 20);\n"
+                + "A = clafer('A').withCard(1,1)\n"
+                + "B = abstract('B')\n"
+                + "C = B.addChild('C').extending(B).withGroupCard(0, 1)");
+        AstModel model = pair.getFst();
+        Scope scope = pair.getSnd();
+
         assertEquals(1, model.getChildren().size());
         // The first is the implicit "clafer" Clafer
         assertEquals(2, model.getAbstractClafers().size());
-
 
         AstConcreteClafer a = model.getChildren().get(0);
         assertEquals("A", a.getName());
@@ -38,5 +45,12 @@ public class JavascriptTest {
         assertEquals("C", c.getName());
         assertEquals(b, c.getSuperClafer());
         assertEquals(new Card(0, 1), c.getGroupCard());
+
+        assertEquals(3, scope.getScope(a));
+        assertEquals(2, scope.getScope(b));
+        assertEquals(1, scope.getScope(c));
+        assertEquals(2, scope.getDefaultScope());
+        assertEquals(-10, scope.getIntLow());
+        assertEquals(20, scope.getIntHigh());
     }
 }

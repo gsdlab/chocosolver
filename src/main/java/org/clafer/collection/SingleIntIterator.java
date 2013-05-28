@@ -1,14 +1,14 @@
 package org.clafer.collection;
 
+import gnu.trove.iterator.TIntIterator;
 import java.util.NoSuchElementException;
-import util.iterators.IntIterator;
 
 /**
  * Iterate over a single value.
  * 
  * @author jimmy
  */
-public class SingleIntIterator implements IntIterator {
+public class SingleIntIterator implements TIntIterator {
 
     private final int value;
     private boolean hasNext = true;

@@ -214,4 +214,100 @@ public class SetArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(0).intHigh(2));
         assertEquals(13, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * Cost -> Int 2..3
+     * [2 in Cost.ref]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testConstantIn() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * isUnique [] = True
+         * isUnique (x : xs) = x `notElem` xs && isUnique xs
+         *
+         * solutions = do
+         *     numCost <- [2..3]
+         *     cost <- sequence $ replicate numCost [-2..2]
+         *     guard $ -2 `elem` cost
+         *     guard $ isUnique cost
+         *     return cost
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refToUnique(IntType);
+        model.addConstraint(in(constant(2), joinRef(global(cost))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(44, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Cost -> Int 2..3
+     * [2 not in Cost.ref]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testConstantNotIn() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * isUnique [] = True
+         * isUnique (x : xs) = x `notElem` xs && isUnique xs
+         *
+         * solutions = do
+         *     numCost <- [2..3]
+         *     cost <- sequence $ replicate numCost [-2..2]
+         *     guard $ -2 `notElem` cost
+         *     guard $ isUnique cost
+         *     return cost
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refToUnique(IntType);
+        model.addConstraint(notIn(constant(2), joinRef(global(cost))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(36, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Cost ->> Int 2..3
+     * [Cost.ref in 2]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testInConstant() {
+        AstModel model = newModel();
+
+        AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
+        model.addConstraint(in(joinRef(global(cost)), constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(2, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Cost ->> Int 2..3
+     * [Cost.ref in 2]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNotInConstant() {
+        AstModel model = newModel();
+
+        AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
+        model.addConstraint(notIn(joinRef(global(cost)), constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(148, solver.allInstances().length);
+    }
 }

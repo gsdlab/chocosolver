@@ -15,7 +15,7 @@ import org.clafer.collection.Pair;
 /**
  * This class provides various methods of loading models and scopes via the
  * Javascript API.
- * 
+ *
  * @author jimmy
  */
 public class Javascript {
@@ -36,7 +36,7 @@ public class Javascript {
     }
 
     public static Pair<AstModel, Scope> readModel(String in) throws ScriptException {
-        return readModel(in, newEngine());
+        return readModel("<unknown>", in, newEngine());
     }
 
     public static Pair<AstModel, Scope> readModel(File in) throws FileNotFoundException, ScriptException {
@@ -44,19 +44,11 @@ public class Javascript {
     }
 
     public static Pair<AstModel, Scope> readModel(Reader in) throws ScriptException {
-        return readModel(in, newEngine());
-    }
-
-    public static Pair<AstModel, Scope> readModel(String in, ScriptEngine engine) throws ScriptException {
-        return readModel("<unknown>", in, engine);
+        return readModel("<unknown>", in, newEngine());
     }
 
     public static Pair<AstModel, Scope> readModel(File in, ScriptEngine engine) throws FileNotFoundException, ScriptException {
-        return readModel(in.getName(), new FileReader(in), engine);
-    }
-
-    public static Pair<AstModel, Scope> readModel(Reader in, ScriptEngine engine) throws ScriptException {
-        return readModel("<unknown>", in, engine);
+        return readModel(in.getName(), in, engine);
     }
 
     public static Pair<AstModel, Scope> readModel(String name, String in, ScriptEngine engine) throws ScriptException {
@@ -67,6 +59,10 @@ public class Javascript {
         engine.put(ScriptEngine.FILENAME, name);
         engine.eval(in);
         return new Pair<AstModel, Scope>(context.getModel(), context.getScope());
+    }
+
+    public static Pair<AstModel, Scope> readModel(String name, File in, ScriptEngine engine) throws FileNotFoundException, ScriptException {
+        return readModel(name, new FileReader(in), engine);
     }
 
     public static Pair<AstModel, Scope> readModel(String name, Reader in, ScriptEngine engine) throws ScriptException {
