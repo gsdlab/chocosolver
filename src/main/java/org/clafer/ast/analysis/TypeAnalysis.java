@@ -199,7 +199,7 @@ public class TypeAnalysis {
             if (!(expr.getType() instanceof AstIntClafer)) {
                 throw new AnalysisException("Cannot -" + expr.getType().getName());
             }
-            return put(IntType, expr.getExpr());
+            return put(IntType, minus(expr.getExpr()));
         }
 
         @Override

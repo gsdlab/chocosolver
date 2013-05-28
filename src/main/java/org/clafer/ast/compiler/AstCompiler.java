@@ -725,7 +725,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstMinus ast, Void a) {
-            return minus(asInt(compile(ast)));
+            return minus(asInt(compile(ast.getExpr())));
         }
 
         @Override

@@ -48,18 +48,6 @@ public class FListTest {
     }
 
     @Test
-    public void testEquals() {
-        assertTrue(Util.equals(empty(), empty()));
-        assertFalse(Util.equals(FList.<Integer>empty(), single(1)));
-        assertTrue(Util.equals(single(1), single(1)));
-        assertFalse(Util.equals(single(2), single(1)));
-        assertFalse(Util.equals(cons(1, single(2)), single(1)));
-        assertTrue(Util.equals(cons(1, single(2)), cons(1, single(2))));
-        assertFalse(Util.equals(cons(1, single(2)), cons(2, single(1))));
-        assertFalse(Util.equals(cons(1, single(2)), FList.<Integer>empty()));
-    }
-
-    @Test
     public void testToList() {
         assertEquals(list(1), single(1).toList());
         assertEquals(list(1, 2, 3), cons(1, snoc(single(2), 3)).toList());
@@ -76,6 +64,18 @@ public class FListTest {
         assertTrue(iter.hasNext());
         assertEquals(3, iter.next().intValue());
         assertFalse(iter.hasNext());
+    }
+
+    @Test
+    public void testEquals() {
+        assertTrue(Util.equals(empty(), empty()));
+        assertFalse(Util.equals(FList.<Integer>empty(), single(1)));
+        assertTrue(Util.equals(single(1), single(1)));
+        assertFalse(Util.equals(single(2), single(1)));
+        assertFalse(Util.equals(cons(1, single(2)), single(1)));
+        assertTrue(Util.equals(cons(1, single(2)), cons(1, single(2))));
+        assertFalse(Util.equals(cons(1, single(2)), cons(2, single(1))));
+        assertFalse(Util.equals(cons(1, single(2)), FList.<Integer>empty()));
     }
 
     @Test

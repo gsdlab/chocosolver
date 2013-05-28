@@ -86,16 +86,8 @@ public class TopologicalSort<V> {
             return index;
         }
 
-        public void setIndex(int index) {
-            this.index = index;
-        }
-
         public int getLowIndex() {
             return lowIndex;
-        }
-
-        public void setLowIndex(int lowIndex) {
-            this.lowIndex = lowIndex;
         }
 
         public void setLowIndexMin(int lowIndex) {

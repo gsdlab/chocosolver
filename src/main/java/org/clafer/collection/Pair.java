@@ -35,17 +35,17 @@ public class Pair<A, B> {
     }
 
     @Override
-    public int hashCode() {
-        return Util.hashCode(fst) ^ Util.hashCode(snd.hashCode());
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (obj instanceof Pair<?, ?>) {
             Pair<?, ?> other = (Pair<?, ?>) obj;
             return Util.equals(fst, other.fst) && Util.equals(snd, other.snd);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Util.hashCode(fst) ^ Util.hashCode(snd.hashCode());
     }
 
     @Override

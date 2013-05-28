@@ -56,17 +56,17 @@ public class Triple<A, B, C> {
     }
 
     @Override
-    public int hashCode() {
-        return Util.hashCode(fst) ^ Util.hashCode(snd) ^ Util.hashCode(thd);
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (obj instanceof Triple<?, ?, ?>) {
             Triple<?, ?, ?> other = (Triple<?, ?, ?>) obj;
             return Util.equals(fst, other.fst) && Util.equals(snd, other.snd) && Util.equals(thd, other.thd);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Util.hashCode(fst) ^ Util.hashCode(snd) ^ Util.hashCode(thd);
     }
 
     @Override
