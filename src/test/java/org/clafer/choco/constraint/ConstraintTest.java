@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import solver.Solver;
+import solver.propagation.PropagationEngineFactory;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.IntVar;
@@ -23,6 +24,7 @@ public abstract class ConstraintTest {
     }
 
     public Solver randomizeStrategy(Solver solver) {
+        solver.set(PropagationEngineFactory.PROPAGATORDRIVEN.make(solver));
         List<IntVar> intVars = new ArrayList<IntVar>();
         List<SetVar> setVars = new ArrayList<SetVar>();
         for (Variable var : solver.getVars()) {
@@ -35,10 +37,10 @@ public abstract class ConstraintTest {
             }
         }
 //        if (rand.nextBoolean()) {
-            solver.set(
-                    new StrategiesSequencer(solver.getEnvironment(),
-                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
-                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
+        solver.set(
+                new StrategiesSequencer(solver.getEnvironment(),
+                new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
+                IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
 //        } else {
 //            solver.set(
 //                    new StrategiesSequencer(solver.getEnvironment(),

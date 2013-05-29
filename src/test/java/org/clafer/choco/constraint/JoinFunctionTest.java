@@ -30,9 +30,9 @@ public class JoinFunctionTest extends ConstraintTest {
         assertEquals(set.size(), $to.length);
     }
 
-    @Test(timeout = 60000)
+    @Test()
     public void quickTest() throws Throwable {
-        for (int repeat = 0; repeat < 1000; repeat++) {
+        for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
             int num = nextInt(10);
 
@@ -69,20 +69,6 @@ public class JoinFunctionTest extends ConstraintTest {
         assertEquals(4, randomizeStrategy(solver).findAllSolutions());
     }
 
-//    @Test(timeout = 60000)
-//    public void testJoinLargeDomain() {
-//        Random rand = new Random();
-//        Model m = new CPModel();
-//
-//        SetVariable take = Choco.makeSetVar("take", 0, rand.nextInt(10));
-//        IntegerVariable[] refs = Choco.makeIntVarArray("ref", 1 + rand.nextInt(10), 0, 1000000, Options.V_ENUM);
-//        SetVariable to = Choco.makeSetVar("to", 0, 1000000, Options.V_NO_DECISION);
-//
-//        m.addConstraint(joinRef(take, refs, to));
-//
-//        Solver solver = solveOnce(m);
-//        checkCorrectness(solver, take, refs, to);
-//    }
     @Test(timeout = 60000)
     public void testJoinFunction() {
         Solver solver = new Solver();
