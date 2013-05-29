@@ -7,69 +7,59 @@ import java.util.Map;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstModel;
 import org.clafer.ast.Card;
 
 /**
  *
  * @author jimmy
  */
-public class PartialSolutionAnalysis {
+public class PartialSolutionAnalysis implements Analyzer {
 
-    private PartialSolutionAnalysis() {
-    }
+    @Override
+    public Analysis analyze(Analysis analysis) {
+        Map<AstClafer, PartialSolution> partialSolutionMap = new HashMap<AstClafer, PartialSolution>();
 
-    public static Map<AstClafer, PartialSolution> analyze(
-            AstModel model,
-            Map<AstClafer, Card> globalCards,
-            Map<AstClafer, Format> formats,
-            Map<AstAbstractClafer, Offsets> offsets) {
-        Map<AstClafer, PartialSolution> partialSolutions = new HashMap<AstClafer, PartialSolution>();
-
-        partialSolutions.put(model, new PartialSolution(new boolean[]{true}, new int[0][]));
-        for (AstConcreteClafer child : model.getChildren()) {
-            analyze(child, globalCards, formats, partialSolutions);
+        partialSolutionMap.put(analysis.getModel(), new PartialSolution(new boolean[]{true}, new int[0][]));
+        for (AstConcreteClafer child : analysis.getModel().getChildren()) {
+            analyze(child, analysis, partialSolutionMap);
         }
-        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
-            analyze(abstractClafer, globalCards, formats, offsets, partialSolutions);
+        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
+            analyze(abstractClafer, analysis, partialSolutionMap);
         }
 
-        return partialSolutions;
+        return analysis.withPartialSolutionMap(partialSolutionMap);
     }
 
     private static void analyze(
             AstAbstractClafer clafer,
-            Map<AstClafer, Card> globalCards,
-            Map<AstClafer, Format> formats,
-            Map<AstAbstractClafer, Offsets> offsets,
-            Map<AstClafer, PartialSolution> partialSolutions) {
-        Card globalCard = AnalysisUtil.notNull(clafer + " global card not analyzed yet", globalCards.get(clafer));
+            Analysis analysis,
+            Map<AstClafer, PartialSolution> partialSolutionMap) {
+        Card globalCard = analysis.getGlobalCard(clafer);
         boolean[] solution = new boolean[globalCard.getHigh()];
         int[][] parents = new int[globalCard.getHigh()][];
         for (AstClafer sub : clafer.getSubs()) {
-            int offset = AnalysisUtil.notNull(clafer + " offset not analyzed yet", offsets.get(clafer)).getOffset(sub);
+            int offset = analysis.getOffsets(clafer).getOffset(sub);
 
-            PartialSolution partialSubSolution = partialSolutions.get(sub);
+            PartialSolution partialSubSolution = partialSolutionMap.get(sub);
             // This is possible for partialSubSolution to be null if a child of an abstract
             // extends the abstract. Assume the worst possible case by assuming it is empty.
             if (partialSubSolution != null) {
                 System.arraycopy(partialSubSolution.getSolution(), 0, solution, offset, partialSubSolution.size());
             }
         }
-        partialSolutions.put(clafer, new PartialSolution(solution, parents));
+        partialSolutionMap.put(clafer, new PartialSolution(solution, parents));
 
         for (AstConcreteClafer child : clafer.getChildren()) {
-            analyze(child, globalCards, formats, partialSolutions);
+            analyze(child, analysis, partialSolutionMap);
         }
     }
 
     private static void analyze(
             AstConcreteClafer clafer,
-            Map<AstClafer, Card> globalCards,
-            Map<AstClafer, Format> formats,
-            Map<AstClafer, PartialSolution> partialSolutions) {
-        Card globalCard = AnalysisUtil.notNull(clafer + " global card not analyzed yet", globalCards.get(clafer));
-        Format format = AnalysisUtil.notNull(clafer.getName() + " format not analyzed yet", formats.get(clafer));
+            Analysis analysis,
+            Map<AstClafer, PartialSolution> partialSolutionMap) {
+        Card globalCard = analysis.getGlobalCard(clafer);
+        Format format = analysis.getFormat(clafer);
 
         boolean[] solution = new boolean[globalCard.getHigh()];
         TIntArrayList[] parents = new TIntArrayList[globalCard.getHigh()];
@@ -77,9 +67,10 @@ public class PartialSolutionAnalysis {
             parents[i] = new TIntArrayList();
         }
 
-        PartialSolution partialParentSolution = partialSolutions.get(clafer.getParent());
-        int lowCard = clafer.getCard().getLow();
-        int highCard = clafer.getCard().getHigh();
+        PartialSolution partialParentSolution = partialSolutionMap.get(clafer.getParent());
+        Card card = analysis.getCard(clafer);
+        int lowCard = card.getLow();
+        int highCard = card.getHigh();
         switch (format) {
             case LowGroup:
                 Arrays.fill(solution, 0, globalCard.getLow(), true);
@@ -107,10 +98,10 @@ public class PartialSolutionAnalysis {
             default:
                 throw new AnalysisException();
         }
-        partialSolutions.put(clafer, new PartialSolution(solution, toArray(parents)));
+        partialSolutionMap.put(clafer, new PartialSolution(solution, toArray(parents)));
 
         for (AstConcreteClafer child : clafer.getChildren()) {
-            analyze(child, globalCards, formats, partialSolutions);
+            analyze(child, analysis, partialSolutionMap);
         }
     }
 

@@ -2,47 +2,43 @@ package org.clafer.ast.analysis;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstModel;
 
 /**
  *
  * @author jimmy
  */
-public class FormatAnalysis {
+public class FormatAnalysis implements Analyzer {
 
-    private FormatAnalysis() {
+    @Override
+    public Analysis analyze(Analysis analysis) {
+        Map<AstClafer, Format> formatMap = new HashMap<AstClafer, Format>();
+        formatMap.put(analysis.getModel(), Format.LowGroup);
+        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
+            analyze(abstractClafer, analysis, formatMap);
+        }
+        for (AstConcreteClafer child : analysis.getModel().getChildren()) {
+            analyze(child, analysis, formatMap);
+        }
+        return analysis.withFormatMap(formatMap);
     }
 
-    public static Map<AstClafer, Format> analyze(AstModel model, Scope scope) {
-        Map<AstClafer, Format> formats = new HashMap<AstClafer, Format>();
-        formats.put(model, Format.LowGroup);
-        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
-            analyze(abstractClafer, scope, formats);
-        }
-        for (AstConcreteClafer child : model.getChildren()) {
-            analyze(child, scope, formats);
-        }
-        return formats;
-    }
-
-    private static void analyze(AstAbstractClafer clafer, Scope scope, Map<AstClafer, Format> formats) {
-        formats.put(clafer, Format.ParentGroup);
+    private static void analyze(AstAbstractClafer clafer, Analysis analysis, Map<AstClafer, Format> formatMap) {
+        formatMap.put(clafer, Format.ParentGroup);
         for (AstConcreteClafer child : clafer.getChildren()) {
-            analyze(child, scope, formats);
+            analyze(child, analysis, formatMap);
         }
     }
 
-    private static void analyze(AstConcreteClafer clafer, Scope scope, Map<AstClafer, Format> formats) {
-        formats.put(clafer,
-                clafer.getCard().isExact()
-                && scope.getScope(clafer) >= clafer.getCard().getHigh() * scope.getScope(clafer.getParent())
+    private static void analyze(AstConcreteClafer clafer, Analysis analysis, Map<AstClafer, Format> formatMap) {
+        formatMap.put(clafer,
+                analysis.getCard(clafer).isExact()
+                && analysis.getScope(clafer) >= analysis.getCard(clafer).getHigh() * analysis.getScope(clafer.getParent())
                 ? Format.ParentGroup : Format.LowGroup);
         for (AstConcreteClafer child : clafer.getChildren()) {
-            analyze(child, scope, formats);
+            analyze(child, analysis, formatMap);
         }
     }
 }

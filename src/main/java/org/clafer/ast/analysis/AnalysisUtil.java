@@ -13,6 +13,7 @@ import org.clafer.ast.Card;
  *
  * @author jimmy
  */
+@Deprecated
 public class AnalysisUtil {
 
     private AnalysisUtil() {
@@ -47,8 +48,8 @@ public class AnalysisUtil {
 
         @Override
         public int compare(AstAbstractClafer o1, AstAbstractClafer o2) {
-            int depth1 = notNull(o1 + " depth not analyzed yet", depths.get(o1)).intValue();
-            int depth2 = notNull(o2 + " depth not analyzed yet", depths.get(o2)).intValue();
+            int depth1 = notNull(o1 + " Depth not analyzed yet", depths.get(o1)).intValue();
+            int depth2 = notNull(o2 + " Depth not analyzed yet", depths.get(o2)).intValue();
             return depth1 > depth2 ? -1 : (depth1 == depth2 ? 0 : 1);
         }
     }
@@ -63,8 +64,8 @@ public class AnalysisUtil {
 
         @Override
         public int compare(AstClafer o1, AstClafer o2) {
-            Card card1 = notNull(o1 + " global card not analyzed yet", globalCards.get(o1));
-            Card card2 = notNull(o2 + " global card not analyzed yet", globalCards.get(o2));
+            Card card1 = notNull(o1 + " Global card not analyzed yet", globalCards.get(o1));
+            Card card2 = notNull(o2 + " Global card not analyzed yet", globalCards.get(o2));
             double ratio1 = ((double) card1.getLow()) / ((double) card1.getHigh());
             double ratio2 = ((double) card2.getLow()) / ((double) card2.getHigh());
             return (ratio1 > ratio2) ? -1 : ((ratio1 == ratio2) ? 0 : 1);

@@ -41,9 +41,9 @@ public class AstModel extends AstConcreteClafer {
         this.abstractClafers = new ArrayList<AstAbstractClafer>();
         this.abstractClafers.add(claferClafer);
     }
-    
+
     AstModel() {
-        this(AstIdFactory.newIdFactory());
+        this(new AstIdFactory());
     }
 
     /**
@@ -74,18 +74,6 @@ public class AstModel extends AstConcreteClafer {
         AstAbstractClafer abstractClafer = new AstAbstractClafer(name, idFactory).extending(claferClafer);
         abstractClafers.add(abstractClafer);
         return abstractClafer;
-    }
-
-    /**
-     * Replace all the abstract Clafers.
-     *
-     * @param abstractClafers the new abstract Clafers
-     * @return this model
-     */
-    public AstModel withAbstractClafers(List<AstAbstractClafer> abstractClafers) {
-        this.abstractClafers.clear();
-        this.abstractClafers.addAll(abstractClafers);
-        return this;
     }
 
     @Override

@@ -29,7 +29,6 @@ import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
-import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
@@ -42,35 +41,39 @@ import org.clafer.ast.AstUtil;
 import org.clafer.common.Util;
 
 /**
- * Type checks and creates explicit upcast nodes in the ast.
+ * Type checks and creates explicit upcast nodes in the AST. When the
+ * expressions are rewritten, the types need to be reanalyzed.
  *
  * @author jimmy
  */
-public class TypeAnalysis {
+public class TypeAnalysis implements Analyzer {
 
-    private TypeAnalysis() {
-    }
-
-    public static Map<AstExpr, AstClafer> analyze(AstModel model) {
-        Map<AstExpr, AstClafer> types = new HashMap<AstExpr, AstClafer>();
-        for (AstClafer clafer : AstUtil.getClafers(model)) {
-            TypeVisitor visitor = new TypeVisitor(clafer, types);
-            for (AstConstraint constraint : clafer.getConstraints()) {
-                TypedExpr<AstBoolExpr> expr = visitor.typeCheck(constraint.getExpr());
-                constraint.setExpr(expr.getExpr());
+    @Override
+    public Analysis analyze(Analysis analysis) {
+        Map<AstExpr, AstClafer> typeMap = new HashMap<AstExpr, AstClafer>();
+        Map<AstClafer, AstConstraint[]> constraintsMap = new HashMap<AstClafer, AstConstraint[]>();
+        for (AstClafer clafer : analysis.getClafers()) {
+            TypeVisitor visitor = new TypeVisitor(clafer, typeMap);
+            AstConstraint[] constraints = analysis.getConstraints(clafer);
+            AstConstraint[] typedConstraints = new AstConstraint[constraints.length];
+            for (int i = 0; i < constraints.length; i++) {
+                AstConstraint constraint = constraints[i];
+                TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(constraint.getExpr());
+                typedConstraints[i] = constraint.withExpr(typedConstraint.getExpr());
             }
+            constraintsMap.put(clafer, typedConstraints);
         }
-        return types;
+        return analysis.withTypeMap(typeMap).withConstraintsMap(constraintsMap);
     }
 
     private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {
 
         private final AstClafer context;
-        private final Map<AstExpr, AstClafer> types;
+        private final Map<AstExpr, AstClafer> typeMap;
 
         TypeVisitor(AstClafer context, Map<AstExpr, AstClafer> typeMap) {
             this.context = context;
-            this.types = typeMap;
+            this.typeMap = typeMap;
         }
 
         private <T extends AstExpr> TypedExpr<T> typeCheck(T expr) {
@@ -129,7 +132,7 @@ public class TypeAnalysis {
         }
 
         private <T extends AstExpr> TypedExpr<T> put(AstClafer type, T expr) {
-            types.put(expr, type);
+            typeMap.put(expr, type);
             return new TypedExpr<T>(type, expr);
         }
 
@@ -310,7 +313,7 @@ public class TypeAnalysis {
 
         @Override
         public TypedExpr<AstLocal> visit(AstLocal ast, Void a) {
-            return put(AnalysisUtil.notNull(ast + " type not analyzed yet", types.get(ast)), ast);
+            return put(AnalysisUtil.notNull(ast + " type not analyzed yet", typeMap.get(ast)), ast);
         }
 
         @Override
@@ -325,10 +328,7 @@ public class TypeAnalysis {
                 decls[i] = decl(decl.getLocals(), body.getExpr());
             }
             TypedExpr<AstBoolExpr> body = typeCheck(ast.getBody());
-            if (body.getType() instanceof AstBoolClafer) {
-                return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
-            }
-            throw new AnalysisException();
+            return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
         }
     }
 

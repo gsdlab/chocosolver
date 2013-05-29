@@ -5,21 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstModel;
 
 /**
  *
  * @author jimmy
  */
-public class TypeHierarchyDepthAnalysis {
+public class TypeHierarchyDepthAnalysis implements Analyzer {
 
-    private TypeHierarchyDepthAnalysis() {
-    }
+    public Analysis analyze(Analysis analysis) {
+        Map<AstAbstractClafer, Integer> depthMap = new HashMap<AstAbstractClafer, Integer>();
 
-    public static Map<AstAbstractClafer, Integer> analyze(AstModel model) {
-        Map<AstAbstractClafer, Integer> depths = new HashMap<AstAbstractClafer, Integer>();
-
-        for (final AstAbstractClafer clafer : model.getAbstractClafers()) {
+        for (final AstAbstractClafer clafer : analysis.getAbstractClafers()) {
             List<AstAbstractClafer> hierarchy = new ArrayList<AstAbstractClafer>(0);
             for (AstAbstractClafer sup = clafer; sup.hasSuperClafer(); sup = sup.getSuperClafer()) {
                 if (hierarchy.contains(sup)) {
@@ -27,13 +23,12 @@ public class TypeHierarchyDepthAnalysis {
                 }
                 hierarchy.add(sup);
             }
-            depths.put(clafer, hierarchy.size());
+            depthMap.put(clafer, hierarchy.size());
         }
 
-        List<AstAbstractClafer> abstractClafers = new ArrayList<AstAbstractClafer>(model.getAbstractClafers());
-        AnalysisUtil.descendingDepths(abstractClafers, depths);
-        model.withAbstractClafers(abstractClafers);
+        List<AstAbstractClafer> abstractClafers = new ArrayList<AstAbstractClafer>(analysis.getAbstractClafers());
+        AnalysisUtil.descendingDepths(abstractClafers, depthMap);
 
-        return depths;
+        return analysis.withAbstractClafers(abstractClafers).withDepthMap(depthMap);
     }
 }

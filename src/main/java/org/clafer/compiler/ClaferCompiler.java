@@ -6,8 +6,10 @@ import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
+import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
+import org.clafer.common.Util;
 import org.clafer.compiler.ClaferObjective.Objective;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.compiler.IrCompiler;
@@ -107,16 +109,11 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scope scope) {
-        for (AstClafer clafer : AstUtil.getClafers(in)) {
-            for (AstConstraint constraint : clafer.getConstraints()) {
-                constraint.asSoft();
-            }
-        }
-
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
+        AstSolutionMap astSolution = AstCompiler.compile(in, scope, module,
+                Util.cons(new UnsatAnalyzer(), AstCompiler.DefaultAnalyzers));
         IrSolutionMap irSolution = IrCompiler.compile(module, solver);
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 

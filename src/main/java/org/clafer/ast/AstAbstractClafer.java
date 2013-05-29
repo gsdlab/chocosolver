@@ -21,16 +21,6 @@ public class AstAbstractClafer extends AstClafer {
      * {@inheritDoc}
      */
     @Override
-    public AstId<AstAbstractClafer> getId() {
-        @SuppressWarnings("unchecked")
-        AstId<AstAbstractClafer> id = (AstId<AstAbstractClafer>) super.getId();
-        return id;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public AstAbstractClafer withGroupCard(Card groupCard) {
         super.withGroupCard(groupCard);
         return this;

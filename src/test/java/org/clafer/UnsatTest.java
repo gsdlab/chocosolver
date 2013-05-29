@@ -11,10 +11,6 @@ import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import solver.Solver;
-import solver.constraints.ICF;
-import solver.variables.BoolVar;
-import solver.variables.VF;
 
 /**
  *

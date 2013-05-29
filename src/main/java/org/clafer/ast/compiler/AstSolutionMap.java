@@ -57,7 +57,7 @@ public class AstSolutionMap {
     }
 
     public int getOffset(AstAbstractClafer sup, AstClafer sub) {
-        return analysis.getOffset(sup, sub);
+        return analysis.getOffsets(sup).getOffset(sub);
     }
 
     public static <T> T notNull(String message, T t) {

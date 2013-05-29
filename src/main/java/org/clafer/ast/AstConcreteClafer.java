@@ -17,19 +17,9 @@ public class AstConcreteClafer extends AstClafer {
         this.parent = null;
     }
 
-    AstConcreteClafer(String name, AstClafer parent,  AstIdFactory idFactory) {
+    AstConcreteClafer(String name, AstClafer parent, AstIdFactory idFactory) {
         super(name, idFactory);
         this.parent = Check.notNull(parent);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public AstId<AstConcreteClafer> getId() {
-        @SuppressWarnings("unchecked")
-        AstId<AstConcreteClafer> id = (AstId<AstConcreteClafer>) super.getId();
-        return id;
     }
 
     /**

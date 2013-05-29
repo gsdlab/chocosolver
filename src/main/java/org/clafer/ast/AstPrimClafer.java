@@ -9,7 +9,9 @@ package org.clafer.ast;
 public abstract class AstPrimClafer extends AstClafer {
 
     AstPrimClafer(String name) {
-        super(name, AstIdFactory.PredefinedIdFactory);
+        super(name,
+                // It's okay to create a new factory since it will never be used.
+                new AstIdFactory());
     }
 
     /**

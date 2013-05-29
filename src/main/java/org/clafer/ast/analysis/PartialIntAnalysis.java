@@ -3,7 +3,6 @@ package org.clafer.ast.analysis;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,23 +33,15 @@ import org.clafer.collection.Pair;
  *
  * @author jimmy
  */
-public class PartialIntAnalysis {
+public class PartialIntAnalysis implements Analyzer {
 
-    private PartialIntAnalysis() {
-    }
-
-    public static Map<AstRef, int[][]> analyze(
-            AstModel model,
-            Map<AstClafer, PartialSolution> partialSolutions,
-            Map<AstAbstractClafer, Offsets> offsets,
-            Scope scope) {
-
+    @Override
+    public Analysis analyze(Analysis analysis) {
         Map<AstRef, int[][]> partialInts = new HashMap<AstRef, int[][]>();
 
-        List<AstClafer> clafers = AstUtil.getClafers(model);
         List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<Pair<FList<AstConcreteClafer>, Integer>>();
-        for (AstClafer clafer : clafers) {
-            for (AstConstraint constraint : clafer.getConstraints()) {
+        for (AstClafer clafer : analysis.getClafers()) {
+            for (AstConstraint constraint : analysis.getConstraints(clafer)) {
                 if (constraint.isSoft()) {
                     continue;
                 }
@@ -68,26 +59,25 @@ public class PartialIntAnalysis {
             }
         }
         AssignmentAutomata automata = new AssignmentAutomata(assignments);
-        for (AstClafer clafer : clafers) {
+        for (AstClafer clafer : analysis.getClafers()) {
             if (clafer.hasRef()) {
-                int s = scope.getScope(clafer);
-                int[][] ints = new int[s][];
-                for (int i = 0; i < s; i++) {
-                    ints[i] = partialInts(i, clafer.getRef(), automata, partialSolutions, offsets);
+                int scope = analysis.getScope(clafer);
+                int[][] ints = new int[scope][];
+                for (int i = 0; i < scope; i++) {
+                    ints[i] = partialInts(i, clafer.getRef(), automata, analysis);
                 }
                 partialInts.put(clafer.getRef(), ints);
             }
         }
-        return partialInts;
+        return analysis.withPartialIntsMap(partialInts);
     }
 
     private static int[] partialInts(
             final int id, final AstRef ref, final AssignmentAutomata automata,
-            final Map<AstClafer, PartialSolution> partialSolutions,
-            final Map<AstAbstractClafer, Offsets> offsets) {
+            final Analysis analysis) {
         TIntArrayList ints = new TIntArrayList();
         AstClafer clafer = ref.getSourceType();
-        if (partialInts(new int[]{id}, clafer, automata, partialSolutions, offsets, ints)) {
+        if (partialInts(new int[]{id}, clafer, automata, analysis, ints)) {
             return ints.toArray();
         }
         return null;
@@ -95,8 +85,7 @@ public class PartialIntAnalysis {
 
     private static boolean partialInts(
             final int[] ids, final AstClafer clafer, final AssignmentAutomata automata,
-            final Map<AstClafer, PartialSolution> partialSolutions,
-            final Map<AstAbstractClafer, Offsets> offsets,
+            final Analysis analysis,
             final TIntArrayList ints) {
         if (clafer instanceof AstConcreteClafer) {
             AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
@@ -110,10 +99,10 @@ public class PartialIntAnalysis {
                 assert !AstUtil.isTop(concreteClafer);
                 TIntHashSet parentIds = new TIntHashSet();
                 for (int id : ids) {
-                    parentIds.addAll(partialSolutions.get(clafer).getPossibleParents(id));
+                    parentIds.addAll(analysis.getPartialSolution(clafer).getPossibleParents(id));
                 }
                 return partialInts(parentIds.toArray(), concreteClafer.getParent(),
-                        next, partialSolutions, offsets, ints);
+                        next, analysis, ints);
             }
             return false;
         }
@@ -123,7 +112,7 @@ public class PartialIntAnalysis {
             AstClafer subClafer = clafer;
             int curId = id;
             do {
-                Offsets offset = offsets.get((AstAbstractClafer) subClafer);
+                Offsets offset = analysis.getOffsets((AstAbstractClafer) subClafer);
                 subClafer = offset.getClafer(curId);
                 curId -= offset.getOffset(subClafer);
             } while (subClafer instanceof AstAbstractClafer);
@@ -136,7 +125,7 @@ public class PartialIntAnalysis {
         }
         for (Entry<AstConcreteClafer, TIntHashSet> entry : parentIdsMap.entrySet()) {
             if (!partialInts(entry.getValue().toArray(), entry.getKey(), automata,
-                    partialSolutions, offsets, ints)) {
+                    analysis, ints)) {
                 return false;
             }
         }

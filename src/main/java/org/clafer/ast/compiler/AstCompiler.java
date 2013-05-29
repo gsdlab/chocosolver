@@ -53,6 +53,16 @@ import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetArithm;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.Card;
+import org.clafer.ast.analysis.AbstractOffsetAnalysis;
+import org.clafer.ast.analysis.Analyzer;
+import org.clafer.ast.analysis.CardAnalysis;
+import org.clafer.ast.analysis.FormatAnalysis;
+import org.clafer.ast.analysis.GlobalCardAnalysis;
+import org.clafer.ast.analysis.PartialIntAnalysis;
+import org.clafer.ast.analysis.PartialSolutionAnalysis;
+import org.clafer.ast.analysis.ScopeAnalysis;
+import org.clafer.ast.analysis.TypeAnalysis;
+import org.clafer.ast.analysis.TypeHierarchyDepthAnalysis;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.graph.KeyGraph;
@@ -73,29 +83,42 @@ import static org.clafer.ir.Irs.*;
  */
 public class AstCompiler {
 
-    private final AstModel model;
+    public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
+        new TypeAnalysis(),
+        new TypeHierarchyDepthAnalysis(),
+        new GlobalCardAnalysis(),
+        new ScopeAnalysis(),
+        new CardAnalysis(),
+        new FormatAnalysis(),
+        new AbstractOffsetAnalysis(),
+        new PartialSolutionAnalysis(),
+        new PartialIntAnalysis()
+    };
     private final Analysis analysis;
     private final IrModule module;
 
-    private AstCompiler(AstModel model, Scope scope, IrModule module) {
-        this.model = Check.notNull(model);
-        this.analysis = Analysis.analyze(model, scope);
+    private AstCompiler(AstModel model, Scope scope, IrModule module, Analyzer[] analyzers) {
+        this.analysis = Analysis.analyze(model, scope, analyzers);
         this.module = Check.notNull(module);
     }
 
     public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out) {
-        AstCompiler compiler = new AstCompiler(in, scope, out);
+        return compile(in, scope, out, DefaultAnalyzers);
+    }
+
+    public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out, Analyzer[] analyzers) {
+        AstCompiler compiler = new AstCompiler(in, scope, out, analyzers);
         return compiler.compile();
     }
 
     private AstSolutionMap compile() {
-        List<AstAbstractClafer> abstractClafers = model.getAbstractClafers();
-        List<AstConcreteClafer> concreteClafers = AstUtil.getConcreteClafers(model);
+        List<AstAbstractClafer> abstractClafers = analysis.getAbstractClafers();
+        List<AstConcreteClafer> concreteClafers = AstUtil.getConcreteClafers(analysis.getModel());
 
         IrSetVar rootSet = constant(new int[]{0});
-        set.put(model, $(rootSet));
-        childrenSet.put(model, new IrSetVar[]{rootSet});
-        membership.put(model, new IrBoolExpr[]{$(True)});
+        set.put(analysis.getModel(), $(rootSet));
+        childrenSet.put(analysis.getModel(), new IrSetVar[]{rootSet});
+        membership.put(analysis.getModel(), new IrBoolExpr[]{$(True)});
 
         KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
         for (AstAbstractClafer abstractClafer : abstractClafers) {
@@ -147,10 +170,9 @@ public class AstCompiler {
 
         List<IrBoolVar> softVars = new ArrayList<IrBoolVar>();
         for (AstClafer clafer : clafers) {
-            List<AstConstraint> constraints = clafer.getConstraints();
+            AstConstraint[] constraints = getConstraints(clafer);
             int scope = getScope(clafer);
-            for (int i = 0; i < constraints.size(); i++) {
-                AstConstraint constraint = constraints.get(i);
+            for (AstConstraint constraint : constraints) {
                 if (constraint.isHard()) {
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
@@ -176,7 +198,7 @@ public class AstCompiler {
             module.addIntVars(refs);
         }
 
-        return new AstSolutionMap(model, childrenSet, refPointers, softVars.toArray(new IrBoolVar[softVars.size()]), analysis);
+        return new AstSolutionMap(analysis.getModel(), childrenSet, refPointers, softVars.toArray(new IrBoolVar[softVars.size()]), analysis);
     }
 
     private void initConcrete(AstConcreteClafer clafer) {
@@ -226,7 +248,7 @@ public class AstCompiler {
             IrBoolExpr[] members = membership.get(clafer);
             IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
                     refOffset, refOffset + getScope(clafer));
-            if (ref.isUnique() && clafer.getCard().getHigh() > 1) {
+            if (ref.isUnique() && getCard(clafer).getHigh() > 1) {
                 if (getGlobalCard(clafer).isExact()) {
                     assert getGlobalCard(clafer).getLow() == refs.length;
                     module.addConstraint(allDifferent($(refs)));
@@ -319,7 +341,7 @@ public class AstCompiler {
             for (AstConcreteClafer child : clafer.getChildren()) {
                 // Children with exact cards will always contribute the same score hence it
                 // is a waste of computation time to include them in the scoring constraints.
-                if (!child.getCard().isExact()) {
+                if (!getCard(child).isExact()) {
                     string.add(card($(childrenSet.get(child)[i])));
                 }
             }
@@ -328,7 +350,7 @@ public class AstCompiler {
             while (sup.hasSuperClafer()) {
                 offset += getOffset(sup.getSuperClafer(), sup);
                 for (AstConcreteClafer child : sup.getSuperClafer().getChildren()) {
-                    if (!child.getCard().isExact()) {
+                    if (!getCard(child).isExact()) {
                         string.add(card($(childrenSet.get(child)[i + offset])));
                     }
                 }
@@ -380,7 +402,7 @@ public class AstCompiler {
             for (int i = 0; i < childrenSets.length; i++) {
                 AstConcreteClafer child = children.get(i);
                 childrenSets[i] = childrenSet.get(child);
-                featureGroup &= child.getCard().getHigh() == 1;
+                featureGroup &= getCard(child).getHigh() == 1;
             }
             int scope = getScope(clafer);
             for (int i = 0; i < scope; i++) {
@@ -439,7 +461,7 @@ public class AstCompiler {
         module.addConstraint(selectN(members, card(set.get(clafer))));
 
         IrBoolExpr[] parentMembership = membership.get(clafer.getParent());
-        Card card = clafer.getCard();
+        Card card = getCard(clafer);
 
         IrSetVar[] childSet = childrenSet.get(clafer);
         for (int i = 0; i < parentMembership.length; i++) {
@@ -476,8 +498,8 @@ public class AstCompiler {
         PartialSolution partialParentSolution = getPartialParentSolution(clafer);
 
         IrSetVar[] children = new IrSetVar[partialParentSolution.size()];
-        assert clafer.getCard().getLow() == clafer.getCard().getHigh();
-        int lowCard = clafer.getCard().getLow();
+        assert getCard(clafer).getLow() == getCard(clafer).getHigh();
+        int lowCard = getCard(clafer).getLow();
         for (int i = 0; i < children.length; i++) {
             if (partialParentSolution.hasClafer(i)) {
                 children[i] = constant(Util.fromTo(i * lowCard, i * lowCard + lowCard));
@@ -507,8 +529,8 @@ public class AstCompiler {
         PartialSolution partialParentSolution = getPartialParentSolution(clafer);
 
         IrSetVar[] children = childrenSet.get(clafer);
-        assert clafer.getCard().getLow() == clafer.getCard().getHigh();
-        int lowCard = clafer.getCard().getLow();
+        assert getCard(clafer).getLow() == getCard(clafer).getHigh();
+        int lowCard = getCard(clafer).getLow();
         for (int i = 0; i < children.length; i++) {
             if (!partialParentSolution.hasClafer(i)) {
                 module.addConstraint(implies(membership.get(clafer.getParent())[i],
@@ -651,8 +673,8 @@ public class AstCompiler {
             IrExpr $left = compile(left);
             if ($left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) $left;
-                if (Format.ParentGroup.equals(getFormat(right)) && right.getCard().getLow() == 1) {
-                    assert right.getCard().isExact();
+                if (Format.ParentGroup.equals(getFormat(right)) && getCard(right).getLow() == 1) {
+                    assert getCard(right).isExact();
                     return $intLeft;
                 }
                 // Why empty set? The "take" var can contain unused.
@@ -680,8 +702,8 @@ public class AstCompiler {
                 IrIntExpr $intChildren = (IrIntExpr) $children;
                 switch (getFormat(childrenType)) {
                     case ParentGroup:
-                        assert childrenType.getCard().isExact();
-                        int lowCard = childrenType.getCard().getLow();
+                        assert getCard(childrenType).isExact();
+                        int lowCard = getCard(childrenType).getLow();
                         return div($intChildren, $(constant(lowCard)));
                     case LowGroup:
                         return element($(parentPointers.get(childrenType)), $intChildren);
@@ -1022,7 +1044,7 @@ public class AstCompiler {
         PartialSolution partialParentSolution = getPartialSolution(clafer.getParent());
 
         int claferScope = getScope(clafer);
-        Card card = clafer.getCard();
+        Card card = getCard(clafer);
         assert card.hasHigh();
 
         int low = 0;
@@ -1166,7 +1188,11 @@ public class AstCompiler {
     }
 
     private int getOffset(AstAbstractClafer sup, AstClafer sub) {
-        return analysis.getOffset(sup, sub);
+        return analysis.getOffsets(sup).getOffset(sub);
+    }
+
+    private Card getCard(AstConcreteClafer clafer) {
+        return analysis.getCard(clafer);
     }
 
     private Card getGlobalCard(AstClafer clafer) {
@@ -1179,5 +1205,9 @@ public class AstCompiler {
 
     private AstClafer getType(AstExpr expr) {
         return analysis.getType(expr);
+    }
+
+    private AstConstraint[] getConstraints(AstClafer clafer) {
+        return analysis.getConstraints(clafer);
     }
 }

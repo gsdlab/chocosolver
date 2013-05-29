@@ -15,7 +15,6 @@ public abstract class AstClafer implements AstVar {
 
     private final String name;
     protected final AstIdFactory idFactory;
-    private final AstId<? extends AstClafer> id;
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard = new Card();
@@ -25,7 +24,6 @@ public abstract class AstClafer implements AstVar {
     AstClafer(String name, AstIdFactory idFactory) {
         this.name = Check.notNull(name);
         this.idFactory = Check.notNull(idFactory);
-        this.id = idFactory.newId();
     }
 
     /**
@@ -36,15 +34,6 @@ public abstract class AstClafer implements AstVar {
     @Override
     public String getName() {
         return name;
-    }
-
-    /**
-     * Returns the unique identifier for this Clafer.
-     * 
-     * @return the unique identifier for this Clafer
-     */
-    public AstId<? extends AstClafer> getId() {
-        return id;
     }
 
     /**
@@ -209,18 +198,6 @@ public abstract class AstClafer implements AstVar {
     }
 
     /**
-     * Replace this Clafer's concrete children.
-     *
-     * @param children the new children
-     * @return this Clafer
-     */
-    public AstClafer withChildren(List<AstConcreteClafer> children) {
-        this.children.clear();
-        this.children.addAll(children);
-        return this;
-    }
-
-    /**
      * Checks if this Clafer has any constraints.
      *
      * @return {@code true} if and only if this Clafer has constraints,
@@ -245,7 +222,7 @@ public abstract class AstClafer implements AstVar {
      * @param constraint the constraint
      */
     public void addConstraint(AstBoolExpr constraint) {
-        constraints.add(new AstConstraint(this, constraint));
+        constraints.add(new AstConstraint(idFactory.<AstConstraint>newId(), this, constraint));
     }
 
     /**
