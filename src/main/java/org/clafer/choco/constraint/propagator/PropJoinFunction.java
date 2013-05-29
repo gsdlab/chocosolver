@@ -1,7 +1,13 @@
 package org.clafer.choco.constraint.propagator;
 
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.queue.TIntQueue;
+import gnu.trove.stack.TIntStack;
+import gnu.trove.stack.array.TIntArrayStack;
 import java.util.Arrays;
+import org.clafer.collection.CircularIntStack;
 import org.clafer.collection.FixedCapacityIntSet;
+import solver.Configuration;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -85,11 +91,26 @@ public class PropJoinFunction extends Propagator<Variable> {
         return EventType.INT_ALL_MASK();
     }
 
-    private boolean possibleTo(int[] take, int to) {
-        for (int i : take) {
-            if (refs[i].contains(to)) {
-                return true;
+    private boolean findMate(int toEnv) throws ContradictionException {
+        boolean inKer = to.kernelContains(toEnv);
+        int mate = -1;
+        for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
+            if (refs[j].contains(toEnv)) {
+                // Found a second mate.
+                if (mate != -1 || !inKer) {
+                    mate = -2;
+                    break;
+                }
+                mate = j;
             }
+        }
+        if (mate == -1) {
+            // No mates.
+            to.removeFromEnvelope(toEnv, aCause);
+        } else if (mate != -2 && inKer) {
+            // One mate.
+            take.addToKernel(mate, aCause);
+            return refs[mate].instantiateTo(toEnv, aCause);
         }
         return false;
     }
@@ -98,81 +119,149 @@ public class PropJoinFunction extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         // Prune to
         // Need to iterate env(take) many times so read it into an array
-        int[] takeEnv = PropUtil.iterateEnv(take);
-        for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
-            if (!possibleTo(takeEnv, i)) {
-                to.removeFromEnvelope(i, aCause);
+        boolean changed;
+        do {
+            changed = false;
+            for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
+                changed |= findMate(i);
             }
-        }
+        } while (changed);
 
+        int sameRefs = 0;
+        FixedCapacityIntSet set = new FixedCapacityIntSet(take.getEnvelopeSize());
         // Prune refs, Pick to
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
             PropUtil.intSubsetEnv(refs[i], to, aCause);
             if (refs[i].instantiated()) {
-                to.addToKernel(refs[i].getValue(), aCause);
+                int value = refs[i].getValue();
+                sameRefs += (set.add(value)) ? 0 : 1;
+                to.addToKernel(value, aCause);
             }
         }
+//        for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+//            if (!refs[i].instantiated() && PropUtil.isDomainSubsetOf(refs[i], set)) {
+//                sameRefs++;
+//            }
+//        }
 
         // Prune take
-        for (int i : takeEnv) {
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (!PropUtil.domainIntersectEnv(refs[i], to)) {
                 take.removeFromEnvelope(i, aCause);
             }
+        }
+
+        int minTakeSize = sameRefs + to.getKernelSize();
+//        System.out.println("##" + to.getKernelSize() + " : " + minTakeSize + " : " + take.getEnvelopeSize() + " : " + evtmask + " : " + set + " : " + this);
+        if (minTakeSize == take.getEnvelopeSize()) {
+            take.instantiateTo(PropUtil.iterateEnv(take), aCause);
+            to.instantiateTo(PropUtil.iterateKer(to), aCause);
+//            for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+//                if (!refs[i].instantiated()) {
+//                    PropUtil.intSubsetEnv(refs[i], to, aCause);
+//                    if (refs[i].instantiated()) {
+//                        int value = refs[i].getValue();
+//                        if (!set.add(value) || !to.kernelContains(value)) {
+//                            // sameRefs++ || to.getKernelSize++
+//                            contradiction(take, "Take too small");
+//                        }
+//                    }
+//                }
+//            }
+//            CircularIntStack queue = new CircularIntStack(refs.length);
+//            queue.addAll(set);
+//            while (!queue.isEmpty()) {
+//                int remove = queue.pop();
+////                System.out.print(remove);
+//                for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+//                    if (!refs[i].instantiated() && !PropUtil.isDomainSubsetOf(refs[i], set)) {
+//                        refs[i].removeValue(remove, aCause);
+//                        if (refs[i].instantiated()) {
+//                            int value = refs[i].getValue();
+//                            if (!set.add(value) || !to.kernelContains(value)) {
+//                                // sameRefs++ || to.getKernelSize++
+//                                contradiction(take, "Take too small");
+//                            }
+//                            queue.push(value);
+//                        }
+//                    }
+//                }
+//            }
+//            sameRefs = 0;
+//            set.clear();
+//            for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+//                if (refs[i].instantiated()) {
+//                    int value = refs[i].getValue();
+//                    sameRefs += (set.add(value)) ? 0 : 1;
+//                    to.addToKernel(value, aCause);
+//                }
+//            }
+//            for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+//                if (!refs[i].instantiated() && PropUtil.isDomainSubsetOf(refs[i], set)) {
+//                    sameRefs++;
+//                }
+//            }
+        }
+//        minTakeSize = sameRefs + to.getKernelSize();
+//        System.out.println("----" + to.getKernelSize() + " : " + minTakeSize + " : " + take.getEnvelopeSize() + " : " + evtmask + " : " + set + " : " + this);
+        if (minTakeSize > take.getEnvelopeSize()) {
+            contradiction(take, "To too large");
         }
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        if (isTakeVar(idxVarInProp)) {
-            if ((mask & EventType.REMOVE_FROM_ENVELOPE.mask) != 0) {
-                // Prune to
-                int[] takeEnv = PropUtil.iterateEnv(take);
-                for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
-                    if (!possibleTo(takeEnv, i)) {
-                        to.removeFromEnvelope(i, aCause);
-                    }
-                }
-            }
-            takeD.freeze();
-            takeD.forEach(pruneRefAndPickToOnTakeKer, EventType.ADD_TO_KER);
-            takeD.unfreeze();
-        } else if (isToVar(idxVarInProp)) {
-            toD.freeze();
-            toD.forEach(pruneRefAndPickToOnToEnv, EventType.REMOVE_FROM_ENVELOPE);
-            toD.unfreeze();
-            if ((mask & EventType.REMOVE_FROM_ENVELOPE.mask) != 0) {
-                // Prune take
-                for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-                    if (!PropUtil.domainIntersectEnv(refs[i], to)) {
-                        take.removeFromEnvelope(i, aCause);
-                    }
-                }
-            }
-        } else {
-            assert isRefVar(idxVarInProp);
-            int id = getRefVarIndex(idxVarInProp);
-
-            refsD[id].freeze();
-            if (take.envelopeContains(id)) {
-                refsD[id].forEach(pruneToOnRefRem, EventType.REMOVE);
-            }
-            refsD[id].unfreeze();
-
-            // Prune refs, Pick to
-            for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-                PropUtil.intSubsetEnv(refs[i], to, aCause);
-                if (refs[i].instantiated()) {
-                    to.addToKernel(refs[i].getValue(), aCause);
-                }
-            }
-
-            // Prune take
-            for (int i : PropUtil.iterateEnv(take)) {
-                if (!PropUtil.domainIntersectEnv(refs[i], to)) {
-                    take.removeFromEnvelope(i, aCause);
-                }
-            }
-        }
+        forcePropagate(EventType.ADD_TO_KER);
+//        if (isTakeVar(idxVarInProp)) {
+//            if ((mask & EventType.REMOVE_FROM_ENVELOPE.mask) != 0) {
+//                // Prune to
+//                int[] takeEnv = PropUtil.iterateEnv(take);
+//                for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
+//                    if (!possibleTo(takeEnv, i)) {
+//                        to.removeFromEnvelope(i, aCause);
+//                    }
+//                }
+//            }
+//            takeD.freeze();
+//            takeD.forEach(pruneRefAndPickToOnTakeKer, EventType.ADD_TO_KER);
+//            takeD.unfreeze();
+//        } else if (isToVar(idxVarInProp)) {
+//            toD.freeze();
+//            toD.forEach(pruneRefAndPickToOnToEnv, EventType.REMOVE_FROM_ENVELOPE);
+//            toD.unfreeze();
+//            if ((mask & EventType.REMOVE_FROM_ENVELOPE.mask) != 0) {
+//                // Prune take
+//                for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+//                    if (!PropUtil.domainIntersectEnv(refs[i], to)) {
+//                        take.removeFromEnvelope(i, aCause);
+//                    }
+//                }
+//            }
+//        } else {
+//            assert isRefVar(idxVarInProp);
+//            int id = getRefVarIndex(idxVarInProp);
+//
+//            refsD[id].freeze();
+//            if (take.envelopeContains(id)) {
+//                refsD[id].forEach(pruneToOnRefRem, EventType.REMOVE);
+//            }
+//            refsD[id].unfreeze();
+//
+//            // Prune refs, Pick to
+//            for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+//                PropUtil.intSubsetEnv(refs[i], to, aCause);
+//                if (refs[i].instantiated()) {
+//                    to.addToKernel(refs[i].getValue(), aCause);
+//                }
+//            }
+//
+//            // Prune take
+//            for (int i : PropUtil.iterateEnv(take)) {
+//                if (!PropUtil.domainIntersectEnv(refs[i], to)) {
+//                    take.removeFromEnvelope(i, aCause);
+//                }
+//            }
+//        }
     }
     private final IntProcedure pruneRefAndPickToOnTakeKer = new IntProcedure() {
         @Override

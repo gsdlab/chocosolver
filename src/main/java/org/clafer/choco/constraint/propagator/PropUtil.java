@@ -101,6 +101,28 @@ public class PropUtil {
 
     /**
      * Checks if it is guaranteed that an integer variable instantiates to a
+     * value in a collection.
+     *
+     * @param ivar the integer variable
+     * @param svar the collection
+     * @return {@code true} if and only if {@code dom(ivar) subsetof collection},
+     *         {@code false} otherwise
+     */
+    public static boolean isDomainSubsetOf(IntVar ivar, TIntCollection collection) {
+        if (ivar.getDomainSize() > collection.size()) {
+            return false;
+        }
+        int ub = ivar.getUB();
+        for (int i = ivar.getLB(); i <= ub; i = ivar.nextValue(i)) {
+            if (!collection.contains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if it is guaranteed that an integer variable instantiates to a
      * value in the set variable.
      *
      * @param ivar the integer variable
@@ -108,7 +130,7 @@ public class PropUtil {
      * @return {@code true} if and only if {@code dom(ivar) subsetof env(svar)},
      *         {@code false} otherwise
      */
-    public static boolean domainSubsetEnv(IntVar ivar, SetVar svar) {
+    public static boolean isDomainSubsetEnv(IntVar ivar, SetVar svar) {
         if (ivar.getDomainSize() < svar.getKernelSize()) {
             int ub = ivar.getUB();
             for (int i = Math.max(ivar.getLB(), svar.getKernelFirst()); i <= ub; i = ivar.nextValue(i)) {

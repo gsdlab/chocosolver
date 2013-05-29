@@ -116,15 +116,8 @@ public class PropJoinRelation extends Propagator<SetVar> {
             }
         }
 
-        // Prune to
-        TIntHashSet viableTo = new TIntHashSet(to.getEnvelopeSize() /* guess the size */);
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            PropUtil.iterateEnv(children[i], viableTo);
-        }
-        PropUtil.envSubsetOf(to, viableTo, aCause);
-
         // Pick take, pick child, pick take, prune to
-        for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
+        for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
             findMate(i);
         }
     }

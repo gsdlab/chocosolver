@@ -82,7 +82,7 @@ public class Constraints {
         vars[0] = take;
         vars[1] = to;
         System.arraycopy(children, 0, vars, 2, children.length);
-        Constraint constraint = new Constraint(vars, take.getSolver());
+        Constraint<SetVar, PropJoinRelation> constraint = new Constraint<SetVar, PropJoinRelation>(vars, take.getSolver());
         constraint.setPropagators(new PropJoinRelation(take, children, to));
         return constraint;
     }

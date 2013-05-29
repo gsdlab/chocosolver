@@ -29,6 +29,11 @@ public class FixedCapacityIntSet implements TIntSet {
         addAll(values);
     }
 
+    public FixedCapacityIntSet(FixedCapacityIntSet set) {
+        this(set.size);
+        System.arraycopy(set.array, 0, array, 0, size);
+    }
+
     /**
      * {@inheritDoc}
      */

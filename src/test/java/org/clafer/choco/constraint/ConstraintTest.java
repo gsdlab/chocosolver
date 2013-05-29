@@ -34,17 +34,17 @@ public abstract class ConstraintTest {
                 throw new IllegalStateException();
             }
         }
-        if (rand.nextBoolean()) {
+//        if (rand.nextBoolean()) {
             solver.set(
                     new StrategiesSequencer(solver.getEnvironment(),
                     new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
                     IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
-        } else {
-            solver.set(
-                    new StrategiesSequencer(solver.getEnvironment(),
-                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime()),
-                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
-        }
+//        } else {
+//            solver.set(
+//                    new StrategiesSequencer(solver.getEnvironment(),
+//                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime()),
+//                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
+//        }
         return solver;
     }
 }

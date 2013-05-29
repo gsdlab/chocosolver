@@ -32,7 +32,7 @@ public class JoinFunctionTest extends ConstraintTest {
 
     @Test(timeout = 60000)
     public void quickTest() throws Throwable {
-        for (int repeat = 0; repeat < 10; repeat++) {
+        for (int repeat = 0; repeat < 1000; repeat++) {
             Solver solver = new Solver();
             int num = nextInt(10);
 
