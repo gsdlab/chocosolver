@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import gnu.trove.list.array.TIntArrayList;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import java.util.Set;
@@ -554,7 +555,23 @@ public class AstCompiler {
                 members[offset + j] = Check.notNull(subMembers[j]);
             }
         }
-        set.put(clafer, union(subSets));
+        if (subSets.length == 1) {
+            set.put(clafer, union(subSets[0]));
+        } else {
+            TIntArrayList env = new TIntArrayList();
+            TIntArrayList ker = new TIntArrayList();
+            for (int i = 0; i < members.length; i++) {
+                if (IrUtil.isTrue(members[i])) {
+                    ker.add(i);
+                }
+                if (!IrUtil.isFalse(members[i])) {
+                    env.add(i);
+                }
+            }
+            IrSetExpr unionSet = $(set(clafer.getName(), env.toArray(), ker.toArray()));
+            module.addConstraint(boolChannel(members, unionSet));
+            set.put(clafer, unionSet);
+        }
         Check.noNulls(members);
         membership.put(clafer, members);
 

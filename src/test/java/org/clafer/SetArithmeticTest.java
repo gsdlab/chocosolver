@@ -374,4 +374,50 @@ public class SetArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
         assertEquals(780, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * abstract Cost
+     * Debt : Cost 3
+     * Credit : Cost
+     * Payment -> Cost
+     * [Payment.ref in Debt]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testIntegerInSetConstant() {
+        AstModel model = newModel();
+
+        AstAbstractClafer cost = model.addAbstractClafer("Cost");
+        AstConcreteClafer debt = model.addChild("Debt").withCard(3, 3).extending(cost);
+        AstConcreteClafer credit = model.addChild("Credit").withCard(Mandatory).extending(cost);
+        AstConcreteClafer payment = model.addChild("Payment").refTo(cost).withCard(Mandatory);
+        model.addConstraint(in(joinRef(global(payment)), global(debt)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
+        assertEquals(3, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Cost
+     * Debt : Cost 3
+     * Credit : Cost
+     * Payment -> Cost
+     * [Payment.ref not in Debt]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testIntegerNotInSetConstant() {
+        AstModel model = newModel();
+
+        AstAbstractClafer cost = model.addAbstractClafer("Cost");
+        AstConcreteClafer debt = model.addChild("Debt").withCard(3, 3).extending(cost);
+        AstConcreteClafer credit = model.addChild("Credit").withCard(Mandatory).extending(cost);
+        AstConcreteClafer payment = model.addChild("Payment").refTo(cost).withCard(Mandatory);
+        model.addConstraint(notIn(joinRef(global(payment)), global(debt)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
+        assertEquals(1, solver.allInstances().length);
+    }
 }
