@@ -214,6 +214,41 @@ public class BoolArithmeticTest {
 
     /**
      * <pre>
+     * A -> integer
+     * B -> integer
+     * C ?
+     * [!(some C => (A.ref = 1 =&gt; B.ref = 2))]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNot() {
+        /*
+         * import Control.Monad
+         *
+         * solutions = do
+         *     a <- [-2..2]
+         *     b <- [-2..2]
+         *     c <- [True, False]
+         *     guard $ not (c `implies` ((a == 1) `implies` (b == 2)))
+         *     return (a, b, c)
+         *     where
+         *         implies True False = False
+         *         implies _ _ = True
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer c = model.addChild("C").withCard(0, 1);
+        model.addConstraint(not(implies(some(c), implies(
+                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2))))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * A ?
      * B ?
      * C ?

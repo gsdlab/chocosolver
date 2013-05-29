@@ -46,19 +46,4 @@ public class ClaferUnsat {
         }
         return null;
     }
-
-    public static enum Objective {
-
-        Maximize(ResolutionPolicy.MAXIMIZE),
-        Minimize(ResolutionPolicy.MINIMIZE);
-        private final ResolutionPolicy policy;
-
-        Objective(ResolutionPolicy policy) {
-            this.policy = policy;
-        }
-
-        ResolutionPolicy getPolicy() {
-            return policy;
-        }
-    }
 }

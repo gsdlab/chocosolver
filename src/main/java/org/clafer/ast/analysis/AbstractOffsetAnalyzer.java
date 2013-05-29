@@ -11,7 +11,7 @@ import org.clafer.ast.AstClafer;
  *
  * @author jimmy
  */
-public class AbstractOffsetAnalysis implements Analyzer {
+public class AbstractOffsetAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {

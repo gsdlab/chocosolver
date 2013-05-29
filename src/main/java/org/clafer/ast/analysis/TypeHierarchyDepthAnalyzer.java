@@ -10,8 +10,9 @@ import org.clafer.ast.AstAbstractClafer;
  *
  * @author jimmy
  */
-public class TypeHierarchyDepthAnalysis implements Analyzer {
+public class TypeHierarchyDepthAnalyzer implements Analyzer {
 
+    @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstAbstractClafer, Integer> depthMap = new HashMap<AstAbstractClafer, Integer>();
 

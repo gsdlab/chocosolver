@@ -11,7 +11,7 @@ import org.clafer.ast.Card;
  *
  * @author jimmy
  */
-public class GlobalCardAnalysis implements Analyzer {
+public class GlobalCardAnalyzer implements Analyzer {
     
     @Override
     public Analysis analyze(Analysis analysis) {

@@ -33,7 +33,7 @@ import org.clafer.collection.Pair;
  *
  * @author jimmy
  */
-public class PartialIntAnalysis implements Analyzer {
+public class PartialIntAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {

@@ -10,7 +10,6 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
-import org.clafer.ast.AstBoolClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
@@ -46,7 +45,7 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class TypeAnalysis implements Analyzer {
+public class TypeAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {

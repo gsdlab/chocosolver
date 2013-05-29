@@ -11,7 +11,7 @@ import org.clafer.ast.Card;
  *
  * @author jimmy
  */
-public class ScopeAnalysis implements Analyzer {
+public class ScopeAnalyzer implements Analyzer {
 
     /*
      * Shrinks the scope if it's greater than the upper global cardinality.

@@ -10,7 +10,7 @@ import org.clafer.ast.AstConcreteClafer;
  *
  * @author jimmy
  */
-public class FormatAnalysis implements Analyzer {
+public class FormatAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {

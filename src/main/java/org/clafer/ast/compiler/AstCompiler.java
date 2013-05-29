@@ -53,16 +53,16 @@ import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetArithm;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.Card;
-import org.clafer.ast.analysis.AbstractOffsetAnalysis;
+import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
 import org.clafer.ast.analysis.Analyzer;
-import org.clafer.ast.analysis.CardAnalysis;
-import org.clafer.ast.analysis.FormatAnalysis;
-import org.clafer.ast.analysis.GlobalCardAnalysis;
-import org.clafer.ast.analysis.PartialIntAnalysis;
-import org.clafer.ast.analysis.PartialSolutionAnalysis;
-import org.clafer.ast.analysis.ScopeAnalysis;
-import org.clafer.ast.analysis.TypeAnalysis;
-import org.clafer.ast.analysis.TypeHierarchyDepthAnalysis;
+import org.clafer.ast.analysis.CardAnalyzer;
+import org.clafer.ast.analysis.FormatAnalyzer;
+import org.clafer.ast.analysis.GlobalCardAnalyzer;
+import org.clafer.ast.analysis.PartialIntAnalyzer;
+import org.clafer.ast.analysis.PartialSolutionAnalyzer;
+import org.clafer.ast.analysis.ScopeAnalyzer;
+import org.clafer.ast.analysis.TypeAnalyzer;
+import org.clafer.ast.analysis.TypeHierarchyDepthAnalyzer;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.graph.KeyGraph;
@@ -84,15 +84,15 @@ import static org.clafer.ir.Irs.*;
 public class AstCompiler {
 
     public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
-        new TypeAnalysis(),
-        new TypeHierarchyDepthAnalysis(),
-        new GlobalCardAnalysis(),
-        new ScopeAnalysis(),
-        new CardAnalysis(),
-        new FormatAnalysis(),
-        new AbstractOffsetAnalysis(),
-        new PartialSolutionAnalysis(),
-        new PartialIntAnalysis()
+        new TypeAnalyzer(),
+        new TypeHierarchyDepthAnalyzer(),
+        new GlobalCardAnalyzer(),
+        new ScopeAnalyzer(),
+        new CardAnalyzer(),
+        new FormatAnalyzer(),
+        new AbstractOffsetAnalyzer(),
+        new PartialSolutionAnalyzer(),
+        new PartialIntAnalyzer()
     };
     private final Analysis analysis;
     private final IrModule module;
@@ -113,7 +113,7 @@ public class AstCompiler {
 
     private AstSolutionMap compile() {
         List<AstAbstractClafer> abstractClafers = analysis.getAbstractClafers();
-        List<AstConcreteClafer> concreteClafers = AstUtil.getConcreteClafers(analysis.getModel());
+        List<AstConcreteClafer> concreteClafers = analysis.getConcreteClafers();
 
         IrSetVar rootSet = constant(new int[]{0});
         set.put(analysis.getModel(), $(rootSet));
