@@ -9,6 +9,7 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
  *
@@ -186,7 +187,7 @@ public class SimpleConstraintTest {
      * Internet : Service
      *     [this.Cost.ref = 2]
      * Computer
-     *     Software : Feature 3..4 
+     *     Software : Feature 3..4
      *     [this.Software.Cost.ref = 3]
      * </pre>
      */
@@ -333,5 +334,26 @@ public class SimpleConstraintTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8));
         // Due to symmetry breaking.
         assertEquals(16, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A -> integer 3..4
+     * B -> integer 3..4
+     * [this.A = this.B]
+     * [this.A.ref > 5000]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinRefLargeDomain() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(IntType).withCard(3, 4);
+        AstConcreteClafer b = model.addChild("B").refToUnique(IntType).withCard(3, 4);
+        model.addConstraint(equal(joinRef(global(a)), joinRef(global(b))));
+        model.addConstraint(greaterThan(joinRef(global(a)), constant(5000)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(10000));
+        assertTrue(solver.find());
     }
 }

@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
+import java.util.Arrays;
 import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
@@ -78,7 +79,7 @@ public class PropSetSumN extends Propagator<Variable> {
         int highStart = chooseSize - lowEnd;
         // The n + 1 highest integer, or 0 if not positive.
         int highCandidate = 0;
-        // The highest n positive integers in order.
+        // The highest n positive integers in descending order.
         int[] highChoose = new int[chooseSize - highStart];
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (!Util.in(i, ker)) {
@@ -106,12 +107,17 @@ public class PropSetSumN extends Propagator<Variable> {
         index = 0;
         // sum of the lowest n - 1 negative integers that can be chosen.
         int lowNMinusOne = kerSum;
+        // sum of the highest n - 1 positive integers that can be chosen.
+        int highNMinusOne = high - (highChoose.length == 0 ? 0 : highChoose[highChoose.length - 1]);
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (!Util.in(i, ker)) {
                 if (index < lowEnd - 1) {
                     lowNMinusOne += Math.min(0, i);
                 } else if ( // Is it possible to add i to the kernel?
-                        lowNMinusOne + i > ub) {
+                        // Adding i will never be under the upper bound
+                        lowNMinusOne + i > ub
+                        // Adding i will never be over the lower bound
+                        || highNMinusOne + i < lb) {
                     // With i, it is impossible to stay below the upper bound.
                     // Remove it from the envelope.
                     again |= set.removeFromEnvelope(i, aCause);
@@ -122,6 +128,7 @@ public class PropSetSumN extends Propagator<Variable> {
         for (int i = highChoose.length - 1; i >= 0
                 // Is it possible to leave i out of the kernel?
                 // Replace i with the candidate.
+                // Not adding highChoose[i] will never be over the lower bound
                 && high - highChoose[i] + highCandidate < lb;
                 i--) {
             // Without i, it is impossible to reach the lower bound.

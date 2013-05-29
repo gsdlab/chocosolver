@@ -50,16 +50,6 @@ public class PropUtil {
         return deltas;
     }
 
-    public static boolean approxDomainIntersectEnv(IntVar e1, SetVar e2, boolean otherwise) {
-        if (e1.instantiated()) {
-            return e2.envelopeContains(e1.getValue());
-        }
-        if (Math.min(e1.getDomainSize(), e2.getEnvelopeSize()) < 100) {
-            return domainIntersectEnv(e1, e2);
-        }
-        return otherwise;
-    }
-
     /**
      * Checks if it is possible for an integer variable to instantiate to a
      * value in the set variable. Assumes the set variables envelope is sorted.
