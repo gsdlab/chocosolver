@@ -15,10 +15,10 @@ public class InstanceClafer {
 
     private final AstClafer type;
     private final int id;
-    private final int ref;
+    private final Integer ref;
     private final InstanceClafer[] children;
 
-    public InstanceClafer(AstClafer type, int id, int ref, InstanceClafer[] children) {
+    public InstanceClafer(AstClafer type, int id, Integer ref, InstanceClafer[] children) {
         this.type = Check.notNull(type);
         this.id = id;
         this.ref = ref;
@@ -33,7 +33,7 @@ public class InstanceClafer {
         return id;
     }
 
-    public int getRef() {
+    public Integer getRef() {
         return ref;
     }
 
@@ -43,6 +43,8 @@ public class InstanceClafer {
 
     /**
      * Print solution to stdout.
+     *
+     * @throws IOException an IO error occurred
      */
     public void print() throws IOException {
         print(System.out);
@@ -50,6 +52,9 @@ public class InstanceClafer {
 
     /**
      * Print solution.
+     *
+     * @param out the stream to print to
+     * @throws IOException an IO error occurred
      */
     public void print(Appendable out) throws IOException {
         print("", out);

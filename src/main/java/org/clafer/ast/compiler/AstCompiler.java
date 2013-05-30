@@ -1,6 +1,7 @@
 package org.clafer.ast.compiler;
 
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntObjectMap;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import java.util.Set;
@@ -169,7 +170,9 @@ public class AstCompiler {
             constrainGroupCardinality(clafer);
         }
 
-        List<IrBoolVar> softVars = new ArrayList<IrBoolVar>();
+        // Map the identifiers to the ORIGINAL constraints.
+        TIntObjectMap<AstConstraint> constraintMap = AstUtil.getConstraintMap(analysis.getModel());
+        List<Pair<AstConstraint, IrBoolVar>> softVars = new ArrayList<Pair<AstConstraint, IrBoolVar>>();
         for (AstClafer clafer : clafers) {
             AstConstraint[] constraints = getConstraints(clafer);
             int scope = getScope(clafer);
@@ -181,9 +184,9 @@ public class AstCompiler {
                         module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
                     }
                 } else {
-//                    IrBoolVar soft = bool("Constraint#" + i + " under " + clafer + i);
                     IrBoolVar soft = bool(constraint.toString());
-                    softVars.add(soft);
+                    AstConstraint originalConstraint = constraintMap.get(constraint.getId());
+                    softVars.add(new Pair<AstConstraint, IrBoolVar>(originalConstraint, soft));
                     for (int j = 0; j < scope; j++) {
                         ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
                         IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
@@ -198,8 +201,9 @@ public class AstCompiler {
         for (IrIntVar[] refs : refPointers.getValues()) {
             module.addIntVars(refs);
         }
-
-        return new AstSolutionMap(analysis.getModel(), childrenSet, refPointers, softVars.toArray(new IrBoolVar[softVars.size()]), analysis);
+        @SuppressWarnings("unchecked")
+        Pair<AstConstraint, IrBoolVar>[] softVarPairs = softVars.toArray(new Pair[softVars.size()]);
+        return new AstSolutionMap(analysis.getModel(), childrenSet, refPointers, softVarPairs, analysis);
     }
 
     private void initConcrete(AstConcreteClafer clafer) {

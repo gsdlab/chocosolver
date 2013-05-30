@@ -12,7 +12,7 @@ import org.clafer.ast.Card;
  * @author jimmy
  */
 public class GlobalCardAnalyzer implements Analyzer {
-    
+
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstClafer, Card> globalCards = new HashMap<AstClafer, Card>();
@@ -27,10 +27,9 @@ public class GlobalCardAnalyzer implements Analyzer {
         }
         return analysis.withGlobalCardMap(globalCards);
     }
-    
+
     private static void analyze(AstAbstractClafer clafer, Analysis analysis, Map<AstClafer, Card> globalCards) {
-        int lowGlobalCard = 0;
-        int highGlobalCard = 0;
+        Card globalCard = new Card(0, 0);
         for (AstClafer sub : clafer.getSubs()) {
             Card subGlobalCard = globalCards.get(sub);
             if (subGlobalCard == null) {
@@ -38,16 +37,14 @@ public class GlobalCardAnalyzer implements Analyzer {
                 // Assume the worst possible case.
                 subGlobalCard = new Card(0, analysis.getScope(sub));
             }
-            lowGlobalCard += subGlobalCard.getLow();
-            highGlobalCard += subGlobalCard.getHigh();
+            globalCard = globalCard.add(subGlobalCard);
         }
-        Card globalCard = new Card(lowGlobalCard, highGlobalCard);
         globalCards.put(clafer, globalCard);
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, globalCard, analysis, globalCards);
         }
     }
-    
+
     private static void analyze(AstConcreteClafer clafer, Card parentGlobalCard, Analysis analysis, Map<AstClafer, Card> globalCards) {
         // Cap by scope
         Card globalCard = parentGlobalCard.mult(analysis.getCard(clafer));

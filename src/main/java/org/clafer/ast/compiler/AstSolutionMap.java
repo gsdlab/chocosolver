@@ -4,9 +4,11 @@ import org.clafer.common.Check;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
+import org.clafer.collection.Pair;
 import org.clafer.collection.ReadMap;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
@@ -21,13 +23,13 @@ public class AstSolutionMap {
     private final AstModel model;
     private final ReadMap<AstClafer, IrSetVar[]> childrenVars;
     private final ReadMap<AstRef, IrIntVar[]> refVars;
-    private final IrBoolVar[] softVars;
+    private final Pair<AstConstraint, IrBoolVar>[] softVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
             ReadMap<AstClafer, IrSetVar[]> childrenVars,
             ReadMap<AstRef, IrIntVar[]> refVars,
-            IrBoolVar[] softVars,
+            Pair<AstConstraint, IrBoolVar>[] softVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
         this.childrenVars = childrenVars.readOnly();
@@ -48,7 +50,12 @@ public class AstSolutionMap {
         return notNull(ref + " not part of the AST solution", refVars.get(ref));
     }
 
-    public IrBoolVar[] getSoftVars() {
+    /**
+     * Returns the soft variables and their corresponding constraints.
+     *
+     * @return the soft variables and their corresponding constraints
+     */
+    public Pair<AstConstraint, IrBoolVar>[] getSoftVars() {
         return softVars;
     }
 

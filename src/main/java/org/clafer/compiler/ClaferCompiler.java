@@ -1,13 +1,18 @@
 package org.clafer.compiler;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.clafer.ast.AstConstraint;
 import org.clafer.scope.Scope;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
+import org.clafer.collection.Pair;
 import org.clafer.common.Util;
 import org.clafer.compiler.ClaferObjective.Objective;
+import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
@@ -114,7 +119,14 @@ public class ClaferCompiler {
         IrSolutionMap irSolution = IrCompiler.compile(module, solver);
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        BoolVar[] softVars = irSolution.getBoolVars(astSolution.getSoftVars());
+        Pair<AstConstraint, IrBoolVar>[] irSoftVarPairs = astSolution.getSoftVars();
+        BoolVar[] softVars = new BoolVar[irSoftVarPairs.length];
+        @SuppressWarnings("unchecked")
+        Pair<AstConstraint, BoolVar>[] softVarPairs = new Pair[irSoftVarPairs.length];
+        for(int i = 0; i < softVars.length;i++) {
+            softVars[i] = irSolution.getBoolVar(irSoftVarPairs[i].getSnd());
+            softVarPairs[i] = new Pair<AstConstraint, BoolVar>(irSoftVarPairs[i].getFst(), softVars[i]);
+        }
         int[] bounds = Sum.getSumBounds(softVars);
         IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
         solver.post(ICF.sum(softVars, sum));
@@ -124,6 +136,7 @@ public class ClaferCompiler {
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
                 SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
                 IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
-        return new ClaferUnsat(solver, solution, softVars, sum);
+        
+        return new ClaferUnsat(solver, solution, softVarPairs, sum);
     }
 }

@@ -11,6 +11,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstUtil;
 import org.clafer.scope.Scope;
@@ -207,7 +208,7 @@ public class JavascriptShell {
      *
      * @return the min Unsat and near-miss example
      */
-    public Pair<Set<String>, InstanceModel> minUnsat() {
+    public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
         ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
         return unsat.minUnsat();
     }

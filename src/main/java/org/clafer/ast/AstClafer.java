@@ -219,10 +219,13 @@ public abstract class AstClafer implements AstVar {
     /**
      * Add a new constraint under this Clafer.
      *
-     * @param constraint the constraint
+     * @param expr a tautology
+     * @return the constraint
      */
-    public void addConstraint(AstBoolExpr constraint) {
-        constraints.add(new AstConstraint(idFactory.<AstConstraint>newId(), this, constraint));
+    public AstConstraint addConstraint(AstBoolExpr expr) {
+        AstConstraint constraint = new AstConstraint(idFactory.<AstConstraint>newId(), this, expr);
+        constraints.add(constraint);
+        return constraint;
     }
 
     /**

@@ -118,6 +118,12 @@ public class Analysis {
         return notNull(key.getName(), analysisName, t);
     }
 
+    /**
+     * Returns the original model. Analyzers are forbidden to alter the original
+     * model.
+     *
+     * @return the original model
+     */
     public AstModel getModel() {
         return model;
     }

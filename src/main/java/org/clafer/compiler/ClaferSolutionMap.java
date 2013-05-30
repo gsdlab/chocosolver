@@ -43,11 +43,11 @@ public class ClaferSolutionMap {
 
     private InstanceClafer getInstanceClafer(AstConcreteClafer clafer, int id) {
         List<InstanceClafer> children = new ArrayList<InstanceClafer>();
-        int ref = getInstanceClafer(clafer, id, children);
+        Integer ref = getInstanceClafer(clafer, id, children);
         return new InstanceClafer(clafer, id, ref, children.toArray(new InstanceClafer[children.size()]));
     }
 
-    private int getInstanceClafer(AstClafer clafer, int id, List<InstanceClafer> children) {
+    private Integer getInstanceClafer(AstClafer clafer, int id, List<InstanceClafer> children) {
         for (AstConcreteClafer child : clafer.getChildren()) {
             IrSetVar childSetIrVar = astSolution.getChildrenVars(child)[id];
             int[] childIds = irSolution.getSetValue(childSetIrVar);
@@ -55,7 +55,7 @@ public class ClaferSolutionMap {
                 children.add(getInstanceClafer(child, childId));
             }
         }
-        int ref = 0;
+        Integer ref = null;
         if (clafer.hasSuperClafer()) {
             ref = getInstanceClafer(clafer.getSuperClafer(),
                     id + astSolution.getOffset(clafer.getSuperClafer(), clafer),

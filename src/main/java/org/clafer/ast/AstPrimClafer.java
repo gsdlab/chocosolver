@@ -58,7 +58,7 @@ public abstract class AstPrimClafer extends AstClafer {
      * {@inheritDoc}
      */
     @Override
-    public void addConstraint(AstBoolExpr constraint) {
+    public AstConstraint addConstraint(AstBoolExpr constraint) {
         throw new UnsupportedOperationException("Cannot add a constraint under " + getName() + " primitive");
     }
 }

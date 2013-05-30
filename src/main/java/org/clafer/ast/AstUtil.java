@@ -1,5 +1,7 @@
 package org.clafer.ast;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -147,6 +149,40 @@ public class AstUtil {
         } else {
             subs.add((AstConcreteClafer) sub);
         }
+    }
+
+    /**
+     * Find all the constraints below the Clafer.
+     *
+     * @param clafer the Clafer
+     * @return the nested constraints
+     */
+    public static List<AstConstraint> getNestedConstraints(AstClafer clafer) {
+        List<AstConstraint> constraints = new ArrayList<AstConstraint>();
+        getNestedConstraints(clafer, constraints);
+        return constraints;
+    }
+
+    private static void getNestedConstraints(AstClafer clafer, List<AstConstraint> constraints) {
+        constraints.addAll(clafer.getConstraints());
+        for (AstConcreteClafer child : clafer.getChildren()) {
+            getNestedConstraints(child, constraints);
+        }
+    }
+
+    /**
+     * Map the identifiers to the constraints below the Clafer.
+     *
+     * @param clafer the Clafer
+     * @return the mapping of identifiers to constraints
+     */
+    public static TIntObjectMap<AstConstraint> getConstraintMap(AstClafer clafer) {
+        List<AstConstraint> constraints = getNestedConstraints(clafer);
+        TIntObjectMap<AstConstraint> map = new TIntObjectHashMap<AstConstraint>(constraints.size());
+        for (AstConstraint constraint : constraints) {
+            map.put(constraint.getId(), constraint);
+        }
+        return map;
     }
 
     /**

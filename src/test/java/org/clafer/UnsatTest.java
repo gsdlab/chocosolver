@@ -2,6 +2,7 @@ package org.clafer;
 
 import java.util.Set;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
 import org.clafer.collection.Pair;
@@ -68,15 +69,16 @@ public class UnsatTest {
         model.addConstraint(equal(joinRef(global(a)), constant(2)));
         model.addConstraint(and(some(a), none(b)));
         model.addConstraint(and(some(a), none(c)));
-        model.addConstraint(none(a));
+        AstConstraint unsatConstraint = model.addConstraint(none(a));
 
         ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
-        Pair<Set<String>, InstanceModel> unsatInstance = unsat.minUnsat();
+        Pair<Set<AstConstraint>, InstanceModel> unsatInstance = unsat.minUnsat();
 
         assertEquals(1, unsatInstance.getFst().size());
+        assertEquals(unsatConstraint, unsatInstance.getFst().iterator().next());
         assertEquals(1, unsatInstance.getSnd().getTopClafers().length);
         assertEquals(a, unsatInstance.getSnd().getTopClafers()[0].getType());
         assertEquals(0, unsatInstance.getSnd().getTopClafers()[0].getId());
-        assertEquals(2, unsatInstance.getSnd().getTopClafers()[0].getRef());
+        assertEquals(2, unsatInstance.getSnd().getTopClafers()[0].getRef().intValue());
     }
 }

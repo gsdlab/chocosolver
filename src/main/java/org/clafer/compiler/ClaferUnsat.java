@@ -2,6 +2,7 @@ package org.clafer.compiler;
 
 import java.util.HashSet;
 import java.util.Set;
+import org.clafer.ast.AstConstraint;
 import org.clafer.common.Check;
 import org.clafer.collection.Pair;
 import org.clafer.instance.InstanceModel;
@@ -19,10 +20,10 @@ public class ClaferUnsat {
 
     private final Solver solver;
     private final ClaferSolutionMap solutionMap;
-    private final BoolVar[] softVars;
+    private final Pair<AstConstraint, BoolVar>[] softVars;
     private final IntVar score;
 
-    ClaferUnsat(Solver solver, ClaferSolutionMap solutionMap, BoolVar[] softVars, IntVar score) {
+    ClaferUnsat(Solver solver, ClaferSolutionMap solutionMap, Pair<AstConstraint, BoolVar>[] softVars, IntVar score) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);
         this.softVars = Check.noNulls(softVars);
@@ -33,16 +34,16 @@ public class ClaferUnsat {
         return solver;
     }
 
-    public Pair<Set<String>, InstanceModel> minUnsat() {
+    public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
         solver.findOptimalSolution(ResolutionPolicy.MAXIMIZE, score);
         if (ESat.TRUE.equals(solver.isFeasible())) {
-            Set<String> unsat = new HashSet<String>();
-            for (BoolVar softVar : softVars) {
-                if (softVar.instantiatedTo(0)) {
-                    unsat.add(softVar.getName());
+            Set<AstConstraint> unsat = new HashSet<AstConstraint>();
+            for (Pair<AstConstraint, BoolVar> softVar : softVars) {
+                if (softVar.getSnd().instantiatedTo(0)) {
+                    unsat.add(softVar.getFst());
                 }
             }
-            return new Pair<Set<String>, InstanceModel>(unsat, solutionMap.getInstance());
+            return new Pair<Set<AstConstraint>, InstanceModel>(unsat, solutionMap.getInstance());
         }
         return null;
     }
