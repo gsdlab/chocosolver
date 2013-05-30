@@ -11,7 +11,6 @@ import org.clafer.ast.AstExprRewriter;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
-import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstThis;
 import static org.clafer.ast.Asts.*;

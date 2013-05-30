@@ -31,6 +31,6 @@ public class AstJoin implements AstSetExpr {
 
     @Override
     public String toString() {
-        return left + " . " + right + super.toString();
+        return left + " . " + right;
     }
 }

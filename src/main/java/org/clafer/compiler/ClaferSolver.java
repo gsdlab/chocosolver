@@ -16,6 +16,7 @@ public class ClaferSolver {
     private final Solver solver;
     private final ClaferSolutionMap solutionMap;
     private boolean first = true;
+    private boolean more = true;
 
     ClaferSolver(Solver solver, ClaferSolutionMap solutionMap) {
         this.solver = Check.notNull(solver);
@@ -31,11 +32,16 @@ public class ClaferSolver {
     }
 
     public boolean find() {
+        if (!more) {
+            return false;
+        }
         if (first) {
             first = false;
-            return solver.findSolution();
+            more &= solver.findSolution();
+            return more;
         }
-        return solver.nextSolution();
+        more &= solver.nextSolution();
+        return more;
     }
 
     public InstanceModel instance() {

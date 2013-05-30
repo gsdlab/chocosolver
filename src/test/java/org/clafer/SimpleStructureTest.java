@@ -249,6 +249,81 @@ public class SimpleStructureTest {
 
     /**
      * <pre>
+     * A 3..4
+     * B ->> A 2..3
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRefToVariable() {
+        /*
+         * import Control.Monad
+         * 
+         * solutions = do
+         *     a <- [3, 4]
+         *     numB <- [2, 3]
+         *     b <- sequence $ replicate numB [1..a]
+         *     return (a, b)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(3, 4);
+        AstConcreteClafer b = model.addChild("B").refTo(a).withCard(2, 3);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+
+        assertEquals(116, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 3..4
+     * B -> A 2..3
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testUniqueRefToVariable() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         * 
+         * isUnique [] = True
+         * isUnique (x : xs) = x `notElem` xs && isUnique xs
+         * 
+         * solutions = do
+         * a <- [3, 4]
+         * numB <- [2, 3]
+         * b <- sequence $ replicate numB [1..a]
+         * guard $ isUnique b
+         * return (a, b)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(3, 4);
+        AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 3);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+
+        assertEquals(48, solver.allInstances().length);
+    }
+
+    /**
+     * A
+     * B -> A 2..3
+     */
+    @Test(timeout = 60000)
+    public void testNotEnoughUniqueRef() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 1);
+        AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 3);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+
+        assertEquals(0, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * Feature 1..2
      * Free -> Feature
      * </pre>

@@ -27,10 +27,18 @@ var lessThanEqual = Asts.lessThanEqual;
 var greaterThan = Asts.greaterThan;
 var greaterThanEqual = Asts.greaterThanEqual;
 var arithm = Asts.arithm;
-var add = Asts.add;
-var sub = Asts.sub;
-var mul = Asts.mul;
-var div = Asts.div;
+function add(a1, a2) {
+    return Asts.add([a1, a2]);
+}
+function sub(s1, s2) {
+    return Asts.sub([s1, s2]);
+}
+function mul(m1, m2) {
+    return Asts.mul([m1, m2]);
+}
+function div(d1, d2) {
+    return Asts.div([d1, d2]);
+}
 var and = Asts.and;
 var ifOnlyIf = Asts.ifOnlyIf;
 var implies = Asts.implies;
@@ -40,6 +48,7 @@ var union = Asts.union;
 var diff = Asts.diff;
 var inter = Asts.inter;
 var membership = Asts.membership;
+var ifThenElse = Asts.ifThenElse;
 var $in = Asts.in;
 var notIn = Asts.notIn;
 var inter = Asts.inter;

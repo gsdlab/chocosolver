@@ -1,9 +1,10 @@
 package org.clafer;
 
+import org.clafer.ast.AstAbstractClafer;
 import org.clafer.scope.Scope;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.ast.Asts;
+import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
@@ -25,7 +26,7 @@ public class SymmetryBreakingTest {
      */
     @Test
     public void breakChildrenSwap() {
-        AstModel model = Asts.newModel();
+        AstModel model = newModel();
 
         AstConcreteClafer patron = model.addChild("Patron").withCard(2, 2);
         AstConcreteClafer food = patron.addChild("Food").withCard(1, 2);
@@ -42,7 +43,6 @@ public class SymmetryBreakingTest {
      *     Food +
      *         Cheese *
      * </pre>
-     * 
      */
     @Ignore("Currently fails because symmetry breaking needs to be more effective.")
     @Test
@@ -116,7 +116,7 @@ public class SymmetryBreakingTest {
          *               topping <- [0..scope]
          *               return $ Food $ replicate topping Cheese
          */
-        AstModel model = Asts.newModel();
+        AstModel model = newModel();
 
         AstConcreteClafer patron = model.addChild("Patron").withCard(2, 2);
         AstConcreteClafer food = patron.addChild("Food").withCard(1);
@@ -125,5 +125,28 @@ public class SymmetryBreakingTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
 
         assertEquals(19, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     * a : A *
+     * setRefToA -> A 3
+     * multisetRefToA ->> A 3
+     * </pre>
+     */  
+    @Ignore("Currently fails because symmetry breaking needs to be more effective.")
+    @Test
+    public void breakRefSwap() {
+        AstModel model = newModel();
+        
+        AstAbstractClafer A = model.addAbstractClafer("A");
+         AstConcreteClafer a = model.addChild("a").withCard(1).extending(A);
+         AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(A).withCard(3, 3);
+         AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
+         
+         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+         
+         assertEquals(4, solver.allInstances().length);
     }
 }
