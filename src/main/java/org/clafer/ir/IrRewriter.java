@@ -7,7 +7,7 @@ import static org.clafer.ir.Irs.*;
  * @param <T> the parameter type
  * @author jimmy
  */
-public class IrRewriter<T>
+public abstract class IrRewriter<T>
         implements IrBoolExprVisitor<T, IrBoolExpr>, IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
 
     public IrBoolExpr rewrite(IrBoolExpr expr, T t) {

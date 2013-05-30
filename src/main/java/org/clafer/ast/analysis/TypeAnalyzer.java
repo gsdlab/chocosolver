@@ -1,5 +1,6 @@
 package org.clafer.ast.analysis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,19 +51,14 @@ public class TypeAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstExpr, AstClafer> typeMap = new HashMap<AstExpr, AstClafer>();
-        Map<AstClafer, AstConstraint[]> constraintsMap = new HashMap<AstClafer, AstConstraint[]>();
-        for (AstClafer clafer : analysis.getClafers()) {
+        List<AstConstraint> typedConstraints = new ArrayList<AstConstraint>();
+        for (AstConstraint constraint : analysis.getConstraints()) {
+            AstClafer clafer = constraint.getContext();
             TypeVisitor visitor = new TypeVisitor(clafer, typeMap);
-            AstConstraint[] constraints = analysis.getConstraints(clafer);
-            AstConstraint[] typedConstraints = new AstConstraint[constraints.length];
-            for (int i = 0; i < constraints.length; i++) {
-                AstConstraint constraint = constraints[i];
-                TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(constraint.getExpr());
-                typedConstraints[i] = constraint.withExpr(typedConstraint.getExpr());
-            }
-            constraintsMap.put(clafer, typedConstraints);
+            TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(constraint.getExpr());
+            typedConstraints.add(constraint.withExpr(typedConstraint.getExpr()));
         }
-        return analysis.withTypeMap(typeMap).withConstraintsMap(constraintsMap);
+        return analysis.withTypeMap(typeMap).withConstraints(typedConstraints);
     }
 
     private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {
@@ -147,7 +143,7 @@ public class TypeAnalyzer implements Analyzer {
 
         @Override
         public TypedExpr<AstConstant> visit(AstConstant ast, Void a) {
-            return put(IntType, ast);
+            return put(ast.getType(), ast);
         }
 
         @Override

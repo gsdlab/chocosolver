@@ -60,6 +60,7 @@ import org.clafer.ast.analysis.Analyzer;
 import org.clafer.ast.analysis.CardAnalyzer;
 import org.clafer.ast.analysis.FormatAnalyzer;
 import org.clafer.ast.analysis.GlobalCardAnalyzer;
+import org.clafer.ast.analysis.OptimizerAnalyzer;
 import org.clafer.ast.analysis.PartialIntAnalyzer;
 import org.clafer.ast.analysis.PartialSolutionAnalyzer;
 import org.clafer.ast.analysis.ScopeAnalyzer;
@@ -93,8 +94,11 @@ public class AstCompiler {
         new CardAnalyzer(),
         new FormatAnalyzer(),
         new AbstractOffsetAnalyzer(),
+        new OptimizerAnalyzer(),
         new PartialSolutionAnalyzer(),
-        new PartialIntAnalyzer()
+        new PartialIntAnalyzer(),
+        // Reanalyze types
+        new TypeAnalyzer()
     };
     private final Analysis analysis;
     private final IrModule module;
@@ -173,25 +177,23 @@ public class AstCompiler {
         // Map the identifiers to the ORIGINAL constraints.
         TIntObjectMap<AstConstraint> constraintMap = AstUtil.getConstraintMap(analysis.getModel());
         List<Pair<AstConstraint, IrBoolVar>> softVars = new ArrayList<Pair<AstConstraint, IrBoolVar>>();
-        for (AstClafer clafer : clafers) {
-            AstConstraint[] constraints = getConstraints(clafer);
+        for (AstConstraint constraint : getConstraints()) {
+            AstClafer clafer = constraint.getContext();
             int scope = getScope(clafer);
-            for (AstConstraint constraint : constraints) {
-                if (constraint.isHard()) {
-                    for (int j = 0; j < scope; j++) {
-                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                        IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
-                        module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
-                    }
-                } else {
-                    IrBoolVar soft = bool(constraint.toString());
-                    AstConstraint originalConstraint = constraintMap.get(constraint.getId());
-                    softVars.add(new Pair<AstConstraint, IrBoolVar>(originalConstraint, soft));
-                    for (int j = 0; j < scope; j++) {
-                        ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                        IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
-                        module.addConstraint(implies($(soft), implies(membership.get(clafer)[j], thisConstraint)));
-                    }
+            if (constraint.isHard()) {
+                for (int j = 0; j < scope; j++) {
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
+                    module.addConstraint(implies(membership.get(clafer)[j], thisConstraint));
+                }
+            } else {
+                IrBoolVar soft = bool(constraint.toString());
+                AstConstraint originalConstraint = constraintMap.get(constraint.getId());
+                softVars.add(new Pair<AstConstraint, IrBoolVar>(originalConstraint, soft));
+                for (int j = 0; j < scope; j++) {
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
+                    module.addConstraint(implies($(soft), implies(membership.get(clafer)[j], thisConstraint)));
                 }
             }
         }
@@ -683,7 +685,11 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstConstant ast, Void a) {
-            return $(constant(ast.getValue()));
+            int[] value = ast.getValue();
+            if (value.length == 1) {
+                return $(constant(value[0]));
+            }
+            return $(constant(value));
         }
 
         @Override
@@ -715,9 +721,10 @@ public class AstCompiler {
 
             IrExpr $children = compile(children);
             if ($children instanceof IrIntExpr) {
-                // TODO: remove this, and do this as an optimization step
+                // Only one possible parent.
                 if (getScope(childrenType.getParent()) == 1) {
-                    return $(Zero);
+//                    return $(Zero);
+                    throw new Error();
                 }
 
                 IrIntExpr $intChildren = (IrIntExpr) $children;
@@ -1228,7 +1235,7 @@ public class AstCompiler {
         return analysis.getType(expr);
     }
 
-    private AstConstraint[] getConstraints(AstClafer clafer) {
-        return analysis.getConstraints(clafer);
+    private List<AstConstraint> getConstraints() {
+        return analysis.getConstraints();
     }
 }

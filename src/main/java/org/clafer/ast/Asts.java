@@ -51,7 +51,11 @@ public class Asts {
     }
 
     public static AstConstant constant(int value) {
-        return new AstConstant(value);
+        return constant(IntType, value);
+    }
+
+    public static AstConstant constant(AstClafer type, int... value) {
+        return new AstConstant(type, value);
     }
 
     public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
@@ -247,8 +251,12 @@ public class Asts {
         return new AstLocal(name);
     }
 
+    public static AstDecl decl(boolean disjoint, AstLocal[] locals, AstSetExpr body) {
+        return new AstDecl(disjoint, locals, body);
+    }
+
     public static AstDecl decl(AstLocal[] locals, AstSetExpr body) {
-        return new AstDecl(false, locals, body);
+        return decl(false, locals, body);
     }
 
     public static AstDecl decl(AstLocal local, AstSetExpr body) {
@@ -256,7 +264,7 @@ public class Asts {
     }
 
     public static AstDecl disjDecl(AstLocal[] locals, AstSetExpr body) {
-        return new AstDecl(true, locals, body);
+        return decl(true, locals, body);
     }
 
     public static AstBoolExpr quantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpr body) {

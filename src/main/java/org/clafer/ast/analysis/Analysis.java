@@ -1,6 +1,7 @@
 package org.clafer.ast.analysis;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ public class Analysis {
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
     private final List<AstConcreteClafer> concreteClafers;
-    private final Map<AstClafer, AstConstraint[]> constraintsMap;
+    private final List<AstConstraint> constraints;
     private final Map<AstConcreteClafer, Card> cardMap;
     private final Map<AstClafer, Card> globalCardMap;
     private final Scope scope;
@@ -45,15 +46,15 @@ public class Analysis {
     }
 
     Analysis(AstModel model, Scope scope, List<AstClafer> clafers, List<AstAbstractClafer> abstractClafers, List<AstConcreteClafer> concreteClafers) {
-        this(model, AstUtil.getClafers(model), abstractClafers, concreteClafers, buildConstraintsMap(clafers), buildCardMap(clafers), null, scope, null, null, null, null, null, null);
+        this(model, AstUtil.getClafers(model), abstractClafers, concreteClafers, AstUtil.getNestedConstraints(model), buildCardMap(clafers), null, scope, null, null, null, null, null, null);
     }
 
-    Analysis(AstModel model, List<AstClafer> clafers, List<AstAbstractClafer> abstractClafers, List<AstConcreteClafer> concreteClafers, Map<AstClafer, AstConstraint[]> constraintsMap, Map<AstConcreteClafer, Card> cardMap, Map<AstClafer, Card> globalCardMap, Scope scope, Map<AstAbstractClafer, Integer> depthMap, Map<AstClafer, Format> formatMap, Map<AstAbstractClafer, Offsets> offsetMap, Map<AstClafer, PartialSolution> partialSolutionMap, Map<AstRef, int[][]> partialIntsMap, Map<AstExpr, AstClafer> typeMap) {
+    Analysis(AstModel model, List<AstClafer> clafers, List<AstAbstractClafer> abstractClafers, List<AstConcreteClafer> concreteClafers, List<AstConstraint> constraints, Map<AstConcreteClafer, Card> cardMap, Map<AstClafer, Card> globalCardMap, Scope scope, Map<AstAbstractClafer, Integer> depthMap, Map<AstClafer, Format> formatMap, Map<AstAbstractClafer, Offsets> offsetMap, Map<AstClafer, PartialSolution> partialSolutionMap, Map<AstRef, int[][]> partialIntsMap, Map<AstExpr, AstClafer> typeMap) {
         this.model = model;
         this.clafers = clafers;
         this.abstractClafers = abstractClafers;
         this.concreteClafers = concreteClafers;
-        this.constraintsMap = constraintsMap;
+        this.constraints = constraints;
         this.cardMap = cardMap;
         this.globalCardMap = globalCardMap;
         this.scope = scope;
@@ -63,15 +64,6 @@ public class Analysis {
         this.partialSolutionMap = partialSolutionMap;
         this.partialIntsMap = partialIntsMap;
         this.typeMap = typeMap;
-    }
-
-    private static Map<AstClafer, AstConstraint[]> buildConstraintsMap(List<AstClafer> clafers) {
-        Map<AstClafer, AstConstraint[]> constraintsMap = new HashMap<AstClafer, AstConstraint[]>();
-        for (AstClafer clafer : clafers) {
-            constraintsMap.put(clafer,
-                    clafer.getConstraints().toArray(new AstConstraint[clafer.getConstraints().size()]));
-        }
-        return constraintsMap;
     }
 
     private static Map<AstConcreteClafer, Card> buildCardMap(List<AstClafer> clafers) {
@@ -129,35 +121,31 @@ public class Analysis {
     }
 
     public List<AstClafer> getClafers() {
-        return clafers;
+        return Collections.unmodifiableList(clafers);
     }
 
     public List<AstAbstractClafer> getAbstractClafers() {
-        return abstractClafers;
+        return Collections.unmodifiableList(abstractClafers);
     }
 
     public Analysis withAbstractClafers(List<AstAbstractClafer> abstractClafers) {
-        return new Analysis(model, append(abstractClafers, concreteClafers), abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, append(abstractClafers, concreteClafers), abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public List<AstConcreteClafer> getConcreteClafers() {
-        return concreteClafers;
+        return Collections.unmodifiableList(concreteClafers);
     }
 
     public Analysis withConcreteClafers(List<AstConcreteClafer> concreteClafers) {
-        return new Analysis(model, append(abstractClafers, concreteClafers), abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, append(abstractClafers, concreteClafers), abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
-    public AstConstraint[] getConstraints(AstClafer clafer) {
-        return notNull(clafer, "Constraint", getConstraintsMap().get(clafer));
+    public List<AstConstraint> getConstraints() {
+        return Collections.unmodifiableList(constraints);
     }
 
-    public Map<AstClafer, AstConstraint[]> getConstraintsMap() {
-        return notNull("Constraint", constraintsMap);
-    }
-
-    public Analysis withConstraintsMap(Map<AstClafer, AstConstraint[]> constraintsMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+    public Analysis withConstraints(List<AstConstraint> constraints) {
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public Card getCard(AstConcreteClafer clafer) {
@@ -169,7 +157,7 @@ public class Analysis {
     }
 
     public Analysis withCardMap(Map<AstConcreteClafer, Card> cardMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public Card getGlobalCard(AstClafer clafer) {
@@ -181,7 +169,7 @@ public class Analysis {
     }
 
     public Analysis withGlobalCardMap(Map<AstClafer, Card> globalCardMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public int getScope(AstClafer clafer) {
@@ -193,7 +181,7 @@ public class Analysis {
     }
 
     public Analysis withScope(Scope scope) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public int getDepth(AstAbstractClafer clafer) {
@@ -205,7 +193,7 @@ public class Analysis {
     }
 
     public Analysis withDepthMap(Map<AstAbstractClafer, Integer> depthMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public Format getFormat(AstClafer clafer) {
@@ -217,7 +205,7 @@ public class Analysis {
     }
 
     public Analysis withFormatMap(Map<AstClafer, Format> formatMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public Offsets getOffsets(AstAbstractClafer clafer) {
@@ -229,7 +217,7 @@ public class Analysis {
     }
 
     public Analysis withOffsetMap(Map<AstAbstractClafer, Offsets> offsetMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public PartialSolution getPartialSolution(AstClafer clafer) {
@@ -241,7 +229,7 @@ public class Analysis {
     }
 
     public Analysis withPartialSolutionMap(Map<AstClafer, PartialSolution> partialSolutionMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public int[][] getPartialInts(AstRef ref) {
@@ -253,7 +241,7 @@ public class Analysis {
     }
 
     public Analysis withPartialIntsMap(Map<AstRef, int[][]> partialIntsMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 
     public AstClafer getType(AstExpr expr) {
@@ -265,6 +253,6 @@ public class Analysis {
     }
 
     public Analysis withTypeMap(Map<AstExpr, AstClafer> typeMap) {
-        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraintsMap, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+        return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
     }
 }

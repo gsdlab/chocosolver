@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
@@ -19,7 +18,6 @@ import org.clafer.ast.AstSetTest.Op;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
-import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstThis;
@@ -40,22 +38,21 @@ public class PartialIntAnalyzer implements Analyzer {
         Map<AstRef, int[][]> partialInts = new HashMap<AstRef, int[][]>();
 
         List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<Pair<FList<AstConcreteClafer>, Integer>>();
-        for (AstClafer clafer : analysis.getClafers()) {
-            for (AstConstraint constraint : analysis.getConstraints(clafer)) {
-                if (constraint.isSoft()) {
-                    continue;
+        for (AstConstraint constraint : analysis.getConstraints()) {
+            AstClafer clafer = constraint.getContext();
+            if (constraint.isSoft()) {
+                continue;
+            }
+            try {
+                Pair<FList<AstConcreteClafer>, Integer> assignment = analyze(constraint.getExpr());
+                FList<AstConcreteClafer> path = assignment.getFst();
+                Integer value = assignment.getSnd();
+                for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
+                    assignments.add(new Pair<FList<AstConcreteClafer>, Integer>(
+                            snoc(path, concreteClafer), value));
                 }
-                try {
-                    Pair<FList<AstConcreteClafer>, Integer> assignment = analyze(constraint.getExpr());
-                    FList<AstConcreteClafer> path = assignment.getFst();
-                    Integer value = assignment.getSnd();
-                    for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
-                        assignments.add(new Pair<FList<AstConcreteClafer>, Integer>(
-                                snoc(path, concreteClafer), value));
-                    }
-                } catch (NotAssignmentException e) {
-                    // Only analyze assignments
-                }
+            } catch (NotAssignmentException e) {
+                // Only analyze assignments
             }
         }
         AssignmentAutomata automata = new AssignmentAutomata(assignments);
@@ -150,7 +147,11 @@ public class PartialIntAnalyzer implements Analyzer {
 
     private static Pair<FList<AstConcreteClafer>, Integer> analyzeEqual(
             AstJoinRef exp, AstConstant constant) throws NotAssignmentException {
-        return new Pair<FList<AstConcreteClafer>, Integer>(analyze(exp), constant.getValue());
+        int[] value = constant.getValue();
+        if (value.length == 1) {
+            return new Pair<FList<AstConcreteClafer>, Integer>(analyze(exp), value[0]);
+        }
+        throw new NotAssignmentException();
     }
 
     private static FList<AstConcreteClafer> analyze(AstJoinRef exp) throws NotAssignmentException {

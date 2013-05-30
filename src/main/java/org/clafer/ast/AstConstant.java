@@ -1,18 +1,33 @@
 package org.clafer.ast;
 
+import java.util.Arrays;
+import org.clafer.common.Check;
+
 /**
- *
+ * A constant set.
+ * 
  * @author jimmy
  */
 public class AstConstant implements AstSetExpr {
 
-    private final int value;
+    private final AstClafer type;
+    private final int[] value;
 
-    AstConstant(int value) {
-        this.value = value;
+    /**
+     * 
+     * @param type the type
+     * @param value the value, must be sorted
+     */
+    AstConstant(AstClafer type, int... value) {
+        this.type = Check.notNull(type);
+        this.value = Check.notNull(value);
     }
 
-    public int getValue() {
+    public AstClafer getType() {
+        return type;
+    }
+
+    public int[] getValue() {
         return value;
     }
 
@@ -23,6 +38,9 @@ public class AstConstant implements AstSetExpr {
 
     @Override
     public String toString() {
-        return Integer.toString(value);
+        if (value.length == 1 && type instanceof AstIntClafer) {
+            return Integer.toString(value[0]);
+        }
+        return Arrays.toString(value) + "::" + type;
     }
 }

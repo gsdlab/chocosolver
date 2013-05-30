@@ -152,14 +152,17 @@ public class AstUtil {
     }
 
     /**
-     * Find all the constraints below the Clafer.
+     * Find all the constraints in the model.
      *
-     * @param clafer the Clafer
+     * @param model the model
      * @return the nested constraints
      */
-    public static List<AstConstraint> getNestedConstraints(AstClafer clafer) {
+    public static List<AstConstraint> getNestedConstraints(AstModel model) {
         List<AstConstraint> constraints = new ArrayList<AstConstraint>();
-        getNestedConstraints(clafer, constraints);
+        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
+            getNestedConstraints(abstractClafer, constraints);
+        }
+        getNestedConstraints(model, constraints);
         return constraints;
     }
 
@@ -171,13 +174,13 @@ public class AstUtil {
     }
 
     /**
-     * Map the identifiers to the constraints below the Clafer.
+     * Map the identifiers to the constraints in the model.
      *
-     * @param clafer the Clafer
+     * @param model the model
      * @return the mapping of identifiers to constraints
      */
-    public static TIntObjectMap<AstConstraint> getConstraintMap(AstClafer clafer) {
-        List<AstConstraint> constraints = getNestedConstraints(clafer);
+    public static TIntObjectMap<AstConstraint> getConstraintMap(AstModel model) {
+        List<AstConstraint> constraints = getNestedConstraints(model);
         TIntObjectMap<AstConstraint> map = new TIntObjectHashMap<AstConstraint>(constraints.size());
         for (AstConstraint constraint : constraints) {
             map.put(constraint.getId(), constraint);
