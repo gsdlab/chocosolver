@@ -11,7 +11,7 @@ public class InstanceModel {
 
     private final InstanceClafer[] topClafers;
 
-    public InstanceModel(InstanceClafer[] topClafers) {
+    public InstanceModel(InstanceClafer... topClafers) {
         this.topClafers = Check.noNulls(topClafers);
     }
 

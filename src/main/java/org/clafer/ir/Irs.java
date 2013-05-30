@@ -1110,6 +1110,9 @@ public class Irs {
         if (IrUtil.isFalse(antecedent)) {
             return alternative;
         }
+        if(consequent.equals(alternative)) {
+            return consequent;
+        }
         Integer consequentConstant = IrUtil.getConstant(consequent);
         Integer alternativeConstant = IrUtil.getConstant(alternative);
         if (consequentConstant != null && consequentConstant.equals(alternativeConstant)) {
@@ -1418,6 +1421,9 @@ public class Irs {
         }
         if (IrUtil.isFalse(antecedent)) {
             return alternative;
+        }
+        if(consequent.equals(alternative)) {
+            return consequent;
         }
         int[] consequentConstant = IrUtil.getConstant(consequent);
         int[] alternativeConstant = IrUtil.getConstant(alternative);

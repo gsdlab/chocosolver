@@ -18,7 +18,7 @@ public class InstanceClafer {
     private final Integer ref;
     private final InstanceClafer[] children;
 
-    public InstanceClafer(AstClafer type, int id, Integer ref, InstanceClafer[] children) {
+    public InstanceClafer(AstClafer type, int id, Integer ref, InstanceClafer... children) {
         this.type = Check.notNull(type);
         this.id = id;
         this.ref = ref;

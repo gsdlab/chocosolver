@@ -5,7 +5,7 @@
 
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>chocosolver</name>
@@ -24,11 +24,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.clafer</groupId>
-            <artifactId>chocosolver</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
         <dependency>
             <groupId>choco</groupId>
             <artifactId>choco-solver</artifactId>
