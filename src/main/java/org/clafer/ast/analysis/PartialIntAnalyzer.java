@@ -106,19 +106,13 @@ public class PartialIntAnalyzer implements Analyzer {
         assert clafer instanceof AstAbstractClafer;
         Map<AstConcreteClafer, TIntHashSet> parentIdsMap = new HashMap<AstConcreteClafer, TIntHashSet>();
         for (int id : ids) {
-            AstClafer subClafer = clafer;
-            int curId = id;
-            do {
-                Offsets offset = analysis.getOffsets((AstAbstractClafer) subClafer);
-                subClafer = offset.getClafer(curId);
-                curId -= offset.getOffset(subClafer);
-            } while (subClafer instanceof AstAbstractClafer);
-            TIntHashSet parentIds = parentIdsMap.get((AstConcreteClafer) subClafer);
+            Pair<AstConcreteClafer, Integer> concreteId = analysis.getConcreteId(clafer, id);
+            TIntHashSet parentIds = parentIdsMap.get(concreteId.getFst());
             if (parentIds == null) {
                 parentIds = new TIntHashSet();
-                parentIdsMap.put((AstConcreteClafer) subClafer, parentIds);
+                parentIdsMap.put(concreteId.getFst(), parentIds);
             }
-            parentIds.add(curId);
+            parentIds.add(concreteId.getSnd());
         }
         for (Entry<AstConcreteClafer, TIntHashSet> entry : parentIdsMap.entrySet()) {
             if (!partialInts(entry.getValue().toArray(), entry.getKey(), automata,

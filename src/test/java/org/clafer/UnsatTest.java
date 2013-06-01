@@ -51,7 +51,7 @@ public class UnsatTest {
 
     /**
      * <pre>
-     * A ?
+     * A -> integer ?
      * B ?
      * C ?
      * [A & !B]
@@ -79,6 +79,7 @@ public class UnsatTest {
         assertEquals(1, unsatInstance.getSnd().getTopClafers().length);
         assertEquals(a, unsatInstance.getSnd().getTopClafers()[0].getType());
         assertEquals(0, unsatInstance.getSnd().getTopClafers()[0].getId());
-        assertEquals(2, unsatInstance.getSnd().getTopClafers()[0].getRef().intValue());
+        assertEquals(IntType, unsatInstance.getSnd().getTopClafers()[0].getRef().getType());
+        assertEquals(2, unsatInstance.getSnd().getTopClafers()[0].getRef().getValue());
     }
 }

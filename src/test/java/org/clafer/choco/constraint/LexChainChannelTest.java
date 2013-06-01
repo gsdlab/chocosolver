@@ -2,16 +2,13 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import java.math.BigInteger;
 import java.util.Arrays;
-import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.constraints.LCF;
 import solver.constraints.set.SCF;
-import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -65,7 +62,6 @@ public class LexChainChannelTest extends ConstraintTest {
     @Test(timeout = 60000)
     public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
-            System.out.println(repeat);
             Solver solver = new Solver();
             int m = nextInt(5) + 1;
             int n = nextInt(5) + 1;

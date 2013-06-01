@@ -15,10 +15,10 @@ public class InstanceClafer {
 
     private final AstClafer type;
     private final int id;
-    private final Integer ref;
+    private final InstanceRef ref;
     private final InstanceClafer[] children;
 
-    public InstanceClafer(AstClafer type, int id, Integer ref, InstanceClafer... children) {
+    public InstanceClafer(AstClafer type, int id, InstanceRef ref, InstanceClafer... children) {
         this.type = Check.notNull(type);
         this.id = id;
         this.ref = ref;
@@ -37,7 +37,7 @@ public class InstanceClafer {
         return ref != null;
     }
 
-    public Integer getRef() {
+    public InstanceRef getRef() {
         return ref;
     }
 
@@ -70,14 +70,17 @@ public class InstanceClafer {
 
     private void print(String indent, Appendable out) throws IOException {
         out.append(indent).append(type.getName()).append("#").append(Integer.toString(id));
-        AstRef typeRef = AstUtil.getInheritedRef(type);
-        if (typeRef != null) {
-            out.append(" = ");
-            if (!(typeRef.getTargetType() instanceof AstIntClafer)) {
-                out.append(typeRef.getTargetType().getName()).append("#");
-            }
-            out.append(Integer.toString(ref));
+        if(hasRef()) {
+            out.append(" = ").append(ref.toString());
         }
+//        AstRef typeRef = AstUtil.getInheritedRef(type);
+//        if (typeRef != null) {
+//            out.append(" = ");
+//            if (!(typeRef.getTargetType() instanceof AstIntClafer)) {
+//                out.append(typeRef.getTargetType().getName()).append("#");
+//            }
+//            out.append(Integer.toString(ref));
+//        }
         out.append('\n');
         for (InstanceClafer child : getChildren()) {
             child.print(indent + "    ", out);

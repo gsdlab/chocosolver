@@ -14,6 +14,7 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
+import org.clafer.collection.Pair;
 import org.clafer.scope.Scope;
 
 /**
@@ -206,6 +207,17 @@ public class Analysis {
 
     public Analysis withFormatMap(Map<AstClafer, Format> formatMap) {
         return new Analysis(model, clafers, abstractClafers, concreteClafers, constraints, cardMap, globalCardMap, scope, depthMap, formatMap, offsetMap, partialSolutionMap, partialIntsMap, typeMap);
+    }
+
+    public Pair<AstConcreteClafer, Integer> getConcreteId(AstClafer clafer, int id) {
+        AstClafer supClafer = clafer;
+        int curId = id;
+        while (supClafer instanceof AstAbstractClafer) {
+            Offsets offset = getOffsets((AstAbstractClafer) supClafer);
+            supClafer = offset.getClafer(curId);
+            curId -= offset.getOffset(supClafer);
+        }
+        return new Pair<AstConcreteClafer, Integer>((AstConcreteClafer) supClafer, curId);
     }
 
     public Offsets getOffsets(AstAbstractClafer clafer) {

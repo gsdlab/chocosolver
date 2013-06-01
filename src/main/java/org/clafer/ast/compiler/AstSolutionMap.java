@@ -42,6 +42,10 @@ public class AstSolutionMap {
         return model;
     }
 
+    public Analysis getAnalysis() {
+        return analysis;
+    }
+
     public IrSetVar[] getChildrenVars(AstClafer clafer) {
         return notNull(clafer + " not part of the AST solution", childrenVars.get(clafer));
     }
@@ -59,15 +63,7 @@ public class AstSolutionMap {
         return softVars;
     }
 
-    public int getScope(AstClafer clafer) {
-        return analysis.getScope().getScope(clafer);
-    }
-
-    public int getOffset(AstAbstractClafer sup, AstClafer sub) {
-        return analysis.getOffsets(sup).getOffset(sub);
-    }
-
-    public static <T> T notNull(String message, T t) {
+    private static <T> T notNull(String message, T t) {
         if (t == null) {
             throw new AstException(message);
         }

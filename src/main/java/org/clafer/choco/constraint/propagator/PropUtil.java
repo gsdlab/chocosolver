@@ -4,15 +4,9 @@ import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
 import solver.ICause;
-import solver.Solver;
-import solver.constraints.set.SCF;
 import solver.exception.ContradictionException;
-import solver.search.strategy.IntStrategyFactory;
-import solver.search.strategy.SetStrategyFactory;
-import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VF;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 
@@ -22,22 +16,6 @@ import solver.variables.delta.monitor.SetDeltaMonitor;
  * @author jimmy
  */
 public class PropUtil {
-
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-        IntVar i = VF.enumerated("i", 0, 1, solver);
-        SetVar s = VF.set("s", new int[]{0, 1}, new int[]{0, 1}, solver);
-        solver.post(SCF.member(i, s));
-        solver.set(
-                new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(new SetVar[]{s}),
-                IntStrategyFactory.firstFail_InDomainMax(new IntVar[]{i})));
-        if (solver.findSolution()) {
-            do {
-                System.out.println(solver);
-            } while (solver.nextSolution());
-        }
-    }
 
     private PropUtil() {
     }

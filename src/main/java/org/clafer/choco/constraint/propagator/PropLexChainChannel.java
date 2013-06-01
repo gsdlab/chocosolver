@@ -3,7 +3,6 @@ package org.clafer.choco.constraint.propagator;
 import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
-import solver.constraints.propagators.nary.lex.PropLexChain;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.IntVar;
@@ -123,31 +122,6 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 | a.updateUpperBound(b.getUB(), aCause)
                 | b.updateLowerBound(a.getLB(), aCause)
                 | b.updateUpperBound(a.getUB(), aCause);
-    }
-
-    private int getCompareIndex(IntVar[] a, IntVar[] b) {
-        int i = 0;
-        while (i < a.length && a[i].instantiated()
-                && b[i].instantiated()
-                && a[i].getValue() == b[i].getValue()) {
-            i++;
-        }
-        return i;
-    }
-
-    private int getStrictCompareIndex(IntVar[] a, IntVar[] b) {
-        for (int i = 0; i < a.length; i++) {
-            switch (compareChar(a[i], b[i])) {
-                case GT:
-                case LT:
-                    return i;
-                // case EQ:
-                // continue
-                case UNKNOWN:
-                    return -1;
-            }
-        }
-        return -1;
     }
 
     @Override

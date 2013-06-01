@@ -3,6 +3,8 @@ package org.clafer.ast.analysis;
 import java.util.Map;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstConcreteClafer;
+import org.clafer.collection.Pair;
 import org.clafer.common.Check;
 
 /**
