@@ -26,6 +26,10 @@ public class Pair<A, B> {
         this.snd = snd;
     }
 
+    public Pair(Pair<? extends A, ? extends B> pair) {
+        this(pair.getFst(), pair.getSnd());
+    }
+
     public A getFst() {
         return fst;
     }

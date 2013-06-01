@@ -164,6 +164,15 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrBoolExpr visit(IrSortStringsChannel ir, T a) {
+        IrIntExpr[][] rewritten = new IrIntExpr[ir.getStrings().length][];
+        for (int i = 0; i < rewritten.length; i++) {
+            rewritten[i] = rewrite(ir.getStrings()[i], a);
+        }
+        return sortChannel(rewritten, rewrite(ir.getInts(), a));
+    }
+
+    @Override
     public IrBoolExpr visit(IrAllDifferent ir, T a) {
         return allDifferent(rewrite(ir.getOperands(), a));
     }
@@ -171,6 +180,11 @@ public abstract class IrRewriter<T>
     @Override
     public IrBoolExpr visit(IrSelectN ir, T a) {
         return selectN(rewrite(ir.getBools(), a), rewrite(ir.getN(), a));
+    }
+
+    @Override
+    public IrBoolExpr visit(IrFilterString ir, T a) {
+        return filterString(rewrite(ir.getSet(), a), rewrite(ir.getString(), a), rewrite(ir.getResult(), a));
     }
 
     @Override

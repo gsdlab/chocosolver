@@ -44,7 +44,6 @@ public class SymmetryBreakingTest {
      *         Cheese *
      * </pre>
      */
-    @Ignore("Currently fails because symmetry breaking needs to be more effective.")
     @Test
     public void breakGrandChildrenSwap() {
         /*

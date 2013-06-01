@@ -53,7 +53,11 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrSortStrings ir, A a);
 
+    public B visit(IrSortStringsChannel ir, A a);
+
     public B visit(IrAllDifferent ir, A a);
 
     public B visit(IrSelectN ir, A a);
+
+    public B visit(IrFilterString ir, A a);
 }

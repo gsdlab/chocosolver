@@ -345,6 +345,20 @@ public class SimpleConstraintTest {
      */
     @Test(timeout = 60000)
     public void testVariableJoinJoinJoinRef() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         * 
+         * solutions = genA
+         *     where
+         *         genA = nub $ do
+         *             a <- [1..2]
+         *             map sort $ sequence $ replicate a genB
+         *         genB = nub $ do
+         *             b <- [1..2]
+         *             map sort $ sequence $ replicate b genC
+         *         genC = [3, 4]
+         */
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A").withCard(1, 2);
@@ -353,7 +367,8 @@ public class SimpleConstraintTest {
         a.addConstraint(equal(joinRef(join(join($this(), b), c)), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(24).intLow(-5).intHigh(5));
-        assertEquals(24, solver.allInstances().length);
+        // Due to symmetry breaking.
+        assertEquals(20, solver.allInstances().length);
     }
 
     /**

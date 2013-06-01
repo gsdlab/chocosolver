@@ -778,6 +778,10 @@ public class Irs {
         return new IrSortStrings(strings, BoolDomain);
     }
 
+    public static IrBoolExpr sortChannel(IrIntExpr[][] strings, IrIntExpr[] ints) {
+        return new IrSortStringsChannel(strings, ints, BoolDomain);
+    }
+
     public static IrBoolExpr allDifferent(IrIntExpr[] ints) {
         if (ints.length < 2) {
             return $(True);
@@ -817,6 +821,10 @@ public class Irs {
             return $(True);
         }
         return new IrSelectN(bools, n, BoolDomain);
+    }
+
+    public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
+        return new IrFilterString(set, string, result, BoolDomain);
     }
     /**
      * ******************

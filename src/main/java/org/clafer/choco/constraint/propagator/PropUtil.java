@@ -94,7 +94,7 @@ public class PropUtil {
      * value in a collection.
      *
      * @param ivar the integer variable
-     * @param svar the collection
+     * @param collection the collection
      * @return {@code true} if and only if {@code dom(ivar) subsetof collection},
      *         {@code false} otherwise
      */

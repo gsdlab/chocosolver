@@ -82,6 +82,8 @@ import static org.clafer.ir.Irs.*;
 /**
  * Compile from AST to IR.
  *
+ * TODO: rename childset to sibling set
+ *
  * @author jimmy
  */
 public class AstCompiler {
@@ -160,6 +162,19 @@ public class AstCompiler {
                 throw new AstException();
             }
         }
+        for (int i = clafers.size() - 1; i >= 0; i--) {
+            AstClafer clafer = clafers.get(i);
+            if (AstUtil.isRoot(clafer)) {
+                continue;
+            }
+            if (clafer instanceof AstConcreteClafer) {
+                initConcreteBottomUp((AstConcreteClafer) clafer);
+            } else if (clafer instanceof AstAbstractClafer) {
+                initAbstractBottomUp((AstAbstractClafer) clafer);
+            } else {
+                throw new AstException();
+            }
+        }
         for (AstClafer clafer : clafers) {
             if (AstUtil.isRoot(clafer)) {
                 continue;
@@ -225,16 +240,46 @@ public class AstCompiler {
         }
     }
 
+    private void initConcreteBottomUp(AstConcreteClafer clafer) {
+        int scope = getScope(clafer);
+        int parentScope = getScope(clafer.getParent());
+        if (!clafer.hasChildren()) {
+            // Optimize for leaves. Don't compute the smallest indices, just
+            // use the cardinalities.
+            IrIntExpr[] weight = Util.replicate($(Zero), scope);
+            IrSetVar[] childSet = childrenSet.get(clafer);
+            IrIntExpr[][] index = new IrIntExpr[childSet.length][];
+            for (int i = 0; i < index.length; i++) {
+                index[i] = new IrIntExpr[]{card($(childSet[i]))};
+            }
+            weights.put(clafer, weight);
+            indices.put(clafer, index);
+        } else {
+            IrIntExpr[] weight = new IrIntExpr[scope];
+            for (int i = 0; i < weight.length; i++) {
+                weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight" + i, 0, scope - 1));
+            }
+            IrIntExpr[][] index = new IrIntExpr[parentScope][scope];
+            for (int i = 0; i < index.length; i++) {
+                for (int j = 0; j < index[i].length; j++) {
+                    index[i][j] = $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope - 1));
+                }
+            }
+            weights.put(clafer, weight);
+            indices.put(clafer, index);
+        }
+    }
+
     private void constrainConcrete(AstConcreteClafer clafer) {
-        IrIntVar[] parents = parentPointers.get(clafer);
+        IrSetExpr[] childSet = $(childrenSet.get(clafer));
+        IrIntExpr[] parents = $(parentPointers.get(clafer));
         if (!getPartialSolution(clafer).parentSolutionKnown()) {
-            IrSetExpr[] childSet = $(childrenSet.get(clafer));
             if (getGlobalCard(clafer).isExact()) {
                 // No unused
-                module.addConstraint(intChannel($(parents), childSet));
+                module.addConstraint(intChannel(parents, childSet));
             } else {
                 IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
-                module.addConstraint(intChannel($(parents), Util.snoc(childSet, $(unused))));
+                module.addConstraint(intChannel(parents, Util.snoc(childSet, $(unused))));
             }
         }
         AstClafer superClafer = clafer;
@@ -264,7 +309,7 @@ public class AstCompiler {
                         for (int j = i + 1; j < refs.length; j++) {
                             module.addConstraint(
                                     implies(and(members[i], members[j],
-                                    equal($(parents[i]), $(parents[j]))),
+                                    equal(parents[i], parents[j])),
                                     notEqual($(refs[i]), $(refs[j]))));
                         }
                     }
@@ -282,108 +327,31 @@ public class AstCompiler {
                 }
             }
         }
-        /**
-         * What is this optimization?
-         *
-         * This optimization is to remove isomorphic solutions due to swapping
-         * of children.
-         *
-         * Consider the following Clafer model.
-         *
-         * Diner 2 Burger 1..*
-         *
-         * Let the scope be {Diner=2, Food=3}. What this says is that we have 2
-         * Diners and 3 Burgers but each Diner gets at least one serving.
-         * Logically, there are two solutions:
-         *
-         * 1. Each Diner gets 1 Burger each (the last Burger is unused) 2. One
-         * Diner gets 2 Burgers and the other Diner gets 1 Burger
-         *
-         * There are two unique solutions, other isomorphic solutions may arise
-         * from the solver, but ideally we want to eliminate the isomorphic
-         * duplicates. For example, here are two isomorphic instances that will
-         * arrise with symmetry breaking:
-         *
-         * Diner0 Burger0 Burger1 Diner1 Burger2
-         *
-         *
-         * Diner0 Burger0 Diner1 Burger1 Burger2
-         *
-         * We add the constraint |Diner0.Burger| >= |Diner1.Burger| to break the
-         * symmetry. This is how it works when Diner only has one type as a
-         * child. This optimization generalizes to multi-children. For example,
-         * consider the Clafer model:
-         *
-         * Diner 2 Burger 1..* Drink 1..*
-         *
-         * Let the scope be {Diner=2, Food=3, Drink=4}. First we'll see a wrong
-         * generalization. Adding the two constraints DO NOT WORK:
-         *
-         * 1. |Diner0.Burger| >= |Diner1.Burger| 2. |Diner0.Drink| >=
-         * |Diner1.Drink|
-         *
-         * The two constraints above DO NOT WORK because it rules out the case
-         * where one Diner has more Burgers but the other Diner has more drinks.
-         * Instead, we want tuple comparison like the following constraint
-         * (tuple comparision as implemented in Haskell, ie. compare the first
-         * indices, then use the second index to break ties, then use the third
-         * index to break the next tie, etc.):
-         *
-         * (|Diner0.Burger|, |Diner0.Drink|) >= (|Diner1.Burger|,
-         * |Diner1.Drink|)
-         *
-         * However, Choco does not implement tuple comparision but it's we can
-         * simulate it with the equation constraint since the size of the sets
-         * are bounded.
-         *
-         * 5 * |Diner0.Burger| + 1 * |Diner0.Drink| >= 5 * |Diner1.Burger| + 1 *
-         * |Diner1.Drink|
-         *
-         * The "5" is coefficient comes from the fact that scope(Drink) = 4.
-         */
-        IrIntExpr[][] terms = new IrIntExpr[getScope(clafer)][];
 
-        for (int i = 0; i < terms.length; i++) {
-            List<IrIntExpr> string = new ArrayList<IrIntExpr>();
-            for (AstConcreteClafer child : clafer.getChildren()) {
-                // Children with exact cards will always contribute the same score hence it
-                // is a waste of computation time to include them in the scoring constraints.
-                if (!getCard(child).isExact()) {
-                    string.add(card($(childrenSet.get(child)[i])));
-                }
-            }
-            AstClafer sup = clafer;
-            int offset = 0;
-            while (sup.hasSuperClafer()) {
-                offset += getOffset(sup.getSuperClafer(), sup);
-                for (AstConcreteClafer child : sup.getSuperClafer().getChildren()) {
-                    if (!getCard(child).isExact()) {
-                        string.add(card($(childrenSet.get(child)[i + offset])));
+        if (clafer.hasChildren()) {
+            IrIntExpr[] weight = weights.get(clafer);
+            IrIntExpr[][] index = indices.get(clafer);
+            analysis.getHierarcyIds(clafer, refOffset);
+            IrIntExpr[][] childIndices = new IrIntExpr[weight.length][];
+
+            List<Pair<AstClafer, Integer>> offsets = analysis.getHierarcyOffsets(clafer);
+            for (int i = 0; i < childIndices.length; i++) {
+                List<IrIntExpr[]> childIndex = new ArrayList<IrIntExpr[]>();
+                for (Pair<AstClafer, Integer> offset : offsets) {
+                    for (AstConcreteClafer child : offset.getFst().getChildren()) {
+                        childIndex.add(indices.get(child)[i]);
                     }
                 }
-                sup = sup.getSuperClafer();
+                childIndices[i] = Util.concat(childIndex.toArray(new IrIntExpr[childIndex.size()][]));
             }
-            if (string.isEmpty()) {
-                assert terms[0] == null;
-                break;
+
+            module.addConstraint(sortChannel(childIndices, weight));
+            for (int i = 0; i < childSet.length; i++) {
+                module.addConstraint(filterString(childSet[i], weight, index[i]));
             }
-            terms[i] = string.toArray(new IrIntExpr[string.size()]);
-        }
-        if (terms[0] != null) {
-            // TODO: Do not need to separte in two different steps with optimzations.
-            if (AstUtil.isTop(clafer)) {
-                /*
-                 * Reversing is so that earlier children have higher scores. Not necessary,
-                 * but the solutions will have instances that are similar closer together.
-                 */
-                Util.reverse(terms);
-                module.addConstraint(sort(terms));
-            } else {
-                for (int i = 0; i < getScope(clafer) - 1; i++) {
-                    module.addConstraint(
-                            implies(equal($(parents[i]), $(parents[i + 1])),
-                            sort(terms[i + 1], terms[i])));
-                }
+            for(int i = 0; i < parents.length - 1; i++) {
+                module.addConstraint(implies(equal(parents[i], parents[i + 1]),
+                        greaterThanEqual(weight[i], weight[i+1])));
             }
         }
 
@@ -586,6 +554,9 @@ public class AstCompiler {
         }
     }
 
+    private void initAbstractBottomUp(AstAbstractClafer clafer) {
+    }
+
     private void constrainAbstract(AstAbstractClafer clafer) {
         // Do nothing.
     }
@@ -594,6 +565,8 @@ public class AstCompiler {
     private final ReadWriteHashMap<AstClafer, IrBoolExpr[]> membership = new ReadWriteHashMap<AstClafer, IrBoolExpr[]>();
     private final ReadWriteHashMap<AstConcreteClafer, IrIntVar[]> parentPointers = new ReadWriteHashMap<AstConcreteClafer, IrIntVar[]>();
     private final ReadWriteHashMap<AstRef, IrIntVar[]> refPointers = new ReadWriteHashMap<AstRef, IrIntVar[]>();
+    private final ReadWriteHashMap<AstClafer, IrIntExpr[]> weights = new ReadWriteHashMap<AstClafer, IrIntExpr[]>();
+    private final ReadWriteHashMap<AstClafer, IrIntExpr[][]> indices = new ReadWriteHashMap<AstClafer, IrIntExpr[][]>();
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 

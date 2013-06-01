@@ -45,6 +45,7 @@ import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDiv;
+import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIntCast;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntLiteral;
@@ -62,6 +63,7 @@ import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrSub;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
@@ -539,15 +541,20 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrSortStrings ir, BoolArg a) {
-            IrIntExpr[][] strings = ir.getStrings();
-            IntVar[][] $strings = new IntVar[strings.length][];
-            for (int i = 0; i < $strings.length; i++) {
-                $strings[i] = new IntVar[strings[i].length];
-                for (int j = 0; j < $strings[i].length; j++) {
-                    $strings[i][j] = compile(strings[i][j]);
-                }
+            IntVar[][] strings = new IntVar[ir.getStrings().length][];
+            for (int i = 0; i < strings.length; i++) {
+                strings[i] = compile(ir.getStrings()[i]);
             }
-            return _lex_chain_less_eq($strings);
+            return _lex_chain_less_eq(strings);
+        }
+
+        @Override
+        public Object visit(IrSortStringsChannel ir, BoolArg a) {
+            IntVar[][] strings = new IntVar[ir.getStrings().length][];
+            for (int i = 0; i < strings.length; i++) {
+                strings[i] = compile(ir.getStrings()[i]);
+            }
+            return _lex_chain_channel(strings, compile(ir.getInts()));
         }
 
         @Override
@@ -571,6 +578,11 @@ public class IrCompiler {
             }
             IntVar $n = compile(n);
             return Constraints.selectN($bools, $n);
+        }
+
+        @Override
+        public Object visit(IrFilterString ir, BoolArg a) {
+            return _filter_string(compile(ir.getSet()), compile(ir.getString()), compile(ir.getResult()));
         }
     };
     private final IrIntExprVisitor<Void, IntVar> intExprCompiler = new IrIntExprVisitor<Void, IntVar>() {
@@ -998,6 +1010,14 @@ public class IrCompiler {
             return ICF.lex_less_eq(vars[0], vars[1]);
         }
         return ICF.lex_chain_less_eq(vars);
+    }
+
+    private static Constraint _lex_chain_channel(IntVar[][] strings, IntVar[] ints) {
+        return Constraints.lexChainChannel(strings, ints);
+    }
+
+    private static Constraint _filter_string(SetVar set, IntVar[] string, IntVar[] result) {
+        return Constraints.filterString(set, string, result);
     }
 
     private static Constraint _difference(SetVar minuend, SetVar subtrahend, SetVar difference) {

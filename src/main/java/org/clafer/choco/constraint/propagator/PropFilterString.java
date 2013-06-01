@@ -7,6 +7,7 @@ import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.SetVarImpl;
 import solver.variables.Variable;
 import util.ESat;
 
@@ -81,12 +82,13 @@ public class PropFilterString extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         int index = 0;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext(), index++) {
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (!set.kernelContains(i)) {
                 return;
             }
             subset(string[i], result[index]);
             subset(result[index], string[i]);
+            index++;
         }
         for (; index < result.length; index++) {
             result[index].instantiateTo(-1, aCause);
