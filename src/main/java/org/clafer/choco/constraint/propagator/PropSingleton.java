@@ -24,7 +24,7 @@ public class PropSingleton extends Propagator<Variable> {
     private final SetDeltaMonitor sD;
 
     public PropSingleton(IntVar ivar, SetVar svar) {
-        super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY, false);
+        super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY, true);
         this.i = ivar;
         this.iD = i.monitorDelta(aCause);
         this.s = svar;

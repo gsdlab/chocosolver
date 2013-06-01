@@ -7,18 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import org.clafer.collection.Counter;
 
 /**
  *
- * @param <V> the type of the data
  * @author jimmy
  */
-public class TopologicalSort<V> {
+public class GraphUtil {
 
-    private int index = 0;
-    private Map<Vertex<V>, Index> vertexIndices = new HashMap<Vertex<V>, Index>();
-    private Stack<Vertex<V>> S = new Stack<Vertex<V>>();
-    private List<Set<V>> components = new ArrayList<Set<V>>();
+    private GraphUtil() {
+    }
 
     /**
      * Compute the strongly connected components in the graph in topological
@@ -32,26 +30,31 @@ public class TopologicalSort<V> {
      * algorithm</a>
      */
     public static <V> List<Set<V>> computeStronglyConnectedComponents(Graph<V> graph) {
-        TopologicalSort<V> tarjan = new TopologicalSort<V>();
+        Counter counter = new Counter();
+        Map<Vertex<V>, Index> vertexIndices = new HashMap<Vertex<V>, Index>();
+        Stack<Vertex<V>> S = new Stack<Vertex<V>>();
+        List<Set<V>> components = new ArrayList<Set<V>>();
+
         for (Vertex<V> vertex : graph.getVertices()) {
-            if (!tarjan.vertexIndices.containsKey(vertex)) {
-                tarjan.strongConnect(vertex);
+            if (!vertexIndices.containsKey(vertex)) {
+                strongConnect(vertex, counter, vertexIndices, S, components);
             }
         }
-        return tarjan.components;
+        return components;
     }
 
-    private Index strongConnect(Vertex<V> vertex) {
+    private static <V> Index strongConnect(Vertex<V> vertex, Counter counter, Map<Vertex<V>, Index> vertexIndices,
+            Stack<Vertex<V>> S, List<Set<V>> components) {
+        int index = counter.next();
         Index vertexIndex = new Index(index, index);
         vertexIndices.put(vertex, vertexIndex);
-        index++;
 
         S.push(vertex);
 
         for (Vertex<V> neighbour : vertex.getNeighbours()) {
             Index neighbourIndex = vertexIndices.get(neighbour);
             if (neighbourIndex == null) {
-                neighbourIndex = strongConnect(neighbour);
+                neighbourIndex = strongConnect(neighbour, counter, vertexIndices, S, components);
                 vertexIndex.setLowIndexMin(neighbourIndex.getLowIndex());
             } else if (S.contains(neighbour)) {
                 vertexIndex.setLowIndexMin(neighbourIndex.getIndex());
@@ -82,15 +85,15 @@ public class TopologicalSort<V> {
             this.lowIndex = lowIndex;
         }
 
-        public int getIndex() {
+        int getIndex() {
             return index;
         }
 
-        public int getLowIndex() {
+        int getLowIndex() {
             return lowIndex;
         }
 
-        public void setLowIndexMin(int lowIndex) {
+        void setLowIndexMin(int lowIndex) {
             if (this.lowIndex >= lowIndex) {
                 this.lowIndex = lowIndex;
             }

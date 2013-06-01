@@ -24,7 +24,7 @@ public class TopologicalSortTest {
         graph.getVertex('b').addNeighbour(graph.getVertex('b'));
         graph.getVertex('b').addNeighbour(graph.getVertex('c'));
 
-        List<Set<Character>> components = TopologicalSort.computeStronglyConnectedComponents(graph);
+        List<Set<Character>> components = GraphUtil.computeStronglyConnectedComponents(graph);
 
         assertEquals(3, components.size());
 
@@ -54,7 +54,7 @@ public class TopologicalSortTest {
         graph.getVertex('b').addNeighbour(graph.getVertex('b'));
         graph.getVertex('k').addNeighbour(graph.getVertex('a'));
 
-        List<Set<Character>> components = TopologicalSort.computeStronglyConnectedComponents(graph);
+        List<Set<Character>> components = GraphUtil.computeStronglyConnectedComponents(graph);
 
         assertEquals(6, components.size());
 

@@ -19,7 +19,7 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
     private final int c;
 
     public PropReifyEqualXC(BoolVar reify, IntVar x, int c) {
-        super(new IntVar[]{reify, x}, PropagatorPriority.UNARY, false);
+        super(new IntVar[]{reify, x}, PropagatorPriority.UNARY, true);
         this.reify = reify;
         this.x = x;
         this.c = c;

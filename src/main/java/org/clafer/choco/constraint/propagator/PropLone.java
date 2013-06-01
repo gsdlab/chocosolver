@@ -15,7 +15,7 @@ import util.ESat;
 public class PropLone extends Propagator<BoolVar> {
 
     public PropLone(BoolVar[] vars) {
-        super(vars, PropagatorPriority.BINARY, false);
+        super(vars, PropagatorPriority.BINARY, true);
     }
 
     @Override

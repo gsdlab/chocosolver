@@ -26,7 +26,7 @@ public class PropArrayToSet extends Propagator<Variable> {
     private final SetDeltaMonitor sD;
 
     public PropArrayToSet(IntVar[] as, SetVar s) {
-        super(buildArray(as, s), PropagatorPriority.BINARY, false);
+        super(buildArray(as, s), PropagatorPriority.BINARY, true);
         if (as.length == 0) {
             throw new IllegalArgumentException();
         }

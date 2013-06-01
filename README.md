@@ -10,6 +10,7 @@ Prerequisites
 ```bash
 git clone https://github.com/chocoteam/choco3.git
 cd choco3
+git checkout develop
 mvn install -DskipTests
 ```
 * [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - OpenJDK is fine too.
@@ -22,7 +23,7 @@ Optional
 ```bash
 git clone https://github.com/gsdlab/clafer.git
 cd clafer
-git checkout choco3
+git checkout choco
 make
 ```
 * [Rhino](https://developer.mozilla.org/en/docs/Rhino) - The Rhino Javascript engine is needed to enable Javascript support. Rhino should come bundled with most Java 6+ installations.

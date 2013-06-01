@@ -10,6 +10,10 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import solver.constraints.propagators.set.PropBoolChannel;
+import solver.constraints.propagators.set.PropCardinality;
+import solver.constraints.propagators.set.PropIntMemberSet;
+import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
  *
@@ -146,7 +150,7 @@ public class SetArithmeticTest {
         // Assuming no reference symmetry breaking.
         assertEquals(22, solver.allInstances().length);
     }
-
+    
     /**
      * <pre>
      * Feature

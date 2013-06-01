@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import java.util.Arrays;
 import org.clafer.common.Util;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
@@ -24,7 +23,7 @@ public class PropSetSumN extends Propagator<Variable> {
     private final int n;
 
     public PropSetSumN(SetVar set, IntVar sum, int n) {
-        super(new Variable[]{set, sum}, PropagatorPriority.LINEAR, false);
+        super(new Variable[]{set, sum}, PropagatorPriority.LINEAR, true);
         if (n <= 0) {
             throw new IllegalArgumentException();
         }
@@ -172,7 +171,7 @@ public class PropSetSumN extends Propagator<Variable> {
         if (sum.getLB() > low || sum.getUB() < high) {
             return ESat.FALSE;
         }
-        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return low == high && sum.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

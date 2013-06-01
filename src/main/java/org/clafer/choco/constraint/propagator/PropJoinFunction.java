@@ -10,8 +10,6 @@ import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
-import solver.variables.delta.IIntDeltaMonitor;
-import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;
 
 /**
@@ -32,20 +30,14 @@ import util.ESat;
 public class PropJoinFunction extends Propagator<Variable> {
 
     private final SetVar take;
-    private final SetDeltaMonitor takeD;
     private final IntVar[] refs;
-    private final IIntDeltaMonitor[] refsD;
     private final SetVar to;
-    private final SetDeltaMonitor toD;
 
     public PropJoinFunction(SetVar take, IntVar[] refs, SetVar to) {
-        super(buildArray(take, to, refs), PropagatorPriority.LINEAR, false);
+        super(buildArray(take, to, refs), PropagatorPriority.LINEAR, true);
         this.take = take;
-        this.takeD = take.monitorDelta(aCause);
         this.refs = refs;
-        this.refsD = PropUtil.monitorDeltas(refs, aCause);
         this.to = to;
-        this.toD = to.monitorDelta(aCause);
     }
 
     private static Variable[] buildArray(SetVar take, SetVar to, IntVar[] refs) {

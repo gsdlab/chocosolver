@@ -20,7 +20,7 @@ public class PropSelectN extends Propagator<IntVar> {
     private final IntVar n;
 
     public PropSelectN(BoolVar[] bools, IntVar n) {
-        super(init(bools, n), PropagatorPriority.LINEAR, false);
+        super(init(bools, n), PropagatorPriority.LINEAR, true);
         this.bools = bools;
         this.n = n;
     }

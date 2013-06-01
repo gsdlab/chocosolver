@@ -7,7 +7,7 @@ import org.clafer.common.Check;
 
 /**
  * A mutable directed vertex.
- * 
+ *
  * @param <V> the type of the data
  * @author jimmy
  */
@@ -23,7 +23,7 @@ public class Vertex<V> {
     /**
      * Returns the data associated with this vertex. Two two vertices with the
      * same data are still different vertices.
-     * 
+     *
      * @return the data associated with this vertex
      */
     public V getData() {
@@ -32,7 +32,7 @@ public class Vertex<V> {
 
     /**
      * Returns the set of vertexes that have an incoming edge from this vertex.
-     * 
+     *
      * @return the neighbours of this vertex
      */
     public Set<Vertex<V>> getNeighbours() {
@@ -40,9 +40,9 @@ public class Vertex<V> {
     }
 
     /**
-     * Add a new edge starting from this edge to the neighbour. If this edge already
-     * exists, then no changes occur.
-     * 
+     * Add a new edge starting from this edge to the neighbour. If this edge
+     * already exists, then no changes occur.
+     *
      * @param neighbour a new neighbour of this vertex
      * @return this vertex
      */
@@ -51,19 +51,25 @@ public class Vertex<V> {
         return this;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object obj) {
         return this == obj;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return data.hashCode();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return data.toString();

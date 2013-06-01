@@ -70,7 +70,7 @@ import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
-import org.clafer.graph.TopologicalSort;
+import org.clafer.graph.GraphUtil;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
@@ -139,7 +139,7 @@ public class AstCompiler {
                 node.addNeighbour(dependency.getVertex(concreteClafer.getParent()));
             }
         }
-        List<Set<AstClafer>> components = TopologicalSort.computeStronglyConnectedComponents(dependency);
+        List<Set<AstClafer>> components = GraphUtil.computeStronglyConnectedComponents(dependency);
         List<AstClafer> clafers = new ArrayList<AstClafer>();
         for (Set<AstClafer> component : components) {
             if (component.size() != 1) {

@@ -697,10 +697,10 @@ public class Irs {
         return new IrBoolCast(flipped, expr, BoolDomain);
     }
 
-    public static IrBoolExpr[] asBools(IrIntExpr... expr) {
-        IrBoolExpr[] bools = new IrBoolExpr[expr.length];
+    public static IrBoolExpr[] asBools(IrIntExpr... exprs) {
+        IrBoolExpr[] bools = new IrBoolExpr[exprs.length];
         for (int i = 0; i < bools.length; i++) {
-            bools[i] = asBool(expr[i]);
+            bools[i] = asBool(exprs[i]);
         }
         return bools;
     }
@@ -872,6 +872,14 @@ public class Irs {
             }
         }
         return new IrIntCast(expr, ZeroOneDomain);
+    }
+
+    public static IrIntExpr[] asInts(IrBoolExpr... exprs) {
+        IrIntExpr[] ints = new IrIntExpr[exprs.length];
+        for (int i = 0; i < ints.length; i++) {
+            ints[i] = asInt(exprs[i]);
+        }
+        return ints;
     }
 
     public static IrIntExpr minus(IrIntExpr expr) {
@@ -1110,7 +1118,7 @@ public class Irs {
         if (IrUtil.isFalse(antecedent)) {
             return alternative;
         }
-        if(consequent.equals(alternative)) {
+        if (consequent.equals(alternative)) {
             return consequent;
         }
         Integer consequentConstant = IrUtil.getConstant(consequent);
@@ -1422,7 +1430,7 @@ public class Irs {
         if (IrUtil.isFalse(antecedent)) {
             return alternative;
         }
-        if(consequent.equals(alternative)) {
+        if (consequent.equals(alternative)) {
             return consequent;
         }
         int[] consequentConstant = IrUtil.getConstant(consequent);

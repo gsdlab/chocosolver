@@ -75,7 +75,6 @@ public class SymmetryBreakingTest {
          *           | length foods1 == length foods2 =
          *               or $ do
          *                   pfoods2 <- permutations foods2
-         *                   return False
          *                   return $ and $ zipWith isomorphic foods1 pfoods2
          *           | otherwise = False
          * 

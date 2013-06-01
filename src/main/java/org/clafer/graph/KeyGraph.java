@@ -17,7 +17,8 @@ import java.util.Map;
  * graph.getVertex('b').addNeighbour(graph.getVertex('a'));
  * </pre>
  * </p>
- * 
+ *
+ * @param <V> the type of the data
  * @author jimmy
  */
 public class KeyGraph<V> implements Graph<V> {
@@ -25,13 +26,13 @@ public class KeyGraph<V> implements Graph<V> {
     private final Map<V, Vertex<V>> vertices = new HashMap<V, Vertex<V>>();
 
     /**
-     * Returns the vertex associated with the data. The data class should implement
-     * equals and hashCode.
-     * 
-     * @param  data the data
+     * Returns the vertex associated with the data. The data class should
+     * implement equals and hashCode.
+     *
+     * @param data the data
      * @return the vertex containing the data
-     * @see    Object#equals(Object)
-     * @see    Object#hashCode()
+     * @see Object#equals(Object)
+     * @see Object#hashCode()
      */
     public Vertex<V> getVertex(V data) {
         Vertex<V> vertex = vertices.get(data);
@@ -42,7 +43,9 @@ public class KeyGraph<V> implements Graph<V> {
         return vertex;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Collection<Vertex<V>> getVertices() {
         return vertices.values();

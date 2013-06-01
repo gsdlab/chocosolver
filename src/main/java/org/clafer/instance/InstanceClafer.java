@@ -33,8 +33,16 @@ public class InstanceClafer {
         return id;
     }
 
+    public boolean hasRef() {
+        return ref != null;
+    }
+
     public Integer getRef() {
         return ref;
+    }
+
+    public boolean hasChildren() {
+        return children.length != 0;
     }
 
     public InstanceClafer[] getChildren() {

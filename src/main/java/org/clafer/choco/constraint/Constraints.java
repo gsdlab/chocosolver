@@ -6,8 +6,10 @@ import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
+import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
+import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
@@ -18,8 +20,10 @@ import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqual;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
+import org.clafer.choco.constraint.propagator.PropSumWeight;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
+import solver.constraints.ICF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -147,6 +151,12 @@ public class Constraints {
         return constraint;
     }
 
+    public static Constraint sumWeight(SetVar set, IntVar[] weight, int bonusWeight, IntVar sum) {
+        Constraint constraint = new Constraint(PropSumWeight.buildArray(set, weight, sum), set.getSolver());
+        constraint.setPropagators(new PropSumWeight(set, weight, bonusWeight, sum));
+        return constraint;
+    }
+
     public static Constraint notMember(IntVar element, SetVar set) {
         Constraint constraint = new Constraint(new Variable[]{element, set}, element.getSolver());
         constraint.setPropagators(new PropIntNotMemberSet(element, set));
@@ -186,6 +196,20 @@ public class Constraints {
     public static Constraint union(SetVar[] sets, SetVar union) {
         Constraint constraint = new Constraint(Util.cons(union, sets), union.getSolver());
         constraint.setPropagators(new PropSetUnion(sets, union));
+        return constraint;
+    }
+
+    public static Constraint filterString(SetVar set, IntVar[] string, IntVar[] result) {
+        Constraint<Variable, PropFilterString> constraint =
+                new Constraint<Variable, PropFilterString>(PropFilterString.buildArray(set, string, result), set.getSolver());
+        constraint.setPropagators(new PropFilterString(set, string, result));
+        return constraint;
+    }
+    
+    public static Constraint lexChainChannel(IntVar[][] strings, IntVar[] ints) {
+        Constraint<IntVar, PropLexChainChannel> constraint =
+                new Constraint<IntVar, PropLexChainChannel>(PropLexChainChannel.buildArray(strings, ints), strings[0][0].getSolver());
+        constraint.setPropagators(new PropLexChainChannel(strings, ints));
         return constraint;
     }
 }
