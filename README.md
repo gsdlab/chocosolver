@@ -5,7 +5,7 @@ A backend for [Clafer](http://clafer.org) using the Choco 3 constraint programmi
 
 Prerequisites
 -------------
-* [Choco 3](https://github.com/chocoteam/choco3) - The project is currently in the beta stage and changes are occurring very rapidly. The build in the Maven repository is too out-of-date so please build the library from source.
+* [Choco 3](https://github.com/chocoteam/choco3) - The project is currently in the beta stage and changes are occurring very rapidly. The build in the Maven repository is too out-of-date so please build the library from source on the develop branch.
 
 ```bash
 git clone https://github.com/chocoteam/choco3.git
@@ -13,7 +13,7 @@ cd choco3
 git checkout develop
 mvn install -DskipTests
 ```
-* [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - OpenJDK is fine too.
+* [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - Mainly tested on OpenJDK 7 on Ubuntu.
 * [Maven 2+](http://maven.apache.org/) - Required for building the project.
 
 Optional
