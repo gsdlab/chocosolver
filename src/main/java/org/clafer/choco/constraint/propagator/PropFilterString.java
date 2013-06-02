@@ -7,7 +7,6 @@ import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.SetVarImpl;
 import solver.variables.Variable;
 import util.ESat;
 
@@ -21,13 +20,15 @@ import util.ESat;
 public class PropFilterString extends Propagator<Variable> {
 
     private final SetVar set;
+    private final int offset;
     // Sorted in decreasing order. Non-negatives
     private final IntVar[] string;
     private final IntVar[] result;
 
-    public PropFilterString(SetVar set, IntVar[] string, IntVar[] result) {
+    public PropFilterString(SetVar set, int offset, IntVar[] string, IntVar[] result) {
         super(buildArray(set, string, result), PropagatorPriority.LINEAR, true);
         this.set = set;
+        this.offset = offset;
         this.string = string;
         this.result = result;
     }
@@ -86,8 +87,12 @@ public class PropFilterString extends Propagator<Variable> {
             if (!set.kernelContains(i)) {
                 return;
             }
-            subset(string[i], result[index]);
-            subset(result[index], string[i]);
+            int x = i - offset;
+            if (index >= result.length) {
+                contradiction(set, "Too many in kernel");
+            }
+            subset(string[x], result[index]);
+            subset(result[index], string[x]);
             index++;
         }
         for (; index < result.length; index++) {
@@ -107,7 +112,11 @@ public class PropFilterString extends Propagator<Variable> {
         }
         int index = 0;
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext(), index++) {
-            if (string[i].getValue() != result[index].getValue()) {
+            if (index >= result.length) {
+                return ESat.FALSE;
+            }
+            int x = i - offset;
+            if (string[x].getValue() != result[index].getValue()) {
                 return ESat.FALSE;
             }
         }
@@ -121,6 +130,6 @@ public class PropFilterString extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return "filter(" + set + ", " + Arrays.toString(string) + ", " + Arrays.toString(result) + ")";
+        return "filter(" + set + " >> " + offset + ", " + Arrays.toString(string) + ", " + Arrays.toString(result) + ")";
     }
 }

@@ -1,5 +1,8 @@
 package org.clafer.ir.compiler;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
 import org.clafer.collection.ReadMap;
 import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
@@ -62,6 +65,16 @@ public class IrSolutionMap {
         return boolVars.getValues().toArray(new BoolVar[boolVars.size()]);
     }
 
+    public BoolVar[] getBoolDecisionVars() {
+        List<BoolVar> decisionVars = new ArrayList<BoolVar>(boolVars.size());
+        for (Entry<IrBoolVar, BoolVar> entry : boolVars.entries()) {
+            if (entry.getKey().isDecision()) {
+                decisionVars.add(entry.getValue());
+            }
+        }
+        return decisionVars.toArray(new BoolVar[decisionVars.size()]);
+    }
+
     public IntVar getIntVar(IrIntVar var) {
         return IrUtil.notNull("Int var " + var + " not par of IR solution", intVars.get(var));
     }
@@ -93,6 +106,16 @@ public class IrSolutionMap {
         return intVars.getValues().toArray(new IntVar[intVars.size()]);
     }
 
+    public IntVar[] getIntDecisionVars() {
+        List<IntVar> decisionVars = new ArrayList<IntVar>(intVars.size());
+        for (Entry<IrIntVar, IntVar> entry : intVars.entries()) {
+            if (entry.getKey().isDecision()) {
+                decisionVars.add(entry.getValue());
+            }
+        }
+        return decisionVars.toArray(new IntVar[decisionVars.size()]);
+    }
+
     public SetVar getSetVar(IrSetVar var) {
         return IrUtil.notNull("Set var " + var + " not par of IR solution", setVars.get(var));
     }
@@ -122,5 +145,15 @@ public class IrSolutionMap {
 
     public SetVar[] getSetVars() {
         return setVars.getValues().toArray(new SetVar[setVars.size()]);
+    }
+
+    public SetVar[] getSetDecisionVars() {
+        List<SetVar> decisionVars = new ArrayList<SetVar>(setVars.size());
+        for (Entry<IrSetVar, SetVar> entry : setVars.entries()) {
+            if (entry.getKey().isDecision()) {
+                decisionVars.add(entry.getValue());
+            }
+        }
+        return decisionVars.toArray(new SetVar[decisionVars.size()]);
     }
 }

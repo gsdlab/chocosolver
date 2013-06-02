@@ -71,6 +71,17 @@ public class AstUtil {
     }
 
     /**
+     * Detects if the Clafer is the implicit type root of the model.
+     *
+     * @param clafer the Clafer
+     * @return {@code true} if and only if the Clafer is the type root,
+     * {@code false} otherwise
+     */
+    public static boolean isTypeRoot(AstClafer clafer) {
+        return clafer instanceof AstAbstractClafer && !clafer.hasSuperClafer();
+    }
+
+    /**
      * Detects if the Clafer is directly under the root.
      *
      * @param clafer the Clafer

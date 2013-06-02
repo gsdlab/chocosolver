@@ -199,13 +199,13 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint filterString(SetVar set, IntVar[] string, IntVar[] result) {
+    public static Constraint filterString(SetVar set, int offset, IntVar[] string, IntVar[] result) {
         Constraint<Variable, PropFilterString> constraint =
                 new Constraint<Variable, PropFilterString>(PropFilterString.buildArray(set, string, result), set.getSolver());
-        constraint.setPropagators(new PropFilterString(set, string, result));
+        constraint.setPropagators(new PropFilterString(set, offset, string, result));
         return constraint;
     }
-    
+
     public static Constraint lexChainChannel(IntVar[][] strings, IntVar[] ints) {
         Constraint<IntVar, PropLexChainChannel> constraint =
                 new Constraint<IntVar, PropLexChainChannel>(PropLexChainChannel.buildArray(strings, ints), strings[0][0].getSolver());

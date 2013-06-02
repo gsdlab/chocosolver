@@ -9,15 +9,36 @@ import org.clafer.common.Check;
 public class IrSetVar extends IrAbstractSet implements IrVar {
 
     private final String name;
+    private final boolean decision;
 
     IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
+        this(name, env, ker, card, true);
+    }
+
+    IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card, boolean decision) {
         super(env, ker, card);
         this.name = Check.notNull(name);
+        this.decision = decision;
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public IrSetVar asDecision() {
+        return new IrSetVar(name, getEnv(), getKer(), getCard(), true);
+    }
+
+    @Override
+    public IrSetVar asNoDecision() {
+        return new IrSetVar(name, getEnv(), getKer(), getCard(), false);
+    }
+
+    @Override
+    public boolean isDecision() {
+        return decision;
     }
 
     @Override

@@ -33,7 +33,7 @@ public class PropFilterStringTest extends ConstraintTest {
         IntVar[] string = VF.enumeratedArray("string", 3, 0, 2, solver);
         IntVar[] result = VF.enumeratedArray("result", 3, -1, 2, solver);
 
-        solver.post(Constraints.filterString(set, string, result));
+        solver.post(Constraints.filterString(set,0, string, result));
 
         assertEquals(216, randomizeStrategy(solver).findAllSolutions());
     }

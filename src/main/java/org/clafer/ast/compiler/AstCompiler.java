@@ -284,34 +284,29 @@ public class AstCompiler {
         int parentScope = getScope(clafer.getParent());
         IrIntExpr[] weight;
         IrIntExpr[][] index;
-        if (!clafer.hasChildren() && !AstUtil.hasInheritedRef(clafer)) {
-            // Optimize for leaves. Don't compute the smallest indices, just
-            // use the cardinalities.
+        AstRef ref = AstUtil.getInheritedRef(clafer);
+        // If the Clafer either needs children or reference to be introduce symmetry.
+        if (clafer.hasChildren() || (ref != null && analysis.isBreakableRef(ref))) {
+            weight = new IrIntExpr[scope];
+            for (int i = 0; i < weight.length; i++) {
+                weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1).asNoDecision());
+            }
+            index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
+            for (int i = 0; i < index.length; i++) {
+                for (int j = 0; j < index[i].length; j++) {
+                    index[i][j] = $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope - 1).asNoDecision());
+                }
+            }
+        } else {
+            // Optimize for nonsymmetric leaves. Don't compute the smallest indices, 
+            // just use the cardinalities.
             weight = Util.replicate($(Zero), scope);
             IrSetVar[] childSet = siblingSets.get(clafer);
             index = new IrIntExpr[childSet.length][];
             for (int i = 0; i < index.length; i++) {
                 index[i] = new IrIntExpr[]{card($(childSet[i]))};
             }
-        } else {
-            weight = new IrIntExpr[scope];
-            for (int i = 0; i < weight.length; i++) {
-                weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1));
-            }
-            index = new IrIntExpr[parentScope][scope];
-            for (int i = 0; i < index.length; i++) {
-                for (int j = 0; j < index[i].length; j++) {
-                    index[i][j] = $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope - 1));
-                }
-            }
         }
-//        AstRef ref = AstUtil.getInheritedRef(clafer);
-//        if(ref != null) {
-//            if(analysis.isBreakableRef(ref)) {
-//                System.out.println(clafer + " : " + ref);
-////                index = Util.snoc(index, $(refPointers.get(ref)));
-//            }
-//        }
         weights.put(clafer, weight);
         indices.put(clafer, index);
     }
@@ -365,7 +360,8 @@ public class AstCompiler {
             }
         }
 
-        if (clafer.hasChildren() || ref != null) {
+        // If the Clafer either needs children or reference to be introduce symmetry.
+        if (clafer.hasChildren() || (ref != null && analysis.isBreakableRef(ref))) {
             IrIntExpr[] weight = weights.get(clafer);
             IrIntExpr[][] index = indices.get(clafer);
 
@@ -377,7 +373,7 @@ public class AstCompiler {
                 List<IrIntExpr[]> childIndex = new ArrayList<IrIntExpr[]>();
                 for (Pair<AstClafer, Integer> offset : offsets) {
                     for (AstConcreteClafer child : offset.getFst().getChildren()) {
-                        childIndex.add(indices.get(child)[i]);
+                        childIndex.add(indices.get(child)[i + offset.getSnd()]);
                     }
                 }
                 if (ref != null) {
@@ -397,8 +393,10 @@ public class AstCompiler {
                 module.addConstraint(filterString(childSet[i], weight, index[i]));
             }
             for (int i = 0; i < parents.length - 1; i++) {
+//                for (int sibling : analysis.getPartialSolution(clafer).getPossiblesSiblings(i)) {
                 module.addConstraint(implies(equal(parents[i], parents[i + 1]),
                         greaterThanEqual(weight[i], weight[i + 1])));
+//                }
             }
         }
 
@@ -593,7 +591,9 @@ public class AstCompiler {
                 }
             }
             IrSetExpr unionSet = $(set(clafer.getName(), env.toArray(), ker.toArray()));
-            module.addConstraint(boolChannel(members, unionSet));
+            if (!AstUtil.isTypeRoot(clafer)) {
+                module.addConstraint(boolChannel(members, unionSet));
+            }
             sets.put(clafer, unionSet);
         }
         Check.noNulls(members);

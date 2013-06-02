@@ -1,5 +1,10 @@
 package org.clafer.ast.analysis;
 
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+import org.clafer.collection.FixedCapacityIntSet;
+import org.clafer.common.Check;
 import org.clafer.common.Util;
 
 /**
@@ -13,10 +18,37 @@ public class PartialSolution {
     private final boolean[] solution;
     // parent[i] = the list of possible parents
     private final int[][] parent;
+    // siblings[i] = the list of possible siblings
+    private final int[][] siblings;
 
     public PartialSolution(boolean[] solution, int[][] parent) {
         this.solution = solution;
         this.parent = parent;
+        this.siblings = new int[parent.length][];
+        TIntArrayList array = new TIntArrayList(parent.length);
+        for (int i = 0; i < siblings.length; i++) {
+            array.clear();
+            for (int j = 1; j < siblings.length; j++) {
+                if (i != j) {
+                    // TODO: shouldn't be null.
+                    if (parent[i] != null && parent[j] != null) {
+                        if (overlaps(parent[i], parent[j])) {
+                            array.add(j);
+                        }
+                    }
+                }
+            }
+            siblings[i] = array.toArray();
+        }
+    }
+
+    private static boolean overlaps(int[] a, int[] b) {
+        for (int i : a) {
+            if (Util.in(i, b)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -58,6 +90,14 @@ public class PartialSolution {
             }
         }
         return true;
+    }
+
+    /**
+     * @param id
+     * @return possible siblings of {@code id}
+     */
+    public int[] getPossiblesSiblings(int id) {
+        return siblings[id];
     }
 
     public int size() {

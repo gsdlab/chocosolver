@@ -10,18 +10,27 @@ import org.clafer.common.Check;
 public class IrFilterString extends IrAbstractBool implements IrBoolExpr {
 
     private final IrSetExpr set;
+    private final int offset;
     private final IrIntExpr[] string;
     private final IrIntExpr[] result;
 
-    public IrFilterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result, IrBoolDomain domain) {
+    public IrFilterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result, IrBoolDomain domain) {
         super(domain);
+        if (offset < 0) {
+            throw new IllegalArgumentException();
+        }
         this.set = set;
+        this.offset = offset;
         this.string = Check.noNullsNotEmpty(string);
         this.result = Check.noNullsNotEmpty(result);
     }
 
     public IrSetExpr getSet() {
         return set;
+    }
+
+    public int getOffset() {
+        return offset;
     }
 
     public IrIntExpr[] getString() {

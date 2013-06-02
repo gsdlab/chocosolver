@@ -824,7 +824,15 @@ public class Irs {
     }
 
     public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
-        return new IrFilterString(set, string, result, BoolDomain);
+        int offset = set.getEnv().getLowBound();
+        int end = set.getEnv().getHighBound();
+        return filterString(set, offset,
+                Arrays.copyOfRange(string, offset, end + 1),
+                result);
+    }
+
+    public static IrBoolExpr filterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result) {
+        return new IrFilterString(set, offset, string, result, BoolDomain);
     }
     /**
      * ******************

@@ -18,6 +18,21 @@ public class IrIntConstant extends IrIntVar {
     }
 
     @Override
+    public IrIntVar asDecision() {
+        return this;
+    }
+
+    @Override
+    public IrIntVar asNoDecision() {
+        return this;
+    }
+
+    @Override
+    public boolean isDecision() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

@@ -38,6 +38,11 @@ public class ReadHashMap<K, V> implements ReadMap<K, V> {
     }
 
     @Override
+    public Collection<Map.Entry<K, V>> entries() {
+        return map.entrySet();
+    }
+
+    @Override
     public Collection<K> getKeys() {
         return map.keySet();
     }

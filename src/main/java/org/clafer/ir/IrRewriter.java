@@ -184,7 +184,7 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrBoolExpr visit(IrFilterString ir, T a) {
-        return filterString(rewrite(ir.getSet(), a), rewrite(ir.getString(), a), rewrite(ir.getResult(), a));
+        return filterString(rewrite(ir.getSet(), a), ir.getOffset(), rewrite(ir.getString(), a), rewrite(ir.getResult(), a));
     }
 
     @Override

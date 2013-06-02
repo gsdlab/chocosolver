@@ -23,6 +23,9 @@ public class SymmetryAnalyzer implements Analyzer {
                 if (concreteClafer.hasParent() && analysis.getScope(concreteClafer.getParent()) > 1) {
                     graph.getVertex(concreteClafer).addNeighbour(graph.getVertex(concreteClafer.getParent()));
                 }
+                if (concreteClafer.hasSuperClafer()) {
+                    graph.getVertex(concreteClafer).addNeighbour(graph.getVertex(concreteClafer.getSuperClafer()));
+                }
             }
             if (analysis.getScope(clafer) > 1) {
                 for (AstConcreteClafer child : clafer.getChildren()) {

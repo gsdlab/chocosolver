@@ -60,7 +60,8 @@ public class SetArithmeticTest {
         model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), constant(0)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
-        assertEquals(9, solver.allInstances().length);
+        // Should be 5 with better symmetry breaking.
+        assertEquals(8, solver.allInstances().length);
     }
 
     /**

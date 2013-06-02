@@ -1,7 +1,5 @@
 package org.clafer.compiler;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.clafer.ast.AstConstraint;
 import org.clafer.scope.Scope;
 import org.clafer.ast.AstModel;
@@ -50,9 +48,9 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
-                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
-                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
+                SetStrategyFactory.setLex(solution.getIrSolution().getSetDecisionVars()),
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getIntDecisionVars()),
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         return new ClaferSolver(solver, solution);
     }
 
@@ -74,10 +72,10 @@ public class ClaferCompiler {
         solver.post(ICF.sum(score, sum));
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
+                SetStrategyFactory.setLex(solution.getIrSolution().getSetDecisionVars()),
                 IntStrategyFactory.firstFail_InDomainMax(score),
-                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getIntVars()),
-                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolVars())));
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getIntDecisionVars()),
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         return new ClaferObjective(solver, solution, Objective.Maximize, sum);
     }
 
@@ -99,10 +97,10 @@ public class ClaferCompiler {
         solver.post(ICF.sum(score, sum));
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
+                SetStrategyFactory.setLex(solution.getIrSolution().getSetDecisionVars()),
                 IntStrategyFactory.firstFail_InDomainMin(score),
-                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
-                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getIntDecisionVars()),
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         return new ClaferObjective(solver, solution, Objective.Minimize, sum);
     }
 
@@ -133,9 +131,9 @@ public class ClaferCompiler {
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 IntStrategyFactory.firstFail_InDomainMax(softVars),
-                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getIntVars()),
-                SetStrategyFactory.setLex(solution.getIrSolution().getSetVars()),
-                IntStrategyFactory.firstFail_InDomainMin(solution.getIrSolution().getBoolVars())));
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getIntDecisionVars()),
+                SetStrategyFactory.setLex(solution.getIrSolution().getSetDecisionVars()),
+                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         
         return new ClaferUnsat(solver, solution, softVarPairs, sum);
     }

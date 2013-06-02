@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
-import org.clafer.ir.IrBoundDomain;
 
 /**
  *
@@ -18,6 +17,21 @@ public class IrSetConstant extends IrSetVar {
 
     public int[] getValue() {
         return value;
+    }
+
+    @Override
+    public IrSetVar asDecision() {
+        return this;
+    }
+
+    @Override
+    public IrSetVar asNoDecision() {
+        return this;
+    }
+
+    @Override
+    public boolean isDecision() {
+        return false;
     }
 
     @Override

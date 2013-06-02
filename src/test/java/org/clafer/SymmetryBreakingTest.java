@@ -1,5 +1,6 @@
 package org.clafer;
 
+import org.clafer.ast.AstAbstractClafer;
 import org.clafer.scope.Scope;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -23,7 +24,7 @@ public class SymmetryBreakingTest {
      *     Drink 1..2
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void breakChildrenSwap() {
         AstModel model = newModel();
 
@@ -39,11 +40,43 @@ public class SymmetryBreakingTest {
     /**
      * <pre>
      * Patron 2
+     *     Money ->> integer 1..2
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void dontBreakUnrelatedRefs() {
+        AstModel model = newModel();
+
+        AstConcreteClafer patron = model.addChild("Patron").withCard(2, 2);
+        AstConcreteClafer money = patron.addChild("Money").refTo(IntType).withCard(1, 2);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(0).intHigh(1));
+        assertEquals(15, solver.allInstances().length);
+    }
+
+    /**
+     * Person 2 Likes -> Person
+     */
+    @Test(timeout = 60000)
+    public void unbreakableCircularRef() {
+        AstModel model = newModel();
+
+        AstConcreteClafer person = model.addChild("Person").withCard(2, 2);
+        AstConcreteClafer likes = person.addChild("Likes").refTo(person).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        // Ideally, this should be 3 but the current strategy should have 4 instances.
+        assertEquals(4, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Patron 2
      *     Food +
      *         Cheese *
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void breakGrandChildrenSwap() {
         /*
          * 19 nonisomorphic solutions:
@@ -131,23 +164,23 @@ public class SymmetryBreakingTest {
      * setRefToA -> A 3
      * multisetRefToA ->> A 3
      * </pre>
-     */  
+     */
     @Ignore
-    @Test
+    @Test(timeout = 60000)
     public void breakRefSwap() {
         AstModel model = newModel();
-        
-//        AstAbstractClafer A = model.addAbstractClafer("A");
-         AstConcreteClafer a = model.addChild("a").withCard(1);//.extending(A);
-         AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(a).withCard(3, 3);
-//         AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
-         
-         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-         System.out.println(solver.getInternalSolver());
-         // 162
+
+        AstAbstractClafer A = model.addAbstractClafer("A");
+        AstConcreteClafer a = model.addChild("a").withCard(1).extending(A);
+        AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(A).withCard(3, 3);
+        AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        System.out.println(solver.getInternalSolver());
+        // 162
 //         while(solver.find()) {
 //             System.out.println(solver.instance());
 //         }
-         assertEquals(4, solver.allInstances().length);
+        assertEquals(4, solver.allInstances().length);
     }
 }

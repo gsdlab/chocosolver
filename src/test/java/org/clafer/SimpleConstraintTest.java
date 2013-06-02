@@ -8,7 +8,6 @@ import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -376,7 +375,7 @@ public class SimpleConstraintTest {
      * <pre>
      * A -> integer 3..4
      * B -> integer 3..4
-     * [this.A = this.B]
+     * [this.A.ref = this.B.ref]
      * [this.A.ref > 5000]
      * </pre>
      */
