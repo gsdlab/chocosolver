@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>package org.clafer.javascript;<a name="line.1"></a>
+<span class="sourceLineNo">002</span><a name="line.2"></a>
+<span class="sourceLineNo">003</span>import java.io.File;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import java.io.FileNotFoundException;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import java.io.FileReader;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import java.io.InputStreamReader;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import java.io.Reader;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import javax.script.ScriptEngine;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import javax.script.ScriptEngineManager;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import javax.script.ScriptException;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.clafer.ast.AstModel;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.clafer.scope.Scope;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import org.clafer.collection.Pair;<a name="line.13"></a>
+<span class="sourceLineNo">014</span><a name="line.14"></a>
+<span class="sourceLineNo">015</span>/**<a name="line.15"></a>
+<span class="sourceLineNo">016</span> * This class provides various methods of loading models and scopes via the<a name="line.16"></a>
+<span class="sourceLineNo">017</span> * Javascript API.<a name="line.17"></a>
+<span class="sourceLineNo">018</span> *<a name="line.18"></a>
+<span class="sourceLineNo">019</span> * @author jimmy<a name="line.19"></a>
+<span class="sourceLineNo">020</span> */<a name="line.20"></a>
+<span class="sourceLineNo">021</span>public class Javascript {<a name="line.21"></a>
+<span class="sourceLineNo">022</span><a name="line.22"></a>
+<span class="sourceLineNo">023</span>    private Javascript() {<a name="line.23"></a>
+<span class="sourceLineNo">024</span>    }<a name="line.24"></a>
+<span class="sourceLineNo">025</span><a name="line.25"></a>
+<span class="sourceLineNo">026</span>    /**<a name="line.26"></a>
+<span class="sourceLineNo">027</span>     * @return a new Javascript engine.<a name="line.27"></a>
+<span class="sourceLineNo">028</span>     */<a name="line.28"></a>
+<span class="sourceLineNo">029</span>    public static ScriptEngine newEngine() {<a name="line.29"></a>
+<span class="sourceLineNo">030</span>        // The Rhino engine is currently the only supported engine.<a name="line.30"></a>
+<span class="sourceLineNo">031</span>        ScriptEngine engine = new ScriptEngineManager().getEngineByName("rhino");<a name="line.31"></a>
+<span class="sourceLineNo">032</span>        if (engine == null) {<a name="line.32"></a>
+<span class="sourceLineNo">033</span>            throw new IllegalStateException("Missing Rhino Javascript engine.");<a name="line.33"></a>
+<span class="sourceLineNo">034</span>        }<a name="line.34"></a>
+<span class="sourceLineNo">035</span>        return engine;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>    }<a name="line.36"></a>
+<span class="sourceLineNo">037</span><a name="line.37"></a>
+<span class="sourceLineNo">038</span>    public static Pair&lt;AstModel, Scope&gt; readModel(String in) throws ScriptException {<a name="line.38"></a>
+<span class="sourceLineNo">039</span>        return readModel("&lt;unknown&gt;", in, newEngine());<a name="line.39"></a>
+<span class="sourceLineNo">040</span>    }<a name="line.40"></a>
+<span class="sourceLineNo">041</span><a name="line.41"></a>
+<span class="sourceLineNo">042</span>    public static Pair&lt;AstModel, Scope&gt; readModel(File in) throws FileNotFoundException, ScriptException {<a name="line.42"></a>
+<span class="sourceLineNo">043</span>        return readModel(in, newEngine());<a name="line.43"></a>
+<span class="sourceLineNo">044</span>    }<a name="line.44"></a>
+<span class="sourceLineNo">045</span><a name="line.45"></a>
+<span class="sourceLineNo">046</span>    public static Pair&lt;AstModel, Scope&gt; readModel(Reader in) throws ScriptException {<a name="line.46"></a>
+<span class="sourceLineNo">047</span>        return readModel("&lt;unknown&gt;", in, newEngine());<a name="line.47"></a>
+<span class="sourceLineNo">048</span>    }<a name="line.48"></a>
+<span class="sourceLineNo">049</span><a name="line.49"></a>
+<span class="sourceLineNo">050</span>    public static Pair&lt;AstModel, Scope&gt; readModel(File in, ScriptEngine engine) throws FileNotFoundException, ScriptException {<a name="line.50"></a>
+<span class="sourceLineNo">051</span>        return readModel(in.getName(), in, engine);<a name="line.51"></a>
+<span class="sourceLineNo">052</span>    }<a name="line.52"></a>
+<span class="sourceLineNo">053</span><a name="line.53"></a>
+<span class="sourceLineNo">054</span>    public static Pair&lt;AstModel, Scope&gt; readModel(String name, String in, ScriptEngine engine) throws ScriptException {<a name="line.54"></a>
+<span class="sourceLineNo">055</span>        JavascriptContext context = new JavascriptContext();<a name="line.55"></a>
+<span class="sourceLineNo">056</span>        engine.put("rc", context);<a name="line.56"></a>
+<span class="sourceLineNo">057</span>        engine.put(ScriptEngine.FILENAME, "header.js");<a name="line.57"></a>
+<span class="sourceLineNo">058</span>        engine.eval(new InputStreamReader(Javascript.class.getResourceAsStream("header.js")));<a name="line.58"></a>
+<span class="sourceLineNo">059</span>        engine.put(ScriptEngine.FILENAME, name);<a name="line.59"></a>
+<span class="sourceLineNo">060</span>        engine.eval(in);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>        return new Pair&lt;AstModel, Scope&gt;(context.getModel(), context.getScope());<a name="line.61"></a>
+<span class="sourceLineNo">062</span>    }<a name="line.62"></a>
+<span class="sourceLineNo">063</span><a name="line.63"></a>
+<span class="sourceLineNo">064</span>    public static Pair&lt;AstModel, Scope&gt; readModel(String name, File in, ScriptEngine engine) throws FileNotFoundException, ScriptException {<a name="line.64"></a>
+<span class="sourceLineNo">065</span>        return readModel(name, new FileReader(in), engine);<a name="line.65"></a>
+<span class="sourceLineNo">066</span>    }<a name="line.66"></a>
+<span class="sourceLineNo">067</span><a name="line.67"></a>
+<span class="sourceLineNo">068</span>    public static Pair&lt;AstModel, Scope&gt; readModel(String name, Reader in, ScriptEngine engine) throws ScriptException {<a name="line.68"></a>
+<span class="sourceLineNo">069</span>        JavascriptContext context = new JavascriptContext();<a name="line.69"></a>
+<span class="sourceLineNo">070</span>        engine.put("rc", context);<a name="line.70"></a>
+<span class="sourceLineNo">071</span>        engine.put(ScriptEngine.FILENAME, "header.js");<a name="line.71"></a>
+<span class="sourceLineNo">072</span>        engine.eval(new InputStreamReader(Javascript.class.getResourceAsStream("header.js")));<a name="line.72"></a>
+<span class="sourceLineNo">073</span>        engine.put(ScriptEngine.FILENAME, name);<a name="line.73"></a>
+<span class="sourceLineNo">074</span>        engine.eval(in);<a name="line.74"></a>
+<span class="sourceLineNo">075</span>        return new Pair&lt;AstModel, Scope&gt;(context.getModel(), context.getScope());<a name="line.75"></a>
+<span class="sourceLineNo">076</span>    }<a name="line.76"></a>
+<span class="sourceLineNo">077</span>}<a name="line.77"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

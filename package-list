@@ -13,4 +13,3 @@ org.clafer.ir.analysis
 org.clafer.ir.compiler
 org.clafer.javascript
 org.clafer.scope
-solver.constraints

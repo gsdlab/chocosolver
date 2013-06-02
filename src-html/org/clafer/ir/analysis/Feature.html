@@ -1,0 +1,285 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>package org.clafer.ir.analysis;<a name="line.1"></a>
+<span class="sourceLineNo">002</span><a name="line.2"></a>
+<span class="sourceLineNo">003</span>import java.util.HashSet;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import java.util.Set;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import org.clafer.scope.Scope;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import static org.clafer.ast.Asts.*;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import org.clafer.ast.AstAbstractClafer;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.clafer.ast.AstConcreteClafer;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import org.clafer.ast.AstModel;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.clafer.compiler.ClaferCompiler;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.clafer.compiler.ClaferSolver;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import solver.variables.Variable;<a name="line.12"></a>
+<span class="sourceLineNo">013</span><a name="line.13"></a>
+<span class="sourceLineNo">014</span>/**<a name="line.14"></a>
+<span class="sourceLineNo">015</span> *<a name="line.15"></a>
+<span class="sourceLineNo">016</span> * @author jimmy<a name="line.16"></a>
+<span class="sourceLineNo">017</span> */<a name="line.17"></a>
+<span class="sourceLineNo">018</span>public class Feature {<a name="line.18"></a>
+<span class="sourceLineNo">019</span><a name="line.19"></a>
+<span class="sourceLineNo">020</span>    public static void main(String[] args) {<a name="line.20"></a>
+<span class="sourceLineNo">021</span>        AstModel model = newModel();<a name="line.21"></a>
+<span class="sourceLineNo">022</span>        AstAbstractClafer c3_SQLite = model.addAbstractClafer("c3_SQLite");<a name="line.22"></a>
+<span class="sourceLineNo">023</span>        AstAbstractClafer c1_IMeasurable = model.addAbstractClafer("c1_IMeasurable");<a name="line.23"></a>
+<span class="sourceLineNo">024</span>        AstConcreteClafer c2_footprint = c1_IMeasurable.addChild("c2_footprint").withCard(1, 1);<a name="line.24"></a>
+<span class="sourceLineNo">025</span>        AstConcreteClafer c4_OperatingSystemCharacteristics = c3_SQLite.addChild("c4_OperatingSystemCharacteristics").withCard(1, 1).extending(c1_IMeasurable);<a name="line.25"></a>
+<span class="sourceLineNo">026</span>        AstConcreteClafer c10_SQLITE_4_BYTE_ALIGNED_MALLOC = c4_OperatingSystemCharacteristics.addChild("c10_SQLITE_4_BYTE_ALIGNED_MALLOC").withCard(1, 1).extending(c1_IMeasurable);<a name="line.26"></a>
+<span class="sourceLineNo">027</span>        AstConcreteClafer c16_SQLITE_CASE_SENSITIVE_LIKE = c4_OperatingSystemCharacteristics.addChild("c16_SQLITE_CASE_SENSITIVE_LIKE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.27"></a>
+<span class="sourceLineNo">028</span>        AstConcreteClafer c22_SQLITE_HAVE_ISNAN = c4_OperatingSystemCharacteristics.addChild("c22_SQLITE_HAVE_ISNAN").withCard(0, 1).extending(c1_IMeasurable);<a name="line.28"></a>
+<span class="sourceLineNo">029</span>        AstConcreteClafer c28_SQLITE_SECURE_DELETE = c4_OperatingSystemCharacteristics.addChild("c28_SQLITE_SECURE_DELETE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.29"></a>
+<span class="sourceLineNo">030</span>        AstConcreteClafer c34_ChooseSQLITE_TEMP_STORE = c4_OperatingSystemCharacteristics.addChild("c34_ChooseSQLITE_TEMP_STORE").withCard(0, 1).withGroupCard(1, 1).extending(c1_IMeasurable);<a name="line.30"></a>
+<span class="sourceLineNo">031</span>        AstConcreteClafer c40_SQLITE_TEMP_STORE_EQ_0 = c34_ChooseSQLITE_TEMP_STORE.addChild("c40_SQLITE_TEMP_STORE_EQ_0").withCard(0, 1).extending(c1_IMeasurable);<a name="line.31"></a>
+<span class="sourceLineNo">032</span>        AstConcreteClafer c46_SQLITE_TEMP_STORE_EQ_1 = c34_ChooseSQLITE_TEMP_STORE.addChild("c46_SQLITE_TEMP_STORE_EQ_1").withCard(0, 1).extending(c1_IMeasurable);<a name="line.32"></a>
+<span class="sourceLineNo">033</span>        AstConcreteClafer c52_SQLITE_TEMP_STORE_EQ_2 = c34_ChooseSQLITE_TEMP_STORE.addChild("c52_SQLITE_TEMP_STORE_EQ_2").withCard(0, 1).extending(c1_IMeasurable);<a name="line.33"></a>
+<span class="sourceLineNo">034</span>        AstConcreteClafer c58_SQLITE_TEMP_STORE_EQ_3 = c34_ChooseSQLITE_TEMP_STORE.addChild("c58_SQLITE_TEMP_STORE_EQ_3").withCard(0, 1).extending(c1_IMeasurable);<a name="line.34"></a>
+<span class="sourceLineNo">035</span>        AstConcreteClafer c64_EnableFeatures = c3_SQLite.addChild("c64_EnableFeatures").withCard(1, 1).extending(c1_IMeasurable);<a name="line.35"></a>
+<span class="sourceLineNo">036</span>        AstConcreteClafer c70_SQLITE_ENABLE_ATOMIC_WRITE = c64_EnableFeatures.addChild("c70_SQLITE_ENABLE_ATOMIC_WRITE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.36"></a>
+<span class="sourceLineNo">037</span>        AstConcreteClafer c76_SQLITE_ENABLE_COLUMN_METADATA = c64_EnableFeatures.addChild("c76_SQLITE_ENABLE_COLUMN_METADATA").withCard(0, 1).extending(c1_IMeasurable);<a name="line.37"></a>
+<span class="sourceLineNo">038</span>        AstConcreteClafer c84_SQLITE_ENABLE_FTS3 = c64_EnableFeatures.addChild("c84_SQLITE_ENABLE_FTS3").withCard(0, 1).extending(c1_IMeasurable);<a name="line.38"></a>
+<span class="sourceLineNo">039</span>        AstConcreteClafer c90_SQLITE_ENABLE_FTS3_PARENTHESIS = c64_EnableFeatures.addChild("c90_SQLITE_ENABLE_FTS3_PARENTHESIS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.39"></a>
+<span class="sourceLineNo">040</span>        AstConcreteClafer c96_SQLITE_ENABLE_MEMORY_MANAGEMENT = c64_EnableFeatures.addChild("c96_SQLITE_ENABLE_MEMORY_MANAGEMENT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.40"></a>
+<span class="sourceLineNo">041</span>        AstConcreteClafer c102_ChooseMemSys = c64_EnableFeatures.addChild("c102_ChooseMemSys").withCard(0, 1).withGroupCard(1, 1).extending(c1_IMeasurable);<a name="line.41"></a>
+<span class="sourceLineNo">042</span>        AstConcreteClafer c108_SQLITE_ENABLE_MEMSYS3 = c102_ChooseMemSys.addChild("c108_SQLITE_ENABLE_MEMSYS3").withCard(0, 1).extending(c1_IMeasurable);<a name="line.42"></a>
+<span class="sourceLineNo">043</span>        AstConcreteClafer c114_SQLITE_ENABLE_MEMSYS5 = c102_ChooseMemSys.addChild("c114_SQLITE_ENABLE_MEMSYS5").withCard(0, 1).extending(c1_IMeasurable);<a name="line.43"></a>
+<span class="sourceLineNo">044</span>        AstConcreteClafer c120_SQLITE_ENABLE_RTREE = c64_EnableFeatures.addChild("c120_SQLITE_ENABLE_RTREE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.44"></a>
+<span class="sourceLineNo">045</span>        AstConcreteClafer c126_SQLITE_ENABLE_STAT2 = c64_EnableFeatures.addChild("c126_SQLITE_ENABLE_STAT2").withCard(0, 1).extending(c1_IMeasurable);<a name="line.45"></a>
+<span class="sourceLineNo">046</span>        AstConcreteClafer c132_SQLITE_ENABLE_UPDATE_DELETE_LIMIT = c64_EnableFeatures.addChild("c132_SQLITE_ENABLE_UPDATE_DELETE_LIMIT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.46"></a>
+<span class="sourceLineNo">047</span>        AstConcreteClafer c138_SQLITE_ENABLE_UNLOCK_NOTIFY = c64_EnableFeatures.addChild("c138_SQLITE_ENABLE_UNLOCK_NOTIFY").withCard(0, 1).extending(c1_IMeasurable);<a name="line.47"></a>
+<span class="sourceLineNo">048</span>        AstConcreteClafer c144_SQLITE_SOUNDEX = c64_EnableFeatures.addChild("c144_SQLITE_SOUNDEX").withCard(0, 1).extending(c1_IMeasurable);<a name="line.48"></a>
+<span class="sourceLineNo">049</span>        AstConcreteClafer c150_YYTRACKMAXSTACKDEPTH = c64_EnableFeatures.addChild("c150_YYTRACKMAXSTACKDEPTH").withCard(0, 1).extending(c1_IMeasurable);<a name="line.49"></a>
+<span class="sourceLineNo">050</span>        AstConcreteClafer c156_DisableFeatures = c3_SQLite.addChild("c156_DisableFeatures").withCard(1, 1).extending(c1_IMeasurable);<a name="line.50"></a>
+<span class="sourceLineNo">051</span>        AstConcreteClafer c162_SQLITE_DISABLE_LFS = c156_DisableFeatures.addChild("c162_SQLITE_DISABLE_LFS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.51"></a>
+<span class="sourceLineNo">052</span>        AstConcreteClafer c168_SQLITE_DISABLE_DIRSYNC = c156_DisableFeatures.addChild("c168_SQLITE_DISABLE_DIRSYNC").withCard(0, 1).extending(c1_IMeasurable);<a name="line.52"></a>
+<span class="sourceLineNo">053</span>        AstConcreteClafer c174_OmitFeatures = c3_SQLite.addChild("c174_OmitFeatures").withCard(1, 1).extending(c1_IMeasurable);<a name="line.53"></a>
+<span class="sourceLineNo">054</span>        AstConcreteClafer c180_SQLITE_OMIT_ALTERTABLE = c174_OmitFeatures.addChild("c180_SQLITE_OMIT_ALTERTABLE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.54"></a>
+<span class="sourceLineNo">055</span>        AstConcreteClafer c187_SQLITE_OMIT_ANALYZE = c174_OmitFeatures.addChild("c187_SQLITE_OMIT_ANALYZE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.55"></a>
+<span class="sourceLineNo">056</span>        AstConcreteClafer c194_SQLITE_OMIT_ATTACH = c174_OmitFeatures.addChild("c194_SQLITE_OMIT_ATTACH").withCard(0, 1).extending(c1_IMeasurable);<a name="line.56"></a>
+<span class="sourceLineNo">057</span>        AstConcreteClafer c201_SQLITE_OMIT_AUTHORIZATION = c174_OmitFeatures.addChild("c201_SQLITE_OMIT_AUTHORIZATION").withCard(0, 1).extending(c1_IMeasurable);<a name="line.57"></a>
+<span class="sourceLineNo">058</span>        AstConcreteClafer c208_SQLITE_OMIT_AUTOINCREMENT = c174_OmitFeatures.addChild("c208_SQLITE_OMIT_AUTOINCREMENT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.58"></a>
+<span class="sourceLineNo">059</span>        AstConcreteClafer c215_SQLITE_OMIT_AUTOMATIC_INDEX = c174_OmitFeatures.addChild("c215_SQLITE_OMIT_AUTOMATIC_INDEX").withCard(0, 1).extending(c1_IMeasurable);<a name="line.59"></a>
+<span class="sourceLineNo">060</span>        AstConcreteClafer c222_SQLITE_OMIT_AUTOINIT = c174_OmitFeatures.addChild("c222_SQLITE_OMIT_AUTOINIT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>        AstConcreteClafer c228_SQLITE_OMIT_AUTOVACUUM = c174_OmitFeatures.addChild("c228_SQLITE_OMIT_AUTOVACUUM").withCard(0, 1).extending(c1_IMeasurable);<a name="line.61"></a>
+<span class="sourceLineNo">062</span>        AstConcreteClafer c235_SQLITE_OMIT_BETWEEN_OPTIMIZATION = c174_OmitFeatures.addChild("c235_SQLITE_OMIT_BETWEEN_OPTIMIZATION").withCard(0, 1).extending(c1_IMeasurable);<a name="line.62"></a>
+<span class="sourceLineNo">063</span>        AstConcreteClafer c241_SQLITE_OMIT_BLOB_LITERAL = c174_OmitFeatures.addChild("c241_SQLITE_OMIT_BLOB_LITERAL").withCard(0, 1).extending(c1_IMeasurable);<a name="line.63"></a>
+<span class="sourceLineNo">064</span>        AstConcreteClafer c248_SQLITE_OMIT_BTREECOUNT = c174_OmitFeatures.addChild("c248_SQLITE_OMIT_BTREECOUNT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.64"></a>
+<span class="sourceLineNo">065</span>        AstConcreteClafer c255_SQLITE_OMIT_BUILTIN_TEST = c174_OmitFeatures.addChild("c255_SQLITE_OMIT_BUILTIN_TEST").withCard(0, 1).extending(c1_IMeasurable);<a name="line.65"></a>
+<span class="sourceLineNo">066</span>        AstConcreteClafer c262_SQLITE_OMIT_CAST = c174_OmitFeatures.addChild("c262_SQLITE_OMIT_CAST").withCard(0, 1).extending(c1_IMeasurable);<a name="line.66"></a>
+<span class="sourceLineNo">067</span>        AstConcreteClafer c269_SQLITE_OMIT_CHECK = c174_OmitFeatures.addChild("c269_SQLITE_OMIT_CHECK").withCard(0, 1).extending(c1_IMeasurable);<a name="line.67"></a>
+<span class="sourceLineNo">068</span>        AstConcreteClafer c276_SQLITE_OMIT_COMPILEOPTION_DIAGS = c174_OmitFeatures.addChild("c276_SQLITE_OMIT_COMPILEOPTION_DIAGS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.68"></a>
+<span class="sourceLineNo">069</span>        AstConcreteClafer c283_SQLITE_OMIT_COMPLETE = c174_OmitFeatures.addChild("c283_SQLITE_OMIT_COMPLETE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.69"></a>
+<span class="sourceLineNo">070</span>        AstConcreteClafer c290_SQLITE_OMIT_COMPOUND_SELECT = c174_OmitFeatures.addChild("c290_SQLITE_OMIT_COMPOUND_SELECT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.70"></a>
+<span class="sourceLineNo">071</span>        AstConcreteClafer c297_SQLITE_OMIT_CONFLICT_CLAUSE = c174_OmitFeatures.addChild("c297_SQLITE_OMIT_CONFLICT_CLAUSE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.71"></a>
+<span class="sourceLineNo">072</span>        AstConcreteClafer c303_SQLITE_OMIT_DATETIME_FUNCS = c174_OmitFeatures.addChild("c303_SQLITE_OMIT_DATETIME_FUNCS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.72"></a>
+<span class="sourceLineNo">073</span>        AstConcreteClafer c310_SQLITE_OMIT_DECLTYPE = c174_OmitFeatures.addChild("c310_SQLITE_OMIT_DECLTYPE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.73"></a>
+<span class="sourceLineNo">074</span>        AstConcreteClafer c319_SQLITE_OMIT_DEPRECATED = c174_OmitFeatures.addChild("c319_SQLITE_OMIT_DEPRECATED").withCard(0, 1).extending(c1_IMeasurable);<a name="line.74"></a>
+<span class="sourceLineNo">075</span>        AstConcreteClafer c326_SQLITE_OMIT_EXPLAIN = c174_OmitFeatures.addChild("c326_SQLITE_OMIT_EXPLAIN").withCard(0, 1).extending(c1_IMeasurable);<a name="line.75"></a>
+<span class="sourceLineNo">076</span>        AstConcreteClafer c333_SQLITE_OMIT_FLAG_PRAGMAS = c174_OmitFeatures.addChild("c333_SQLITE_OMIT_FLAG_PRAGMAS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.76"></a>
+<span class="sourceLineNo">077</span>        AstConcreteClafer c340_SQLITE_OMIT_FLOATING_POINT = c174_OmitFeatures.addChild("c340_SQLITE_OMIT_FLOATING_POINT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.77"></a>
+<span class="sourceLineNo">078</span>        AstConcreteClafer c347_SQLITE_OMIT_FOREIGN_KEY = c174_OmitFeatures.addChild("c347_SQLITE_OMIT_FOREIGN_KEY").withCard(0, 1).extending(c1_IMeasurable);<a name="line.78"></a>
+<span class="sourceLineNo">079</span>        AstConcreteClafer c354_SQLITE_OMIT_GET_TABLE = c174_OmitFeatures.addChild("c354_SQLITE_OMIT_GET_TABLE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.79"></a>
+<span class="sourceLineNo">080</span>        AstConcreteClafer c361_SQLITE_OMIT_INCRBLOB = c174_OmitFeatures.addChild("c361_SQLITE_OMIT_INCRBLOB").withCard(0, 1).extending(c1_IMeasurable);<a name="line.80"></a>
+<span class="sourceLineNo">081</span>        AstConcreteClafer c368_SQLITE_OMIT_INTEGRITY_CHECK = c174_OmitFeatures.addChild("c368_SQLITE_OMIT_INTEGRITY_CHECK").withCard(0, 1).extending(c1_IMeasurable);<a name="line.81"></a>
+<span class="sourceLineNo">082</span>        AstConcreteClafer c375_SQLITE_OMIT_LIKE_OPTIMIZATION = c174_OmitFeatures.addChild("c375_SQLITE_OMIT_LIKE_OPTIMIZATION").withCard(0, 1).extending(c1_IMeasurable);<a name="line.82"></a>
+<span class="sourceLineNo">083</span>        AstConcreteClafer c382_SQLITE_OMIT_LOAD_EXTENSION = c174_OmitFeatures.addChild("c382_SQLITE_OMIT_LOAD_EXTENSION").withCard(0, 1).extending(c1_IMeasurable);<a name="line.83"></a>
+<span class="sourceLineNo">084</span>        AstConcreteClafer c389_SQLITE_OMIT_LOCALTIME = c174_OmitFeatures.addChild("c389_SQLITE_OMIT_LOCALTIME").withCard(0, 1).extending(c1_IMeasurable);<a name="line.84"></a>
+<span class="sourceLineNo">085</span>        AstConcreteClafer c396_SQLITE_OMIT_LOOKASIDE = c174_OmitFeatures.addChild("c396_SQLITE_OMIT_LOOKASIDE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.85"></a>
+<span class="sourceLineNo">086</span>        AstConcreteClafer c403_SQLITE_OMIT_MEMORYDB = c174_OmitFeatures.addChild("c403_SQLITE_OMIT_MEMORYDB").withCard(0, 1).extending(c1_IMeasurable);<a name="line.86"></a>
+<span class="sourceLineNo">087</span>        AstConcreteClafer c410_SQLITE_OMIT_OR_OPTIMIZATION = c174_OmitFeatures.addChild("c410_SQLITE_OMIT_OR_OPTIMIZATION").withCard(0, 1).extending(c1_IMeasurable);<a name="line.87"></a>
+<span class="sourceLineNo">088</span>        AstConcreteClafer c417_SQLITE_OMIT_PAGER_PRAGMAS = c174_OmitFeatures.addChild("c417_SQLITE_OMIT_PAGER_PRAGMAS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.88"></a>
+<span class="sourceLineNo">089</span>        AstConcreteClafer c424_SQLITE_OMIT_PRAGMA = c174_OmitFeatures.addChild("c424_SQLITE_OMIT_PRAGMA").withCard(0, 1).extending(c1_IMeasurable);<a name="line.89"></a>
+<span class="sourceLineNo">090</span>        AstConcreteClafer c431_SQLITE_OMIT_PROGRESS_CALLBACK = c174_OmitFeatures.addChild("c431_SQLITE_OMIT_PROGRESS_CALLBACK").withCard(0, 1).extending(c1_IMeasurable);<a name="line.90"></a>
+<span class="sourceLineNo">091</span>        AstConcreteClafer c438_SQLITE_OMIT_QUICKBALANCE = c174_OmitFeatures.addChild("c438_SQLITE_OMIT_QUICKBALANCE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.91"></a>
+<span class="sourceLineNo">092</span>        AstConcreteClafer c445_SQLITE_OMIT_REINDEX = c174_OmitFeatures.addChild("c445_SQLITE_OMIT_REINDEX").withCard(0, 1).extending(c1_IMeasurable);<a name="line.92"></a>
+<span class="sourceLineNo">093</span>        AstConcreteClafer c452_SQLITE_OMIT_SCHEMA_PRAGMAS = c174_OmitFeatures.addChild("c452_SQLITE_OMIT_SCHEMA_PRAGMAS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.93"></a>
+<span class="sourceLineNo">094</span>        AstConcreteClafer c459_SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS = c174_OmitFeatures.addChild("c459_SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS").withCard(0, 1).extending(c1_IMeasurable);<a name="line.94"></a>
+<span class="sourceLineNo">095</span>        AstConcreteClafer c466_SQLITE_OMIT_SHARED_CACHE = c174_OmitFeatures.addChild("c466_SQLITE_OMIT_SHARED_CACHE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.95"></a>
+<span class="sourceLineNo">096</span>        AstConcreteClafer c473_SQLITE_OMIT_SUBQUERY = c174_OmitFeatures.addChild("c473_SQLITE_OMIT_SUBQUERY").withCard(0, 1).extending(c1_IMeasurable);<a name="line.96"></a>
+<span class="sourceLineNo">097</span>        AstConcreteClafer c480_SQLITE_OMIT_TCL_VARIABLE = c174_OmitFeatures.addChild("c480_SQLITE_OMIT_TCL_VARIABLE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.97"></a>
+<span class="sourceLineNo">098</span>        AstConcreteClafer c486_SQLITE_OMIT_TEMPDB = c174_OmitFeatures.addChild("c486_SQLITE_OMIT_TEMPDB").withCard(0, 1).extending(c1_IMeasurable);<a name="line.98"></a>
+<span class="sourceLineNo">099</span>        AstConcreteClafer c492_SQLITE_OMIT_TRACE = c174_OmitFeatures.addChild("c492_SQLITE_OMIT_TRACE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.99"></a>
+<span class="sourceLineNo">100</span>        AstConcreteClafer c499_SQLITE_OMIT_TRIGGER = c174_OmitFeatures.addChild("c499_SQLITE_OMIT_TRIGGER").withCard(0, 1).extending(c1_IMeasurable);<a name="line.100"></a>
+<span class="sourceLineNo">101</span>        AstConcreteClafer c506_SQLITE_OMIT_TRUNCATE_OPTIMIZATION = c174_OmitFeatures.addChild("c506_SQLITE_OMIT_TRUNCATE_OPTIMIZATION").withCard(0, 1).extending(c1_IMeasurable);<a name="line.101"></a>
+<span class="sourceLineNo">102</span>        AstConcreteClafer c512_SQLITE_OMIT_UTF16 = c174_OmitFeatures.addChild("c512_SQLITE_OMIT_UTF16").withCard(0, 1).extending(c1_IMeasurable);<a name="line.102"></a>
+<span class="sourceLineNo">103</span>        AstConcreteClafer c519_SQLITE_OMIT_VACUUM = c174_OmitFeatures.addChild("c519_SQLITE_OMIT_VACUUM").withCard(0, 1).extending(c1_IMeasurable);<a name="line.103"></a>
+<span class="sourceLineNo">104</span>        AstConcreteClafer c526_SQLITE_OMIT_VIEW = c174_OmitFeatures.addChild("c526_SQLITE_OMIT_VIEW").withCard(0, 1).extending(c1_IMeasurable);<a name="line.104"></a>
+<span class="sourceLineNo">105</span>        AstConcreteClafer c533_SQLITE_OMIT_VIRTUALTABLE = c174_OmitFeatures.addChild("c533_SQLITE_OMIT_VIRTUALTABLE").withCard(0, 1).extending(c1_IMeasurable);<a name="line.105"></a>
+<span class="sourceLineNo">106</span>        AstConcreteClafer c540_SQLITE_OMIT_WAL = c174_OmitFeatures.addChild("c540_SQLITE_OMIT_WAL").withCard(0, 1).extending(c1_IMeasurable);<a name="line.106"></a>
+<span class="sourceLineNo">107</span>        AstConcreteClafer c547_SQLITE_OMIT_XFER_OPT = c174_OmitFeatures.addChild("c547_SQLITE_OMIT_XFER_OPT").withCard(0, 1).extending(c1_IMeasurable);<a name="line.107"></a>
+<span class="sourceLineNo">108</span>        AstConcreteClafer c554_SQLITE_DEBUG = c3_SQLite.addChild("c554_SQLITE_DEBUG").withCard(0, 1).extending(c1_IMeasurable);<a name="line.108"></a>
+<span class="sourceLineNo">109</span>        AstConcreteClafer c560_SQLITE_MEMDEBUG = c3_SQLite.addChild("c560_SQLITE_MEMDEBUG").withCard(0, 1).extending(c1_IMeasurable);<a name="line.109"></a>
+<span class="sourceLineNo">110</span>        AstConcreteClafer c566_simpleConfig = model.addChild("c566_simpleConfig").withCard(1, 1).extending(c3_SQLite);<a name="line.110"></a>
+<span class="sourceLineNo">111</span>        c2_footprint.refToUnique(IntType);<a name="line.111"></a>
+<span class="sourceLineNo">112</span>        c4_OperatingSystemCharacteristics.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(888)));<a name="line.112"></a>
+<span class="sourceLineNo">113</span>        c10_SQLITE_4_BYTE_ALIGNED_MALLOC.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.113"></a>
+<span class="sourceLineNo">114</span>        c16_SQLITE_CASE_SENSITIVE_LIKE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.114"></a>
+<span class="sourceLineNo">115</span>        c22_SQLITE_HAVE_ISNAN.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.115"></a>
+<span class="sourceLineNo">116</span>        c28_SQLITE_SECURE_DELETE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.116"></a>
+<span class="sourceLineNo">117</span>        c34_ChooseSQLITE_TEMP_STORE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.117"></a>
+<span class="sourceLineNo">118</span>        c40_SQLITE_TEMP_STORE_EQ_0.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.118"></a>
+<span class="sourceLineNo">119</span>        c46_SQLITE_TEMP_STORE_EQ_1.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.119"></a>
+<span class="sourceLineNo">120</span>        c52_SQLITE_TEMP_STORE_EQ_2.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.120"></a>
+<span class="sourceLineNo">121</span>        c58_SQLITE_TEMP_STORE_EQ_3.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.121"></a>
+<span class="sourceLineNo">122</span>        c64_EnableFeatures.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.122"></a>
+<span class="sourceLineNo">123</span>        c70_SQLITE_ENABLE_ATOMIC_WRITE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(3)));<a name="line.123"></a>
+<span class="sourceLineNo">124</span>        c76_SQLITE_ENABLE_COLUMN_METADATA.addConstraint(none(join(join(joinParent(joinParent($this())), c174_OmitFeatures), c310_SQLITE_OMIT_DECLTYPE)));<a name="line.124"></a>
+<span class="sourceLineNo">125</span>        c76_SQLITE_ENABLE_COLUMN_METADATA.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));<a name="line.125"></a>
+<span class="sourceLineNo">126</span>        c84_SQLITE_ENABLE_FTS3.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(100)));<a name="line.126"></a>
+<span class="sourceLineNo">127</span>        c90_SQLITE_ENABLE_FTS3_PARENTHESIS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.127"></a>
+<span class="sourceLineNo">128</span>        c96_SQLITE_ENABLE_MEMORY_MANAGEMENT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(1)));<a name="line.128"></a>
+<span class="sourceLineNo">129</span>        c102_ChooseMemSys.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(3)));<a name="line.129"></a>
+<span class="sourceLineNo">130</span>        c108_SQLITE_ENABLE_MEMSYS3.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));<a name="line.130"></a>
+<span class="sourceLineNo">131</span>        c114_SQLITE_ENABLE_MEMSYS5.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.131"></a>
+<span class="sourceLineNo">132</span>        c120_SQLITE_ENABLE_RTREE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(33)));<a name="line.132"></a>
+<span class="sourceLineNo">133</span>        c126_SQLITE_ENABLE_STAT2.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(4)));<a name="line.133"></a>
+<span class="sourceLineNo">134</span>        c132_SQLITE_ENABLE_UPDATE_DELETE_LIMIT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(1)));<a name="line.134"></a>
+<span class="sourceLineNo">135</span>        c138_SQLITE_ENABLE_UNLOCK_NOTIFY.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(3)));<a name="line.135"></a>
+<span class="sourceLineNo">136</span>        c144_SQLITE_SOUNDEX.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(1)));<a name="line.136"></a>
+<span class="sourceLineNo">137</span>        c150_YYTRACKMAXSTACKDEPTH.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.137"></a>
+<span class="sourceLineNo">138</span>        c156_DisableFeatures.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.138"></a>
+<span class="sourceLineNo">139</span>        c162_SQLITE_DISABLE_LFS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.139"></a>
+<span class="sourceLineNo">140</span>        c168_SQLITE_DISABLE_DIRSYNC.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.140"></a>
+<span class="sourceLineNo">141</span>        c174_OmitFeatures.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.141"></a>
+<span class="sourceLineNo">142</span>        c180_SQLITE_OMIT_ALTERTABLE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-7)));<a name="line.142"></a>
+<span class="sourceLineNo">143</span>        c187_SQLITE_OMIT_ANALYZE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-5)));<a name="line.143"></a>
+<span class="sourceLineNo">144</span>        c194_SQLITE_OMIT_ATTACH.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-8)));<a name="line.144"></a>
+<span class="sourceLineNo">145</span>        c201_SQLITE_OMIT_AUTHORIZATION.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-5)));<a name="line.145"></a>
+<span class="sourceLineNo">146</span>        c208_SQLITE_OMIT_AUTOINCREMENT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-3)));<a name="line.146"></a>
+<span class="sourceLineNo">147</span>        c215_SQLITE_OMIT_AUTOMATIC_INDEX.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-4)));<a name="line.147"></a>
+<span class="sourceLineNo">148</span>        c222_SQLITE_OMIT_AUTOINIT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.148"></a>
+<span class="sourceLineNo">149</span>        c228_SQLITE_OMIT_AUTOVACUUM.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-14)));<a name="line.149"></a>
+<span class="sourceLineNo">150</span>        c235_SQLITE_OMIT_BETWEEN_OPTIMIZATION.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.150"></a>
+<span class="sourceLineNo">151</span>        c241_SQLITE_OMIT_BLOB_LITERAL.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.151"></a>
+<span class="sourceLineNo">152</span>        c248_SQLITE_OMIT_BTREECOUNT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-2)));<a name="line.152"></a>
+<span class="sourceLineNo">153</span>        c255_SQLITE_OMIT_BUILTIN_TEST.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-2)));<a name="line.153"></a>
+<span class="sourceLineNo">154</span>        c262_SQLITE_OMIT_CAST.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.154"></a>
+<span class="sourceLineNo">155</span>        c269_SQLITE_OMIT_CHECK.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.155"></a>
+<span class="sourceLineNo">156</span>        c276_SQLITE_OMIT_COMPILEOPTION_DIAGS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.156"></a>
+<span class="sourceLineNo">157</span>        c283_SQLITE_OMIT_COMPLETE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-888)));<a name="line.157"></a>
+<span class="sourceLineNo">158</span>        c290_SQLITE_OMIT_COMPOUND_SELECT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-10)));<a name="line.158"></a>
+<span class="sourceLineNo">159</span>        c297_SQLITE_OMIT_CONFLICT_CLAUSE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.159"></a>
+<span class="sourceLineNo">160</span>        c303_SQLITE_OMIT_DATETIME_FUNCS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-10)));<a name="line.160"></a>
+<span class="sourceLineNo">161</span>        c310_SQLITE_OMIT_DECLTYPE.addConstraint(none(join(join(joinParent(joinParent($this())), c64_EnableFeatures), c76_SQLITE_ENABLE_COLUMN_METADATA)));<a name="line.161"></a>
+<span class="sourceLineNo">162</span>        c310_SQLITE_OMIT_DECLTYPE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.162"></a>
+<span class="sourceLineNo">163</span>        c319_SQLITE_OMIT_DEPRECATED.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.163"></a>
+<span class="sourceLineNo">164</span>        c326_SQLITE_OMIT_EXPLAIN.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-10)));<a name="line.164"></a>
+<span class="sourceLineNo">165</span>        c333_SQLITE_OMIT_FLAG_PRAGMAS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.165"></a>
+<span class="sourceLineNo">166</span>        c340_SQLITE_OMIT_FLOATING_POINT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-18)));<a name="line.166"></a>
+<span class="sourceLineNo">167</span>        c347_SQLITE_OMIT_FOREIGN_KEY.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-15)));<a name="line.167"></a>
+<span class="sourceLineNo">168</span>        c354_SQLITE_OMIT_GET_TABLE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-3)));<a name="line.168"></a>
+<span class="sourceLineNo">169</span>        c361_SQLITE_OMIT_INCRBLOB.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-7)));<a name="line.169"></a>
+<span class="sourceLineNo">170</span>        c368_SQLITE_OMIT_INTEGRITY_CHECK.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-9)));<a name="line.170"></a>
+<span class="sourceLineNo">171</span>        c375_SQLITE_OMIT_LIKE_OPTIMIZATION.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-2)));<a name="line.171"></a>
+<span class="sourceLineNo">172</span>        c382_SQLITE_OMIT_LOAD_EXTENSION.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-3)));<a name="line.172"></a>
+<span class="sourceLineNo">173</span>        c389_SQLITE_OMIT_LOCALTIME.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.173"></a>
+<span class="sourceLineNo">174</span>        c396_SQLITE_OMIT_LOOKASIDE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.174"></a>
+<span class="sourceLineNo">175</span>        c403_SQLITE_OMIT_MEMORYDB.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-2)));<a name="line.175"></a>
+<span class="sourceLineNo">176</span>        c410_SQLITE_OMIT_OR_OPTIMIZATION.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-5)));<a name="line.176"></a>
+<span class="sourceLineNo">177</span>        c417_SQLITE_OMIT_PAGER_PRAGMAS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-5)));<a name="line.177"></a>
+<span class="sourceLineNo">178</span>        c424_SQLITE_OMIT_PRAGMA.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-16)));<a name="line.178"></a>
+<span class="sourceLineNo">179</span>        c431_SQLITE_OMIT_PROGRESS_CALLBACK.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.179"></a>
+<span class="sourceLineNo">180</span>        c438_SQLITE_OMIT_QUICKBALANCE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.180"></a>
+<span class="sourceLineNo">181</span>        c445_SQLITE_OMIT_REINDEX.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.181"></a>
+<span class="sourceLineNo">182</span>        c452_SQLITE_OMIT_SCHEMA_PRAGMAS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-2)));<a name="line.182"></a>
+<span class="sourceLineNo">183</span>        c459_SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-1)));<a name="line.183"></a>
+<span class="sourceLineNo">184</span>        c466_SQLITE_OMIT_SHARED_CACHE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-10)));<a name="line.184"></a>
+<span class="sourceLineNo">185</span>        c473_SQLITE_OMIT_SUBQUERY.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-11)));<a name="line.185"></a>
+<span class="sourceLineNo">186</span>        c480_SQLITE_OMIT_TCL_VARIABLE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.186"></a>
+<span class="sourceLineNo">187</span>        c486_SQLITE_OMIT_TEMPDB.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.187"></a>
+<span class="sourceLineNo">188</span>        c492_SQLITE_OMIT_TRACE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-3)));<a name="line.188"></a>
+<span class="sourceLineNo">189</span>        c499_SQLITE_OMIT_TRIGGER.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-27)));<a name="line.189"></a>
+<span class="sourceLineNo">190</span>        c506_SQLITE_OMIT_TRUNCATE_OPTIMIZATION.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(0)));<a name="line.190"></a>
+<span class="sourceLineNo">191</span>        c512_SQLITE_OMIT_UTF16.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-8)));<a name="line.191"></a>
+<span class="sourceLineNo">192</span>        c519_SQLITE_OMIT_VACUUM.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-4)));<a name="line.192"></a>
+<span class="sourceLineNo">193</span>        c526_SQLITE_OMIT_VIEW.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-3)));<a name="line.193"></a>
+<span class="sourceLineNo">194</span>        c533_SQLITE_OMIT_VIRTUALTABLE.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-20)));<a name="line.194"></a>
+<span class="sourceLineNo">195</span>        c540_SQLITE_OMIT_WAL.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-30)));<a name="line.195"></a>
+<span class="sourceLineNo">196</span>        c547_SQLITE_OMIT_XFER_OPT.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(-3)));<a name="line.196"></a>
+<span class="sourceLineNo">197</span>        c554_SQLITE_DEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(9)));<a name="line.197"></a>
+<span class="sourceLineNo">198</span>        c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));<a name="line.198"></a>
+<span class="sourceLineNo">199</span><a name="line.199"></a>
+<span class="sourceLineNo">200</span>        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(200).intLow(-10000).intHigh(10000));<a name="line.200"></a>
+<span class="sourceLineNo">201</span>//        ClaferObjective solver = ClaferCompiler.compileMinimize(model, new Scope(200, -10000, 10000), c2_footprint.getRef());<a name="line.201"></a>
+<span class="sourceLineNo">202</span>        System.out.println(solver.getInternalSolver());<a name="line.202"></a>
+<span class="sourceLineNo">203</span>        Set&lt;String&gt; names = new HashSet&lt;String&gt;();<a name="line.203"></a>
+<span class="sourceLineNo">204</span>        for(Variable var : solver.getInternalSolver().getVars()) {<a name="line.204"></a>
+<span class="sourceLineNo">205</span>            if(names.contains(var.getName())) {<a name="line.205"></a>
+<span class="sourceLineNo">206</span>                System.out.println(var);<a name="line.206"></a>
+<span class="sourceLineNo">207</span>                throw new Error(var.getName());<a name="line.207"></a>
+<span class="sourceLineNo">208</span>            }<a name="line.208"></a>
+<span class="sourceLineNo">209</span>            names.add(var.getName());<a name="line.209"></a>
+<span class="sourceLineNo">210</span>        }<a name="line.210"></a>
+<span class="sourceLineNo">211</span>        System.out.println(solver.find());<a name="line.211"></a>
+<span class="sourceLineNo">212</span>    }<a name="line.212"></a>
+<span class="sourceLineNo">213</span>}<a name="line.213"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>
