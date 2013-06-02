@@ -10,10 +10,6 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import solver.constraints.propagators.set.PropBoolChannel;
-import solver.constraints.propagators.set.PropCardinality;
-import solver.constraints.propagators.set.PropIntMemberSet;
-import solver.search.loop.monitors.SearchMonitorFactory;
 
 /**
  *
@@ -64,7 +60,6 @@ public class SetArithmeticTest {
         model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), constant(0)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
-        // Can be reduced with better symmetry breaking
         assertEquals(9, solver.allInstances().length);
     }
 
@@ -140,6 +135,25 @@ public class SetArithmeticTest {
      */
     @Test(timeout = 60000)
     public void testEqualityOnRefs() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
+         * solutions = do
+         *     backup <- [[1], [1,2]]
+         *     numFeature <- [3,4]
+         *     feature <- choose numFeature backup
+         *     guard $ backup == nub feature
+         *     return (backup, feature)
+         */
         AstModel model = newModel();
 
         AstConcreteClafer backup = model.addChild("Backup").withCard(1, 2);
@@ -148,9 +162,9 @@ public class SetArithmeticTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         // Assuming no reference symmetry breaking.
-        assertEquals(22, solver.allInstances().length);
+        assertEquals(7, solver.allInstances().length);
     }
-    
+
     /**
      * <pre>
      * Feature
@@ -166,12 +180,20 @@ public class SetArithmeticTest {
          * import Control.Monad
          * import Data.List
          *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
-         *     cost <- sequence $ replicate 2 [0..2]
+         *     cost <- choose 2 [0..2]
          *     numPerformance <- [2..3]
-         *     performance <- sequence $ replicate numPerformance [0..2]
+         *     performance <- choose numPerformance [0..2]
          *     frugal <- [True, False]
-         *     guard $ sum (if nub frugal then nub cost else performance) < 2
+         *     guard $ sum (if frugal then nub cost else nub performance) < 2
          *     return (cost, performance, frugal)
          */
         AstModel model = newModel();
@@ -184,7 +206,7 @@ public class SetArithmeticTest {
                 joinRef(join($this(), cost)), joinRef(join($this(), performance))), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(0).intHigh(2));
-        assertEquals(252, solver.allInstances().length);
+        assertEquals(90, solver.allInstances().length);
     }
 
     /**
@@ -201,8 +223,16 @@ public class SetArithmeticTest {
          * import Control.Monad
          * import Data.List
          *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
-         *     cost <- sequence $ replicate 2 [0..2]
+         *     cost <- choose 2 [0..2]
          *     frugal <- [True, False]
          *     guard $ sum (if frugal then nub cost else [0]) < 2
          *     return (cost, frugal)
@@ -216,7 +246,7 @@ public class SetArithmeticTest {
                 joinRef(join($this(), cost)), constant(0)), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(0).intHigh(2));
-        assertEquals(13, solver.allInstances().length);
+        assertEquals(9, solver.allInstances().length);
     }
 
     /**
@@ -233,13 +263,21 @@ public class SetArithmeticTest {
          *
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
-         *
+         * 
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-2..2]
-         *     guard $ -2 `elem` cost
+         *     cost <- choose numCost [-2..2]
+         *     guard $ 2 `elem` cost
          *     guard $ isUnique cost
-         *     return cost
+         return cost
          */
         AstModel model = newModel();
 
@@ -247,7 +285,7 @@ public class SetArithmeticTest {
         model.addConstraint(in(constant(2), joinRef(global(cost))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
-        assertEquals(44, solver.allInstances().length);
+        assertEquals(10, solver.allInstances().length);
     }
 
     /**
@@ -265,10 +303,18 @@ public class SetArithmeticTest {
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
          *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-2..2]
-         *     guard $ -2 `notElem` cost
+         *     cost <- choose numCost [-2..2]
+         *     guard $ 2 `notElem` cost
          *     guard $ isUnique cost
          *     return cost
          */
@@ -278,7 +324,7 @@ public class SetArithmeticTest {
         model.addConstraint(notIn(constant(2), joinRef(global(cost))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
-        assertEquals(36, solver.allInstances().length);
+        assertEquals(10, solver.allInstances().length);
     }
 
     /**
@@ -301,18 +347,38 @@ public class SetArithmeticTest {
     /**
      * <pre>
      * Cost ->> Int 2..3
-     * [Cost.ref in 2]
+     * [Cost.ref not in 2]
      * </pre>
      */
     @Test(timeout = 60000)
     public void testNotInConstant() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * isSubsetOf = flip $ all . flip elem
+         * 
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
+         * solutions = do
+         *     numCost <- [2..3]
+         *     cost <- choose numCost [-2..2]
+         *     guard $ not (sort (nub cost) `isSubsetOf` [2])
+         *     return cost
+         */
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
         model.addConstraint(notIn(joinRef(global(cost)), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
-        assertEquals(148, solver.allInstances().length);
+        assertEquals(48, solver.allInstances().length);
     }
 
     /**
@@ -326,14 +392,23 @@ public class SetArithmeticTest {
     public void testSetInSet() {
         /*
          * import Control.Monad
+         * import Data.List
          * 
-         * isSubsetOf = all . flip elem
-         * 
+         * isSubsetOf = flip $ all . flip elem
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *   
          * solutions = do
          *     numCost <- [2,3]
          *     numPayment <- [2,3]
-         *     cost <- sequence $ replicate numCost [-1..1]
-         *     payment <- sequence $ replicate numPayment [-1..1]
+         *     cost <- choose numCost [-1..1]
+         *     payment <- choose numPayment [-1..1]
          *     guard $ cost `isSubsetOf` payment
          *     return (cost, payment)
          */
@@ -344,7 +419,7 @@ public class SetArithmeticTest {
         model.addConstraint(in(joinRef(global(cost)), joinRef(global(payment))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
-        assertEquals(516, solver.allInstances().length);
+        assertEquals(91, solver.allInstances().length);
     }
 
     /**
@@ -376,7 +451,7 @@ public class SetArithmeticTest {
         model.addConstraint(notIn(joinRef(global(cost)), joinRef(global(payment))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
-        assertEquals(780, solver.allInstances().length);
+        assertEquals(165, solver.allInstances().length);
     }
 
     /**
@@ -399,6 +474,7 @@ public class SetArithmeticTest {
         model.addConstraint(in(joinRef(global(payment)), global(debt)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
+        // Should be 1 with stronger symmetry breaking.
         assertEquals(3, solver.allInstances().length);
     }
 

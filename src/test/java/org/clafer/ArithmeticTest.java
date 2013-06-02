@@ -49,7 +49,7 @@ public class ArithmeticTest {
          * 
          * solutions = do
          *     cost1 <- [-10 .. 10]
-         *     cost2 <- [-10 .. 10]
+         *     cost2 <- [cost1 .. 10]
          *     -- Set sum
          *     let sum = if cost1 == cost2 then cost1 else cost1 + cost2
          *     guard $ sum + 3 == 5
@@ -62,14 +62,14 @@ public class ArithmeticTest {
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)), constant(5)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10));
-        assertEquals(19, solver.allInstances().length);
+        assertEquals(10, solver.allInstances().length);
     }
 
     /**
      * <pre>
      * Feature
-     *     Cost -> Int 2
-     *     Profit -> Int 2
+     *     Cost ->> Int 2
+     *     Profit ->> Int 2
      *     [this.Cost + 3 = this.Profit - 2]
      * </pre>
      */
@@ -80,9 +80,9 @@ public class ArithmeticTest {
          * 
          * solutions = do
          *     cost1 <- [-3 .. 3]
-         *     cost2 <- [-3 .. 3]
+         *     cost2 <- [cost1 .. 3]
          *     profit1 <- [-3 .. 3]
-         *     profit2 <- [-3 .. 3]
+         *     profit2 <- [profit1 .. 3]
          *     -- Set sum
          *     let costSum = if cost1 == cost2 then cost1 else cost1 + cost2
          *     let profitSum = if profit1 == profit2 then profit1 else profit1 + profit2
@@ -98,7 +98,7 @@ public class ArithmeticTest {
                 sub(joinRef(join($this(), profit)), constant(2))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(106, solver.allInstances().length);
+        assertEquals(34, solver.allInstances().length);
     }
 
     /**
@@ -152,6 +152,7 @@ public class ArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(32, solver.allInstances().length);
     }
+
     /**
      * <pre>
      * A -> integer

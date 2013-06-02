@@ -32,12 +32,20 @@ public class InequalityTest {
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
          *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-1..1]
+         *     cost <- choose numCost [-1..1]
          *     guard $ isUnique cost
          *     numPerformance <- [2..3]
-         *     performance <- sequence $ replicate numPerformance [-1..1]
+         *     performance <- choose numPerformance [-1..1]
          *     guard $ isUnique performance
          *     guard $ nub (sort cost) == nub (sort performance)
          *     return (cost, performance)
@@ -50,7 +58,7 @@ public class InequalityTest {
         feature.addConstraint(equal(joinRef(join($this(), cost)), joinRef(join($this(), performance))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
-        assertEquals(48, solver.allInstances().length);
+        assertEquals(4, solver.allInstances().length);
     }
 
     /**
@@ -63,19 +71,27 @@ public class InequalityTest {
      */
     @Test(timeout = 60000)
     public void testSetNotEqual() {
-        /*
+        /* 
          * import Control.Monad
          * import Data.List
-         *
+         * 
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
+         * 
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) xs
+         *         return $ x : xs'
+         *    `mplus` choose n xs 
          *
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-1..1]
+         *     cost <- choose numCost [-1..1]
          *     guard $ isUnique cost
          *     numPerformance <- [2..3]
-         *     performance <- sequence $ replicate numPerformance [-1..1]
+         *     performance <- choose numPerformance [-1..1]
          *     guard $ isUnique performance
          *     guard $ nub (sort cost) /= nub (sort performance)
          *     return (cost, performance)
@@ -88,7 +104,7 @@ public class InequalityTest {
         feature.addConstraint(notEqual(joinRef(join($this(), cost)), joinRef(join($this(), performance))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
-        assertEquals(96, solver.allInstances().length);
+        assertEquals(12, solver.allInstances().length);
     }
 
     /**
@@ -103,13 +119,21 @@ public class InequalityTest {
         /*
          * import Control.Monad
          * import Data.List
-         * 
+         *
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
          * 
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-3..3]
+         *     cost <- choose numCost [-3..3]
          *     guard $ isUnique cost
          *     guard $ sum cost < 2
          *     return cost
@@ -121,7 +145,7 @@ public class InequalityTest {
         feature.addConstraint(lessThan(joinRef(join($this(), cost)), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(174, solver.allInstances().length);
+        assertEquals(39, solver.allInstances().length);
     }
 
     /**
@@ -139,10 +163,18 @@ public class InequalityTest {
          * 
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
-         * 
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-3..3]
+         *     cost <- choose numCost [-3..3]
          *     guard $ isUnique cost
          *     guard $ sum cost <= 2
          *     return cost
@@ -154,7 +186,7 @@ public class InequalityTest {
         feature.addConstraint(lessThanEqual(joinRef(join($this(), cost)), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(202, solver.allInstances().length);
+        assertEquals(45, solver.allInstances().length);
     }
 
     /**
@@ -169,13 +201,21 @@ public class InequalityTest {
         /*
          * import Control.Monad
          * import Data.List
-         * 
+         *
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
-         * 
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-3..3]
+         *     cost <- choose numCost [-3..3]
          *     guard $ isUnique cost
          *     guard $ sum cost > 2
          *     return cost
@@ -187,7 +227,7 @@ public class InequalityTest {
         feature.addConstraint(greaterThan(joinRef(join($this(), cost)), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(50, solver.allInstances().length);
+        assertEquals(11, solver.allInstances().length);
     }
 
     /**
@@ -202,13 +242,21 @@ public class InequalityTest {
         /*
          * import Control.Monad
          * import Data.List
-         * 
+         *
          * isUnique [] = True
          * isUnique (x : xs) = x `notElem` xs && isUnique xs
-         * 
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         *    
          * solutions = do
          *     numCost <- [2..3]
-         *     cost <- sequence $ replicate numCost [-3..3]
+         *     cost <- choose numCost [-3..3]
          *     guard $ isUnique cost
          *     guard $ sum cost >= 2
          *     return cost
@@ -220,6 +268,6 @@ public class InequalityTest {
         feature.addConstraint(greaterThanEqual(joinRef(join($this(), cost)), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(78, solver.allInstances().length);
+        assertEquals(17, solver.allInstances().length);
     }
 }
