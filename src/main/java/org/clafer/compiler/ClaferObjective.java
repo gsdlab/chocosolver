@@ -27,6 +27,10 @@ public class ClaferObjective {
         this.score = Check.notNull(score);
     }
 
+    public Solver getInternalSolver() {
+        return solver;
+    }
+
     public IMeasures getMeasures() {
         return solver.getMeasures();
     }

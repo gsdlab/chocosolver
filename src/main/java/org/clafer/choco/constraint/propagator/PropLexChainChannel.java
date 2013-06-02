@@ -22,7 +22,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
     private final IntVar[] ints;
 
     public PropLexChainChannel(IntVar[][] strings, IntVar[] ints) {
-        super(buildArray(strings, ints), PropagatorPriority.QUADRATIC, true);
+        super(buildArray(strings, ints), PropagatorPriority.QUADRATIC, false);
         this.strings = strings;
         this.ints = ints;
     }
@@ -124,91 +124,110 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 | b.updateUpperBound(a.getUB(), aCause);
     }
 
+    private boolean propagateStrings() throws ContradictionException {
+        boolean repeat;
+        boolean changed = false;
+        do {
+            repeat = false;
+            int eqs = 0;
+            for (int i = 0; i < strings.length; i++) {
+                boolean equivalenceClass = false;
+                for (int j = i + 1; j < strings.length; j++) {
+                    switch (compareString(strings[i], strings[j])) {
+                        case LT:
+                            repeat |= lessThan(ints[i], ints[j]);
+                            break;
+                        case GT:
+                            repeat |= greaterThan(ints[i], ints[j]);
+                            break;
+                        case EQ:
+                            repeat |= equal(ints[i], ints[j]);
+                            equivalenceClass = true;
+                            break;
+                    }
+                }
+                if (equivalenceClass) {
+                    eqs++;
+                }
+            }
+            for (int i = 0; i < ints.length; i++) {
+                repeat |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
+            }
+            changed |= repeat;
+        } while (repeat);
+        return changed;
+    }
+
+    private boolean propagateInts() throws ContradictionException {
+        boolean repeat;
+        boolean changed = false;
+        do {
+            repeat = false;
+            for (int i = 0; i < ints.length; i++) {
+                for (int j = i + 1; j < ints.length; j++) {
+                    switch (compare(ints[i], ints[j])) {
+                        case LT:
+                            for (int x = 0; x < strings[i].length; x++) {
+                                CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
+                                if (CharOrdering.UNKNOWN.equals(ord)) {
+                                    repeat |= lessThanEqual(strings[i][x], strings[j][x]);
+                                    break;
+                                }
+                                if (!CharOrdering.EQ.equals(ord)) {
+                                    repeat |= lessThan(strings[i][x], strings[j][x]);
+                                    break;
+                                }
+                            }
+                            break;
+                        case LE:
+                            for (int x = 0; x < strings[i].length; x++) {
+                                CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
+                                if (!CharOrdering.EQ.equals(ord)) {
+                                    repeat |= lessThanEqual(strings[i][x], strings[j][x]);
+                                    break;
+                                }
+                            }
+                            break;
+                        case GT:
+                            for (int x = 0; x < strings[i].length; x++) {
+                                CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
+                                if (CharOrdering.UNKNOWN.equals(ord)) {
+                                    repeat |= greaterThanEqual(strings[i][x], strings[j][x]);
+                                    break;
+                                }
+                                if (!CharOrdering.EQ.equals(ord)) {
+                                    repeat |= greaterThan(strings[i][x], strings[j][x]);
+                                    break;
+                                }
+                            }
+                            break;
+                        case GE:
+                            for (int x = 0; x < strings[i].length; x++) {
+                                CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
+                                if (!CharOrdering.EQ.equals(ord)) {
+                                    repeat |= greaterThanEqual(strings[i][x], strings[j][x]);
+                                    break;
+                                }
+                            }
+                            break;
+                        case EQ:
+                            for (int y = 0; y < strings[i].length; y++) {
+                                repeat |= equal(strings[i][y], strings[j][y]);
+                            }
+                            break;
+                    }
+                }
+            }
+            changed |= repeat;
+        } while (repeat);
+        return changed;
+    }
+
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        boolean changed = false;
-        int eqs = 0;
-        for (int i = 0; i < strings.length; i++) {
-            boolean equivalenceClass = false;
-            for (int j = i + 1; j < strings.length; j++) {
-                switch (compareString(strings[i], strings[j])) {
-                    case LT:
-                        changed |= lessThan(ints[i], ints[j]);
-                        break;
-                    case GT:
-                        changed |= greaterThan(ints[i], ints[j]);
-                        break;
-                    case EQ:
-                        changed |= equal(ints[i], ints[j]);
-                        equivalenceClass = true;
-                        break;
-                }
-            }
-            if (equivalenceClass) {
-                eqs++;
-            }
-        }
-        for (int i = 0; i < ints.length; i++) {
-            changed |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
-        }
-        for (int i = 0; i < ints.length; i++) {
-            for (int j = i + 1; j < ints.length; j++) {
-                switch (compare(ints[i], ints[j])) {
-                    case LT:
-                        for (int x = 0; x < strings[i].length; x++) {
-                            CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
-                            if (CharOrdering.UNKNOWN.equals(ord)) {
-                                changed |= lessThanEqual(strings[i][x], strings[j][x]);
-                                break;
-                            }
-                            if (!CharOrdering.EQ.equals(ord)) {
-                                changed |= lessThan(strings[i][x], strings[j][x]);
-                                break;
-                            }
-                        }
-                        break;
-                    case LE:
-                        for (int x = 0; x < strings[i].length; x++) {
-                            CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
-                            if (!CharOrdering.EQ.equals(ord)) {
-                                changed |= lessThanEqual(strings[i][x], strings[j][x]);
-                                break;
-                            }
-                        }
-                        break;
-                    case GT:
-                        for (int x = 0; x < strings[i].length; x++) {
-                            CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
-                            if (CharOrdering.UNKNOWN.equals(ord)) {
-                                changed |= greaterThanEqual(strings[i][x], strings[j][x]);
-                                break;
-                            }
-                            if (!CharOrdering.EQ.equals(ord)) {
-                                changed |= greaterThan(strings[i][x], strings[j][x]);
-                                break;
-                            }
-                        }
-                        break;
-                    case GE:
-                        for (int x = 0; x < strings[i].length; x++) {
-                            CharOrdering ord = compareChar(strings[i][x], strings[j][x]);
-                            if (!CharOrdering.EQ.equals(ord)) {
-                                changed |= greaterThanEqual(strings[i][x], strings[j][x]);
-                                break;
-                            }
-                        }
-                        break;
-                    case EQ:
-                        for (int y = 0; y < strings[i].length; y++) {
-                            changed |= equal(strings[i][y], strings[j][y]);
-                        }
-                        break;
-                }
-            }
-        }
-        if (changed) {
-            propagate(evtmask);
-        }
+        do {
+            propagateStrings();
+        } while (propagateInts());
     }
 
     @Override
