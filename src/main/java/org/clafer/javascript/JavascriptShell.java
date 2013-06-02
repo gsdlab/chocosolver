@@ -176,14 +176,14 @@ public class JavascriptShell {
      * Find an instance where the Clafer's value is maximal.
      *
      * @param clafer maximize this Clafer's value
-     * @return an optimal instance
+     * @return the maximal value and the optimal instance
      */
-    public InstanceModel maximize(AstClafer clafer) {
+    public Pair<Integer, InstanceModel> maximize(AstClafer clafer) {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot maximize " + clafer + ".");
         }
         ClaferObjective objective = ClaferCompiler.compileMaximize(model, scope, clafer.getRef());
-        return objective.optimal().getSnd();
+        return objective.optimal();
 
     }
 
@@ -191,14 +191,14 @@ public class JavascriptShell {
      * Find an instance where the Clafer's value is minimal.
      *
      * @param clafer minimize this Clafer's value
-     * @return an optimal instance
+     * @return the minimal value and the optimal instance
      */
-    public InstanceModel minimize(AstClafer clafer) {
+    public Pair<Integer, InstanceModel> minimize(AstClafer clafer) {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot minimize " + clafer + ".");
         }
         ClaferObjective objective = ClaferCompiler.compileMinimize(model, scope, clafer.getRef());
-        return objective.optimal().getSnd();
+        return objective.optimal();
     }
 
     /**

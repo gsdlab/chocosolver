@@ -1,6 +1,5 @@
 package org.clafer;
 
-import org.clafer.ast.AstAbstractClafer;
 import org.clafer.scope.Scope;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -133,18 +132,22 @@ public class SymmetryBreakingTest {
      * multisetRefToA ->> A 3
      * </pre>
      */  
-    @Ignore("Currently fails because symmetry breaking needs to be more effective.")
+    @Ignore
     @Test
     public void breakRefSwap() {
         AstModel model = newModel();
         
-        AstAbstractClafer A = model.addAbstractClafer("A");
-         AstConcreteClafer a = model.addChild("a").withCard(1).extending(A);
-         AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(A).withCard(3, 3);
-         AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
+//        AstAbstractClafer A = model.addAbstractClafer("A");
+         AstConcreteClafer a = model.addChild("a").withCard(1);//.extending(A);
+         AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(a).withCard(3, 3);
+//         AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
          
          ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-         
+         System.out.println(solver.getInternalSolver());
+         // 162
+//         while(solver.find()) {
+//             System.out.println(solver.instance());
+//         }
          assertEquals(4, solver.allInstances().length);
     }
 }

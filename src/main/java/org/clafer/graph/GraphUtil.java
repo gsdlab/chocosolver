@@ -18,6 +18,26 @@ public class GraphUtil {
     private GraphUtil() {
     }
 
+    public static <V> boolean hasPath(Vertex<V> start, Vertex<V> end, Graph<V> graph) {
+        Set<Vertex<V>> visited = new HashSet<Vertex<V>>();
+        return findPath(start, end, graph, visited);
+    }
+
+    private static <V> boolean findPath(Vertex<V> cur, Vertex<V> end, Graph<V> graph, Set<Vertex<V>> visited) {
+        if (cur.equals(end)) {
+            return true;
+        }
+        if (!visited.add(cur)) {
+            return false;
+        }
+        for (Vertex<V> neighbour : cur.getNeighbours()) {
+            if (findPath(neighbour, end, graph, visited)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Compute the strongly connected components in the graph in topological
      * order. Implementation of Tarjan's algorithm.

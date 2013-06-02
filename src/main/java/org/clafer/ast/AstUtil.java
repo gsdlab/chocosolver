@@ -314,6 +314,10 @@ public class AstUtil {
         return supers.get(0);
     }
 
+    public static boolean hasInheritedRef(AstClafer clafer) {
+        return getInheritedRef(clafer) != null;
+    }
+
     /**
      * Find the reference belonging to the Clafer or the reference it inherited.
      *
