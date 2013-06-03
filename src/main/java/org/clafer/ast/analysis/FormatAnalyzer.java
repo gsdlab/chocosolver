@@ -22,7 +22,7 @@ public class FormatAnalyzer implements Analyzer {
         for (AstConcreteClafer child : analysis.getModel().getChildren()) {
             analyze(child, analysis, formatMap);
         }
-        return analysis.withFormatMap(formatMap);
+        return analysis.setFormatMap(formatMap);
     }
 
     private static void analyze(AstAbstractClafer clafer, Analysis analysis, Map<AstClafer, Format> formatMap) {

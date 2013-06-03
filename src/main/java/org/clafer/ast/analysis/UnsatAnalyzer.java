@@ -21,6 +21,6 @@ public class UnsatAnalyzer implements Analyzer {
         for (AstConstraint constraint : constraints) {
             softConstraints.add(constraint.asSoft());
         }
-        return analysis.withConstraints(softConstraints);
+        return analysis.setConstraints(softConstraints);
     }
 }

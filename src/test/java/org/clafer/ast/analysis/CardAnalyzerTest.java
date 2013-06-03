@@ -38,7 +38,7 @@ public class CardAnalyzerTest {
 
         Analysis analysis =
                 new CardAnalyzer().analyze(
-                new Analysis(model, Scope.defaultScope(1).toScope()).withGlobalCardMap(globalCards));
+                new Analysis(model, Scope.defaultScope(1).toScope()).setGlobalCardMap(globalCards));
 
         assertEquals(new Card(4, 20), analysis.getCard(limb));
         assertEquals(new Card(3, 113), analysis.getCard(digit));

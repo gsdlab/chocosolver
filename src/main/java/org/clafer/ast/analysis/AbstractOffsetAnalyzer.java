@@ -39,6 +39,6 @@ public class AbstractOffsetAnalyzer implements Analyzer {
             }
             offsetsMap.put(abstractClafer, new Offsets(abstractClafer, offsets, reverseOffsets.toArray(new AstClafer[reverseOffsets.size()])));
         }
-        return analysis.withOffsetMap(offsetsMap);
+        return analysis.setOffsetMap(offsetsMap);
     }
 }

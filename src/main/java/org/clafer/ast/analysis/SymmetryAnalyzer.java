@@ -5,6 +5,7 @@ import java.util.Set;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstRef;
+import org.clafer.collection.Pair;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 
@@ -16,6 +17,23 @@ public class SymmetryAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
+        breakableChildren(analysis);
+        return analysis.setBreakableRefs(breakableRefs(analysis));
+    }
+
+    // If the Clafer either needs children or reference to be introduce symmetry.
+    private Set<AstClafer> breakableChildren(Analysis analysis) {
+        Set<AstConcreteClafer> breakableChildren = new HashSet<AstConcreteClafer>();
+        for (AstConcreteClafer clafer : analysis.getConcreteClafers()) {
+            if (clafer.hasParent()) {
+                for (int i = 0; i < analysis.getScope(clafer); i++) {
+                }
+            }
+        }
+        return null;
+    }
+
+    private Set<AstRef> breakableRefs(Analysis analysis) {
         KeyGraph<AstClafer> graph = new KeyGraph<AstClafer>();
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer instanceof AstConcreteClafer) {
@@ -51,6 +69,6 @@ public class SymmetryAnalyzer implements Analyzer {
             }
         }
 
-        return analysis.withBreakableRefs(breakableRefs);
+        return breakableRefs;
     }
 }

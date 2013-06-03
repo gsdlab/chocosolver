@@ -25,7 +25,7 @@ public class GlobalCardAnalyzer implements Analyzer {
         for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
             analyze(abstractClafer, analysis, globalCards);
         }
-        return analysis.withGlobalCardMap(globalCards);
+        return analysis.setGlobalCardMap(globalCards);
     }
 
     private static void analyze(AstAbstractClafer clafer, Analysis analysis, Map<AstClafer, Card> globalCards) {

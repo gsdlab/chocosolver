@@ -27,7 +27,7 @@ public class PartialSolutionAnalyzer implements Analyzer {
             analyze(abstractClafer, analysis, partialSolutionMap);
         }
 
-        return analysis.withPartialSolutionMap(partialSolutionMap);
+        return analysis.setPartialSolutionMap(partialSolutionMap);
     }
 
     private static void analyze(

@@ -58,7 +58,7 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(constraint.getExpr());
             typedConstraints.add(constraint.withExpr(typedConstraint.getExpr()));
         }
-        return analysis.withTypeMap(typeMap).withConstraints(typedConstraints);
+        return analysis.setTypeMap(typeMap).setConstraints(typedConstraints);
     }
 
     private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {

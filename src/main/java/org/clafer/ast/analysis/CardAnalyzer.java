@@ -23,7 +23,7 @@ public class CardAnalyzer implements Analyzer {
         for (AstConcreteClafer child : analysis.getModel().getChildren()) {
             analyze(child, 1, cardMap, analysis);
         }
-        return analysis.withCardMap(cardMap);
+        return analysis.setCardMap(cardMap);
     }
 
     private static void analyze(AstAbstractClafer clafer, Map<AstConcreteClafer, Card> cardMap, Analysis analysis) {

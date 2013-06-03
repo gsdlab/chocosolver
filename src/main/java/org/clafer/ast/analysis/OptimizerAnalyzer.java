@@ -31,7 +31,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         for (AstConstraint constraint : analysis.getConstraints()) {
             optimizedConstraint.add(constraint.withExpr(rewrite(constraint.getExpr(), analysis)));
         }
-        return analysis.withConstraints(optimizedConstraint);
+        return analysis.setConstraints(optimizedConstraint);
     }
 
     @Override

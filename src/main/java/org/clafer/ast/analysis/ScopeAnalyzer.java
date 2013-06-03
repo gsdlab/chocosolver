@@ -36,6 +36,6 @@ public class ScopeAnalyzer implements Analyzer {
             optimizedScope.put(abstractClafer, subScopes);
         }
 
-        return analysis.withScope(new Scope(optimizedScope, scope.getDefaultScope(), scope.getIntLow(), scope.getIntHigh()));
+        return analysis.setScope(new Scope(optimizedScope, scope.getDefaultScope(), scope.getIntLow(), scope.getIntHigh()));
     }
 }

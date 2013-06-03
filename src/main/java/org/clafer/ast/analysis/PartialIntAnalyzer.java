@@ -66,7 +66,7 @@ public class PartialIntAnalyzer implements Analyzer {
                 partialInts.put(clafer.getRef(), ints);
             }
         }
-        return analysis.withPartialIntsMap(partialInts);
+        return analysis.setPartialIntsMap(partialInts);
     }
 
     private static int[] partialInts(

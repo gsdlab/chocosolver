@@ -134,7 +134,6 @@ public class ClaferCompiler {
                 IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getIntDecisionVars()),
                 SetStrategyFactory.setLex(solution.getIrSolution().getSetDecisionVars()),
                 IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
-        
         return new ClaferUnsat(solver, solution, softVarPairs, sum);
     }
 }
