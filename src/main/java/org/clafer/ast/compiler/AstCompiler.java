@@ -286,7 +286,7 @@ public class AstCompiler {
         IrIntExpr[][] index;
         AstRef ref = AstUtil.getInheritedRef(clafer);
         // If the Clafer either needs children or reference to be introduce symmetry.
-        if (clafer.hasChildren() || (ref != null && analysis.isBreakableRef(ref))) {
+        if (analysis.hasInteritedBreakableChildren(clafer) || (ref != null && analysis.isBreakableRef(ref))) {
             weight = new IrIntExpr[scope];
             for (int i = 0; i < weight.length; i++) {
                 weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1).asNoDecision());
@@ -298,7 +298,7 @@ public class AstCompiler {
                 }
             }
         } else {
-            // Optimize for nonsymmetric leaves. Don't compute the smallest indices, 
+            // Optimize for nonsymmetric nodes. Don't compute the smallest indices, 
             // just use the cardinalities.
             weight = Util.replicate($(Zero), scope);
             IrSetVar[] childSet = siblingSets.get(clafer);
@@ -361,7 +361,7 @@ public class AstCompiler {
         }
 
         // If the Clafer either needs children or reference to be introduce symmetry.
-        if (clafer.hasChildren() || (ref != null && analysis.isBreakableRef(ref))) {
+        if (analysis.hasInteritedBreakableChildren(clafer)|| (ref != null && analysis.isBreakableRef(ref))) {
             IrIntExpr[] weight = weights.get(clafer);
             IrIntExpr[][] index = indices.get(clafer);
 
@@ -372,7 +372,7 @@ public class AstCompiler {
             for (int i = 0; i < childIndices.length; i++) {
                 List<IrIntExpr[]> childIndex = new ArrayList<IrIntExpr[]>();
                 for (Pair<AstClafer, Integer> offset : offsets) {
-                    for (AstConcreteClafer child : offset.getFst().getChildren()) {
+                    for (AstConcreteClafer child : analysis.getBreakableChildren(offset.getFst())) {
                         childIndex.add(indices.get(child)[i + offset.getSnd()]);
                     }
                 }
@@ -392,7 +392,6 @@ public class AstCompiler {
                 }
                 childIndices[i] = Util.concat(childIndex.toArray(new IrIntExpr[childIndex.size()][]));
             }
-
             module.addConstraint(sortChannel(childIndices, weight));
             for (int i = 0; i < childSet.length; i++) {
                 module.addConstraint(filterString(childSet[i], weight, index[i]));

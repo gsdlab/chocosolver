@@ -1,18 +1,27 @@
 package org.clafer.ast.analysis;
 
 import gnu.trove.list.array.TIntArrayList;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
+import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstUtil;
+import org.clafer.ast.Asts;
 import org.clafer.collection.Pair;
+import org.clafer.compiler.ClaferCompiler;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
+import org.clafer.scope.Scope;
 
 /**
+ * This analyzer determines where symmetry is and is not possible.
  *
  * @author jimmy
  */
@@ -20,23 +29,77 @@ public class SymmetryAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        breakableChildren(analysis);
-        return analysis.setBreakableRefs(breakableRefs(analysis));
+        return analysis.setBreakableChildrenMap(breakableChildren(
+                analysis.setBreakableRefsMap(breakableRefs(analysis))));
     }
 
-    // If the Clafer either needs children or reference to be introduce symmetry.
-    private Set<AstClafer> breakableChildren(Analysis analysis) {
-        Set<AstConcreteClafer> breakableChildren = new HashSet<AstConcreteClafer>();
-        for (AstConcreteClafer clafer : analysis.getConcreteClafers()) {
-            if (clafer.hasParent()) {
-                for (int i = 0; i < analysis.getScope(clafer); i++) {
-                }
+    /**
+     * Find which children need breaking.
+     *
+     * @param analysis the analysis
+     * @return
+     */
+    private Map<AstClafer, AstConcreteClafer[]> breakableChildren(Analysis analysis) {
+        Map<AstClafer, AstConcreteClafer[]> breakableChildren = new HashMap<AstClafer, AstConcreteClafer[]>();
+        for (AstAbstractClafer clafer : analysis.getAbstractClafers()) {
+            breakableChildren(clafer, breakableChildren, analysis);
+        }
+        breakableChildren(analysis.getModel(), breakableChildren, analysis);
+//        for (Entry<AstClafer, AstConcreteClafer[]> e : breakableChildren.entrySet()) {
+//            System.out.println(e.getKey() + " ::: " + Arrays.toString(e.getValue()));
+//        }
+        return breakableChildren;
+    }
+
+    private boolean breakableChildren(AstClafer clafer, Map<AstClafer, AstConcreteClafer[]> breakableChildren, Analysis analysis) {
+        List<AstConcreteClafer> breakables = new ArrayList<AstConcreteClafer>();
+        for (AstConcreteClafer child : clafer.getChildren()) {
+            if (breakableChildren(child, breakableChildren, analysis)) {
+                breakables.add(child);
             }
         }
-        return null;
+        breakableChildren.put(clafer, breakables.toArray(new AstConcreteClafer[breakables.size()]));
+        AstRef ref = AstUtil.getInheritedRef(clafer);
+        return (clafer instanceof AstConcreteClafer && !analysis.getCard((AstConcreteClafer) clafer).isExact())
+                || !breakables.isEmpty() || (ref != null && analysis.isBreakableRef(ref));
     }
 
+    public static void main(String[] args) {
+        AstModel model = Asts.newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(2, 2);
+        AstConcreteClafer b = a.addChild("b").withCard(Asts.Mandatory).refTo(a);
+        AstConcreteClafer c = a.addChild("c").withCard(1, 2);
+
+        System.out.println(ClaferCompiler.compile(model, Scope.defaultScope(8)).getInternalSolver());
+    }
+
+    /**
+     * Find which references need breaking.
+     *
+     * Does not need breaking.
+     * <pre>
+     * A
+     *     B -> integer
+     * </pre>
+     *
+     * Does need breaking.
+     * <pre>
+     * A
+     *     B -> integer 2
+     * </pre>
+     *
+     * Cannot be broken.
+     * <pre>
+     * A 2
+     *    B -> A
+     * </pre>
+     *
+     * @param analysis the analysis
+     * @return the map of references to the breakable ids
+     */
     private Map<AstRef, int[]> breakableRefs(Analysis analysis) {
+        // Use this graph to detect when symmetries cannot be broken.
         KeyGraph<AstClafer> graph = new KeyGraph<AstClafer>();
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer instanceof AstConcreteClafer) {

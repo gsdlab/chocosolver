@@ -36,6 +36,49 @@ public class SymmetryBreakingTest {
 
         assertEquals(5, solver.allInstances().length);
     }
+    
+    /**
+     * <pre>
+     * abstract Eater
+     *     Food 1..2
+     * Patron : Eater 2
+     *     Drink 1..2
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void breakInheritedChildrenSwap() {
+        AstModel model = newModel();
+
+        AstAbstractClafer eater = model.addAbstractClafer("Eater");
+        AstConcreteClafer food = eater.addChild("Food").withCard(1, 2);
+        AstConcreteClafer patron = model.addChild("Patron").extending(eater).withCard(2, 2);
+        AstConcreteClafer drink = patron.addChild("Drink").withCard(1, 2);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+
+        assertEquals(5, solver.allInstances().length);
+    }
+    /**
+     * <pre>
+     * abstract Eater
+     *     Food 1..2
+     *     Drink 1..2
+     * Patron : Eater 2
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void breakOnlyInheritedChildrenSwap() {
+        AstModel model = newModel();
+
+        AstAbstractClafer eater = model.addAbstractClafer("Eater");
+        AstConcreteClafer food = eater.addChild("Food").withCard(1, 2);
+        AstConcreteClafer drink = eater.addChild("Drink").withCard(1, 2);
+        AstConcreteClafer patron = model.addChild("Patron").extending(eater).withCard(2, 2);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+
+        assertEquals(5, solver.allInstances().length);
+    }
 
     /**
      * <pre>
@@ -55,7 +98,10 @@ public class SymmetryBreakingTest {
     }
 
     /**
-     * Person 2 Likes -> Person
+     * <pre>
+     * Person 2
+     *     Likes -> Person
+     * </pre>
      */
     @Test(timeout = 60000)
     public void unbreakableCircularRef() {

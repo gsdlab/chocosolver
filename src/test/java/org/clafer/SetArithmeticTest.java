@@ -28,6 +28,24 @@ public class SetArithmeticTest {
      */
     @Test(timeout = 60000)
     public void testDifference() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         * 
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
+         * 
+         * solutions = do
+         *     numBackup <- [1,2]
+         *     numFeature <- [1,2]
+         *     feature <- choose numFeature [-1..1]
+         *     return (numBackup, feature)
+         */
         AstModel model = newModel();
 
         AstAbstractClafer feature = model.addAbstractClafer("Feature");
@@ -37,7 +55,7 @@ public class SetArithmeticTest {
         model.addConstraint(equal(joinRef(join(diff(global(backup), global(firewall)), cost)), constant(1)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
-        assertEquals(24, solver.allInstances().length);
+        assertEquals(18, solver.allInstances().length);
     }
 
     /**
@@ -61,7 +79,7 @@ public class SetArithmeticTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
         // Should be 5 with better symmetry breaking.
-        assertEquals(8, solver.allInstances().length);
+        assertEquals(6, solver.allInstances().length);
     }
 
     /**

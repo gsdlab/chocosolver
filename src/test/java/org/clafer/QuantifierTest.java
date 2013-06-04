@@ -31,19 +31,28 @@ public class QuantifierTest {
     public void testAll() {
         /*
          * import Control.Monad
+         * import Data.List
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
          *
          * solutions = do
          *     backupCard <- [2..3]
-         *     backup <- sequence $ replicate backupCard [-1..1]
-         *     
+         *     backup <- choose backupCard [-1..1]
+         *    
          *     firewallCard <- [0, 1]
-         *     firewall <- sequence $ replicate firewallCard [-1..1]
-         *     
+         *     firewall <- choose firewallCard [-1..1]
+         *    
          *     guarddCard <- [0, 1]
-         *     guardd <- sequence $ replicate guarddCard [-1..1]
-         *     
+         *     guardd <- choose guarddCard [-1..1]
+         *    
          *     guard $ all (== 1) (backup ++ firewall)
-         *     
+         *    
          *     return (backup, firewall)
          */
         AstModel model = newModel();
@@ -75,16 +84,25 @@ public class QuantifierTest {
     public void testLone() {
         /*
          * import Control.Monad
+         * import Data.List
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
          *
          * solutions = do
          *     backupCard <- [2..3]
-         *     backup <- sequence $ replicate backupCard [-1..1]
-         *     
+         *     backup <- choose backupCard [-1..1]
+         *    
          *     firewallCard <- [0, 1]
-         *     firewall <- sequence $ replicate firewallCard [-1..1]
-         *     
+         *     firewall <- choose firewallCard [-1..1]
+         *    
          *     guarddCard <- [0, 1]
-         *     guardd <- sequence $ replicate guarddCard [-1..1]
+         *     guardd <- choose guarddCard [-1..1]
          *     
          *     guard $ length (filter (== 1) (backup ++ firewall)) <= 1
          *     
@@ -102,7 +120,7 @@ public class QuantifierTest {
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
-        assertEquals(384, solver.allInstances().length);
+        assertEquals(172, solver.allInstances().length);
     }
 
     /**
@@ -119,19 +137,28 @@ public class QuantifierTest {
     public void testNone() {
         /*
          * import Control.Monad
+         * import Data.List
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
          *
          * solutions = do
          *     backupCard <- [2..3]
-         *     backup <- sequence $ replicate backupCard [-1..1]
-         *     
+         *     backup <- choose backupCard [-1..1]
+         *    
          *     firewallCard <- [0, 1]
-         *     firewall <- sequence $ replicate firewallCard [-1..1]
-         *     
+         *     firewall <- choose firewallCard [-1..1]
+         *    
          *     guarddCard <- [0, 1]
-         *     guardd <- sequence $ replicate guarddCard [-1..1]
-         *     
+         *     guardd <- choose guarddCard [-1..1]
+         *    
          *     guard $ all (/= 1) (backup ++ firewall)
-         *     
+         *    
          *     return (backup, firewall)
          */
         AstModel model = newModel();
@@ -146,7 +173,7 @@ public class QuantifierTest {
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
-        assertEquals(144, solver.allInstances().length);
+        assertEquals(84, solver.allInstances().length);
     }
 
     /**
@@ -163,19 +190,28 @@ public class QuantifierTest {
     public void testOne() {
         /*
          * import Control.Monad
+         * import Data.List
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
          *
          * solutions = do
          *     backupCard <- [2..3]
-         *     backup <- sequence $ replicate backupCard [-1..1]
-         *     
+         *     backup <- choose backupCard [-1..1]
+         *    
          *     firewallCard <- [0, 1]
-         *     firewall <- sequence $ replicate firewallCard [-1..1]
-         *     
+         *     firewall <- choose firewallCard [-1..1]
+         *    
          *     guarddCard <- [0, 1]
-         *     guardd <- sequence $ replicate guarddCard [-1..1]
-         *     
+         *     guardd <- choose guarddCard [-1..1]
+         *    
          *     guard $ length (filter (== 1) (backup ++ firewall)) == 1
-         *     
+         *    
          *     return (backup, firewall)
          */
         AstModel model = newModel();
@@ -190,7 +226,7 @@ public class QuantifierTest {
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
-        assertEquals(240, solver.allInstances().length);
+        assertEquals(88, solver.allInstances().length);
     }
 
     /**
@@ -207,19 +243,28 @@ public class QuantifierTest {
     public void testSome() {
         /*
          * import Control.Monad
+         * import Data.List
+         *
+         * choose 0 _ = return []
+         * choose _ [] = mzero
+         * choose n (x:xs) =
+         *     do
+         *         xs' <- choose (n-1) (x:xs)
+         *         return $ x : xs'
+         *     `mplus` choose n xs 
          *
          * solutions = do
          *     backupCard <- [2..3]
-         *     backup <- sequence $ replicate backupCard [-1..1]
-         *     
+         *     backup <- choose backupCard [-1..1]
+         *    
          *     firewallCard <- [0, 1]
-         *     firewall <- sequence $ replicate firewallCard [-1..1]
-         *     
+         *     firewall <- choose firewallCard [-1..1]
+         *    
          *     guarddCard <- [0, 1]
-         *     guardd <- sequence $ replicate guarddCard [-1..1]
-         *     
+         *     guardd <- choose guarddCard [-1..1]
+         *    
          *     guard $ any (== 1) (backup ++ firewall)
-         *     
+         *    
          *     return (backup, firewall)
          */
         AstModel model = newModel();
@@ -234,6 +279,6 @@ public class QuantifierTest {
                 equal(joinRef(join(x, cost)), constant(1))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5).intLow(-1).intHigh(1));
-        assertEquals(432, solver.allInstances().length);
+        assertEquals(172, solver.allInstances().length);
     }
 }

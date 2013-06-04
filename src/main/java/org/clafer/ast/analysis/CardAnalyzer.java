@@ -17,6 +17,7 @@ public class CardAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstConcreteClafer, Card> cardMap = new HashMap<AstConcreteClafer, Card>();
+        cardMap.put(analysis.getModel(), new Card(1, 1));
         for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
             analyze(abstractClafer, cardMap, analysis);
         }
@@ -40,10 +41,7 @@ public class CardAnalyzer implements Analyzer {
 
         int evenlyDistributed = parentlowGlobalCard * low;
         int rest = globalCard.getHigh() - evenlyDistributed;
-        // If rest is less than 0, the model is unsatisfiable, most likely due to
-        // insufficient scope. Throwing an exception is a possibility at this point
-        // but let's continue on instead.
-        cardMap.put(clafer, new Card(low, Math.min(high, low + Math.max(rest, 0))));
+        cardMap.put(clafer, new Card(low, Math.min(high, low + rest)));
 
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, globalCard.getLow(), cardMap, analysis);
