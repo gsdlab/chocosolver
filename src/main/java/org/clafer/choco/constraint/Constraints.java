@@ -20,10 +20,8 @@ import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqual;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
-import org.clafer.choco.constraint.propagator.PropSumWeight;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
-import solver.constraints.ICF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -148,12 +146,6 @@ public class Constraints {
     public static Constraint setSumN(SetVar set, IntVar sum, int n) {
         Constraint constraint = new Constraint(new Variable[]{set, sum}, set.getSolver());
         constraint.setPropagators(new PropSetSumN(set, sum, n));
-        return constraint;
-    }
-
-    public static Constraint sumWeight(SetVar set, IntVar[] weight, int bonusWeight, IntVar sum) {
-        Constraint constraint = new Constraint(PropSumWeight.buildArray(set, weight, sum), set.getSolver());
-        constraint.setPropagators(new PropSumWeight(set, weight, bonusWeight, sum));
         return constraint;
     }
 

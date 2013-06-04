@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import org.clafer.ast.AstUtil;
 import org.clafer.common.Util;
 
 /**
@@ -779,6 +780,9 @@ public class Irs {
     }
 
     public static IrBoolExpr sortChannel(IrIntExpr[][] strings, IrIntExpr[] ints) {
+        if (ints.length == 1) {
+            return $(True);
+        }
         return new IrSortStringsChannel(strings, ints, BoolDomain);
     }
 
@@ -832,6 +836,14 @@ public class Irs {
     }
 
     public static IrBoolExpr filterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result) {
+        int[] constant = IrUtil.getConstant(set);
+        if (constant != null) {
+            IrBoolExpr[] ands = new IrBoolExpr[constant.length];
+            for (int i = 0; i < ands.length; i++) {
+                ands[i] = equal(string[constant[i] - offset], result[i]);
+            }
+            return and(ands);
+        }
         return new IrFilterString(set, offset, string, result, BoolDomain);
     }
     /**

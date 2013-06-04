@@ -32,7 +32,11 @@ public class Feature {
 
         ClaferObjective solver = ClaferCompiler.compileMinimize(model,
                 Scope.defaultScope(100).intLow(-1000).intHigh(1000), footprint.getRef());
-        System.out.println(solver.optimal().getFst().intValue());
+        System.out.println(solver.optimal());
+//        ClaferObjective solver = ClaferCompiler.compileMinimize(model,
+//                Scope.defaultScope(100).intLow(-1000).intHigh(1000), footprint.getRef());
+//        System.out.println(solver.getInternalSolver());
+//        System.out.println(solver.optimal().getFst().intValue());
 //        AstModel model = newModel();
 //        AstAbstractClafer c3_SQLite = model.addAbstractClafer("c3_SQLite");
 //        AstAbstractClafer c1_IMeasurable = model.addAbstractClafer("c1_IMeasurable");

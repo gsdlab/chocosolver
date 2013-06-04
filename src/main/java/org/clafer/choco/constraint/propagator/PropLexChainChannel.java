@@ -88,15 +88,6 @@ public class PropLexChainChannel extends Propagator<IntVar> {
         }
     }
 
-    public static void main(String[] args) {
-        // string0[0] = -2 string0[1] = -2 string0[2] = -1 string0[3] = {-2,-1,0,1}
-        // [string3[0] = {-2,-1}, string3[1] = {-2,-1,0}, string3[2] = {-1,0}, string3[3] = 2
-        Solver solver = new Solver();
-        System.out.println(compareString(
-                new IntVar[]{VF.fixed(-2, solver), VF.fixed(-2, solver), VF.fixed(-3, solver), VF.enumerated("string03", -2, 1, solver)},
-                new IntVar[]{VF.enumerated("string30", -2, -1, solver), VF.enumerated("string31", -2, 0, solver), VF.enumerated("string32", -1, 0, solver), VF.fixed(2, solver)}));
-    }
-
     private static Ordering compare(IntVar a, IntVar b) {
         if (a.instantiated() && b.instantiated() && a.getValue() == b.getValue()) {
             return Ordering.EQ;

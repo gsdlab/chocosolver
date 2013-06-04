@@ -382,7 +382,12 @@ public class AstCompiler {
                     // a weight, need to offset it so that it always positive.
                     int add = refLow < 0 ? -refLow : 0;
                     childIndex.add(new IrIntExpr[]{
-                        add($(refPointers.get(ref)[i + refOffset]), mul(asInt(members[i]), add + 1))
+                        analysis.isBreakableRefId(ref, i + refOffset)
+                        // The id of the target is the weight.
+                        ? add($(refPointers.get(ref)[i + refOffset]), mul(asInt(members[i]), add + 1))
+                        // If analysis says that this id does not need breaking
+                        // then give it a constant weight. Any constant is fine.
+                        : $(Zero)
                     });
                 }
                 childIndices[i] = Util.concat(childIndex.toArray(new IrIntExpr[childIndex.size()][]));

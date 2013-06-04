@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
@@ -40,7 +39,7 @@ public class Analysis {
     private Map<AstClafer, PartialSolution> partialSolutionMap;
     private Map<AstRef, int[][]> partialIntsMap;
     private Set<AstConcreteClafer> breakableChildren;
-    private Set<AstRef> breakableRefs;
+    private Map<AstRef, int[]> breakableRefs;
     private Map<AstExpr, AstClafer> typeMap;
 
     Analysis(AstModel model, Scope scope) {
@@ -55,7 +54,7 @@ public class Analysis {
         this(model, AstUtil.getClafers(model), abstractClafers, concreteClafers, AstUtil.getNestedConstraints(model), buildCardMap(clafers), null, scope, null, null, null, null, null, null, null, null);
     }
 
-    Analysis(AstModel model, List<AstClafer> clafers, List<AstAbstractClafer> abstractClafers, List<AstConcreteClafer> concreteClafers, List<AstConstraint> constraints, Map<AstConcreteClafer, Card> cardMap, Map<AstClafer, Card> globalCardMap, Scope scope, Map<AstAbstractClafer, Integer> depthMap, Map<AstClafer, Format> formatMap, Map<AstAbstractClafer, Offsets> offsetMap, Map<AstClafer, PartialSolution> partialSolutionMap, Map<AstRef, int[][]> partialIntsMap, Set<AstConcreteClafer> breakableChildren, Set<AstRef> breakableRefs, Map<AstExpr, AstClafer> typeMap) {
+    Analysis(AstModel model, List<AstClafer> clafers, List<AstAbstractClafer> abstractClafers, List<AstConcreteClafer> concreteClafers, List<AstConstraint> constraints, Map<AstConcreteClafer, Card> cardMap, Map<AstClafer, Card> globalCardMap, Scope scope, Map<AstAbstractClafer, Integer> depthMap, Map<AstClafer, Format> formatMap, Map<AstAbstractClafer, Offsets> offsetMap, Map<AstClafer, PartialSolution> partialSolutionMap, Map<AstRef, int[][]> partialIntsMap, Set<AstConcreteClafer> breakableChildren, Map<AstRef, int[]> breakableRefs, Map<AstExpr, AstClafer> typeMap) {
         this.model = model;
         this.clafers = clafers;
         this.abstractClafers = abstractClafers;
@@ -308,48 +307,6 @@ public class Analysis {
         return this;
     }
 
-    /**
-     * Returns the possible parents above the Clafer. For example, if
-     * <pre>
-     * A#1
-     *     B#2
-     * </pre> and
-     * <pre>
-     * A#2
-     *     B#2
-     * </pre> are the only possible parents above {@code B#2}, then
-     * {@code getPossibleConcreteParentIds(B, 2)} returns a list with a single
-     * pair containing the clafer A and the array [1, 2].
-     *
-     * @param clafer the Clafer
-     * @param id the id
-     * @return the possible concrete parents above the Clafer
-     */
-    public List<Pair<AstConcreteClafer, int[]>> getPossibleConcreteParentIds(AstConcreteClafer clafer, int id) {
-        AstClafer parent = clafer.getParent();
-        if (parent instanceof AstConcreteClafer) {
-            return Collections.singletonList(new Pair<AstConcreteClafer, int[]>(
-                    (AstConcreteClafer) parent, getPartialSolution(clafer).getPossibleParents(id)));
-        }
-        Map<AstConcreteClafer, int[]> map = new HashMap<AstConcreteClafer, int[]>();
-        List<Pair<AstConcreteClafer, int[]>> possibleConcreteParentIds = new ArrayList<Pair<AstConcreteClafer, int[]>>();
-        AstAbstractClafer abstractParent = (AstAbstractClafer) parent;
-        for (int abstractParentId : getPartialSolution(clafer).getPossibleParents(id)) {
-            Pair<AstConcreteClafer, Integer> pair = getConcreteId(abstractParent, abstractParentId);
-            int[] parentIds = map.get(pair.getFst());
-            parentIds = parentIds == null ? new int[]{pair.getSnd()} : Util.cons(pair.getSnd(), parentIds);
-            map.put(pair.getFst(), parentIds);
-        }
-        for (Entry<AstConcreteClafer, int[]> entry : map.entrySet()) {
-            possibleConcreteParentIds.add(new Pair<AstConcreteClafer, int[]>(entry.getKey(), entry.getValue()));
-        }
-        return possibleConcreteParentIds;
-    }
-
-    public List<AstConcreteClafer> getPossibleConcreteParentTypes(AstConcreteClafer clafer, int id) {
-        return Util.mapFst(getPossibleConcreteParentIds(clafer, id));
-    }
-
     public PartialSolution getPartialSolution(AstClafer clafer) {
         return notNull(clafer, "Partial solution", getPartialSolutionMap().get(clafer));
     }
@@ -390,14 +347,22 @@ public class Analysis {
     }
 
     public boolean isBreakableRef(AstRef ref) {
-        return getBreakableRefs().contains(ref);
+        return getBreakableRefs().containsKey(ref);
     }
 
-    public Set<AstRef> getBreakableRefs() {
+    public boolean isBreakableRefId(AstRef ref, int id) {
+        int[] breakbleIDs = getBreakableRefs().get(ref);
+        if (breakbleIDs == null) {
+            return false;
+        }
+        return Util.in(id, breakbleIDs);
+    }
+
+    public Map<AstRef, int[]> getBreakableRefs() {
         return notNull("Breakable ref", breakableRefs);
     }
 
-    public Analysis setBreakableRefs(Set<AstRef> breakableRefs) {
+    public Analysis setBreakableRefs(Map<AstRef, int[]> breakableRefs) {
         this.breakableRefs = breakableRefs;
         return this;
     }
