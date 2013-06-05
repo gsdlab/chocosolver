@@ -48,6 +48,13 @@ public class OrTest extends ConstraintTest {
 
         solver.post(Constraints.or(vars));
 
-        assertEquals(31, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(vars);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(31, count);
     }
 }

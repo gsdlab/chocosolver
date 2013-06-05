@@ -46,6 +46,13 @@ public class NotMemberTest extends ConstraintTest {
 
         solver.post(Constraints.notMember(element, set));
 
-        assertEquals(192, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(element, set);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(192, count);
     }
 }

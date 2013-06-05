@@ -22,7 +22,7 @@ public class SetNotEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testSetNotEqual() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
@@ -40,7 +40,7 @@ public class SetNotEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSetNotEqual() {
         /*
          * import Control.Monad
          * 
@@ -59,6 +59,13 @@ public class SetNotEqualTest extends ConstraintTest {
 
         solver.post(Constraints.notEqual(s1, s2));
 
-        assertEquals(248, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(s1, s2);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(248, count);
     }
 }

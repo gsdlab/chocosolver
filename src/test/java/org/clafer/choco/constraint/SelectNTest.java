@@ -54,6 +54,13 @@ public class SelectNTest extends ConstraintTest {
 
         solver.post(Constraints.selectN(bools, n));
 
-        assertEquals(21, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(bools, n);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(21, count);
     }
 }

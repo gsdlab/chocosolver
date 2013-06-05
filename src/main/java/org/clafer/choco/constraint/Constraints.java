@@ -7,6 +7,7 @@ import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropFilterString;
+import org.clafer.choco.constraint.propagator.PropFind;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
@@ -156,37 +157,37 @@ public class Constraints {
     }
 
     public static Constraint and(BoolVar... vars) {
-        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        Constraint<BoolVar, PropAnd> constraint = new Constraint<BoolVar, PropAnd>(vars, vars[0].getSolver());
         constraint.setPropagators(new PropAnd(vars));
         return constraint;
     }
 
     public static Constraint lone(BoolVar... vars) {
-        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        Constraint<BoolVar, PropLone> constraint = new Constraint<BoolVar, PropLone>(vars, vars[0].getSolver());
         constraint.setPropagators(new PropLone(vars));
         return constraint;
     }
 
     public static Constraint one(BoolVar... vars) {
-        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        Constraint<BoolVar, PropOne> constraint = new Constraint<BoolVar, PropOne>(vars, vars[0].getSolver());
         constraint.setPropagators(new PropOne(vars));
         return constraint;
     }
 
     public static Constraint or(BoolVar... vars) {
-        Constraint constraint = new Constraint(vars, vars[0].getSolver());
+        Constraint<BoolVar, PropOr> constraint = new Constraint<BoolVar, PropOr>(vars, vars[0].getSolver());
         constraint.setPropagators(new PropOr(vars));
         return constraint;
     }
 
     public static Constraint difference(SetVar minuend, SetVar subtrahend, SetVar difference) {
-        Constraint constraint = new Constraint(new Variable[]{minuend, subtrahend, difference}, minuend.getSolver());
+        Constraint<SetVar, PropSetDifference> constraint = new Constraint<SetVar, PropSetDifference>(new SetVar[]{minuend, subtrahend, difference}, minuend.getSolver());
         constraint.setPropagators(new PropSetDifference(minuend, subtrahend, difference));
         return constraint;
     }
 
     public static Constraint union(SetVar[] sets, SetVar union) {
-        Constraint constraint = new Constraint(Util.cons(union, sets), union.getSolver());
+        Constraint<SetVar, PropSetUnion> constraint = new Constraint<SetVar, PropSetUnion>(Util.cons(union, sets), union.getSolver());
         constraint.setPropagators(new PropSetUnion(sets, union));
         return constraint;
     }
@@ -202,6 +203,13 @@ public class Constraints {
         Constraint<IntVar, PropLexChainChannel> constraint =
                 new Constraint<IntVar, PropLexChainChannel>(PropLexChainChannel.buildArray(strings, ints), strings[0][0].getSolver());
         constraint.setPropagators(new PropLexChainChannel(strings, ints));
+        return constraint;
+    }
+
+    public static Constraint find(int value, IntVar[] array, IntVar index) {
+        Constraint<IntVar, PropFind> constraint =
+                new Constraint<IntVar, PropFind>(Util.cons(index, array), index.getSolver());
+        constraint.setPropagators(new PropFind(value, array, index));
         return constraint;
     }
 }

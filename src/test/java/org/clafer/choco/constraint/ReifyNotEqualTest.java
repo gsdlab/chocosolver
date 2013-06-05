@@ -48,6 +48,13 @@ public class ReifyNotEqualTest extends ConstraintTest {
 
         solver.post(Constraints.reifyNotEqual(reify, i, c));
 
-        assertEquals(21, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(reify, i, c);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(21, count);
     }
 }

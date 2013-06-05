@@ -21,7 +21,7 @@ public class SetEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void testSetEqual() {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 
@@ -39,7 +39,7 @@ public class SetEqualTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
+    public void testSetEqual() {
         Solver solver = new Solver();
 
         SetVar s1 = VF.set("s1", Util.range(-5, 10), solver);
@@ -47,6 +47,13 @@ public class SetEqualTest extends ConstraintTest {
 
         solver.post(Constraints.equal(s1, s2));
 
-        assertEquals(2048, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(s1, s2);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(2048, count);
     }
 }

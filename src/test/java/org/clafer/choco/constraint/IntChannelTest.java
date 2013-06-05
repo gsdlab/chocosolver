@@ -65,6 +65,13 @@ public class IntChannelTest extends ConstraintTest {
 
         solver.post(Constraints.intChannel(sets, ints));
 
-        assertEquals(243, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(sets, ints);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(243, count);
     }
 }

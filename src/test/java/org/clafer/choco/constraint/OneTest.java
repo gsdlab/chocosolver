@@ -50,6 +50,13 @@ public class OneTest extends ConstraintTest {
 
         solver.post(Constraints.one(vars));
 
-        assertEquals(5, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(vars);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(5, count);
     }
 }

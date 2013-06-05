@@ -26,7 +26,7 @@ public class LexChainChannelTest extends ConstraintTest {
         for (int i = 0; i < strings.length; i++) {
             $strings[i] = new int[strings[i].length];
             for (int j = 0; j < strings[i].length; j++) {
-                $strings[i][j] = (byte) strings[i][j].getValue();
+                $strings[i][j] = strings[i][j].getValue();
             }
             $ints.add(ints[i].getValue());
         }
@@ -196,6 +196,13 @@ public class LexChainChannelTest extends ConstraintTest {
 
         solver.post(Constraints.lexChainChannel(strings, ints));
 
-        assertEquals(729, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(strings, ints);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(729, count);
     }
 }

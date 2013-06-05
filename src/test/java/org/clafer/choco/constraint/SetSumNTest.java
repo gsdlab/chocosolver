@@ -59,12 +59,20 @@ public class SetSumNTest extends ConstraintTest {
          */
         Solver solver = new Solver();
 
+        int n = 7;
         SetVar set = VF.set("set", Util.range(-4, 5), solver);
         IntVar sum = VF.enumerated("sum", -120, 120, solver);
 
-        solver.post(Constraints.setSumN(set, sum, 7));
+        solver.post(Constraints.setSumN(set, sum, n));
 
-        assertEquals(968, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(set, sum, n);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(968, count);
     }
 
     @Test(timeout = 60000)
@@ -85,6 +93,13 @@ public class SetSumNTest extends ConstraintTest {
 
         solver.post(Constraints.setSumN(set, sum, n));
 
-        assertEquals(14, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(set, sum, n);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(14, count);
     }
 }

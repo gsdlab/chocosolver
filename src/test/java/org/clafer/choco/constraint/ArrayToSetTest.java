@@ -66,6 +66,13 @@ public class ArrayToSetTest extends ConstraintTest {
 
         solver.post(Constraints.arrayToSet(ivars, svar));
 
-        assertEquals(216, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(ivars, svar);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(216, count);
     }
 }

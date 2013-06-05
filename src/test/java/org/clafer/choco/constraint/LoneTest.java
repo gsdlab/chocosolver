@@ -49,6 +49,13 @@ public class LoneTest extends ConstraintTest {
 
         solver.post(Constraints.lone(vars));
 
-        assertEquals(6, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(vars);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(6, count);
     }
 }

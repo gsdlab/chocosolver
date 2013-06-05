@@ -49,6 +49,13 @@ public class SingletonTest extends ConstraintTest {
 
         solver.post(Constraints.singleton(i, s));
 
-        assertEquals(21, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(i, s);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(21, count);
     }
 }

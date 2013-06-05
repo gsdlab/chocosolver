@@ -66,7 +66,15 @@ public class JoinFunctionTest extends ConstraintTest {
 
         solver.post(Constraints.joinFunction(take, refs, to));
 
-        assertEquals(4, randomizeStrategy(solver).findAllSolutions());
+        assertTrue(randomizeStrategy(solver).findSolution());
+        checkCorrectness(take, refs, to);
+        assertTrue(solver.nextSolution());
+        checkCorrectness(take, refs, to);
+        assertTrue(solver.nextSolution());
+        checkCorrectness(take, refs, to);
+        assertTrue(solver.nextSolution());
+        checkCorrectness(take, refs, to);
+        assertFalse(solver.nextSolution());
     }
 
     @Test(timeout = 60000)
@@ -82,6 +90,13 @@ public class JoinFunctionTest extends ConstraintTest {
 
         solver.post(Constraints.joinFunction(take, refs, to));
 
-        assertEquals(1000, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(take, refs, to);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(1000, count);
     }
 }

@@ -66,6 +66,13 @@ public class SetDifferenceTest extends ConstraintTest {
 
         solver.post(Constraints.difference(minuend, subtrahend, difference));
 
-        assertEquals(6144, randomizeStrategy(solver).findAllSolutions());
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(minuend, subtrahend, difference);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(6144, count);
     }
 }
