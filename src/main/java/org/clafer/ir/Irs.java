@@ -1102,6 +1102,31 @@ public class Irs {
         return new IrElement(array, index, domain);
     }
 
+    public static IrIntExpr count(int value, IrIntExpr[] array) {
+        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
+        int count = 0;
+        for (IrIntExpr i : array) {
+            Integer constant = IrUtil.getConstant(i);
+            if (constant != null) {
+                if (constant.intValue() == value) {
+                    count++;
+                }
+            } else if (i.getDomain().contains(value)) {
+                filter.add(i);
+            }
+        }
+        switch (filter.size()) {
+            case 0:
+                return $(constant(count));
+            case 1:
+                return add(asInt(equal(value, filter.get(0))), count);
+            default:
+                return add(
+                        new IrCount(value, filter.toArray(new IrIntExpr[filter.size()]), boundDomain(0, filter.size())),
+                        count);
+        }
+    }
+
     public static IrIntExpr sum(IrSetExpr set) {
         int sum = Util.sum(set.getKer().iterator());
         int count = set.getKer().size();

@@ -44,6 +44,7 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrException;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
+import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIntCast;
@@ -726,17 +727,16 @@ public class IrCompiler {
 
         @Override
         public IntVar visit(IrElement ir, Void a) {
-            IrIntExpr index = ir.getIndex();
-            IrIntExpr[] array = ir.getArray();
-
-            IntVar $index = index.accept(intExprCompiler, a);
-            IntVar[] $array = new IntVar[array.length];
-            for (int i = 0; i < $array.length; i++) {
-                $array[i] = array[i].accept(intExprCompiler, a);
-            }
             IntVar element = numIntVar("Element", ir.getDomain());
-            solver.post(_element($index, $array, element));
+            solver.post(_element(compile(ir.getIndex()), compile(ir.getArray()), element));
             return element;
+        }
+
+        @Override
+        public IntVar visit(IrCount ir, Void a) {
+            IntVar count = numIntVar("Count", ir.getDomain());
+            solver.post(_count(ir.getValue(), compile(ir.getArray()), count));
+            return count;
         }
 
         @Override
@@ -967,6 +967,10 @@ public class IrCompiler {
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
         return ICF.element(value, array, index, 0);
+    }
+
+    private static Constraint _count(int value, IntVar[] array, IntVar count) {
+        return ICF.count(value, array, count);
     }
 
     private static Constraint _equal(SetVar var1, SetVar var2) {

@@ -4,23 +4,22 @@ import java.util.Arrays;
 import org.clafer.common.Check;
 
 /**
- * Returns array[index].
- * 
+ *
  * @author jimmy
  */
-public class IrElement extends IrAbstractInt implements IrIntExpr {
+public class IrCount extends IrAbstractInt implements IrIntExpr {
 
+    private final int value;
     private final IrIntExpr[] array;
-    private final IrIntExpr index;
 
-    IrElement(IrIntExpr[] array, IrIntExpr index, IrDomain domain) {
+    public IrCount(int value, IrIntExpr[] array, IrDomain domain) {
         super(domain);
         this.array = Check.noNullsNotEmpty(array);
-        this.index = Check.notNull(index);
+        this.value = Check.notNull(value);
     }
 
-    public IrIntExpr getIndex() {
-        return index;
+    public int getValue() {
+        return value;
     }
 
     public IrIntExpr[] getArray() {
@@ -34,20 +33,21 @@ public class IrElement extends IrAbstractInt implements IrIntExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrElement) {
-            IrElement other = (IrElement) obj;
-            return Arrays.equals(array, other.array) && index.equals(other.index) && super.equals(other);
+        if (obj instanceof IrCount) {
+            IrCount other = (IrCount) obj;
+            return value == other.value && Arrays.equals(array, other.array)
+                    && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(array) ^ index.hashCode();
+        return value ^ Arrays.hashCode(array);
     }
 
     @Override
     public String toString() {
-        return Arrays.toString(array) + "[" + index + "]";
+        return "count(" + value + " in " + Arrays.toString(array) + ")";
     }
 }

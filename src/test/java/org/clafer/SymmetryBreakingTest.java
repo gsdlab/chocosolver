@@ -33,10 +33,9 @@ public class SymmetryBreakingTest {
         AstConcreteClafer drink = patron.addChild("Drink").withCard(1, 2);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-
         assertEquals(5, solver.allInstances().length);
     }
-    
+
     /**
      * <pre>
      * abstract Eater
@@ -55,9 +54,9 @@ public class SymmetryBreakingTest {
         AstConcreteClafer drink = patron.addChild("Drink").withCard(1, 2);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-
         assertEquals(5, solver.allInstances().length);
     }
+
     /**
      * <pre>
      * abstract Eater
@@ -76,7 +75,6 @@ public class SymmetryBreakingTest {
         AstConcreteClafer patron = model.addChild("Patron").extending(eater).withCard(2, 2);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-
         assertEquals(5, solver.allInstances().length);
     }
 
@@ -104,7 +102,7 @@ public class SymmetryBreakingTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void unbreakableCircularRef() {
+    public void dontBreakCircularRef() {
         AstModel model = newModel();
 
         AstConcreteClafer person = model.addChild("Person").withCard(2, 2);
@@ -199,8 +197,26 @@ public class SymmetryBreakingTest {
         AstConcreteClafer cheese = food.addChild("Cheese").withCard(0);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-
         assertEquals(19, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * a : A *
+     * setRefToA -> a 3
+     * multisetRefToA ->> a 3
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void breakRefSwap() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a");
+        AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(a).withCard(3, 3);
+        AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(a).withCard(3, 3);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        assertEquals(3, solver.allInstances().length);
     }
 
     /**
@@ -211,22 +227,41 @@ public class SymmetryBreakingTest {
      * multisetRefToA ->> A 3
      * </pre>
      */
-    @Ignore
     @Test(timeout = 60000)
-    public void breakRefSwap() {
+    public void breakAbstractRefSwap() {
         AstModel model = newModel();
 
         AstAbstractClafer A = model.addAbstractClafer("A");
-        AstConcreteClafer a = model.addChild("a").withCard(1).extending(A);
+        AstConcreteClafer a = model.addChild("a").extending(A);
         AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(A).withCard(3, 3);
         AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-        System.out.println(solver.getInternalSolver());
-        // 162
-//         while(solver.find()) {
-//             System.out.println(solver.instance());
-//         }
-        assertEquals(4, solver.allInstances().length);
+        assertEquals(3, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     * a : A
+     * b : A
+     * c : A
+     * setRefToA -> A 3
+     * multisetRefToA ->> A 3
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void breakAbstractRefSwapMultipleConcrete() {
+        AstModel model = newModel();
+
+        AstAbstractClafer A = model.addAbstractClafer("A");
+        AstConcreteClafer a = model.addChild("a").extending(A).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("b").extending(A).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("c").extending(A).withCard(Mandatory);
+        AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(A).withCard(3, 3);
+        AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        assertEquals(3, solver.allInstances().length);
     }
 }

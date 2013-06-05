@@ -352,7 +352,6 @@ public class Analysis {
     }
 
     public boolean hasInteritedBreakableChildren(AstClafer clafer) {
-//        return hasBreakableChildren(clafer);
         AstClafer sup = clafer;
         do {
             if (hasBreakableChildren(sup)) {
@@ -390,6 +389,36 @@ public class Analysis {
             return false;
         }
         return Util.in(id, breakbleIDs);
+    }
+
+    public boolean isInheritedBreakableTarget(AstClafer clafer) {
+        AstClafer sup = clafer;
+        do {
+            if (isBreakableTarget(sup)) {
+                return true;
+            }
+            sup = sup.getSuperClafer();
+        } while (sup != null);
+        return false;
+    }
+
+    public boolean isBreakableTarget(AstClafer clafer) {
+        for (AstRef ref : getBreakableRefsMap().keySet()) {
+            if (ref.getTargetType().equals(clafer)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<AstRef> getBreakableTarget(AstClafer clafer) {
+        List<AstRef> refs = new ArrayList<AstRef>();
+        for (AstRef ref : getBreakableRefsMap().keySet()) {
+            if (ref.getTargetType().equals(clafer)) {
+                refs.add(ref);
+            }
+        }
+        return refs;
     }
 
     public Map<AstRef, int[]> getBreakableRefsMap() {

@@ -286,7 +286,9 @@ public class AstCompiler {
         IrIntExpr[][] index;
         AstRef ref = AstUtil.getInheritedRef(clafer);
         // If the Clafer either needs children or reference to be introduce symmetry.
-        if (analysis.hasInteritedBreakableChildren(clafer) || (ref != null && analysis.isBreakableRef(ref))) {
+        if (analysis.hasInteritedBreakableChildren(clafer)
+                || (ref != null && analysis.isBreakableRef(ref))
+                || analysis.isInheritedBreakableTarget(clafer)) {
             weight = new IrIntExpr[scope];
             for (int i = 0; i < weight.length; i++) {
                 weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1).asNoDecision());
@@ -294,7 +296,8 @@ public class AstCompiler {
             index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
             for (int i = 0; i < index.length; i++) {
                 for (int j = 0; j < index[i].length; j++) {
-                    index[i][j] = $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope - 1).asNoDecision());
+                    index[i][j] =
+                            $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope).asNoDecision());
                 }
             }
         } else {
@@ -361,7 +364,9 @@ public class AstCompiler {
         }
 
         // If the Clafer either needs children or reference to be introduce symmetry.
-        if (analysis.hasInteritedBreakableChildren(clafer)|| (ref != null && analysis.isBreakableRef(ref))) {
+        if (analysis.hasInteritedBreakableChildren(clafer)
+                || (ref != null && analysis.isBreakableRef(ref))
+                || analysis.isInheritedBreakableTarget(clafer)) {
             IrIntExpr[] weight = weights.get(clafer);
             IrIntExpr[][] index = indices.get(clafer);
 
@@ -376,19 +381,34 @@ public class AstCompiler {
                         childIndex.add(indices.get(child)[i + offset.getSnd()]);
                     }
                 }
-                if (ref != null) {
-                    int refLow = getScopeLow(ref.getTargetType());
+                if (ref != null && analysis.isBreakableRef(ref)) {
+                    int refHigh = getScopeHigh(ref.getTargetType());
                     // References need a positive weight, so to use their value as
                     // a weight, need to offset it so that it always positive.
-                    int add = refLow < 0 ? -refLow : 0;
                     childIndex.add(new IrIntExpr[]{
                         analysis.isBreakableRefId(ref, i + refOffset)
                         // The id of the target is the weight.
-                        ? add($(refPointers.get(ref)[i + refOffset]), mul(asInt(members[i]), add + 1))
+                        ? sub(mul(asInt(members[i]), refHigh + 1), $(refPointers.get(ref)[i + refOffset]))
                         // If analysis says that this id does not need breaking
                         // then give it a constant weight. Any constant is fine.
                         : $(Zero)
                     });
+                }
+                if (analysis.isInheritedBreakableTarget(clafer)) {
+                    for(Pair<AstClafer ,Integer> hierarchy : analysis.getHierarcyIds(clafer, i)) {
+                        for (AstRef sourceRef : analysis.getBreakableTarget(hierarchy.getFst())) {
+                            IrIntVar[] sourceRefs = refPointers.get(sourceRef);
+                            IrBoolExpr[] sourceMembers = memberships.get(sourceRef.getSourceType());
+
+                            IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
+                            for (int j = 0; j < array.length; j++) {
+                                array[j] = add($(sourceRefs[j]), asInt(sourceMembers[j]));
+                            }
+                            childIndex.add(new IrIntExpr[]{
+                                count(hierarchy.getSnd().intValue() + 1, array)
+                            });
+                        }
+                    }
                 }
                 childIndices[i] = Util.concat(childIndex.toArray(new IrIntExpr[childIndex.size()][]));
             }
@@ -397,10 +417,8 @@ public class AstCompiler {
                 module.addConstraint(filterString(childSet[i], weight, index[i]));
             }
             for (int i = 0; i < parents.length - 1; i++) {
-//                for (int sibling : analysis.getPartialSolution(clafer).getPossiblesSiblings(i)) {
                 module.addConstraint(implies(equal(parents[i], parents[i + 1]),
                         greaterThanEqual(weight[i], weight[i + 1])));
-//                }
             }
         }
 

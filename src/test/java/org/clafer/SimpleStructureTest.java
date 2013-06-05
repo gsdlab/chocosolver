@@ -417,6 +417,7 @@ public class SimpleStructureTest {
          *     a <- [3, 4]
          *     numB <- [2, 3]
          *     b <- choose numB [1..a]
+         *     guard $ all (\x -> length (filter (== x) b)>= length (filter (== x + 1) b)) [1..a - 1]
          *     return (a, b)
          */
         AstModel model = newModel();
@@ -425,8 +426,7 @@ public class SimpleStructureTest {
         AstConcreteClafer b = model.addChild("B").refTo(a).withCard(2, 3);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
-
-        assertEquals(46, solver.allInstances().length);
+        assertEquals(10, solver.allInstances().length);
     }
 
     /**
@@ -457,6 +457,7 @@ public class SimpleStructureTest {
          *     numB <- [2, 3]
          *     b <- choose numB [1..a]
          *     guard $ isUnique b
+         *     guard $ all (\x -> length (filter (== x) b) >= length (filter (== x + 1) b)) [1..a - 1]
          *     return (a, b)
          */
         AstModel model = newModel();
@@ -465,8 +466,7 @@ public class SimpleStructureTest {
         AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 3);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
-
-        assertEquals(14, solver.allInstances().length);
+        assertEquals(4, solver.allInstances().length);
     }
 
     /**
@@ -481,7 +481,6 @@ public class SimpleStructureTest {
         AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 3);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
-
         assertEquals(0, solver.allInstances().length);
     }
 

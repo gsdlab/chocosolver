@@ -2,23 +2,18 @@ package org.clafer.ast.analysis;
 
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
-import org.clafer.ast.Asts;
 import org.clafer.collection.Pair;
-import org.clafer.compiler.ClaferCompiler;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
-import org.clafer.scope.Scope;
+import solver.constraints.ICF;
 
 /**
  * This analyzer determines where symmetry is and is not possible.
@@ -45,9 +40,6 @@ public class SymmetryAnalyzer implements Analyzer {
             breakableChildren(clafer, breakableChildren, analysis);
         }
         breakableChildren(analysis.getModel(), breakableChildren, analysis);
-//        for (Entry<AstClafer, AstConcreteClafer[]> e : breakableChildren.entrySet()) {
-//            System.out.println(e.getKey() + " ::: " + Arrays.toString(e.getValue()));
-//        }
         return breakableChildren;
     }
 
@@ -62,16 +54,6 @@ public class SymmetryAnalyzer implements Analyzer {
         AstRef ref = AstUtil.getInheritedRef(clafer);
         return (clafer instanceof AstConcreteClafer && !analysis.getCard((AstConcreteClafer) clafer).isExact())
                 || !breakables.isEmpty() || (ref != null && analysis.isBreakableRef(ref));
-    }
-
-    public static void main(String[] args) {
-        AstModel model = Asts.newModel();
-
-        AstConcreteClafer a = model.addChild("a").withCard(2, 2);
-        AstConcreteClafer b = a.addChild("b").withCard(Asts.Mandatory).refTo(a);
-        AstConcreteClafer c = a.addChild("c").withCard(1, 2);
-
-        System.out.println(ClaferCompiler.compile(model, Scope.defaultScope(8)).getInternalSolver());
     }
 
     /**
@@ -163,7 +145,6 @@ public class SymmetryAnalyzer implements Analyzer {
                 }
             }
         }
-
         return breakableRefs;
     }
 

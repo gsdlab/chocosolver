@@ -78,8 +78,7 @@ public class SetArithmeticTest {
         model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), constant(0)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
-        // Should be 5 with better symmetry breaking.
-        assertEquals(6, solver.allInstances().length);
+        assertEquals(5, solver.allInstances().length);
     }
 
     /**
@@ -171,6 +170,7 @@ public class SetArithmeticTest {
          *     numFeature <- [3,4]
          *     feature <- choose numFeature backup
          *     guard $ backup == nub feature
+         *     guard $ length (filter (== 1) feature) >= length (filter (== 2) feature)
          *     return (backup, feature)
          */
         AstModel model = newModel();
@@ -180,8 +180,7 @@ public class SetArithmeticTest {
         model.addConstraint(equal(joinRef(global(feature)), global(backup)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
-        // Assuming no reference symmetry breaking.
-        assertEquals(7, solver.allInstances().length);
+        assertEquals(5, solver.allInstances().length);
     }
 
     /**
