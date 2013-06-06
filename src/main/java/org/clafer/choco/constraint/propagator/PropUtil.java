@@ -4,11 +4,14 @@ import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
 import solver.ICause;
+import solver.Solver;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.VF;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
+import util.iterators.DisposableRangeIterator;
 
 /**
  * Various static utility functions for writing Choco propagators.
@@ -16,6 +19,15 @@ import solver.variables.delta.monitor.SetDeltaMonitor;
  * @author jimmy
  */
 public class PropUtil {
+
+    public static void main(String[] args) {
+        Solver solver = new Solver();
+        IntVar i = VF.enumerated("i", new int[]{10, 888}, solver);
+        DisposableRangeIterator iter = i.getRangeIterator(true);
+        System.out.println(iter.min() + " : " + iter.max());
+        iter = i.getRangeIterator(false);
+        System.out.println(iter.min() + " : " + iter.max());
+    }
 
     private PropUtil() {
     }
@@ -48,6 +60,45 @@ public class PropUtil {
             deltas[i] = vars[i].monitorDelta(propagator);
         }
         return deltas;
+    }
+
+    /**
+     * Checks if it is possible for the integer variables to instantiate to the
+     * same value
+     *
+     * @param i1 the integer variable
+     * @param i2 the integer variable
+     * @return {@code true} if and only if {@code (dom(i1) intersect dom(i2)) !=
+     *         empty set}, {@code false} otherwise
+     */
+    public static boolean domainIntersectDomain(IntVar i1, IntVar i2) {
+        for (int i = i1.getLB(); i <= i1.getUB(); i = i1.nextValue(i)) {
+            if (i2.contains(i)) {
+                return true;
+            }
+        }
+        return false;
+//        IntVar small;
+//        IntVar large;
+//        if (i1.getDomainSize() < i2.getDomainSize()) {
+//            small = i1;
+//            large = i2;
+//        } else {
+//            small = i2;
+//            large = i1;
+//        }
+//        DisposableRangeIterator iter = small.getRangeIterator(true);
+//        try {
+//            while (iter.hasNext()) {
+//                if (large.nextValue(iter.min() - 1) <= iter.max()) {
+//                    return true;
+//                }
+//                iter.next();
+//            }
+//        } finally {
+//            iter.dispose();
+//        }
+//        return false;
     }
 
     /**
@@ -234,6 +285,33 @@ public class PropUtil {
     }
 
     /**
+     * Removes every element in the subset's domain that is not in the
+     * collection.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     */
+    public static void domainSubsetOf(IntVar sub, TIntHashSet sup, ICause propagator) throws ContradictionException {
+        int left = Integer.MIN_VALUE;
+        int right = left;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (!sup.contains(val)) {
+                if (val == right + 1) {
+                    right = val;
+                } else {
+                    sub.removeInterval(left, right, propagator);
+                    left = val;
+                    right = val;
+                }
+            }
+        }
+        sub.removeInterval(left, right, propagator);
+    }
+
+    /**
      * Adds every element in the subset's kernel to the superset's kernel.
      *
      * @param sub the subset
@@ -403,6 +481,36 @@ public class PropUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * Enumerate the domain of a integer variable.
+     *
+     * @param ivar the integer variable
+     * @return {@code dom(int)}
+     */
+    public static int[] iterateDomain(IntVar ivar) {
+        int[] iterate = new int[ivar.getDomainSize()];
+        int count = 0;
+        int ub = ivar.getUB();
+        for (int i = ivar.getLB(); i <= ub; i = ivar.nextValue(i)) {
+            iterate[count++] = i;
+        }
+        assert count == iterate.length;
+        return iterate;
+    }
+
+    /**
+     * Enumerate the domain of a integer variable.
+     *
+     * @param ivar the integer variable
+     * @param collection add {@code env(set)} into here
+     */
+    public static void iterateDomain(IntVar ivar, TIntCollection collection) {
+        int ub = ivar.getUB();
+        for (int i = ivar.getLB(); i <= ub; i = ivar.nextValue(i)) {
+            collection.add(i);
+        }
     }
 
     /**

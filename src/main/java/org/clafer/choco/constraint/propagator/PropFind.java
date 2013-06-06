@@ -19,6 +19,7 @@ import util.ESat;
  *
  * @author jimmy
  */
+@Deprecated
 public class PropFind extends Propagator<IntVar> {
 
     private final int value;
@@ -48,10 +49,10 @@ public class PropFind extends Propagator<IntVar> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isIndexVar(vIdx)) {
-            return EventType.INSTANTIATE.mask;
+            return EventType.INSTANTIATE.mask + EventType.INCLOW.mask;
         }
         assert isArrayVar(vIdx);
-        if (getArrayVarIndex(vIdx) <= index.getUB()) {
+        if (index.contains(getArrayVarIndex(vIdx))) {
             return EventType.INT_ALL_MASK();
         }
         return EventType.VOID.mask;
@@ -65,11 +66,11 @@ public class PropFind extends Propagator<IntVar> {
                 index.removeValue(i, aCause);
             }
         }
+        int lb = index.getLB();
+        for (int i = 0; i < lb; i++) {
+            array[i].removeValue(value, aCause);
+        }
         if (index.instantiated()) {
-            int id = index.getValue();
-            for (int i = 0; i < id; i++) {
-                array[i].removeValue(value, aCause);
-            }
             array[index.getValue()].instantiateTo(value, aCause);
             setPassive();
         }
@@ -83,11 +84,11 @@ public class PropFind extends Propagator<IntVar> {
                 index.removeValue(id, aCause);
             }
         }
+        int lb = index.getLB();
+        for (int i = 0; i < lb; i++) {
+            array[i].removeValue(value, aCause);
+        }
         if (index.instantiated()) {
-            int id = index.getValue();
-            for (int i = 0; i < id; i++) {
-                array[i].removeValue(value, aCause);
-            }
             array[index.getValue()].instantiateTo(value, aCause);
             setPassive();
         }

@@ -17,11 +17,20 @@ import solver.variables.VF;
 public class PropUtilTest {
 
     private final Random rand = new Random();
-    private static final int problemSize = 10000;
+    private static final int problemSize = 10;
 
-    private boolean canIntersectBruteForce(IntVar e1, SetVar e2) {
-        for (int i = e2.getEnvelopeFirst(); i != SetVar.END; i = e2.getEnvelopeNext()) {
-            if (e1.contains(i)) {
+    private boolean canIntersectBruteForce(IntVar i1, IntVar i2) {
+        for (int i = i1.getLB(); i <= i1.getUB(); i = i1.nextValue(i)) {
+            if (i2.contains(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean canIntersectBruteForce(IntVar i1, SetVar s2) {
+        for (int i = s2.getEnvelopeFirst(); i != SetVar.END; i = s2.getEnvelopeNext()) {
+            if (i1.contains(i)) {
                 return true;
             }
         }
@@ -55,15 +64,37 @@ public class PropUtilTest {
     }
 
     @Test
+    public void testDomainIntersectDomain() {
+        Solver solver = new Solver();
+        for (int i = 0; i < 100; i++) {
+            IntVar i1 = randIntVar("i1" + i, solver);
+            IntVar i2 = randIntVar("i2" + i, solver);
+
+            assertEquals(
+                    i1 + " intersect " + i2,
+                    canIntersectBruteForce(i1, i2), PropUtil.domainIntersectDomain(i1, i2));
+        }
+    }
+
+    @Test
+    public void testDomainIntersectDomainOnUB() {
+        Solver solver = new Solver();
+        IntVar i1 = VF.enumerated("i1", new int[]{-10, -8, 9}, solver);
+        IntVar i2 = VF.enumerated("i2", new int[]{-4, 0, 3, 9}, solver);
+
+        assertTrue(PropUtil.domainIntersectDomain(i1, i2));
+    }
+
+    @Test
     public void testDomainIntersectEnv() {
         Solver solver = new Solver();
         for (int i = 0; i < 100; i++) {
-            IntVar iv = randIntVar("iv" + i, solver);
-            SetVar sv = randSetVar("sv" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, solver);
+            SetVar s2 = randSetVar("s2" + i, solver);
 
             assertEquals(
-                    iv + " intersect " + sv,
-                    canIntersectBruteForce(iv, sv), PropUtil.domainIntersectEnv(iv, sv));
+                    i1 + " intersect " + s2,
+                    canIntersectBruteForce(i1, s2), PropUtil.domainIntersectEnv(i1, s2));
         }
     }
 }

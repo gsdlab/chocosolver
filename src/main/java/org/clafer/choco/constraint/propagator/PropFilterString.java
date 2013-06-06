@@ -1,5 +1,7 @@
 package org.clafer.choco.constraint.propagator;
 
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import solver.constraints.propagators.Propagator;
 import solver.constraints.propagators.PropagatorPriority;
@@ -26,7 +28,7 @@ public class PropFilterString extends Propagator<Variable> {
     private final IntVar[] result;
 
     public PropFilterString(SetVar set, int offset, IntVar[] string, IntVar[] result) {
-        super(buildArray(set, string, result), PropagatorPriority.LINEAR, true);
+        super(buildArray(set, string, result), PropagatorPriority.LINEAR, false);
         this.set = set;
         this.offset = offset;
         this.string = string;
@@ -82,21 +84,66 @@ public class PropFilterString extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        int index = 0;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            if (!set.kernelContains(i)) {
-                return;
-            }
-            int x = i - offset;
-            if (index >= result.length) {
-                contradiction(set, "Too many in kernel");
-            }
-            subset(string[x], result[index]);
-            subset(result[index], string[x]);
-            index++;
+        if (set.getKernelSize() > result.length) {
+            contradiction(set, "Too many in kernel");
         }
-        for (; index < result.length; index++) {
-            result[index].instantiateTo(-1, aCause);
+
+        // The number of kernel elements seen.
+        int minKer = 0;
+        // The number of potential kernel elements seen.
+        int maxKer = 0;
+        TIntHashSet values = new TIntHashSet(Math.min(set.getEnvelopeSize(), result.length));
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            int x = i - offset;
+            if (set.kernelContains(i)) {
+                if (minKer == maxKer) {
+                    subset(string[x], result[minKer]);
+                    subset(result[minKer], string[x]);
+                }
+                minKer++;
+                maxKer++;
+                PropUtil.iterateDomain(string[x], values);
+            } else {
+                boolean found = false;
+                for (int j = minKer; j < result.length && j <= maxKer; j++) {
+                    if (PropUtil.domainIntersectDomain(string[x], result[j])) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    set.removeFromEnvelope(i, aCause);
+                } else {
+                    PropUtil.iterateDomain(string[x], values);
+                    maxKer++;
+                }
+            }
+        }
+        for (int i = 0; i < minKer; i++) {
+            PropUtil.domainSubsetOf(result[i], values, aCause);
+        }
+        values.add(-1);
+        for (int i = minKer; i < result.length; i++) {
+            PropUtil.domainSubsetOf(result[i], values, aCause);
+        }
+        values.clear();
+        for (IntVar i : result) {
+            PropUtil.iterateDomain(i, values);
+        }
+        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+            PropUtil.domainSubsetOf(string[i - offset], values, aCause);
+        }
+        if (set.instantiated()) {
+            for (int i = set.getKernelSize(); i < result.length; i++) {
+                result[i].instantiateTo(-1, aCause);
+            }
+        } else {
+            int i = set.getKernelSize();
+            for (; i < result.length && !result[i].contains(-1); i++) {
+            }
+            if (set.getEnvelopeSize() < i) {
+                contradiction(set, "Too few in envelope");
+            }
         }
     }
 
