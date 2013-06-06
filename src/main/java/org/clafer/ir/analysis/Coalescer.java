@@ -7,9 +7,11 @@ import java.util.Set;
 import org.clafer.collection.Pair;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
+import org.clafer.ir.IrBoolCast;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDomain;
+import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntVar;
@@ -36,9 +38,22 @@ public class Coalescer {
                         && compare.getRight() instanceof IrIntLiteral) {
                     IrIntLiteral left = (IrIntLiteral) compare.getLeft();
                     IrIntLiteral right = (IrIntLiteral) compare.getRight();
-
                     intGraph.addEdge(left.getVar(), right.getVar());
                     intGraph.addEdge(right.getVar(), left.getVar());
+                }
+            }
+            if (constraint instanceof IrIfOnlyIf) {
+                IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) constraint;
+                if (ifOnlyIf.getLeft() instanceof IrBoolCast
+                        && ifOnlyIf.getRight() instanceof IrBoolCast) {
+                    IrBoolCast left = (IrBoolCast) ifOnlyIf.getLeft();
+                    IrBoolCast right = (IrBoolCast) ifOnlyIf.getRight();
+                    if (left.getExpr() instanceof IrIntLiteral && right.getExpr() instanceof IrIntLiteral) {
+                        IrIntLiteral leftExpr = (IrIntLiteral) left.getExpr();
+                        IrIntLiteral rightExpr = (IrIntLiteral) right.getExpr();
+                        intGraph.addEdge(leftExpr.getVar(), rightExpr.getVar());
+                        intGraph.addEdge(rightExpr.getVar(), leftExpr.getVar());
+                    }
                 }
             }
         }
@@ -51,7 +66,7 @@ public class Coalescer {
                 IrDomain domain = var.getDomain();
                 while (iter.hasNext()) {
                     var = iter.next();
-                    name.append('/').append(var.getName());
+                    name.append(';').append(var.getName());
                     domain = IrUtil.intersection(domain, var.getDomain());
                 }
 

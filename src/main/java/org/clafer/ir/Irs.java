@@ -2,7 +2,6 @@ package org.clafer.ir;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
-import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import org.clafer.ast.AstUtil;
 import org.clafer.common.Util;
 
 /**
@@ -365,6 +363,9 @@ public class Irs {
     }
 
     public static IrBoolExpr ifOnlyIf(IrBoolExpr left, IrBoolExpr right) {
+        if(left.equals(right)) {
+            return $(True);
+        }
         if (IrUtil.isTrue(left)) {
             return right;
         }
@@ -441,6 +442,9 @@ public class Irs {
         IrDomain rightDomain = right.getDomain();
         switch (op) {
             case Equal:
+                if (left.equals(right)) {
+                    return $(True);
+                }
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return $(constant(leftDomain.getLowBound() == rightDomain.getLowBound()));
                 }
@@ -449,6 +453,9 @@ public class Irs {
                 }
                 break;
             case NotEqual:
+                if (left.equals(right)) {
+                    return $(False);
+                }
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return $(constant(leftDomain.getLowBound() != rightDomain.getLowBound()));
                 }
@@ -457,6 +464,9 @@ public class Irs {
                 }
                 break;
             case LessThan:
+                if (left.equals(right)) {
+                    return $(False);
+                }
                 if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
                     return $(True);
                 }
@@ -468,6 +478,9 @@ public class Irs {
                 }
                 break;
             case LessThanEqual:
+                if (left.equals(right)) {
+                    return $(True);
+                }
                 if (leftDomain.getHighBound() <= rightDomain.getLowBound()) {
                     return $(True);
                 }
@@ -479,6 +492,9 @@ public class Irs {
                 }
                 break;
             case GreaterThan:
+                if (left.equals(right)) {
+                    return $(False);
+                }
                 if (leftDomain.getLowBound() > rightDomain.getHighBound()) {
                     return $(True);
                 }
@@ -490,6 +506,9 @@ public class Irs {
                 }
                 break;
             case GreaterThanEqual:
+                if (left.equals(right)) {
+                    return $(True);
+                }
                 if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
                     return $(True);
                 }

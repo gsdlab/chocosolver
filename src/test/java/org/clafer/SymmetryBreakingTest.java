@@ -8,7 +8,6 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -306,7 +305,7 @@ public class SymmetryBreakingTest {
         AstConcreteClafer b = a.addChild("B").withCard(Optional);
         AstConcreteClafer c = model.addChild("C").refTo(a).withCard(Mandatory);
         AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Mandatory);
-        
+
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(b, 1).defaultScope(3));
         assertEquals(7, solver.allInstances().length);
     }

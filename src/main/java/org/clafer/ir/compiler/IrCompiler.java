@@ -73,6 +73,7 @@ import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
+import org.clafer.ir.Irs;
 import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.Optimizer;
@@ -181,27 +182,8 @@ public class IrCompiler {
             }
             IrDomain env = a.getEnv();
             IrDomain ker = a.getKer();
-            IrDomain card = a.getCard();
-            SetVar set = VF.set(a.getName(), env.getValues(), ker.getValues(), solver);
 
-            if (card.getHighBound() < env.size()) {
-                IntVar setCard = setCardVar.get(set);
-                solver.post(_arithm(setCard, "<=", card.getHighBound()));
-            }
-            if (card.getLowBound() > ker.size()) {
-                IntVar setCard = setCardVar.get(set);
-                solver.post(_arithm(setCard, ">=", card.getLowBound()));
-            }
-
-            return set;
-        }
-    };
-    private final CacheMap<SetVar, IntVar> setCardVar = new CacheMap<SetVar, IntVar>() {
-        @Override
-        protected IntVar cache(SetVar a) {
-            IntVar card = VF.enumerated("|" + a.getName() + "|", a.getKernelSize(), a.getEnvelopeSize(), solver);
-            solver.post(SCF.cardinality(a, card));
-            return card;
+            return VF.set(a.getName(), env.getValues(), ker.getValues(), solver);
         }
     };
 
@@ -272,6 +254,15 @@ public class IrCompiler {
         return constraint;
     }
 
+    private Constraint compileAsConstraint(IrIntExpr expr, IntVar reify) {
+        Object result = expr.accept(intExprCompiler, reify);
+        if (result instanceof IntVar) {
+            // The compliation failed to reify, explicitly reify now.
+            return _arithm(reify, "=", (IntVar) result);
+        }
+        return (Constraint) result;
+    }
+
     private Constraint[] compileAsConstraints(IrBoolExpr[] exprs) {
         Constraint[] constraints = new Constraint[exprs.length];
         for (int i = 0; i < constraints.length; i++) {
@@ -281,7 +272,11 @@ public class IrCompiler {
     }
 
     private IntVar compile(IrIntExpr expr) {
-        return expr.accept(intExprCompiler, null);
+        return (IntVar) expr.accept(intExprCompiler, null);
+    }
+
+    private Object compile(IrIntExpr expr, IntVar reify) {
+        return reify == null ? compile(expr) : compileAsConstraint(expr, reify);
     }
 
     private IntVar[] compile(IrIntExpr[] exprs) {
@@ -369,8 +364,7 @@ public class IrCompiler {
                 return compileAsConstraint(ir.getRight(), left);
             }
             IntVar $left = compileAsIntVar(ir.getLeft());
-            IntVar $right = compileAsIntVar(ir.getRight());
-            return _arithm($left, "=", $right);
+            return compile(Irs.asInt(ir.getRight()), $left);
         }
 
         @Override
@@ -418,6 +412,10 @@ public class IrCompiler {
             if (offset != null) {
                 return _arithm(compile(ir.getLeft()), offset.getFst(),
                         compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
+            }
+            if (IrCompare.Op.Equal.equals(ir.getOp())) {
+                IntVar left = compile(ir.getLeft());
+                return compileAsConstraint(ir.getRight(), left);
             }
             return _arithm(compile(ir.getLeft()), ir.getOp().getSyntax(), compile(ir.getRight()));
         }
@@ -506,14 +504,16 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrBoolCast ir, BoolArg a) {
-            IntVar expr = compile(ir.getExpr());
+            Object expr = compile(ir.getExpr(), a.useReify());
             BoolVar boolExpr;
             if (expr instanceof BoolVar) {
                 boolExpr = (BoolVar) expr;
+            } else if (expr instanceof Constraint) {
+                return expr;
             } else {
                 // TODO: View?
                 boolExpr = numBoolVar("BoolCast");
-                solver.post(_arithm(expr, "=", boolExpr));
+                solver.post(_arithm((IntVar) expr, "=", boolExpr));
             }
             return ir.isFlipped() ? boolExpr.not() : boolExpr;
         }
@@ -592,7 +592,7 @@ public class IrCompiler {
             return _filter_string(compile(ir.getSet()), ir.getOffset(), compile(ir.getString()), compile(ir.getResult()));
         }
     };
-    private final IrIntExprVisitor<Void, IntVar> intExprCompiler = new IrIntExprVisitor<Void, IntVar>() {
+    private final IrIntExprVisitor<IntVar, Object> intExprCompiler = new IrIntExprVisitor<IntVar, Object>() {
         /**
          * TODO: optimize
          *
@@ -603,27 +603,33 @@ public class IrCompiler {
          * Instead pass "5" in the Void param so sum([x,y], 5)
          */
         @Override
-        public IntVar visit(IrIntLiteral ir, Void a) {
+        public IntVar visit(IrIntLiteral ir, IntVar reify) {
             return intVar.get(ir.getVar());
         }
 
         @Override
-        public IntVar visit(IrIntCast ir, Void a) {
+        public IntVar visit(IrIntCast ir, IntVar reify) {
             return compileAsBoolVar(ir.getExpr());
         }
 
         @Override
-        public IntVar visit(IrMinus ir, Void a) {
+        public IntVar visit(IrMinus ir, IntVar reify) {
             return VF.minus(compile(ir.getExpr()));
         }
 
         @Override
-        public IntVar visit(IrCard ir, Void a) {
-            return setCardVar.get(ir.getSet().accept(setExprCompiler, a));
+        public Object visit(IrCard ir, IntVar reify) {
+            IrSetExpr set = ir.getSet();
+            if (reify == null) {
+                IntVar card = intVar("|" + set.toString() + "|", set.getCard());
+                solver.post(SCF.cardinality(compile(set), card));
+                return card;
+            }
+            return SCF.cardinality(compile(set), reify);
         }
 
         @Override
-        public IntVar visit(IrAdd ir, Void a) {
+        public Object visit(IrAdd ir, IntVar reify) {
             int constants = 0;
             Deque<IntVar> filter = new LinkedList<IntVar>();
             for (IrIntExpr addend : ir.getAddends()) {
@@ -644,14 +650,17 @@ public class IrCompiler {
                 case 2:
                     return VF.offset(_sum(addends[0], addends[1]), constants);
                 default:
-                    IntVar sum = numIntVar("Sum", ir.getDomain());
-                    solver.post(_sum(sum, addends));
-                    return VF.offset(sum, constants);
+                    if (reify == null) {
+                        IntVar sum = numIntVar("Sum", ir.getDomain());
+                        solver.post(_sum(sum, addends));
+                        return VF.offset(sum, constants);
+                    }
+                    return _sum(reify, addends);
             }
         }
 
         @Override
-        public IntVar visit(IrSub ir, Void a) {
+        public Object visit(IrSub ir, IntVar reify) {
             int constants = 0;
             IrIntExpr[] operands = ir.getSubtrahends();
             Deque<IntVar> filter = new LinkedList<IntVar>();
@@ -681,14 +690,17 @@ public class IrCompiler {
                     return VF.offset(_sum(subtractends[0],
                             VF.minus(subtractends[1])), -constants);
                 default:
-                    IntVar diff = numIntVar("Diff", ir.getDomain());
-                    solver.post(_difference(diff, subtractends));
-                    return VF.offset(diff, -constants);
+                    if (reify == null) {
+                        IntVar diff = numIntVar("Diff", ir.getDomain());
+                        solver.post(_difference(diff, subtractends));
+                        return VF.offset(diff, -constants);
+                    }
+                    return _difference(reify, subtractends);
             }
         }
 
         @Override
-        public IntVar visit(IrMul ir, Void a) {
+        public Object visit(IrMul ir, IntVar reify) {
             IrIntExpr multiplicand = ir.getMultiplicand();
             IrIntExpr multiplier = ir.getMultiplier();
             Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
@@ -696,9 +708,9 @@ public class IrCompiler {
             if (multiplicandConstant != null) {
                 switch (multiplicandConstant.intValue()) {
                     case 0:
-                        return compile(multiplicand);
+                        return compile(multiplicand, reify);
                     case 1:
-                        return compile(multiplier);
+                        return compile(multiplier, reify);
                     default:
                         if (multiplicandConstant.intValue() >= -1) {
                             return VF.scale(compile(multiplier), multiplicandConstant.intValue());
@@ -708,60 +720,75 @@ public class IrCompiler {
             if (multiplierConstant != null) {
                 switch (multiplierConstant.intValue()) {
                     case 0:
-                        return compile(multiplier);
+                        return compile(multiplier, reify);
                     case 1:
-                        return compile(multiplicand);
+                        return compile(multiplicand, reify);
                     default:
                         if (multiplierConstant.intValue() >= -1) {
                             return VF.scale(compile(multiplicand), multiplierConstant.intValue());
                         }
                 }
             }
-            IntVar product = numIntVar("Mul", ir.getDomain());
-            solver.post(_times(compile(multiplicand), compile(multiplier), product));
-            return product;
+            if (reify == null) {
+                IntVar product = numIntVar("Mul", ir.getDomain());
+                solver.post(_times(compile(multiplicand), compile(multiplier), product));
+                return product;
+            }
+            return _times(compile(multiplicand), compile(multiplier), reify);
         }
 
         @Override
-        public IntVar visit(IrDiv ir, Void a) {
+        public Object visit(IrDiv ir, IntVar reify) {
             IrIntExpr dividend = ir.getDividend();
             IrIntExpr divisor = ir.getDivisor();
-            IntVar quotient = numIntVar("Div", ir.getDomain());
-            solver.post(_div(compile(dividend), compile(divisor), quotient));
-            return quotient;
+            if (reify == null) {
+                IntVar quotient = numIntVar("Div", ir.getDomain());
+                solver.post(_div(compile(dividend), compile(divisor), quotient));
+                return quotient;
+            }
+            return _div(compile(dividend), compile(divisor), reify);
         }
 
         @Override
-        public IntVar visit(IrElement ir, Void a) {
-            IntVar element = numIntVar("Element", ir.getDomain());
-            solver.post(_element(compile(ir.getIndex()), compile(ir.getArray()), element));
-            return element;
+        public Object visit(IrElement ir, IntVar reify) {
+            if (reify == null) {
+                IntVar element = numIntVar("Element", ir.getDomain());
+                solver.post(_element(compile(ir.getIndex()), compile(ir.getArray()), element));
+                return element;
+            }
+            return _element(compile(ir.getIndex()), compile(ir.getArray()), reify);
         }
 
         @Override
-        public IntVar visit(IrFind ir, Void a) {
+        public IntVar visit(IrFind ir, IntVar reify) {
             IntVar count = numIntVar("Find", ir.getDomain());
             solver.post(_find(ir.getValue(), compile(ir.getArray()), count));
             return count;
         }
 
         @Override
-        public IntVar visit(IrCount ir, Void a) {
-            IntVar count = numIntVar("Count", ir.getDomain());
-            solver.post(_count(ir.getValue(), compile(ir.getArray()), count));
-            return count;
+        public Object visit(IrCount ir, IntVar reify) {
+            if (reify == null) {
+                IntVar count = numIntVar("Count", ir.getDomain());
+                solver.post(_count(ir.getValue(), compile(ir.getArray()), count));
+                return count;
+            }
+            return _count(ir.getValue(), compile(ir.getArray()), reify);
         }
 
         @Override
-        public IntVar visit(IrSetSum ir, Void a) {
-            IntVar sum = intVar("SetSum", ir.getDomain());
+        public Object visit(IrSetSum ir, IntVar reify) {
             int n = ir.getSet().getCard().getHighBound();
-            solver.post(Constraints.setSumN(compile(ir.getSet()), sum, n));
-            return sum;
+            if (reify == null) {
+                IntVar sum = intVar("SetSum", ir.getDomain());
+                solver.post(Constraints.setSumN(compile(ir.getSet()), sum, n));
+                return sum;
+            }
+            return Constraints.setSumN(compile(ir.getSet()), reify, n);
         }
 
         @Override
-        public IntVar visit(IrTernary ir, Void a) {
+        public IntVar visit(IrTernary ir, IntVar reify) {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar ternary = numIntVar("Ternary", ir.getDomain());
             solver.post(_ifThenElse(antecedent,
@@ -778,10 +805,9 @@ public class IrCompiler {
 
         @Override
         public SetVar visit(IrSingleton ir, Void a) {
-            IrIntExpr value = ir.getValue();
-            IntVar $value = value.accept(intExprCompiler, a);
+            IntVar value = compile(ir.getValue());
             SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
-            solver.post(Constraints.singleton($value, singleton));
+            solver.post(Constraints.singleton(value, singleton));
             return singleton;
         }
 
