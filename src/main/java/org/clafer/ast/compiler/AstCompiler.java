@@ -247,7 +247,7 @@ public class AstCompiler {
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
                     IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
-                    module.addConstraint(implies($(soft), implies(memberships.get(clafer)[j], thisConstraint)));
+                    module.addConstraint(ifOnlyIf($(soft), implies(memberships.get(clafer)[j], thisConstraint)));
                 }
             }
         }
@@ -313,7 +313,6 @@ public class AstCompiler {
         weights.put(clafer, weight);
         indices.put(clafer, index);
     }
-    static int uuu = 0;
 
     private void constrainConcrete(AstConcreteClafer clafer) {
         IrSetExpr[] childSet = $(siblingSets.get(clafer));

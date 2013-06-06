@@ -2,7 +2,6 @@ package org.clafer.ast.compiler;
 
 import org.clafer.common.Check;
 import org.clafer.ast.analysis.Analysis;
-import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstException;

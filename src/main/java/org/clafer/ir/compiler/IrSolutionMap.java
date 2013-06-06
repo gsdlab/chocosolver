@@ -2,6 +2,7 @@ package org.clafer.ir.compiler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import org.clafer.collection.ReadMap;
 import org.clafer.ir.IrBoolConstant;
@@ -25,11 +26,16 @@ import solver.variables.SetVar;
 public class IrSolutionMap {
 
     private final ReadMap<IrBoolVar, BoolVar> boolVars;
+    private final Map<IrIntVar, IrIntVar> coalescedIntVars;
     private final ReadMap<IrIntVar, IntVar> intVars;
     private final ReadMap<IrSetVar, SetVar> setVars;
 
-    IrSolutionMap(ReadMap<IrBoolVar, BoolVar> boolVars, ReadMap<IrIntVar, IntVar> intVars, ReadMap<IrSetVar, SetVar> setVars) {
+    IrSolutionMap(ReadMap<IrBoolVar, BoolVar> boolVars,
+            Map<IrIntVar, IrIntVar> coalescedIntVars,
+            ReadMap<IrIntVar, IntVar> intVars,
+            ReadMap<IrSetVar, SetVar> setVars) {
         this.boolVars = boolVars.readOnly();
+        this.coalescedIntVars = coalescedIntVars;
         this.intVars = intVars.readOnly();
         this.setVars = setVars.readOnly();
     }
@@ -76,7 +82,11 @@ public class IrSolutionMap {
     }
 
     public IntVar getIntVar(IrIntVar var) {
-        return IrUtil.notNull("Int var " + var + " not par of IR solution", intVars.get(var));
+        IrIntVar intVar = coalescedIntVars.get(var);
+        if (intVar == null) {
+            intVar = var;
+        }
+        return IrUtil.notNull("Int var " + var + " not par of IR solution", intVars.get(intVar));
     }
 
     public int getIntValue(IrIntVar var) {

@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import java.util.ArrayList;
+import java.util.List;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -9,6 +11,14 @@ import static org.clafer.ir.Irs.*;
  */
 public abstract class IrRewriter<T>
         implements IrBoolExprVisitor<T, IrBoolExpr>, IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
+
+    public IrModule rewrite(IrModule module, T t) {
+        List<IrBoolExpr> rewrittenConstraints = new ArrayList<IrBoolExpr>(module.getConstraints().size());
+        for (IrBoolExpr constaint : module.getConstraints()) {
+            rewrittenConstraints.add(rewrite(constaint, t));
+        }
+        return module.withConstraints(rewrittenConstraints);
+    }
 
     public IrBoolExpr rewrite(IrBoolExpr expr, T t) {
         return expr.accept(this, t);
@@ -116,7 +126,7 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrBoolExpr visit(IrCompare ir, T a) {
-        return compare(rewrite(ir.getLeft(), a), ir.getOp(), ir.getRight());
+        return compare(rewrite(ir.getLeft(), a), ir.getOp(), rewrite(ir.getRight(), a));
     }
 
     @Override

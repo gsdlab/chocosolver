@@ -24,7 +24,7 @@ public class QuantifierTest {
      * Backup : Feature 2..3
      * Firewall : Feature ?
      * Guard : Feature ?
-     * [all a : Backup ++ Firewall | a.Cost.ref = 2]
+     * [all a : Backup ++ Firewall | a.Cost.ref = 1]
      * </pre>
      */
     @Test

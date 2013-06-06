@@ -62,6 +62,10 @@ public class IrModule {
     public IrIntVar[] getIntVars() {
         return intVars.toArray(new IrIntVar[intVars.size()]);
     }
+    public void setIntVars(IrIntVar[] vars) {
+        intVars.clear();
+        intVars.addAll(Arrays.asList(vars));
+    }
 
     public void addSetVar(IrSetVar var) {
         setVars.add(Check.notNull(var));

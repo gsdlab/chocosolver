@@ -18,6 +18,7 @@ import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Map;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
@@ -27,6 +28,7 @@ import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.common.Check;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolChannel;
@@ -72,6 +74,7 @@ import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.analysis.Canonicalizer;
+import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.ICF;
@@ -104,6 +107,8 @@ public class IrCompiler {
 
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
+        Pair<Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
+        optModule = coalescePair.getSnd();
         for (IrBoolVar var : optModule.getBoolVars()) {
             boolVar.get(var);
         }
@@ -116,7 +121,7 @@ public class IrCompiler {
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             solver.post(compileAsConstraint(constraint));
         }
-        return new IrSolutionMap(boolVar, intVar, setVar);
+        return new IrSolutionMap(boolVar, coalescePair.getFst(), intVar, setVar);
     }
 
     private BoolVar numBoolVar(String name) {
