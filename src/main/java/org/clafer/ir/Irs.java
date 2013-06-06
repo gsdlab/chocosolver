@@ -2,6 +2,7 @@ package org.clafer.ir;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
@@ -1125,6 +1126,16 @@ public class Irs {
                         new IrCount(value, filter.toArray(new IrIntExpr[filter.size()]), boundDomain(0, filter.size())),
                         count);
         }
+    }
+
+    public static IrIntExpr find(int value, IrIntExpr[] array) {
+//        TIntArrayList domain = new TIntArrayList();
+//        for (int i = 0; i < array.length; i++) {
+//            if (array[i].getDomain().contains(value)) {
+//                domain.add(i);
+//            }
+//        }
+        return new IrFind(value, array, boundDomain(0, array.length - 1));
     }
 
     public static IrIntExpr sum(IrSetExpr set) {

@@ -39,6 +39,7 @@ public class Analysis {
     private Map<AstRef, int[][]> partialIntsMap;
     private Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap;
     private Map<AstRef, int[]> breakableRefsMap;
+    private Map<AstClafer, AstRef[]> breakableTargetsMap;
     private Map<AstExpr, AstClafer> typeMap;
 
     Analysis(AstModel model, Scope scope) {
@@ -55,7 +56,7 @@ public class Analysis {
             List<AstClafer> clafers,
             List<AstAbstractClafer> abstractClafers,
             List<AstConcreteClafer> concreteClafers) {
-        this(model, scope, AstUtil.getClafers(model), abstractClafers, concreteClafers, AstUtil.getNestedConstraints(model), buildCardMap(clafers), null, null, null, null, null, null, null, null, null);
+        this(model, scope, AstUtil.getClafers(model), abstractClafers, concreteClafers, AstUtil.getNestedConstraints(model), buildCardMap(clafers), null, null, null, null, null, null, null, null, null, null);
     }
 
     Analysis(AstModel model, Scope scope,
@@ -72,6 +73,7 @@ public class Analysis {
             Map<AstRef, int[][]> partialIntsMap,
             Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap,
             Map<AstRef, int[]> breakableRefsMap,
+            Map<AstClafer, AstRef[]> breakableTargetsMap,
             Map<AstExpr, AstClafer> typeMap) {
         this.model = model;
         this.scope = scope;
@@ -88,6 +90,7 @@ public class Analysis {
         this.partialIntsMap = partialIntsMap;
         this.breakableChildrenMap = breakableChildrenMap;
         this.breakableRefsMap = breakableRefsMap;
+        this.breakableTargetsMap = breakableTargetsMap;
         this.typeMap = typeMap;
     }
 
@@ -391,6 +394,15 @@ public class Analysis {
         return Util.in(id, breakbleIDs);
     }
 
+    public Map<AstRef, int[]> getBreakableRefsMap() {
+        return notNull("Breakable ref", breakableRefsMap);
+    }
+
+    public Analysis setBreakableRefsMap(Map<AstRef, int[]> breakableRefs) {
+        this.breakableRefsMap = breakableRefs;
+        return this;
+    }
+
     public boolean isInheritedBreakableTarget(AstClafer clafer) {
         AstClafer sup = clafer;
         do {
@@ -403,30 +415,20 @@ public class Analysis {
     }
 
     public boolean isBreakableTarget(AstClafer clafer) {
-        for (AstRef ref : getBreakableRefsMap().keySet()) {
-            if (ref.getTargetType().equals(clafer)) {
-                return true;
-            }
-        }
-        return false;
+        return getBreakableTargetsMap().containsKey(clafer);
     }
 
-    public List<AstRef> getBreakableTarget(AstClafer clafer) {
-        List<AstRef> refs = new ArrayList<AstRef>();
-        for (AstRef ref : getBreakableRefsMap().keySet()) {
-            if (ref.getTargetType().equals(clafer)) {
-                refs.add(ref);
-            }
-        }
-        return refs;
+    public AstRef[] getBreakableTarget(AstClafer clafer) {
+        AstRef[] ref = getBreakableTargetsMap().get(clafer);
+        return ref == null ? new AstRef[0] : ref;
     }
 
-    public Map<AstRef, int[]> getBreakableRefsMap() {
-        return notNull("Breakable ref", breakableRefsMap);
+    public Map<AstClafer, AstRef[]> getBreakableTargetsMap() {
+        return notNull("Breakable target", breakableTargetsMap);
     }
 
-    public Analysis setBreakableRefsMap(Map<AstRef, int[]> breakableRefs) {
-        this.breakableRefsMap = breakableRefs;
+    public Analysis setBreakableTargetsMap(Map<AstClafer, AstRef[]> breakableTargetsMap) {
+        this.breakableTargetsMap = breakableTargetsMap;
         return this;
     }
 

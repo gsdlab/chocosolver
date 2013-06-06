@@ -3,17 +3,19 @@ package org.clafer.ast.analysis;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
 import org.clafer.collection.Pair;
+import org.clafer.common.Util;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
-import solver.constraints.ICF;
 
 /**
  * This analyzer determines where symmetry is and is not possible.
@@ -24,23 +26,22 @@ public class SymmetryAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        return analysis.setBreakableChildrenMap(breakableChildren(
-                analysis.setBreakableRefsMap(breakableRefs(analysis))));
+        return breakableChildren(breakableRefs(analysis));
     }
 
     /**
      * Find which children need breaking.
      *
      * @param analysis the analysis
-     * @return
+     * @return the analysis
      */
-    private Map<AstClafer, AstConcreteClafer[]> breakableChildren(Analysis analysis) {
+    private Analysis breakableChildren(Analysis analysis) {
         Map<AstClafer, AstConcreteClafer[]> breakableChildren = new HashMap<AstClafer, AstConcreteClafer[]>();
         for (AstAbstractClafer clafer : analysis.getAbstractClafers()) {
             breakableChildren(clafer, breakableChildren, analysis);
         }
         breakableChildren(analysis.getModel(), breakableChildren, analysis);
-        return breakableChildren;
+        return analysis.setBreakableChildrenMap(breakableChildren);
     }
 
     private boolean breakableChildren(AstClafer clafer, Map<AstClafer, AstConcreteClafer[]> breakableChildren, Analysis analysis) {
@@ -78,9 +79,9 @@ public class SymmetryAnalyzer implements Analyzer {
      * </pre>
      *
      * @param analysis the analysis
-     * @return the map of references to the breakable ids
+     * @return the analysis
      */
-    private Map<AstRef, int[]> breakableRefs(Analysis analysis) {
+    private Analysis breakableRefs(Analysis analysis) {
         // Use this graph to detect when symmetries cannot be broken.
         KeyGraph<AstClafer> graph = new KeyGraph<AstClafer>();
         for (AstClafer clafer : analysis.getClafers()) {
@@ -101,7 +102,8 @@ public class SymmetryAnalyzer implements Analyzer {
             }
         }
 
-        Map<AstRef, int[]> breakableRefs = new HashMap<AstRef, int[]>();
+        Map<AstRef, int[]> breakableRefsMap = new HashMap<AstRef, int[]>();
+        Map<AstClafer, AstRef[]> breakableTargetsMap = new HashMap<AstClafer, AstRef[]>();
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer.hasRef()) {
                 if (!GraphUtil.hasPath(
@@ -140,12 +142,26 @@ public class SymmetryAnalyzer implements Analyzer {
                         }
                     }
                     if (!breakableIds.isEmpty()) {
-                        breakableRefs.put(clafer.getRef(), breakableIds.toArray());
+                        breakableRefsMap.put(clafer.getRef(), breakableIds.toArray());
                     }
+                    AstRef[] breakableTarget = breakableTargetsMap.get(clafer.getRef().getTargetType());
+                    if (breakableTarget == null) {
+                        breakableTarget = new AstRef[]{clafer.getRef()};
+                    } else {
+                        breakableTarget = Util.cons(clafer.getRef(), breakableTarget);
+                    }
+                    breakableTargetsMap.put(clafer.getRef().getTargetType(), breakableTarget);
                 }
             }
         }
-        return breakableRefs;
+        Iterator<Entry<AstClafer, AstRef[]>> iter = breakableTargetsMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            Entry<AstClafer, AstRef[]> entry = iter.next();
+            if (singleSourceScope(entry.getValue(), analysis)) {
+                iter.remove();
+            }
+        }
+        return analysis.setBreakableRefsMap(breakableRefsMap).setBreakableTargetsMap(breakableTargetsMap);
     }
 
     private void addDependency(KeyGraph<AstClafer> graph, AstClafer from, AstClafer to, Analysis analysis) {
@@ -158,6 +174,17 @@ public class SymmetryAnalyzer implements Analyzer {
         for (int id : possibleIds) {
             Pair<AstConcreteClafer, Integer> concreteId = analysis.getConcreteId(parentType, id);
             if (analysis.getScope(concreteId.getFst()) > 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean singleSourceScope(AstRef[] refs, Analysis analysis) {
+        int scope = 0;
+        for (AstRef ref : refs) {
+            scope += analysis.getScope(ref.getSourceType());
+            if (scope > 1) {
                 return false;
             }
         }

@@ -238,6 +238,11 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrFind ir, T a) {
+        return find(ir.getValue(), rewrite(ir.getArray(), a));
+    }
+
+    @Override
     public IrIntExpr visit(IrSetSum ir, T a) {
         return sum(rewrite(ir.getSet(), a));
     }

@@ -262,6 +262,52 @@ public class SymmetryBreakingTest {
         AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-        assertEquals(3, solver.allInstances().length);
+        assertEquals(10, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     * a : A 4
+     * b -> A
+     * c -> A
+     * d -> a
+     * e -> a
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void breakNonIsomorphicSourceIsomorphicTarget() {
+        AstModel model = newModel();
+
+        AstAbstractClafer A = model.addAbstractClafer("A");
+        AstConcreteClafer a = model.addChild("1").extending(A).withCard(4, 4);
+        AstConcreteClafer b = model.addChild("b").refTo(A).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("c").refTo(A).withCard(Mandatory);
+        AstConcreteClafer d = model.addChild("d").refTo(a).withCard(Mandatory);
+        AstConcreteClafer e = model.addChild("e").refTo(a).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+        assertEquals(15, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 3
+     *     B ?
+     * C -> A
+     * D -> A
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void breakTargetRefWithChildren() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(3, 3);
+        AstConcreteClafer b = a.addChild("B").withCard(Optional);
+        AstConcreteClafer c = model.addChild("C").refTo(a).withCard(Mandatory);
+        AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Mandatory);
+        
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(b, 1).defaultScope(3));
+        assertEquals(7, solver.allInstances().length);
     }
 }

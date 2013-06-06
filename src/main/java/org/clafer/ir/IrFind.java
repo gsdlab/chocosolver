@@ -7,16 +7,16 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrCount extends IrAbstractInt implements IrIntExpr {
+public class IrFind extends IrAbstractInt implements IrIntExpr {
 
     private final int value;
     private final IrIntExpr[] array;
 
-    public IrCount(int value, IrIntExpr[] array, IrDomain domain) {
+    public IrFind(int value, IrIntExpr[] array, IrDomain domain) {
         super(domain);
         this.array = Check.noNullsNotEmpty(array);
         this.value = Check.notNull(value);
-}
+    }
 
     public int getValue() {
         return value;
@@ -33,8 +33,8 @@ public class IrCount extends IrAbstractInt implements IrIntExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrCount) {
-            IrCount other = (IrCount) obj;
+        if (obj instanceof IrFind) {
+            IrFind other = (IrFind) obj;
             return value == other.value && Arrays.equals(array, other.array)
                     && super.equals(other);
         }
@@ -48,6 +48,6 @@ public class IrCount extends IrAbstractInt implements IrIntExpr {
 
     @Override
     public String toString() {
-        return "count(" + value + " in " + Arrays.toString(array) + ")";
+        return "find(" + value + ", " + Arrays.toString(array) + ")";
     }
 }

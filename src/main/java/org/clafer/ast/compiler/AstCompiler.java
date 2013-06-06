@@ -313,6 +313,7 @@ public class AstCompiler {
         weights.put(clafer, weight);
         indices.put(clafer, index);
     }
+    static int uuu = 0;
 
     private void constrainConcrete(AstConcreteClafer clafer) {
         IrSetExpr[] childSet = $(siblingSets.get(clafer));
@@ -395,7 +396,7 @@ public class AstCompiler {
                     });
                 }
                 if (analysis.isInheritedBreakableTarget(clafer)) {
-                    for(Pair<AstClafer ,Integer> hierarchy : analysis.getHierarcyIds(clafer, i)) {
+                    for (Pair<AstClafer, Integer> hierarchy : analysis.getHierarcyIds(clafer, i)) {
                         for (AstRef sourceRef : analysis.getBreakableTarget(hierarchy.getFst())) {
                             IrIntVar[] sourceRefs = refPointers.get(sourceRef);
                             IrBoolExpr[] sourceMembers = memberships.get(sourceRef.getSourceType());

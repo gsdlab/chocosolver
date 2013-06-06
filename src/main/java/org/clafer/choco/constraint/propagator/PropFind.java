@@ -51,11 +51,7 @@ public class PropFind extends Propagator<IntVar> {
         if (isIndexVar(vIdx)) {
             return EventType.INSTANTIATE.mask + EventType.INCLOW.mask;
         }
-        assert isArrayVar(vIdx);
-        if (index.contains(getArrayVarIndex(vIdx))) {
-            return EventType.INT_ALL_MASK();
-        }
-        return EventType.VOID.mask;
+        return EventType.INT_ALL_MASK();
     }
 
     @Override
@@ -70,7 +66,10 @@ public class PropFind extends Propagator<IntVar> {
         for (int i = 0; i < lb; i++) {
             array[i].removeValue(value, aCause);
         }
-        if (index.instantiated()) {
+        if (array[lb].instantiatedTo(value)) {
+            index.instantiateTo(lb, aCause);
+            setPassive();
+        } else if (index.instantiated()) {
             array[index.getValue()].instantiateTo(value, aCause);
             setPassive();
         }
@@ -88,7 +87,10 @@ public class PropFind extends Propagator<IntVar> {
         for (int i = 0; i < lb; i++) {
             array[i].removeValue(value, aCause);
         }
-        if (index.instantiated()) {
+        if (array[lb].instantiatedTo(value)) {
+            index.instantiateTo(lb, aCause);
+            setPassive();
+        } else if (index.instantiated()) {
             array[index.getValue()].instantiateTo(value, aCause);
             setPassive();
         }
