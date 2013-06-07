@@ -2,8 +2,8 @@ package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
 import solver.Solver;
-import solver.constraints.propagators.Propagator;
-import solver.constraints.propagators.PropagatorPriority;
+import solver.constraints.Propagator;
+import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.IntVar;

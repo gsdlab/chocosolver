@@ -1,8 +1,8 @@
 package org.clafer.choco.constraint.propagator;
 
 import org.clafer.common.Util;
-import solver.constraints.propagators.Propagator;
-import solver.constraints.propagators.PropagatorPriority;
+import solver.constraints.Propagator;
+import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;

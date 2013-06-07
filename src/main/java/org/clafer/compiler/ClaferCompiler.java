@@ -17,7 +17,7 @@ import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
 import solver.constraints.ICF;
-import solver.constraints.nary.Sum;
+import solver.constraints.nary.sum.Sum;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
