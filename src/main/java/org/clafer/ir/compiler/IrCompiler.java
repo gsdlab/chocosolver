@@ -780,7 +780,7 @@ public class IrCompiler {
         public Object visit(IrSetSum ir, IntVar reify) {
             int n = ir.getSet().getCard().getHighBound();
             if (reify == null) {
-                IntVar sum = intVar("SetSum", ir.getDomain());
+                IntVar sum = numIntVar("SetSum", ir.getDomain());
                 solver.post(Constraints.setSumN(compile(ir.getSet()), sum, n));
                 return sum;
             }
