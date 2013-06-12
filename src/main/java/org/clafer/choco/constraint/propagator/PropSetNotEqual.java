@@ -131,7 +131,7 @@ public class PropSetNotEqual extends Propagator<SetVar> {
         if (!PropUtil.isKerSubsetEnv(s1, s2) || !PropUtil.isKerSubsetEnv(s2, s1)) {
             return ESat.TRUE;
         }
-        return s1.instantiated() && s2.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return s1.instantiated() && s2.instantiated() ? ESat.FALSE : ESat.UNDEFINED;
     }
 
     @Override

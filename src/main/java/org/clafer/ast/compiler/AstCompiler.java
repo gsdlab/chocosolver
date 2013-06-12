@@ -83,8 +83,6 @@ import static org.clafer.ir.Irs.*;
 /**
  * Compile from AST to IR.
  *
- * TODO: rename childset to sibling set
- *
  * @author jimmy
  */
 public class AstCompiler {
@@ -191,39 +189,24 @@ public class AstCompiler {
 
         List<AstClafer> clafers = initOrder();
         for (AstClafer clafer : clafers) {
-            if (AstUtil.isRoot(clafer)) {
-                continue;
-            }
-            if (clafer instanceof AstConcreteClafer) {
+            if (clafer instanceof AstConcreteClafer && !AstUtil.isRoot((AstConcreteClafer) clafer)) {
                 initConcrete((AstConcreteClafer) clafer);
             } else if (clafer instanceof AstAbstractClafer) {
                 initAbstract((AstAbstractClafer) clafer);
-            } else {
-                throw new AstException();
             }
         }
         for (AstClafer clafer : initWeightOrder()) {
-            if (AstUtil.isRoot(clafer)) {
-                continue;
-            }
-            if (clafer instanceof AstConcreteClafer) {
+            if (clafer instanceof AstConcreteClafer && !AstUtil.isRoot((AstConcreteClafer) clafer)) {
                 initConcreteWeight((AstConcreteClafer) clafer);
             } else if (clafer instanceof AstAbstractClafer) {
                 initAbstractWeight((AstAbstractClafer) clafer);
-            } else {
-                throw new AstException();
             }
         }
         for (AstClafer clafer : clafers) {
-            if (AstUtil.isRoot(clafer)) {
-                continue;
-            }
-            if (clafer instanceof AstConcreteClafer) {
+            if (clafer instanceof AstConcreteClafer && !AstUtil.isRoot((AstConcreteClafer) clafer)) {
                 constrainConcrete((AstConcreteClafer) clafer);
             } else if (clafer instanceof AstAbstractClafer) {
                 constrainAbstract((AstAbstractClafer) clafer);
-            } else {
-                throw new AstException();
             }
             constrainGroupCardinality(clafer);
         }

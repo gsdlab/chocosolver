@@ -20,18 +20,18 @@ import org.clafer.ir.IrSetVar;
 public class AstSolutionMap {
 
     private final AstModel model;
-    private final ReadMap<AstClafer, IrSetVar[]> childrenVars;
+    private final ReadMap<AstClafer, IrSetVar[]> siblingVars;
     private final ReadMap<AstRef, IrIntVar[]> refVars;
     private final Pair<AstConstraint, IrBoolVar>[] softVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
-            ReadMap<AstClafer, IrSetVar[]> childrenVars,
+            ReadMap<AstClafer, IrSetVar[]> sibling,
             ReadMap<AstRef, IrIntVar[]> refVars,
             Pair<AstConstraint, IrBoolVar>[] softVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
-        this.childrenVars = childrenVars.readOnly();
+        this.siblingVars = sibling.readOnly();
         this.refVars = refVars.readOnly();
         this.softVars = Check.noNulls(softVars);
         this.analysis = analysis;
@@ -45,8 +45,8 @@ public class AstSolutionMap {
         return analysis;
     }
 
-    public IrSetVar[] getChildrenVars(AstClafer clafer) {
-        return notNull(clafer + " not part of the AST solution", childrenVars.get(clafer));
+    public IrSetVar[] getSiblingVars(AstClafer clafer) {
+        return notNull(clafer + " not part of the AST solution", siblingVars.get(clafer));
     }
 
     public IrIntVar[] getRefVars(AstRef ref) {

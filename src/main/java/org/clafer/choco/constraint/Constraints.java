@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint;
 
+import java.util.Collection;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropJoinRelation;
 import org.clafer.choco.constraint.propagator.PropJoinFunction;
@@ -19,6 +20,7 @@ import org.clafer.choco.constraint.propagator.PropReifyNotEqualXC;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqual;
+import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
 import org.clafer.choco.constraint.propagator.PropSetSumN;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.common.Util;
@@ -69,14 +71,23 @@ public class Constraints {
     }
 
     public static Constraint equal(SetVar s1, SetVar s2) {
-        Constraint constraint = new Constraint(new SetVar[]{s1, s2}, s1.getSolver());
+        Constraint<SetVar, PropSetEqual> constraint =
+                new Constraint<SetVar, PropSetEqual>(new SetVar[]{s1, s2}, s1.getSolver());
         constraint.setPropagators(new PropSetEqual(s1, s2));
         return constraint;
     }
 
     public static Constraint notEqual(SetVar s1, SetVar s2) {
-        Constraint constraint = new Constraint(new SetVar[]{s1, s2}, s1.getSolver());
+        Constraint<SetVar, PropSetNotEqual> constraint =
+                new Constraint<SetVar, PropSetNotEqual>(new SetVar[]{s1, s2}, s1.getSolver());
         constraint.setPropagators(new PropSetNotEqual(s1, s2));
+        return constraint;
+    }
+
+    public static Constraint notEqual(SetVar s, int[] c) {
+        Constraint<SetVar, PropSetNotEqualC> constraint =
+                new Constraint<SetVar, PropSetNotEqualC>(new SetVar[]{s}, s.getSolver());
+        constraint.setPropagators(new PropSetNotEqualC(s, c));
         return constraint;
     }
 
@@ -178,6 +189,14 @@ public class Constraints {
         Constraint<BoolVar, PropOr> constraint = new Constraint<BoolVar, PropOr>(vars, vars[0].getSolver());
         constraint.setPropagators(new PropOr(vars));
         return constraint;
+    }
+
+    public static Constraint or(Collection<Constraint> constraints) {
+        return or(constraints.toArray(new Constraint[constraints.size()]));
+    }
+
+    public static Constraint or(Constraint... constraints) {
+        return new OrConstraint(constraints);
     }
 
     public static Constraint difference(SetVar minuend, SetVar subtrahend, SetVar difference) {

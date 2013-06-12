@@ -6,8 +6,6 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstPrimClafer;
-import org.clafer.ast.AstRef;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.collection.Pair;
 import org.clafer.instance.InstanceClafer;
@@ -16,7 +14,6 @@ import org.clafer.instance.InstanceRef;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.compiler.IrSolutionMap;
-import solver.variables.IntVar;
 
 /**
  *
@@ -36,7 +33,7 @@ public class ClaferSolutionMap {
         List<InstanceClafer> topInstances = new ArrayList<InstanceClafer>();
         for (AstConcreteClafer child : astSolution.getModel().getChildren()) {
             // [0] because top clafers only have exactly one children set
-            IrSetVar topSetIrVar = astSolution.getChildrenVars(child)[0];
+            IrSetVar topSetIrVar = astSolution.getSiblingVars(child)[0];
             int[] topIds = irSolution.getSetValue(topSetIrVar);
             for (int topId : topIds) {
                 topInstances.add(getInstanceClafer(child, topId));
@@ -53,7 +50,7 @@ public class ClaferSolutionMap {
 
     private InstanceRef getInstanceClafer(AstClafer clafer, int id, List<InstanceClafer> children) {
         for (AstConcreteClafer child : clafer.getChildren()) {
-            IrSetVar childSetIrVar = astSolution.getChildrenVars(child)[id];
+            IrSetVar childSetIrVar = astSolution.getSiblingVars(child)[id];
             int[] childIds = irSolution.getSetValue(childSetIrVar);
             for (int childId : childIds) {
                 children.add(getInstanceClafer(child, childId));

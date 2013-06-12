@@ -31,6 +31,10 @@ public class ClaferSolver {
         return solver;
     }
 
+    public ClaferSolutionMap getSolutionMap() {
+        return solutionMap;
+    }
+
     public boolean find() {
         if (!more) {
             return false;

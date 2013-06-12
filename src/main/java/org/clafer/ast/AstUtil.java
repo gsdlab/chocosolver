@@ -66,7 +66,7 @@ public class AstUtil {
      * @return {@code true} if and only if the Clafer is the root, {@code false}
      * otherwise
      */
-    public static boolean isRoot(AstClafer clafer) {
+    public static boolean isRoot(AstConcreteClafer clafer) {
         return clafer instanceof AstModel;
     }
 
@@ -77,7 +77,7 @@ public class AstUtil {
      * @return {@code true} if and only if the Clafer is the type root,
      * {@code false} otherwise
      */
-    public static boolean isTypeRoot(AstClafer clafer) {
+    public static boolean isTypeRoot(AstAbstractClafer clafer) {
         return clafer instanceof AstAbstractClafer && !clafer.hasSuperClafer();
     }
 
@@ -91,7 +91,8 @@ public class AstUtil {
     public static boolean isTop(AstClafer clafer) {
         if (clafer instanceof AstConcreteClafer) {
             AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-            return isRoot(concrete.getParent());
+            return concrete.getParent() instanceof AstConcreteClafer
+                    && isRoot((AstConcreteClafer) concrete.getParent());
         }
         return clafer instanceof AstAbstractClafer;
     }
@@ -108,7 +109,8 @@ public class AstUtil {
             if (!concrete.hasParent()) {
                 throw new IllegalArgumentException("Root does not have a non-root parent.");
             }
-            if (!isRoot(concrete.getParent())) {
+            if (!(concrete.getParent() instanceof AstConcreteClafer
+                    && isRoot((AstConcreteClafer) concrete.getParent()))) {
                 return getTopParent(concrete.getParent());
             }
         }
