@@ -1,6 +1,5 @@
 package org.clafer.ir.compiler;
 
-import org.clafer.collection.CacheMap;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolCast;
@@ -17,6 +16,7 @@ import org.clafer.ir.IrOr;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import org.clafer.ir.IrNot;
@@ -32,6 +32,7 @@ import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolChannel;
+import org.clafer.ir.IrBoolDomain;
 import org.clafer.ir.IrIntChannel;
 import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrJoinFunction;
@@ -111,13 +112,13 @@ public class IrCompiler {
         Pair<Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
         optModule = coalescePair.getSnd();
         for (IrBoolVar var : optModule.getBoolVars()) {
-            boolVar.get(var);
+            getBoolVar(var);
         }
         for (IrIntVar var : optModule.getIntVars()) {
-            intVar.get(var);
+            getIntVar(var);
         }
         for (IrSetVar var : optModule.getSetVars()) {
-            setVar.get(var);
+            getSetVar(var);
         }
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             solver.post(compileAsConstraint(constraint));
@@ -125,11 +126,29 @@ public class IrCompiler {
         return new IrSolutionMap(boolVar, coalescePair.getFst(), intVar, setVar);
     }
 
-    private BoolVar numBoolVar(String name) {
-        return VF.bool(name + "#" + varNum++, solver);
+    private BoolVar boolVar(String name, IrBoolDomain domain) {
+        switch (domain) {
+            case TrueDomain:
+                return VF.one(solver);
+            case FalseDomain:
+                return VF.zero(solver);
+            default:
+                return VF.bool(name, solver);
+        }
     }
 
     private IntVar intVar(String name, IrDomain domain) {
+        if (domain.size() == 1) {
+            int constant = domain.getLowBound();
+            switch (domain.getLowBound()) {
+                case 0:
+                    return VF.zero(solver);
+                case 1:
+                    return VF.one(solver);
+                default:
+                    return VF.fixed(constant, solver);
+            }
+        }
         if (domain.getLowBound() == 0 && domain.getHighBound() == 1) {
             return VF.bool(name, solver);
         }
@@ -139,53 +158,56 @@ public class IrCompiler {
         return VF.enumerated(name, domain.getValues(), solver);
     }
 
+    private SetVar setVar(String name, IrDomain env, IrDomain ker) {
+        assert IrUtil.isSubsetOf(ker, env);
+        if (env.size() == ker.size()) {
+            int[] values = ker.getValues();
+            return VF.set(name, values, values, solver);
+        }
+        return VF.set(name, env.getValues(), ker.getValues(), solver);
+    }
+
+    private BoolVar numBoolVar(String name) {
+        return VF.bool(name + "#" + varNum++, solver);
+    }
+
     private IntVar numIntVar(String name, IrDomain domain) {
         return intVar(name + "#" + varNum++, domain);
     }
 
     private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
-        return VF.set(name + "#" + varNum++, env.getValues(), ker.getValues(), solver);
+        return setVar(name + "#" + varNum++, env, ker);
     }
-    private final CacheMap<IrBoolVar, BoolVar> boolVar = new CacheMap<IrBoolVar, BoolVar>() {
-        @Override
-        protected BoolVar cache(IrBoolVar ir) {
-            Boolean constant = IrUtil.getConstant(ir);
-            if (constant != null) {
-                return constant.booleanValue() ? VF.one(solver) : VF.zero(solver);
-            }
-            return VF.bool(ir.getName(), solver);
-        }
-    };
-    private final CacheMap<IrIntVar, IntVar> intVar = new CacheMap<IrIntVar, IntVar>() {
-        @Override
-        protected IntVar cache(IrIntVar ir) {
-            Integer constant = IrUtil.getConstant(ir);
-            if (constant != null) {
-                switch (constant.intValue()) {
-                    case 0:
-                        return VF.zero(solver);
-                    case 1:
-                        return VF.one(solver);
-                    default:
-                        return VF.fixed(constant, solver);
-                }
-            }
-            return intVar(ir.getName(), ir.getDomain());
-        }
-    };
-    private final CacheMap<IrSetVar, SetVar> setVar = new CacheMap<IrSetVar, SetVar>() {
-        @Override
-        protected SetVar cache(IrSetVar a) {
-            int[] constant = IrUtil.getConstant(a);
-            if (constant != null) {
-                return VF.set(a.toString(), constant, constant, solver);
-            }
-            IrDomain env = a.getEnv();
-            IrDomain ker = a.getKer();
 
-            return VF.set(a.getName(), env.getValues(), ker.getValues(), solver);
+    private BoolVar getBoolVar(IrBoolVar var) {
+        BoolVar bool = boolVar.get(var);
+        if (bool == null) {
+            bool = boolVar(var.getName(), var.getDomain());
+            boolVar.put(var, bool);
         }
-    };
+        return bool;
+    }
+    private final Map<IrBoolVar, BoolVar> boolVar = new HashMap<IrBoolVar, BoolVar>();
+
+    private IntVar getIntVar(IrIntVar var) {
+        IntVar iint = intVar.get(var);
+        if (iint == null) {
+            iint = intVar(var.getName(), var.getDomain());
+            intVar.put(var, iint);
+        }
+        return iint;
+    }
+    private final Map<IrIntVar, IntVar> intVar = new HashMap<IrIntVar, IntVar>();
+
+    private SetVar getSetVar(IrSetVar var) {
+        SetVar set = setVar.get(var);
+        if (set == null) {
+            set = setVar(var.getName(), var.getEnv(), var.getKer());
+            setVar.put(var, set);
+        }
+        return set;
+    }
+    private final Map<IrSetVar, SetVar> setVar = new HashMap<IrSetVar, SetVar>();
 
     private BoolVar asBoolVar(Object obj) {
         if (obj instanceof Constraint) {
@@ -301,7 +323,7 @@ public class IrCompiler {
     private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
         @Override
         public Object visit(IrBoolLiteral ir, BoolArg a) {
-            return boolVar.get(ir.getVar());
+            return getBoolVar(ir.getVar());
         }
 
         @Override
@@ -604,7 +626,7 @@ public class IrCompiler {
          */
         @Override
         public IntVar visit(IrIntLiteral ir, IntVar reify) {
-            return intVar.get(ir.getVar());
+            return getIntVar(ir.getVar());
         }
 
         @Override
@@ -800,7 +822,7 @@ public class IrCompiler {
     private final IrSetExprVisitor<Void, SetVar> setExprCompiler = new IrSetExprVisitor<Void, SetVar>() {
         @Override
         public SetVar visit(IrSetLiteral ir, Void a) {
-            return setVar.get(ir.getVar());
+            return getSetVar(ir.getVar());
         }
 
         @Override

@@ -20,7 +20,6 @@ import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ir.IrExpr;
-import org.clafer.collection.ReadWriteHashMap;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.common.Util;
@@ -234,10 +233,10 @@ public class AstCompiler {
                 }
             }
         }
-        for (IrSetVar[] childSet : siblingSets.getValues()) {
+        for (IrSetVar[] childSet : siblingSets.values()) {
             module.addSetVars(childSet);
         }
-        for (IrIntVar[] refs : refPointers.getValues()) {
+        for (IrIntVar[] refs : refPointers.values()) {
             module.addIntVars(refs);
         }
         @SuppressWarnings("unchecked")
@@ -619,13 +618,13 @@ public class AstCompiler {
     private void constrainAbstract(AstAbstractClafer clafer) {
         // Do nothing.
     }
-    private final ReadWriteHashMap<AstClafer, IrSetExpr> sets = new ReadWriteHashMap<AstClafer, IrSetExpr>();
-    private final ReadWriteHashMap<AstClafer, IrSetVar[]> siblingSets = new ReadWriteHashMap<AstClafer, IrSetVar[]>();
-    private final ReadWriteHashMap<AstClafer, IrBoolExpr[]> memberships = new ReadWriteHashMap<AstClafer, IrBoolExpr[]>();
-    private final ReadWriteHashMap<AstConcreteClafer, IrIntVar[]> parentPointers = new ReadWriteHashMap<AstConcreteClafer, IrIntVar[]>();
-    private final ReadWriteHashMap<AstRef, IrIntVar[]> refPointers = new ReadWriteHashMap<AstRef, IrIntVar[]>();
-    private final ReadWriteHashMap<AstClafer, IrIntExpr[]> weights = new ReadWriteHashMap<AstClafer, IrIntExpr[]>();
-    private final ReadWriteHashMap<AstClafer, IrIntExpr[][]> indices = new ReadWriteHashMap<AstClafer, IrIntExpr[][]>();
+    private final Map<AstClafer, IrSetExpr> sets = new HashMap<AstClafer, IrSetExpr>();
+    private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<AstClafer, IrSetVar[]>();
+    private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<AstClafer, IrBoolExpr[]>();
+    private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
+    private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<AstRef, IrIntVar[]>();
+    private final Map<AstClafer, IrIntExpr[]> weights = new HashMap<AstClafer, IrIntExpr[]>();
+    private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<AstClafer, IrIntExpr[][]>();
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 

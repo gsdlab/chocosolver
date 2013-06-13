@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.collection.ReadMap;
 import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntConstant;
@@ -25,19 +24,19 @@ import solver.variables.SetVar;
  */
 public class IrSolutionMap {
 
-    private final ReadMap<IrBoolVar, BoolVar> boolVars;
+    private final Map<IrBoolVar, BoolVar> boolVars;
     private final Map<IrIntVar, IrIntVar> coalescedIntVars;
-    private final ReadMap<IrIntVar, IntVar> intVars;
-    private final ReadMap<IrSetVar, SetVar> setVars;
+    private final Map<IrIntVar, IntVar> intVars;
+    private final Map<IrSetVar, SetVar> setVars;
 
-    IrSolutionMap(ReadMap<IrBoolVar, BoolVar> boolVars,
+    IrSolutionMap(Map<IrBoolVar, BoolVar> boolVars,
             Map<IrIntVar, IrIntVar> coalescedIntVars,
-            ReadMap<IrIntVar, IntVar> intVars,
-            ReadMap<IrSetVar, SetVar> setVars) {
-        this.boolVars = boolVars.readOnly();
+            Map<IrIntVar, IntVar> intVars,
+            Map<IrSetVar, SetVar> setVars) {
+        this.boolVars = boolVars;
         this.coalescedIntVars = coalescedIntVars;
-        this.intVars = intVars.readOnly();
-        this.setVars = setVars.readOnly();
+        this.intVars = intVars;
+        this.setVars = setVars;
     }
 
     public BoolVar getBoolVar(IrBoolVar var) {
@@ -68,12 +67,12 @@ public class IrSolutionMap {
     }
 
     public BoolVar[] getBoolVars() {
-        return boolVars.getValues().toArray(new BoolVar[boolVars.size()]);
+        return boolVars.values().toArray(new BoolVar[boolVars.size()]);
     }
 
     public BoolVar[] getBoolDecisionVars() {
         List<BoolVar> decisionVars = new ArrayList<BoolVar>(boolVars.size());
-        for (Entry<IrBoolVar, BoolVar> entry : boolVars.entries()) {
+        for (Entry<IrBoolVar, BoolVar> entry : boolVars.entrySet()) {
             if (entry.getKey().isDecision()) {
                 decisionVars.add(entry.getValue());
             }
@@ -113,12 +112,12 @@ public class IrSolutionMap {
     }
 
     public IntVar[] getIntVars() {
-        return intVars.getValues().toArray(new IntVar[intVars.size()]);
+        return intVars.values().toArray(new IntVar[intVars.size()]);
     }
 
     public IntVar[] getIntDecisionVars() {
         List<IntVar> decisionVars = new ArrayList<IntVar>(intVars.size());
-        for (Entry<IrIntVar, IntVar> entry : intVars.entries()) {
+        for (Entry<IrIntVar, IntVar> entry : intVars.entrySet()) {
             if (entry.getKey().isDecision()) {
                 decisionVars.add(entry.getValue());
             }
@@ -154,12 +153,12 @@ public class IrSolutionMap {
     }
 
     public SetVar[] getSetVars() {
-        return setVars.getValues().toArray(new SetVar[setVars.size()]);
+        return setVars.values().toArray(new SetVar[setVars.size()]);
     }
 
     public SetVar[] getSetDecisionVars() {
         List<SetVar> decisionVars = new ArrayList<SetVar>(setVars.size());
-        for (Entry<IrSetVar, SetVar> entry : setVars.entries()) {
+        for (Entry<IrSetVar, SetVar> entry : setVars.entrySet()) {
             if (entry.getKey().isDecision()) {
                 decisionVars.add(entry.getValue());
             }

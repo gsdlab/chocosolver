@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import java.util.Map;
 import org.clafer.common.Check;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.AstClafer;
@@ -8,7 +9,6 @@ import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.collection.Pair;
-import org.clafer.collection.ReadMap;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
@@ -20,19 +20,19 @@ import org.clafer.ir.IrSetVar;
 public class AstSolutionMap {
 
     private final AstModel model;
-    private final ReadMap<AstClafer, IrSetVar[]> siblingVars;
-    private final ReadMap<AstRef, IrIntVar[]> refVars;
+    private final Map<AstClafer, IrSetVar[]> siblingVars;
+    private final Map<AstRef, IrIntVar[]> refVars;
     private final Pair<AstConstraint, IrBoolVar>[] softVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
-            ReadMap<AstClafer, IrSetVar[]> sibling,
-            ReadMap<AstRef, IrIntVar[]> refVars,
+            Map<AstClafer, IrSetVar[]> sibling,
+            Map<AstRef, IrIntVar[]> refVars,
             Pair<AstConstraint, IrBoolVar>[] softVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
-        this.siblingVars = sibling.readOnly();
-        this.refVars = refVars.readOnly();
+        this.siblingVars = Check.notNull(sibling);
+        this.refVars = Check.notNull(refVars);
         this.softVars = Check.noNulls(softVars);
         this.analysis = analysis;
     }
