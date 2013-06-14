@@ -39,14 +39,30 @@ function mul(m1, m2) {
 function div(d1, d2) {
     return Asts.div([d1, d2]);
 }
-var and = Asts.and;
-var ifOnlyIf = Asts.ifOnlyIf;
-var implies = Asts.implies;
-var or = Asts.or;
-var xor = Asts.xor;
-var union = Asts.union;
-var diff = Asts.diff;
-var inter = Asts.inter;
+function and(a1, a2) {
+    return Asts.and([a1, a2]);
+}
+function ifOnlyIf(i1, i2) {
+    return Asts.ifOnlyIf([i1, i2]);
+}
+function implies(i1, i2) {
+    return Asts.implies([i1, i2]);
+}
+function or(o1, o2) {
+    return Asts.or([o1, o2]);
+}
+function xor(x1, x2) {
+    return Asts.xor([x1, x2]);
+}
+function union(u1, u2) {
+    return Asts.union([u1, u2]);
+}
+function diff(d1, d2) {
+    return Asts.diff([d1, d2]);
+}
+function inter(i1, i2) {
+    return Asts.inter([i1, i2]);
+}
 var membership = Asts.membership;
 var ifThenElse = Asts.ifThenElse;
 var $in = Asts.in;
