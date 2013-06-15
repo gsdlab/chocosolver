@@ -267,11 +267,13 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<AstBoolExpr> visit(AstMembership ast, Void a) {
             TypedExpr<AstSetExpr> member = typeCheck(ast.getMember());
             TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
-            if (!AstUtil.hasNonEmptyIntersectionType(member.getType(), set.getType())) {
+            AstClafer unionType = AstUtil.getUnionType(member.getType(), set.getType());
+            if (unionType == null) {
                 throw new AnalysisException("Cannot " + member.getType().getName()
                         + " " + ast.getOp().getSyntax() + " " + set.getType().getName());
             }
-            return put(BoolType, membership(member.getExpr(), ast.getOp(), set.getExpr()));
+            return put(BoolType, membership(
+                    upcastTo(member, unionType), ast.getOp(), upcastTo(set, unionType)));
         }
 
         @Override

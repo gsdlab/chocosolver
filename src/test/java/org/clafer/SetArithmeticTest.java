@@ -518,4 +518,32 @@ public class SetArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
         assertEquals(1, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * abstract A
+     * abstract B
+     *     C -> A *
+     * D : A
+     * E : B
+     *     F : A
+     *         [this.parent.C.ref = F]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testAbstractSetIn() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstractClafer("A");
+        AstAbstractClafer b = model.addAbstractClafer("B");
+        AstConcreteClafer c = b.addChild("C").refToUnique(a);
+        AstConcreteClafer d = model.addChild("D").extending(a).withCard(Mandatory);
+        AstConcreteClafer e = model.addChild("E").extending(b).withCard(Mandatory);
+        AstConcreteClafer f = e.addChild("F").extending(a).withCard(Mandatory);
+        e.addConstraint(in(joinRef(join($this(), c)), global(f)));
+        f.addConstraint(equal(joinRef(join(joinParent($this()), c)), $this()));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(1, solver.allInstances().length);
+    }
 }
