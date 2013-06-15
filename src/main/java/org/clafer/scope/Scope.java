@@ -95,8 +95,8 @@ public class Scope {
             throw new IllegalArgumentException("Default scope must be positive");
         }
         for (Entry<AstClafer, Integer> entry : scopes.entrySet()) {
-            if (entry.getValue() <= 0) {
-                throw new IllegalArgumentException(entry.getKey().getName() + " scope set to " + entry.getValue() + ". Scope must be positive.");
+            if (entry.getValue() < 0) {
+                throw new IllegalArgumentException(entry.getKey().getName() + " scope set to " + entry.getValue() + ". Scope must be non-negative.");
             }
         }
         if (intLow > intHigh) {

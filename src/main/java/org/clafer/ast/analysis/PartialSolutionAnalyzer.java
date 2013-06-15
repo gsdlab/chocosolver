@@ -35,7 +35,7 @@ public class PartialSolutionAnalyzer implements Analyzer {
             Analysis analysis,
             Map<AstClafer, PartialSolution> partialSolutionMap) {
         Card globalCard = analysis.getGlobalCard(clafer);
-        boolean[] solution = new boolean[globalCard.getHigh()];
+        boolean[] solution = new boolean[analysis.getScope(clafer)];
         int[][] parents = new int[globalCard.getHigh()][];
         for (AstClafer sub : clafer.getSubs()) {
             int offset = analysis.getOffsets(clafer).getOffset(sub);
@@ -61,7 +61,7 @@ public class PartialSolutionAnalyzer implements Analyzer {
         Card globalCard = analysis.getGlobalCard(clafer);
         Format format = analysis.getFormat(clafer);
 
-        boolean[] solution = new boolean[globalCard.getHigh()];
+        boolean[] solution = new boolean[analysis.getScope(clafer)];
         TIntArrayList[] parents = new TIntArrayList[globalCard.getHigh()];
         for (int i = 0; i < parents.length; i++) {
             parents[i] = new TIntArrayList();

@@ -800,7 +800,7 @@ public class Irs {
     }
 
     public static IrBoolExpr sortChannel(IrIntExpr[][] strings, IrIntExpr[] ints) {
-        if (ints.length == 1) {
+        if (ints.length == 0 || ints.length == 1) {
             return $(True);
         }
         return new IrSortStringsChannel(strings, ints, BoolDomain);

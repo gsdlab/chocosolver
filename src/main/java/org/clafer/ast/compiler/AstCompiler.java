@@ -231,6 +231,7 @@ public class AstCompiler {
                     IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
                     module.addConstraint(ifOnlyIf($(soft), implies(memberships.get(clafer)[j], thisConstraint)));
                 }
+                module.addBoolVar(soft);
             }
         }
         for (IrSetVar[] childSet : siblingSets.values()) {
@@ -339,8 +340,13 @@ public class AstCompiler {
 
             if (!(ref.getTargetType() instanceof AstIntClafer)) {
                 IrSetExpr targetSet = sets.get(ref.getTargetType());
-                for (IrIntVar refPointer : refs) {
-                    module.addConstraint(member($(refPointer), targetSet));
+                for (int i = 0; i < refs.length; i++) {
+                    IrIntVar refPointer = refs[i];
+                    if (targetSet.getKer().contains(0)) {
+                        module.addConstraint(member($(refPointer), targetSet));
+                    } else {
+                        module.addConstraint(implies(members[i], member($(refPointer), targetSet)));
+                    }
                 }
             }
         }
@@ -541,7 +547,12 @@ public class AstCompiler {
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         IrBoolExpr[] parentMembership = memberships.get(clafer.getParent());
         if (lowCard == 1) {
-            members = parentMembership;
+            if (members.length == parentMembership.length) {
+                members = parentMembership;
+            } else {
+                System.arraycopy(parentMembership, 0, members, 0, parentMembership.length);
+                Arrays.fill(members, parentMembership.length, members.length, $(False));
+            }
         } else {
             for (int i = 0; i < parentMembership.length; i++) {
                 for (int j = 0; j < lowCard; j++) {
@@ -1174,7 +1185,9 @@ public class AstCompiler {
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
         for (int i = 0; i < ivs.length; i++) {
             if (partialInts[i] == null) {
-                IrDomain domain = boundDomain(getScopeLow(tar), getScopeHigh(tar));
+                int tarLow = getScopeLow(tar);
+                int tarHigh = getScopeHigh(tar);
+                IrDomain domain = tarLow <= tarHigh ? boundDomain(tarLow, tarHigh) : ZeroDomain;
                 if (!partialSolution.hasClafer(i) // <-- this means that ref may need to be zeroed out.
                         && !domain.contains(0) // <-- this means that the domain doesn't allow zeroing out.
                         ) {

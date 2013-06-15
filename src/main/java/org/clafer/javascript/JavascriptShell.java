@@ -230,9 +230,9 @@ public class JavascriptShell {
             try {
                 System.out.println(context.load(args[0]));
             } catch (IOException e) {
-                System.out.println(getOriginalMessage(e));
+                System.out.println("Error: " + getOriginalMessage(e));
             } catch (ScriptException e) {
-                System.out.println(getOriginalMessage(e));
+                System.out.println("Error: " + getOriginalMessage(e));
             }
         } else {
             context.init();

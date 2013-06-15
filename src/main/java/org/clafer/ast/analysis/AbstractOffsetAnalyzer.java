@@ -31,7 +31,7 @@ public class AbstractOffsetAnalyzer implements Analyzer {
             List<AstClafer> greedy = subs;
             for (AstClafer sub : greedy) {
                 offsets.put(sub, offset);
-                int skip = analysis.getGlobalCard(sub).getHigh();
+                int skip = analysis.getScope(sub);
                 for (int i = 0; i < skip; i++) {
                     reverseOffsets.add(sub);
                 }

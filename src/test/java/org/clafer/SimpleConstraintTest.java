@@ -391,4 +391,44 @@ public class SimpleConstraintTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(10000));
         assertTrue(solver.find());
     }
+
+    /**
+     * <pre>
+     * abstract A
+     * abstract B
+     * C : B
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testUnusedAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstractClafer("A");
+        AstAbstractClafer b = model.addAbstractClafer("B");
+        AstConcreteClafer c = model.addChild("C").extending(b);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1));
+        assertTrue(solver.find());
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     * abstract B
+     * C : B
+     *     D -> A ?
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRefToUnusedAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstractClafer("A");
+        AstAbstractClafer b = model.addAbstractClafer("B");
+        AstConcreteClafer c = model.addChild("C").extending(b);
+        AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Optional);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1).set(d, 1));
+        assertTrue(solver.find());
+    }
 }
