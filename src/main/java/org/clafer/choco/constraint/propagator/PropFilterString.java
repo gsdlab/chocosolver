@@ -1,7 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
@@ -73,13 +71,61 @@ public class PropFilterString extends Propagator<Variable> {
         return EventType.INT_ALL_MASK();
     }
 
-    private void subset(IntVar a, IntVar b) throws ContradictionException {
-        int ub = a.getUB();
-        for (int i = a.getLB(); i <= ub; i = a.nextValue(i)) {
-            if (!b.contains(i)) {
-                a.removeValue(i, aCause);
+    private boolean subset(IntVar sub, IntVar[] sups, int from, int to) throws ContradictionException {
+        boolean changed = false;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            boolean found = false;
+            for (int i = from; i < to; i++) {
+                if (sups[i].contains(val)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                changed |= sub.removeValue(val, aCause);
             }
         }
+        return changed;
+    }
+
+    private boolean subset(IntVar sub, IntVar[] sups, int[] indices, int low, int high) throws ContradictionException {
+        boolean changed = false;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            boolean found = false;
+            for (int i = low; i <= high; i++) {
+                if (sups[indices[i]].contains(val)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                changed |= sub.removeValue(val, aCause);
+            }
+        }
+        return changed;
+    }
+
+    private boolean subsetOrNegativeOne(IntVar sub, IntVar[] sups, int[] indices, int from, int to) throws ContradictionException {
+        boolean changed = false;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (val != -1) {
+                boolean found = false;
+                for (int i = from; i < to; i++) {
+                    assert i < indices.length;
+                    if (sups[indices[i]].contains(val)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    changed |= sub.removeValue(val, aCause);
+                }
+            }
+        }
+        return changed;
     }
 
     @Override
@@ -88,51 +134,51 @@ public class PropFilterString extends Propagator<Variable> {
             contradiction(set, "Too many in kernel");
         }
 
-        // The number of kernel elements seen.
-        int minKer = 0;
-        // The number of potential kernel elements seen.
-        int maxKer = 0;
-        TIntHashSet values = new TIntHashSet(Math.min(set.getEnvelopeSize(), result.length));
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            int x = i - offset;
-            if (set.kernelContains(i)) {
-                if (minKer == maxKer) {
-                    subset(string[x], result[minKer]);
-                    subset(result[minKer], string[x]);
-                }
-                minKer++;
-                maxKer++;
-                PropUtil.iterateDomain(string[x], values);
-            } else {
-                boolean found = false;
-                for (int j = minKer; j < result.length && j <= maxKer; j++) {
-                    if (PropUtil.domainIntersectDomain(string[x], result[j])) {
-                        found = true;
-                        break;
+        int[] env = new int[set.getEnvelopeSize()];
+        int[] kerIndices = new int[set.getKernelSize()];
+
+        boolean changed;
+        do {
+            changed = false;
+            // The number of ker elements seen.
+            int kerIndex = 0;
+            // The number of env elements seen.
+            int envIndex = 0;
+            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+                int x = i - offset;
+                env[envIndex] = x;
+                if (set.kernelContains(i)) {
+                    kerIndices[kerIndex] = envIndex;
+                    changed |= subset(string[x], result, kerIndex, Math.min(envIndex + 1, result.length));
+                    envIndex++;
+                    kerIndex++;
+                } else {
+                    boolean found = false;
+                    for (int j = kerIndex; j < result.length && j <= envIndex; j++) {
+                        if (PropUtil.domainIntersectDomain(string[x], result[j])) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        changed |= set.removeFromEnvelope(i, aCause);
+                    } else {
+                        envIndex++;
                     }
                 }
-                if (!found) {
-                    set.removeFromEnvelope(i, aCause);
+            }
+            assert envIndex <= env.length;
+            assert kerIndex == kerIndices.length;
+
+            for (int i = 0; i < result.length; i++) {
+                if (i < kerIndices.length) {
+                    changed |= subset(result[i], string, env, i, kerIndices[i]);
                 } else {
-                    PropUtil.iterateDomain(string[x], values);
-                    maxKer++;
+                    changed |= subsetOrNegativeOne(result[i], string, env, i, envIndex);
                 }
             }
-        }
-        for (int i = 0; i < minKer; i++) {
-            PropUtil.domainSubsetOf(result[i], values, aCause);
-        }
-        values.add(-1);
-        for (int i = minKer; i < result.length; i++) {
-            PropUtil.domainSubsetOf(result[i], values, aCause);
-        }
-        values.clear();
-        for (IntVar i : result) {
-            PropUtil.iterateDomain(i, values);
-        }
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            PropUtil.domainSubsetOf(string[i - offset], values, aCause);
-        }
+        } while (changed);
+
         if (set.instantiated()) {
             for (int i = set.getKernelSize(); i < result.length; i++) {
                 result[i].instantiateTo(-1, aCause);
