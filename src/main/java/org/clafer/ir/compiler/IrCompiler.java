@@ -1098,7 +1098,7 @@ public class IrCompiler {
     }
 
     private static Constraint _union(SetVar[] operands, SetVar union) {
-        return Constraints.union(operands, union);
+        return SCF.union(operands, union);
     }
 
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {

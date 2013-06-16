@@ -182,7 +182,7 @@ public class AstCompiler {
 
     private AstSolutionMap compile() {
         IrSetVar rootSet = constant(new int[]{0});
-        sets.put(analysis.getModel(), $(rootSet));
+        sets.put(analysis.getModel(), rootSet);
         siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
         memberships.put(analysis.getModel(), new IrBoolExpr[]{$(True)});
 
@@ -260,6 +260,22 @@ public class AstCompiler {
             default:
                 throw new AstException();
         }
+
+        IrSetVar[] siblingSet = siblingSets.get(clafer);
+        switch (siblingSet.length) {
+            case 0:
+                sets.put(clafer, EmptySet);
+                break;
+            case 1:
+                sets.put(clafer, siblingSet[0]);
+                break;
+            default:
+                IrSetExpr union = union($(siblingSet));
+                IrSetVar set = set(clafer.getName(), union.getEnv(), union.getKer(), union.getCard());
+                module.addConstraint(equal($(set), union));
+                sets.put(clafer, set);
+                break;
+        }
     }
 
     private void initConcreteWeight(AstConcreteClafer clafer) {
@@ -298,15 +314,15 @@ public class AstCompiler {
     }
 
     private void constrainConcrete(AstConcreteClafer clafer) {
-        IrSetExpr[] childSet = $(siblingSets.get(clafer));
+        IrSetExpr[] siblingSet = $(siblingSets.get(clafer));
         IrIntExpr[] parents = $(parentPointers.get(clafer));
         if (!getPartialSolution(clafer).parentSolutionKnown()) {
             if (getGlobalCard(clafer).isExact()) {
                 // No unused
-                module.addConstraint(intChannel(parents, childSet));
+                module.addConstraint(intChannel(parents, siblingSet));
             } else {
-                IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
-                module.addConstraint(intChannel(parents, Util.snoc(childSet, $(unused))));
+                IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers()).asNoDecision();
+                module.addConstraint(intChannel(parents, Util.snoc(siblingSet, $(unused))));
             }
         }
 
@@ -332,6 +348,13 @@ public class AstCompiler {
                         }
                     }
                 }
+                IrIntExpr size =
+                        ref.getTargetType() instanceof AstIntClafer
+                        ? $(constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1))
+                        : card($(sets.get(ref.getTargetType())));
+                for(IrSetExpr sibling : siblingSet) {
+                    module.addConstraint(lessThanEqual(card(sibling), size));
+                }
             }
             assert refs.length == members.length;
             for (int i = 0; i < members.length; i++) {
@@ -339,13 +362,13 @@ public class AstCompiler {
             }
 
             if (!(ref.getTargetType() instanceof AstIntClafer)) {
-                IrSetExpr targetSet = sets.get(ref.getTargetType());
+                IrSetVar targetSet = sets.get(ref.getTargetType());
                 for (int i = 0; i < refs.length; i++) {
                     IrIntVar refPointer = refs[i];
                     if (targetSet.getKer().contains(0)) {
-                        module.addConstraint(member($(refPointer), targetSet));
+                        module.addConstraint(member($(refPointer), $(targetSet)));
                     } else {
-                        module.addConstraint(implies(members[i], member($(refPointer), targetSet)));
+                        module.addConstraint(implies(members[i], member($(refPointer), $(targetSet))));
                     }
                 }
             }
@@ -401,8 +424,8 @@ public class AstCompiler {
                 childIndices[i] = Util.concat(childIndex.toArray(new IrIntExpr[childIndex.size()][]));
             }
             module.addConstraint(sortChannel(childIndices, weight));
-            for (int i = 0; i < childSet.length; i++) {
-                module.addConstraint(filterString(childSet[i], weight, index[i]));
+            for (int i = 0; i < siblingSet.length; i++) {
+                module.addConstraint(filterString(siblingSet[i], weight, index[i]));
             }
             for (int i = 0; i < parents.length - 1; i++) {
                 module.addConstraint(implies(equal(parents[i], parents[i + 1]),
@@ -469,7 +492,6 @@ public class AstCompiler {
 
         IrSetVar[] childSet = buildChildSet(clafer);
         siblingSets.put(clafer, childSet);
-        sets.put(clafer, union($(childSet)));
 
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         for (int i = 0; i < members.length; i++) {
@@ -487,8 +509,9 @@ public class AstCompiler {
 
     private void constrainLowGroupConcrete(AstConcreteClafer clafer) {
         IrBoolExpr[] members = memberships.get(clafer);
+        IrSetVar set = sets.get(clafer);
 
-        module.addConstraint(selectN(members, card(sets.get(clafer))));
+        module.addConstraint(selectN(members, card($(set))));
 
         IrBoolExpr[] parentMembership = memberships.get(clafer.getParent());
         Card card = getCard(clafer);
@@ -503,10 +526,9 @@ public class AstCompiler {
             module.addConstraint(implies(not(parentMember), equal($(childSet[i]), $(EmptySet))));
         }
 
-        IrSetExpr claferSet = sets.get(clafer);
 
         if (!(childSet.length == 1 && members.length == 1)) {
-            module.addConstraint(boolChannel(members, claferSet));
+            module.addConstraint(boolChannel(members, $(set)));
         }
 
         /**
@@ -542,7 +564,6 @@ public class AstCompiler {
         }
 
         siblingSets.put(clafer, children);
-        sets.put(clafer, union($(children)));
 
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         IrBoolExpr[] parentMembership = memberships.get(clafer.getParent());
@@ -580,7 +601,7 @@ public class AstCompiler {
     }
 
     private void initAbstract(AstAbstractClafer clafer) {
-        IrSetExpr[] subSets = new IrSetExpr[clafer.getSubs().size()];
+        IrSetVar[] subSets = new IrSetVar[clafer.getSubs().size()];
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         for (int i = 0; i < subSets.length; i++) {
             AstClafer sub = clafer.getSubs().get(i);
@@ -593,7 +614,7 @@ public class AstCompiler {
             }
         }
         if (subSets.length == 1) {
-            sets.put(clafer, union(subSets[0]));
+            sets.put(clafer, sets.get(clafer.getSubs().get(0)));
         } else {
             TIntArrayList env = new TIntArrayList();
             TIntArrayList ker = new TIntArrayList();
@@ -605,9 +626,9 @@ public class AstCompiler {
                     env.add(i);
                 }
             }
-            IrSetExpr unionSet = $(set(clafer.getName(), env.toArray(), ker.toArray()));
+            IrSetVar unionSet = set(clafer.getName(), env.toArray(), ker.toArray());
             if (!AstUtil.isTypeRoot(clafer)) {
-                module.addConstraint(boolChannel(members, unionSet));
+                module.addConstraint(boolChannel(members, $(unionSet)));
             }
             sets.put(clafer, unionSet);
         }
@@ -629,7 +650,7 @@ public class AstCompiler {
     private void constrainAbstract(AstAbstractClafer clafer) {
         // Do nothing.
     }
-    private final Map<AstClafer, IrSetExpr> sets = new HashMap<AstClafer, IrSetExpr>();
+    private final Map<AstClafer, IrSetVar> sets = new HashMap<AstClafer, IrSetVar>();
     private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<AstClafer, IrSetVar[]>();
     private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<AstClafer, IrBoolExpr[]>();
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
@@ -715,14 +736,14 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstGlobal ast, Void a) {
-            IrSetExpr global = sets.get(ast.getType());
+            IrSetVar global = sets.get(ast.getType());
             if (global.getEnv().size() == 1) {
                 int[] constant = IrUtil.getConstant(global);
                 if (constant != null) {
                     return $(constant(constant[0]));
                 }
             }
-            return global;
+            return $(global);
         }
 
         @Override
