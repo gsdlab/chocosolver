@@ -271,8 +271,13 @@ public class AstCompiler {
                 break;
             default:
                 IrSetExpr union = union($(siblingSet));
+                IrIntExpr[] cards = new IrIntExpr[siblingSet.length];
+                for (int i = 0; i < cards.length; i++) {
+                    cards[i] = card($(siblingSet[i]));
+                }
                 IrSetVar set = set(clafer.getName(), union.getEnv(), union.getKer(), union.getCard());
                 module.addConstraint(equal($(set), union));
+                module.addConstraint(equal(card($(set)), add(cards)));
                 sets.put(clafer, set);
                 break;
         }
@@ -352,7 +357,7 @@ public class AstCompiler {
                         ref.getTargetType() instanceof AstIntClafer
                         ? $(constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1))
                         : card($(sets.get(ref.getTargetType())));
-                for(IrSetExpr sibling : siblingSet) {
+                for (IrSetExpr sibling : siblingSet) {
                     module.addConstraint(lessThanEqual(card(sibling), size));
                 }
             }
@@ -428,8 +433,13 @@ public class AstCompiler {
                 module.addConstraint(filterString(siblingSet[i], weight, index[i]));
             }
             for (int i = 0; i < parents.length - 1; i++) {
-                module.addConstraint(implies(equal(parents[i], parents[i + 1]),
-                        greaterThanEqual(weight[i], weight[i + 1])));
+                if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
+                    module.addConstraint(implies(and(equal(parents[i], parents[i + 1]), members[i]),
+                            greaterThan(weight[i], weight[i + 1])));
+                } else {
+                    module.addConstraint(implies(equal(parents[i], parents[i + 1]),
+                            greaterThanEqual(weight[i], weight[i + 1])));
+                }
             }
         }
 
@@ -504,6 +514,7 @@ public class AstCompiler {
                         : $(bool(clafer.getName() + "@Membership#" + i));
             }
         }
+        Check.noNulls(members);
         memberships.put(clafer, members);
     }
 
@@ -580,7 +591,9 @@ public class AstCompiler {
                     members[i * lowCard + j] = parentMembership[i];
                 }
             }
+            Arrays.fill(members, parentMembership.length * lowCard, members.length, $(False));
         }
+        Check.noNulls(members);
         memberships.put(clafer, members);
     }
 

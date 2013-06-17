@@ -363,7 +363,7 @@ public class Irs {
     }
 
     public static IrBoolExpr ifOnlyIf(IrBoolExpr left, IrBoolExpr right) {
-        if(left.equals(right)) {
+        if (left.equals(right)) {
             return $(True);
         }
         if (IrUtil.isTrue(left)) {
@@ -1466,6 +1466,11 @@ public class Irs {
     }
 
     public static IrSetExpr union(IrSetExpr... operands) {
+        List<IrSetExpr> flatten = new ArrayList<IrSetExpr>(operands.length);
+        for (IrSetExpr operand : operands) {
+            flattenUnion(operand, flatten);
+        }
+        operands = flatten.toArray(new IrSetExpr[flatten.size()]);
         switch (operands.length) {
             case 0:
                 return $(EmptySet);
@@ -1485,7 +1490,18 @@ public class Irs {
                 IrDomain card = boundDomain(
                         Math.max(low, ker.size()),
                         Math.min(high, env.size()));
-                return new IrSetUnion(operands, env, ker, card);
+                return IrUtil.asConstant(new IrSetUnion(operands, env, ker, card));
+        }
+    }
+
+    private static void flattenUnion(IrSetExpr expr, List<IrSetExpr> flatten) {
+        if (expr instanceof IrSetUnion) {
+            IrSetUnion union = (IrSetUnion) expr;
+            for (IrSetExpr subexpr : union.getOperands()) {
+                flattenUnion(subexpr, flatten);
+            }
+        } else {
+            flatten.add(expr);
         }
     }
 

@@ -5,6 +5,7 @@ import java.util.Map;
 import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.Card;
 
 /**
@@ -23,7 +24,7 @@ public class ScopeAnalyzer implements Analyzer {
         Map<AstClafer, Integer> optimizedScope = new HashMap<AstClafer, Integer>();
         optimizedScope.put(analysis.getModel(), 1);
 
-        for (AstClafer clafer : analysis.getClafers()) {
+        for (AstConcreteClafer clafer : analysis.getConcreteClafers()) {
             Card globalCard = analysis.getGlobalCard(clafer);
             optimizedScope.put(clafer, Math.min(scope.getScope(clafer), globalCard.getHigh()));
         }

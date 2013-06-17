@@ -30,6 +30,7 @@ import org.clafer.common.Check;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
+import org.clafer.common.Util;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolDomain;
@@ -565,7 +566,7 @@ public class IrCompiler {
             for (int i = 0; i < $sets.length; i++) {
                 $sets[i] = compile(sets[i]);
             }
-            return Constraints.intChannel($sets, $ints);
+            return SCF.int_channel($sets, $ints, 0, 0);
         }
 
         @Override
@@ -677,6 +678,9 @@ public class IrCompiler {
                         solver.post(_sum(sum, addends));
                         return VF.offset(sum, constants);
                     }
+                    if (constants != 0) {
+                        addends = Util.cons(VF.fixed(constants, solver), addends);
+                    }
                     return _sum(reify, addends);
             }
         }
@@ -716,6 +720,9 @@ public class IrCompiler {
                         IntVar diff = numIntVar("Diff", ir.getDomain());
                         solver.post(_difference(diff, subtractends));
                         return VF.offset(diff, -constants);
+                    }
+                    if (constants != 0) {
+                        subtractends = Util.cons(VF.fixed(0, solver), subtractends);
                     }
                     return _difference(reify, subtractends);
             }
