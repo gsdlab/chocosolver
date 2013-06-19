@@ -304,6 +304,15 @@ public class IrCompiler {
         return (Constraint) result;
     }
 
+    private Constraint compileAsConstraint(IrSetExpr expr, SetVar reify) {
+        Object result = expr.accept(setExprCompiler, reify);
+        if (result instanceof SetVar) {
+            // The compliation failed to reify, explicitly reify now.
+            return _equal(reify, (SetVar) result);
+        }
+        return (Constraint) result;
+    }
+
     private Constraint[] compileAsConstraints(IrBoolExpr[] exprs) {
         Constraint[] constraints = new Constraint[exprs.length];
         for (int i = 0; i < constraints.length; i++) {
@@ -329,7 +338,7 @@ public class IrCompiler {
     }
 
     private SetVar compile(IrSetExpr expr) {
-        return expr.accept(setExprCompiler, null);
+        return (SetVar) expr.accept(setExprCompiler, null);
     }
 
     private SetVar[] compile(IrSetExpr[] exprs) {
@@ -520,7 +529,7 @@ public class IrCompiler {
         public Object visit(IrSetTest ir, BoolArg a) {
             switch (ir.getOp()) {
                 case Equal:
-                    return _equal(compile(ir.getLeft()), compile(ir.getRight()));
+                    return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
                 case NotEqual:
                     return _not_equal(compile(ir.getLeft()), compile(ir.getRight()));
                 default:
@@ -634,15 +643,6 @@ public class IrCompiler {
         }
     };
     private final IrIntExprVisitor<IntVar, Object> intExprCompiler = new IrIntExprVisitor<IntVar, Object>() {
-        /**
-         * TODO: optimize
-         *
-         * 5 = x + y
-         *
-         * sum([x,y], newVar) newVar = 5
-         *
-         * Instead pass "5" in the Void param so sum([x,y], 5)
-         */
         @Override
         public IntVar visit(IrIntLiteral ir, IntVar reify) {
             return getIntVar(ir.getVar());
@@ -815,123 +815,160 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrCount ir, IntVar reify) {
+            IntVar[] array = compile(ir.getArray());
             if (reify == null) {
                 IntVar count = numIntVar("Count", ir.getDomain());
-                solver.post(_count(ir.getValue(), compile(ir.getArray()), count));
+                solver.post(_count(ir.getValue(), array, count));
                 return count;
             }
-            return _count(ir.getValue(), compile(ir.getArray()), reify);
+            return _count(ir.getValue(), array, reify);
         }
 
         @Override
         public Object visit(IrSetSum ir, IntVar reify) {
+            SetVar set = compile(ir.getSet());
             int n = ir.getSet().getCard().getHighBound();
             if (reify == null) {
                 IntVar sum = numIntVar("SetSum", ir.getDomain());
-                solver.post(Constraints.setSumN(compile(ir.getSet()), sum, n));
+                solver.post(Constraints.setSumN(set, sum, n));
                 return sum;
             }
-            return Constraints.setSumN(compile(ir.getSet()), reify, n);
+            return Constraints.setSumN(set, reify, n);
         }
 
         @Override
-        public IntVar visit(IrTernary ir, IntVar reify) {
+        public Object visit(IrTernary ir, IntVar reify) {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
-            IntVar ternary = numIntVar("Ternary", ir.getDomain());
-            solver.post(_ifThenElse(antecedent,
-                    _arithm(ternary, "=", compile(ir.getConsequent())),
-                    _arithm(ternary, "=", compile(ir.getAlternative()))));
-            return ternary;
+            IntVar consequent = compile(ir.getConsequent());
+            IntVar alternative = compile(ir.getAlternative());
+            if (reify == null) {
+                IntVar ternary = numIntVar("Ternary", ir.getDomain());
+                solver.post(_ifThenElse(antecedent,
+                        _arithm(ternary, "=", consequent),
+                        _arithm(ternary, "=", alternative)));
+                return ternary;
+            }
+            return _ifThenElse(antecedent,
+                    _arithm(reify, "=", consequent),
+                    _arithm(reify, "=", alternative));
         }
     };
-    private final IrSetExprVisitor<Void, SetVar> setExprCompiler = new IrSetExprVisitor<Void, SetVar>() {
+    private final IrSetExprVisitor<SetVar, Object> setExprCompiler = new IrSetExprVisitor<SetVar, Object>() {
         @Override
-        public SetVar visit(IrSetLiteral ir, Void a) {
+        public SetVar visit(IrSetLiteral ir, SetVar reify) {
             return getSetVar(ir.getVar());
         }
 
         @Override
-        public SetVar visit(IrSingleton ir, Void a) {
+        public Object visit(IrSingleton ir, SetVar reify) {
             IntVar value = compile(ir.getValue());
-            SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
-            solver.post(Constraints.singleton(value, singleton));
-            return singleton;
-        }
-
-        @Override
-        public SetVar visit(IrArrayToSet ir, Void a) {
-            IntVar[] $array = compile(ir.getArray());
-            SetVar set = numSetVar("ArrayToSet", ir.getEnv(), ir.getKer());
-            IntVar setCard = setCardVar(ir);
-            solver.post(SCF.cardinality(set, setCard));
-            solver.post(Constraints.arrayToSet($array, set, setCard));
-            return set;
-        }
-
-        @Override
-        public SetVar visit(IrJoinRelation ir, Void a) {
-            SetVar $take = compile(ir.getTake());
-            SetVar[] $children = compile(ir.getChildren());
-            SetVar joinRelation = numSetVar("JoinRelation", ir.getEnv(), ir.getKer());
-            solver.post(Constraints.joinRelation($take, $children, joinRelation));
-            return joinRelation;
-        }
-
-        @Override
-        public SetVar visit(IrJoinFunction ir, Void a) {
-            IrSetExpr take = ir.getTake();
-            IrIntExpr[] refs = ir.getRefs();
-            SetVar $take = compile(take);
-            IntVar[] $refs = new IntVar[refs.length];
-            for (int i = 0; i < $refs.length; i++) {
-                $refs[i] = compile(refs[i]);
+            if (reify == null) {
+                SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
+                solver.post(Constraints.singleton(value, singleton));
+                return singleton;
             }
-            SetVar joinFunction = numSetVar("JoinFunction", ir.getEnv(), ir.getKer());
-            solver.post(Constraints.joinFunction($take, $refs, joinFunction));
-            return joinFunction;
+            return Constraints.singleton(value, reify);
         }
 
         @Override
-        public SetVar visit(IrSetDifference ir, Void a) {
+        public Object visit(IrArrayToSet ir, SetVar reify) {
+            IntVar[] array = compile(ir.getArray());
+            if (reify == null) {
+                SetVar set = numSetVar("ArrayToSet", ir.getEnv(), ir.getKer());
+                IntVar setCard = setCardVar(ir);
+                solver.post(SCF.cardinality(set, setCard));
+                solver.post(Constraints.arrayToSet(array, set, setCard));
+                return set;
+            }
+            IntVar setCard = setCardVar(ir);
+            solver.post(SCF.cardinality(reify, setCard));
+            return Constraints.arrayToSet(array, reify, setCard);
+        }
+
+        @Override
+        public Object visit(IrJoinRelation ir, SetVar reify) {
+            SetVar take = compile(ir.getTake());
+            SetVar[] children = compile(ir.getChildren());
+            if (reify == null) {
+                SetVar joinRelation = numSetVar("JoinRelation", ir.getEnv(), ir.getKer());
+                solver.post(Constraints.joinRelation(take, children, joinRelation));
+                return joinRelation;
+            }
+            return Constraints.joinRelation(take, children, reify);
+        }
+
+        @Override
+        public Object visit(IrJoinFunction ir, SetVar reify) {
+            SetVar take = compile(ir.getTake());
+            IntVar[] refs = compile(ir.getRefs());
+            if (reify == null) {
+                SetVar joinFunction = numSetVar("JoinFunction", ir.getEnv(), ir.getKer());
+                solver.post(Constraints.joinFunction(take, refs, joinFunction));
+                return joinFunction;
+            }
+            return Constraints.joinFunction(take, refs, reify);
+        }
+
+        @Override
+        public Object visit(IrSetDifference ir, SetVar reify) {
             SetVar minuend = compile(ir.getMinuend());
             SetVar subtrahend = compile(ir.getSubtrahend());
-            SetVar difference = numSetVar("Difference", ir.getEnv(), ir.getKer());
-            solver.post(_difference(minuend, subtrahend, difference));
-            return difference;
+            if (reify == null) {
+                SetVar difference = numSetVar("Difference", ir.getEnv(), ir.getKer());
+                solver.post(_difference(minuend, subtrahend, difference));
+                return difference;
+            }
+            return _difference(minuend, subtrahend, reify);
         }
 
         @Override
-        public SetVar visit(IrSetIntersection ir, Void a) {
+        public Object visit(IrSetIntersection ir, SetVar reify) {
             SetVar[] operands = compile(ir.getOperands());
-            SetVar union = numSetVar("Intersection", ir.getEnv(), ir.getKer());
-            solver.post(_intersection(operands, union));
-            return union;
+            if (reify == null) {
+                SetVar intersection = numSetVar("Intersection", ir.getEnv(), ir.getKer());
+                solver.post(_intersection(operands, intersection));
+                return intersection;
+            }
+            return _intersection(operands, reify);
         }
 
         @Override
-        public SetVar visit(IrSetUnion ir, Void a) {
+        public Object visit(IrSetUnion ir, SetVar reify) {
             SetVar[] operands = compile(ir.getOperands());
-            SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
-            solver.post(_union(operands, union));
-            return union;
+            if (reify == null) {
+                SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
+                solver.post(_union(operands, union));
+                return union;
+            }
+            return _union(operands, reify);
         }
 
         @Override
-        public SetVar visit(IrOffset ir, Void a) {
+        public Object visit(IrOffset ir, SetVar reify) {
             SetVar set = compile(ir.getSet());
-            SetVar offset = numSetVar("Offset", ir.getEnv(), ir.getKer());
-            solver.post(_offset(set, offset, ir.getOffset()));
-            return offset;
+            if (reify == null) {
+                SetVar offset = numSetVar("Offset", ir.getEnv(), ir.getKer());
+                solver.post(_offset(set, offset, ir.getOffset()));
+                return offset;
+            }
+            return _offset(set, reify, ir.getOffset());
         }
 
         @Override
-        public SetVar visit(IrSetTernary ir, Void a) {
+        public Object visit(IrSetTernary ir, SetVar reify) {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
-            SetVar ternary = numSetVar("Ternary", ir.getEnv(), ir.getKer());
-            solver.post(_ifThenElse(antecedent,
-                    _equal(ternary, compile(ir.getConsequent())),
-                    _equal(ternary, compile(ir.getAlternative()))));
-            return ternary;
+            SetVar consequent = compile(ir.getConsequent());
+            SetVar alternative = compile(ir.getAlternative());
+            if (reify == null) {
+                SetVar ternary = numSetVar("Ternary", ir.getEnv(), ir.getKer());
+                solver.post(_ifThenElse(antecedent,
+                        _equal(ternary, consequent),
+                        _equal(ternary, alternative)));
+                return ternary;
+            }
+            return _ifThenElse(antecedent,
+                    _equal(reify, consequent),
+                    _equal(reify, alternative));
         }
     };
 
