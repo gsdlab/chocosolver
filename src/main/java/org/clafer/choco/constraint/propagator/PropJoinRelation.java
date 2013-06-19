@@ -2,7 +2,6 @@ package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;

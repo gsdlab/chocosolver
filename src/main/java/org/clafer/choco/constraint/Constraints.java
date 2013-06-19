@@ -7,6 +7,7 @@ import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
+import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropFind;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
@@ -49,12 +50,19 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint arrayToSet(IntVar[] ivars, SetVar svar) {
-        Variable[] vars = new Variable[ivars.length + 1];
-        System.arraycopy(ivars, 0, vars, 0, ivars.length);
-        vars[ivars.length] = svar;
+    public static Constraint arrayToSet(IntVar[] ivars, SetVar svar, IntVar svarCard) {
+        return arrayToSet(ivars, svar, svarCard, null);
+    }
+
+    public static Constraint arrayToSet(IntVar[] ivars, SetVar svar, IntVar svarCard, Integer globalCardinality) {
+        Variable[] vars = new Variable[ivars.length + 2];
+        vars[0] = svar;
+        vars[1] = svarCard;
+        System.arraycopy(ivars, 0, vars, 2, ivars.length);
         Constraint constraint = new Constraint(vars, svar.getSolver());
-        constraint.setPropagators(new PropArrayToSet(ivars, svar));
+        constraint.setPropagators(
+                new PropArrayToSet(ivars, svar),
+                new PropArrayToSetCard(ivars, svarCard, globalCardinality));
         return constraint;
     }
 

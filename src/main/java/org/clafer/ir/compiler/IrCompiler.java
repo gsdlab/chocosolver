@@ -167,6 +167,24 @@ public class IrCompiler {
         }
         return VF.set(name, env.getValues(), ker.getValues(), solver);
     }
+    // Temporary solution
+    @Deprecated
+    private final Map<IrSetExpr, IntVar> setCardVars = new HashMap<IrSetExpr, IntVar>();
+
+    // Temporary solution
+    @Deprecated
+    private IntVar setCardVar(IrSetExpr set) {
+        IntVar setCardVar = setCardVars.get(set);
+        if (setCardVar == null) {
+            if (set instanceof IrSetLiteral) {
+                setCardVar = intVar("|" + ((IrSetLiteral) set).getVar().getName() + "|", set.getCard());
+            } else {
+                setCardVar = numIntVar("|" + set.toString() + "|", set.getCard());
+            }
+            setCardVars.put(set, setCardVar);
+        }
+        return setCardVar;
+    }
 
     private BoolVar numBoolVar(String name) {
         return VF.bool(name + "#" + varNum++, solver);
@@ -644,7 +662,7 @@ public class IrCompiler {
         public Object visit(IrCard ir, IntVar reify) {
             IrSetExpr set = ir.getSet();
             if (reify == null) {
-                IntVar card = intVar("|" + set.toString() + "|", set.getCard());
+                IntVar card = setCardVar(set);
                 solver.post(SCF.cardinality(compile(set), card));
                 return card;
             }
@@ -844,7 +862,9 @@ public class IrCompiler {
         public SetVar visit(IrArrayToSet ir, Void a) {
             IntVar[] $array = compile(ir.getArray());
             SetVar set = numSetVar("ArrayToSet", ir.getEnv(), ir.getKer());
-            solver.post(Constraints.arrayToSet($array, set));
+            IntVar setCard = setCardVar(ir);
+            solver.post(SCF.cardinality(set, setCard));
+            solver.post(Constraints.arrayToSet($array, set, setCard));
             return set;
         }
 

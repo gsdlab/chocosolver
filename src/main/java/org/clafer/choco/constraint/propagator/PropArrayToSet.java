@@ -44,7 +44,7 @@ public class PropArrayToSet extends Propagator<Variable> {
     }
 
     private boolean isAVar(int idx) {
-        return idx > 0;
+        return idx >= 1;
     }
 
     private int getAVarIndex(int idx) {
@@ -65,14 +65,35 @@ public class PropArrayToSet extends Propagator<Variable> {
         return EventType.REMOVE_FROM_ENVELOPE.mask + EventType.ADD_TO_KER.mask;
     }
 
-    private void checkKerSize() throws ContradictionException {
-        if (s.getKernelSize() > as.length) {
-            contradiction(s, s + " is too large");
+    private boolean findMate(int sEnv) throws ContradictionException {
+        assert s.envelopeContains(sEnv);
+        boolean inKer = s.kernelContains(sEnv);
+        int mate = -1;
+        for (int i = 0; i < as.length; i++) {
+            if (as[i].contains(sEnv)) {
+                // Found a second mate.
+                if (mate != -1 || !inKer) {
+                    mate = -2;
+                    break;
+                }
+                mate = i;
+            }
         }
-        if (s.getKernelSize() == as.length) {
-            if (!s.instantiated()) {
-                s.instantiateTo(PropUtil.iterateKer(s), aCause);
-                PropUtil.intsSubsetEnv(as, s, aCause);
+        if (mate == -1) {
+            // No mates.
+            s.removeFromEnvelope(sEnv, aCause);
+        } else if (mate != -2 && inKer) {
+            // One mate.
+            return as[mate].instantiateTo(sEnv, aCause);
+        }
+        return false;
+    }
+
+    private void findMates() throws ContradictionException {
+        for (int i = s.getEnvelopeFirst(); i != SetVar.END; i = s.getEnvelopeNext()) {
+            if (findMate(i)) {
+                findMates();
+                return;
             }
         }
     }
@@ -82,14 +103,13 @@ public class PropArrayToSet extends Propagator<Variable> {
         // Prune as
         PropUtil.intsSubsetEnv(as, s, aCause);
         // Prune s
-        PropUtil.envSubsetInts(s, as, aCause);
+        findMates();
         // Pick s
         for (IntVar a : as) {
             if (a.instantiated()) {
                 s.addToKernel(a.getValue(), aCause);
             }
         }
-        checkKerSize();
     }
 
     @Override
@@ -97,8 +117,8 @@ public class PropArrayToSet extends Propagator<Variable> {
         if (isSVar(idxVarInProp)) {
             sD.freeze();
             sD.forEach(pruneAOnSEnv, EventType.REMOVE_FROM_ENVELOPE);
+            sD.forEach(pickAOnSEnv, EventType.ADD_TO_KER);
             sD.unfreeze();
-            checkKerSize();
         } else {
             assert isAVar(idxVarInProp);
 
@@ -112,7 +132,6 @@ public class PropArrayToSet extends Propagator<Variable> {
             }
             if (as[id].instantiated()) {
                 s.addToKernel(as[id].getValue(), aCause);
-                checkKerSize();
             }
         }
     }
@@ -126,16 +145,21 @@ public class PropArrayToSet extends Propagator<Variable> {
             }
         }
     };
+    private final IntProcedure pickAOnSEnv = new IntProcedure() {
+        @Override
+        public void execute(int sKer) throws ContradictionException {
+            if (findMate(sKer)) {
+                findMates();
+            }
+        }
+    };
     private final IntProcedure pruneSOnARem = new IntProcedure() {
         @Override
         public void execute(int aRem) throws ContradictionException {
             if (s.envelopeContains(aRem)) {
-                for (IntVar a : as) {
-                    if (a.contains(aRem)) {
-                        return;
-                    }
+                if (findMate(aRem)) {
+                    findMates();
                 }
-                s.removeFromEnvelope(aRem, aCause);
             }
         }
     };

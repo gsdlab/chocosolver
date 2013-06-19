@@ -2,16 +2,24 @@ package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import java.io.File;
+import java.io.FileNotFoundException;
+import javax.script.ScriptException;
+import org.clafer.ast.AstModel;
+import org.clafer.collection.Pair;
+import org.clafer.compiler.ClaferCompiler;
+import org.clafer.compiler.ClaferSolver;
+import org.clafer.javascript.Javascript;
+import org.clafer.scope.Scope;
+import solver.Configuration;
 import solver.ICause;
-import solver.Solver;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VF;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
-import util.iterators.DisposableRangeIterator;
 
 /**
  * Various static utility functions for writing Choco propagators.
@@ -20,13 +28,16 @@ import util.iterators.DisposableRangeIterator;
  */
 public class PropUtil {
 
-    public static void main(String[] args) {
-        Solver solver = new Solver();
-        IntVar i = VF.enumerated("i", new int[]{10, 888}, solver);
-        DisposableRangeIterator iter = i.getRangeIterator(true);
-        System.out.println(iter.min() + " : " + iter.max());
-        iter = i.getRangeIterator(false);
-        System.out.println(iter.min() + " : " + iter.max());
+    public static void main(String[] args) throws FileNotFoundException, ScriptException {
+        Pair<AstModel, Scope> p = Javascript.readModel(new File("/home/jimmy/Programming/clafer/AADL_simplified.js"));
+        System.out.println(Configuration.IDEMPOTENCY);
+        ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
+//        SearchMonitorFactory.log(s.getInternalSolver(), false, true);
+//        SearchMonitorFactory.logContradiction(s.getInternalSolver());
+//        SearchMonitorFactory.limitNode(s.getInternalSolver(), 2000);
+        if (s.find()) {
+            System.out.println(s.instance());
+        }
     }
 
     private PropUtil() {
@@ -293,22 +304,24 @@ public class PropUtil {
      * @param propagator the propagator
      * @throws ContradictionException
      */
-    public static void domainSubsetOf(IntVar sub, TIntHashSet sup, ICause propagator) throws ContradictionException {
+    public static boolean domainSubsetOf(IntVar sub, TIntSet sup, ICause propagator) throws ContradictionException {
         int left = Integer.MIN_VALUE;
         int right = left;
         int ub = sub.getUB();
+        boolean changed = false;
         for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
             if (!sup.contains(val)) {
                 if (val == right + 1) {
                     right = val;
                 } else {
-                    sub.removeInterval(left, right, propagator);
+                    changed |= sub.removeInterval(left, right, propagator);
                     left = val;
                     right = val;
                 }
             }
         }
-        sub.removeInterval(left, right, propagator);
+        changed |= sub.removeInterval(left, right, propagator);
+        return changed;
     }
 
     /**

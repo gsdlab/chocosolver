@@ -250,6 +250,25 @@ public class SimpleConstraintTest {
 
     /**
      * <pre>
+     * Feature
+     *     Cost -> integer*
+     *     [this.Cost.ref = 5 ++ 2 ++ 3 ++ 4]
+     * </pre>
+     */
+    @Test
+    public void testJoinRefMultiValue() {
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
+        AstConcreteClafer cost = feature.addChild("Cost").refToUnique(IntType);
+        feature.addConstraint(equal(joinRef(join($this(), cost)), union(constant(5), constant(2), constant(3), constant(4))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(20));
+        assertEquals(1, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * abstract Feature ->> integer
      * Backup : Feature 2..3
      * [Backup.Feature.ref = 4]
@@ -389,46 +408,6 @@ public class SimpleConstraintTest {
         model.addConstraint(greaterThan(joinRef(global(a)), constant(5000)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(10000));
-        assertTrue(solver.find());
-    }
-
-    /**
-     * <pre>
-     * abstract A
-     * abstract B
-     * C : B
-     * </pre>
-     */
-    @Test(timeout = 60000)
-    public void testUnusedAbstract() {
-        AstModel model = newModel();
-
-        AstAbstractClafer a = model.addAbstractClafer("A");
-        AstAbstractClafer b = model.addAbstractClafer("B");
-        AstConcreteClafer c = model.addChild("C").extending(b);
-
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1));
-        assertTrue(solver.find());
-    }
-
-    /**
-     * <pre>
-     * abstract A
-     * abstract B
-     * C : B
-     *     D -> A ?
-     * </pre>
-     */
-    @Test(timeout = 60000)
-    public void testRefToUnusedAbstract() {
-        AstModel model = newModel();
-
-        AstAbstractClafer a = model.addAbstractClafer("A");
-        AstAbstractClafer b = model.addAbstractClafer("B");
-        AstConcreteClafer c = model.addChild("C").extending(b);
-        AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Optional);
-
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1).set(d, 1));
         assertTrue(solver.find());
     }
 }
