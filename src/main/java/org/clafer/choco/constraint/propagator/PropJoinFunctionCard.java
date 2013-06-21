@@ -161,6 +161,8 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        takeCard.updateLowerBound(take.getKernelSize(), aCause);
+        takeCard.updateUpperBound(take.getEnvelopeSize(), aCause);
         boolean changed;
         do {
             changed = false;

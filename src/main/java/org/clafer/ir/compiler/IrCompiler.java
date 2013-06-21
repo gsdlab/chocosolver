@@ -868,12 +868,10 @@ public class IrCompiler {
             if (reify == null) {
                 SetVar set = numSetVar("ArrayToSet", ir.getEnv(), ir.getKer());
                 IntVar setCard = setCardVar(ir);
-                solver.post(SCF.cardinality(set, setCard));
                 solver.post(Constraints.arrayToSet(array, set, setCard));
                 return set;
             }
             IntVar setCard = setCardVar(ir);
-            solver.post(SCF.cardinality(reify, setCard));
             return Constraints.arrayToSet(array, reify, setCard);
         }
 
@@ -898,14 +896,12 @@ public class IrCompiler {
                 IntVar takeCard = setCardVar(ir.getTake());
                 IntVar joinFunctionCard = setCardVar(ir);
                 solver.post(SCF.cardinality(take, takeCard));
-                solver.post(SCF.cardinality(joinFunction, joinFunctionCard));
                 solver.post(Constraints.joinFunction(take, takeCard, refs, joinFunction, joinFunctionCard));
                 return joinFunction;
             }
             IntVar takeCard = setCardVar(ir.getTake());
             IntVar reifyCard = setCardVar(ir);
             solver.post(SCF.cardinality(take, takeCard));
-            solver.post(SCF.cardinality(reify, reifyCard));
             return Constraints.joinFunction(take, takeCard, refs, reify, reifyCard);
         }
 

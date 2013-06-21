@@ -12,6 +12,7 @@ import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
+import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropOne;
@@ -26,6 +27,7 @@ import org.clafer.choco.constraint.propagator.PropSetSumN;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
+import solver.constraints.set.PropCardinality;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -62,7 +64,8 @@ public class Constraints {
         Constraint constraint = new Constraint(vars, svar.getSolver());
         constraint.setPropagators(
                 new PropArrayToSet(ivars, svar),
-                new PropArrayToSetCard(ivars, svarCard, globalCardinality));
+                new PropArrayToSetCard(ivars, svarCard, globalCardinality),
+                new PropCardinality(svar, svarCard));
         return constraint;
     }
 
@@ -109,6 +112,26 @@ public class Constraints {
         return constraint;
     }
 
+    public static Constraint joinInjectiveRelation(SetVar take, IntVar takeCard, SetVar[] children, IntVar[] childrenCards, SetVar to, IntVar toCard) {
+        if (children.length != childrenCards.length) {
+            throw new IllegalArgumentException();
+        }
+        Variable[] vars = new Variable[children.length * 2 + 4];
+        vars[0] = take;
+        vars[1] = takeCard;
+        vars[2] = to;
+        vars[3] = toCard;
+        System.arraycopy(children, 0, vars, 4, children.length);
+        System.arraycopy(childrenCards, 0, vars, 4 + children.length, childrenCards.length);
+        // Assumes take and children card is already constrained for maximum efficiency.
+        Constraint constraint = new Constraint(vars, take.getSolver());
+        constraint.setPropagators(
+                new PropJoinRelation(take, children, to),
+                new PropJoinInjectiveRelationCard(take, takeCard, childrenCards, toCard),
+                new PropCardinality(to, toCard));
+        return constraint;
+    }
+
     public static Constraint joinFunction(SetVar take, IntVar takeCard, IntVar[] refs, SetVar to, IntVar toCard) {
         return joinFunction(take, takeCard, refs, to, toCard, null);
     }
@@ -119,10 +142,12 @@ public class Constraints {
         vars[1] = takeCard;
         vars[2] = to;
         vars[3] = toCard;
+        // Assumes take card is already constrained for maximum efficiency.
         System.arraycopy(refs, 0, vars, 4, refs.length);
         Constraint constraint = new Constraint(vars, take.getSolver());
         constraint.setPropagators(new PropJoinFunction(take, refs, to),
-                new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality));
+                new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality),
+                new PropCardinality(to, toCard));
         return constraint;
     }
 

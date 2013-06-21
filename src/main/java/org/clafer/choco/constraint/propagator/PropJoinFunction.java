@@ -36,7 +36,7 @@ public class PropJoinFunction extends Propagator<Variable> {
     private final SetVar to;
 
     public PropJoinFunction(SetVar take, IntVar[] refs, SetVar to) {
-        super(buildArray(take, to, refs), PropagatorPriority.LINEAR, true);
+        super(buildArray(take, to, refs), PropagatorPriority.QUADRATIC, true);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
         this.refs = refs;

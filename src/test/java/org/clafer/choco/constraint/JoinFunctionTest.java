@@ -6,7 +6,6 @@ import org.clafer.choco.constraint.propagator.PropUtil;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
-import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -46,8 +45,6 @@ public class JoinFunctionTest extends ConstraintTest {
             SetVar to = VF.set("to", Util.fromTo(0, nextInt(10)), solver);
             IntVar toCard = VF.enumerated("|to|", 0, to.getEnvelopeSize(), solver);
 
-            solver.post(SCF.cardinality(take, takeCard));
-            solver.post(SCF.cardinality(to, toCard));
             solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard));
 
             assertTrue(randomizeStrategy(solver).findSolution());
@@ -71,8 +68,6 @@ public class JoinFunctionTest extends ConstraintTest {
         SetVar to = VF.set("to", Util.range(0, 5), solver);
         IntVar toCard = VF.enumerated("|to|", 0, to.getEnvelopeSize(), solver);
 
-        solver.post(SCF.cardinality(take, takeCard));
-        solver.post(SCF.cardinality(to, toCard));
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard));
 
         assertTrue(randomizeStrategy(solver).findSolution());
@@ -99,8 +94,6 @@ public class JoinFunctionTest extends ConstraintTest {
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
         IntVar toCard = VF.enumerated("|to|", 0, 5, solver);
 
-        solver.post(SCF.cardinality(take, takeCard));
-        solver.post(SCF.cardinality(to, toCard));
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard));
 
         int count = 0;
@@ -141,8 +134,6 @@ public class JoinFunctionTest extends ConstraintTest {
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
         IntVar toCard = VF.enumerated("|to|", 0, 5, solver);
 
-        solver.post(SCF.cardinality(take, takeCard));
-        solver.post(SCF.cardinality(to, toCard));
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard, 1));
 
         int count = 0;
@@ -183,8 +174,6 @@ public class JoinFunctionTest extends ConstraintTest {
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
         IntVar toCard = VF.enumerated("|to|", 0, 5, solver);
 
-        solver.post(SCF.cardinality(take, takeCard));
-        solver.post(SCF.cardinality(to, toCard));
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard, 2));
 
         int count = 0;

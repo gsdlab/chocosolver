@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.set.SCF;
+import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
 
@@ -80,13 +81,19 @@ public class JoinRelationTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
+        IntVar takeCard = VF.enumerated("|take|", 0, take.getEnvelopeSize(), solver);
+        solver.post(SCF.cardinality(take, takeCard));
         SetVar[] children = new SetVar[3];
+        IntVar[] childrenCards = new IntVar[children.length];
         for (int i = 0; i < children.length; i++) {
             children[i] = VF.set("child" + i, new int[]{0, 1, 2, 3, 4}, solver);
+            childrenCards[i] = VF.enumerated("|child" + i + "|", 0, children[i].getEnvelopeSize(), solver);
+            solver.post(SCF.cardinality(children[i], childrenCards[i]));
         }
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
+        IntVar toCard = VF.enumerated("|to|", 0, to.getEnvelopeSize(), solver);
 
-        solver.post(Constraints.joinRelation(take, children, to));
+        solver.post(Constraints.joinInjectiveRelation(take, takeCard, children, childrenCards, to, toCard));
         solver.post(SCF.all_disjoint(children));
 
         int count = 0;

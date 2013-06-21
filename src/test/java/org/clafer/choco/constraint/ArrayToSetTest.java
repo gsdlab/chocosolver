@@ -8,7 +8,6 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Cause;
 import solver.Solver;
-import solver.constraints.set.SCF;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -55,7 +54,6 @@ public class ArrayToSetTest extends ConstraintTest {
             SetVar set = VF.set("set", Util.range(-low - nextInt(10), high + nextInt(10)), solver);
             IntVar setCard = VF.enumerated("|set|", 0, set.getEnvelopeSize(), solver);
 
-            solver.post(SCF.cardinality(set, setCard));
             solver.post(Constraints.arrayToSet(array, set, setCard));
 
             assertTrue(randomizeStrategy(solver).findSolution());
@@ -79,7 +77,6 @@ public class ArrayToSetTest extends ConstraintTest {
             SetVar set = VF.set("set", Util.range(-low - nextInt(10), high + nextInt(10)), solver);
             IntVar setCard = VF.enumerated("|set|", 0, set.getEnvelopeSize(), solver);
 
-            solver.post(SCF.cardinality(set, setCard));
             solver.post(Constraints.arrayToSet(array, set, setCard, globalCardinality));
 
             assertTrue(solver.toString(), randomizeStrategy(solver).findSolution());
@@ -98,7 +95,6 @@ public class ArrayToSetTest extends ConstraintTest {
         SetVar set = VF.set("set", Util.range(0, 10000), solver);
         IntVar setCard = VF.enumerated("|set|", 0, set.getEnvelopeSize(), solver);
 
-        solver.post(SCF.cardinality(set, setCard));
         solver.post(Constraints.arrayToSet(array, set, setCard));
 
         assertTrue(randomizeStrategy(solver).findSolution());
@@ -116,7 +112,6 @@ public class ArrayToSetTest extends ConstraintTest {
         SetVar svar = VF.set("svar", new int[]{0, 1, 2, 3, 4, 5}, solver);
         IntVar svarCard = VF.enumerated("|svar|", 0, 6, solver);
 
-        solver.post(SCF.cardinality(svar, svarCard));
         solver.post(Constraints.arrayToSet(ivars, svar, svarCard));
 
         int count = 0;
@@ -144,7 +139,6 @@ public class ArrayToSetTest extends ConstraintTest {
         IntVar svarCard = VF.enumerated("|svar|", 0, 4, solver);
         int globalCardinality = 1;
 
-        solver.post(SCF.cardinality(svar, svarCard));
         solver.post(Constraints.arrayToSet(ivars, svar, svarCard, globalCardinality));
 
         int count = 0;
@@ -175,7 +169,6 @@ public class ArrayToSetTest extends ConstraintTest {
         IntVar svarCard = VF.enumerated("|svar|", 0, 4, solver);
         int globalCardinality = 1;
 
-        solver.post(SCF.cardinality(svar, svarCard));
         solver.post(Constraints.arrayToSet(ivars, svar, svarCard, globalCardinality));
 
         randomizeStrategy(solver).propagate();
