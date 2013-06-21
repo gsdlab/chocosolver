@@ -12,6 +12,7 @@ import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropFind;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
+import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropOne;
@@ -109,13 +110,20 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint joinFunction(SetVar take, IntVar[] refs, SetVar to) {
-        Variable[] vars = new Variable[refs.length + 2];
+    public static Constraint joinFunction(SetVar take, IntVar takeCard, IntVar[] refs, SetVar to, IntVar toCard) {
+        return joinFunction(take, takeCard, refs, to, toCard, null);
+    }
+
+    public static Constraint joinFunction(SetVar take, IntVar takeCard, IntVar[] refs, SetVar to, IntVar toCard, Integer globalCardinality) {
+        Variable[] vars = new Variable[refs.length + 4];
         vars[0] = take;
-        vars[1] = to;
-        System.arraycopy(refs, 0, vars, 2, refs.length);
+        vars[1] = takeCard;
+        vars[2] = to;
+        vars[3] = toCard;
+        System.arraycopy(refs, 0, vars, 4, refs.length);
         Constraint constraint = new Constraint(vars, take.getSolver());
-        constraint.setPropagators(new PropJoinFunction(take, refs, to));
+        constraint.setPropagators(new PropJoinFunction(take, refs, to),
+                new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality));
         return constraint;
     }
 

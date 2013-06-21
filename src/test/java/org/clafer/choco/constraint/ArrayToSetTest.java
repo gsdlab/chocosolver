@@ -10,7 +10,6 @@ import solver.Cause;
 import solver.Solver;
 import solver.constraints.set.SCF;
 import solver.exception.ContradictionException;
-import solver.search.loop.monitors.SMF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;

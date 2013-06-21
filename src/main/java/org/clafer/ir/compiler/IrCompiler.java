@@ -903,10 +903,18 @@ public class IrCompiler {
             IntVar[] refs = compile(ir.getRefs());
             if (reify == null) {
                 SetVar joinFunction = numSetVar("JoinFunction", ir.getEnv(), ir.getKer());
-                solver.post(Constraints.joinFunction(take, refs, joinFunction));
+                IntVar takeCard = setCardVar(ir.getTake());
+                IntVar joinFunctionCard = setCardVar(ir);
+                solver.post(SCF.cardinality(take, takeCard));
+                solver.post(SCF.cardinality(joinFunction, joinFunctionCard));
+                solver.post(Constraints.joinFunction(take, takeCard, refs, joinFunction, joinFunctionCard));
                 return joinFunction;
             }
-            return Constraints.joinFunction(take, refs, reify);
+            IntVar takeCard = setCardVar(ir.getTake());
+            IntVar reifyCard = setCardVar(ir);
+            solver.post(SCF.cardinality(take, takeCard));
+            solver.post(SCF.cardinality(reify, reifyCard));
+            return Constraints.joinFunction(take, takeCard, refs, reify, reifyCard);
         }
 
         @Override

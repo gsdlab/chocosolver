@@ -1439,7 +1439,7 @@ public class Irs {
         IrDomain env = IrUtil.difference(minuend.getEnv(), subtrahend.getKer());
         IrDomain ker = IrUtil.difference(minuend.getKer(), subtrahend.getEnv());
         int low = Math.max(0, minuend.getCard().getLowBound() - subtrahend.getCard().getHighBound());
-        int high = Math.max(0, minuend.getCard().getHighBound() - subtrahend.getCard().getLowBound());
+        int high = minuend.getCard().getHighBound();
         IrDomain card = boundDomain(Math.max(low, ker.size()), Math.min(high, env.size()));
         return new IrSetDifference(minuend, subtrahend, env, ker, card);
     }

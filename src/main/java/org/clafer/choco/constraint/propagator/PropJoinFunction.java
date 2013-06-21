@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import gnu.trove.iterator.TIntIterator;
 import java.util.Arrays;
 import org.clafer.collection.FixedCapacityIntSet;
 import solver.constraints.Propagator;
@@ -10,7 +9,9 @@ import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;
+import util.procedure.IntProcedure;
 
 /**
  * <p>
@@ -30,12 +31,14 @@ import util.ESat;
 public class PropJoinFunction extends Propagator<Variable> {
 
     private final SetVar take;
+    private final SetDeltaMonitor takeD;
     private final IntVar[] refs;
     private final SetVar to;
 
     public PropJoinFunction(SetVar take, IntVar[] refs, SetVar to) {
         super(buildArray(take, to, refs), PropagatorPriority.LINEAR, true);
         this.take = take;
+        this.takeD = take.monitorDelta(aCause);
         this.refs = refs;
         this.to = to;
     }
@@ -110,43 +113,16 @@ public class PropJoinFunction extends Propagator<Variable> {
         }
     }
 
-    private int pruneRefsPickTo(boolean forceNoMoreDuplicates) throws ContradictionException {
-        int sameRefs = 0;
-        FixedCapacityIntSet set = new FixedCapacityIntSet(take.getKernelSize());
-        // Prune refs, Pick to
+    @Override
+    public void propagate(int evtmask) throws ContradictionException {
+        // Pick to and prune refs
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
             PropUtil.intSubsetEnv(refs[i], to, aCause);
             if (refs[i].instantiated()) {
                 int value = refs[i].getValue();
-                sameRefs += set.add(value) ? 0 : 1;
                 to.addToKernel(value, aCause);
             }
         }
-        for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            if (!refs[i].instantiated()) {
-                if (PropUtil.isDomainSubsetOf(refs[i], set)) {
-                    sameRefs++;
-                } else if (forceNoMoreDuplicates) {
-                    TIntIterator iter = set.iterator();
-                    while (iter.hasNext()) {
-                        refs[i].removeValue(iter.next(), aCause);
-                    }
-                    if (refs[i].instantiated()) {
-                        contradiction(refs[i], "Take too small");
-                    }
-                }
-            }
-        }
-        return sameRefs;
-    }
-
-    @Override
-    public void propagate(int evtmask) throws ContradictionException {
-        // Prune to
-        findMates();
-
-        // Prune refs, Pick to
-        int sameRefs = pruneRefsPickTo(false);
 
         // Prune take
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
@@ -155,22 +131,50 @@ public class PropJoinFunction extends Propagator<Variable> {
             }
         }
 
-        int minTakeSize = sameRefs + to.getKernelSize();
-        if (minTakeSize == take.getEnvelopeSize()) {
-            take.instantiateTo(PropUtil.iterateEnv(take), aCause);
-            to.instantiateTo(PropUtil.iterateKer(to), aCause);
-            sameRefs = pruneRefsPickTo(true);
-        }
-        minTakeSize = sameRefs + to.getKernelSize();
-        if (minTakeSize > take.getEnvelopeSize()) {
-            contradiction(take, "Take too large");
-        }
+        // Prune to
+        findMates();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
+        if (isTakeVar(idxVarInProp)) {
+            takeD.freeze();
+            takeD.forEach(pruneToOnTakeEnv, EventType.REMOVE_FROM_ENVELOPE);
+            takeD.forEach(pickToAndPruneChildOnTakeKer, EventType.ADD_TO_KER);
+            takeD.unfreeze();
+        } else {
+            forcePropagate(EventType.FULL_PROPAGATION);
+        }
     }
+    private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
+        @Override
+        public void execute(int takeEnv) throws ContradictionException {
+            assert !take.envelopeContains(takeEnv);
+
+            IntVar ref = refs[takeEnv];
+            int ub = ref.getUB();
+            for (int i = ref.getLB(); i <= ub; i = ref.nextValue(i)) {
+                if (to.envelopeContains(i)) {
+                    if (findMate(i)) {
+                        findMates();
+                        return;
+                    }
+                }
+            }
+        }
+    };
+    private final IntProcedure pickToAndPruneChildOnTakeKer = new IntProcedure() {
+        @Override
+        public void execute(int takeKer) throws ContradictionException {
+            assert take.kernelContains(takeKer);
+
+            IntVar ref = refs[takeKer];
+            PropUtil.intSubsetEnv(ref, to, aCause);
+            if (ref.instantiated()) {
+                to.addToKernel(ref.getValue(), aCause);
+            }
+        }
+    };
 
     @Override
     public ESat isEntailed() {

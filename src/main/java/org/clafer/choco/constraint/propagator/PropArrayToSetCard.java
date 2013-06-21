@@ -1,10 +1,8 @@
 package org.clafer.choco.constraint.propagator;
 
-import gnu.trove.iterator.TIntIterator;
+import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.set.TIntSet;
 import java.util.Arrays;
-import org.clafer.collection.FixedCapacityIntSet;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -14,7 +12,6 @@ import solver.variables.Variable;
 import util.ESat;
 
 /**
- * TODO propping on card
  *
  * @author jimmy
  */
@@ -69,24 +66,44 @@ public class PropArrayToSetCard extends Propagator<Variable> {
         return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
     }
 
-    private TIntSet countRefs() {
-        FixedCapacityIntSet set = new FixedCapacityIntSet(as.length);
-        for (IntVar a : as) {
-            if (a.instantiated()) {
-                set.add(a.getValue());
+    private int countAdditionalSameRefsAllowed(TIntIntHashMap map) {
+        assert hasGlobalCardinality();
+        int gc = getGlobalCardinality();
+
+        int allowed = 0;
+
+        if (gc != 1) {
+            TIntIntIterator iter = map.iterator();
+            for (int i = map.size(); i-- > 0;) {
+                iter.advance();
+                assert iter.value() > 0;
+                assert iter.value() <= gc;
+                allowed += gc - iter.value();
             }
+            assert !iter.hasNext();
         }
-        return set;
+
+        return allowed;
     }
 
-    private TIntSet constrainGlobalCardinality() throws ContradictionException {
+    private TIntIntHashMap countRefs() {
+        TIntIntHashMap map = new TIntIntHashMap(as.length);
+        for (IntVar a : as) {
+            if (a.instantiated()) {
+                map.adjustOrPutValue(a.getValue(), 1, 1);
+            }
+        }
+        return map;
+    }
+
+    private TIntIntHashMap constrainGlobalCardinality() throws ContradictionException {
         assert hasGlobalCardinality();
         TIntIntHashMap map = new TIntIntHashMap(as.length);
         for (int i = 0; i < as.length; i++) {
             constrainGlobalCardinality(i, i, map);
         }
         assert map.size() == countRefs().size();
-        return map.keySet();
+        return map;
     }
 
     private void constrainGlobalCardinality(int index, int explored, TIntIntHashMap map) throws ContradictionException {
@@ -128,16 +145,17 @@ public class PropArrayToSetCard extends Propagator<Variable> {
         boolean changed;
         do {
             changed = false;
-            TIntSet instantiated = hasGlobalCardinality() ? constrainGlobalCardinality() : countRefs();
-            int instCard = instantiated.size();
+            TIntIntHashMap map = hasGlobalCardinality() ? constrainGlobalCardinality() : countRefs();
+            int instCard = map.size();
             int uninstantiated = 0;
             for (IntVar a : as) {
                 if (!a.instantiated()) {
                     uninstantiated++;
                 }
             }
-            int minCard = instCard + (hasGlobalCardinality()
-                    ? divRoundUp(uninstantiated, getGlobalCardinality())
+            int minCard = instCard
+                    + (hasGlobalCardinality()
+                    ? divRoundUp(Math.max(0, uninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
                     : 0);
             int maxCard = instCard + uninstantiated;
 
@@ -148,9 +166,9 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                 if (instCard == sCard.getUB()) {
                     // The rest must be duplicates.
                     for (IntVar a : as) {
-                        assert !a.instantiated() || instantiated.contains(a.getValue());
+                        assert !a.instantiated() || map.contains(a.getValue());
                         if (!a.instantiated()) {
-                            changed |= PropUtil.domainSubsetOf(a, instantiated, aCause) && a.instantiated();
+                            changed |= PropUtil.domainSubsetOf(a, map.keySet(), aCause) && a.instantiated();
                         }
                     }
                 }
@@ -158,10 +176,12 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                     // No more duplicate values.
                     for (IntVar a : as) {
                         if (!a.instantiated()) {
-                            TIntIterator iter = instantiated.iterator();
-                            while (iter.hasNext()) {
-                                changed |= a.removeValue(iter.next(), aCause) && a.instantiated();
+                            TIntIntIterator iter = map.iterator();
+                            for (int i = map.size(); i-- > 0;) {
+                                iter.advance();
+                                changed |= a.removeValue(iter.key(), aCause) && a.instantiated();
                             }
+                            assert !iter.hasNext();
                         }
                     }
                 }
@@ -189,8 +209,12 @@ public class PropArrayToSetCard extends Propagator<Variable> {
             }
         }
 
-        int minCard = map.size();
-        int maxCard = map.size() + uninstantiated;
+        int instCard = map.size();
+        int minCard = instCard
+                + (hasGlobalCardinality()
+                ? divRoundUp(Math.max(0, uninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
+                : 0);
+        int maxCard = instCard + uninstantiated;
 
         if (sCard.getUB() < minCard) {
             return ESat.FALSE;
