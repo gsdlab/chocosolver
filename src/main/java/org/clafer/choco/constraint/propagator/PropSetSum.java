@@ -16,20 +16,17 @@ import util.ESat;
  *
  * @author jimmy
  */
-public class PropSetSumN extends Propagator<Variable> {
+public class PropSetSum extends Propagator<Variable> {
 
     private final SetVar set;
     private final IntVar sum;
-    private final int n;
+    private final IntVar card;
 
-    public PropSetSumN(SetVar set, IntVar sum, int n) {
-        super(new Variable[]{set, sum}, PropagatorPriority.LINEAR, true);
-        if (n <= 0) {
-            throw new IllegalArgumentException();
-        }
+    public PropSetSum(SetVar set, IntVar sum, IntVar card) {
+        super(new Variable[]{set, sum, card}, PropagatorPriority.LINEAR, false);
         this.set = set;
         this.sum = sum;
-        this.n = n;
+        this.card = card;
     }
 
     private boolean isSetVar(int idx) {
@@ -39,27 +36,26 @@ public class PropSetSumN extends Propagator<Variable> {
     private boolean isSumVar(int idx) {
         return idx == 1;
     }
+    
+    private boolean isCardVar(int idx) {
+        return idx == 2;
+    }
 
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
             return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
         }
-        assert isSumVar(vIdx);
+        assert isSumVar(vIdx) || isCardVar(vIdx);
         return EventType.INSTANTIATE.mask + EventType.BOUND.mask;
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        propagate(0, 0);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         int envSize = set.getEnvelopeSize();
         int kerSize = set.getKernelSize();
-        if (kerSize > n) {
-            contradiction(set, "|" + set + "| > " + n);
+        if (kerSize > card.getUB()) {
+            contradiction(set, "|" + set + "| > " + card);
         }
 
         final int[] ker = PropUtil.iterateKer(set);
@@ -73,7 +69,7 @@ public class PropSetSumN extends Propagator<Variable> {
         // The size of the set of integers to still choose from.
         int chooseSize = envSize - kerSize;
         // The [0-lowEnd) integers in env-ker are the lowest integers.
-        int lowEnd = Math.min(n, envSize) - kerSize;
+        int lowEnd = Math.min(card.getUB(), envSize) - kerSize;
         // The [highStart-choosSize) integers in env-ker are the highest integers.
         int highStart = chooseSize - lowEnd;
         // The n + 1 highest integer, or 0 if not positive.
@@ -102,7 +98,7 @@ public class PropSetSumN extends Propagator<Variable> {
         int lb = sum.getLB();
         int ub = sum.getUB();
 
-        boolean again = false;
+        boolean changed = false;
         index = 0;
         // sum of the lowest n - 1 negative integers that can be chosen.
         int lowNMinusOne = kerSum;
@@ -119,7 +115,7 @@ public class PropSetSumN extends Propagator<Variable> {
                         || highNMinusOne + i < lb) {
                     // With i, it is impossible to stay below the upper bound.
                     // Remove it from the envelope.
-                    again |= set.removeFromEnvelope(i, aCause);
+                    changed |= set.removeFromEnvelope(i, aCause);
                 }
                 index++;
             }
@@ -132,19 +128,24 @@ public class PropSetSumN extends Propagator<Variable> {
                 i--) {
             // Without i, it is impossible to reach the lower bound.
             // Add it to the kernel.
-            again |= set.addToKernel(highChoose[i], aCause);
+            changed |= set.addToKernel(highChoose[i], aCause);
         }
-        if (again) {
+        if (changed) {
             // Changed some values, need to repropagate.
-            propagate(0, 0);
+            propagate(evtmask);
         }
+    }
+
+    @Override
+    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
+        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override
     public ESat isEntailed() {
         int envSize = set.getEnvelopeSize();
         int kerSize = set.getKernelSize();
-        if (kerSize > n) {
+        if (kerSize > card.getUB()) {
             return ESat.FALSE;
         }
         int[] ker = PropUtil.iterateKer(set);
@@ -152,7 +153,7 @@ public class PropSetSumN extends Propagator<Variable> {
         int high = 0;
         // The number of elements seen in env but not in ker.
         int index = 0;
-        int lowEnd = Math.min(n, envSize - kerSize);
+        int lowEnd = Math.min(card.getUB(), envSize - kerSize);
         int highStart = envSize - kerSize - lowEnd;
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (Util.in(i, ker)) {
@@ -176,6 +177,6 @@ public class PropSetSumN extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return "sum(" + set + ") = " + sum + " where |" + set.getName() + "| <= " + n;
+        return "sum(" + set + ") = " + sum + " where |" + set.getName() + "| <= " + card;
     }
 }

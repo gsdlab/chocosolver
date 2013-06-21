@@ -4,6 +4,7 @@ import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -12,13 +13,13 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class SetSumNTest extends ConstraintTest {
+public class SetSumTest extends ConstraintTest {
 
-    private void checkCorrectness(SetVar set, IntVar sum, int n) {
+    private void checkCorrectness(SetVar set, IntVar sum, IntVar setCard) {
         int[] $set = set.getValue();
         int $sum = sum.getValue();
 
-        assertTrue($set.length <= n);
+        assertTrue($set.length <= setCard.getValue());
 
         int sumSet = 0;
         for (int s : $set) {
@@ -34,20 +35,21 @@ public class SetSumNTest extends ConstraintTest {
 
             SetVar set = VF.set("set", Util.range(-nextInt(10), nextInt(10)), solver);
             IntVar sum = VF.enumerated("sum", -nextInt(100), nextInt(100), solver);
-            int n = nextInt(10) + 1;
+            IntVar setCard = VF.enumerated("|set|", 0, nextInt(10) + 1, solver);
 
-            solver.post(Constraints.setSumN(set, sum, n));
+            solver.post(SCF.cardinality(set, setCard));
+            solver.post(Constraints.setSum(set, sum, setCard));
 
             assertTrue(solver.toString(), randomizeStrategy(solver).findSolution());
-            checkCorrectness(set, sum, n);
+            checkCorrectness(set, sum, setCard);
             for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(set, sum, n);
+                checkCorrectness(set, sum, setCard);
             }
         }
     }
 
     @Test(timeout = 60000)
-    public void testSumSetN() {
+    public void testSumSet() {
         /*
          * import Control.Monad
          *
@@ -59,16 +61,17 @@ public class SetSumNTest extends ConstraintTest {
          */
         Solver solver = new Solver();
 
-        int n = 7;
         SetVar set = VF.set("set", Util.range(-4, 5), solver);
         IntVar sum = VF.enumerated("sum", -120, 120, solver);
+        IntVar setCard = VF.enumerated("|set|", 0, 7, solver);
 
-        solver.post(Constraints.setSumN(set, sum, n));
+        solver.post(SCF.cardinality(set, setCard));
+        solver.post(Constraints.setSum(set, sum, setCard));
 
         int count = 0;
         if (randomizeStrategy(solver).findSolution()) {
             do {
-                checkCorrectness(set, sum, n);
+                checkCorrectness(set, sum, setCard);
                 count++;
             } while (solver.nextSolution());
         }
@@ -89,14 +92,15 @@ public class SetSumNTest extends ConstraintTest {
 
         SetVar set = VF.set("set", Util.range(-7, 0), solver);
         IntVar sum = VF.enumerated("sum", -4, 13, solver);
-        int n = 8;
+        IntVar setCard = VF.enumerated("|set|", 0, 8, solver);
 
-        solver.post(Constraints.setSumN(set, sum, n));
+        solver.post(SCF.cardinality(set, setCard));
+        solver.post(Constraints.setSum(set, sum, setCard));
 
         int count = 0;
         if (randomizeStrategy(solver).findSolution()) {
             do {
-                checkCorrectness(set, sum, n);
+                checkCorrectness(set, sum, setCard);
                 count++;
             } while (solver.nextSolution());
         }

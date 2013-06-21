@@ -822,10 +822,14 @@ public class IrCompiler {
             int n = ir.getSet().getCard().getHighBound();
             if (reify == null) {
                 IntVar sum = numIntVar("SetSum", ir.getDomain());
-                solver.post(Constraints.setSumN(set, sum, n));
+                IntVar setCard = setCardVar(ir.getSet());
+                solver.post(SCF.cardinality(set, setCard));
+                solver.post(Constraints.setSum(set, sum, setCard));
                 return sum;
             }
-            return Constraints.setSumN(set, reify, n);
+            IntVar setCard = setCardVar(ir.getSet());
+            solver.post(SCF.cardinality(set, setCard));
+            return Constraints.setSum(set, reify, setCard);
         }
 
         @Override

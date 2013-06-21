@@ -23,7 +23,7 @@ import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
-import org.clafer.choco.constraint.propagator.PropSetSumN;
+import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
@@ -192,12 +192,12 @@ public class Constraints {
      *
      * @param set the set of integers
      * @param sum the sum of the set
-     * @param n the maximum cardinality of the set
-     * @return a constraint where |set| &le n and sum = Σ set
+     * @param card the cardinality of the set
+     * @return a constraint where and sum = Σ set
      */
-    public static Constraint setSumN(SetVar set, IntVar sum, int n) {
-        Constraint constraint = new Constraint(new Variable[]{set, sum}, set.getSolver());
-        constraint.setPropagators(new PropSetSumN(set, sum, n));
+    public static Constraint setSum(SetVar set, IntVar sum, IntVar card) {
+        Constraint constraint = new Constraint(new Variable[]{set, sum, card}, set.getSolver());
+        constraint.setPropagators(new PropSetSum(set, sum, card));
         return constraint;
     }
 
