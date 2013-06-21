@@ -11,6 +11,7 @@ public class IrJoinRelation extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr take;
     private final IrSetExpr[] children;
+    private final boolean injective = false;
 
     IrJoinRelation(IrSetExpr take, IrSetExpr[] children, IrDomain env, IrDomain ker, IrDomain card) {
         super(env, ker, card);
@@ -24,6 +25,10 @@ public class IrJoinRelation extends IrAbstractSet implements IrSetExpr {
 
     public IrSetExpr[] getChildren() {
         return children;
+    }
+
+    public boolean isInjective() {
+        return injective;
     }
 
     @Override

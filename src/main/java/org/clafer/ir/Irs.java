@@ -1147,16 +1147,6 @@ public class Irs {
         }
     }
 
-    public static IrIntExpr find(int value, IrIntExpr[] array) {
-//        TIntArrayList domain = new TIntArrayList();
-//        for (int i = 0; i < array.length; i++) {
-//            if (array[i].getDomain().contains(value)) {
-//                domain.add(i);
-//            }
-//        }
-        return new IrFind(value, array, boundDomain(0, array.length - 1));
-    }
-
     public static IrIntExpr sum(IrSetExpr set) {
         int sum = Util.sum(set.getKer().iterator());
         int count = set.getKer().size();

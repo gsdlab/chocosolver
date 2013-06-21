@@ -9,7 +9,6 @@ import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropFilterString;
-import org.clafer.choco.constraint.propagator.PropFind;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
@@ -238,13 +237,6 @@ public class Constraints {
         Constraint<IntVar, PropLexChainChannel> constraint =
                 new Constraint<IntVar, PropLexChainChannel>(PropLexChainChannel.buildArray(strings, ints), strings[0][0].getSolver());
         constraint.setPropagators(new PropLexChainChannel(strings, ints));
-        return constraint;
-    }
-
-    public static Constraint find(int value, IntVar[] array, IntVar index) {
-        Constraint<IntVar, PropFind> constraint =
-                new Constraint<IntVar, PropFind>(Util.cons(index, array), index.getSolver());
-        constraint.setPropagators(new PropFind(value, array, index));
         return constraint;
     }
 }

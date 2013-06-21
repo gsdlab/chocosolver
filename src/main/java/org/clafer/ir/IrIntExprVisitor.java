@@ -27,8 +27,6 @@ public interface IrIntExprVisitor<A, B> {
 
     public B visit(IrElement ir, A a);
 
-    public B visit(IrFind ir, A a);
-
     public B visit(IrCount ir, A a);
 
     public B visit(IrSetSum ir, A a);
