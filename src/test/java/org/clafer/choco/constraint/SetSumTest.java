@@ -4,7 +4,6 @@ import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
-import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -37,7 +36,6 @@ public class SetSumTest extends ConstraintTest {
             IntVar sum = VF.enumerated("sum", -nextInt(100), nextInt(100), solver);
             IntVar setCard = VF.enumerated("|set|", 0, nextInt(10) + 1, solver);
 
-            solver.post(SCF.cardinality(set, setCard));
             solver.post(Constraints.setSum(set, sum, setCard));
 
             assertTrue(solver.toString(), randomizeStrategy(solver).findSolution());
@@ -65,7 +63,6 @@ public class SetSumTest extends ConstraintTest {
         IntVar sum = VF.enumerated("sum", -120, 120, solver);
         IntVar setCard = VF.enumerated("|set|", 0, 7, solver);
 
-        solver.post(SCF.cardinality(set, setCard));
         solver.post(Constraints.setSum(set, sum, setCard));
 
         int count = 0;
@@ -94,7 +91,6 @@ public class SetSumTest extends ConstraintTest {
         IntVar sum = VF.enumerated("sum", -4, 13, solver);
         IntVar setCard = VF.enumerated("|set|", 0, 8, solver);
 
-        solver.post(SCF.cardinality(set, setCard));
         solver.post(Constraints.setSum(set, sum, setCard));
 
         int count = 0;
@@ -105,5 +101,25 @@ public class SetSumTest extends ConstraintTest {
             } while (solver.nextSolution());
         }
         assertEquals(14, count);
+    }
+
+    @Test(timeout = 60000)
+    public void testPartiallySolved() {
+        Solver solver = new Solver();
+
+        SetVar set = VF.set("set", Util.range(-4, 0), solver);
+        IntVar sum = VF.enumerated("sum", -4, -1, solver);
+        IntVar setCard = VF.enumerated("|set|", new int[]{3, 5}, solver);
+
+        solver.post(Constraints.setSum(set, sum, setCard));
+
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(set, sum, setCard);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(2, count);
     }
 }
