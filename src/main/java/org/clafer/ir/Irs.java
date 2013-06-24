@@ -104,6 +104,10 @@ public class Irs {
         return value ? TrueDomain : FalseDomain;
     }
 
+    public static IrDomain constantDomain(int value) {
+        return boundDomain(value, value);
+    }
+
     public static IrDomain boundDomain(int low, int high) {
         return new IrBoundDomain(low, high);
     }

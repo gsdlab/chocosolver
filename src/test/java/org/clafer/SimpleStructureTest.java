@@ -503,7 +503,9 @@ public class SimpleStructureTest {
     }
 
     /**
+     * <pre>
      * Age -> integer ?
+     * </pre>
      */
     @Test(timeout = 60000)
     public void testRefZeroOutsideIntRange() {
@@ -512,8 +514,7 @@ public class SimpleStructureTest {
         model.addChild("Age").withCard(0, 1).refTo(IntType);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(1).intHigh(2));
-        // Even though it should be "3", the current compiler will add "0" to the int range.
-        assertEquals(4, solver.allInstances().length);
+        assertEquals(3, solver.allInstances().length);
     }
 
     /**

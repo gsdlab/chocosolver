@@ -338,6 +338,7 @@ public class AstCompiler {
 
         IrBoolExpr[] members = memberships.get(clafer);
         if (ref != null) {
+            AstClafer tar = ref.getTargetType();
             IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
                     refOffset, refOffset + getScope(clafer));
             if (ref.isUnique() && getCard(clafer).getHigh() > 1) {
@@ -364,18 +365,17 @@ public class AstCompiler {
             }
             assert refs.length == members.length;
             for (int i = 0; i < members.length; i++) {
-                module.addConstraint(implies(not(members[i]), equal($(refs[i]), 0)));
+                module.addConstraint(implies(not(members[i]), equal($(refs[i]), getUninitalizedRef(tar))));
             }
 
-            if (!(ref.getTargetType() instanceof AstIntClafer)) {
+            if (ref.getTargetType() instanceof AstIntClafer) {
+                for (int i = 0; i < refs.length; i++) {
+                    module.addConstraint(implies(members[i], notEqual($(refs[i]), getUninitalizedRef(tar))));
+                }
+            } else {
                 IrSetVar targetSet = sets.get(ref.getTargetType());
                 for (int i = 0; i < refs.length; i++) {
-                    IrIntVar refPointer = refs[i];
-                    if (targetSet.getKer().contains(0)) {
-                        module.addConstraint(member($(refPointer), $(targetSet)));
-                    } else {
-                        module.addConstraint(implies(members[i], member($(refPointer), $(targetSet))));
-                    }
+                    module.addConstraint(implies(members[i], member($(refs[i]), $(targetSet))));
                 }
             }
         }
@@ -405,7 +405,8 @@ public class AstCompiler {
                     childIndex.add(new IrIntExpr[]{
                         analysis.isBreakableRefId(ref, i + refOffset)
                         // The id of the target is the weight.
-                        ? sub(mul(asInt(members[i]), refHigh + 1), $(refPointers.get(ref)[i + refOffset]))
+                        //                        ? sub(mul(asInt(members[i]), refHigh + 1), $(refPointers.get(ref)[i + refOffset]))
+                        ? minus($(refPointers.get(ref)[i + refOffset]))
                         // If analysis says that this id does not need breaking
                         // then give it a constant weight. Any constant is fine.
                         : $(Zero)
@@ -415,14 +416,13 @@ public class AstCompiler {
                     for (Pair<AstClafer, Integer> hierarchy : analysis.getHierarcyIds(clafer, i)) {
                         for (AstRef sourceRef : analysis.getBreakableTarget(hierarchy.getFst())) {
                             IrIntVar[] sourceRefs = refPointers.get(sourceRef);
-                            IrBoolExpr[] sourceMembers = memberships.get(sourceRef.getSourceType());
 
                             IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
                             for (int j = 0; j < array.length; j++) {
-                                array[j] = add($(sourceRefs[j]), asInt(sourceMembers[j]));
+                                array[j] = $(sourceRefs[j]);
                             }
                             childIndex.add(new IrIntExpr[]{
-                                count(hierarchy.getSnd().intValue() + 1, array)
+                                count(hierarchy.getSnd().intValue(), array)
                             });
                         }
                     }
@@ -800,8 +800,7 @@ public class AstCompiler {
             if ($children instanceof IrIntExpr) {
                 // Only one possible parent.
                 if (getScope(childrenType.getParent()) == 1) {
-//                    return $(Zero);
-                    throw new Error();
+                    return $(Zero);
                 }
 
                 IrIntExpr $intChildren = (IrIntExpr) $children;
@@ -1236,17 +1235,15 @@ public class AstCompiler {
                 int tarLow = getScopeLow(tar);
                 int tarHigh = getScopeHigh(tar);
                 IrDomain domain = tarLow <= tarHigh ? boundDomain(tarLow, tarHigh) : ZeroDomain;
-                if (!partialSolution.hasClafer(i) // <-- this means that ref may need to be zeroed out.
-                        && !domain.contains(0) // <-- this means that the domain doesn't allow zeroing out.
-                        ) {
-                    domain = IrUtil.union(ZeroDomain, domain); // <-- add zero to the domain.
+                if (!partialSolution.hasClafer(i)) { // The ref may need to be zeroed out.
+                    domain = IrUtil.union(constantDomain(getUninitalizedRef(tar)), domain); // <-- add zero to the domain.
                 }
                 ivs[i] = domainInt(src.getName() + "@Ref" + i, domain);
             } else {
                 if (partialSolution.hasClafer(i)) {
                     ivs[i] = enumInt(src.getName() + "@Ref" + i, partialInts[i]);
                 } else {
-                    ivs[i] = enumInt(src.getName() + "@Ref" + i, Util.cons(0, partialInts[i]));
+                    ivs[i] = enumInt(src.getName() + "@Ref" + i, Util.cons(getUninitalizedRef(tar), partialInts[i]));
                 }
             }
         }
@@ -1282,6 +1279,10 @@ public class AstCompiler {
      * Convenience functions.
      ************************
      */
+    private int getUninitalizedRef(AstClafer clafer) {
+        return getScopeHigh(clafer) + 1;
+    }
+
     private int getScopeLow(AstClafer clafer) {
         return clafer instanceof AstIntClafer ? analysis.getScope().getIntLow() : 0;
     }

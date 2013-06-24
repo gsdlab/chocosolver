@@ -662,8 +662,6 @@ public class IrCompiler {
                     return VF.fixed(constants, solver);
                 case 1:
                     return VF.offset(addends[0], constants);
-                case 2:
-                    return VF.offset(_sum(addends[0], addends[1]), constants);
                 default:
                     if (reify == null) {
                         IntVar sum = numIntVar("Sum", ir.getDomain());
@@ -704,9 +702,6 @@ public class IrCompiler {
                     return VF.fixed(minuend, solver);
                 case 1:
                     return VF.offset(subtractends[0], -constants);
-                case 2:
-                    return VF.offset(_sum(subtractends[0],
-                            VF.minus(subtractends[1])), -constants);
                 default:
                     if (reify == null) {
                         IntVar diff = numIntVar("Diff", ir.getDomain());
