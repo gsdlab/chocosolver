@@ -269,7 +269,7 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrSetExpr visit(IrArrayToSet ir, T a) {
-        return arrayToSet(rewrite(ir.getArray(), a));
+        return arrayToSet(rewrite(ir.getArray(), a), ir.getGlobalCardinality());
     }
 
     @Override
@@ -279,7 +279,7 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrSetExpr visit(IrJoinFunction ir, T a) {
-        return joinFunction(rewrite(ir.getTake(), a), rewrite(ir.getRefs(), a));
+        return joinFunction(rewrite(ir.getTake(), a), rewrite(ir.getRefs(), a), ir.getGlobalCardinality());
     }
 
     @Override

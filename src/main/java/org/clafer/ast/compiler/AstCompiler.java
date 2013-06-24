@@ -74,6 +74,7 @@ import org.clafer.graph.GraphUtil;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
+import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
@@ -770,20 +771,20 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoin ast, Void a) {
-            AstSetExpr left = ast.getLeft();
-            AstConcreteClafer right = ast.getRight();
+            return doJoin(compile(ast.getLeft()), ast.getRight());
+        }
 
-            IrExpr $left = compile(left);
-            if ($left instanceof IrIntExpr) {
-                IrIntExpr $intLeft = (IrIntExpr) $left;
+        private IrExpr doJoin(IrExpr left, AstConcreteClafer right) {
+            if (left instanceof IrIntExpr) {
+                IrIntExpr $intLeft = (IrIntExpr) left;
                 if (Format.ParentGroup.equals(getFormat(right)) && getCard(right).getLow() == 1) {
                     assert getCard(right).isExact();
                     return $intLeft;
                 }
                 // Why empty set? The "take" var can contain unused.
                 return joinRelation(singleton($intLeft), $(Util.snoc(siblingSets.get(right), EmptySet)));
-            } else if ($left instanceof IrSetExpr) {
-                IrSetExpr $setLeft = (IrSetExpr) $left;
+            } else if (left instanceof IrSetExpr) {
+                IrSetExpr $setLeft = (IrSetExpr) left;
                 // Why empty set? The "take" var can contain unused.
                 return joinRelation($setLeft, $(Util.snoc(siblingSets.get(right), EmptySet)));
             }
@@ -814,7 +815,7 @@ public class AstCompiler {
                 }
             } else if ($children instanceof IrSetExpr) {
                 IrSetExpr $setChildren = (IrSetExpr) $children;
-                return joinFunction($setChildren, $(parentPointers.get(childrenType)));
+                return joinFunction($setChildren, $(parentPointers.get(childrenType)), null);
             }
             throw new AstException();
         }
@@ -824,13 +825,26 @@ public class AstCompiler {
             AstSetExpr deref = ast.getDeref();
             AstClafer derefType = getType(deref);
 
-            IrExpr $deref = compile(deref);
+            Integer globalCardinality = null;
+            IrExpr $deref;
+            if (derefType.getRef().isUnique() && deref instanceof AstJoin) {
+                AstJoin join = (AstJoin) deref;
+                IrExpr left = compile(join.getLeft());
+                $deref = doJoin(left, join.getRight());
+
+                globalCardinality = left instanceof IrSetExpr
+                        ? ((IrSetExpr) left).getCard().getHighBound()
+                        : 1;
+            } else {
+                $deref = compile(deref);
+            }
+
             if ($deref instanceof IrIntExpr) {
                 IrIntExpr $intDeref = (IrIntExpr) $deref;
                 return element($(refPointers.get(derefType.getRef())), $intDeref);
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
-                return joinFunction($setDeref, $(refPointers.get(derefType.getRef())));
+                return joinFunction($setDeref, $(refPointers.get(derefType.getRef())), globalCardinality);
             }
             throw new AstException();
         }

@@ -1261,7 +1261,8 @@ public class Irs {
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
 
-    public static IrSetExpr arrayToSet(IrIntExpr[] array) {
+    // TODO: optimize on gc
+    public static IrSetExpr arrayToSet(IrIntExpr[] array, Integer globalCardinality) {
         switch (array.length) {
             case 0:
                 return $(EmptySet);
@@ -1285,7 +1286,7 @@ public class Irs {
                     return $(constant(env));
                 }
                 IrDomain card = Irs.boundDomain(1, Math.min(array.length, env.size()));
-                return new IrArrayToSet(array, env, ker, card);
+                return new IrArrayToSet(array, env, ker, card, globalCardinality);
         }
     }
 
@@ -1380,14 +1381,15 @@ public class Irs {
         return new IrJoinRelation(take, $children, env, ker, card);
     }
 
-    public static IrSetExpr joinFunction(IrSetExpr take, IrIntExpr[] refs) {
+    // TODO optimize on gc
+    public static IrSetExpr joinFunction(IrSetExpr take, IrIntExpr[] refs, Integer globalCardinality) {
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
             IrIntExpr[] to = new IrIntExpr[constant.length];
             for (int i = 0; i < to.length; i++) {
                 to[i] = refs[constant[i]];
             }
-            return arrayToSet(to);
+            return arrayToSet(to, globalCardinality);
         }
 
         // Compute env
@@ -1422,7 +1424,7 @@ public class Irs {
                 ? boundDomain(Math.max(0, ker.size()), Math.min(highTakeCard, env.size()))
                 : boundDomain(Math.max(1, ker.size()), Math.min(highTakeCard, env.size()));
 
-        return new IrJoinFunction(take, refs, env, ker, card);
+        return new IrJoinFunction(take, refs, env, ker, card, globalCardinality);
     }
 
     public static IrSetExpr difference(IrSetExpr minuend, IrSetExpr subtrahend) {

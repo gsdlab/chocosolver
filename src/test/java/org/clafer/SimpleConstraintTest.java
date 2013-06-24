@@ -9,6 +9,7 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import solver.search.loop.monitors.SMF;
 
 /**
  *
@@ -408,6 +409,36 @@ public class SimpleConstraintTest {
         model.addConstraint(greaterThan(joinRef(global(a)), constant(5000)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(10000));
+        assertTrue(solver.find());
+    }
+    
+    /**
+     * <pre>
+     * abstract A
+     *     B -> C *
+     * abstract C *
+     * D : A 2
+     *     E : C
+     *     F : C
+     *     G : C
+     *     [this.B.ref = E ++ F ++ C]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinRefStar() {
+        AstModel model = newModel();
+        
+        AstAbstractClafer a = model.addAbstractClafer("A");
+        AstAbstractClafer c = model.addAbstractClafer("C");
+        AstConcreteClafer b = a.addChild("B").refToUnique(c);
+        
+        AstConcreteClafer d = model.addChild("D").extending(a).withCard(2,2);
+        AstConcreteClafer e = d.addChild("E").extending(c).withCard(Mandatory);
+        AstConcreteClafer f = d.addChild("F").extending(c).withCard(Mandatory);
+        AstConcreteClafer g = d.addChild("G").extending(c).withCard(Mandatory);
+        d.addConstraint(equal(joinRef(join($this(), b)), union(join($this(), e), join($this(), f), join($this(), g))));
+        
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(20));
         assertTrue(solver.find());
     }
 }

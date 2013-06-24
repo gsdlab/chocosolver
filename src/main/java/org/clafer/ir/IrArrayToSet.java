@@ -11,17 +11,27 @@ import org.clafer.common.Util;
 public class IrArrayToSet extends IrAbstractSet implements IrSetExpr {
 
     private final IrIntExpr[] array;
+    private final Integer globalCardinality;
 
-    IrArrayToSet(IrIntExpr[] array, IrDomain env, IrDomain ker, IrDomain card) {
+    IrArrayToSet(IrIntExpr[] array, IrDomain env, IrDomain ker, IrDomain card, Integer globalCardinality) {
         super(env, ker, card);
         this.array = Check.noNullsNotEmpty(array);
         if (ker.size() > array.length) {
             throw new IllegalArgumentException();
         }
+        this.globalCardinality = globalCardinality;
     }
 
     public IrIntExpr[] getArray() {
         return array;
+    }
+
+    public boolean hasGlobalCardinality() {
+        return globalCardinality != null;
+    }
+
+    public Integer getGlobalCardinality() {
+        return globalCardinality;
     }
 
     @Override
@@ -33,18 +43,20 @@ public class IrArrayToSet extends IrAbstractSet implements IrSetExpr {
     public boolean equals(Object obj) {
         if (obj instanceof IrArrayToSet) {
             IrArrayToSet other = (IrArrayToSet) obj;
-            return Arrays.equals(array, other.array) && super.equals(other);
+            return Arrays.equals(array, other.array) && Util.equals(globalCardinality, other.globalCardinality) && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(array);
+        return Arrays.hashCode(array) ^ Util.hashCode(globalCardinality);
     }
 
     @Override
     public String toString() {
-        return '{' + Util.commaSeparate(array) + '}';
+        return '{' + Util.commaSeparate(array)
+                + (hasGlobalCardinality() ? " with global cardinality " + getGlobalCardinality() : "")
+                + '}';
     }
 }

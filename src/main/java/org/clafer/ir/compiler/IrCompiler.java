@@ -876,7 +876,7 @@ public class IrCompiler {
                 return set;
             }
             IntVar setCard = setCardVar(ir);
-            return Constraints.arrayToSet(array, reify, setCard);
+            return Constraints.arrayToSet(array, reify, setCard, ir.getGlobalCardinality());
         }
 
         @Override
@@ -900,13 +900,13 @@ public class IrCompiler {
                 IntVar takeCard = setCardVar(ir.getTake());
                 IntVar joinFunctionCard = setCardVar(ir);
                 solver.post(SCF.cardinality(take, takeCard));
-                solver.post(Constraints.joinFunction(take, takeCard, refs, joinFunction, joinFunctionCard));
+                solver.post(Constraints.joinFunction(take, takeCard, refs, joinFunction, joinFunctionCard, ir.getGlobalCardinality()));
                 return joinFunction;
             }
             IntVar takeCard = setCardVar(ir.getTake());
             IntVar reifyCard = setCardVar(ir);
             solver.post(SCF.cardinality(take, takeCard));
-            return Constraints.joinFunction(take, takeCard, refs, reify, reifyCard);
+            return Constraints.joinFunction(take, takeCard, refs, reify, reifyCard, ir.getGlobalCardinality());
         }
 
         @Override
