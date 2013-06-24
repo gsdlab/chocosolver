@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint;
 
+import java.util.Arrays;
 import java.util.Collection;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropJoinRelation;
@@ -27,6 +28,7 @@ import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
+import solver.constraints.binary.PropEqualX_Y;
 import solver.constraints.set.PropCardinality;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -81,10 +83,9 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint equal(SetVar s1, SetVar s2) {
-        Constraint<SetVar, PropSetEqual> constraint =
-                new Constraint<SetVar, PropSetEqual>(new SetVar[]{s1, s2}, s1.getSolver());
-        constraint.setPropagators(new PropSetEqual(s1, s2));
+    public static Constraint equal(SetVar s1, IntVar s1Card, SetVar s2, IntVar s2Card) {
+        Constraint constraint = new Constraint(new Variable[]{s1, s1Card, s2, s2Card}, s1.getSolver());
+        constraint.setPropagators(new PropSetEqual(s1, s2), new PropEqualX_Y(s1Card, s2Card));
         return constraint;
     }
 

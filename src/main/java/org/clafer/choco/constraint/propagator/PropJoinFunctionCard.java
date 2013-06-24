@@ -177,16 +177,19 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             boolean cardChanged;
             do {
                 cardChanged = false;
-                minUninstantiated = Math.max(0, takeCard.getLB() - kerSize);
-                maxUninstantiated = Math.max(0, takeCard.getUB() - kerSize);
+//                minUninstantiated = Math.max(0, takeCard.getLB() - kerSize);
+//                maxUninstantiated = Math.max(0, takeCard.getUB() - kerSize);
+                int kerUninstantiated = 0;
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
                     if (!refs[i].instantiated()) {
                         if (take.kernelContains(i)) {
-                            minUninstantiated++;
+                            kerUninstantiated++;
                         }
-                        maxUninstantiated++;
                     }
                 }
+                assert takeCard.getLB() >= kerSize;
+                minUninstantiated = takeCard.getLB() - kerSize + kerUninstantiated;
+                maxUninstantiated = takeCard.getUB() - kerSize + kerUninstantiated;
                 minCard = instCard
                         + (hasGlobalCardinality()
                         ? divRoundUp(Math.max(0, minUninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
@@ -252,19 +255,25 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             }
         }
 
-        int minCard = map.size();
+        int instCard = map.size();
 
         int uninstantiated = 0;
         map.clear();
+        int minUninstantiated = Math.max(0, takeCard.getLB() - take.getKernelSize());
+        int maxUninstantiated = Math.max(0, takeCard.getUB() - take.getKernelSize());
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            IntVar ref = refs[i];
-            if (ref.instantiated()) {
-                map.adjustOrPutValue(ref.getValue(), 1, 1);
-            } else {
-                uninstantiated++;
+            if (!refs[i].instantiated()) {
+                if (take.kernelContains(i)) {
+                    minUninstantiated++;
+                }
+                maxUninstantiated++;
             }
         }
-        int maxCard = map.size() + uninstantiated;
+        int minCard = instCard
+                + (hasGlobalCardinality()
+                ? divRoundUp(Math.max(0, minUninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
+                : 0);
+        int maxCard = instCard + maxUninstantiated;
 
         if (toCard.getUB() < minCard) {
             return ESat.FALSE;

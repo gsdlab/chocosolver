@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
+import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -134,5 +135,10 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
         }
 
         return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return "joinInjectiveRelationCard(" + take + ", " + takeCard + ", " + Arrays.toString(childrenCards) + ", " + toCard + ")";
     }
 }

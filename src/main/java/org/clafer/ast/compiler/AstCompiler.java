@@ -782,11 +782,11 @@ public class AstCompiler {
                     return $intLeft;
                 }
                 // Why empty set? The "take" var can contain unused.
-                return joinRelation(singleton($intLeft), $(Util.snoc(siblingSets.get(right), EmptySet)));
+                return joinRelation(singleton($intLeft), $(Util.snoc(siblingSets.get(right), EmptySet)), true);
             } else if (left instanceof IrSetExpr) {
                 IrSetExpr $setLeft = (IrSetExpr) left;
                 // Why empty set? The "take" var can contain unused.
-                return joinRelation($setLeft, $(Util.snoc(siblingSets.get(right), EmptySet)));
+                return joinRelation($setLeft, $(Util.snoc(siblingSets.get(right), EmptySet)), true);
             }
             throw new AstException();
         }

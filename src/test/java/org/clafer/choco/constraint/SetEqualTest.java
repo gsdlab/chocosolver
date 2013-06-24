@@ -4,6 +4,8 @@ import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.set.SCF;
+import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
 
@@ -26,9 +28,13 @@ public class SetEqualTest extends ConstraintTest {
             Solver solver = new Solver();
 
             SetVar s1 = VF.set("s1", Util.range(-nextInt(10), nextInt(10)), solver);
+            IntVar s1Card = VF.enumerated("|s1|", 0, s1.getEnvelopeSize(), solver);
             SetVar s2 = VF.set("s2", Util.range(-nextInt(10), nextInt(10)), solver);
+            IntVar s2Card = VF.enumerated("|s2|", 0, s2.getEnvelopeSize(), solver);
 
-            solver.post(Constraints.equal(s1, s2));
+            solver.post(SCF.cardinality(s1, s1Card));
+            solver.post(SCF.cardinality(s2, s2Card));
+            solver.post(Constraints.equal(s1, s1Card, s2, s2Card));
 
             assertTrue(randomizeStrategy(solver).findSolution());
             checkCorrectness(s1, s2);
@@ -43,9 +49,13 @@ public class SetEqualTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar s1 = VF.set("s1", Util.range(-5, 10), solver);
+        IntVar s1Card = VF.enumerated("|s1|", 0, s1.getEnvelopeSize(), solver);
         SetVar s2 = VF.set("s2", Util.range(-10, 5), solver);
+        IntVar s2Card = VF.enumerated("|s2|", 0, s2.getEnvelopeSize(), solver);
 
-        solver.post(Constraints.equal(s1, s2));
+        solver.post(SCF.cardinality(s1, s1Card));
+        solver.post(SCF.cardinality(s2, s2Card));
+        solver.post(Constraints.equal(s1, s1Card, s2, s2Card));
 
         int count = 0;
         if (randomizeStrategy(solver).findSolution()) {

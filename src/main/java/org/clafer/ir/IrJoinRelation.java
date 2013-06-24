@@ -11,12 +11,13 @@ public class IrJoinRelation extends IrAbstractSet implements IrSetExpr {
 
     private final IrSetExpr take;
     private final IrSetExpr[] children;
-    private final boolean injective = false;
+    private final boolean injective;
 
-    IrJoinRelation(IrSetExpr take, IrSetExpr[] children, IrDomain env, IrDomain ker, IrDomain card) {
+    IrJoinRelation(IrSetExpr take, IrSetExpr[] children, IrDomain env, IrDomain ker, IrDomain card, boolean injective) {
         super(env, ker, card);
         this.take = Check.notNull(take);
         this.children = Check.noNulls(children);
+        this.injective = injective;
     }
 
     public IrSetExpr getTake() {
@@ -40,18 +41,18 @@ public class IrJoinRelation extends IrAbstractSet implements IrSetExpr {
     public boolean equals(Object obj) {
         if (obj instanceof IrJoinRelation) {
             IrJoinRelation other = (IrJoinRelation) obj;
-            return take.equals(other.take) && Arrays.equals(children, other.children) && super.equals(other);
+            return take.equals(other.take) && Arrays.equals(children, other.children) && injective == other.injective && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return take.hashCode() ^ Arrays.hashCode(children);
+        return take.hashCode() ^ Arrays.hashCode(children) ^ (isInjective() ? 1 : 0);
     }
 
     @Override
     public String toString() {
-        return take + " . " + Arrays.toString(children);
+        return take + " . " + Arrays.toString(children) + (isInjective() ? " where injective" : "");
     }
 }

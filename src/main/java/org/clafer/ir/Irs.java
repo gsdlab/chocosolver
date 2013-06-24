@@ -1299,7 +1299,7 @@ public class Irs {
      * @param children
      * @return the join expression take.children
      */
-    public static IrSetExpr joinRelation(IrSetExpr take, IrSetExpr[] children) {
+    public static IrSetExpr joinRelation(IrSetExpr take, IrSetExpr[] children, boolean injective) {
         IrSetExpr[] $children = children;
         if (take.getEnv().getHighBound() + 1 < $children.length) {
             $children = Arrays.copyOf(children, take.getEnv().getHighBound() + 1);
@@ -1378,7 +1378,7 @@ public class Irs {
         cardHigh = Math.min(cardHigh, env.size());
         IrDomain card = boundDomain(cardLow, cardHigh);
 
-        return new IrJoinRelation(take, $children, env, ker, card);
+        return new IrJoinRelation(take, $children, env, ker, card, injective);
     }
 
     // TODO optimize on gc

@@ -411,7 +411,7 @@ public class SimpleConstraintTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(10000));
         assertTrue(solver.find());
     }
-    
+
     /**
      * <pre>
      * abstract A
@@ -427,17 +427,54 @@ public class SimpleConstraintTest {
     @Test(timeout = 60000)
     public void testJoinRefStar() {
         AstModel model = newModel();
-        
+
         AstAbstractClafer a = model.addAbstractClafer("A");
         AstAbstractClafer c = model.addAbstractClafer("C");
         AstConcreteClafer b = a.addChild("B").refToUnique(c);
-        
-        AstConcreteClafer d = model.addChild("D").extending(a).withCard(2,2);
+
+        AstConcreteClafer d = model.addChild("D").extending(a).withCard(2, 2);
         AstConcreteClafer e = d.addChild("E").extending(c).withCard(Mandatory);
         AstConcreteClafer f = d.addChild("F").extending(c).withCard(Mandatory);
         AstConcreteClafer g = d.addChild("G").extending(c).withCard(Mandatory);
         d.addConstraint(equal(joinRef(join($this(), b)), union(join($this(), e), join($this(), f), join($this(), g))));
-        
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(20));
+        assertTrue(solver.find());
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     *     B -> C *
+     * abstract C *
+     * D : A 2
+     *     E : C
+     *     F : C
+     *     G : C
+     *     H ?
+     *     I -> C *
+     *     [this.I.ref = E ++ F ++ C]
+     *     [some this.H => this.I.ref = this.B.ref]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinRefStarCondition() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstractClafer("A");
+        AstAbstractClafer c = model.addAbstractClafer("C");
+        AstConcreteClafer b = a.addChild("B").refToUnique(c);
+
+        AstConcreteClafer d = model.addChild("D").extending(a).withCard(2, 2);
+        AstConcreteClafer e = d.addChild("E").extending(c).withCard(Mandatory);
+        AstConcreteClafer f = d.addChild("F").extending(c).withCard(Mandatory);
+        AstConcreteClafer g = d.addChild("G").extending(c).withCard(Mandatory);
+        AstConcreteClafer h = d.addChild("H").withCard(Optional);
+        AstConcreteClafer i = d.addChild("I").refToUnique(c);
+        d.addConstraint(equal(joinRef(join($this(), i)), union(join($this(), e), join($this(), f), join($this(), g))));
+        d.addConstraint(implies(some(join($this(), h)),
+                equal(joinRef(join($this(), i)), joinRef(join($this(), b)))));
+
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(20));
         assertTrue(solver.find());
     }
