@@ -17,9 +17,6 @@ public class IrSortStringsChannel extends IrAbstractBool implements IrBoolExpr {
         this.strings = Check.noNullsNotEmpty(strings);
         for (IrIntExpr[] string : strings) {
             Check.noNullsNotEmpty(string);
-            if (string.length != strings[0].length) {
-                throw new IllegalArgumentException();
-            }
         }
         this.ints = Check.noNullsNotEmpty(ints);
         if (strings.length != ints.length) {

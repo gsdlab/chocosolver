@@ -33,10 +33,14 @@ public class PropUtil {
         Pair<AstModel, Scope> p = Javascript.readModel(new File("/home/jimmy/Programming/clafer/AADL_simplified.js"));
         System.out.println(Configuration.IDEMPOTENCY);
         ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
-        System.out.println(s.getInternalSolver());
+//        System.out.println(s.getInternalSolver());
 //        SearchMonitorFactory.log(s.getInternalSolver(), false, true);
 //        SearchMonitorFactory.logContradiction(s.getInternalSolver());
 //        SearchMonitorFactory.limitNode(s.getInternalSolver(), 2000);
+        System.out.println(s.getInternalSolver().getVars().length);
+        System.out.println(s.getInternalSolver().getCstrs().length);
+//        52596
+//        34450
         if (s.find()) {
             System.out.println(s.instance());
         }

@@ -1,8 +1,6 @@
 package org.clafer.compiler;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,6 +17,7 @@ import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import org.clafer.compiler.ClaferObjective.Objective;
 import org.clafer.ir.IrBoolVar;
@@ -28,6 +27,7 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.compiler.IrCompiler;
+import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
@@ -114,21 +114,17 @@ public class ClaferCompiler {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
+        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(in, scope, ref, module);
+        AstSolutionMap astSolution = triple.getFst();
         IrSolutionMap irSolution = IrCompiler.compile(module, solver);
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        IntVar[] score = irSolution.getIntVars(astSolution.getRefVars(ref));
-        int[] bounds = Sum.getSumBounds(score);
-        IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
-        solver.post(ICF.sum(score, sum));
-
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 SetStrategyFactory.setLex(getSetVars(in, solution)),
-                IntStrategyFactory.firstFail_InDomainMax(score),
+                IntStrategyFactory.firstFail_InDomainMax(irSolution.getIntVars(triple.getSnd())),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution)),
-                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
-        return new ClaferObjective(solver, solution, Objective.Maximize, sum);
+                IntStrategyFactory.firstFail_InDomainMax(irSolution.getBoolDecisionVars())));
+        return new ClaferObjective(solver, solution, Objective.Maximize, irSolution.getIntVar(triple.getThd()));
     }
 
     public static ClaferObjective compileMinimize(AstModel in, ScopeBuilder scope, AstRef ref) {
@@ -139,21 +135,17 @@ public class ClaferCompiler {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
+        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(in, scope, ref, module);
+        AstSolutionMap astSolution = triple.getFst();
         IrSolutionMap irSolution = IrCompiler.compile(module, solver);
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        IntVar[] score = irSolution.getIntVars(astSolution.getRefVars(ref));
-        int[] bounds = Sum.getSumBounds(score);
-        IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
-        solver.post(ICF.sum(score, sum));
-
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 SetStrategyFactory.setLex(getSetVars(in, solution)),
-                IntStrategyFactory.firstFail_InDomainMin(score),
+                IntStrategyFactory.firstFail_InDomainMin(irSolution.getIntVars(triple.getSnd())),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution)),
-                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
-        return new ClaferObjective(solver, solution, Objective.Minimize, sum);
+                IntStrategyFactory.firstFail_InDomainMax(irSolution.getBoolDecisionVars())));
+        return new ClaferObjective(solver, solution, Objective.Minimize, irSolution.getIntVar(triple.getThd()));
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, ScopeBuilder scope) {

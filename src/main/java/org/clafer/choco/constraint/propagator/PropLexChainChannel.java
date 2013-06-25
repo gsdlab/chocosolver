@@ -1,13 +1,11 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import solver.Solver;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.IntVar;
-import solver.variables.VF;
 import util.ESat;
 
 /**
@@ -37,13 +35,10 @@ public class PropLexChainChannel extends Propagator<IntVar> {
         System.arraycopy(ints, 0, array, 0, ints.length);
         int i = ints.length;
         for (IntVar[] string : strings) {
-            if (string.length != strings[0].length) {
-                throw new IllegalArgumentException();
-            }
             System.arraycopy(string, 0, array, i, string.length);
             i += string.length;
         }
-        return array;
+        return Arrays.copyOf(array, i);
     }
 
     @Override
@@ -57,7 +52,11 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     private static Ordering compareString(IntVar[] a, IntVar[] b, int index) {
         if (index == a.length) {
-            return Ordering.EQ;
+            return a.length == b.length ? Ordering.EQ : Ordering.LT;
+        }
+        if (index == b.length) {
+            assert a.length != b.length;
+            return Ordering.GT;
         }
         Ordering ord = compare(a[index], b[index]);
         switch (ord) {

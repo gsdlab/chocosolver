@@ -74,7 +74,6 @@ import org.clafer.graph.GraphUtil;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
@@ -117,6 +116,15 @@ public class AstCompiler {
     public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out, Analyzer[] analyzers) {
         AstCompiler compiler = new AstCompiler(in, scope, out, analyzers);
         return compiler.compile();
+    }
+
+    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out) {
+        return compile(in, scope, objective, out, DefaultAnalyzers);
+    }
+
+    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out, Analyzer[] analyzers) {
+        AstCompiler compiler = new AstCompiler(in, scope, out, analyzers);
+        return compiler.compile(objective);
     }
 
     /**
@@ -182,6 +190,33 @@ public class AstCompiler {
     }
 
     private AstSolutionMap compile() {
+        Pair<AstConstraint, IrBoolVar>[] softVarPairs = doCompile();
+        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers, softVarPairs, analysis);
+    }
+
+    private Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstRef objective) {
+        Pair<AstConstraint, IrBoolVar>[] softVarPairs = doCompile();
+
+        IrBoolExpr[] members = memberships.get(objective.getSourceType());
+        IrIntVar[] refs = refPointers.get(objective);
+        assert members.length == refs.length;
+
+        IrIntVar[] score = new IrIntVar[refs.length];
+        for (int i = 0; i < members.length; i++) {
+            score[i] = domainInt("Score@" + refs[i], IrUtil.union(ZeroDomain, refs[i].getDomain()));
+            module.addConstraint(ifThenElse(members[i],
+                    equal($(score[i]), $(refs[i])), equal($(score[i]), 0)));
+        }
+        IrIntExpr sum = add($(score));
+        IrIntVar sumScore = domainInt("SumScore@" + objective, sum.getDomain());
+        module.addConstraint(equal($(sumScore), sum));
+
+        return new Triple<AstSolutionMap, IrIntVar[], IrIntVar>(
+                new AstSolutionMap(analysis.getModel(), siblingSets, refPointers, softVarPairs, analysis),
+                score, sumScore);
+    }
+
+    private Pair<AstConstraint, IrBoolVar>[] doCompile() {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
         siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
@@ -243,7 +278,7 @@ public class AstCompiler {
         }
         @SuppressWarnings("unchecked")
         Pair<AstConstraint, IrBoolVar>[] softVarPairs = softVars.toArray(new Pair[softVars.size()]);
-        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers, softVarPairs, analysis);
+        return softVarPairs;
     }
 
     private void initConcrete(AstConcreteClafer clafer) {
@@ -285,6 +320,7 @@ public class AstCompiler {
     }
 
     private void initConcreteWeight(AstConcreteClafer clafer) {
+        IrSetVar[] siblings = siblingSets.get(clafer);
         int scope = getScope(clafer);
         int parentScope = getScope(clafer.getParent());
         IrIntExpr[] weight;
@@ -298,8 +334,9 @@ public class AstCompiler {
             for (int i = 0; i < weight.length; i++) {
                 weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1).asNoDecision());
             }
-            index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
+            index = new IrIntExpr[parentScope][];
             for (int i = 0; i < index.length; i++) {
+                index[i] = new IrIntExpr[siblings[i].getCard().getHighBound()];
                 for (int j = 0; j < index[i].length; j++) {
                     index[i][j] =
                             $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope).asNoDecision());
