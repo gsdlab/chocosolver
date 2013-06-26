@@ -804,6 +804,14 @@ public class Irs {
     }
 
     public static IrBoolExpr sortChannel(IrIntExpr[][] strings, IrIntExpr[] ints) {
+        if (strings.length != ints.length) {
+            throw new IllegalArgumentException();
+        }
+        for (int i = 1; i < strings.length; i++) {
+            if (strings[0].length != strings[i].length) {
+                throw new IllegalArgumentException();
+            }
+        }
         if (ints.length == 0 || ints.length == 1) {
             return $(True);
         }

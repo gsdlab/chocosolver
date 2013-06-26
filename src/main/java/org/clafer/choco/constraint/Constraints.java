@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint;
 
-import java.util.Arrays;
 import java.util.Collection;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropJoinRelation;

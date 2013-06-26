@@ -38,7 +38,8 @@ public class PropLexChainChannel extends Propagator<IntVar> {
             System.arraycopy(string, 0, array, i, string.length);
             i += string.length;
         }
-        return Arrays.copyOf(array, i);
+        assert i == array.length;
+        return array;
     }
 
     @Override

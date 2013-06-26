@@ -332,14 +332,13 @@ public class AstCompiler {
                 || analysis.isInheritedBreakableTarget(clafer)) {
             weight = new IrIntExpr[scope];
             for (int i = 0; i < weight.length; i++) {
-                weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1).asNoDecision());
+                weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1));
             }
-            index = new IrIntExpr[parentScope][];
+            index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
             for (int i = 0; i < index.length; i++) {
-                index[i] = new IrIntExpr[siblings[i].getCard().getHighBound()];
                 for (int j = 0; j < index[i].length; j++) {
                     index[i][j] =
-                            $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope).asNoDecision());
+                            $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope));
                 }
             }
         } else {
@@ -436,7 +435,6 @@ public class AstCompiler {
                     }
                 }
                 if (ref != null && analysis.isBreakableRef(ref)) {
-                    int refHigh = getScopeHigh(ref.getTargetType());
                     // References need a positive weight, so to use their value as
                     // a weight, need to offset it so that it always positive.
                     childIndex.add(new IrIntExpr[]{
