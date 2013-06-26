@@ -15,127 +15,181 @@
 <span class="sourceLineNo">007</span>import java.util.Iterator;<a name="line.7"></a>
 <span class="sourceLineNo">008</span>import java.util.List;<a name="line.8"></a>
 <span class="sourceLineNo">009</span>import java.util.Map;<a name="line.9"></a>
-<span class="sourceLineNo">010</span>import java.util.Set;<a name="line.10"></a>
-<span class="sourceLineNo">011</span>import org.clafer.ir.IrAnd;<a name="line.11"></a>
-<span class="sourceLineNo">012</span>import org.clafer.ir.IrBoolExpr;<a name="line.12"></a>
-<span class="sourceLineNo">013</span>import org.clafer.ir.IrCompare;<a name="line.13"></a>
-<span class="sourceLineNo">014</span>import org.clafer.ir.IrDomain;<a name="line.14"></a>
-<span class="sourceLineNo">015</span>import org.clafer.ir.IrImplies;<a name="line.15"></a>
-<span class="sourceLineNo">016</span>import org.clafer.ir.IrIntExpr;<a name="line.16"></a>
-<span class="sourceLineNo">017</span>import org.clafer.ir.IrModule;<a name="line.17"></a>
-<span class="sourceLineNo">018</span>import org.clafer.ir.IrUtil;<a name="line.18"></a>
-<span class="sourceLineNo">019</span>import static org.clafer.ir.Irs.*;<a name="line.19"></a>
-<span class="sourceLineNo">020</span><a name="line.20"></a>
-<span class="sourceLineNo">021</span>/**<a name="line.21"></a>
-<span class="sourceLineNo">022</span> *<a name="line.22"></a>
-<span class="sourceLineNo">023</span> * @author jimmy<a name="line.23"></a>
-<span class="sourceLineNo">024</span> */<a name="line.24"></a>
-<span class="sourceLineNo">025</span>public class Canonicalizer {<a name="line.25"></a>
+<span class="sourceLineNo">010</span>import java.util.Map.Entry;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import java.util.Set;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.clafer.ir.IrAnd;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import org.clafer.ir.IrBoolExpr;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import org.clafer.ir.IrCard;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import org.clafer.ir.IrCompare;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import org.clafer.ir.IrDomain;<a name="line.16"></a>
+<span class="sourceLineNo">017</span>import org.clafer.ir.IrImplies;<a name="line.17"></a>
+<span class="sourceLineNo">018</span>import org.clafer.ir.IrIntExpr;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import org.clafer.ir.IrIntVar;<a name="line.19"></a>
+<span class="sourceLineNo">020</span>import org.clafer.ir.IrModule;<a name="line.20"></a>
+<span class="sourceLineNo">021</span>import org.clafer.ir.IrSetExpr;<a name="line.21"></a>
+<span class="sourceLineNo">022</span>import org.clafer.ir.IrSetLiteral;<a name="line.22"></a>
+<span class="sourceLineNo">023</span>import org.clafer.ir.IrSetVar;<a name="line.23"></a>
+<span class="sourceLineNo">024</span>import org.clafer.ir.IrUtil;<a name="line.24"></a>
+<span class="sourceLineNo">025</span>import static org.clafer.ir.Irs.*;<a name="line.25"></a>
 <span class="sourceLineNo">026</span><a name="line.26"></a>
-<span class="sourceLineNo">027</span>    private Canonicalizer() {<a name="line.27"></a>
-<span class="sourceLineNo">028</span>    }<a name="line.28"></a>
-<span class="sourceLineNo">029</span><a name="line.29"></a>
-<span class="sourceLineNo">030</span>    /**<a name="line.30"></a>
-<span class="sourceLineNo">031</span>     * Rewrites the module in a form that is easier to pattern match.<a name="line.31"></a>
-<span class="sourceLineNo">032</span>     *<a name="line.32"></a>
-<span class="sourceLineNo">033</span>     * @param module the module to canonicalize<a name="line.33"></a>
-<span class="sourceLineNo">034</span>     * @return the canonicalized module<a name="line.34"></a>
-<span class="sourceLineNo">035</span>     */<a name="line.35"></a>
-<span class="sourceLineNo">036</span>    public static IrModule canonical(IrModule module) {<a name="line.36"></a>
-<span class="sourceLineNo">037</span>        return module.withConstraints(canonicalizer.rewrite(and(module.getConstraints()), null));<a name="line.37"></a>
-<span class="sourceLineNo">038</span>    }<a name="line.38"></a>
-<span class="sourceLineNo">039</span>    private static final IrRewriter&lt;Void&gt; canonicalizer = new IrRewriter&lt;Void&gt;() {<a name="line.39"></a>
-<span class="sourceLineNo">040</span>        @Override<a name="line.40"></a>
-<span class="sourceLineNo">041</span>        public IrBoolExpr visit(IrAnd ir, Void a) {<a name="line.41"></a>
-<span class="sourceLineNo">042</span>            Map&lt;IrBoolExpr, Set&lt;IrBoolExpr&gt;&gt; implications = new HashMap&lt;IrBoolExpr, Set&lt;IrBoolExpr&gt;&gt;();<a name="line.42"></a>
-<span class="sourceLineNo">043</span>            List&lt;IrBoolExpr&gt; opts = new ArrayList&lt;IrBoolExpr&gt;(ir.getOperands().length);<a name="line.43"></a>
-<span class="sourceLineNo">044</span>            for (IrBoolExpr operand : ir.getOperands()) {<a name="line.44"></a>
-<span class="sourceLineNo">045</span>                IrBoolExpr opt = rewrite(operand, a);<a name="line.45"></a>
-<span class="sourceLineNo">046</span>                if (opt instanceof IrImplies) {<a name="line.46"></a>
-<span class="sourceLineNo">047</span>                    IrImplies implies = (IrImplies) opt;<a name="line.47"></a>
-<span class="sourceLineNo">048</span>                    Set&lt;IrBoolExpr&gt; consequents = implications.get(implies.getAntecedent());<a name="line.48"></a>
-<span class="sourceLineNo">049</span>                    if (consequents == null) {<a name="line.49"></a>
-<span class="sourceLineNo">050</span>                        consequents = new HashSet&lt;IrBoolExpr&gt;();<a name="line.50"></a>
-<span class="sourceLineNo">051</span>                        implications.put(implies.getAntecedent(), consequents);<a name="line.51"></a>
-<span class="sourceLineNo">052</span>                    }<a name="line.52"></a>
-<span class="sourceLineNo">053</span>                    consequents.add(implies.getConsequent());<a name="line.53"></a>
-<span class="sourceLineNo">054</span>                } else {<a name="line.54"></a>
-<span class="sourceLineNo">055</span>                    opts.add(opt);<a name="line.55"></a>
-<span class="sourceLineNo">056</span>                }<a name="line.56"></a>
+<span class="sourceLineNo">027</span>/**<a name="line.27"></a>
+<span class="sourceLineNo">028</span> *<a name="line.28"></a>
+<span class="sourceLineNo">029</span> * @author jimmy<a name="line.29"></a>
+<span class="sourceLineNo">030</span> */<a name="line.30"></a>
+<span class="sourceLineNo">031</span>public class Canonicalizer {<a name="line.31"></a>
+<span class="sourceLineNo">032</span><a name="line.32"></a>
+<span class="sourceLineNo">033</span>    private Canonicalizer() {<a name="line.33"></a>
+<span class="sourceLineNo">034</span>    }<a name="line.34"></a>
+<span class="sourceLineNo">035</span><a name="line.35"></a>
+<span class="sourceLineNo">036</span>    /**<a name="line.36"></a>
+<span class="sourceLineNo">037</span>     * Rewrites the module in a form that is easier to pattern match and makes<a name="line.37"></a>
+<span class="sourceLineNo">038</span>     * some implicit constraints explicit.<a name="line.38"></a>
+<span class="sourceLineNo">039</span>     *<a name="line.39"></a>
+<span class="sourceLineNo">040</span>     * @param module the module to canonicalize<a name="line.40"></a>
+<span class="sourceLineNo">041</span>     * @return the canonicalized module<a name="line.41"></a>
+<span class="sourceLineNo">042</span>     */<a name="line.42"></a>
+<span class="sourceLineNo">043</span>    public static IrModule canonical(IrModule module) {<a name="line.43"></a>
+<span class="sourceLineNo">044</span>        CanonicalRewriter rewriter = new CanonicalRewriter();<a name="line.44"></a>
+<span class="sourceLineNo">045</span>        IrModule optModule = module.withConstraints(rewriter.rewrite(and(module.getConstraints()), null));<a name="line.45"></a>
+<span class="sourceLineNo">046</span>        for (Entry&lt;IrSetVar, IrIntVar&gt; entry : rewriter.setVarCards.entrySet()) {<a name="line.46"></a>
+<span class="sourceLineNo">047</span>            optModule.addConstraint(equal($(entry.getValue()), card($(entry.getKey()))));<a name="line.47"></a>
+<span class="sourceLineNo">048</span>        }<a name="line.48"></a>
+<span class="sourceLineNo">049</span>//        rewriter.setVars.removeAll(rewriter.setVarCards.keySet());<a name="line.49"></a>
+<span class="sourceLineNo">050</span>        for (IrSetVar setVar : rewriter.setVars) {<a name="line.50"></a>
+<span class="sourceLineNo">051</span>            if (setVar.getCard().getLowBound() &gt; setVar.getKer().size()<a name="line.51"></a>
+<span class="sourceLineNo">052</span>                    || setVar.getCard().getHighBound() &lt; setVar.getEnv().size()) {<a name="line.52"></a>
+<span class="sourceLineNo">053</span>                // These variables need to have their cardinalities constrainted.<a name="line.53"></a>
+<span class="sourceLineNo">054</span>                optModule.addConstraint(equal(<a name="line.54"></a>
+<span class="sourceLineNo">055</span>                        $(domainInt("|" + setVar.getName() + "|", setVar.getCard())),<a name="line.55"></a>
+<span class="sourceLineNo">056</span>                        card($(setVar))));<a name="line.56"></a>
 <span class="sourceLineNo">057</span>            }<a name="line.57"></a>
-<span class="sourceLineNo">058</span>            for (Map.Entry&lt;IrBoolExpr, Set&lt;IrBoolExpr&gt;&gt; entry : implications.entrySet()) {<a name="line.58"></a>
-<span class="sourceLineNo">059</span>                IrBoolExpr antecedent = entry.getKey();<a name="line.59"></a>
-<span class="sourceLineNo">060</span>                Set&lt;IrBoolExpr&gt; consequents = entry.getValue();<a name="line.60"></a>
-<span class="sourceLineNo">061</span>                if (!consequents.isEmpty()) {<a name="line.61"></a>
-<span class="sourceLineNo">062</span>                    IrBoolExpr notAntecedent = not(antecedent);<a name="line.62"></a>
-<span class="sourceLineNo">063</span>                    Set&lt;IrBoolExpr&gt; alternatives = implications.get(notAntecedent);<a name="line.63"></a>
-<span class="sourceLineNo">064</span>                    if (alternatives != null &amp;&amp; !alternatives.isEmpty()) {<a name="line.64"></a>
-<span class="sourceLineNo">065</span>                        Iterator&lt;IrBoolExpr&gt; iter = consequents.iterator();<a name="line.65"></a>
-<span class="sourceLineNo">066</span>                        while (iter.hasNext()) {<a name="line.66"></a>
-<span class="sourceLineNo">067</span>                            IrBoolExpr consequent = iter.next();<a name="line.67"></a>
-<span class="sourceLineNo">068</span>                            IrBoolExpr alternative = not(consequent);<a name="line.68"></a>
-<span class="sourceLineNo">069</span>                            if (alternatives.remove(alternative)) {<a name="line.69"></a>
-<span class="sourceLineNo">070</span>                                opts.add(<a name="line.70"></a>
-<span class="sourceLineNo">071</span>                                        // Either choice is fine, but prefer to pick<a name="line.71"></a>
-<span class="sourceLineNo">072</span>                                        // the antecedent that is not negative because<a name="line.72"></a>
-<span class="sourceLineNo">073</span>                                        // it looks nicer and some cases easier to<a name="line.73"></a>
-<span class="sourceLineNo">074</span>                                        // propagate.<a name="line.74"></a>
-<span class="sourceLineNo">075</span>                                        antecedent.isNegative()<a name="line.75"></a>
-<span class="sourceLineNo">076</span>                                        ? ifOnlyIf(notAntecedent, alternative)<a name="line.76"></a>
-<span class="sourceLineNo">077</span>                                        : ifOnlyIf(antecedent, consequent));<a name="line.77"></a>
-<span class="sourceLineNo">078</span>                                iter.remove();<a name="line.78"></a>
-<span class="sourceLineNo">079</span>                            }<a name="line.79"></a>
-<span class="sourceLineNo">080</span>                        }<a name="line.80"></a>
-<span class="sourceLineNo">081</span>                    }<a name="line.81"></a>
-<span class="sourceLineNo">082</span>                    for (IrBoolExpr consequent : consequents) {<a name="line.82"></a>
-<span class="sourceLineNo">083</span>                        opts.add(implies(antecedent, consequent));<a name="line.83"></a>
-<span class="sourceLineNo">084</span>                    }<a name="line.84"></a>
-<span class="sourceLineNo">085</span>                    consequents.clear();<a name="line.85"></a>
-<span class="sourceLineNo">086</span>                }<a name="line.86"></a>
-<span class="sourceLineNo">087</span>            }<a name="line.87"></a>
-<span class="sourceLineNo">088</span>            return and(opts);<a name="line.88"></a>
-<span class="sourceLineNo">089</span>        }<a name="line.89"></a>
-<span class="sourceLineNo">090</span><a name="line.90"></a>
-<span class="sourceLineNo">091</span>        @Override<a name="line.91"></a>
-<span class="sourceLineNo">092</span>        public IrBoolExpr visit(IrCompare ir, Void a) {<a name="line.92"></a>
-<span class="sourceLineNo">093</span>            IrIntExpr left = rewrite(ir.getLeft(), a);<a name="line.93"></a>
-<span class="sourceLineNo">094</span>            IrIntExpr right = rewrite(ir.getRight(), a);<a name="line.94"></a>
-<span class="sourceLineNo">095</span>            if (ir.getOp().isEquality()) {<a name="line.95"></a>
-<span class="sourceLineNo">096</span>                IrDomain leftDomain = left.getDomain();<a name="line.96"></a>
-<span class="sourceLineNo">097</span>                IrDomain rightDomain = right.getDomain();<a name="line.97"></a>
-<span class="sourceLineNo">098</span>                // This canoicalizes the form somewhat so that is easier for the other<a name="line.98"></a>
-<span class="sourceLineNo">099</span>                // analysis to find pattern matches.<a name="line.99"></a>
-<span class="sourceLineNo">100</span>                if (leftDomain.size() == 2) {<a name="line.100"></a>
-<span class="sourceLineNo">101</span>                    // Prefer the one that's closer to 0.<a name="line.101"></a>
-<span class="sourceLineNo">102</span>                    int prefer = leftDomain.getLowBound();<a name="line.102"></a>
-<span class="sourceLineNo">103</span>                    int unprefer = leftDomain.getHighBound();<a name="line.103"></a>
-<span class="sourceLineNo">104</span>                    if (Math.abs(leftDomain.getLowBound()) &gt; Math.abs(leftDomain.getHighBound())) {<a name="line.104"></a>
-<span class="sourceLineNo">105</span>                        prefer = leftDomain.getHighBound();<a name="line.105"></a>
-<span class="sourceLineNo">106</span>                        unprefer = leftDomain.getLowBound();<a name="line.106"></a>
-<span class="sourceLineNo">107</span>                    }<a name="line.107"></a>
-<span class="sourceLineNo">108</span>                    Integer rightConstant = IrUtil.getConstant(right);<a name="line.108"></a>
-<span class="sourceLineNo">109</span>                    if (rightConstant != null &amp;&amp; rightConstant.intValue() == unprefer) {<a name="line.109"></a>
-<span class="sourceLineNo">110</span>                        return compare(left, ir.getOp().negate(), prefer);<a name="line.110"></a>
+<span class="sourceLineNo">058</span>        }<a name="line.58"></a>
+<span class="sourceLineNo">059</span>        return optModule;<a name="line.59"></a>
+<span class="sourceLineNo">060</span>    }<a name="line.60"></a>
+<span class="sourceLineNo">061</span><a name="line.61"></a>
+<span class="sourceLineNo">062</span>    private static class CanonicalRewriter extends IrRewriter&lt;Void&gt; {<a name="line.62"></a>
+<span class="sourceLineNo">063</span><a name="line.63"></a>
+<span class="sourceLineNo">064</span>        private final List&lt;IrSetVar&gt; setVars = new ArrayList&lt;IrSetVar&gt;();<a name="line.64"></a>
+<span class="sourceLineNo">065</span>        private final Map&lt;IrSetVar, IrIntVar&gt; setVarCards = new HashMap&lt;IrSetVar, IrIntVar&gt;();<a name="line.65"></a>
+<span class="sourceLineNo">066</span><a name="line.66"></a>
+<span class="sourceLineNo">067</span>        @Override<a name="line.67"></a>
+<span class="sourceLineNo">068</span>        public IrBoolExpr visit(IrAnd ir, Void a) {<a name="line.68"></a>
+<span class="sourceLineNo">069</span>            Map&lt;IrBoolExpr, Set&lt;IrBoolExpr&gt;&gt; implications = new HashMap&lt;IrBoolExpr, Set&lt;IrBoolExpr&gt;&gt;();<a name="line.69"></a>
+<span class="sourceLineNo">070</span>            List&lt;IrBoolExpr&gt; opts = new ArrayList&lt;IrBoolExpr&gt;(ir.getOperands().length);<a name="line.70"></a>
+<span class="sourceLineNo">071</span>            for (IrBoolExpr operand : ir.getOperands()) {<a name="line.71"></a>
+<span class="sourceLineNo">072</span>                IrBoolExpr opt = rewrite(operand, a);<a name="line.72"></a>
+<span class="sourceLineNo">073</span>                if (opt instanceof IrImplies) {<a name="line.73"></a>
+<span class="sourceLineNo">074</span>                    IrImplies implies = (IrImplies) opt;<a name="line.74"></a>
+<span class="sourceLineNo">075</span>                    Set&lt;IrBoolExpr&gt; consequents = implications.get(implies.getAntecedent());<a name="line.75"></a>
+<span class="sourceLineNo">076</span>                    if (consequents == null) {<a name="line.76"></a>
+<span class="sourceLineNo">077</span>                        consequents = new HashSet&lt;IrBoolExpr&gt;();<a name="line.77"></a>
+<span class="sourceLineNo">078</span>                        implications.put(implies.getAntecedent(), consequents);<a name="line.78"></a>
+<span class="sourceLineNo">079</span>                    }<a name="line.79"></a>
+<span class="sourceLineNo">080</span>                    consequents.add(implies.getConsequent());<a name="line.80"></a>
+<span class="sourceLineNo">081</span>                } else {<a name="line.81"></a>
+<span class="sourceLineNo">082</span>                    opts.add(opt);<a name="line.82"></a>
+<span class="sourceLineNo">083</span>                }<a name="line.83"></a>
+<span class="sourceLineNo">084</span>            }<a name="line.84"></a>
+<span class="sourceLineNo">085</span>            for (Map.Entry&lt;IrBoolExpr, Set&lt;IrBoolExpr&gt;&gt; entry : implications.entrySet()) {<a name="line.85"></a>
+<span class="sourceLineNo">086</span>                IrBoolExpr antecedent = entry.getKey();<a name="line.86"></a>
+<span class="sourceLineNo">087</span>                Set&lt;IrBoolExpr&gt; consequents = entry.getValue();<a name="line.87"></a>
+<span class="sourceLineNo">088</span>                if (!consequents.isEmpty()) {<a name="line.88"></a>
+<span class="sourceLineNo">089</span>                    IrBoolExpr notAntecedent = not(antecedent);<a name="line.89"></a>
+<span class="sourceLineNo">090</span>                    Set&lt;IrBoolExpr&gt; alternatives = implications.get(notAntecedent);<a name="line.90"></a>
+<span class="sourceLineNo">091</span>                    if (alternatives != null &amp;&amp; !alternatives.isEmpty()) {<a name="line.91"></a>
+<span class="sourceLineNo">092</span>                        Iterator&lt;IrBoolExpr&gt; iter = consequents.iterator();<a name="line.92"></a>
+<span class="sourceLineNo">093</span>                        while (iter.hasNext()) {<a name="line.93"></a>
+<span class="sourceLineNo">094</span>                            IrBoolExpr consequent = iter.next();<a name="line.94"></a>
+<span class="sourceLineNo">095</span>                            IrBoolExpr alternative = not(consequent);<a name="line.95"></a>
+<span class="sourceLineNo">096</span>                            if (alternatives.remove(alternative)) {<a name="line.96"></a>
+<span class="sourceLineNo">097</span>                                opts.add(<a name="line.97"></a>
+<span class="sourceLineNo">098</span>                                        // Either choice is fine, but prefer to pick<a name="line.98"></a>
+<span class="sourceLineNo">099</span>                                        // the antecedent that is not negative because<a name="line.99"></a>
+<span class="sourceLineNo">100</span>                                        // it looks nicer and some cases easier to<a name="line.100"></a>
+<span class="sourceLineNo">101</span>                                        // propagate.<a name="line.101"></a>
+<span class="sourceLineNo">102</span>                                        antecedent.isNegative()<a name="line.102"></a>
+<span class="sourceLineNo">103</span>                                        ? ifOnlyIf(notAntecedent, alternative)<a name="line.103"></a>
+<span class="sourceLineNo">104</span>                                        : ifOnlyIf(antecedent, consequent));<a name="line.104"></a>
+<span class="sourceLineNo">105</span>                                iter.remove();<a name="line.105"></a>
+<span class="sourceLineNo">106</span>                            }<a name="line.106"></a>
+<span class="sourceLineNo">107</span>                        }<a name="line.107"></a>
+<span class="sourceLineNo">108</span>                    }<a name="line.108"></a>
+<span class="sourceLineNo">109</span>                    for (IrBoolExpr consequent : consequents) {<a name="line.109"></a>
+<span class="sourceLineNo">110</span>                        opts.add(implies(antecedent, consequent));<a name="line.110"></a>
 <span class="sourceLineNo">111</span>                    }<a name="line.111"></a>
-<span class="sourceLineNo">112</span>                }<a name="line.112"></a>
-<span class="sourceLineNo">113</span>                if (rightDomain.size() == 2) {<a name="line.113"></a>
-<span class="sourceLineNo">114</span>                    // Prefer the one that's closer to 0.<a name="line.114"></a>
-<span class="sourceLineNo">115</span>                    int prefer = rightDomain.getLowBound();<a name="line.115"></a>
-<span class="sourceLineNo">116</span>                    int unprefer = rightDomain.getHighBound();<a name="line.116"></a>
-<span class="sourceLineNo">117</span>                    if (Math.abs(rightDomain.getLowBound()) &gt; Math.abs(rightDomain.getHighBound())) {<a name="line.117"></a>
-<span class="sourceLineNo">118</span>                        prefer = rightDomain.getHighBound();<a name="line.118"></a>
-<span class="sourceLineNo">119</span>                        unprefer = rightDomain.getLowBound();<a name="line.119"></a>
-<span class="sourceLineNo">120</span>                    }<a name="line.120"></a>
-<span class="sourceLineNo">121</span>                    Integer leftConstant = IrUtil.getConstant(left);<a name="line.121"></a>
-<span class="sourceLineNo">122</span>                    if (leftConstant != null &amp;&amp; leftConstant.intValue() == unprefer) {<a name="line.122"></a>
-<span class="sourceLineNo">123</span>                        return compare(prefer, ir.getOp().negate(), right);<a name="line.123"></a>
-<span class="sourceLineNo">124</span>                    }<a name="line.124"></a>
-<span class="sourceLineNo">125</span>                }<a name="line.125"></a>
-<span class="sourceLineNo">126</span>            }<a name="line.126"></a>
-<span class="sourceLineNo">127</span>            return compare(left, ir.getOp(), right);<a name="line.127"></a>
-<span class="sourceLineNo">128</span>        }<a name="line.128"></a>
-<span class="sourceLineNo">129</span>    };<a name="line.129"></a>
-<span class="sourceLineNo">130</span>}<a name="line.130"></a>
+<span class="sourceLineNo">112</span>                    consequents.clear();<a name="line.112"></a>
+<span class="sourceLineNo">113</span>                }<a name="line.113"></a>
+<span class="sourceLineNo">114</span>            }<a name="line.114"></a>
+<span class="sourceLineNo">115</span>            return and(opts);<a name="line.115"></a>
+<span class="sourceLineNo">116</span>        }<a name="line.116"></a>
+<span class="sourceLineNo">117</span><a name="line.117"></a>
+<span class="sourceLineNo">118</span>        @Override<a name="line.118"></a>
+<span class="sourceLineNo">119</span>        public IrBoolExpr visit(IrCompare ir, Void a) {<a name="line.119"></a>
+<span class="sourceLineNo">120</span>            IrIntExpr left = rewrite(ir.getLeft(), a);<a name="line.120"></a>
+<span class="sourceLineNo">121</span>            IrIntExpr right = rewrite(ir.getRight(), a);<a name="line.121"></a>
+<span class="sourceLineNo">122</span>            if (ir.getOp().isEquality()) {<a name="line.122"></a>
+<span class="sourceLineNo">123</span>                IrDomain leftDomain = left.getDomain();<a name="line.123"></a>
+<span class="sourceLineNo">124</span>                IrDomain rightDomain = right.getDomain();<a name="line.124"></a>
+<span class="sourceLineNo">125</span>                // This canoicalizes the form somewhat so that is easier for the other<a name="line.125"></a>
+<span class="sourceLineNo">126</span>                // analysis to find pattern matches.<a name="line.126"></a>
+<span class="sourceLineNo">127</span>                if (leftDomain.size() == 2) {<a name="line.127"></a>
+<span class="sourceLineNo">128</span>                    // Prefer the one that's closer to 0.<a name="line.128"></a>
+<span class="sourceLineNo">129</span>                    int prefer = leftDomain.getLowBound();<a name="line.129"></a>
+<span class="sourceLineNo">130</span>                    int unprefer = leftDomain.getHighBound();<a name="line.130"></a>
+<span class="sourceLineNo">131</span>                    if (Math.abs(leftDomain.getLowBound()) &gt; Math.abs(leftDomain.getHighBound())) {<a name="line.131"></a>
+<span class="sourceLineNo">132</span>                        prefer = leftDomain.getHighBound();<a name="line.132"></a>
+<span class="sourceLineNo">133</span>                        unprefer = leftDomain.getLowBound();<a name="line.133"></a>
+<span class="sourceLineNo">134</span>                    }<a name="line.134"></a>
+<span class="sourceLineNo">135</span>                    Integer rightConstant = IrUtil.getConstant(right);<a name="line.135"></a>
+<span class="sourceLineNo">136</span>                    if (rightConstant != null &amp;&amp; rightConstant.intValue() == unprefer) {<a name="line.136"></a>
+<span class="sourceLineNo">137</span>                        return compare(left, ir.getOp().negate(), prefer);<a name="line.137"></a>
+<span class="sourceLineNo">138</span>                    }<a name="line.138"></a>
+<span class="sourceLineNo">139</span>                }<a name="line.139"></a>
+<span class="sourceLineNo">140</span>                if (rightDomain.size() == 2) {<a name="line.140"></a>
+<span class="sourceLineNo">141</span>                    // Prefer the one that's closer to 0.<a name="line.141"></a>
+<span class="sourceLineNo">142</span>                    int prefer = rightDomain.getLowBound();<a name="line.142"></a>
+<span class="sourceLineNo">143</span>                    int unprefer = rightDomain.getHighBound();<a name="line.143"></a>
+<span class="sourceLineNo">144</span>                    if (Math.abs(rightDomain.getLowBound()) &gt; Math.abs(rightDomain.getHighBound())) {<a name="line.144"></a>
+<span class="sourceLineNo">145</span>                        prefer = rightDomain.getHighBound();<a name="line.145"></a>
+<span class="sourceLineNo">146</span>                        unprefer = rightDomain.getLowBound();<a name="line.146"></a>
+<span class="sourceLineNo">147</span>                    }<a name="line.147"></a>
+<span class="sourceLineNo">148</span>                    Integer leftConstant = IrUtil.getConstant(left);<a name="line.148"></a>
+<span class="sourceLineNo">149</span>                    if (leftConstant != null &amp;&amp; leftConstant.intValue() == unprefer) {<a name="line.149"></a>
+<span class="sourceLineNo">150</span>                        return compare(prefer, ir.getOp().negate(), right);<a name="line.150"></a>
+<span class="sourceLineNo">151</span>                    }<a name="line.151"></a>
+<span class="sourceLineNo">152</span>                }<a name="line.152"></a>
+<span class="sourceLineNo">153</span>            }<a name="line.153"></a>
+<span class="sourceLineNo">154</span>            return compare(left, ir.getOp(), right);<a name="line.154"></a>
+<span class="sourceLineNo">155</span>        }<a name="line.155"></a>
+<span class="sourceLineNo">156</span><a name="line.156"></a>
+<span class="sourceLineNo">157</span>        @Override<a name="line.157"></a>
+<span class="sourceLineNo">158</span>        public IrIntExpr visit(IrCard ir, Void a) {<a name="line.158"></a>
+<span class="sourceLineNo">159</span>            /*<a name="line.159"></a>
+<span class="sourceLineNo">160</span>             * |Literal| is a very common expression that is used very often.<a name="line.160"></a>
+<span class="sourceLineNo">161</span>             * Instead, rewrite as NewVar = |Literal| so that every reference<a name="line.161"></a>
+<span class="sourceLineNo">162</span>             * to |Literal| can use the same variable.<a name="line.162"></a>
+<span class="sourceLineNo">163</span>             */<a name="line.163"></a>
+<span class="sourceLineNo">164</span>            IrSetExpr set = rewrite(ir.getSet(), a);<a name="line.164"></a>
+<span class="sourceLineNo">165</span>            if (set instanceof IrSetLiteral) {<a name="line.165"></a>
+<span class="sourceLineNo">166</span>                IrSetLiteral setLiteral = (IrSetLiteral) set;<a name="line.166"></a>
+<span class="sourceLineNo">167</span>                IrSetVar setVar = setLiteral.getVar();<a name="line.167"></a>
+<span class="sourceLineNo">168</span>                IrIntVar card = setVarCards.get(setVar);<a name="line.168"></a>
+<span class="sourceLineNo">169</span>                if (card == null) {<a name="line.169"></a>
+<span class="sourceLineNo">170</span>                    card = domainInt("|" + setVar.getName() + "|", setVar.getCard());<a name="line.170"></a>
+<span class="sourceLineNo">171</span>                    setVarCards.put(setVar, card);<a name="line.171"></a>
+<span class="sourceLineNo">172</span>                }<a name="line.172"></a>
+<span class="sourceLineNo">173</span>                return $(card);<a name="line.173"></a>
+<span class="sourceLineNo">174</span>            }<a name="line.174"></a>
+<span class="sourceLineNo">175</span>            return card(set);<a name="line.175"></a>
+<span class="sourceLineNo">176</span>        }<a name="line.176"></a>
+<span class="sourceLineNo">177</span><a name="line.177"></a>
+<span class="sourceLineNo">178</span>        @Override<a name="line.178"></a>
+<span class="sourceLineNo">179</span>        public IrSetExpr visit(IrSetLiteral ir, Void a) {<a name="line.179"></a>
+<span class="sourceLineNo">180</span>            setVars.add(ir.getVar());<a name="line.180"></a>
+<span class="sourceLineNo">181</span>            return ir;<a name="line.181"></a>
+<span class="sourceLineNo">182</span>        }<a name="line.182"></a>
+<span class="sourceLineNo">183</span>    };<a name="line.183"></a>
+<span class="sourceLineNo">184</span>}<a name="line.184"></a>
 
 
 

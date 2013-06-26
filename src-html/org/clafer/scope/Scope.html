@@ -103,8 +103,8 @@
 <span class="sourceLineNo">095</span>            throw new IllegalArgumentException("Default scope must be positive");<a name="line.95"></a>
 <span class="sourceLineNo">096</span>        }<a name="line.96"></a>
 <span class="sourceLineNo">097</span>        for (Entry&lt;AstClafer, Integer&gt; entry : scopes.entrySet()) {<a name="line.97"></a>
-<span class="sourceLineNo">098</span>            if (entry.getValue() &lt;= 0) {<a name="line.98"></a>
-<span class="sourceLineNo">099</span>                throw new IllegalArgumentException(entry.getKey().getName() + " scope set to " + entry.getValue() + ". Scope must be positive.");<a name="line.99"></a>
+<span class="sourceLineNo">098</span>            if (entry.getValue() &lt; 0) {<a name="line.98"></a>
+<span class="sourceLineNo">099</span>                throw new IllegalArgumentException(entry.getKey().getName() + " scope set to " + entry.getValue() + ". Scope must be non-negative.");<a name="line.99"></a>
 <span class="sourceLineNo">100</span>            }<a name="line.100"></a>
 <span class="sourceLineNo">101</span>        }<a name="line.101"></a>
 <span class="sourceLineNo">102</span>        if (intLow &gt; intHigh) {<a name="line.102"></a>

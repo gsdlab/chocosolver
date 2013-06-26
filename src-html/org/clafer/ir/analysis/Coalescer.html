@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>package org.clafer.ir.analysis;<a name="line.1"></a>
+<span class="sourceLineNo">002</span><a name="line.2"></a>
+<span class="sourceLineNo">003</span>import java.util.HashMap;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import java.util.Iterator;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import java.util.Map;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import java.util.Set;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import org.clafer.collection.Pair;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.clafer.graph.GraphUtil;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import org.clafer.graph.KeyGraph;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.clafer.ir.IrBoolCast;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.clafer.ir.IrBoolExpr;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.clafer.ir.IrCompare;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import org.clafer.ir.IrDomain;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import org.clafer.ir.IrIfOnlyIf;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import org.clafer.ir.IrIntExpr;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import org.clafer.ir.IrIntLiteral;<a name="line.16"></a>
+<span class="sourceLineNo">017</span>import org.clafer.ir.IrIntVar;<a name="line.17"></a>
+<span class="sourceLineNo">018</span>import org.clafer.ir.IrModule;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import org.clafer.ir.IrRewriter;<a name="line.19"></a>
+<span class="sourceLineNo">020</span>import org.clafer.ir.IrUtil;<a name="line.20"></a>
+<span class="sourceLineNo">021</span>import static org.clafer.ir.Irs.*;<a name="line.21"></a>
+<span class="sourceLineNo">022</span><a name="line.22"></a>
+<span class="sourceLineNo">023</span>/**<a name="line.23"></a>
+<span class="sourceLineNo">024</span> * @author jimmy<a name="line.24"></a>
+<span class="sourceLineNo">025</span> */<a name="line.25"></a>
+<span class="sourceLineNo">026</span>public class Coalescer {<a name="line.26"></a>
+<span class="sourceLineNo">027</span><a name="line.27"></a>
+<span class="sourceLineNo">028</span>    private Coalescer() {<a name="line.28"></a>
+<span class="sourceLineNo">029</span>    }<a name="line.29"></a>
+<span class="sourceLineNo">030</span><a name="line.30"></a>
+<span class="sourceLineNo">031</span>    public static Pair&lt;Map&lt;IrIntVar, IrIntVar&gt;, IrModule&gt; coalesce(IrModule module) {<a name="line.31"></a>
+<span class="sourceLineNo">032</span>        KeyGraph&lt;IrIntVar&gt; intGraph = new KeyGraph&lt;IrIntVar&gt;();<a name="line.32"></a>
+<span class="sourceLineNo">033</span>        for (IrBoolExpr constraint : module.getConstraints()) {<a name="line.33"></a>
+<span class="sourceLineNo">034</span>            if (constraint instanceof IrCompare) {<a name="line.34"></a>
+<span class="sourceLineNo">035</span>                IrCompare compare = (IrCompare) constraint;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>                if (IrCompare.Op.Equal.equals(compare.getOp())<a name="line.36"></a>
+<span class="sourceLineNo">037</span>                        &amp;&amp; compare.getLeft() instanceof IrIntLiteral<a name="line.37"></a>
+<span class="sourceLineNo">038</span>                        &amp;&amp; compare.getRight() instanceof IrIntLiteral) {<a name="line.38"></a>
+<span class="sourceLineNo">039</span>                    IrIntLiteral left = (IrIntLiteral) compare.getLeft();<a name="line.39"></a>
+<span class="sourceLineNo">040</span>                    IrIntLiteral right = (IrIntLiteral) compare.getRight();<a name="line.40"></a>
+<span class="sourceLineNo">041</span>                    intGraph.addEdge(left.getVar(), right.getVar());<a name="line.41"></a>
+<span class="sourceLineNo">042</span>                    intGraph.addEdge(right.getVar(), left.getVar());<a name="line.42"></a>
+<span class="sourceLineNo">043</span>                }<a name="line.43"></a>
+<span class="sourceLineNo">044</span>            }<a name="line.44"></a>
+<span class="sourceLineNo">045</span>            if (constraint instanceof IrIfOnlyIf) {<a name="line.45"></a>
+<span class="sourceLineNo">046</span>                IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) constraint;<a name="line.46"></a>
+<span class="sourceLineNo">047</span>                if (ifOnlyIf.getLeft() instanceof IrBoolCast<a name="line.47"></a>
+<span class="sourceLineNo">048</span>                        &amp;&amp; ifOnlyIf.getRight() instanceof IrBoolCast) {<a name="line.48"></a>
+<span class="sourceLineNo">049</span>                    IrBoolCast left = (IrBoolCast) ifOnlyIf.getLeft();<a name="line.49"></a>
+<span class="sourceLineNo">050</span>                    IrBoolCast right = (IrBoolCast) ifOnlyIf.getRight();<a name="line.50"></a>
+<span class="sourceLineNo">051</span>                    if (left.getExpr() instanceof IrIntLiteral &amp;&amp; right.getExpr() instanceof IrIntLiteral) {<a name="line.51"></a>
+<span class="sourceLineNo">052</span>                        IrIntLiteral leftExpr = (IrIntLiteral) left.getExpr();<a name="line.52"></a>
+<span class="sourceLineNo">053</span>                        IrIntLiteral rightExpr = (IrIntLiteral) right.getExpr();<a name="line.53"></a>
+<span class="sourceLineNo">054</span>                        intGraph.addEdge(leftExpr.getVar(), rightExpr.getVar());<a name="line.54"></a>
+<span class="sourceLineNo">055</span>                        intGraph.addEdge(rightExpr.getVar(), leftExpr.getVar());<a name="line.55"></a>
+<span class="sourceLineNo">056</span>                    }<a name="line.56"></a>
+<span class="sourceLineNo">057</span>                }<a name="line.57"></a>
+<span class="sourceLineNo">058</span>            }<a name="line.58"></a>
+<span class="sourceLineNo">059</span>        }<a name="line.59"></a>
+<span class="sourceLineNo">060</span>        Map&lt;IrIntVar, IrIntVar&gt; coalescedInts = new HashMap&lt;IrIntVar, IrIntVar&gt;();<a name="line.60"></a>
+<span class="sourceLineNo">061</span>        for (Set&lt;IrIntVar&gt; component : GraphUtil.computeStronglyConnectedComponents(intGraph)) {<a name="line.61"></a>
+<span class="sourceLineNo">062</span>            if (component.size() &gt; 1) {<a name="line.62"></a>
+<span class="sourceLineNo">063</span>                Iterator&lt;IrIntVar&gt; iter = component.iterator();<a name="line.63"></a>
+<span class="sourceLineNo">064</span>                IrIntVar var = iter.next();<a name="line.64"></a>
+<span class="sourceLineNo">065</span>                StringBuilder name = new StringBuilder().append(var.getName());<a name="line.65"></a>
+<span class="sourceLineNo">066</span>                IrDomain domain = var.getDomain();<a name="line.66"></a>
+<span class="sourceLineNo">067</span>                while (iter.hasNext()) {<a name="line.67"></a>
+<span class="sourceLineNo">068</span>                    var = iter.next();<a name="line.68"></a>
+<span class="sourceLineNo">069</span>                    name.append(';').append(var.getName());<a name="line.69"></a>
+<span class="sourceLineNo">070</span>                    domain = IrUtil.intersection(domain, var.getDomain());<a name="line.70"></a>
+<span class="sourceLineNo">071</span>                }<a name="line.71"></a>
+<span class="sourceLineNo">072</span><a name="line.72"></a>
+<span class="sourceLineNo">073</span>                if (domain.isEmpty()) {<a name="line.73"></a>
+<span class="sourceLineNo">074</span>                    // Model is unsatisfiable. Compile anyways?<a name="line.74"></a>
+<span class="sourceLineNo">075</span>                } else {<a name="line.75"></a>
+<span class="sourceLineNo">076</span>                    IrIntVar coalesced = domainInt(name.toString(), domain);<a name="line.76"></a>
+<span class="sourceLineNo">077</span>                    for (IrIntVar coalesce : component) {<a name="line.77"></a>
+<span class="sourceLineNo">078</span>                        coalescedInts.put(coalesce, coalesced);<a name="line.78"></a>
+<span class="sourceLineNo">079</span>                    }<a name="line.79"></a>
+<span class="sourceLineNo">080</span>                }<a name="line.80"></a>
+<span class="sourceLineNo">081</span>            }<a name="line.81"></a>
+<span class="sourceLineNo">082</span>        }<a name="line.82"></a>
+<span class="sourceLineNo">083</span><a name="line.83"></a>
+<span class="sourceLineNo">084</span>        IrIntVar[] coalescedIntVars = new IrIntVar[module.getIntVars().length];<a name="line.84"></a>
+<span class="sourceLineNo">085</span>        for (int i = 0; i &lt; coalescedIntVars.length; i++) {<a name="line.85"></a>
+<span class="sourceLineNo">086</span>            IrIntVar intVar = module.getIntVars()[i];<a name="line.86"></a>
+<span class="sourceLineNo">087</span>            IrIntVar coalescedIntVar = coalescedInts.get(intVar);<a name="line.87"></a>
+<span class="sourceLineNo">088</span>            coalescedIntVars[i] = coalescedIntVar == null ? intVar : coalescedIntVar;<a name="line.88"></a>
+<span class="sourceLineNo">089</span>        }<a name="line.89"></a>
+<span class="sourceLineNo">090</span>        module.setIntVars(coalescedIntVars);<a name="line.90"></a>
+<span class="sourceLineNo">091</span>        return new Pair&lt;Map&lt;IrIntVar, IrIntVar&gt;, IrModule&gt;(<a name="line.91"></a>
+<span class="sourceLineNo">092</span>                coalescedInts,<a name="line.92"></a>
+<span class="sourceLineNo">093</span>                new CoalesceRewriter(coalescedInts).rewrite(module, null));<a name="line.93"></a>
+<span class="sourceLineNo">094</span>    }<a name="line.94"></a>
+<span class="sourceLineNo">095</span><a name="line.95"></a>
+<span class="sourceLineNo">096</span>    private static class CoalesceRewriter extends IrRewriter&lt;Void&gt; {<a name="line.96"></a>
+<span class="sourceLineNo">097</span><a name="line.97"></a>
+<span class="sourceLineNo">098</span>        private final Map&lt;IrIntVar, IrIntVar&gt; coalesced;<a name="line.98"></a>
+<span class="sourceLineNo">099</span><a name="line.99"></a>
+<span class="sourceLineNo">100</span>        CoalesceRewriter(Map&lt;IrIntVar, IrIntVar&gt; coalesced) {<a name="line.100"></a>
+<span class="sourceLineNo">101</span>            this.coalesced = coalesced;<a name="line.101"></a>
+<span class="sourceLineNo">102</span>        }<a name="line.102"></a>
+<span class="sourceLineNo">103</span><a name="line.103"></a>
+<span class="sourceLineNo">104</span>        @Override<a name="line.104"></a>
+<span class="sourceLineNo">105</span>        public IrIntExpr visit(IrIntLiteral ir, Void a) {<a name="line.105"></a>
+<span class="sourceLineNo">106</span>            IrIntVar var = coalesced.get(ir.getVar());<a name="line.106"></a>
+<span class="sourceLineNo">107</span>            return var == null ? super.visit(ir, a) : $(var);<a name="line.107"></a>
+<span class="sourceLineNo">108</span>        }<a name="line.108"></a>
+<span class="sourceLineNo">109</span>    }<a name="line.109"></a>
+<span class="sourceLineNo">110</span>}<a name="line.110"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

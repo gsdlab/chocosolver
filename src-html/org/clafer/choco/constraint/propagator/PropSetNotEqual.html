@@ -8,8 +8,8 @@
 <div class="sourceContainer">
 <pre><span class="sourceLineNo">001</span>package org.clafer.choco.constraint.propagator;<a name="line.1"></a>
 <span class="sourceLineNo">002</span><a name="line.2"></a>
-<span class="sourceLineNo">003</span>import solver.constraints.propagators.Propagator;<a name="line.3"></a>
-<span class="sourceLineNo">004</span>import solver.constraints.propagators.PropagatorPriority;<a name="line.4"></a>
+<span class="sourceLineNo">003</span>import solver.constraints.Propagator;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import solver.constraints.PropagatorPriority;<a name="line.4"></a>
 <span class="sourceLineNo">005</span>import solver.exception.ContradictionException;<a name="line.5"></a>
 <span class="sourceLineNo">006</span>import solver.variables.EventType;<a name="line.6"></a>
 <span class="sourceLineNo">007</span>import solver.variables.SetVar;<a name="line.7"></a>
@@ -139,7 +139,7 @@
 <span class="sourceLineNo">131</span>        if (!PropUtil.isKerSubsetEnv(s1, s2) || !PropUtil.isKerSubsetEnv(s2, s1)) {<a name="line.131"></a>
 <span class="sourceLineNo">132</span>            return ESat.TRUE;<a name="line.132"></a>
 <span class="sourceLineNo">133</span>        }<a name="line.133"></a>
-<span class="sourceLineNo">134</span>        return s1.instantiated() &amp;&amp; s2.instantiated() ? ESat.TRUE : ESat.UNDEFINED;<a name="line.134"></a>
+<span class="sourceLineNo">134</span>        return s1.instantiated() &amp;&amp; s2.instantiated() ? ESat.FALSE : ESat.UNDEFINED;<a name="line.134"></a>
 <span class="sourceLineNo">135</span>    }<a name="line.135"></a>
 <span class="sourceLineNo">136</span><a name="line.136"></a>
 <span class="sourceLineNo">137</span>    @Override<a name="line.137"></a>
