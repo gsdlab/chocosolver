@@ -1,5 +1,6 @@
 package org.clafer.ir.compiler;
 
+import java.util.ArrayList;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolCast;
@@ -18,6 +19,7 @@ import org.clafer.ir.IrSetExpr;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetTest;
@@ -120,7 +122,31 @@ public class IrCompiler {
         for (IrSetVar var : optModule.getSetVars()) {
             getSetVar(var);
         }
+        List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
         for (IrBoolExpr constraint : optModule.getConstraints()) {
+            if (constraint instanceof IrCompare) {
+                IrCompare compare = (IrCompare) constraint;
+                if (compare.getRight() instanceof IrCard) {
+                    IrIntExpr left = compare.getLeft();
+                    IrCard right = (IrCard) compare.getRight();
+                    if (right.getSet() instanceof IrSetLiteral) {
+                        IrSetLiteral set = (IrSetLiteral) right.getSet();
+
+                        IntVar leftInt = compile(left);
+                        CSet rightSet = compile(set);
+
+                        assert !rightSet.hasCardCached();
+
+                        solver.post(SCF.cardinality(rightSet.getSet(), leftInt));
+                        setCardVars.put(rightSet.getSet(), leftInt);
+
+                        continue;
+                    }
+                }
+            }
+            constraints.add(constraint);
+        }
+        for (IrBoolExpr constraint : constraints) {
             solver.post(compileAsConstraint(constraint));
         }
         return new IrSolutionMap(boolVar, coalescePair.getFst(), intVar, setVar);
@@ -166,14 +192,19 @@ public class IrCompiler {
         }
         return VF.set(name, env.getValues(), ker.getValues(), solver);
     }
-    private final Map<SetVar, IntVar> setCardVars2 = new HashMap<SetVar, IntVar>();
 
-    private IntVar setCardVar2(SetVar set) {
-        IntVar setCardVar = setCardVars2.get(set);
+    private CSet cset(String name, IrDomain env, IrDomain ker, IrDomain card) {
+        SetVar set = setVar(name, env, ker);
+        return new CSet(set, setCardVar(set, card));
+    }
+    private final Map<SetVar, IntVar> setCardVars = new HashMap<SetVar, IntVar>();
+
+    private IntVar setCardVar(SetVar set, IrDomain card) {
+        IntVar setCardVar = setCardVars.get(set);
         if (setCardVar == null) {
-            setCardVar = numIntVar("|" + set.getName() + "|", Irs.boundDomain(set.getKernelSize(), set.getEnvelopeSize()));
+            setCardVar = intVar("|" + set.getName() + "|", card);
             solver.post(SCF.cardinality(set, setCardVar));
-            setCardVars2.put(set, setCardVar);
+            setCardVars.put(set, setCardVar);
         }
         return setCardVar;
     }
@@ -818,7 +849,7 @@ public class IrCompiler {
     private final IrSetExprVisitor<CSet, Object> setExprCompiler = new IrSetExprVisitor<CSet, Object>() {
         @Override
         public Object visit(IrSetLiteral ir, CSet reify) {
-            return new CSet(getSetVar(ir.getVar()), null);
+            return new CSet(getSetVar(ir.getVar()), ir.getCard());
         }
 
         @Override
@@ -836,10 +867,9 @@ public class IrCompiler {
         public Object visit(IrArrayToSet ir, CSet reify) {
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {
-                SetVar set = numSetVar("ArrayToSet", ir.getEnv(), ir.getKer());
-                IntVar setCard = setCardVar2(set);
-                solver.post(Constraints.arrayToSet(array, set, setCard, ir.getGlobalCardinality()));
-                return new CSet(set, setCard);
+                CSet set = cset("ArrayToSet", ir.getEnv(), ir.getKer(), ir.getCard());
+                solver.post(Constraints.arrayToSet(array, set.getSet(), set.getCard(), ir.getGlobalCardinality()));
+                return set;
             }
             return Constraints.arrayToSet(array, reify.getSet(), reify.getCard(), ir.getGlobalCardinality());
         }
@@ -850,18 +880,17 @@ public class IrCompiler {
             CSet take = compile(ir.getTake());
             CSet[] children = compile(ir.getChildren());
             if (reify == null) {
-                SetVar joinRelation = numSetVar("JoinRelation", ir.getEnv(), ir.getKer());
+                CSet joinRelation = cset("JoinRelation", ir.getEnv(), ir.getKer(), ir.getCard());
                 if (ir.isInjective()) {
-                    IntVar joinRelationCard = setCardVar2(joinRelation);
                     solver.post(Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
-                            mapSet(children), mapCard(children), joinRelation, joinRelationCard));
-                    return new CSet(joinRelation, joinRelationCard);
+                            mapSet(children), mapCard(children), joinRelation.getSet(), joinRelation.getCard()));
+                    return joinRelation;
                 } else {
-                    solver.post(Constraints.joinRelation(take.getSet(), mapSet(children), joinRelation));
-                    return new CSet(joinRelation, null);
+                    solver.post(Constraints.joinRelation(take.getSet(), mapSet(children), joinRelation.getSet()));
+                    return joinRelation;
                 }
             }
-            if(ir.isInjective()) {
+            if (ir.isInjective()) {
                 return Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
                         mapSet(children), mapCard(children), reify.getSet(), reify.getCard());
             }
@@ -873,10 +902,9 @@ public class IrCompiler {
             CSet take = compile(ir.getTake());
             IntVar[] refs = compile(ir.getRefs());
             if (reify == null) {
-                SetVar joinFunction = numSetVar("JoinFunction", ir.getEnv(), ir.getKer());
-                IntVar joinFunctionCard = setCardVar2(joinFunction);
-                solver.post(Constraints.joinFunction(take.getSet(), take.getCard(), refs, joinFunction, joinFunctionCard, ir.getGlobalCardinality()));
-                return new CSet(joinFunction, joinFunctionCard);
+                CSet joinFunction = cset("JoinFunction", ir.getEnv(), ir.getKer(), ir.getCard());
+                solver.post(Constraints.joinFunction(take.getSet(), take.getCard(), refs, joinFunction.getSet(), joinFunction.getCard(), ir.getGlobalCardinality()));
+                return joinFunction;
             }
             return Constraints.joinFunction(take.getSet(), take.getCard(), refs, reify.getSet(), reify.getCard(), ir.getGlobalCardinality());
         }
@@ -888,7 +916,7 @@ public class IrCompiler {
             if (reify == null) {
                 SetVar difference = numSetVar("Difference", ir.getEnv(), ir.getKer());
                 solver.post(_difference(minuend.getSet(), subtrahend.getSet(), difference));
-                return new CSet(difference, null);
+                return new CSet(difference, ir.getCard());
             }
             return _difference(minuend.getSet(), subtrahend.getSet(), reify.getSet());
         }
@@ -899,7 +927,7 @@ public class IrCompiler {
             if (reify == null) {
                 SetVar intersection = numSetVar("Intersection", ir.getEnv(), ir.getKer());
                 solver.post(_intersection(mapSet(operands), intersection));
-                return new CSet(intersection, null);
+                return new CSet(intersection, ir.getCard());
             }
             return _intersection(mapSet(operands), reify.getSet());
         }
@@ -910,7 +938,7 @@ public class IrCompiler {
             if (reify == null) {
                 SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
                 solver.post(_union(mapSet(operands), union));
-                return new CSet(union, null);
+                return new CSet(union, ir.getCard());
             }
             return _union(mapSet(operands), reify.getSet());
         }
@@ -932,7 +960,7 @@ public class IrCompiler {
             CSet consequent = compile(ir.getConsequent());
             CSet alternative = compile(ir.getAlternative());
             if (reify == null) {
-                CSet ternary = new CSet(numSetVar("Ternary", ir.getEnv(), ir.getKer()));
+                CSet ternary = cset("Ternary", ir.getEnv(), ir.getKer(), ir.getCard());
                 solver.post(_ifThenElse(antecedent,
                         _equal(ternary, consequent),
                         _equal(ternary, alternative)));
@@ -1180,30 +1208,39 @@ public class IrCompiler {
     private class CSet {
 
         private final SetVar set;
+        private final IrDomain cardDomain;
         private IntVar card;
 
-        public CSet(SetVar set) {
-            this(set, null);
+        public CSet(SetVar set, IrDomain cardDomain) {
+            this.set = Check.notNull(set);
+            this.cardDomain = Check.notNull(cardDomain);
+            this.card = null;
         }
 
         public CSet(SetVar set, IntVar card) {
             this.set = Check.notNull(set);
-            this.card = card;
+            this.cardDomain = null;
+            this.card = Check.notNull(card);
         }
 
         public SetVar getSet() {
             return set;
         }
 
+        public boolean hasCardCached() {
+            return card != null;
+        }
+
         public IntVar getCard() {
             if (card == null) {
-                card = setCardVar2(set);
+                assert cardDomain != null;
+                card = setCardVar(set, cardDomain);
             }
             return card;
         }
     }
 
-    private static final SetVar[] mapSet(CSet... sets) {
+    private static SetVar[] mapSet(CSet... sets) {
         SetVar[] vars = new SetVar[sets.length];
         for (int i = 0; i < sets.length; i++) {
             vars[i] = sets[i].getSet();
@@ -1211,7 +1248,7 @@ public class IrCompiler {
         return vars;
     }
 
-    private static final IntVar[] mapCard(CSet... sets) {
+    private static IntVar[] mapCard(CSet... sets) {
         IntVar[] vars = new IntVar[sets.length];
         for (int i = 0; i < sets.length; i++) {
             vars[i] = sets[i].getCard();
