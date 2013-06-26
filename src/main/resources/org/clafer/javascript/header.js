@@ -65,7 +65,7 @@ function inter(i1, i2) {
 }
 var membership = Asts.membership;
 var ifThenElse = Asts.ifThenElse;
-var $in = Asts.in;
+var $in = Asts["in"];
 var notIn = Asts.notIn;
 var inter = Asts.inter;
 var upcast = Asts.upcast;
