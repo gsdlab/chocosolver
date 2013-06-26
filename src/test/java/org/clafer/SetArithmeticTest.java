@@ -48,7 +48,7 @@ public class SetArithmeticTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
@@ -71,7 +71,7 @@ public class SetArithmeticTest {
     public void testIntersection() {
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer free = model.addChild("Free").refToUnique(feature).withCard(1, 2);
@@ -94,7 +94,7 @@ public class SetArithmeticTest {
     public void testUnion() {
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
@@ -135,7 +135,7 @@ public class SetArithmeticTest {
     public void testEqualityOnSubTypes() {
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature);
         model.addConstraint(equal(union(global(backup), global(firewall)), global(backup)));
@@ -485,7 +485,7 @@ public class SetArithmeticTest {
     public void testIntegerInSetConstant() {
         AstModel model = newModel();
 
-        AstAbstractClafer cost = model.addAbstractClafer("Cost");
+        AstAbstractClafer cost = model.addAbstract("Cost");
         AstConcreteClafer debt = model.addChild("Debt").withCard(3, 3).extending(cost);
         AstConcreteClafer credit = model.addChild("Credit").withCard(Mandatory).extending(cost);
         AstConcreteClafer payment = model.addChild("Payment").refTo(cost).withCard(Mandatory);
@@ -509,7 +509,7 @@ public class SetArithmeticTest {
     public void testIntegerNotInSetConstant() {
         AstModel model = newModel();
 
-        AstAbstractClafer cost = model.addAbstractClafer("Cost");
+        AstAbstractClafer cost = model.addAbstract("Cost");
         AstConcreteClafer debt = model.addChild("Debt").withCard(3, 3).extending(cost);
         AstConcreteClafer credit = model.addChild("Credit").withCard(Mandatory).extending(cost);
         AstConcreteClafer payment = model.addChild("Payment").refTo(cost).withCard(Mandatory);
@@ -534,8 +534,8 @@ public class SetArithmeticTest {
     public void testAbstractSetIn() {
         AstModel model = newModel();
 
-        AstAbstractClafer a = model.addAbstractClafer("A");
-        AstAbstractClafer b = model.addAbstractClafer("B");
+        AstAbstractClafer a = model.addAbstract("A");
+        AstAbstractClafer b = model.addAbstract("B");
         AstConcreteClafer c = b.addChild("C").refToUnique(a);
         AstConcreteClafer d = model.addChild("D").extending(a).withCard(Mandatory);
         AstConcreteClafer e = model.addChild("E").extending(b).withCard(Mandatory);

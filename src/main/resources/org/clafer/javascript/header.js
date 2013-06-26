@@ -3,12 +3,12 @@ importClass(Packages.org.clafer.ast.Asts);
 var scope = rc.setScope.bind(rc);
 var defaultScope = rc.setDefaultScope.bind(rc);
 var intRange = rc.setIntRange.bind(rc);
-var clafer = rc.getModel().addChild.bind(rc.getModel());
-var abstract = rc.getModel().addAbstractClafer.bind(rc.getModel());
-var constraint = rc.getModel().addConstraint.bind(rc.getModel());
+var Clafer = rc.getModel().addChild.bind(rc.getModel());
+var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript engine versions has "abstract" as a keyword.
+var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
 
-var int = Asts.IntType;
-var bool = Asts.BoolType;
+var Int = Asts.IntType; // Some Javascript engine versions has "int" as a keyword.
+var Bool = Asts.BoolType;
 
 var $this = Asts.$this;
 var global = Asts.global;

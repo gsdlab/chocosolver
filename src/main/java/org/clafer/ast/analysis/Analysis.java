@@ -43,7 +43,7 @@ public class Analysis {
     private Map<AstExpr, AstClafer> typeMap;
 
     Analysis(AstModel model, Scope scope) {
-        this(model, scope, model.getAbstractClafers(), AstUtil.getConcreteClafers(model));
+        this(model, scope, model.getAbstracts(), AstUtil.getConcreteClafers(model));
     }
 
     Analysis(AstModel model, Scope scope,

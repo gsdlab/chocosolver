@@ -47,7 +47,7 @@ public class SymmetryBreakingTest {
     public void breakInheritedChildrenSwap() {
         AstModel model = newModel();
 
-        AstAbstractClafer eater = model.addAbstractClafer("Eater");
+        AstAbstractClafer eater = model.addAbstract("Eater");
         AstConcreteClafer food = eater.addChild("Food").withCard(1, 2);
         AstConcreteClafer patron = model.addChild("Patron").extending(eater).withCard(2, 2);
         AstConcreteClafer drink = patron.addChild("Drink").withCard(1, 2);
@@ -68,7 +68,7 @@ public class SymmetryBreakingTest {
     public void breakOnlyInheritedChildrenSwap() {
         AstModel model = newModel();
 
-        AstAbstractClafer eater = model.addAbstractClafer("Eater");
+        AstAbstractClafer eater = model.addAbstract("Eater");
         AstConcreteClafer food = eater.addChild("Food").withCard(1, 2);
         AstConcreteClafer drink = eater.addChild("Drink").withCard(1, 2);
         AstConcreteClafer patron = model.addChild("Patron").extending(eater).withCard(2, 2);
@@ -230,7 +230,7 @@ public class SymmetryBreakingTest {
     public void breakAbstractRefSwap() {
         AstModel model = newModel();
 
-        AstAbstractClafer A = model.addAbstractClafer("A");
+        AstAbstractClafer A = model.addAbstract("A");
         AstConcreteClafer a = model.addChild("a").extending(A);
         AstConcreteClafer setRefToA = model.addChild("setRefToA").refToUnique(A).withCard(3, 3);
         AstConcreteClafer multisetRefToA = model.addChild("multisetRefToA").refTo(A).withCard(3, 3);
@@ -253,7 +253,7 @@ public class SymmetryBreakingTest {
     public void breakAbstractRefSwapMultipleConcrete() {
         AstModel model = newModel();
 
-        AstAbstractClafer A = model.addAbstractClafer("A");
+        AstAbstractClafer A = model.addAbstract("A");
         AstConcreteClafer a = model.addChild("a").extending(A).withCard(Mandatory);
         AstConcreteClafer b = model.addChild("b").extending(A).withCard(Mandatory);
         AstConcreteClafer c = model.addChild("c").extending(A).withCard(Mandatory);
@@ -278,7 +278,7 @@ public class SymmetryBreakingTest {
     public void breakNonIsomorphicSourceIsomorphicTarget() {
         AstModel model = newModel();
 
-        AstAbstractClafer A = model.addAbstractClafer("A");
+        AstAbstractClafer A = model.addAbstract("A");
         AstConcreteClafer a = model.addChild("1").extending(A).withCard(4, 4);
         AstConcreteClafer b = model.addChild("b").refTo(A).withCard(Mandatory);
         AstConcreteClafer c = model.addChild("c").refTo(A).withCard(Mandatory);

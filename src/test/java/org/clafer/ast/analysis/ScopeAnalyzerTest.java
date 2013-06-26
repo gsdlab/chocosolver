@@ -22,7 +22,7 @@ public class ScopeAnalyzerTest {
     public void testAnalyze() {
         AstModel model = Asts.newModel();
 
-        AstAbstractClafer object = model.addAbstractClafer("object");
+        AstAbstractClafer object = model.addAbstract("object");
         AstConcreteClafer id = object.addChild("id").withCard(new Card(1, 1));
         AstConcreteClafer hash = object.addChild("hash").withCard(new Card(1, 1));
         AstConcreteClafer lock = object.addChild("lock").withCard(new Card(1, 1));

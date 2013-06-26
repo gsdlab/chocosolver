@@ -57,7 +57,7 @@ public class QuantifierTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
@@ -110,7 +110,7 @@ public class QuantifierTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
@@ -163,7 +163,7 @@ public class QuantifierTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
@@ -216,7 +216,7 @@ public class QuantifierTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
@@ -269,7 +269,7 @@ public class QuantifierTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);

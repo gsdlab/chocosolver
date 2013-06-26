@@ -39,21 +39,21 @@ public class AbstractOffsetAnalyzerTest {
     public void testAnalyze() {
         AstModel model = Asts.newModel();
 
-        AstAbstractClafer object = model.addAbstractClafer("Object");
+        AstAbstractClafer object = model.addAbstract("Object");
         AstConcreteClafer id = object.addChild("Id").withCard(new Card(1, 1));
 
-        AstAbstractClafer animal = model.addAbstractClafer("Animal").extending(object);
-        AstAbstractClafer mammal = model.addAbstractClafer("Mammal").extending(animal);
-        AstAbstractClafer primate = model.addAbstractClafer("Primate").extending(mammal);
+        AstAbstractClafer animal = model.addAbstract("Animal").extending(object);
+        AstAbstractClafer mammal = model.addAbstract("Mammal").extending(animal);
+        AstAbstractClafer primate = model.addAbstract("Primate").extending(mammal);
         AstConcreteClafer arm = primate.addChild("Arm").withCard(2, 2).extending(object);
-        AstAbstractClafer human = model.addAbstractClafer("Human").extending(primate);
+        AstAbstractClafer human = model.addAbstract("Human").extending(primate);
         AstConcreteClafer jimmy = model.addChild("Jimmy").extending(human).withCard(0, 1);
         AstConcreteClafer degree = jimmy.addChild("UWaterlooDegree").extending(object).withCard(1, 1);
         AstConcreteClafer mona = model.addChild("Mona").extending(human).withCard(1, 1);
         AstConcreteClafer lisa = model.addChild("Lisa").extending(human).withCard(1, 1);
         AstConcreteClafer knut = model.addChild("Knut").extending(mammal).withCard(0, 1);
 
-        AstAbstractClafer art = model.addAbstractClafer("Art").extending(object);
+        AstAbstractClafer art = model.addAbstract("Art").extending(object);
         AstConcreteClafer monalisa = model.addChild("MonaLisa").extending(art).withCard(1, 3); // forgeries
 
         Scope scope = Scope.defaultScope(10).toScope();

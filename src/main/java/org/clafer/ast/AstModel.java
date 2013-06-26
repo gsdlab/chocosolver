@@ -3,7 +3,6 @@ package org.clafer.ast;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.clafer.common.Check;
 
 /**
  * <p>
@@ -32,14 +31,14 @@ public class AstModel extends AstConcreteClafer {
 
     // The topmost Clafer in the type hierarchy.
     private final AstAbstractClafer claferClafer;
-    private final List<AstAbstractClafer> abstractClafers;
+    private final List<AstAbstractClafer> abstracts;
 
     AstModel(AstIdFactory idFactory) {
         super("#root#", idFactory);
         super.withCard(new Card(1, 1));
         this.claferClafer = new AstAbstractClafer("#clafer#", idFactory);
-        this.abstractClafers = new ArrayList<AstAbstractClafer>();
-        this.abstractClafers.add(claferClafer);
+        this.abstracts = new ArrayList<AstAbstractClafer>();
+        this.abstracts.add(claferClafer);
     }
 
     AstModel() {
@@ -60,8 +59,8 @@ public class AstModel extends AstConcreteClafer {
      *
      * @return all the abstract Clafers
      */
-    public List<AstAbstractClafer> getAbstractClafers() {
-        return Collections.unmodifiableList(abstractClafers);
+    public List<AstAbstractClafer> getAbstracts() {
+        return Collections.unmodifiableList(abstracts);
     }
 
     /**
@@ -70,9 +69,9 @@ public class AstModel extends AstConcreteClafer {
      * @param name the name of the abtract Clafer
      * @return the new abstract Clafer
      */
-    public AstAbstractClafer addAbstractClafer(String name) {
+    public AstAbstractClafer addAbstract(String name) {
         AstAbstractClafer abstractClafer = new AstAbstractClafer(name, idFactory).extending(claferClafer);
-        abstractClafers.add(abstractClafer);
+        abstracts.add(abstractClafer);
         return abstractClafer;
     }
 

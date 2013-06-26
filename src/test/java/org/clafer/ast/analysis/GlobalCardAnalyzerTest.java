@@ -19,21 +19,21 @@ public class GlobalCardAnalyzerTest {
     public void testAnalyze() {
         AstModel model = Asts.newModel();
 
-        AstAbstractClafer object = model.addAbstractClafer("object");
+        AstAbstractClafer object = model.addAbstract("object");
         AstConcreteClafer id = object.addChild("id").withCard(new Card(1, 1));
 
-        AstAbstractClafer animal = model.addAbstractClafer("animal").extending(object);
-        AstAbstractClafer mammal = model.addAbstractClafer("mammal").extending(animal);
-        AstAbstractClafer primate = model.addAbstractClafer("primate").extending(mammal);
+        AstAbstractClafer animal = model.addAbstract("animal").extending(object);
+        AstAbstractClafer mammal = model.addAbstract("mammal").extending(animal);
+        AstAbstractClafer primate = model.addAbstract("primate").extending(mammal);
         AstConcreteClafer arm = primate.addChild("arm").withCard(2, 2).extending(object);
-        AstAbstractClafer human = model.addAbstractClafer("human").extending(primate);
+        AstAbstractClafer human = model.addAbstract("human").extending(primate);
         AstConcreteClafer jimmy = model.addChild("Jimmy").extending(human).withCard(0, 1);
         AstConcreteClafer degree = jimmy.addChild("Degree@UWaterloo").extending(object).withCard(1, 1);
         AstConcreteClafer mona = model.addChild("Mona").extending(human).withCard(1, 1);
         AstConcreteClafer lisa = model.addChild("Lisa").extending(human).withCard(1, 1);
         AstConcreteClafer knut = model.addChild("Knut").extending(mammal).withCard(0, 1);
 
-        AstAbstractClafer art = model.addAbstractClafer("art").extending(object);
+        AstAbstractClafer art = model.addAbstract("art").extending(object);
         AstConcreteClafer monalisa = model.addChild("Mona Lisa").extending(art).withCard(1, 3); // forgeries
 
         Scope scope = Scope.defaultScope(10).toScope();

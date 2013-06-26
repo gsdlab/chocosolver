@@ -18,15 +18,15 @@ public class TypeHierarchyDepthAnalyzerTest {
     public void testAnalyze() {
         AstModel model = Asts.newModel();
 
-        AstAbstractClafer object = model.addAbstractClafer("object");
+        AstAbstractClafer object = model.addAbstract("object");
         
-        AstAbstractClafer animal = model.addAbstractClafer("animal").extending(object);
-        AstAbstractClafer mammal = model.addAbstractClafer("mammal").extending(animal);
-        AstAbstractClafer primate = model.addAbstractClafer("primate").extending(mammal);
-        AstAbstractClafer human = model.addAbstractClafer("human").extending(primate);
+        AstAbstractClafer animal = model.addAbstract("animal").extending(object);
+        AstAbstractClafer mammal = model.addAbstract("mammal").extending(animal);
+        AstAbstractClafer primate = model.addAbstract("primate").extending(mammal);
+        AstAbstractClafer human = model.addAbstract("human").extending(primate);
         model.addChild("Jimmy").extending(human);
 
-        AstAbstractClafer art = model.addAbstractClafer("art").extending(object);
+        AstAbstractClafer art = model.addAbstract("art").extending(object);
 
         Analysis analysis = new TypeHierarchyDepthAnalyzer().analyze(new Analysis(model, Scope.defaultScope(1).toScope()));
 

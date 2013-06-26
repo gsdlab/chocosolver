@@ -29,7 +29,7 @@ public class AstUtil {
     public static List<AstClafer> getClafers(AstModel model) {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
         clafers.add(model);
-        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
+        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             clafers.add(abstractClafer);
             getNestedChildClafers(abstractClafer, clafers);
         }
@@ -49,7 +49,7 @@ public class AstUtil {
     public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
         List<AstConcreteClafer> clafers = new ArrayList<AstConcreteClafer>();
         clafers.add(model);
-        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
+        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             getNestedChildClafers(abstractClafer, clafers);
         }
         for (AstConcreteClafer child : model.getChildren()) {
@@ -172,7 +172,7 @@ public class AstUtil {
      */
     public static List<AstConstraint> getNestedConstraints(AstModel model) {
         List<AstConstraint> constraints = new ArrayList<AstConstraint>();
-        for (AstAbstractClafer abstractClafer : model.getAbstractClafers()) {
+        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             getNestedConstraints(abstractClafer, constraints);
         }
         getNestedConstraints(model, constraints);

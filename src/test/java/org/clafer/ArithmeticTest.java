@@ -232,7 +232,7 @@ public class ArithmeticTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer cost = feature.addChild("Cost").withCard(Mandatory).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(Mandatory);
         AstConcreteClafer firewall = model.addChild("Fireall").extending(feature).withCard(Mandatory);

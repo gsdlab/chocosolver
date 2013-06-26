@@ -20,7 +20,7 @@ public class FeatureModelTest {
     public void testSmallFeatureModel() {
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature");
+        AstAbstractClafer feature = model.addAbstract("Feature");
         AstConcreteClafer footprint = feature.addChild("Footprint").withCard(1, 1).refTo(IntType);
 
         int n = 50;
@@ -228,8 +228,8 @@ public class FeatureModelTest {
     @Test(timeout = 60000)
     public void testSqlLite() {
         AstModel model = newModel();
-        AstAbstractClafer c3_SQLite = model.addAbstractClafer("c3_SQLite");
-        AstAbstractClafer c1_IMeasurable = model.addAbstractClafer("c1_IMeasurable");
+        AstAbstractClafer c3_SQLite = model.addAbstract("c3_SQLite");
+        AstAbstractClafer c1_IMeasurable = model.addAbstract("c1_IMeasurable");
         AstConcreteClafer c2_footprint = c1_IMeasurable.addChild("c2_footprint").withCard(1, 1);
         AstConcreteClafer c4_OperatingSystemCharacteristics = c3_SQLite.addChild("c4_OperatingSystemCharacteristics").withCard(1, 1).extending(c1_IMeasurable);
         AstConcreteClafer c10_SQLITE_4_BYTE_ALIGNED_MALLOC = c4_OperatingSystemCharacteristics.addChild("c10_SQLITE_4_BYTE_ALIGNED_MALLOC").withCard(1, 1).extending(c1_IMeasurable);

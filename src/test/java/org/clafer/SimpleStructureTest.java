@@ -35,13 +35,13 @@ public class SimpleStructureTest {
     public void testMultiLevelAbstract() {
         AstModel model = newModel();
 
-        AstAbstractClafer object = model.addAbstractClafer("Object");
+        AstAbstractClafer object = model.addAbstract("Object");
         object.addChild("Name").withCard(0, 1);
 
-        AstAbstractClafer animal = model.addAbstractClafer("Animal").extending(object);
+        AstAbstractClafer animal = model.addAbstract("Animal").extending(object);
         animal.addChild("Tail").withCard(0, 1);
 
-        AstAbstractClafer primate = model.addAbstractClafer("Primate").extending(animal);
+        AstAbstractClafer primate = model.addAbstract("Primate").extending(animal);
         primate.addChild("Bipedal").withCard(0, 1);
 
         model.addChild("Human").withCard(1, 1).extending(primate);
@@ -344,7 +344,7 @@ public class SimpleStructureTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature").refTo(IntType);
+        AstAbstractClafer feature = model.addAbstract("Feature").refTo(IntType);
         model.addChild("Backup").withCard(1, 1).extending(feature);
         model.addChild("Firewall").withCard(1, 2).extending(feature);
 
@@ -385,7 +385,7 @@ public class SimpleStructureTest {
          */
         AstModel model = newModel();
 
-        AstAbstractClafer feature = model.addAbstractClafer("Feature").refToUnique(IntType);
+        AstAbstractClafer feature = model.addAbstract("Feature").refToUnique(IntType);
         model.addChild("Backup").withCard(1, 1).extending(feature);
         model.addChild("Firewall").withCard(1, 2).extending(feature);
 
@@ -529,7 +529,7 @@ public class SimpleStructureTest {
     public void testRefToAbstractToString() {
         AstModel model = newModel();
 
-        AstAbstractClafer a = model.addAbstractClafer("A");
+        AstAbstractClafer a = model.addAbstract("A");
         AstConcreteClafer b = model.addChild("B").extending(a).withCard(2, 2);
         AstConcreteClafer c = model.addChild("C").extending(a).withCard(2, 2);
         AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Mandatory);
@@ -559,8 +559,8 @@ public class SimpleStructureTest {
     public void testUnusedAbstract() {
         AstModel model = newModel();
 
-        AstAbstractClafer a = model.addAbstractClafer("A");
-        AstAbstractClafer b = model.addAbstractClafer("B");
+        AstAbstractClafer a = model.addAbstract("A");
+        AstAbstractClafer b = model.addAbstract("B");
         AstConcreteClafer c = model.addChild("C").extending(b);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1));
@@ -579,8 +579,8 @@ public class SimpleStructureTest {
     public void testRefToUnusedAbstract() {
         AstModel model = newModel();
 
-        AstAbstractClafer a = model.addAbstractClafer("A");
-        AstAbstractClafer b = model.addAbstractClafer("B");
+        AstAbstractClafer a = model.addAbstract("A");
+        AstAbstractClafer b = model.addAbstract("B");
         AstConcreteClafer c = model.addChild("C").extending(b);
         AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Optional);
 

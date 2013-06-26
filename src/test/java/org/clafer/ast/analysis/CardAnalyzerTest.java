@@ -22,7 +22,7 @@ public class CardAnalyzerTest {
     public void testAnalyze() {
         AstModel model = Asts.newModel();
 
-        AstAbstractClafer animal = model.addAbstractClafer("animal");
+        AstAbstractClafer animal = model.addAbstract("animal");
         AstConcreteClafer limb = animal.addChild("limb").withCard(4);
         AstConcreteClafer digit = limb.addChild("digit").withCard(3);
         AstConcreteClafer parrot = model.addChild("parrot").withCard(3).extending(animal);
