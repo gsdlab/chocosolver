@@ -188,7 +188,7 @@ public class IrCompiler {
 
     private CSet cset(String name, IrDomain env, IrDomain ker, IrDomain card) {
         SetVar set = setVar(name, env, ker);
-        return new CSet(set, setCardVar(set, card));
+        return new CSet(set, card);
     }
     private final Map<SetVar, IntVar> setCardVars = new HashMap<SetVar, IntVar>();
 
@@ -212,6 +212,10 @@ public class IrCompiler {
 
     private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
         return setVar(name + "#" + varNum++, env, ker);
+    }
+
+    private CSet numCset(String name, IrDomain env, IrDomain ker, IrDomain card) {
+        return cset(name + "#" + varNum++, env, ker, card);
     }
 
     private BoolVar getBoolVar(IrBoolVar var) {
@@ -430,8 +434,10 @@ public class IrCompiler {
                 BoolVar left = compileAsBoolVar(ir.getLeft());
                 return compileAsConstraint(ir.getRight(), left);
             }
-            IntVar $left = compileAsIntVar(ir.getLeft());
-            return compile(Irs.asInt(ir.getRight()), $left);
+            if (ir.getRight() instanceof IrBoolLiteral) {
+                return compile(Irs.asInt(ir.getLeft()), compileAsIntVar(ir.getRight()));
+            }
+            return compile(Irs.asInt(ir.getRight()), compileAsIntVar(ir.getLeft()));
         }
 
         @Override
@@ -481,8 +487,10 @@ public class IrCompiler {
                         compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
             }
             if (IrCompare.Op.Equal.equals(ir.getOp())) {
-                IntVar left = compile(ir.getLeft());
-                return compileAsConstraint(ir.getRight(), left);
+                if (ir.getRight() instanceof IrIntLiteral) {
+                    return compileAsConstraint(ir.getLeft(), compile(ir.getRight()));
+                }
+                return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
             }
             return _arithm(compile(ir.getLeft()), ir.getOp().getSyntax(), compile(ir.getRight()));
         }
@@ -546,6 +554,9 @@ public class IrCompiler {
         public Object visit(IrSetTest ir, BoolArg a) {
             switch (ir.getOp()) {
                 case Equal:
+                    if (ir.getRight() instanceof IrSetLiteral) {
+                        return compileAsConstraint(ir.getLeft(), compile(ir.getRight()));
+                    }
                     return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
                 case NotEqual:
                     return _not_equal(compile(ir.getLeft()), compile(ir.getRight()));
@@ -878,7 +889,7 @@ public class IrCompiler {
         public Object visit(IrArrayToSet ir, CSet reify) {
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {
-                CSet set = cset("ArrayToSet", ir.getEnv(), ir.getKer(), ir.getCard());
+                CSet set = numCset("ArrayToSet", ir.getEnv(), ir.getKer(), ir.getCard());
                 solver.post(Constraints.arrayToSet(array, set.getSet(), set.getCard(), ir.getGlobalCardinality()));
                 return set;
             }
@@ -891,7 +902,7 @@ public class IrCompiler {
             CSet take = compile(ir.getTake());
             CSet[] children = compile(ir.getChildren());
             if (reify == null) {
-                CSet joinRelation = cset("JoinRelation", ir.getEnv(), ir.getKer(), ir.getCard());
+                CSet joinRelation = numCset("JoinRelation", ir.getEnv(), ir.getKer(), ir.getCard());
                 if (ir.isInjective()) {
                     solver.post(Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
                             mapSet(children), mapCard(children), joinRelation.getSet(), joinRelation.getCard()));
@@ -913,7 +924,7 @@ public class IrCompiler {
             CSet take = compile(ir.getTake());
             IntVar[] refs = compile(ir.getRefs());
             if (reify == null) {
-                CSet joinFunction = cset("JoinFunction", ir.getEnv(), ir.getKer(), ir.getCard());
+                CSet joinFunction = numCset("JoinFunction", ir.getEnv(), ir.getKer(), ir.getCard());
                 solver.post(Constraints.joinFunction(take.getSet(), take.getCard(), refs, joinFunction.getSet(), joinFunction.getCard(), ir.getGlobalCardinality()));
                 return joinFunction;
             }
@@ -971,7 +982,7 @@ public class IrCompiler {
             CSet consequent = compile(ir.getConsequent());
             CSet alternative = compile(ir.getAlternative());
             if (reify == null) {
-                CSet ternary = cset("Ternary", ir.getEnv(), ir.getKer(), ir.getCard());
+                CSet ternary = numCset("Ternary", ir.getEnv(), ir.getKer(), ir.getCard());
                 solver.post(_ifThenElse(antecedent,
                         _equal(ternary, consequent),
                         _equal(ternary, alternative)));
