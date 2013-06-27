@@ -15,8 +15,8 @@ public abstract class IrRewriter<T>
 
     public IrModule rewrite(IrModule module, T t) {
         List<IrBoolExpr> rewrittenConstraints = new ArrayList<IrBoolExpr>(module.getConstraints().size());
-        for (IrBoolExpr constaint : module.getConstraints()) {
-            rewrittenConstraints.add(rewrite(constaint, t));
+        for (IrBoolExpr constraint : module.getConstraints()) {
+            rewrittenConstraints.add(rewrite(constraint, t));
         }
         return module.withConstraints(rewrittenConstraints);
     }

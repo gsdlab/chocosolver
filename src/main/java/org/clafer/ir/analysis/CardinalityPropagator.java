@@ -24,6 +24,9 @@ import static org.clafer.ir.Irs.nop;
  */
 public class CardinalityPropagator {
 
+    private CardinalityPropagator() {
+    }
+
     public static Pair<Map<IrSetVar, IrSetVar>, IrModule> propagate(IrModule module) {
         List<IrBoolExpr> nops = new ArrayList<IrBoolExpr>();
         Map<IrSetVar, IrSetVar> propagated = new HashMap<IrSetVar, IrSetVar>();
@@ -37,7 +40,6 @@ public class CardinalityPropagator {
                     IrSetVar var = IrUtil.asConstant(cardinality.getSnd().withCard(card));
                     propagated.put(cardinality.getSnd(), var);
                     nops.add(nop(var));
-
                 }
             }
         }

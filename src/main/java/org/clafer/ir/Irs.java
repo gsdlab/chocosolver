@@ -233,13 +233,17 @@ public class Irs {
                 filter.add(operand);
             }
         }
+        assert count == 0 || count == 1;
         switch (filter.size()) {
             case 0:
                 return $(True);
             case 1:
-                return filter.get(0);
+                return count == 0 ? $(True) : not(filter.get(0));
             default:
-                return new IrLone(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
+                IrBoolExpr[] f = filter.toArray(new IrBoolExpr[filter.size()]);
+                return count == 0
+                        ? new IrLone(f, BoolDomain)
+                        : not(or(f));
         }
     }
 
@@ -715,15 +719,15 @@ public class Irs {
         Integer constant = IrUtil.getConstant(expr);
         if (constant != null) {
             if (constant.intValue() == 0) {
-                return $(False);
+                return $(flipped ? True : False);
             }
             if (constant.intValue() == 1) {
-                return $(True);
+                return $(flipped ? False : True);
             }
         }
         if (expr instanceof IrIntCast) {
             IrIntCast intCast = (IrIntCast) expr;
-            return intCast.getExpr();
+            return flipped ? not(intCast.getExpr()) : intCast.getExpr();
         }
         return new IrBoolCast(flipped, expr, BoolDomain);
     }

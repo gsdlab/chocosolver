@@ -75,6 +75,14 @@ public class Coalescer {
                         coalescedBools.put(bool.getVar(), False);
                     }
                 }
+            } else if (constraint instanceof IrBoolCast) {
+                IrBoolCast cast = (IrBoolCast) constraint;
+                if (cast.getExpr() instanceof IrIntLiteral) {
+                    IrIntLiteral intt = (IrIntLiteral) cast.getExpr();
+                    IrIntVar constant = cast.isFlipped() ? Zero : One;
+                    intGraph.addEdge(intt.getVar(), constant);
+                    intGraph.addEdge(constant, intt.getVar());
+                }
             }
         }
         for (Set<IrIntVar> component : GraphUtil.computeStronglyConnectedComponents(intGraph)) {

@@ -141,7 +141,7 @@ public class IrSolutionMap {
         if (setVar == null) {
             setVar = var;
         }
-        return IrUtil.notNull("Set var " + var + " not par of IR solution", setVars.get(setVar));
+        return setVars.get(setVar);
     }
 
     public int[] getSetValue(IrSetVar var) {

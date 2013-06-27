@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
@@ -65,7 +66,6 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
-import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
@@ -117,9 +117,23 @@ public class IrCompiler {
 
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
+
         Triple<Map<IrBoolVar, IrBoolVar>, Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
+        Map<IrBoolVar, IrBoolVar> coalescedBoolVars = coalescePair.getFst();
+        Map<IrIntVar, IrIntVar> coalescedIntVars = coalescePair.getSnd();
         Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalescePair.getThd());
+        Map<IrSetVar, IrSetVar> coalescedSetVars = propagatedPair.getFst();
         optModule = propagatedPair.getSnd();
+
+        while (!coalescePair.getFst().isEmpty() || !coalescePair.getSnd().isEmpty() || !propagatedPair.getFst().isEmpty()) {
+            coalescePair = Coalescer.coalesce(optModule);
+            coalescedBoolVars = compose(coalescedBoolVars, coalescePair.getFst());
+            coalescedIntVars = compose(coalescedIntVars, coalescePair.getSnd());
+            propagatedPair = CardinalityPropagator.propagate(coalescePair.getThd());
+            coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
+            optModule = propagatedPair.getSnd();
+        }
+
         List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
@@ -141,9 +155,25 @@ public class IrCompiler {
             }
         }
         return new IrSolutionMap(
-                coalescePair.getFst(), boolVarMap,
-                coalescePair.getSnd(), intVarMap,
-                propagatedPair.getFst(), setVarMap);
+                coalescedBoolVars, boolVarMap,
+                coalescedIntVars, intVarMap,
+                coalescedSetVars, setVarMap);
+    }
+
+    private static <T> Map<T, T> compose(Map<T, T> f1, Map<T, T> f2) {
+        if (f2.isEmpty()) {
+            return f1;
+        }
+        Map<T, T> composed = new HashMap<T, T>(f2);
+        for (Entry<T, T> e : f1.entrySet()) {
+            T key = e.getKey();
+            T value = f2.get(e.getValue());
+            if (value == null) {
+                value = e.getValue();
+            }
+            composed.put(key, value);
+        }
+        return composed;
     }
 
     private BoolVar boolVar(String name, IrBoolDomain domain) {

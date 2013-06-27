@@ -57,7 +57,10 @@ public class ClaferCompiler {
         for (AstConcreteClafer clafer : AstUtil.getConcreteClafers(model)) {
             for (IrSetVar setVar : map.getAstSolution().getSiblingVars(clafer)) {
                 if (!(setVar instanceof IrSetConstant)) {
-                    vars.add(map.getIrSolution().getSetVar(setVar));
+                    SetVar var = map.getIrSolution().getSetVar(setVar);
+                    if (var != null) {
+                        vars.add(var);
+                    }
                 }
             }
         }
