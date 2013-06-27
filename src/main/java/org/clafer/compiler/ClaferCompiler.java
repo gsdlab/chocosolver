@@ -28,7 +28,6 @@ import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
-import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
 import solver.constraints.Constraint;

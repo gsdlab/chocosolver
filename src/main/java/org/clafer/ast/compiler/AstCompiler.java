@@ -386,13 +386,11 @@ public class AstCompiler {
                     assert getGlobalCard(clafer).getLow() == refs.length;
                     module.addConstraint(allDifferent($(refs)));
                 } else {
-                    for (int i = 0; i < refs.length; i++) {
-                        for (int j = i + 1; j < refs.length; j++) {
-                            module.addConstraint(
-                                    implies(and(members[i], members[j],
-                                    equal(parents[i], parents[j])),
-                                    notEqual($(refs[i]), $(refs[j]))));
-                        }
+                    for (int i = 0; i < refs.length - 1; i++) {
+                        module.addConstraint(
+                                implies(and(members[i], members[i + 1],
+                                equal(parents[i], parents[i + 1])),
+                                notEqual($(refs[i]), $(refs[i + 1]))));
                     }
                 }
                 IrIntExpr size =

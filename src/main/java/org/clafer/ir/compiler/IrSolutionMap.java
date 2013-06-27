@@ -27,15 +27,18 @@ public class IrSolutionMap {
     private final Map<IrBoolVar, BoolVar> boolVars;
     private final Map<IrIntVar, IrIntVar> coalescedIntVars;
     private final Map<IrIntVar, IntVar> intVars;
+    private final Map<IrSetVar, IrSetVar> coalescedSetVars;
     private final Map<IrSetVar, SetVar> setVars;
 
     IrSolutionMap(Map<IrBoolVar, BoolVar> boolVars,
             Map<IrIntVar, IrIntVar> coalescedIntVars,
             Map<IrIntVar, IntVar> intVars,
+            Map<IrSetVar, IrSetVar> coalescedSetVars,
             Map<IrSetVar, SetVar> setVars) {
         this.boolVars = boolVars;
         this.coalescedIntVars = coalescedIntVars;
         this.intVars = intVars;
+        this.coalescedSetVars = coalescedSetVars;
         this.setVars = setVars;
     }
 
@@ -126,7 +129,11 @@ public class IrSolutionMap {
     }
 
     public SetVar getSetVar(IrSetVar var) {
-        return IrUtil.notNull("Set var " + var + " not par of IR solution", setVars.get(var));
+        IrSetVar setVar = coalescedSetVars.get(var);
+        if (setVar == null) {
+            setVar = var;
+        }
+        return IrUtil.notNull("Set var " + var + " not par of IR solution", setVars.get(setVar));
     }
 
     public int[] getSetValue(IrSetVar var) {

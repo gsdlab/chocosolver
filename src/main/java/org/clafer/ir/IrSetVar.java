@@ -41,6 +41,10 @@ public class IrSetVar extends IrAbstractSet implements IrVar {
         return decision;
     }
 
+    public IrSetVar withCard(IrDomain card) {
+        return new IrSetVar(name, getEnv(), getKer(), card);
+    }
+
     @Override
     public boolean equals(Object obj) {
         return this == obj;

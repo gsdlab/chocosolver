@@ -1235,7 +1235,7 @@ public class Irs {
      *******************
      */
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
-        return set(name, boundDomain(lowEnv, highEnv), EmptyDomain);
+        return set(name, boundDomain(lowEnv, highEnv));
     }
 
     public static IrSetVar set(String name, int lowEnv, int highEnv, int lowKer, int highKer) {
@@ -1247,7 +1247,7 @@ public class Irs {
     }
 
     public static IrSetVar set(String name, int[] env) {
-        return set(name, enumDomain(env), EmptyDomain);
+        return set(name, enumDomain(env));
     }
 
     public static IrSetVar set(String name, int[] env, int lowKer, int highKer) {
@@ -1258,15 +1258,16 @@ public class Irs {
         return set(name, enumDomain(env), enumDomain(ker));
     }
 
+    public static IrSetVar set(String name, IrDomain env) {
+        return set(name, env, EmptyDomain);
+    }
+
     public static IrSetVar set(String name, IrDomain env, IrDomain ker) {
         return set(name, env, ker, boundDomain(ker.size(), env.size()));
     }
 
     public static IrSetVar set(String name, IrDomain env, IrDomain ker, IrDomain card) {
-        if (env.equals(ker)) {
-            return constant(ker);
-        }
-        return new IrSetVar(name, env, ker, card);
+        return IrUtil.asConstant(new IrSetVar(name, env, ker, card));
     }
 
     public static IrSetVar constant(int[] value) {
@@ -1274,6 +1275,9 @@ public class Irs {
     }
 
     public static IrSetVar constant(IrDomain value) {
+        if (value.isEmpty()) {
+            return EmptySet;
+        }
         return new IrSetConstant(value);
     }
 

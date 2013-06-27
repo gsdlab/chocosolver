@@ -90,14 +90,34 @@ public class IrUtil {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
         assert IrUtil.isSubsetOf(ker, env);
-        return env.size() == ker.size() ? Irs.constant(ker.getValues()) : s;
+        if (env.size() == ker.size()) {
+            return Irs.constant(ker);
+        }
+        IrDomain card = s.getCard();
+        if (card.size() == 1) {
+            int constantCard = card.getLowBound();
+            if (constantCard == ker.size()) {
+                return Irs.constant(ker);
+            }
+        }
+        return s;
     }
 
     public static IrSetExpr asConstant(IrSetExpr s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
         assert IrUtil.isSubsetOf(ker, env);
-        return env.size() == ker.size() ? Irs.$(Irs.constant(ker.getValues())) : s;
+        if (env.size() == ker.size()) {
+            return Irs.$(Irs.constant(env));
+        }
+        IrDomain card = s.getCard();
+        if (card.size() == 1) {
+            int constantCard = card.getLowBound();
+            if (constantCard == ker.size()) {
+                return Irs.$(Irs.constant(ker));
+            }
+        }
+        return s;
     }
 
     public static boolean containsAll(int[] values, IrDomain domain) {

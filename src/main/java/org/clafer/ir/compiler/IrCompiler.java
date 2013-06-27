@@ -80,7 +80,9 @@ import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.Irs;
+import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
+import org.clafer.ir.analysis.CardinalityPropagator;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
@@ -115,30 +117,21 @@ public class IrCompiler {
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
         Pair<Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
-        optModule = coalescePair.getSnd();
+        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalescePair.getSnd());
+        optModule = propagatedPair.getSnd();
         List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
         for (IrBoolExpr constraint : optModule.getConstraints()) {
-            if (constraint instanceof IrCompare) {
-                IrCompare compare = (IrCompare) constraint;
-                if (compare.getRight() instanceof IrCard) {
-                    IrIntExpr left = compare.getLeft();
-                    IrCard right = (IrCard) compare.getRight();
-                    if (right.getSet() instanceof IrSetLiteral) {
-                        IrSetLiteral set = (IrSetLiteral) right.getSet();
+            Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
+            if (cardinality != null) {
+                IntVar leftInt = compile(cardinality.getFst());
+                SetVar rightSet = getSetVar(cardinality.getSnd());
 
-                        IntVar leftInt = compile(left);
-                        CSet rightSet = compile(set);
-
-                        assert !rightSet.hasCardCached();
-
-                        solver.post(SCF.cardinality(rightSet.getSet(), leftInt));
-                        setCardVars.put(rightSet.getSet(), leftInt);
-
-                        continue;
-                    }
-                }
+                solver.post(SCF.cardinality(rightSet, leftInt));
+                assert !setCardVars.containsKey(rightSet);
+                setCardVars.put(rightSet, leftInt);
+            } else {
+                constraints.add(constraint);
             }
-            constraints.add(constraint);
         }
         for (IrBoolExpr constraint : constraints) {
             Constraint compiled = compileAsConstraint(constraint);
@@ -146,7 +139,9 @@ public class IrCompiler {
                 solver.post(compiled);
             }
         }
-        return new IrSolutionMap(boolVarMap, coalescePair.getFst(), intVarMap, setVarMap);
+        return new IrSolutionMap(boolVarMap,
+                coalescePair.getFst(), intVarMap,
+                propagatedPair.getFst(), setVarMap);
     }
 
     private BoolVar boolVar(String name, IrBoolDomain domain) {
@@ -663,7 +658,7 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrSetNop ir, BoolArg a) {
-            getSetVar(ir.getVar());
+            new CSet(getSetVar(ir.getVar()), ir.getVar().getCard());
             return solver.TRUE;
         }
     };
@@ -864,7 +859,7 @@ public class IrCompiler {
     private final IrSetExprVisitor<CSet, Object> setExprCompiler = new IrSetExprVisitor<CSet, Object>() {
         @Override
         public Object visit(IrSetLiteral ir, CSet reify) {
-            return new CSet(getSetVar(ir.getVar()), ir.getCard());
+            return new CSet(getSetVar(ir.getVar()), ir.getVar().getCard());
         }
 
         @Override
@@ -1229,7 +1224,10 @@ public class IrCompiler {
         public CSet(SetVar set, IrDomain cardDomain) {
             this.set = Check.notNull(set);
             this.cardDomain = Check.notNull(cardDomain);
-            this.card = null;
+            this.card =
+                    cardDomain.getLowBound() > set.getKernelSize() || cardDomain.getHighBound() < set.getEnvelopeSize()
+                    ? setCardVar(set, cardDomain)
+                    : null;
         }
 
         public CSet(SetVar set, IntVar card) {

@@ -153,7 +153,7 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrBoolExpr visit(IrSetTest ir, T a) {
-        return equality(rewrite(ir.getLeft(), a), ir.getOp(), ir.getRight());
+        return equality(rewrite(ir.getLeft(), a), ir.getOp(), rewrite(ir.getRight(), a));
     }
 
     @Override

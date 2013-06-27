@@ -24,7 +24,7 @@ public class IrModule {
         this(new ArrayList<IrBoolExpr>());
     }
 
-    public void addConstraint(IrBoolExpr expr) {
+    public IrModule addConstraint(IrBoolExpr expr) {
         Check.notNull(expr);
         if (expr instanceof IrAnd) {
             IrAnd and = (IrAnd) expr;
@@ -34,12 +34,14 @@ public class IrModule {
         } else if (!IrUtil.isTrue(expr)) {
             constraints.add(expr);
         }
+        return this;
     }
 
-    public void addConstraints(Iterable<? extends IrBoolExpr> exprs) {
+    public IrModule addConstraints(Iterable<? extends IrBoolExpr> exprs) {
         for (IrBoolExpr expr : exprs) {
             addConstraint(expr);
         }
+        return this;
     }
 
     public List<IrBoolExpr> getConstraints() {
