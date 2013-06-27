@@ -116,8 +116,8 @@ public class IrCompiler {
 
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
-        Pair<Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
-        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalescePair.getSnd());
+        Triple<Map<IrBoolVar, IrBoolVar>, Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
+        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalescePair.getThd());
         optModule = propagatedPair.getSnd();
         List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
         for (IrBoolExpr constraint : optModule.getConstraints()) {
@@ -139,8 +139,9 @@ public class IrCompiler {
                 solver.post(compiled);
             }
         }
-        return new IrSolutionMap(boolVarMap,
-                coalescePair.getFst(), intVarMap,
+        return new IrSolutionMap(
+                coalescePair.getFst(), boolVarMap,
+                coalescePair.getSnd(), intVarMap,
                 propagatedPair.getFst(), setVarMap);
     }
 

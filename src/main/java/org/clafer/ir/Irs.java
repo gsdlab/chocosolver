@@ -491,6 +491,9 @@ public class Irs {
                 if (leftDomain.getLowBound() > rightDomain.getHighBound()) {
                     return $(False);
                 }
+                if (leftDomain.getLowBound() == rightDomain.getHighBound()) {
+                    return equal(left, right);
+                }
                 if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
                     return implies(asBool(left), asBool(right));
                 }
@@ -518,6 +521,9 @@ public class Irs {
                 }
                 if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
                     return $(False);
+                }
+                if (leftDomain.getHighBound() == rightDomain.getLowBound()) {
+                    return equal(left, right);
                 }
                 if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
                     return implies(asBool(right), asBool(left));
