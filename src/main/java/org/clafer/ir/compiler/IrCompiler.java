@@ -45,6 +45,7 @@ import solver.constraints.Constraint;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
 import org.clafer.ir.IrBoolLiteral;
+import org.clafer.ir.IrBoolNop;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrException;
@@ -56,6 +57,7 @@ import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIntCast;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntLiteral;
+import org.clafer.ir.IrIntNop;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrMinus;
@@ -67,6 +69,7 @@ import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
 import org.clafer.ir.IrSetLiteral;
+import org.clafer.ir.IrSetNop;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetVar;
@@ -113,15 +116,6 @@ public class IrCompiler {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
         Pair<Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
         optModule = coalescePair.getSnd();
-        for (IrBoolVar var : optModule.getBoolVars()) {
-            getBoolVar(var);
-        }
-        for (IrIntVar var : optModule.getIntVars()) {
-            getIntVar(var);
-        }
-        for (IrSetVar var : optModule.getSetVars()) {
-            getSetVar(var);
-        }
         List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             if (constraint instanceof IrCompare) {
@@ -147,9 +141,12 @@ public class IrCompiler {
             constraints.add(constraint);
         }
         for (IrBoolExpr constraint : constraints) {
-            solver.post(compileAsConstraint(constraint));
+            Constraint compiled = compileAsConstraint(constraint);
+            if (!compiled.equals(solver.TRUE)) {
+                solver.post(compiled);
+            }
         }
-        return new IrSolutionMap(boolVar, coalescePair.getFst(), intVar, setVar);
+        return new IrSolutionMap(boolVarMap, coalescePair.getFst(), intVarMap, setVarMap);
     }
 
     private BoolVar boolVar(String name, IrBoolDomain domain) {
@@ -222,34 +219,34 @@ public class IrCompiler {
     }
 
     private BoolVar getBoolVar(IrBoolVar var) {
-        BoolVar bool = boolVar.get(var);
+        BoolVar bool = boolVarMap.get(var);
         if (bool == null) {
             bool = boolVar(var.getName(), var.getDomain());
-            boolVar.put(var, bool);
+            boolVarMap.put(var, bool);
         }
         return bool;
     }
-    private final Map<IrBoolVar, BoolVar> boolVar = new HashMap<IrBoolVar, BoolVar>();
+    private final Map<IrBoolVar, BoolVar> boolVarMap = new HashMap<IrBoolVar, BoolVar>();
 
     private IntVar getIntVar(IrIntVar var) {
-        IntVar iint = intVar.get(var);
+        IntVar iint = intVarMap.get(var);
         if (iint == null) {
             iint = intVar(var.getName(), var.getDomain());
-            intVar.put(var, iint);
+            intVarMap.put(var, iint);
         }
         return iint;
     }
-    private final Map<IrIntVar, IntVar> intVar = new HashMap<IrIntVar, IntVar>();
+    private final Map<IrIntVar, IntVar> intVarMap = new HashMap<IrIntVar, IntVar>();
 
     private SetVar getSetVar(IrSetVar var) {
-        SetVar set = setVar.get(var);
+        SetVar set = setVarMap.get(var);
         if (set == null) {
             set = setVar(var.getName(), var.getEnv(), var.getKer());
-            setVar.put(var, set);
+            setVarMap.put(var, set);
         }
         return set;
     }
-    private final Map<IrSetVar, SetVar> setVar = new HashMap<IrSetVar, SetVar>();
+    private final Map<IrSetVar, SetVar> setVarMap = new HashMap<IrSetVar, SetVar>();
 
     private BoolVar asBoolVar(Object obj) {
         if (obj instanceof Constraint) {
@@ -650,6 +647,24 @@ public class IrCompiler {
         @Override
         public Object visit(IrFilterString ir, BoolArg a) {
             return _filter_string(compile(ir.getSet()).getSet(), ir.getOffset(), compile(ir.getString()), compile(ir.getResult()));
+        }
+
+        @Override
+        public Object visit(IrBoolNop ir, BoolArg a) {
+            getBoolVar(ir.getVar());
+            return solver.TRUE;
+        }
+
+        @Override
+        public Object visit(IrIntNop ir, BoolArg a) {
+            getIntVar(ir.getVar());
+            return solver.TRUE;
+        }
+
+        @Override
+        public Object visit(IrSetNop ir, BoolArg a) {
+            getSetVar(ir.getVar());
+            return solver.TRUE;
         }
     };
     private final IrIntExprVisitor<IntVar, Object> intExprCompiler = new IrIntExprVisitor<IntVar, Object>() {

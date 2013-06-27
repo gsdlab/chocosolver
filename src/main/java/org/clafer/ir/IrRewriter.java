@@ -2,6 +2,7 @@ package org.clafer.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.clafer.collection.Pair;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -18,6 +19,27 @@ public abstract class IrRewriter<T>
             rewrittenConstraints.add(rewrite(constaint, t));
         }
         return module.withConstraints(rewrittenConstraints);
+    }
+
+    public IrModule rewriteAndNonNops(IrModule module, T t) {
+        Pair<List<IrNop>, List<IrBoolExpr>> pair = partitionNops(module.getConstraints());
+        IrModule rewritten = module.withConstraints(rewrite(and(pair.getSnd()), t));
+        rewritten.addConstraints(pair.getFst());
+        return rewritten;
+    }
+
+    private static Pair<List<IrNop>, List<IrBoolExpr>> partitionNops(List<IrBoolExpr> constraints) {
+        List<IrNop> nops = new ArrayList<IrNop>();
+        List<IrBoolExpr> nonNops = new ArrayList<IrBoolExpr>(constraints.size());
+
+        for (IrBoolExpr constraint : constraints) {
+            if (constraint instanceof IrNop) {
+                nops.add((IrNop) constraint);
+            } else {
+                nonNops.add(constraint);
+            }
+        }
+        return new Pair<List<IrNop>, List<IrBoolExpr>>(nops, nonNops);
     }
 
     public IrBoolExpr rewrite(IrBoolExpr expr, T t) {
@@ -195,6 +217,21 @@ public abstract class IrRewriter<T>
     @Override
     public IrBoolExpr visit(IrFilterString ir, T a) {
         return filterString(rewrite(ir.getSet(), a), ir.getOffset(), rewrite(ir.getString(), a), rewrite(ir.getResult(), a));
+    }
+
+    @Override
+    public IrBoolExpr visit(IrBoolNop ir, T a) {
+        return ir;
+    }
+
+    @Override
+    public IrBoolExpr visit(IrIntNop ir, T a) {
+        return ir;
+    }
+
+    @Override
+    public IrBoolExpr visit(IrSetNop ir, T a) {
+        return ir;
     }
 
     @Override

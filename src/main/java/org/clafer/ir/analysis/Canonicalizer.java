@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.clafer.collection.Pair;
 import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCard;
@@ -18,6 +19,7 @@ import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrNop;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetVar;
@@ -42,11 +44,11 @@ public class Canonicalizer {
      */
     public static IrModule canonical(IrModule module) {
         CanonicalRewriter rewriter = new CanonicalRewriter();
-        IrModule optModule = module.withConstraints(rewriter.rewrite(and(module.getConstraints()), null));
+
+        IrModule optModule = rewriter.rewriteAndNonNops(module, null);
         for (Entry<IrSetVar, IrIntVar> entry : rewriter.setVarCards.entrySet()) {
             optModule.addConstraint(equal($(entry.getValue()), card($(entry.getKey()))));
         }
-//        rewriter.setVars.removeAll(rewriter.setVarCards.keySet());
         for (IrSetVar setVar : rewriter.setVars) {
             if (setVar.getCard().getLowBound() > setVar.getKer().size()
                     || setVar.getCard().getHighBound() < setVar.getEnv().size()) {
@@ -57,6 +59,20 @@ public class Canonicalizer {
             }
         }
         return optModule;
+    }
+
+    private static Pair<List<IrNop>, List<IrBoolExpr>> partitionNops(List<IrBoolExpr> constraints) {
+        List<IrNop> nops = new ArrayList<IrNop>();
+        List<IrBoolExpr> nonNops = new ArrayList<IrBoolExpr>(constraints.size());
+
+        for (IrBoolExpr constraint : constraints) {
+            if (constraint instanceof IrNop) {
+                nops.add((IrNop) constraint);
+            } else {
+                nonNops.add(constraint);
+            }
+        }
+        return new Pair<List<IrNop>, List<IrBoolExpr>>(nops, nonNops);
     }
 
     private static class CanonicalRewriter extends IrRewriter<Void> {

@@ -92,7 +92,7 @@ public class IrUtil {
         assert IrUtil.isSubsetOf(ker, env);
         return env.size() == ker.size() ? Irs.constant(ker.getValues()) : s;
     }
-    
+
     public static IrSetExpr asConstant(IrSetExpr s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();

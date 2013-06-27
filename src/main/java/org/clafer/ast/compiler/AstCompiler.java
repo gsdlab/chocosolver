@@ -267,14 +267,18 @@ public class AstCompiler {
                     IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
                     module.addConstraint(ifOnlyIf($(soft), implies(memberships.get(clafer)[j], thisConstraint)));
                 }
-                module.addBoolVar(soft);
+                module.addConstraint(nop(soft));
             }
         }
         for (IrSetVar[] childSet : siblingSets.values()) {
-            module.addSetVars(childSet);
+            for (IrSetVar set : childSet) {
+                module.addConstraint(nop(set));
+            }
         }
         for (IrIntVar[] refs : refPointers.values()) {
-            module.addIntVars(refs);
+            for (IrIntVar ref : refs) {
+                module.addConstraint(nop(ref));
+            }
         }
         @SuppressWarnings("unchecked")
         Pair<AstConstraint, IrBoolVar>[] softVarPairs = softVars.toArray(new Pair[softVars.size()]);

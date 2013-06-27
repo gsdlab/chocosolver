@@ -878,6 +878,18 @@ public class Irs {
         }
         return new IrFilterString(set, offset, string, result, BoolDomain);
     }
+
+    public static IrBoolExpr nop(IrBoolVar var) {
+        return new IrBoolNop(var);
+    }
+
+    public static IrBoolExpr nop(IrIntVar var) {
+        return new IrIntNop(var);
+    }
+
+    public static IrBoolExpr nop(IrSetVar var) {
+        return new IrSetNop(var);
+    }
     /**
      * ******************
      *

@@ -14,6 +14,7 @@ import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntLiteral;
+import org.clafer.ir.IrIntNop;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrRewriter;
@@ -81,13 +82,6 @@ public class Coalescer {
             }
         }
 
-        IrIntVar[] coalescedIntVars = new IrIntVar[module.getIntVars().length];
-        for (int i = 0; i < coalescedIntVars.length; i++) {
-            IrIntVar intVar = module.getIntVars()[i];
-            IrIntVar coalescedIntVar = coalescedInts.get(intVar);
-            coalescedIntVars[i] = coalescedIntVar == null ? intVar : coalescedIntVar;
-        }
-        module.setIntVars(coalescedIntVars);
         return new Pair<Map<IrIntVar, IrIntVar>, IrModule>(
                 coalescedInts,
                 new CoalesceRewriter(coalescedInts).rewrite(module, null));
@@ -99,6 +93,12 @@ public class Coalescer {
 
         CoalesceRewriter(Map<IrIntVar, IrIntVar> coalesced) {
             this.coalesced = coalesced;
+        }
+
+        @Override
+        public IrBoolExpr visit(IrIntNop ir, Void a) {
+            IrIntVar var = coalesced.get(ir.getVar());
+            return var == null ? super.visit(ir, a) : nop(var);
         }
 
         @Override
