@@ -16,7 +16,6 @@ import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIfOnlyIf;
-import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntNop;

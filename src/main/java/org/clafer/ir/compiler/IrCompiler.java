@@ -65,6 +65,7 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
+import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
@@ -196,7 +197,9 @@ public class IrCompiler {
         IntVar setCardVar = setCardVars.get(set);
         if (setCardVar == null) {
             setCardVar = intVar("|" + set.getName() + "|", card);
-            solver.post(SCF.cardinality(set, setCardVar));
+            if (!(set.instantiated() && card.size() == 1 && card.getLowBound() == set.getKernelSize())) {
+                solver.post(SCF.cardinality(set, setCardVar));
+            }
             setCardVars.put(set, setCardVar);
         }
         return setCardVar;
