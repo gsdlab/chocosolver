@@ -12,13 +12,13 @@ public class AstConcreteClafer extends AstClafer {
     private final AstClafer parent;
     private Card card = new Card();
 
-    AstConcreteClafer(String name, AstIdFactory idFactory) {
-        super(name, idFactory);
+    AstConcreteClafer(String name) {
+        super(name);
         this.parent = null;
     }
 
-    AstConcreteClafer(String name, AstClafer parent, AstIdFactory idFactory) {
-        super(name, idFactory);
+    AstConcreteClafer(String name, AstClafer parent) {
+        super(name);
         this.parent = Check.notNull(parent);
     }
 

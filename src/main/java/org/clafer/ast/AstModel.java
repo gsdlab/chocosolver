@@ -33,16 +33,12 @@ public class AstModel extends AstConcreteClafer {
     private final AstAbstractClafer claferClafer;
     private final List<AstAbstractClafer> abstracts;
 
-    AstModel(AstIdFactory idFactory) {
-        super("#root#", idFactory);
+    AstModel() {
+        super("#root#");
         super.withCard(new Card(1, 1));
-        this.claferClafer = new AstAbstractClafer("#clafer#", idFactory);
+        this.claferClafer = new AstAbstractClafer("#clafer#");
         this.abstracts = new ArrayList<AstAbstractClafer>();
         this.abstracts.add(claferClafer);
-    }
-
-    AstModel() {
-        this(new AstIdFactory());
     }
 
     /**
@@ -70,7 +66,7 @@ public class AstModel extends AstConcreteClafer {
      * @return the new abstract Clafer
      */
     public AstAbstractClafer addAbstract(String name) {
-        AstAbstractClafer abstractClafer = new AstAbstractClafer(name, idFactory).extending(claferClafer);
+        AstAbstractClafer abstractClafer = new AstAbstractClafer(name).extending(claferClafer);
         abstracts.add(abstractClafer);
         return abstractClafer;
     }

@@ -9,10 +9,19 @@ import org.clafer.common.Check;
  */
 public class AstConstraint {
 
+    private static int idFactory = 0;
     private final int id;
     private final AstClafer context;
     private AstBoolExpr expr;
     private final boolean soft;
+
+    AstConstraint(AstClafer context, AstBoolExpr expr) {
+        this(idFactory++, context, expr);
+    }
+
+    AstConstraint(AstClafer context, AstBoolExpr expr, boolean soft) {
+        this(idFactory++, context, expr, soft);
+    }
 
     AstConstraint(int id, AstClafer context, AstBoolExpr expr) {
         this(id, context, expr, false);

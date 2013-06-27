@@ -14,16 +14,14 @@ import org.clafer.common.Check;
 public abstract class AstClafer implements AstVar {
 
     private final String name;
-    protected final AstIdFactory idFactory;
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard = new Card();
     private final List<AstConcreteClafer> children = new ArrayList<AstConcreteClafer>();
     private final List<AstConstraint> constraints = new ArrayList<AstConstraint>();
 
-    AstClafer(String name, AstIdFactory idFactory) {
+    AstClafer(String name) {
         this.name = Check.notNull(name);
-        this.idFactory = Check.notNull(idFactory);
     }
 
     /**
@@ -192,7 +190,7 @@ public abstract class AstClafer implements AstVar {
      * @return the new child
      */
     public AstConcreteClafer addChild(String name) {
-        AstConcreteClafer child = new AstConcreteClafer(name, this, idFactory);
+        AstConcreteClafer child = new AstConcreteClafer(name, this);
         children.add(child);
         return child;
     }
@@ -223,7 +221,7 @@ public abstract class AstClafer implements AstVar {
      * @return the constraint
      */
     public AstConstraint addConstraint(AstBoolExpr expr) {
-        AstConstraint constraint = new AstConstraint(idFactory.<AstConstraint>newId(), this, expr);
+        AstConstraint constraint = new AstConstraint(this, expr);
         constraints.add(constraint);
         return constraint;
     }
