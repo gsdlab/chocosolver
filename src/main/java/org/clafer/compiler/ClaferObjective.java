@@ -40,10 +40,9 @@ public class ClaferObjective {
     }
 
     public Pair<Integer, InstanceModel> optimal() {
-        int[] opt = solver.findOptimalSolution(objective.getPolicy(), score);
+        solver.findOptimalSolution(objective.getPolicy(), score);
         return ESat.TRUE.equals(solver.isFeasible())
-                ? new Pair<Integer, InstanceModel>(
-                (Objective.Minimize.equals(objective) ? opt[1] : opt[0]), solutionMap.getInstance())
+                ? new Pair<Integer, InstanceModel>(score.getValue(), solutionMap.getInstance())
                 : null;
     }
 
