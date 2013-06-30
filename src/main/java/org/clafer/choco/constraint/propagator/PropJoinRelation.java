@@ -161,29 +161,32 @@ public class PropJoinRelation extends Propagator<SetVar> {
         } else {
             assert isChildVar(idxVarInProp);
             final int id = getChildVarIndex(idxVarInProp);
-            childrenD[id].freeze();
-            childrenD[id].forEach(pruneToOnChildEnv, EventType.REMOVE_FROM_ENVELOPE);
-            if (take.envelopeContains(id)) {
-                if (take.kernelContains(id)) {
-                    childrenD[id].forEach(pickToOnChildKer, EventType.ADD_TO_KER);
-                } else {
-                    IntProcedure pruneTakeOnChildKer = new IntProcedure() {
-                        @Override
-                        public void execute(int childKer) throws ContradictionException {
-                            if (!to.envelopeContains(childKer)) {
-                                take.removeFromEnvelope(id, aCause);
-                                for (int i = children[id].getEnvelopeFirst(); i != SetVar.END; i = children[id].getEnvelopeNext()) {
-                                    if (to.envelopeContains(i)) {
-                                        findMate(i);
-                                    }
+            final SetDeltaMonitor childD = childrenD[id];
+            childD.freeze();
+            // Note that we MUST prune even if id is not in env(take) to ensure
+            // idempotence. Otherwise if id is removed from take and val removed
+            // from child at the same time is no longer supported, we need to
+            // remove val from to as well.
+            childD.forEach(pruneToOnChildEnv, EventType.REMOVE_FROM_ENVELOPE);
+            if (take.kernelContains(id)) {
+                childD.forEach(pickToOnChildKer, EventType.ADD_TO_KER);
+            } else if (take.envelopeContains(id)) {
+                IntProcedure pruneTakeOnChildKer = new IntProcedure() {
+                    @Override
+                    public void execute(int childKer) throws ContradictionException {
+                        if (!to.envelopeContains(childKer)) {
+                            take.removeFromEnvelope(id, aCause);
+                            for (int i = children[id].getEnvelopeFirst(); i != SetVar.END; i = children[id].getEnvelopeNext()) {
+                                if (to.envelopeContains(i)) {
+                                    findMate(i);
                                 }
                             }
                         }
-                    };
-                    childrenD[id].forEach(pruneTakeOnChildKer, EventType.ADD_TO_KER);
-                }
+                    }
+                };
+                childD.forEach(pruneTakeOnChildKer, EventType.ADD_TO_KER);
             }
-            childrenD[id].unfreeze();
+            childD.unfreeze();
         }
     }
     private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
@@ -218,7 +221,9 @@ public class PropJoinRelation extends Propagator<SetVar> {
             //     take = {0,1}, child0 = {0}, child1 = {1}, child2 = {}, to = {0,1,2}
             // Need to find mate for 2 on child2 or else to will keep 2, and break
             // idempotency.
-            findMate(childEnv);
+            if (to.envelopeContains(childEnv)) {
+                findMate(childEnv);
+            }
         }
     };
     private final IntProcedure pickToOnChildKer = new IntProcedure() {

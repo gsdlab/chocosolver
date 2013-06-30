@@ -1,7 +1,10 @@
 package org.clafer.choco.constraint.propagator;
 
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
 import org.clafer.collection.FixedCapacityIntSet;
+import org.clafer.collection.MutableBoolean;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -9,6 +12,7 @@ import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
@@ -33,14 +37,18 @@ public class PropJoinFunction extends Propagator<Variable> {
     private final SetVar take;
     private final SetDeltaMonitor takeD;
     private final IntVar[] refs;
+    private final IIntDeltaMonitor[] refsD;
     private final SetVar to;
+    private final SetDeltaMonitor toD;
 
     public PropJoinFunction(SetVar take, IntVar[] refs, SetVar to) {
         super(buildArray(take, to, refs), PropagatorPriority.QUADRATIC, true);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
         this.refs = refs;
+        this.refsD = PropUtil.monitorDeltas(refs, aCause);
         this.to = to;
+        this.toD = to.monitorDelta(aCause);
     }
 
     private static Variable[] buildArray(SetVar take, SetVar to, IntVar[] refs) {
@@ -142,8 +150,71 @@ public class PropJoinFunction extends Propagator<Variable> {
             takeD.forEach(pruneToOnTakeEnv, EventType.REMOVE_FROM_ENVELOPE);
             takeD.forEach(pickToAndPruneChildOnTakeKer, EventType.ADD_TO_KER);
             takeD.unfreeze();
+        } else if (isToVar(idxVarInProp)) {
+            toD.freeze();
+            toD.forEach(pruneRefOnToEnv, EventType.REMOVE_FROM_ENVELOPE);
+            toD.forEach(pickTakeOnToKer, EventType.ADD_TO_KER);
+            toD.unfreeze();
+            if ((EventType.REMOVE_FROM_ENVELOPE.mask & mask) != 0) {
+                TIntArrayList removed = null;
+                for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+                    if (!PropUtil.domainIntersectEnv(refs[i], to)) {
+                        take.removeFromEnvelope(i, aCause);
+                        // Cannot call findMate here because we inside iterating take env.
+                        // Queue up the even to do later.
+                        if (removed == null) {
+                            removed = new TIntArrayList(1);
+                        }
+                        removed.add(i);
+                    }
+                }
+                if (removed != null) {
+                    TIntIterator it = removed.iterator();
+                    while (it.hasNext()) {
+                        IntVar ref = refs[it.next()];
+                        int ub = ref.getUB();
+                        for (int i = ref.getLB(); i <= ub; i = ref.nextValue(i)) {
+                            if (to.envelopeContains(i)) {
+                                if (findMate(i)) {
+                                    findMates();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         } else {
-            forcePropagate(EventType.FULL_PROPAGATION);
+            assert isRefVar(idxVarInProp);
+            final int id = getRefVarIndex(idxVarInProp);
+            final IIntDeltaMonitor refD = refsD[id];
+            final MutableBoolean bool = new MutableBoolean();
+            refD.freeze();
+            IntProcedure pruneToOnRefRem = new IntProcedure() {
+                @Override
+                public void execute(int refRem) throws ContradictionException {
+                    if (bool.isClear()) {
+                        if (to.envelopeContains(refRem)) {
+                            if (findMate(refRem)) {
+                                bool.set();
+                                findMates();
+                            }
+                        }
+                    }
+                }
+            };
+            refD.forEach(pruneToOnRefRem, EventType.REMOVE);
+            refD.unfreeze();
+            IntVar ref = refs[id];
+            if (EventType.isRemove(mask)) {
+                if (!PropUtil.domainIntersectEnv(ref, to)) {
+                    take.removeFromEnvelope(id, aCause);
+                }
+            }
+            if (ref.instantiated()) {
+                if (take.kernelContains(id)) {
+                    to.addToKernel(ref.getValue(), aCause);
+                }
+            }
         }
     }
     private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
@@ -172,6 +243,28 @@ public class PropJoinFunction extends Propagator<Variable> {
             PropUtil.intSubsetEnv(ref, to, aCause);
             if (ref.instantiated()) {
                 to.addToKernel(ref.getValue(), aCause);
+            }
+        }
+    };
+    private final IntProcedure pruneRefOnToEnv = new IntProcedure() {
+        @Override
+        public void execute(int toEnv) throws ContradictionException {
+            assert !to.envelopeContains(toEnv);
+
+            for (int takeKer = take.getKernelFirst(); takeKer != SetVar.END; takeKer = take.getKernelNext()) {
+                IntVar ref = refs[takeKer];
+                if(ref.removeValue(toEnv, aCause) && ref.instantiated()) {
+                    to.addToKernel(ref.getValue(), aCause);
+                }
+            }
+        }
+    };
+    private final IntProcedure pickTakeOnToKer = new IntProcedure() {
+        @Override
+        public void execute(int toVal) throws ContradictionException {
+            assert to.kernelContains(toVal);
+            if (findMate(toVal)) {
+                findMates();
             }
         }
     };
