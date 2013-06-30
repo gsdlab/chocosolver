@@ -89,16 +89,15 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             int ub = toCard.getUB();
             int minCardInc = 0;
             int maxCardDec = 0;
+            
             for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-
                 if (!take.kernelContains(i)) {
                     IntVar childCard = childrenCards[i];
                     if (maxCard - childCard.getUB() < lb) {
                         take.addToKernel(i, aCause);
                         minCardInc += childCard.getLB();
                         changed = true;
-                    }
-                    if (minCard + childCard.getLB() > ub) {
+                    } else if (minCard + childCard.getLB() > ub) {
                         take.removeFromEnvelope(i, aCause);
                         maxCardDec += childCard.getUB();
                         changed = true;

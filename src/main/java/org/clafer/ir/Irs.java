@@ -1392,8 +1392,12 @@ public class Irs {
             int val = iter.next();
             IrDomain childDomain = $children[val].getCard();
             if (takeKer.contains(val)) {
-                cardLow += childDomain.getLowBound();
-                cardHigh += childDomain.getHighBound();
+                cardLow = injective
+                        ? cardLow + childDomain.getLowBound()
+                        : Math.max(cardLow, childDomain.getLowBound());
+                cardHigh = injective
+                        ? cardHigh + childDomain.getHighBound()
+                        : Math.max(cardHigh, childDomain.getHighBound());
             } else {
                 childrenLowCards[index] = childDomain.getLowBound();
                 childrenHighCards[index] = childDomain.getHighBound();
@@ -1407,10 +1411,14 @@ public class Irs {
         Arrays.sort(childrenHighCards);
 
         for (int i = 0; i < takeCard.getLowBound() - takeKer.size(); i++) {
-            cardLow += childrenLowCards[i];
+            cardLow = injective
+                    ? cardLow + childrenLowCards[i]
+                    : Math.max(cardLow, childrenLowCards[i]);
         }
         for (int i = 0; i < takeCard.getHighBound() - takeKer.size(); i++) {
-            cardHigh += childrenHighCards[childrenHighCards.length - 1 - i];
+            cardHigh = injective
+                    ? cardHigh + childrenHighCards[childrenHighCards.length - 1 - i]
+                    : Math.max(cardHigh, childrenHighCards[childrenHighCards.length - 1 - i]);
         }
         cardLow = Math.max(cardLow, ker.size());
         cardHigh = Math.min(cardHigh, env.size());
@@ -1419,7 +1427,6 @@ public class Irs {
         return new IrJoinRelation(take, $children, env, ker, card, injective);
     }
 
-    // TODO optimize on gc
     public static IrSetExpr joinFunction(IrSetExpr take, IrIntExpr[] refs, Integer globalCardinality) {
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
@@ -1458,11 +1465,25 @@ public class Irs {
         IrDomain takeCard = take.getCard();
         int lowTakeCard = takeCard.getLowBound();
         int highTakeCard = takeCard.getHighBound();
-        IrDomain card = lowTakeCard == 0
-                ? boundDomain(Math.max(0, ker.size()), Math.min(highTakeCard, env.size()))
-                : boundDomain(Math.max(1, ker.size()), Math.min(highTakeCard, env.size()));
+        IrDomain card;
+        if (globalCardinality == null) {
+            card = lowTakeCard == 0
+                    ? boundDomain(Math.max(0, ker.size()), Math.min(highTakeCard, env.size()))
+                    : boundDomain(Math.max(1, ker.size()), Math.min(highTakeCard, env.size()));
+        } else {
+            card = boundDomain(
+                    divRoundUp(Math.max(lowTakeCard, ker.size()), globalCardinality),
+                    Math.min(highTakeCard, env.size()));
+        }
 
         return new IrJoinFunction(take, refs, env, ker, card, globalCardinality);
+    }
+
+    private static int divRoundUp(int a, int b) {
+        assert a >= 0;
+        assert b > 0;
+
+        return (a + b - 1) / b;
     }
 
     public static IrSetExpr difference(IrSetExpr minuend, IrSetExpr subtrahend) {
