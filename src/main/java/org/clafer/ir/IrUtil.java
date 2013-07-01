@@ -108,13 +108,13 @@ public class IrUtil {
         IrDomain ker = s.getKer();
         assert IrUtil.isSubsetOf(ker, env);
         if (env.size() == ker.size()) {
-            return Irs.$(Irs.constant(env));
+            return Irs.constant(env);
         }
         IrDomain card = s.getCard();
         if (card.size() == 1) {
             int constantCard = card.getLowBound();
             if (constantCard == ker.size()) {
-                return Irs.$(Irs.constant(ker));
+                return Irs.constant(ker);
             }
         }
         return s;

@@ -19,7 +19,6 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
@@ -45,7 +44,7 @@ public class Canonicalizer {
 
         IrModule optModule = rewriter.rewriteAndNonNops(module, null);
         for (Entry<IrSetVar, IrIntVar> entry : rewriter.setVarCards.entrySet()) {
-            optModule.addConstraint(equal(entry.getValue(), card($(entry.getKey()))));
+            optModule.addConstraint(equal(entry.getValue(), card(entry.getKey())));
         }
         rewriter.setVars.removeAll(rewriter.setVarCards.keySet());
         for (IrSetVar setVar : rewriter.setVars) {
@@ -54,7 +53,7 @@ public class Canonicalizer {
                 // These variables need to have their cardinalities constrainted.
                 optModule.addConstraint(equal(
                         domainInt("|" + setVar.getName() + "|", setVar.getCard()),
-                        card($(setVar))));
+                        card(setVar)));
             }
         }
         return optModule;
@@ -163,9 +162,8 @@ public class Canonicalizer {
              * to |Literal| can use the same variable.
              */
             IrSetExpr set = rewrite(ir.getSet(), a);
-            if (set instanceof IrSetLiteral) {
-                IrSetLiteral setLiteral = (IrSetLiteral) set;
-                IrSetVar setVar = setLiteral.getVar();
+            if (set instanceof IrSetVar) {
+                IrSetVar setVar = (IrSetVar) set;
                 IrIntVar card = setVarCards.get(setVar);
                 if (card == null) {
                     card = domainInt("|" + setVar.getName() + "|", setVar.getCard());
@@ -177,8 +175,8 @@ public class Canonicalizer {
         }
 
         @Override
-        public IrSetExpr visit(IrSetLiteral ir, Void a) {
-            setVars.add(ir.getVar());
+        public IrSetExpr visit(IrSetVar ir, Void a) {
+            setVars.add(ir);
             return ir;
         }
     };

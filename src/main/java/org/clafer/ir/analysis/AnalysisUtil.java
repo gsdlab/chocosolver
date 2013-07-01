@@ -6,7 +6,6 @@ import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetVar;
 
 /**
@@ -40,9 +39,9 @@ public class AnalysisUtil {
     private static Pair<IrIntExpr, IrSetVar> getAssignCardinalityImpl(IrIntExpr left, IrIntExpr right) {
         if (right instanceof IrCard) {
             IrCard card = (IrCard) right;
-            if (card.getSet() instanceof IrSetLiteral) {
-                IrSetLiteral set = (IrSetLiteral) card.getSet();
-                return new Pair<IrIntExpr, IrSetVar>(left, set.getVar());
+            if (card.getSet() instanceof IrSetVar) {
+                IrSetVar set = (IrSetVar) card.getSet();
+                return new Pair<IrIntExpr, IrSetVar>(left, set);
             }
         }
         return null;

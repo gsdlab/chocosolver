@@ -6,5 +6,5 @@ package org.clafer.ir;
  */
 public interface IrNop extends IrBoolExpr {
 
-    public IrVar getVar();
+    public IrExpr getExpr();
 }

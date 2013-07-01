@@ -44,7 +44,6 @@ import solver.variables.SetVar;
 import solver.constraints.Constraint;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
-import org.clafer.ir.IrBoolNop;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrException;
@@ -65,7 +64,6 @@ import org.clafer.ir.IrOne;
 import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
-import org.clafer.ir.IrSetLiteral;
 import org.clafer.ir.IrSetNop;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetTernary;
@@ -359,6 +357,10 @@ public class IrCompiler {
         return constraints;
     }
 
+    private Object compile(IrBoolExpr expr) {
+        return expr.accept(boolExprCompiler, ConstraintNoReify);
+    }
+
     private IntVar compile(IrIntExpr expr) {
         return (IntVar) expr.accept(intExprCompiler, null);
     }
@@ -571,7 +573,7 @@ public class IrCompiler {
         public Object visit(IrSetTest ir, BoolArg a) {
             switch (ir.getOp()) {
                 case Equal:
-                    if (ir.getRight() instanceof IrSetLiteral) {
+                    if (ir.getRight() instanceof IrSetVar) {
                         return compileAsConstraint(ir.getLeft(), compile(ir.getRight()));
                     }
                     return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
@@ -658,20 +660,18 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrBoolNop ir, BoolArg a) {
-            getBoolVar(ir.getVar());
-            return solver.TRUE;
-        }
-
-        @Override
         public Object visit(IrIntNop ir, BoolArg a) {
-            getIntVar(ir.getVar());
+            if (ir.getExpr() instanceof IrBoolExpr) {
+                compileAsBoolVar((IrBoolExpr) ir.getExpr());
+            } else {
+                compile(ir.getExpr());
+            }
             return solver.TRUE;
         }
 
         @Override
         public Object visit(IrSetNop ir, BoolArg a) {
-            new CSet(getSetVar(ir.getVar()), ir.getVar().getCard());
+            compile(ir.getExpr());
             return solver.TRUE;
         }
     };
@@ -998,11 +998,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrBoolNop ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
         public Object visit(IrIntNop ir, IntVar a) {
             return compileBool(ir, a);
         }
@@ -1014,8 +1009,8 @@ public class IrCompiler {
     };
     private final IrSetExprVisitor<CSet, Object> setExprCompiler = new IrSetExprVisitor<CSet, Object>() {
         @Override
-        public Object visit(IrSetLiteral ir, CSet reify) {
-            return new CSet(getSetVar(ir.getVar()), ir.getVar().getCard());
+        public Object visit(IrSetVar ir, CSet reify) {
+            return new CSet(getSetVar(ir), ir.getCard());
         }
 
         @Override

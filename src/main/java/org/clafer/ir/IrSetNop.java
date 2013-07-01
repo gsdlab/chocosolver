@@ -8,16 +8,16 @@ import org.clafer.common.Check;
  */
 public class IrSetNop extends IrAbstractBool implements IrBoolExpr, IrNop {
 
-    private final IrSetVar var;
+    private final IrSetExpr expr;
 
-    public IrSetNop(IrSetVar var) {
+    public IrSetNop(IrSetExpr expr) {
         super(IrBoolDomain.BoolDomain);
-        this.var = Check.notNull(var);
+        this.expr = Check.notNull(expr);
     }
 
     @Override
-    public IrSetVar getVar() {
-        return var;
+    public IrSetExpr getExpr() {
+        return expr;
     }
 
     @Override
@@ -44,18 +44,18 @@ public class IrSetNop extends IrAbstractBool implements IrBoolExpr, IrNop {
     public boolean equals(Object obj) {
         if (obj instanceof IrSetNop) {
             IrSetNop other = (IrSetNop) obj;
-            return var.equals(other.var) && super.equals(other);
+            return expr.equals(other.expr) && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return var.hashCode();
+        return expr.hashCode();
     }
 
     @Override
     public String toString() {
-        return "nop(" + var + ")";
+        return "nop(" + expr + ")";
     }
 }

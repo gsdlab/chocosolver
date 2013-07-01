@@ -9,7 +9,7 @@ package org.clafer.ir;
  */
 public interface IrSetExprVisitor<A, B> {
 
-    public B visit(IrSetLiteral ir, A a);
+    public B visit(IrSetVar ir, A a);
 
     public B visit(IrSingleton ir, A a);
 

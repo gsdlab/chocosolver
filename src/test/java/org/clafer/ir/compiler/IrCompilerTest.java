@@ -1,6 +1,5 @@
 package org.clafer.ir.compiler;
 
-import java.util.Arrays;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
@@ -44,8 +43,8 @@ public class IrCompilerTest {
         IrIntVar card1 = domainInt("|set1|", boundDomain(0, 4));
         IrIntVar card2 = domainInt("|set2|", boundDomain(0, 4));
 
-        module.addConstraint(equal(card1, card($(var))));
-        module.addConstraint(equal(card2, card($(var))));
+        module.addConstraint(equal(card1, card(var)));
+        module.addConstraint(equal(card2, card(var)));
 
         Solver solver = new Solver();
         IrSolutionMap map = IrCompiler.compile(module, solver);

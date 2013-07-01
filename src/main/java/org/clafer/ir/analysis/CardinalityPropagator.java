@@ -11,12 +11,9 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrSetLiteral;
-import org.clafer.ir.IrSetNop;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
-import static org.clafer.ir.Irs.$;
-import static org.clafer.ir.Irs.nop;
+import static org.clafer.ir.Irs.*;
 
 /**
  *
@@ -57,15 +54,9 @@ public class CardinalityPropagator {
         }
 
         @Override
-        public IrBoolExpr visit(IrSetNop ir, Void a) {
-            IrSetVar var = propagated.get(ir.getVar());
-            return var == null ? super.visit(ir, a) : nop(var);
-        }
-
-        @Override
-        public IrSetExpr visit(IrSetLiteral ir, Void a) {
-            IrSetVar var = propagated.get(ir.getVar());
-            return var == null ? super.visit(ir, a) : $(var);
+        public IrSetExpr visit(IrSetVar ir, Void a) {
+            IrSetVar var = propagated.get(ir);
+            return var == null ? ir : var;
         }
     }
 }

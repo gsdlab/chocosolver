@@ -24,26 +24,6 @@ public class Irs {
 
     private Irs() {
     }
-
-    /**
-     * @param var the variable to access
-     * @return the variable's set value
-     */
-    public static IrSetExpr $(IrSetVar var) {
-        return new IrSetLiteral(var, var.getEnv(), var.getKer(), var.getCard());
-    }
-
-    /**
-     * @param var the variables to access
-     * @return the variables' set values
-     */
-    public static IrSetExpr[] $(IrSetVar... var) {
-        IrSetExpr[] exprs = new IrSetExpr[var.length];
-        for (int i = 0; i < exprs.length; i++) {
-            exprs[i] = $(var[i]);
-        }
-        return exprs;
-    }
     /**
      * ******************
      *
@@ -823,21 +803,17 @@ public class Irs {
         return new IrFilterString(set, offset, string, result, BoolDomain);
     }
 
-    public static IrBoolExpr nop(IrBoolVar var) {
+    public static IrBoolExpr nop(IrIntExpr var) {
 //        if (var instanceof IrBoolConstant) {
 //            return True;
 //        }
-        return new IrBoolNop(var);
-    }
-
-    public static IrBoolExpr nop(IrIntVar var) {
 //        if (var instanceof IrIntConstant) {
 //            return True;
 //        }
         return new IrIntNop(var);
     }
 
-    public static IrBoolExpr nop(IrSetVar var) {
+    public static IrBoolExpr nop(IrSetExpr var) {
 //        if (var instanceof IrSetConstant) {
 //            return True;
 //        }
@@ -1212,7 +1188,7 @@ public class Irs {
     public static IrSetExpr singleton(IrIntExpr value) {
         Integer constant = IrUtil.getConstant(value);
         if (constant != null) {
-            return $(constant(new int[]{constant.intValue()}));
+            return constant(new int[]{constant.intValue()});
         }
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
@@ -1221,7 +1197,7 @@ public class Irs {
     public static IrSetExpr arrayToSet(IrIntExpr[] array, Integer globalCardinality) {
         switch (array.length) {
             case 0:
-                return $(EmptySet);
+                return EmptySet;
             case 1:
                 return singleton(array[0]);
             default:
@@ -1239,7 +1215,7 @@ public class Irs {
                 IrDomain ker = Irs.enumDomain(values);
                 // TODO: every set expr function should do this
                 if (env.size() == ker.size()) {
-                    return $(constant(env));
+                    return constant(env);
                 }
                 IrDomain card = Irs.boundDomain(1, Math.min(array.length, env.size()));
                 return new IrArrayToSet(array, env, ker, card, globalCardinality);
@@ -1416,7 +1392,7 @@ public class Irs {
     public static IrSetExpr intersection(IrSetExpr... operands) {
         switch (operands.length) {
             case 0:
-                return $(EmptySet);
+                return EmptySet;
             case 1:
                 return operands[0];
             default:
@@ -1442,7 +1418,7 @@ public class Irs {
         operands = flatten.toArray(new IrSetExpr[flatten.size()]);
         switch (operands.length) {
             case 0:
-                return $(EmptySet);
+                return EmptySet;
             case 1:
                 return operands[0];
             default:
@@ -1483,7 +1459,7 @@ public class Irs {
             for (int i = 0; i < constant.length; i++) {
                 constant[i] += offset;
             }
-            return $(constant(constant));
+            return constant(constant);
         }
         IrDomain env = IrUtil.offset(set.getEnv(), offset);
         IrDomain ker = IrUtil.offset(set.getKer(), offset);
@@ -1504,7 +1480,7 @@ public class Irs {
         int[] consequentConstant = IrUtil.getConstant(consequent);
         int[] alternativeConstant = IrUtil.getConstant(alternative);
         if (consequentConstant != null && alternativeConstant != null && Arrays.equals(consequentConstant, alternativeConstant)) {
-            return $(constant(consequentConstant));
+            return constant(consequentConstant);
         }
         IrDomain env = IrUtil.union(consequent.getEnv(), alternative.getEnv());
         IrDomain ker = IrUtil.intersection(consequent.getKer(), alternative.getKer());

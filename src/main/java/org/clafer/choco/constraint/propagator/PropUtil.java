@@ -33,7 +33,7 @@ public class PropUtil {
         System.out.println(Configuration.IDEMPOTENCY);
         ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
 //        System.out.println(s.getInternalSolver());
-//        SearchMonitorFactory.logContradiction(s.getInternalSolver());
+//        SearchMonitorFactory.log(s.getInternalSolver(), true, true);
 //        SearchMonitorFactory.limitNode(s.getInternalSolver(), 2000);
         System.out.println(s.getInternalSolver().getVars().length);
         System.out.println(s.getInternalSolver().getCstrs().length);
@@ -77,6 +77,9 @@ public class PropUtil {
 //        Fix point
 //        26156
 //        11757
+//        Merge bool into int
+//        25679
+//        11297
         if (s.find()) {
             System.out.println(s.instance());
         }

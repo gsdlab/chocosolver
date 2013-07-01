@@ -9,13 +9,11 @@ import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.ir.IrBoolDomain;
 import org.clafer.ir.IrBoolExpr;
-import org.clafer.ir.IrBoolNop;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrIntNop;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
@@ -107,27 +105,15 @@ public class Coalescer {
         }
 
         @Override
-        public IrBoolExpr visit(IrBoolNop ir, Void a) {
-            IrBoolVar var = (IrBoolVar) coalescedInts.get(ir.getVar());
-            return var == null ? super.visit(ir, a) : nop(var);
-        }
-
-        @Override
-        public IrBoolExpr visit(IrIntNop ir, Void a) {
-            IrIntVar var = coalescedInts.get(ir.getVar());
-            return var == null ? super.visit(ir, a) : nop(var);
-        }
-
-        @Override
         public IrBoolExpr visit(IrBoolVar ir, Void a) {
             IrBoolVar var = (IrBoolVar) coalescedInts.get(ir);
-            return var == null ? super.visit(ir, a) : var;
+            return var == null ? ir : var;
         }
 
         @Override
         public IrIntExpr visit(IrIntVar ir, Void a) {
             IrIntVar var = coalescedInts.get(ir);
-            return var == null ? super.visit(ir, a) : var;
+            return var == null ? ir : var;
         }
     }
 }

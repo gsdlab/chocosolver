@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSetVar extends IrAbstractSet implements IrVar {
+public class IrSetVar extends IrAbstractSet implements IrSetExpr, IrVar {
 
     private final String name;
     private final boolean decision;
@@ -43,6 +43,11 @@ public class IrSetVar extends IrAbstractSet implements IrVar {
 
     public IrSetVar withCard(IrDomain card) {
         return new IrSetVar(name, getEnv(), getKer(), card);
+    }
+
+    @Override
+    public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
     }
 
     @Override

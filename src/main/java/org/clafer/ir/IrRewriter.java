@@ -215,18 +215,13 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrBoolNop ir, T a) {
-        return ir;
-    }
-
-    @Override
     public IrBoolExpr visit(IrIntNop ir, T a) {
-        return ir;
+        return nop(rewrite(ir.getExpr(), a));
     }
 
     @Override
     public IrBoolExpr visit(IrSetNop ir, T a) {
-        return ir;
+        return nop(rewrite(ir.getExpr(), a));
     }
 
     @Override
@@ -285,7 +280,7 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrSetExpr visit(IrSetLiteral ir, T a) {
+    public IrSetExpr visit(IrSetVar ir, T a) {
         return ir;
     }
 
