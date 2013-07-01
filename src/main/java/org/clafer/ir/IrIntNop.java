@@ -36,6 +36,11 @@ public class IrIntNop extends IrAbstractBool implements IrBoolExpr, IrNop {
     }
 
     @Override
+    public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof IrIntNop) {
             IrIntNop other = (IrIntNop) obj;

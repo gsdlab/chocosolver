@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrBoolVar extends IrAbstractBool implements IrVar {
+public class IrBoolVar extends IrAbstractBool implements IrBoolExpr, IrVar {
 
     private final String name;
     private final boolean decision;
@@ -27,6 +27,16 @@ public class IrBoolVar extends IrAbstractBool implements IrVar {
     }
 
     @Override
+    public IrBoolExpr negate() {
+        return new IrNot(this, getDomain().invert());
+    }
+
+    @Override
+    public boolean isNegative() {
+        return false;
+    }
+
+    @Override
     public IrBoolVar asDecision() {
         return new IrBoolVar(name, getDomain(), true);
     }
@@ -39,6 +49,16 @@ public class IrBoolVar extends IrAbstractBool implements IrVar {
     @Override
     public boolean isDecision() {
         return decision;
+    }
+
+    @Override
+    public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
+    }
+
+    @Override
+    public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
     }
 
     @Override

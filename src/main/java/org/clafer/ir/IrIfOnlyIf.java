@@ -7,38 +7,43 @@ import org.clafer.common.Check;
  * @author jimmy
  */
 public class IrIfOnlyIf extends IrAbstractBool implements IrBoolExpr {
-    
+
     private final IrBoolExpr left, right;
-    
+
     IrIfOnlyIf(IrBoolExpr left, IrBoolExpr right, IrBoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);
     }
-    
+
     public IrBoolExpr getLeft() {
         return left;
     }
-    
+
     public IrBoolExpr getRight() {
         return right;
     }
-    
+
     @Override
     public IrBoolExpr negate() {
         return new IrXor(left, right, getDomain().invert());
     }
-    
+
     @Override
     public boolean isNegative() {
         return false;
     }
-    
+
     @Override
     public <A, B> B accept(IrBoolExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
-    
+
+    @Override
+    public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof IrIfOnlyIf) {
@@ -47,12 +52,12 @@ public class IrIfOnlyIf extends IrAbstractBool implements IrBoolExpr {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return left.hashCode() ^ right.hashCode();
     }
-    
+
     @Override
     public String toString() {
         return left + " <=> " + right;

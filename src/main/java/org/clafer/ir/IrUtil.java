@@ -19,19 +19,19 @@ public class IrUtil {
         return t;
     }
 
-    public static boolean isTrue(IrBool b) {
+    public static boolean isTrue(IrBoolExpr b) {
         return IrBoolDomain.TrueDomain.equals(b.getDomain());
     }
 
-    public static boolean isFalse(IrBool b) {
+    public static boolean isFalse(IrBoolExpr b) {
         return IrBoolDomain.FalseDomain.equals(b.getDomain());
     }
 
-    public static Boolean isConstant(IrBool b) {
+    public static Boolean isConstant(IrBoolExpr b) {
         return !IrBoolDomain.BoolDomain.equals(b.getDomain());
     }
 
-    public static Boolean getConstant(IrBool b) {
+    public static Boolean getConstant(IrBoolExpr b) {
         switch (b.getDomain()) {
             case TrueDomain:
                 return Boolean.TRUE;

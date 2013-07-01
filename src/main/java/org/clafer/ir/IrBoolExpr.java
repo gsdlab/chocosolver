@@ -5,7 +5,13 @@ package org.clafer.ir;
  *
  * @author jimmy
  */
-public interface IrBoolExpr extends IrBool, IrExpr {
+public interface IrBoolExpr extends IrIntExpr {
+
+    /**
+     * @return the domain of values this expression can take
+     */
+    @Override
+    public IrBoolDomain getDomain();
 
     /**
      * The negated expression is true if and only if this expression if false.

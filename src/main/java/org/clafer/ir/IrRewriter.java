@@ -11,7 +11,7 @@ import static org.clafer.ir.Irs.*;
  * @author jimmy
  */
 public abstract class IrRewriter<T>
-        implements IrBoolExprVisitor<T, IrBoolExpr>, IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
+        implements IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
 
     public IrModule rewrite(IrModule module, T t) {
         List<IrBoolExpr> rewrittenConstraints = new ArrayList<IrBoolExpr>(module.getConstraints().size());
@@ -43,7 +43,7 @@ public abstract class IrRewriter<T>
     }
 
     public IrBoolExpr rewrite(IrBoolExpr expr, T t) {
-        return expr.accept(this, t);
+        return (IrBoolExpr) expr.accept(this, t);
     }
 
     public IrBoolExpr[] rewrite(IrBoolExpr[] exprs, T t) {
@@ -79,7 +79,7 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrBoolLiteral ir, T a) {
+    public IrBoolExpr visit(IrBoolVar ir, T a) {
         return ir;
     }
 

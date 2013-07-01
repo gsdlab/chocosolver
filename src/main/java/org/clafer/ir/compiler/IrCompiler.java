@@ -45,7 +45,6 @@ import solver.variables.SetVar;
 import solver.constraints.Constraint;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
-import org.clafer.ir.IrBoolLiteral;
 import org.clafer.ir.IrBoolNop;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrDomain;
@@ -404,8 +403,8 @@ public class IrCompiler {
     }
     private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
         @Override
-        public Object visit(IrBoolLiteral ir, BoolArg a) {
-            return getBoolVar(ir.getVar());
+        public Object visit(IrBoolVar ir, BoolArg a) {
+            return getBoolVar(ir);
         }
 
         @Override
@@ -467,7 +466,7 @@ public class IrCompiler {
                 BoolVar left = compileAsBoolVar(ir.getLeft());
                 return compileAsConstraint(ir.getRight(), left);
             }
-            if (ir.getRight() instanceof IrBoolLiteral) {
+            if (ir.getRight() instanceof IrBoolVar) {
                 return compile(Irs.asInt(ir.getLeft()), compileAsIntVar(ir.getRight()));
             }
             return compile(Irs.asInt(ir.getRight()), compileAsIntVar(ir.getLeft()));
@@ -900,6 +899,159 @@ public class IrCompiler {
                     _arithm(reify, "=", consequent),
                     _arithm(reify, "=", alternative));
         }
+
+        private Object compileBool(IrBoolExpr expr, IntVar a) {
+            if (a instanceof BoolVar) {
+                return compileAsConstraint(expr, (BoolVar) a);
+            }
+            BoolVar var = compileAsBoolVar(expr);
+            return a == null ? var : _arithm(var, "=", a);
+        }
+
+        @Override
+        public Object visit(IrBoolVar ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrNot ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrAnd ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrLone ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrOne ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrOr ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrImplies ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrNotImplies ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrIfThenElse ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrIfOnlyIf ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrXor ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrWithin ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrNotWithin ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrCompare ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSetTest ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrMember ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrNotMember ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSubsetEq ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrBoolCast ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrBoolChannel ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrIntChannel ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSortStrings ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSortStringsChannel ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrAllDifferent ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSelectN ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrFilterString ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrBoolNop ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrIntNop ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSetNop ir, IntVar a) {
+            return compileBool(ir, a);
+        }
     };
     private final IrSetExprVisitor<CSet, Object> setExprCompiler = new IrSetExprVisitor<CSet, Object>() {
         @Override
@@ -1234,22 +1386,22 @@ public class IrCompiler {
         // The prefered type of solution.
         private final Preference preference;
 
-        private BoolArg(BoolVar reify, Preference preference) {
+        BoolArg(BoolVar reify, Preference preference) {
             this.reify = reify;
             this.preference = preference;
         }
 
-        private boolean hasReify() {
+        boolean hasReify() {
             return reify != null;
         }
 
-        private BoolVar useReify() {
+        BoolVar useReify() {
             BoolVar tmp = reify;
             reify = null;
             return tmp;
         }
 
-        private Preference getPreference() {
+        Preference getPreference() {
             return preference;
         }
     }
@@ -1266,7 +1418,7 @@ public class IrCompiler {
         private final IrDomain cardDomain;
         private IntVar card;
 
-        public CSet(SetVar set, IrDomain cardDomain) {
+        CSet(SetVar set, IrDomain cardDomain) {
             this.set = Check.notNull(set);
             this.cardDomain = Check.notNull(cardDomain);
             this.card =
@@ -1275,21 +1427,21 @@ public class IrCompiler {
                     : null;
         }
 
-        public CSet(SetVar set, IntVar card) {
+        CSet(SetVar set, IntVar card) {
             this.set = Check.notNull(set);
             this.cardDomain = null;
             this.card = Check.notNull(card);
         }
 
-        public SetVar getSet() {
+        SetVar getSet() {
             return set;
         }
 
-        public boolean hasCardCached() {
+        boolean hasCardCached() {
             return card != null;
         }
 
-        public IntVar getCard() {
+        IntVar getCard() {
             if (card == null) {
                 assert cardDomain != null;
                 card = setCardVar(set, cardDomain);

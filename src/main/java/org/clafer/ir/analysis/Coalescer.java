@@ -10,7 +10,6 @@ import org.clafer.graph.KeyGraph;
 import org.clafer.ir.IrBoolCast;
 import org.clafer.ir.IrBoolDomain;
 import org.clafer.ir.IrBoolExpr;
-import org.clafer.ir.IrBoolLiteral;
 import org.clafer.ir.IrBoolNop;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCompare;
@@ -62,17 +61,17 @@ public class Coalescer {
                         intGraph.addEdge(rightExpr.getVar(), leftExpr.getVar());
                     }
                 }
-            } else if (constraint instanceof IrBoolLiteral) {
-                IrBoolLiteral bool = (IrBoolLiteral) constraint;
+            } else if (constraint instanceof IrBoolVar) {
+                IrBoolVar bool = (IrBoolVar) constraint;
                 if (IrBoolDomain.BoolDomain.equals(bool.getDomain())) {
-                    coalescedBools.put(bool.getVar(), True);
+                    coalescedBools.put(bool, True);
                 }
             } else if (constraint instanceof IrNot) {
                 IrNot not = (IrNot) constraint;
-                if (not.getExpr() instanceof IrBoolLiteral) {
-                    IrBoolLiteral bool = (IrBoolLiteral) not.getExpr();
+                if (not.getExpr() instanceof IrBoolVar) {
+                    IrBoolVar bool = (IrBoolVar) not.getExpr();
                     if (IrBoolDomain.BoolDomain.equals(bool.getDomain())) {
-                        coalescedBools.put(bool.getVar(), False);
+                        coalescedBools.put(bool, False);
                     }
                 }
             } else if (constraint instanceof IrBoolCast) {
@@ -138,9 +137,9 @@ public class Coalescer {
         }
 
         @Override
-        public IrBoolExpr visit(IrBoolLiteral ir, Void a) {
-            IrBoolVar var = coalescedBools.get(ir.getVar());
-            return var == null ? super.visit(ir, a) : $(var);
+        public IrBoolExpr visit(IrBoolVar ir, Void a) {
+            IrBoolVar var = coalescedBools.get(ir);
+            return var == null ? super.visit(ir, a) : var;
         }
 
         @Override

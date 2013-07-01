@@ -220,7 +220,7 @@ public class AstCompiler {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
         siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
-        memberships.put(analysis.getModel(), new IrBoolExpr[]{$(True)});
+        memberships.put(analysis.getModel(), new IrBoolExpr[]{True});
 
         List<AstClafer> clafers = initOrder();
         for (AstClafer clafer : clafers) {
@@ -265,7 +265,7 @@ public class AstCompiler {
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
                     IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
-                    module.addConstraint(ifOnlyIf($(soft), implies(memberships.get(clafer)[j], thisConstraint)));
+                    module.addConstraint(ifOnlyIf(soft, implies(memberships.get(clafer)[j], thisConstraint)));
                 }
                 module.addConstraint(nop(soft));
             }
@@ -544,12 +544,12 @@ public class AstCompiler {
         IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
         for (int i = 0; i < members.length; i++) {
             if (partialSolution.hasClafer(i)) {
-                members[i] = $(True);
+                members[i] = True;
             } else {
                 members[i] =
                         childSet.length == 1 && members.length == 1
                         ? asBool(card($(childSet[0])))
-                        : $(bool(clafer.getName() + "@Membership#" + i));
+                        : bool(clafer.getName() + "@Membership#" + i);
             }
         }
         Check.noNulls(members);
@@ -621,7 +621,7 @@ public class AstCompiler {
                 members = parentMembership;
             } else {
                 System.arraycopy(parentMembership, 0, members, 0, parentMembership.length);
-                Arrays.fill(members, parentMembership.length, members.length, $(False));
+                Arrays.fill(members, parentMembership.length, members.length, False);
             }
         } else {
             for (int i = 0; i < parentMembership.length; i++) {
@@ -629,7 +629,7 @@ public class AstCompiler {
                     members[i * lowCard + j] = parentMembership[i];
                 }
             }
-            Arrays.fill(members, parentMembership.length * lowCard, members.length, $(False));
+            Arrays.fill(members, parentMembership.length * lowCard, members.length, False);
         }
         Check.noNulls(members);
         memberships.put(clafer, members);
@@ -1090,7 +1090,7 @@ public class AstCompiler {
                 Triple<AstLocal, IrIntExpr, IrBoolExpr>[] labeledPermutation = new Triple[decl.getLocals().length];
                 for (int i = 0; i < labeledPermutation.length; i++) {
                     labeledPermutation[i] = new Triple<AstLocal, IrIntExpr, IrBoolExpr>(
-                            decl.getLocals()[i], intBody, $(True));
+                            decl.getLocals()[i], intBody, True);
                 }
                 @SuppressWarnings("unchecked")
                 Triple<AstLocal, IrIntExpr, IrBoolExpr>[][] labeledSequence = new Triple[][]{labeledPermutation};
@@ -1105,12 +1105,12 @@ public class AstCompiler {
                 @SuppressWarnings("unchecked")
                 Pair<IrIntExpr, IrBoolExpr>[] members = new Pair[env.getHighBound() + 1];
                 for (int i = 0; i < env.getLowBound(); i++) {
-                    members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)), $(False));
+                    members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)), False);
                 }
                 for (int i = env.getLowBound(); i <= env.getHighBound(); i++) {
                     members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)),
-                            $(ker.contains(i) ? True
-                            : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i)));
+                            ker.contains(i) ? True
+                            : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i));
                 }
                 module.addConstraint(boolChannel(Util.mapSnd(Arrays.asList(members)), setBody));
                 Pair<IrIntExpr, IrBoolExpr>[][] sequence = decl.isDisjoint() ? Util.permutations(members,
@@ -1308,7 +1308,7 @@ public class AstCompiler {
         if (card.hasHigh()) {
             return lessThanEqual(setCard, card.getHigh());
         }
-        return $(True);
+        return True;
     }
 
     /*

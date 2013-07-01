@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public abstract class IrAbstractBool implements IrBool {
+public abstract class IrAbstractBool {
 
     private final IrBoolDomain domain;
 
@@ -14,8 +14,9 @@ public abstract class IrAbstractBool implements IrBool {
         this.domain = Check.notNull(domain);
     }
 
-    /** {@inheritDoc} */
-    @Override
+    /**
+     * {@inheritDoc}
+     */
     public IrBoolDomain getDomain() {
         return domain;
     }

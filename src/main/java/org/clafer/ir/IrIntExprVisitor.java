@@ -7,7 +7,7 @@ package org.clafer.ir;
  * @param <B> the return type
  * @author jimmy
  */
-public interface IrIntExprVisitor<A, B> {
+public interface IrIntExprVisitor<A, B> extends IrBoolExprVisitor<A, B> {
 
     public B visit(IrIntLiteral ir, A a);
 

@@ -41,6 +41,11 @@ public class IrOr extends IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof IrOr) {
             IrOr other = (IrOr) obj;
