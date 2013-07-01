@@ -45,7 +45,7 @@ public class Canonicalizer {
 
         IrModule optModule = rewriter.rewriteAndNonNops(module, null);
         for (Entry<IrSetVar, IrIntVar> entry : rewriter.setVarCards.entrySet()) {
-            optModule.addConstraint(equal($(entry.getValue()), card($(entry.getKey()))));
+            optModule.addConstraint(equal(entry.getValue(), card($(entry.getKey()))));
         }
         rewriter.setVars.removeAll(rewriter.setVarCards.keySet());
         for (IrSetVar setVar : rewriter.setVars) {
@@ -53,7 +53,7 @@ public class Canonicalizer {
                     || setVar.getCard().getHighBound() < setVar.getEnv().size()) {
                 // These variables need to have their cardinalities constrainted.
                 optModule.addConstraint(equal(
-                        $(domainInt("|" + setVar.getName() + "|", setVar.getCard())),
+                        domainInt("|" + setVar.getName() + "|", setVar.getCard()),
                         card($(setVar))));
             }
         }
@@ -171,7 +171,7 @@ public class Canonicalizer {
                     card = domainInt("|" + setVar.getName() + "|", setVar.getCard());
                     setVarCards.put(setVar, card);
                 }
-                return $(card);
+                return card;
             }
             return card(set);
         }

@@ -3,7 +3,6 @@ package org.clafer.ir.compiler;
 import java.util.ArrayList;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
-import org.clafer.ir.IrBoolCast;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIfThenElse;
@@ -54,9 +53,7 @@ import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrFilterString;
-import org.clafer.ir.IrIntCast;
 import org.clafer.ir.IrIntExprVisitor;
-import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntNop;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrLone;
@@ -79,7 +76,6 @@ import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
-import org.clafer.ir.Irs;
 import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.CardinalityPropagator;
@@ -117,18 +113,16 @@ public class IrCompiler {
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
 
-        Triple<Map<IrBoolVar, IrBoolVar>, Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
-        Map<IrBoolVar, IrBoolVar> coalescedBoolVars = coalescePair.getFst();
-        Map<IrIntVar, IrIntVar> coalescedIntVars = coalescePair.getSnd();
-        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalescePair.getThd());
+        Pair<Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
+        Map<IrIntVar, IrIntVar> coalescedIntVars = coalescePair.getFst();
+        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalescePair.getSnd());
         Map<IrSetVar, IrSetVar> coalescedSetVars = propagatedPair.getFst();
         optModule = propagatedPair.getSnd();
 
-        while (!coalescePair.getFst().isEmpty() || !coalescePair.getSnd().isEmpty() || !propagatedPair.getFst().isEmpty()) {
+        while (!coalescePair.getFst().isEmpty() || !propagatedPair.getFst().isEmpty()) {
             coalescePair = Coalescer.coalesce(optModule);
-            coalescedBoolVars = compose(coalescedBoolVars, coalescePair.getFst());
-            coalescedIntVars = compose(coalescedIntVars, coalescePair.getSnd());
-            propagatedPair = CardinalityPropagator.propagate(coalescePair.getThd());
+            coalescedIntVars = compose(coalescedIntVars, coalescePair.getFst());
+            propagatedPair = CardinalityPropagator.propagate(coalescePair.getSnd());
             coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
             optModule = propagatedPair.getSnd();
         }
@@ -154,7 +148,6 @@ public class IrCompiler {
             }
         }
         return new IrSolutionMap(
-                coalescedBoolVars, boolVarMap,
                 coalescedIntVars, intVarMap,
                 coalescedSetVars, setVarMap);
     }
@@ -235,7 +228,7 @@ public class IrCompiler {
     }
 
     private BoolVar numBoolVar(String name) {
-        return VF.bool(name + "#" + varNum++, solver);
+        return boolVar(name + "#" + varNum++, IrBoolDomain.BoolDomain);
     }
 
     private IntVar numIntVar(String name, IrDomain domain) {
@@ -251,14 +244,13 @@ public class IrCompiler {
     }
 
     private BoolVar getBoolVar(IrBoolVar var) {
-        BoolVar bool = boolVarMap.get(var);
+        BoolVar bool = (BoolVar) intVarMap.get(var);
         if (bool == null) {
             bool = boolVar(var.getName(), var.getDomain());
-            boolVarMap.put(var, bool);
+            intVarMap.put(var, bool);
         }
         return bool;
     }
-    private final Map<IrBoolVar, BoolVar> boolVarMap = new HashMap<IrBoolVar, BoolVar>();
 
     private IntVar getIntVar(IrIntVar var) {
         IntVar iint = intVarMap.get(var);
@@ -304,13 +296,6 @@ public class IrCompiler {
     }
 
     private IntVar compileAsIntVar(IrBoolExpr expr) {
-        if (expr instanceof IrBoolCast) {
-            IrBoolCast cast = (IrBoolCast) expr;
-            if (!cast.isFlipped()) {
-                return compile(cast.getExpr());
-            }
-            // TODO: else view?
-        }
         return asBoolVar(expr.accept(boolExprCompiler, BoolVarNoReify));
     }
 
@@ -467,9 +452,9 @@ public class IrCompiler {
                 return compileAsConstraint(ir.getRight(), left);
             }
             if (ir.getRight() instanceof IrBoolVar) {
-                return compile(Irs.asInt(ir.getLeft()), compileAsIntVar(ir.getRight()));
+                return compile(ir.getLeft(), compileAsIntVar(ir.getRight()));
             }
-            return compile(Irs.asInt(ir.getRight()), compileAsIntVar(ir.getLeft()));
+            return compile(ir.getRight(), compileAsIntVar(ir.getLeft()));
         }
 
         @Override
@@ -519,7 +504,7 @@ public class IrCompiler {
                         compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
             }
             if (IrCompare.Op.Equal.equals(ir.getOp())) {
-                if (ir.getRight() instanceof IrIntLiteral) {
+                if (ir.getRight() instanceof IrIntVar) {
                     return compileAsConstraint(ir.getLeft(), compile(ir.getRight()));
                 }
                 return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
@@ -613,22 +598,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrBoolCast ir, BoolArg a) {
-            Object expr = compile(ir.getExpr(), a.useReify());
-            BoolVar boolExpr;
-            if (expr instanceof BoolVar) {
-                boolExpr = (BoolVar) expr;
-            } else if (expr instanceof Constraint) {
-                return expr;
-            } else {
-                // TODO: View?
-                boolExpr = numBoolVar("BoolCast");
-                solver.post(_arithm((IntVar) expr, "=", boolExpr));
-            }
-            return ir.isFlipped() ? boolExpr.not() : boolExpr;
-        }
-
-        @Override
         public Constraint visit(IrBoolChannel ir, BoolArg a) {
             BoolVar[] bools = compileAsBoolVars(ir.getBools());
             CSet set = compile(ir.getSet());
@@ -708,13 +677,8 @@ public class IrCompiler {
     };
     private final IrIntExprVisitor<IntVar, Object> intExprCompiler = new IrIntExprVisitor<IntVar, Object>() {
         @Override
-        public IntVar visit(IrIntLiteral ir, IntVar reify) {
-            return getIntVar(ir.getVar());
-        }
-
-        @Override
-        public IntVar visit(IrIntCast ir, IntVar reify) {
-            return compileAsBoolVar(ir.getExpr());
+        public IntVar visit(IrIntVar ir, IntVar reify) {
+            return getIntVar(ir);
         }
 
         @Override
@@ -749,7 +713,7 @@ public class IrCompiler {
                     return VF.offset(addends[0], constants);
                 default:
                     if (reify == null) {
-                        IntVar sum = numIntVar("Sum", ir.getDomain());
+                        IntVar sum = numIntVar("Sum", IrUtil.offset(ir.getDomain(), -constants));
                         solver.post(_sum(sum, addends));
                         return VF.offset(sum, constants);
                     }
@@ -789,7 +753,7 @@ public class IrCompiler {
                     return VF.offset(subtractends[0], -constants);
                 default:
                     if (reify == null) {
-                        IntVar diff = numIntVar("Diff", ir.getDomain());
+                        IntVar diff = numIntVar("Diff", IrUtil.offset(ir.getDomain(), constants));
                         solver.post(_difference(diff, subtractends));
                         return VF.offset(diff, -constants);
                     }
@@ -904,7 +868,7 @@ public class IrCompiler {
             if (a instanceof BoolVar) {
                 return compileAsConstraint(expr, (BoolVar) a);
             }
-            BoolVar var = compileAsBoolVar(expr);
+            IntVar var = compileAsIntVar(expr);
             return a == null ? var : _arithm(var, "=", a);
         }
 
@@ -995,11 +959,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrSubsetEq ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrBoolCast ir, IntVar a) {
             return compileBool(ir, a);
         }
 

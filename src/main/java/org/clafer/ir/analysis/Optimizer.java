@@ -166,7 +166,7 @@ public class Optimizer {
                     //     asInt(bool) <= 888 - int
                     //     asInt(bool) + int <= 888
                     if (domain.getHighBound() == constant.intValue()) {
-                        return lessThanEqual(add(asInt(antecedent), left),
+                        return lessThanEqual(add(antecedent, left),
                                 domain.getHighBound());
                     }
                     // Rewrite
@@ -175,7 +175,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) <= int - (-3)
                     if (domain.getLowBound() == constant.intValue()) {
-                        return lessThanEqual(asInt(antecedent),
+                        return lessThanEqual(antecedent,
                                 sub(left, domain.getLowBound()));
                     }
                     break;
@@ -186,7 +186,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) <= int - (-3)
                     if (domain.getHighBound() == constant.intValue()) {
-                        return lessThanEqual(asInt(antecedent),
+                        return lessThanEqual(antecedent,
                                 sub(left, domain.getLowBound()));
                     }
                     // Rewrite
@@ -196,7 +196,7 @@ public class Optimizer {
                     //     asInt(bool) <= 888 - int
                     //     asInt(bool) + int <= 888
                     if (domain.getLowBound() == constant.intValue()) {
-                        return lessThanEqual(add(asInt(antecedent), left),
+                        return lessThanEqual(add(antecedent, left),
                                 domain.getHighBound());
                     }
                     break;
@@ -221,7 +221,7 @@ public class Optimizer {
                     //     asInt(bool) > (-3) - int
                     //     asInt(bool) + int > (-3)
                     if (domain.getHighBound() == constant.intValue()) {
-                        return greaterThan(add(asInt(antecedent), left),
+                        return greaterThan(add(antecedent, left),
                                 domain.getLowBound());
                     }
                     // Rewrite
@@ -230,7 +230,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) > int - 888
                     if (domain.getLowBound() == constant.intValue()) {
-                        return greaterThan(asInt(antecedent),
+                        return greaterThan(antecedent,
                                 sub(left, domain.getHighBound()));
                     }
                     break;
@@ -241,7 +241,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) > int - 888
                     if (domain.getHighBound() == constant.intValue()) {
-                        return greaterThan(asInt(antecedent),
+                        return greaterThan(antecedent,
                                 sub(left, domain.getHighBound()));
                     }
                     // Rewrite
@@ -251,7 +251,7 @@ public class Optimizer {
                     //     asInt(bool) > (-3) - int
                     //     asInt(bool) + int > (-3)
                     if (domain.getLowBound() == constant.intValue()) {
-                        return greaterThan(add(asInt(antecedent), left),
+                        return greaterThan(add(antecedent, left),
                                 domain.getLowBound());
                     }
                     break;
@@ -275,7 +275,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) <= int - (-3)
                     if (domain.getHighBound() == constant.intValue()) {
-                        return lessThanEqual(asInt(antecedent),
+                        return lessThanEqual(antecedent,
                                 sub(left, domain.getLowBound()));
                     }
                     // Rewrite
@@ -285,7 +285,7 @@ public class Optimizer {
                     //     asInt(bool) <= 888 - int
                     //     asInt(bool) + int <= 888
                     if (domain.getLowBound() == constant.intValue()) {
-                        return lessThanEqual(add(asInt(antecedent), left),
+                        return lessThanEqual(add(antecedent, left),
                                 domain.getHighBound());
                     }
                     break;
@@ -297,7 +297,7 @@ public class Optimizer {
                     //     asInt(bool) <= 888 - int
                     //     asInt(bool) + int <= 888
                     if (domain.getHighBound() == constant.intValue()) {
-                        return lessThanEqual(add(asInt(antecedent), left),
+                        return lessThanEqual(add(antecedent, left),
                                 domain.getHighBound());
                     }
                     // Rewrite
@@ -306,7 +306,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) <= int - (-3)
                     if (domain.getLowBound() == constant.intValue()) {
-                        return lessThanEqual(asInt(antecedent),
+                        return lessThanEqual(antecedent,
                                 sub(left, domain.getLowBound()));
                     }
                     break;

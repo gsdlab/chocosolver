@@ -27,26 +27,6 @@ public class Irs {
 
     /**
      * @param var the variable to access
-     * @return the variable's integer value
-     */
-    public static IrIntExpr $(IrIntVar var) {
-        return new IrIntLiteral(var, var.getDomain());
-    }
-
-    /**
-     * @param vars the variables to access
-     * @return the variables' integer values
-     */
-    public static IrIntExpr[] $(IrIntVar... vars) {
-        IrIntExpr[] exprs = new IrIntExpr[vars.length];
-        for (int i = 0; i < exprs.length; i++) {
-            exprs[i] = $(vars[i]);
-        }
-        return exprs;
-    }
-
-    /**
-     * @param var the variable to access
      * @return the variable's set value
      */
     public static IrSetExpr $(IrSetVar var) {
@@ -75,9 +55,9 @@ public class Irs {
     public static final IrBoolDomain FalseDomain = IrBoolDomain.FalseDomain;
     public static final IrBoolDomain BoolDomain = IrBoolDomain.BoolDomain;
     public static final IrDomain EmptyDomain = new IrEmptyDomain();
-    public static final IrDomain ZeroDomain = new IrBoundDomain(0, 0);
-    public static final IrDomain OneDomain = new IrBoundDomain(1, 1);
-    public static final IrDomain ZeroOneDomain = new IrBoundDomain(0, 1);
+    public static final IrDomain ZeroDomain = FalseDomain;
+    public static final IrDomain OneDomain = TrueDomain;
+    public static final IrDomain ZeroOneDomain = BoolDomain;
     public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
 
     public static IrBoolDomain domain(boolean value) {
@@ -89,18 +69,19 @@ public class Irs {
     }
 
     public static IrDomain boundDomain(int low, int high) {
+        if (low == 0 && high == 0) {
+            return ZeroDomain;
+        }
+        if (low == 1 && high == 1) {
+            return OneDomain;
+        }
+        if (low == 0 && high == 1) {
+            return ZeroOneDomain;
+        }
         return new IrBoundDomain(low, high);
     }
 
     public static IrDomain enumDomain(int... values) {
-        if (values.length == 1) {
-            if (values[0] == 0) {
-                return ZeroDomain;
-            }
-            if (values[0] == 1) {
-                return OneDomain;
-            }
-        }
         return enumDomain(new TIntHashSet(values));
     }
 
@@ -126,7 +107,7 @@ public class Irs {
                     }
                 }
                 // A contigious interval.
-                return new IrBoundDomain(low, array[array.length - 1]);
+                return boundDomain(low, array[array.length - 1]);
         }
     }
     /**
@@ -245,15 +226,21 @@ public class Irs {
                 filter.add(operand);
             }
         }
+        assert count == 0 || count == 1;
         switch (filter.size()) {
             case 0:
-                return count == 1 ? True : False;
+                return count == 0 ? False : True;
             case 1:
-                return filter.get(0);
+                return count == 0 ? filter.get(0) : not(filter.get(0));
             case 2:
-                return xor(filter.get(0), filter.get(1));
+                return count == 0
+                        ? xor(filter.get(0), filter.get(1))
+                        : and(not(filter.get(0)), not(filter.get(1)));
             default:
-                return new IrOne(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
+                IrBoolExpr[] f = filter.toArray(new IrBoolExpr[filter.size()]);
+                return count == 0
+                        ? new IrOne(f, BoolDomain)
+                        : not(or(f));
         }
     }
 
@@ -413,16 +400,12 @@ public class Irs {
         return new IrNotWithin(var, range, BoolDomain);
     }
 
-    private static boolean isBoolDomain(IrDomain domain) {
-        return domain.getLowBound() >= 0 && domain.getHighBound() <= 1;
-    }
-
     public static IrBoolExpr compare(int left, IrCompare.Op op, IrIntExpr right) {
-        return compare($(constant(left)), op, right);
+        return compare(constant(left), op, right);
     }
 
     public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, int right) {
-        return compare(left, op, $(constant(right)));
+        return compare(left, op, constant(right));
     }
 
     public static IrBoolExpr compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
@@ -436,8 +419,8 @@ public class Irs {
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return constant(leftDomain.getLowBound() == rightDomain.getLowBound());
                 }
-                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
-                    return ifOnlyIf(asBool(left), asBool(right));
+                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
+                    return ifOnlyIf((IrBoolExpr) left, (IrBoolExpr) right);
                 }
                 break;
             case NotEqual:
@@ -447,8 +430,8 @@ public class Irs {
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return constant(leftDomain.getLowBound() != rightDomain.getLowBound());
                 }
-                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
-                    return xor(asBool(left), asBool(right));
+                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
+                    return xor((IrBoolExpr) left, (IrBoolExpr) right);
                 }
                 break;
             case LessThan:
@@ -461,8 +444,8 @@ public class Irs {
                 if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
                     return False;
                 }
-                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
-                    return not(implies(asBool(right), asBool(left)));
+                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
+                    return not(implies((IrBoolExpr) right, (IrBoolExpr) left));
                 }
                 break;
             case LessThanEqual:
@@ -478,8 +461,8 @@ public class Irs {
                 if (leftDomain.getLowBound() == rightDomain.getHighBound()) {
                     return equal(left, right);
                 }
-                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
-                    return implies(asBool(left), asBool(right));
+                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
+                    return implies((IrBoolExpr) left, (IrBoolExpr) right);
                 }
                 break;
             case GreaterThan:
@@ -492,8 +475,8 @@ public class Irs {
                 if (leftDomain.getHighBound() <= rightDomain.getLowBound()) {
                     return False;
                 }
-                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
-                    return not(implies(asBool(left), asBool(right)));
+                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
+                    return not(implies((IrBoolExpr) left, (IrBoolExpr) right));
                 }
                 break;
             case GreaterThanEqual:
@@ -509,8 +492,8 @@ public class Irs {
                 if (leftDomain.getHighBound() == rightDomain.getLowBound()) {
                     return equal(left, right);
                 }
-                if (isBoolDomain(left.getDomain()) && isBoolDomain(right.getDomain())) {
-                    return implies(asBool(right), asBool(left));
+                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
+                    return implies((IrBoolExpr) right, (IrBoolExpr) left);
                 }
                 break;
             default:
@@ -520,11 +503,11 @@ public class Irs {
     }
 
     public static IrBoolExpr equal(int left, IrIntExpr right) {
-        return equal($(constant(left)), right);
+        return equal(constant(left), right);
     }
 
     public static IrBoolExpr equal(IrIntExpr left, int right) {
-        return equal(left, $(constant(right)));
+        return equal(left, constant(right));
     }
 
     public static IrBoolExpr equal(IrIntExpr left, IrIntExpr right) {
@@ -592,11 +575,11 @@ public class Irs {
     }
 
     public static IrBoolExpr notEqual(int left, IrIntExpr right) {
-        return notEqual($(constant(left)), right);
+        return notEqual(constant(left), right);
     }
 
     public static IrBoolExpr notEqual(IrIntExpr left, int right) {
-        return notEqual(left, $(constant(right)));
+        return notEqual(left, constant(right));
     }
 
     public static IrBoolExpr notEqual(IrIntExpr left, IrIntExpr right) {
@@ -608,11 +591,11 @@ public class Irs {
     }
 
     public static IrBoolExpr lessThan(int left, IrIntExpr right) {
-        return lessThan($(constant(left)), right);
+        return lessThan(constant(left), right);
     }
 
     public static IrBoolExpr lessThan(IrIntExpr left, int right) {
-        return lessThan(left, $(constant(right)));
+        return lessThan(left, constant(right));
     }
 
     public static IrBoolExpr lessThan(IrIntExpr left, IrIntExpr right) {
@@ -620,11 +603,11 @@ public class Irs {
     }
 
     public static IrBoolExpr lessThanEqual(int left, IrIntExpr right) {
-        return lessThanEqual($(constant(left)), right);
+        return lessThanEqual(constant(left), right);
     }
 
     public static IrBoolExpr lessThanEqual(IrIntExpr left, int right) {
-        return lessThanEqual(left, $(constant(right)));
+        return lessThanEqual(left, constant(right));
     }
 
     public static IrBoolExpr lessThanEqual(IrIntExpr left, IrIntExpr right) {
@@ -632,11 +615,11 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThan(int left, IrIntExpr right) {
-        return greaterThan($(constant(left)), right);
+        return greaterThan(constant(left), right);
     }
 
     public static IrBoolExpr greaterThan(IrIntExpr left, int right) {
-        return greaterThan(left, $(constant(right)));
+        return greaterThan(left, constant(right));
     }
 
     public static IrBoolExpr greaterThan(IrIntExpr left, IrIntExpr right) {
@@ -644,11 +627,11 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThanEqual(int left, IrIntExpr right) {
-        return greaterThanEqual($(constant(left)), right);
+        return greaterThanEqual(constant(left), right);
     }
 
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, int right) {
-        return greaterThanEqual(left, $(constant(right)));
+        return greaterThanEqual(left, constant(right));
     }
 
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, IrIntExpr right) {
@@ -689,35 +672,6 @@ public class Irs {
             return equal(subset, superset);
         }
         return new IrSubsetEq(subset, superset, BoolDomain);
-    }
-
-    public static IrBoolExpr asBool(IrIntExpr expr) {
-        return asBool(false, expr);
-    }
-
-    public static IrBoolExpr asBool(boolean flipped, IrIntExpr expr) {
-        Integer constant = IrUtil.getConstant(expr);
-        if (constant != null) {
-            if (constant.intValue() == 0) {
-                return flipped ? True : False;
-            }
-            if (constant.intValue() == 1) {
-                return flipped ? False : True;
-            }
-        }
-        if (expr instanceof IrIntCast) {
-            IrIntCast intCast = (IrIntCast) expr;
-            return flipped ? not(intCast.getExpr()) : intCast.getExpr();
-        }
-        return new IrBoolCast(flipped, expr, BoolDomain);
-    }
-
-    public static IrBoolExpr[] asBools(IrIntExpr... exprs) {
-        IrBoolExpr[] bools = new IrBoolExpr[exprs.length];
-        for (int i = 0; i < bools.length; i++) {
-            bools[i] = asBool(exprs[i]);
-        }
-        return bools;
     }
 
     public static IrBoolExpr boolChannel(Collection<IrBoolExpr> bools, IrSetExpr set) {
@@ -817,7 +771,7 @@ public class Irs {
 
     public static IrBoolExpr selectN(IrBoolExpr[] bools, IrIntExpr n) {
         if (bools.length == 1) {
-            if (bools[0].equals(asBool(n))) {
+            if (bools[0].equals(n)) {
                 return True;
             }
         }
@@ -870,14 +824,23 @@ public class Irs {
     }
 
     public static IrBoolExpr nop(IrBoolVar var) {
+//        if (var instanceof IrBoolConstant) {
+//            return True;
+//        }
         return new IrBoolNop(var);
     }
 
     public static IrBoolExpr nop(IrIntVar var) {
+//        if (var instanceof IrIntConstant) {
+//            return True;
+//        }
         return new IrIntNop(var);
     }
 
     public static IrBoolExpr nop(IrSetVar var) {
+//        if (var instanceof IrSetConstant) {
+//            return True;
+//        }
         return new IrSetNop(var);
     }
     /**
@@ -887,28 +850,25 @@ public class Irs {
      *
      *******************
      */
-    public static IrIntVar Zero = new IrIntConstant(0);
-    public static IrIntVar One = new IrIntConstant(1);
+    public static IrIntVar Zero = False;
+    public static IrIntVar One = True;
 
     public static IrIntVar domainInt(String name, IrDomain domain) {
         if (domain.size() == 1) {
             return constant(domain.getLowBound());
         }
+        if (domain instanceof IrBoolDomain) {
+            return new IrBoolVar(name, (IrBoolDomain) domain);
+        }
         return new IrIntVar(name, domain);
     }
 
     public static IrIntVar boundInt(String name, int low, int high) {
-        if (low == high) {
-            return constant(low);
-        }
-        return new IrIntVar(name, boundDomain(low, high));
+        return domainInt(name, boundDomain(low, high));
     }
 
     public static IrIntVar enumInt(String name, int[] values) {
-        if (values.length == 1) {
-            return constant(values[0]);
-        }
-        return new IrIntVar(name, enumDomain(values));
+        return domainInt(name, enumDomain(values));
     }
 
     public static IrIntVar constant(int value) {
@@ -922,32 +882,10 @@ public class Irs {
         }
     }
 
-    public static IrIntExpr asInt(IrBoolExpr expr) {
-        Boolean constant = IrUtil.getConstant(expr);
-        if (constant != null) {
-            return constant.booleanValue() ? $(One) : $(Zero);
-        }
-        if (expr instanceof IrBoolCast) {
-            IrBoolCast boolCast = (IrBoolCast) expr;
-            if (!boolCast.isFlipped()) {
-                return boolCast.getExpr();
-            }
-        }
-        return new IrIntCast(expr, ZeroOneDomain);
-    }
-
-    public static IrIntExpr[] asInts(IrBoolExpr... exprs) {
-        IrIntExpr[] ints = new IrIntExpr[exprs.length];
-        for (int i = 0; i < ints.length; i++) {
-            ints[i] = asInt(exprs[i]);
-        }
-        return ints;
-    }
-
     public static IrIntExpr minus(IrIntExpr expr) {
         Integer constant = IrUtil.getConstant(expr);
         if (constant != null) {
-            return $(constant(-constant.intValue()));
+            return constant(-constant.intValue());
         }
         if (expr instanceof IrMinus) {
             IrMinus minus = (IrMinus) expr;
@@ -960,17 +898,17 @@ public class Irs {
     public static IrIntExpr card(IrSetExpr set) {
         IrDomain domain = set.getCard();
         if (domain.size() == 1) {
-            return $(constant(domain.getLowBound()));
+            return constant(domain.getLowBound());
         }
         return new IrCard(set, domain);
     }
 
     public static IrIntExpr add(int addend1, IrIntExpr addend2) {
-        return add($(constant(addend1)), addend2);
+        return add(constant(addend1), addend2);
     }
 
     public static IrIntExpr add(IrIntExpr addend1, int addend2) {
-        return add(addend1, $(constant(addend2)));
+        return add(addend1, constant(addend2));
     }
 
     public static IrIntExpr add(IrIntExpr... addends) {
@@ -985,10 +923,10 @@ public class Irs {
             }
         }
         if (constants != 0) {
-            filter.add($(constant(constants)));
+            filter.add(constant(constants));
         }
         if (filter.isEmpty()) {
-            return $(Zero);
+            return Zero;
         }
         if (filter.size() == 1) {
             return filter.getFirst();
@@ -1006,11 +944,11 @@ public class Irs {
     }
 
     public static IrIntExpr sub(int minuend, IrIntExpr subtrahend) {
-        return sub($(constant(minuend)), subtrahend);
+        return sub(constant(minuend), subtrahend);
     }
 
     public static IrIntExpr sub(IrIntExpr minuend, int subtrahend) {
-        return sub(minuend, $(constant(subtrahend)));
+        return sub(minuend, constant(subtrahend));
     }
 
     public static IrIntExpr sub(IrIntExpr... subtrahends) {
@@ -1027,11 +965,11 @@ public class Irs {
         }
         Integer head = IrUtil.getConstant(subtrahends[0]);
         if (head != null && filter.isEmpty()) {
-            return $(constant(head - constants));
+            return constant(head - constants);
         }
         filter.addFirst(subtrahends[0]);
         if (constants != 0) {
-            filter.add($(constant(constants)));
+            filter.add(constant(constants));
         }
         if (filter.size() == 1) {
             return filter.getFirst();
@@ -1049,11 +987,11 @@ public class Irs {
     }
 
     public static IrIntExpr mul(int multiplicand, IrIntExpr multiplier) {
-        return mul($(constant(multiplicand)), multiplier);
+        return mul(constant(multiplicand), multiplier);
     }
 
     public static IrIntExpr mul(IrIntExpr multiplicand, int multiplier) {
-        return mul(multiplicand, $(constant(multiplier)));
+        return mul(multiplicand, constant(multiplier));
     }
 
     public static IrIntExpr mul(IrIntExpr multiplicand, IrIntExpr multiplier) {
@@ -1076,7 +1014,7 @@ public class Irs {
             }
         }
         if (multiplicandConstant != null && multiplierConstant != null) {
-            return $(constant(multiplicandConstant.intValue() * multiplierConstant.intValue()));
+            return constant(multiplicandConstant.intValue() * multiplierConstant.intValue());
         }
         int low1 = multiplicand.getDomain().getLowBound();
         int high1 = multiplicand.getDomain().getHighBound();
@@ -1088,11 +1026,11 @@ public class Irs {
     }
 
     public static IrIntExpr div(int dividend, IrIntExpr divisor) {
-        return div($(constant(dividend)), divisor);
+        return div(constant(dividend), divisor);
     }
 
     public static IrIntExpr div(IrIntExpr dividend, int divisor) {
-        return div(dividend, $(constant(divisor)));
+        return div(dividend, constant(divisor));
     }
 
     public static IrIntExpr div(IrIntExpr dividend, IrIntExpr divisor) {
@@ -1105,7 +1043,7 @@ public class Irs {
             return dividend;
         }
         if (dividendConstant != null && divisorConstant != null) {
-            return $(constant(dividendConstant.intValue() / divisorConstant.intValue()));
+            return constant(dividendConstant.intValue() / divisorConstant.intValue());
         }
         int low1 = dividend.getDomain().getLowBound();
         int high1 = dividend.getDomain().getHighBound();
@@ -1151,9 +1089,9 @@ public class Irs {
         }
         switch (filter.size()) {
             case 0:
-                return $(constant(count));
+                return constant(count);
             case 1:
-                return add(asInt(equal(value, filter.get(0))), count);
+                return add(equal(value, filter.get(0)), count);
             default:
                 return add(
                         new IrCount(value, filter.toArray(new IrIntExpr[filter.size()]), boundDomain(0, filter.size())),
@@ -1211,7 +1149,7 @@ public class Irs {
         Integer consequentConstant = IrUtil.getConstant(consequent);
         Integer alternativeConstant = IrUtil.getConstant(alternative);
         if (consequentConstant != null && consequentConstant.equals(alternativeConstant)) {
-            return $(constant(consequentConstant));
+            return constant(consequentConstant);
         }
         IrDomain domain = IrUtil.union(consequent.getDomain(), alternative.getDomain());
         return new IrTernary(antecedent, consequent, alternative, domain);

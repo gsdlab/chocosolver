@@ -54,4 +54,9 @@ public class KeyGraph<V> implements Graph<V> {
     public Collection<Vertex<V>> getVertices() {
         return vertices.values();
     }
+
+    @Override
+    public String toString() {
+        return vertices.toString();
+    }
 }

@@ -49,9 +49,6 @@ public class ScopeAnalyzer implements Analyzer {
                 } else {
                     int subScopes = 0;
                     for (AstClafer sub : ((AstAbstractClafer) clafer).getSubs()) {
-                        if (!optimizedScope.containsKey(sub)) {
-                            System.out.println(sub);
-                        }
                         subScopes += optimizedScope.containsKey(sub) ? optimizedScope.get(sub) : scope.getDefaultScope();
                     }
                     optimizedScope.put(clafer, subScopes);

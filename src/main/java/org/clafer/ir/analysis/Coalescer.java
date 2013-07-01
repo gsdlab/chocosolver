@@ -4,10 +4,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import org.clafer.collection.Triple;
+import org.clafer.collection.Pair;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
-import org.clafer.ir.IrBoolCast;
 import org.clafer.ir.IrBoolDomain;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolNop;
@@ -16,7 +15,6 @@ import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrIntLiteral;
 import org.clafer.ir.IrIntNop;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
@@ -33,54 +31,43 @@ public class Coalescer {
     private Coalescer() {
     }
 
-    public static Triple<Map<IrBoolVar, IrBoolVar>, Map<IrIntVar, IrIntVar>, IrModule> coalesce(IrModule module) {
+    public static Pair<Map<IrIntVar, IrIntVar>, IrModule> coalesce(IrModule module) {
         KeyGraph<IrIntVar> intGraph = new KeyGraph<IrIntVar>();
-        Map<IrBoolVar, IrBoolVar> coalescedBools = new HashMap<IrBoolVar, IrBoolVar>();
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<IrIntVar, IrIntVar>();
         for (IrBoolExpr constraint : module.getConstraints()) {
             if (constraint instanceof IrCompare) {
                 IrCompare compare = (IrCompare) constraint;
                 if (IrCompare.Op.Equal.equals(compare.getOp())
-                        && compare.getLeft() instanceof IrIntLiteral
-                        && compare.getRight() instanceof IrIntLiteral) {
-                    IrIntLiteral left = (IrIntLiteral) compare.getLeft();
-                    IrIntLiteral right = (IrIntLiteral) compare.getRight();
-                    intGraph.addEdge(left.getVar(), right.getVar());
-                    intGraph.addEdge(right.getVar(), left.getVar());
+                        && compare.getLeft() instanceof IrIntVar
+                        && compare.getRight() instanceof IrIntVar) {
+                    IrIntVar left = (IrIntVar) compare.getLeft();
+                    IrIntVar right = (IrIntVar) compare.getRight();
+                    intGraph.addEdge(left, right);
+                    intGraph.addEdge(right, left);
                 }
             } else if (constraint instanceof IrIfOnlyIf) {
                 IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) constraint;
-                if (ifOnlyIf.getLeft() instanceof IrBoolCast
-                        && ifOnlyIf.getRight() instanceof IrBoolCast) {
-                    IrBoolCast left = (IrBoolCast) ifOnlyIf.getLeft();
-                    IrBoolCast right = (IrBoolCast) ifOnlyIf.getRight();
-                    if (left.getExpr() instanceof IrIntLiteral && right.getExpr() instanceof IrIntLiteral) {
-                        IrIntLiteral leftExpr = (IrIntLiteral) left.getExpr();
-                        IrIntLiteral rightExpr = (IrIntLiteral) right.getExpr();
-                        intGraph.addEdge(leftExpr.getVar(), rightExpr.getVar());
-                        intGraph.addEdge(rightExpr.getVar(), leftExpr.getVar());
-                    }
+                if (ifOnlyIf.getLeft() instanceof IrBoolVar
+                        && ifOnlyIf.getRight() instanceof IrBoolVar) {
+                    IrBoolVar left = (IrBoolVar) ifOnlyIf.getLeft();
+                    IrBoolVar right = (IrBoolVar) ifOnlyIf.getRight();
+                    intGraph.addEdge(left, right);
+                    intGraph.addEdge(right, left);
                 }
             } else if (constraint instanceof IrBoolVar) {
                 IrBoolVar bool = (IrBoolVar) constraint;
                 if (IrBoolDomain.BoolDomain.equals(bool.getDomain())) {
-                    coalescedBools.put(bool, True);
+                    intGraph.addEdge(bool, True);
+                    intGraph.addEdge(True, bool);
                 }
             } else if (constraint instanceof IrNot) {
                 IrNot not = (IrNot) constraint;
                 if (not.getExpr() instanceof IrBoolVar) {
                     IrBoolVar bool = (IrBoolVar) not.getExpr();
                     if (IrBoolDomain.BoolDomain.equals(bool.getDomain())) {
-                        coalescedBools.put(bool, False);
+                        intGraph.addEdge(bool, False);
+                        intGraph.addEdge(False, bool);
                     }
-                }
-            } else if (constraint instanceof IrBoolCast) {
-                IrBoolCast cast = (IrBoolCast) constraint;
-                if (cast.getExpr() instanceof IrIntLiteral) {
-                    IrIntLiteral intt = (IrIntLiteral) cast.getExpr();
-                    IrIntVar constant = cast.isFlipped() ? Zero : One;
-                    intGraph.addEdge(intt.getVar(), constant);
-                    intGraph.addEdge(constant, intt.getVar());
                 }
             }
         }
@@ -106,27 +93,22 @@ public class Coalescer {
                 }
             }
         }
-
-        return new Triple<Map<IrBoolVar, IrBoolVar>, Map<IrIntVar, IrIntVar>, IrModule>(
-                coalescedBools,
+        return new Pair<Map<IrIntVar, IrIntVar>, IrModule>(
                 coalescedInts,
-                new CoalesceRewriter(coalescedBools, coalescedInts).rewrite(module, null));
-
+                new CoalesceRewriter(coalescedInts).rewrite(module, null));
     }
 
     private static class CoalesceRewriter extends IrRewriter<Void> {
 
-        private final Map<IrBoolVar, IrBoolVar> coalescedBools;
         private final Map<IrIntVar, IrIntVar> coalescedInts;
 
-        CoalesceRewriter(Map<IrBoolVar, IrBoolVar> coalescedBools, Map<IrIntVar, IrIntVar> coalescedInts) {
-            this.coalescedBools = coalescedBools;
+        CoalesceRewriter(Map<IrIntVar, IrIntVar> coalescedInts) {
             this.coalescedInts = coalescedInts;
         }
 
         @Override
         public IrBoolExpr visit(IrBoolNop ir, Void a) {
-            IrBoolVar var = coalescedBools.get(ir.getVar());
+            IrBoolVar var = (IrBoolVar) coalescedInts.get(ir.getVar());
             return var == null ? super.visit(ir, a) : nop(var);
         }
 
@@ -138,14 +120,14 @@ public class Coalescer {
 
         @Override
         public IrBoolExpr visit(IrBoolVar ir, Void a) {
-            IrBoolVar var = coalescedBools.get(ir);
+            IrBoolVar var = (IrBoolVar) coalescedInts.get(ir);
             return var == null ? super.visit(ir, a) : var;
         }
 
         @Override
-        public IrIntExpr visit(IrIntLiteral ir, Void a) {
-            IrIntVar var = coalescedInts.get(ir.getVar());
-            return var == null ? super.visit(ir, a) : $(var);
+        public IrIntExpr visit(IrIntVar ir, Void a) {
+            IrIntVar var = coalescedInts.get(ir);
+            return var == null ? super.visit(ir, a) : var;
         }
     }
 }

@@ -96,7 +96,6 @@ public class PropSetSum extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-//        System.out.println(this);
         boolean changed;
         do {
             changed = false;
@@ -170,96 +169,7 @@ public class PropSetSum extends Propagator<Variable> {
                     index++;
                 }
             }
-
-//            final int[] ker = PropUtil.iterateKer(set);
-//            final int kerSum = Util.sum(ker);
-//            // The sum of the lowest n negative integers that can be chosen.
-//            int low = kerSum;
-//            // The sum of the highest n positive integers that can be chosen.
-//            int high = kerSum;
-//            // The number of elements seen in env but not in ker.
-//            int index = 0;
-//            // The size of the set of integers to still choose from.
-//            int chooseSize = envSize - kerSize;
-//            // The [0-lowEnd) integers in env-ker are the lowest integers.
-//            int lowEnd1 = Math.max(card.getLB() - kerSize, 0);
-//            int lowEnd2 = Math.max(card.getUB() - kerSize, 0);
-//            assert lowEnd2 >= lowEnd1;
-//            // The [highStart-choosSize) integers in env-ker are the highest integers.
-//            int highStart1 = chooseSize - lowEnd1;
-//            int highStart2 = chooseSize - lowEnd2;
-//            assert highStart1 >= 0;
-//            assert highStart2 >= 0;
-//            // The n + 1 highest integer, or 0 if not positive.
-//            int highCandidate = 0;
-//            // The highest n positive integers in descending order.
-//            int[] highChoose = new int[chooseSize - highStart2];
-//            
-//            findKerSmallestLargest(lowEnd2);
-//            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-//                if (!Util.in(i, ker)) {
-//                    if (index < lowEnd1) {
-//                        low += i;
-//                    } else if (index < lowEnd2 && i < 0) {
-//                        low += i;
-//                    }
-//                    index++;
-//                    if (index == highStart2) {
-//                        highCandidate = Math.max(0, i);
-//                    }
-//                    if (index > highStart1) {
-//                        highChoose[chooseSize - index] = i;
-//                        high += i;
-//                    } else if (index > highStart2 && i > 0) {
-//                        highChoose[chooseSize - index] = i;
-//                        high += i;
-//                    }
-//                }
-//            }
-//
-//            System.out.println("        " + sum + " : " + low + " : " + high);
-//            sum.updateLowerBound(low, aCause);
-//            sum.updateUpperBound(high, aCause);
-//
-//            int lb = sum.getLB();
-//            int ub = sum.getUB();
-//
-//            index = 0;
-//            // sum of the lowest n - 1 negative integers that can be chosen.
-//            int lowNMinusOne = kerSum;
-//            // sum of the highest n - 1 positive integers that can be chosen.
-//            int highNMinusOne = high - (highChoose.length == 0 ? 0 : highChoose[highChoose.length - 1]);
-//            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-//                if (!Util.in(i, ker)) {
-//                    if (index < lowEnd1 - 1) {
-//                        lowNMinusOne += i;
-//                    } else if (index < lowEnd2 - 1) {
-//                        lowNMinusOne += Math.min(0, i);
-//                    } else if ( // Is it possible to add i to the kernel?
-//                            // Adding i will never be under the upper bound
-//                            lowNMinusOne + i > ub
-//                            // Adding i will never be over the lower bound
-//                            || highNMinusOne + i < lb) {
-//                        System.out.println(i + " : " + lowNMinusOne + " : " + ub + " : " + highNMinusOne + " : " + lb);
-//                        // With i, it is impossible to stay below the upper bound.
-//                        // Remove it from the envelope.
-//                        changed |= set.removeFromEnvelope(i, aCause);
-//                    }
-//                    index++;
-//                }
-//            }
-//            for (int i = highChoose.length - 1; i >= 0
-//                    // Is it possible to leave i out of the kernel?
-//                    // Replace i with the candidate.
-//                    // Not adding highChoose[i] will never be over the lower bound
-//                    && high - highChoose[i] + highCandidate < lb;
-//                    i--) {
-//                // Without i, it is impossible to reach the lower bound.
-//                // Add it to the kernel.
-//                changed |= set.addToKernel(highChoose[i], aCause);
-//            }
         } while (changed);
-//        System.out.println("    " + this);
     }
 
     @Override

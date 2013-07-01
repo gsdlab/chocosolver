@@ -172,11 +172,6 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrBoolCast ir, T a) {
-        return asBool(ir.isFlipped(), rewrite(ir.getExpr(), a));
-    }
-
-    @Override
     public IrBoolExpr visit(IrBoolChannel ir, T a) {
         return boolChannel(rewrite(ir.getBools(), a), rewrite(ir.getSet(), a));
     }
@@ -235,13 +230,8 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrIntExpr visit(IrIntLiteral ir, T a) {
+    public IrIntExpr visit(IrIntVar ir, T a) {
         return ir;
-    }
-
-    @Override
-    public IrIntExpr visit(IrIntCast ir, T a) {
-        return asInt(rewrite(ir.getExpr(), a));
     }
 
     @Override

@@ -9,9 +9,7 @@ package org.clafer.ir;
  */
 public interface IrIntExprVisitor<A, B> extends IrBoolExprVisitor<A, B> {
 
-    public B visit(IrIntLiteral ir, A a);
-
-    public B visit(IrIntCast ir, A a);
+    public B visit(IrIntVar ir, A a);
 
     public B visit(IrMinus ir, A a);
 

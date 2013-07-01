@@ -40,7 +40,14 @@ public enum IrBoolDomain implements IrDomain {
 
     @Override
     public boolean contains(int value) {
-        return value == 1 ? hasTrue : hasFalse;
+        switch (value) {
+            case 0:
+                return hasFalse;
+            case 1:
+                return hasTrue;
+            default:
+                return false;
+        }
     }
 
     @Override

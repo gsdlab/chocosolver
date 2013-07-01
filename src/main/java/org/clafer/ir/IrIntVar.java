@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrIntVar extends IrAbstractInt implements IrVar {
+public class IrIntVar extends IrAbstractInt implements IrIntExpr, IrVar {
 
     private final String name;
     private final boolean decision;
@@ -39,6 +39,11 @@ public class IrIntVar extends IrAbstractInt implements IrVar {
     @Override
     public boolean isDecision() {
         return decision;
+    }
+
+    @Override
+    public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
+        return visitor.visit(this, a);
     }
 
     @Override

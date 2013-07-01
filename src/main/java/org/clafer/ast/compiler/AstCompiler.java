@@ -205,11 +205,11 @@ public class AstCompiler {
         for (int i = 0; i < members.length; i++) {
             score[i] = domainInt("Score@" + refs[i], IrUtil.union(ZeroDomain, refs[i].getDomain()));
             module.addConstraint(ifThenElse(members[i],
-                    equal($(score[i]), $(refs[i])), equal($(score[i]), 0)));
+                    equal(score[i], refs[i]), equal(score[i], 0)));
         }
-        IrIntExpr sum = add($(score));
+        IrIntExpr sum = add(score);
         IrIntVar sumScore = domainInt("SumScore@" + objective, sum.getDomain());
-        module.addConstraint(equal($(sumScore), sum));
+        module.addConstraint(equal(sumScore, sum));
 
         return new Triple<AstSolutionMap, IrIntVar[], IrIntVar>(
                 new AstSolutionMap(analysis.getModel(), siblingSets, refPointers, softVarPairs, analysis),
@@ -336,19 +336,19 @@ public class AstCompiler {
                 || analysis.isInheritedBreakableTarget(clafer)) {
             weight = new IrIntExpr[scope];
             for (int i = 0; i < weight.length; i++) {
-                weight[i] = $(boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1));
+                weight[i] = boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
             for (int i = 0; i < index.length; i++) {
                 for (int j = 0; j < index[i].length; j++) {
                     index[i][j] =
-                            $(boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope));
+                            boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope);
                 }
             }
         } else {
             // Optimize for nonsymmetric nodes. Don't compute the smallest indices, 
             // just use the cardinalities.
-            weight = Util.replicate($(Zero), scope);
+            weight = Util.replicate(Zero, scope);
             IrSetVar[] childSet = siblingSets.get(clafer);
             index = new IrIntExpr[childSet.length][];
             for (int i = 0; i < index.length; i++) {
@@ -361,7 +361,7 @@ public class AstCompiler {
 
     private void constrainConcrete(AstConcreteClafer clafer) {
         IrSetExpr[] siblingSet = $(siblingSets.get(clafer));
-        IrIntExpr[] parents = $(parentPointers.get(clafer));
+        IrIntExpr[] parents = parentPointers.get(clafer);
         if (!getPartialSolution(clafer).parentSolutionKnown()) {
             if (getGlobalCard(clafer).isExact()) {
                 // No unused
@@ -384,18 +384,18 @@ public class AstCompiler {
             if (ref.isUnique() && getCard(clafer).getHigh() > 1) {
                 if (getGlobalCard(clafer).isExact()) {
                     assert getGlobalCard(clafer).getLow() == refs.length;
-                    module.addConstraint(allDifferent($(refs)));
+                    module.addConstraint(allDifferent(refs));
                 } else {
                     for (int i = 0; i < refs.length - 1; i++) {
                         module.addConstraint(
                                 implies(and(members[i], members[i + 1],
                                 equal(parents[i], parents[i + 1])),
-                                notEqual($(refs[i]), $(refs[i + 1]))));
+                                notEqual(refs[i], refs[i + 1])));
                     }
                 }
                 IrIntExpr size =
                         ref.getTargetType() instanceof AstIntClafer
-                        ? $(constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1))
+                        ? constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1)
                         : card($(sets.get(ref.getTargetType())));
                 for (IrSetExpr sibling : siblingSet) {
                     module.addConstraint(lessThanEqual(card(sibling), size));
@@ -403,17 +403,17 @@ public class AstCompiler {
             }
             assert refs.length == members.length;
             for (int i = 0; i < members.length; i++) {
-                module.addConstraint(implies(not(members[i]), equal($(refs[i]), getUninitalizedRef(tar))));
+                module.addConstraint(implies(not(members[i]), equal(refs[i], getUninitalizedRef(tar))));
             }
 
             if (ref.getTargetType() instanceof AstIntClafer) {
                 for (int i = 0; i < refs.length; i++) {
-                    module.addConstraint(implies(members[i], notEqual($(refs[i]), getUninitalizedRef(tar))));
+                    module.addConstraint(implies(members[i], notEqual(refs[i], getUninitalizedRef(tar))));
                 }
             } else {
                 IrSetVar targetSet = sets.get(ref.getTargetType());
                 for (int i = 0; i < refs.length; i++) {
-                    module.addConstraint(implies(members[i], member($(refs[i]), $(targetSet))));
+                    module.addConstraint(implies(members[i], member(refs[i], $(targetSet))));
                 }
             }
         }
@@ -443,10 +443,10 @@ public class AstCompiler {
                         analysis.isBreakableRefId(ref, i + refOffset)
                         // The id of the target is the weight.
                         //                        ? sub(mul(asInt(members[i]), refHigh + 1), $(refPointers.get(ref)[i + refOffset]))
-                        ? minus($(refPointers.get(ref)[i + refOffset]))
+                        ? minus(refPointers.get(ref)[i + refOffset])
                         // If analysis says that this id does not need breaking
                         // then give it a constant weight. Any constant is fine.
-                        : $(Zero)
+                        : Zero
                     });
                 }
                 if (analysis.isInheritedBreakableTarget(clafer)) {
@@ -456,7 +456,7 @@ public class AstCompiler {
 
                             IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
                             for (int j = 0; j < array.length; j++) {
-                                array[j] = $(sourceRefs[j]);
+                                array[j] = sourceRefs[j];
                             }
                             childIndex.add(new IrIntExpr[]{
                                 count(hierarchy.getSnd().intValue(), array)
@@ -513,22 +513,22 @@ public class AstCompiler {
                 }
                 if (featureGroup) {
                     // Translate common cases more efficiently.
-                    if (groupCard.getLow() == 0 && groupCard.getHigh() == 1) {
-                        // "lone"
-                        module.addConstraint(implies(members[i], lone(asBools(cards))));
-                        continue;
-                    }
-                    if (groupCard.getLow() == 1 && !groupCard.hasHigh()) {
-                        // "or"
-                        module.addConstraint(implies(members[i], or(asBools(cards))));
-                        continue;
-                    }
-                    if (groupCard.isExact() && groupCard.getLow() == 1) {
-                        // "xor"
-                        // TODO constrain as sum(cards) = card(this)
-                        module.addConstraint(implies(members[i], one(asBools(cards))));
-                        continue;
-                    }
+//                    if (groupCard.getLow() == 0 && groupCard.getHigh() == 1) {
+//                        // "lone"
+//                        module.addConstraint(implies(members[i], lone(asBools(cards))));
+//                        continue;
+//                    }
+//                    if (groupCard.getLow() == 1 && !groupCard.hasHigh()) {
+//                        // "or"
+//                        module.addConstraint(implies(members[i], or(asBools(cards))));
+//                        continue;
+//                    }
+//                    if (groupCard.isExact() && groupCard.getLow() == 1) {
+//                        // "xor"
+//                        // TODO constrain as sum(cards) = card(this)
+//                        module.addConstraint(implies(members[i], one(asBools(cards))));
+//                        continue;
+//                    }
                 }
                 module.addConstraint(implies(members[i], constrainCard(add(cards), groupCard)));
             }
@@ -546,10 +546,10 @@ public class AstCompiler {
             if (partialSolution.hasClafer(i)) {
                 members[i] = True;
             } else {
-                members[i] =
-                        childSet.length == 1 && members.length == 1
-                        ? asBool(card($(childSet[0])))
-                        : bool(clafer.getName() + "@Membership#" + i);
+                members[i] = bool(clafer.getName() + "@Membership#" + i);
+                if (childSet.length == 1 && members.length == 1) {
+                    module.addConstraint(equal(members[i], card($(childSet[0]))));
+                }
             }
         }
         Check.noNulls(members);
@@ -595,7 +595,7 @@ public class AstCompiler {
          * Hand1 belongs to Person0. Otherwise, the children can swap around
          * creating many isomorphic solutions.
          */
-        module.addConstraint(sort($(parentPointers.get(clafer))));
+        module.addConstraint(sort(parentPointers.get(clafer)));
     }
 
     private void initParentGroupConcrete(AstConcreteClafer clafer) {
@@ -782,7 +782,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstThis ast, Void a) {
-            return $(constant(thisId));
+            return constant(thisId);
         }
 
         @Override
@@ -791,7 +791,7 @@ public class AstCompiler {
             if (global.getEnv().size() == 1) {
                 int[] constant = IrUtil.getConstant(global);
                 if (constant != null) {
-                    return $(constant(constant[0]));
+                    return constant(constant[0]);
                 }
             }
             return $(global);
@@ -801,7 +801,7 @@ public class AstCompiler {
         public IrExpr visit(AstConstant ast, Void a) {
             int[] value = ast.getValue();
             if (value.length == 1) {
-                return $(constant(value[0]));
+                return constant(value[0]);
             }
             return $(constant(value));
         }
@@ -830,28 +830,27 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoinParent ast, Void a) {
-            AstSetExpr children = ast.getChildren();
-            AstConcreteClafer childrenType = (AstConcreteClafer) getType(children);
+            AstConcreteClafer childrenType = (AstConcreteClafer) getType(ast.getChildren());
 
-            IrExpr $children = compile(children);
-            if ($children instanceof IrIntExpr) {
+            IrExpr children = compile(ast.getChildren());
+            if (children instanceof IrIntExpr) {
                 // Only one possible parent.
                 if (getScope(childrenType.getParent()) == 1) {
-                    return $(Zero);
+                    return Zero;
                 }
 
-                IrIntExpr $intChildren = (IrIntExpr) $children;
+                IrIntExpr intChildren = (IrIntExpr) children;
                 switch (getFormat(childrenType)) {
                     case ParentGroup:
                         assert getCard(childrenType).isExact();
                         int lowCard = getCard(childrenType).getLow();
-                        return div($intChildren, $(constant(lowCard)));
+                        return div(intChildren, constant(lowCard));
                     case LowGroup:
-                        return element($(parentPointers.get(childrenType)), $intChildren);
+                        return element(parentPointers.get(childrenType), intChildren);
                 }
-            } else if ($children instanceof IrSetExpr) {
-                IrSetExpr $setChildren = (IrSetExpr) $children;
-                return joinFunction($setChildren, $(parentPointers.get(childrenType)), null);
+            } else if (children instanceof IrSetExpr) {
+                IrSetExpr setChildren = (IrSetExpr) children;
+                return joinFunction(setChildren, parentPointers.get(childrenType), null);
             }
             throw new AstException();
         }
@@ -877,10 +876,10 @@ public class AstCompiler {
 
             if ($deref instanceof IrIntExpr) {
                 IrIntExpr $intDeref = (IrIntExpr) $deref;
-                return element($(refPointers.get(derefType.getRef())), $intDeref);
+                return element(refPointers.get(derefType.getRef()), $intDeref);
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
-                return joinFunction($setDeref, $(refPointers.get(derefType.getRef())), globalCardinality);
+                return joinFunction($setDeref, refPointers.get(derefType.getRef()), globalCardinality);
             }
             throw new AstException();
         }
@@ -889,7 +888,7 @@ public class AstCompiler {
         public IrExpr visit(AstCard ast, Void a) {
             IrExpr set = compile(ast.getSet());
             if (set instanceof IrIntExpr) {
-                return $(One);
+                return One;
             }
             return card((IrSetExpr) set);
         }
@@ -1072,7 +1071,7 @@ public class AstCompiler {
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
-                return add(intBase, $(constant(offset)));
+                return add(intBase, constant(offset));
             }
             return offset((IrSetExpr) $base, offset);
         }
@@ -1105,10 +1104,10 @@ public class AstCompiler {
                 @SuppressWarnings("unchecked")
                 Pair<IrIntExpr, IrBoolExpr>[] members = new Pair[env.getHighBound() + 1];
                 for (int i = 0; i < env.getLowBound(); i++) {
-                    members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)), False);
+                    members[i] = new Pair<IrIntExpr, IrBoolExpr>(constant(i), False);
                 }
                 for (int i = env.getLowBound(); i <= env.getHighBound(); i++) {
-                    members[i] = new Pair<IrIntExpr, IrBoolExpr>($(constant(i)),
+                    members[i] = new Pair<IrIntExpr, IrBoolExpr>(constant(i),
                             ker.contains(i) ? True
                             : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i));
                 }

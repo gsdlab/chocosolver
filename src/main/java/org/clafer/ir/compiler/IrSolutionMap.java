@@ -24,22 +24,16 @@ import solver.variables.SetVar;
  */
 public class IrSolutionMap {
 
-    private final Map<IrBoolVar, IrBoolVar> coalescedBoolVars;
-    private final Map<IrBoolVar, BoolVar> boolVars;
     private final Map<IrIntVar, IrIntVar> coalescedIntVars;
     private final Map<IrIntVar, IntVar> intVars;
     private final Map<IrSetVar, IrSetVar> coalescedSetVars;
     private final Map<IrSetVar, SetVar> setVars;
 
     IrSolutionMap(
-            Map<IrBoolVar, IrBoolVar> coalescedBoolVars,
-            Map<IrBoolVar, BoolVar> boolVars,
             Map<IrIntVar, IrIntVar> coalescedIntVars,
             Map<IrIntVar, IntVar> intVars,
             Map<IrSetVar, IrSetVar> coalescedSetVars,
             Map<IrSetVar, SetVar> setVars) {
-        this.coalescedBoolVars = coalescedBoolVars;
-        this.boolVars = boolVars;
         this.coalescedIntVars = coalescedIntVars;
         this.intVars = intVars;
         this.coalescedSetVars = coalescedSetVars;
@@ -47,11 +41,11 @@ public class IrSolutionMap {
     }
 
     public BoolVar getBoolVar(IrBoolVar var) {
-        IrBoolVar boolVar = coalescedBoolVars.get(var);
+        IrBoolVar boolVar = (IrBoolVar) coalescedIntVars.get(var);
         if (boolVar == null) {
             boolVar = var;
         }
-        return IrUtil.notNull("Bool var " + var + " not par of IR solution", boolVars.get(boolVar));
+        return (BoolVar) IrUtil.notNull("Bool var " + var + " not par of IR solution", intVars.get(boolVar));
     }
 
     public boolean getBoolValue(IrBoolVar var) {
@@ -75,20 +69,6 @@ public class IrSolutionMap {
             bvalues[i] = getBoolValue(vars[i]);
         }
         return bvalues;
-    }
-
-    public BoolVar[] getBoolVars() {
-        return boolVars.values().toArray(new BoolVar[boolVars.size()]);
-    }
-
-    public BoolVar[] getBoolDecisionVars() {
-        List<BoolVar> decisionVars = new ArrayList<BoolVar>(boolVars.size());
-        for (Entry<IrBoolVar, BoolVar> entry : boolVars.entrySet()) {
-            if (entry.getKey().isDecision()) {
-                decisionVars.add(entry.getValue());
-            }
-        }
-        return decisionVars.toArray(new BoolVar[decisionVars.size()]);
     }
 
     public IntVar getIntVar(IrIntVar var) {

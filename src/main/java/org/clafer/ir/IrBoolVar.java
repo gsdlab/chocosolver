@@ -1,14 +1,11 @@
 package org.clafer.ir;
 
-import org.clafer.common.Check;
-
 /**
  *
  * @author jimmy
  */
-public class IrBoolVar extends IrAbstractBool implements IrBoolExpr, IrVar {
+public class IrBoolVar extends IrIntVar implements IrBoolExpr, IrVar {
 
-    private final String name;
     private final boolean decision;
 
     IrBoolVar(String name, IrBoolDomain domain) {
@@ -16,14 +13,12 @@ public class IrBoolVar extends IrAbstractBool implements IrBoolExpr, IrVar {
     }
 
     IrBoolVar(String name, IrBoolDomain domain, boolean decision) {
-        super(domain);
-        this.name = Check.notNull(name);
+        super(name, domain);
         this.decision = decision;
     }
 
-    @Override
-    public String getName() {
-        return name;
+    public IrBoolDomain getDomain() {
+        return (IrBoolDomain) super.getDomain();
     }
 
     @Override
@@ -38,12 +33,12 @@ public class IrBoolVar extends IrAbstractBool implements IrBoolExpr, IrVar {
 
     @Override
     public IrBoolVar asDecision() {
-        return new IrBoolVar(name, getDomain(), true);
+        return new IrBoolVar(getName(), getDomain(), true);
     }
 
     @Override
     public IrBoolVar asNoDecision() {
-        return new IrBoolVar(name, getDomain(), false);
+        return new IrBoolVar(getName(), getDomain(), false);
     }
 
     @Override
@@ -59,20 +54,5 @@ public class IrBoolVar extends IrAbstractBool implements IrBoolExpr, IrVar {
     @Override
     public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return this == obj;
-    }
-
-    @Override
-    public int hashCode() {
-        return name.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return name;
     }
 }

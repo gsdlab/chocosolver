@@ -18,9 +18,9 @@ public class CoalescerTest {
     public void testCoalesceIntConstant() {
         IrModule module = new IrModule();
         IrIntVar var = boundInt("var", 0, 10);
-        module.addConstraint(equal($(var), $(constant(3))));
+        module.addConstraint(equal(var, constant(3)));
         
-        IrIntVar coalesced = Coalescer.coalesce(module).getSnd().get(var);
+        IrIntVar coalesced = Coalescer.coalesce(module).getFst().get(var);
         assertEquals(Integer.valueOf(3), IrUtil.getConstant(coalesced));
     }
 }
