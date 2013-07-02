@@ -497,6 +497,9 @@ public class Irs {
     public static IrBoolExpr equality(IrSetExpr left, IrSetTest.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
+                if (left.equals(right)) {
+                    return True;
+                }
                 int[] constant = IrUtil.getConstant(left);
                 if (constant != null) {
                     if (constant.length == 0) {
@@ -521,6 +524,9 @@ public class Irs {
                 }
                 break;
             case NotEqual:
+                if (left.equals(right)) {
+                    return False;
+                }
                 constant = IrUtil.getConstant(left);
                 if (constant != null) {
                     if (constant.length == 0) {
@@ -659,12 +665,26 @@ public class Irs {
     }
 
     public static IrBoolExpr boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
+        {
+            int[] constant = IrUtil.getConstant(set);
+            if (constant != null) {
+                IrBoolExpr[] ands = new IrBoolExpr[bools.length];
+                for (int i = 0; i < ands.length; i++) {
+                    ands[i] = equal(bools[i], Util.in(i, constant) ? True : False);
+                }
+                return and(ands);
+            }
+        }
+        TIntHashSet values = new TIntHashSet();
         IrDomain env = set.getEnv();
         IrDomain ker = set.getKer();
         boolean entailed = true;
         for (int i = 0; i < bools.length; i++) {
             Boolean constant = IrUtil.getConstant(bools[i]);
             if (Boolean.TRUE.equals(constant)) {
+                if (values != null) {
+                    values.add(i);
+                }
                 if (!env.contains(i)) {
                     return False;
                 }
@@ -679,11 +699,15 @@ public class Irs {
                     entailed = false;
                 }
             } else {
+                values = null;
                 entailed = false;
             }
         }
         if (entailed) {
             return True;
+        }
+        if (values != null) {
+            return equal(set, constant(enumDomain(values)));
         }
         return new IrBoolChannel(bools, set, BoolDomain);
     }
@@ -804,19 +828,19 @@ public class Irs {
     }
 
     public static IrBoolExpr nop(IrIntExpr var) {
-//        if (var instanceof IrBoolConstant) {
-//            return True;
-//        }
-//        if (var instanceof IrIntConstant) {
-//            return True;
-//        }
+        if (var instanceof IrBoolConstant) {
+            return True;
+        }
+        if (var instanceof IrIntConstant) {
+            return True;
+        }
         return new IrIntNop(var);
     }
 
     public static IrBoolExpr nop(IrSetExpr var) {
-//        if (var instanceof IrSetConstant) {
-//            return True;
-//        }
+        if (var instanceof IrSetConstant) {
+            return True;
+        }
         return new IrSetNop(var);
     }
     /**

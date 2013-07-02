@@ -83,6 +83,8 @@ public class PropUtil {
         if (s.find()) {
             System.out.println(s.instance());
         }
+        // 84,272 + 27,598
+        System.out.println(s.getMeasures());
     }
 
     private PropUtil() {

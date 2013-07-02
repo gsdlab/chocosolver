@@ -47,6 +47,13 @@ public class KeyGraph<V> implements Graph<V> {
         getVertex(from).addNeighbour(getVertex(to));
     }
 
+    public void addUndirectedEdge(V from, V to) {
+        Vertex<V> fromV = getVertex(from);
+        Vertex<V> toV = getVertex(to);
+        fromV.addNeighbour(toV);
+        toV.addNeighbour(fromV);
+    }
+
     /**
      * {@inheritDoc}
      */

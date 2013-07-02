@@ -111,16 +111,20 @@ public class IrCompiler {
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
 
-        Pair<Map<IrIntVar, IrIntVar>, IrModule> coalescePair = Coalescer.coalesce(optModule);
-        Map<IrIntVar, IrIntVar> coalescedIntVars = coalescePair.getFst();
-        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalescePair.getSnd());
-        Map<IrSetVar, IrSetVar> coalescedSetVars = propagatedPair.getFst();
+        Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
+        Map<IrIntVar, IrIntVar> coalescedIntVars = coalesceTriple.getFst();
+        Map<IrSetVar, IrSetVar> coalescedSetVars = coalesceTriple.getSnd();
+        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
+        coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
         optModule = propagatedPair.getSnd();
 
-        while (!coalescePair.getFst().isEmpty() || !propagatedPair.getFst().isEmpty()) {
-            coalescePair = Coalescer.coalesce(optModule);
-            coalescedIntVars = compose(coalescedIntVars, coalescePair.getFst());
-            propagatedPair = CardinalityPropagator.propagate(coalescePair.getSnd());
+        while (!coalesceTriple.getFst().isEmpty()
+                || !coalesceTriple.getSnd().isEmpty()
+                || !propagatedPair.getFst().isEmpty()) {
+            coalesceTriple = Coalescer.coalesce(optModule);
+            coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
+            coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
+            propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
             coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
             optModule = propagatedPair.getSnd();
         }

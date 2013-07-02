@@ -76,14 +76,18 @@ public class IrSolutionMap {
         if (intVar == null) {
             intVar = var;
         }
-        return IrUtil.notNull("Int var " + var + " not par of IR solution", intVars.get(intVar));
+        return intVars.get(intVar);
     }
 
     public int getIntValue(IrIntVar var) {
-        if (var instanceof IrIntConstant) {
-            return ((IrIntConstant) var).getValue();
+        IrIntVar intVar = coalescedIntVars.get(var);
+        if (intVar == null) {
+            intVar = var;
         }
-        return getIntVar(var).getValue();
+        if (intVar instanceof IrIntConstant) {
+            return ((IrIntConstant) intVar).getValue();
+        }
+        return intVars.get(intVar).getValue();
     }
 
     public IntVar[] getIntVars(IrIntVar... vars) {

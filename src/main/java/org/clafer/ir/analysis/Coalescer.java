@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.ir.IrBoolDomain;
@@ -18,6 +18,9 @@ import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrRewriter;
+import org.clafer.ir.IrSetExpr;
+import org.clafer.ir.IrSetTest;
+import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 
@@ -29,9 +32,11 @@ public class Coalescer {
     private Coalescer() {
     }
 
-    public static Pair<Map<IrIntVar, IrIntVar>, IrModule> coalesce(IrModule module) {
+    public static Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesce(IrModule module) {
         KeyGraph<IrIntVar> intGraph = new KeyGraph<IrIntVar>();
+        KeyGraph<IrSetVar> setGraph = new KeyGraph<IrSetVar>();
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<IrIntVar, IrIntVar>();
+        Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<IrSetVar, IrSetVar>();
         for (IrBoolExpr constraint : module.getConstraints()) {
             if (constraint instanceof IrCompare) {
                 IrCompare compare = (IrCompare) constraint;
@@ -40,8 +45,7 @@ public class Coalescer {
                         && compare.getRight() instanceof IrIntVar) {
                     IrIntVar left = (IrIntVar) compare.getLeft();
                     IrIntVar right = (IrIntVar) compare.getRight();
-                    intGraph.addEdge(left, right);
-                    intGraph.addEdge(right, left);
+                    intGraph.addUndirectedEdge(left, right);
                 }
             } else if (constraint instanceof IrIfOnlyIf) {
                 IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) constraint;
@@ -49,23 +53,29 @@ public class Coalescer {
                         && ifOnlyIf.getRight() instanceof IrBoolVar) {
                     IrBoolVar left = (IrBoolVar) ifOnlyIf.getLeft();
                     IrBoolVar right = (IrBoolVar) ifOnlyIf.getRight();
-                    intGraph.addEdge(left, right);
-                    intGraph.addEdge(right, left);
+                    intGraph.addUndirectedEdge(left, right);
                 }
             } else if (constraint instanceof IrBoolVar) {
                 IrBoolVar bool = (IrBoolVar) constraint;
                 if (IrBoolDomain.BoolDomain.equals(bool.getDomain())) {
-                    intGraph.addEdge(bool, True);
-                    intGraph.addEdge(True, bool);
+                    intGraph.addUndirectedEdge(bool, True);
                 }
             } else if (constraint instanceof IrNot) {
                 IrNot not = (IrNot) constraint;
                 if (not.getExpr() instanceof IrBoolVar) {
                     IrBoolVar bool = (IrBoolVar) not.getExpr();
                     if (IrBoolDomain.BoolDomain.equals(bool.getDomain())) {
-                        intGraph.addEdge(bool, False);
-                        intGraph.addEdge(False, bool);
+                        intGraph.addUndirectedEdge(bool, False);
                     }
+                }
+            } else if (constraint instanceof IrSetTest) {
+                IrSetTest test = (IrSetTest) constraint;
+                if (IrSetTest.Op.Equal.equals(test.getOp())
+                        && test.getLeft() instanceof IrSetVar
+                        && test.getRight() instanceof IrSetVar) {
+                    IrSetVar left = (IrSetVar) test.getLeft();
+                    IrSetVar right = (IrSetVar) test.getRight();
+                    setGraph.addUndirectedEdge(left, right);
                 }
             }
         }
@@ -80,7 +90,6 @@ public class Coalescer {
                     name.append(';').append(var.getName());
                     domain = IrUtil.intersection(domain, var.getDomain());
                 }
-
                 if (domain.isEmpty()) {
                     // Model is unsatisfiable. Compile anyways?
                 } else {
@@ -91,17 +100,45 @@ public class Coalescer {
                 }
             }
         }
-        return new Pair<Map<IrIntVar, IrIntVar>, IrModule>(
+        for (Set<IrSetVar> component : GraphUtil.computeStronglyConnectedComponents(setGraph)) {
+            if (component.size() > 1) {
+                Iterator<IrSetVar> iter = component.iterator();
+                IrSetVar var = iter.next();
+                StringBuilder name = new StringBuilder().append(var.getName());
+                IrDomain env = var.getEnv();
+                IrDomain ker = var.getKer();
+                IrDomain card = var.getCard();
+                while (iter.hasNext()) {
+                    var = iter.next();
+                    name.append(';').append(var.getName());
+                    env = IrUtil.intersection(env, var.getEnv());
+                    ker = IrUtil.union(ker, var.getKer());
+                    card = IrUtil.intersection(card, var.getCard());
+                }
+                if (!IrUtil.isSubsetOf(ker, env)) {
+                    // Model is unsatisfiable. Compile anyways?
+                } else {
+                    IrSetVar coalesced = set(name.toString(), env, ker, card);
+                    for (IrSetVar coalesce : component) {
+                        coalescedSets.put(coalesce, coalesced);
+                    }
+                }
+            }
+        }
+        return new Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule>(
                 coalescedInts,
-                new CoalesceRewriter(coalescedInts).rewrite(module, null));
+                coalescedSets,
+                new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null));
     }
 
     private static class CoalesceRewriter extends IrRewriter<Void> {
 
         private final Map<IrIntVar, IrIntVar> coalescedInts;
+        private final Map<IrSetVar, IrSetVar> coalescedSets;
 
-        CoalesceRewriter(Map<IrIntVar, IrIntVar> coalescedInts) {
+        CoalesceRewriter(Map<IrIntVar, IrIntVar> coalescedInts, Map<IrSetVar, IrSetVar> coalescedSets) {
             this.coalescedInts = coalescedInts;
+            this.coalescedSets = coalescedSets;
         }
 
         @Override
@@ -113,6 +150,12 @@ public class Coalescer {
         @Override
         public IrIntExpr visit(IrIntVar ir, Void a) {
             IrIntVar var = coalescedInts.get(ir);
+            return var == null ? ir : var;
+        }
+
+        @Override
+        public IrSetExpr visit(IrSetVar ir, Void a) {
+            IrSetVar var = coalescedSets.get(ir);
             return var == null ? ir : var;
         }
     }

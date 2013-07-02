@@ -81,7 +81,10 @@ public class ClaferCompiler {
             if (clafer.hasRef()) {
                 for (IrIntVar intVar : map.getAstSolution().getRefVars(clafer.getRef())) {
                     if (!(intVar instanceof IrIntConstant)) {
-                        vars.add(map.getIrSolution().getIntVar(intVar));
+                        IntVar var = map.getIrSolution().getIntVar(intVar);
+                        if (var != null) {
+                            vars.add(var);
+                        }
                     }
                 }
             }
