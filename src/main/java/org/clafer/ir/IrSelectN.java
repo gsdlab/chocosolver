@@ -47,6 +47,20 @@ public class IrSelectN extends IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IrSelectN) {
+            IrSelectN other = (IrSelectN) obj;
+            return Arrays.equals(bools, other.bools) && n.equals(other.n);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(bools) ^ n.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "selectN(" + Arrays.toString(bools) + ", " + n + ")";
     }
