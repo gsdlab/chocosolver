@@ -468,7 +468,7 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrWithin ir, BoolArg a) {
-            IntVar var = compile(ir.getVar());
+            IntVar var = compile(ir.getValue());
             IrDomain range = ir.getRange();
             if (range.isBounded()) {
                 return _within(var, range.getLowBound(), range.getHighBound());
@@ -478,7 +478,7 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrNotWithin ir, BoolArg a) {
-            IntVar var = compile(ir.getVar());
+            IntVar var = compile(ir.getValue());
             IrDomain range = ir.getRange();
             if (range.isBounded()) {
                 return _not_within(var, range.getLowBound(), range.getHighBound());

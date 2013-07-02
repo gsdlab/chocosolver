@@ -352,8 +352,8 @@ public class Irs {
         return new IrXor(left, right, BoolDomain);
     }
 
-    public static IrBoolExpr within(IrIntExpr var, IrDomain range) {
-        IrDomain domain = var.getDomain();
+    public static IrBoolExpr within(IrIntExpr value, IrDomain range) {
+        IrDomain domain = value.getDomain();
         if (range.isBounded()
                 && domain.getLowBound() >= range.getLowBound()
                 && domain.getHighBound() <= range.getHighBound()) {
@@ -363,11 +363,11 @@ public class Irs {
                 || domain.getHighBound() < range.getLowBound()) {
             return False;
         }
-        return new IrWithin(var, range, BoolDomain);
+        return new IrWithin(value, range, BoolDomain);
     }
 
-    public static IrBoolExpr notWithin(IrIntExpr var, IrDomain range) {
-        IrDomain domain = var.getDomain();
+    public static IrBoolExpr notWithin(IrIntExpr value, IrDomain range) {
+        IrDomain domain = value.getDomain();
         if (range.isBounded()
                 && domain.getLowBound() >= range.getLowBound()
                 && domain.getHighBound() <= range.getHighBound()) {
@@ -377,7 +377,7 @@ public class Irs {
                 || domain.getHighBound() < range.getLowBound()) {
             return True;
         }
-        return new IrNotWithin(var, range, BoolDomain);
+        return new IrNotWithin(value, range, BoolDomain);
     }
 
     public static IrBoolExpr compare(int left, IrCompare.Op op, IrIntExpr right) {

@@ -8,12 +8,12 @@ import org.clafer.common.Check;
  */
 public class IrWithin extends IrAbstractBool implements IrBoolExpr {
 
-    private final IrIntExpr var;
+    private final IrIntExpr value;
     private final IrDomain range;
 
-    IrWithin(IrIntExpr var, IrDomain range, IrBoolDomain domain) {
+    IrWithin(IrIntExpr value, IrDomain range, IrBoolDomain domain) {
         super(domain);
-        this.var = Check.notNull(var);
+        this.value = Check.notNull(value);
         this.range = Check.notNull(range);
 
         if (range.isEmpty()) {
@@ -21,8 +21,8 @@ public class IrWithin extends IrAbstractBool implements IrBoolExpr {
         }
     }
 
-    public IrIntExpr getVar() {
-        return var;
+    public IrIntExpr getValue() {
+        return value;
     }
 
     public IrDomain getRange() {
@@ -31,7 +31,7 @@ public class IrWithin extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrNotWithin(var, range, getDomain().invert());
+        return new IrNotWithin(value, range, getDomain().invert());
     }
 
     @Override
@@ -53,18 +53,18 @@ public class IrWithin extends IrAbstractBool implements IrBoolExpr {
     public boolean equals(Object obj) {
         if (obj instanceof IrWithin) {
             IrWithin other = (IrWithin) obj;
-            return var.equals(other.var) && range.equals(other.range) && super.equals(other);
+            return value.equals(other.value) && range.equals(other.range) && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return var.hashCode() ^ range.hashCode();
+        return value.hashCode() ^ range.hashCode();
     }
 
     @Override
     public String toString() {
-        return var + " ∈ " + range;
+        return value + " ∈ " + range;
     }
 }
