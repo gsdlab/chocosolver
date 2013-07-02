@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;

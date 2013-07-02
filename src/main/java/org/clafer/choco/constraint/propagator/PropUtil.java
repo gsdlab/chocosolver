@@ -80,6 +80,8 @@ public class PropUtil {
 //        Merge bool into int
 //        25679
 //        11297
+//        24383
+//        10218
         if (s.find()) {
             System.out.println(s.instance());
         }

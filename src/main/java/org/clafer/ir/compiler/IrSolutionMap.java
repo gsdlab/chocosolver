@@ -45,14 +45,18 @@ public class IrSolutionMap {
         if (boolVar == null) {
             boolVar = var;
         }
-        return (BoolVar) IrUtil.notNull("Bool var " + var + " not par of IR solution", intVars.get(boolVar));
+        return (BoolVar) intVars.get(boolVar);
     }
 
     public boolean getBoolValue(IrBoolVar var) {
+        IrBoolVar boolVar = (IrBoolVar) coalescedIntVars.get(var);
+        if (boolVar == null) {
+            boolVar = var;
+        }
         if (var instanceof IrBoolConstant) {
             return ((IrBoolConstant) var).getValue();
         }
-        return getBoolVar(var).getValue() != 0;
+        return intVars.get(boolVar).getValue() != 0;
     }
 
     public BoolVar[] getBoolVars(IrBoolVar... vars) {
@@ -106,20 +110,6 @@ public class IrSolutionMap {
         return ivalues;
     }
 
-    public IntVar[] getIntVars() {
-        return intVars.values().toArray(new IntVar[intVars.size()]);
-    }
-
-    public IntVar[] getIntDecisionVars() {
-        List<IntVar> decisionVars = new ArrayList<IntVar>(intVars.size());
-        for (Entry<IrIntVar, IntVar> entry : intVars.entrySet()) {
-            if (entry.getKey().isDecision()) {
-                decisionVars.add(entry.getValue());
-            }
-        }
-        return decisionVars.toArray(new IntVar[decisionVars.size()]);
-    }
-
     public SetVar getSetVar(IrSetVar var) {
         IrSetVar setVar = coalescedSetVars.get(var);
         if (setVar == null) {
@@ -129,10 +119,14 @@ public class IrSolutionMap {
     }
 
     public int[] getSetValue(IrSetVar var) {
-        if (var instanceof IrSetConstant) {
-            return ((IrSetConstant) var).getValue();
+        IrSetVar setVar = coalescedSetVars.get(var);
+        if (setVar == null) {
+            setVar = var;
         }
-        return getSetVar(var).getValue();
+        if (setVar instanceof IrSetConstant) {
+            return ((IrSetConstant) setVar).getValue();
+        }
+        return setVars.get(setVar).getValue();
     }
 
     public SetVar[] getSetVars(IrSetVar... vars) {
@@ -149,19 +143,5 @@ public class IrSolutionMap {
             svalues[i] = getSetValue(vars[i]);
         }
         return svalues;
-    }
-
-    public SetVar[] getSetVars() {
-        return setVars.values().toArray(new SetVar[setVars.size()]);
-    }
-
-    public SetVar[] getSetDecisionVars() {
-        List<SetVar> decisionVars = new ArrayList<SetVar>(setVars.size());
-        for (Entry<IrSetVar, SetVar> entry : setVars.entrySet()) {
-            if (entry.getKey().isDecision()) {
-                decisionVars.add(entry.getValue());
-            }
-        }
-        return decisionVars.toArray(new SetVar[decisionVars.size()]);
     }
 }

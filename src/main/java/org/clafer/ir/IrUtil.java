@@ -99,6 +99,9 @@ public class IrUtil {
             if (constantCard == ker.size()) {
                 return Irs.constant(ker);
             }
+            if (constantCard == env.size()) {
+                return Irs.constant(env);
+            }
         }
         return s;
     }
