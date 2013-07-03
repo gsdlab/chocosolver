@@ -541,6 +541,9 @@ public class IrCompiler {
                     }
                     return constraint;
                 }
+                if (IrCompare.Op.Equal.equals(op)) {
+                    return compileAsConstraint(left, compile(right));
+                }
                 return _arithm(compile(left), op.getSyntax(), constant.intValue());
             }
             return null;
