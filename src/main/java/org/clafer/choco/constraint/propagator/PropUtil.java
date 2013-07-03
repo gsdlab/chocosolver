@@ -16,6 +16,7 @@ import org.clafer.scope.Scope;
 import solver.Configuration;
 import solver.ICause;
 import solver.exception.ContradictionException;
+import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.delta.IIntDeltaMonitor;
@@ -34,6 +35,7 @@ public class PropUtil {
         ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
 //        System.out.println(s.getInternalSolver());
 //        SearchMonitorFactory.log(s.getInternalSolver(), true, true);
+//        SearchMonitorFactory.logContradiction(s.getInternalSolver());
 //        SearchMonitorFactory.limitNode(s.getInternalSolver(), 2000);
         System.out.println(s.getInternalSolver().getVars().length);
         System.out.println(s.getInternalSolver().getCstrs().length);
@@ -82,10 +84,17 @@ public class PropUtil {
 //        11297
 //        24383
 //        10218
+//        24243
+//        10212
+//        20526
+//        6317
+//        20495
+//        6274
         if (s.find()) {
             System.out.println(s.instance());
         }
         // 84,272 + 27,598
+        // 73,902 + 27,011
         System.out.println(s.getMeasures());
     }
 

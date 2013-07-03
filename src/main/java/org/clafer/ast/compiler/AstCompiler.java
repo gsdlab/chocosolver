@@ -367,7 +367,7 @@ public class AstCompiler {
                 // No unused
                 module.addConstraint(intChannel(parents, siblingSet));
             } else {
-                IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers()).asNoDecision();
+                IrSetVar unused = set(clafer.getName() + "@Unused", getPartialSolution(clafer).getUnknownClafers());
                 module.addConstraint(intChannel(parents, Util.snoc(siblingSet, unused)));
             }
         }
@@ -876,10 +876,12 @@ public class AstCompiler {
 
             if ($deref instanceof IrIntExpr) {
                 IrIntExpr $intDeref = (IrIntExpr) $deref;
-                return element(refPointers.get(derefType.getRef()), $intDeref);
+                // Why zero? The "take" var can contain unused.
+                return element(Util.snoc(refPointers.get(derefType.getRef()), Zero), $intDeref);
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
-                return joinFunction($setDeref, refPointers.get(derefType.getRef()), globalCardinality);
+                // Why zero? The "take" var can contain unused.
+                return joinFunction($setDeref, Util.snoc(refPointers.get(derefType.getRef()), Zero), globalCardinality);
             }
             throw new AstException();
         }

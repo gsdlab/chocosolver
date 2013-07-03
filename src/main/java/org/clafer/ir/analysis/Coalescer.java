@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
@@ -139,7 +138,7 @@ public class Coalescer {
 
         CoalesceRewriter(Map<IrIntVar, IrIntVar> coalescedInts, Map<IrSetVar, IrSetVar> coalescedSets) {
             this.coalescedInts = coalescedInts;
-            this.coalescedSets = coalescedSets;
+            this.coalescedSets = coalescedSets;a=true;
         }
 
         @Override

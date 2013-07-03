@@ -136,7 +136,7 @@ public class IrCompiler {
                 IntVar leftInt = compile(cardinality.getFst());
                 SetVar rightSet = getSetVar(cardinality.getSnd());
 
-                solver.post(SCF.cardinality(rightSet, leftInt));
+                post(SCF.cardinality(rightSet, leftInt));
                 assert !setCardVars.containsKey(rightSet);
                 setCardVars.put(rightSet, leftInt);
             } else {
@@ -146,7 +146,7 @@ public class IrCompiler {
         for (IrBoolExpr constraint : constraints) {
             Constraint compiled = compileAsConstraint(constraint);
             if (!compiled.equals(solver.TRUE)) {
-                solver.post(compiled);
+                post(compiled);
             }
         }
         return new IrSolutionMap(
@@ -168,6 +168,10 @@ public class IrCompiler {
             composed.put(key, value);
         }
         return composed;
+    }
+
+    private void post(Constraint constraint) {
+        solver.post(constraint);
     }
 
     private BoolVar boolVar(String name, IrBoolDomain domain) {
@@ -222,7 +226,7 @@ public class IrCompiler {
         if (setCardVar == null) {
             setCardVar = intVar("|" + set.getName() + "|", card);
             if (!(set.instantiated() && card.size() == 1 && card.getLowBound() == set.getKernelSize())) {
-                solver.post(SCF.cardinality(set, setCardVar));
+                post(SCF.cardinality(set, setCardVar));
             }
             setCardVars.put(set, setCardVar);
         }
@@ -532,7 +536,7 @@ public class IrCompiler {
                             ? Constraints.reifyEqual(reify, compile(left), constant.intValue())
                             : Constraints.reifyNotEqual(reify, compile(left), constant.intValue());
                     if (preferBoolVar) {
-                        solver.post(constraint);
+                        post(constraint);
                         return reify;
                     }
                     return constraint;
@@ -718,7 +722,7 @@ public class IrCompiler {
                 default:
                     if (reify == null) {
                         IntVar sum = numIntVar("Sum", IrUtil.offset(ir.getDomain(), -constants));
-                        solver.post(_sum(sum, addends));
+                        post(_sum(sum, addends));
                         return VF.offset(sum, constants);
                     }
                     if (constants != 0) {
@@ -758,7 +762,7 @@ public class IrCompiler {
                 default:
                     if (reify == null) {
                         IntVar diff = numIntVar("Diff", IrUtil.offset(ir.getDomain(), constants));
-                        solver.post(_difference(diff, subtractends));
+                        post(_difference(diff, subtractends));
                         return VF.offset(diff, -constants);
                     }
                     if (constants != 0) {
@@ -800,7 +804,7 @@ public class IrCompiler {
             }
             if (reify == null) {
                 IntVar product = numIntVar("Mul", ir.getDomain());
-                solver.post(_times(compile(multiplicand), compile(multiplier), product));
+                post(_times(compile(multiplicand), compile(multiplier), product));
                 return product;
             }
             return _times(compile(multiplicand), compile(multiplier), reify);
@@ -812,7 +816,7 @@ public class IrCompiler {
             IrIntExpr divisor = ir.getDivisor();
             if (reify == null) {
                 IntVar quotient = numIntVar("Div", ir.getDomain());
-                solver.post(_div(compile(dividend), compile(divisor), quotient));
+                post(_div(compile(dividend), compile(divisor), quotient));
                 return quotient;
             }
             return _div(compile(dividend), compile(divisor), reify);
@@ -822,7 +826,7 @@ public class IrCompiler {
         public Object visit(IrElement ir, IntVar reify) {
             if (reify == null) {
                 IntVar element = numIntVar("Element", ir.getDomain());
-                solver.post(_element(compile(ir.getIndex()), compile(ir.getArray()), element));
+                post(_element(compile(ir.getIndex()), compile(ir.getArray()), element));
                 return element;
             }
             return _element(compile(ir.getIndex()), compile(ir.getArray()), reify);
@@ -833,7 +837,7 @@ public class IrCompiler {
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {
                 IntVar count = numIntVar("Count", ir.getDomain());
-                solver.post(_count(ir.getValue(), array, count));
+                post(_count(ir.getValue(), array, count));
                 return count;
             }
             return _count(ir.getValue(), array, reify);
@@ -845,7 +849,7 @@ public class IrCompiler {
             int n = ir.getSet().getCard().getHighBound();
             if (reify == null) {
                 IntVar sum = numIntVar("SetSum", ir.getDomain());
-                solver.post(Constraints.setSum(set.getSet(), sum, set.getCard()));
+                post(Constraints.setSum(set.getSet(), sum, set.getCard()));
                 return sum;
             }
             return Constraints.setSum(set.getSet(), reify, set.getCard());
@@ -858,7 +862,7 @@ public class IrCompiler {
             IntVar alternative = compile(ir.getAlternative());
             if (reify == null) {
                 IntVar ternary = numIntVar("Ternary", ir.getDomain());
-                solver.post(_ifThenElse(antecedent,
+                post(_ifThenElse(antecedent,
                         _arithm(ternary, "=", consequent),
                         _arithm(ternary, "=", alternative)));
                 return ternary;
@@ -1022,7 +1026,7 @@ public class IrCompiler {
             IntVar value = compile(ir.getValue());
             if (reify == null) {
                 SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
-                solver.post(Constraints.singleton(value, singleton));
+                post(Constraints.singleton(value, singleton));
                 return new CSet(singleton, VF.one(solver));
             }
             return Constraints.singleton(value, reify.getSet());
@@ -1033,7 +1037,7 @@ public class IrCompiler {
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {
                 CSet set = numCset("ArrayToSet", ir.getEnv(), ir.getKer(), ir.getCard());
-                solver.post(Constraints.arrayToSet(array, set.getSet(), set.getCard(), ir.getGlobalCardinality()));
+                post(Constraints.arrayToSet(array, set.getSet(), set.getCard(), ir.getGlobalCardinality()));
                 return set;
             }
             return Constraints.arrayToSet(array, reify.getSet(), reify.getCard(), ir.getGlobalCardinality());
@@ -1047,11 +1051,11 @@ public class IrCompiler {
             if (reify == null) {
                 CSet joinRelation = numCset("JoinRelation", ir.getEnv(), ir.getKer(), ir.getCard());
                 if (ir.isInjective()) {
-                    solver.post(Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
+                    post(Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
                             mapSet(children), mapCard(children), joinRelation.getSet(), joinRelation.getCard()));
                     return joinRelation;
                 } else {
-                    solver.post(Constraints.joinRelation(take.getSet(), mapSet(children), joinRelation.getSet()));
+                    post(Constraints.joinRelation(take.getSet(), mapSet(children), joinRelation.getSet()));
                     return joinRelation;
                 }
             }
@@ -1068,7 +1072,7 @@ public class IrCompiler {
             IntVar[] refs = compile(ir.getRefs());
             if (reify == null) {
                 CSet joinFunction = numCset("JoinFunction", ir.getEnv(), ir.getKer(), ir.getCard());
-                solver.post(Constraints.joinFunction(take.getSet(), take.getCard(), refs, joinFunction.getSet(), joinFunction.getCard(), ir.getGlobalCardinality()));
+                post(Constraints.joinFunction(take.getSet(), take.getCard(), refs, joinFunction.getSet(), joinFunction.getCard(), ir.getGlobalCardinality()));
                 return joinFunction;
             }
             return Constraints.joinFunction(take.getSet(), take.getCard(), refs, reify.getSet(), reify.getCard(), ir.getGlobalCardinality());
@@ -1080,7 +1084,7 @@ public class IrCompiler {
             CSet subtrahend = compile(ir.getSubtrahend());
             if (reify == null) {
                 SetVar difference = numSetVar("Difference", ir.getEnv(), ir.getKer());
-                solver.post(_difference(minuend.getSet(), subtrahend.getSet(), difference));
+                post(_difference(minuend.getSet(), subtrahend.getSet(), difference));
                 return new CSet(difference, ir.getCard());
             }
             return _difference(minuend.getSet(), subtrahend.getSet(), reify.getSet());
@@ -1091,7 +1095,7 @@ public class IrCompiler {
             CSet[] operands = compile(ir.getOperands());
             if (reify == null) {
                 SetVar intersection = numSetVar("Intersection", ir.getEnv(), ir.getKer());
-                solver.post(_intersection(mapSet(operands), intersection));
+                post(_intersection(mapSet(operands), intersection));
                 return new CSet(intersection, ir.getCard());
             }
             return _intersection(mapSet(operands), reify.getSet());
@@ -1102,7 +1106,7 @@ public class IrCompiler {
             CSet[] operands = compile(ir.getOperands());
             if (reify == null) {
                 SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
-                solver.post(_union(mapSet(operands), union));
+                post(_union(mapSet(operands), union));
                 return new CSet(union, ir.getCard());
             }
             return _union(mapSet(operands), reify.getSet());
@@ -1113,7 +1117,7 @@ public class IrCompiler {
             CSet set = compile(ir.getSet());
             if (reify == null) {
                 SetVar offset = numSetVar("Offset", ir.getEnv(), ir.getKer());
-                solver.post(_offset(set.getSet(), offset, ir.getOffset()));
+                post(_offset(set.getSet(), offset, ir.getOffset()));
                 return new CSet(offset, set.getCard());
             }
             return _offset(set.getSet(), reify.getSet(), ir.getOffset());
@@ -1126,7 +1130,7 @@ public class IrCompiler {
             CSet alternative = compile(ir.getAlternative());
             if (reify == null) {
                 CSet ternary = numCset("Ternary", ir.getEnv(), ir.getKer(), ir.getCard());
-                solver.post(_ifThenElse(antecedent,
+                post(_ifThenElse(antecedent,
                         _equal(ternary, consequent),
                         _equal(ternary, alternative)));
                 return ternary;

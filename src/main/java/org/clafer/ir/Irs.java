@@ -169,8 +169,7 @@ public class Irs {
                 if (count > 1) {
                     return False;
                 }
-            }
-            if (!IrUtil.isFalse(operand)) {
+            } else if (!IrUtil.isFalse(operand)) {
                 filter.add(operand);
             }
         }
@@ -760,10 +759,33 @@ public class Irs {
                 throw new IllegalArgumentException();
             }
         }
-        if (ints.length == 0 || ints.length == 1) {
-            return True;
+        List<IrBoolExpr> ands = new ArrayList<IrBoolExpr>(0);
+        List<IrIntExpr[]> filterStrings = new ArrayList<IrIntExpr[]>(strings.length);
+        List<IrIntExpr> filterInts = new ArrayList<IrIntExpr>(ints.length);
+        for (int i = 0; i < strings.length; i++) {
+            boolean equivalence = false;
+            for (int j = i + 1; j < strings.length; j++) {
+                if (Arrays.equals(strings[i], strings[j])) {
+                    ands.add(equal(ints[i], ints[j]));
+                    equivalence = true;
+                    break;
+                }
+            }
+            if (!equivalence) {
+                filterStrings.add(strings[i]);
+                filterInts.add(ints[i]);
+            }
         }
-        return new IrSortStringsChannel(strings, ints, BoolDomain);
+        if (filterInts.size() == 1) {
+            ands.add(equal(filterInts.get(0), 0));
+        } else if (filterInts.size() > 1) {
+            ands.add(
+                    new IrSortStringsChannel(
+                    filterStrings.toArray(new IrIntExpr[filterStrings.size()][]),
+                    filterInts.toArray(new IrIntExpr[filterInts.size()]),
+                    BoolDomain));
+        }
+        return and(ands);
     }
 
     public static IrBoolExpr allDifferent(IrIntExpr[] ints) {
@@ -804,6 +826,15 @@ public class Irs {
         if (entailed) {
             return True;
         }
+        Integer constant = IrUtil.getConstant(n);
+        if (constant != null) {
+            IrBoolExpr[] ands = new IrBoolExpr[bools.length];
+            System.arraycopy(bools, 0, ands, 0, constant.intValue());
+            for (int i = constant.intValue(); i < bools.length; i++) {
+                ands[i] = not(bools[i]);
+            }
+            return and(ands);
+        }
         return new IrSelectN(bools, n, BoolDomain);
     }
 
@@ -828,10 +859,7 @@ public class Irs {
     }
 
     public static IrBoolExpr nop(IrIntExpr var) {
-        if (var instanceof IrBoolConstant) {
-            return True;
-        }
-        if (var instanceof IrIntConstant) {
+        if (var instanceof IrBoolConstant || var instanceof IrIntConstant) {
             return True;
         }
         return new IrIntNop(var);
@@ -1066,9 +1094,12 @@ public class Irs {
         int low = domain.getLowBound();
         int high = domain.getHighBound();
         while (iter.hasNext()) {
-            domain = array[iter.next()].getDomain();
-            low = Math.min(low, domain.getLowBound());
-            high = Math.max(high, domain.getHighBound());
+            int val = iter.next();
+            if (val < array.length) {
+                domain = array[val].getDomain();
+                low = Math.min(low, domain.getLowBound());
+                high = Math.max(high, domain.getHighBound());
+            }
         }
         domain = boundDomain(low, high);
         return new IrElement(array, index, domain);
@@ -1256,6 +1287,9 @@ public class Irs {
      * @return the join expression take.children
      */
     public static IrSetExpr joinRelation(IrSetExpr take, IrSetExpr[] children, boolean injective) {
+        if (take.getEnv().isEmpty()) {
+            return EmptySet;
+        }
         IrSetExpr[] $children = children;
         if (take.getEnv().getHighBound() + 1 < $children.length) {
             $children = Arrays.copyOf(children, take.getEnv().getHighBound() + 1);
@@ -1439,7 +1473,13 @@ public class Irs {
         for (IrSetExpr operand : operands) {
             flattenUnion(operand, flatten);
         }
-        operands = flatten.toArray(new IrSetExpr[flatten.size()]);
+        List<IrSetExpr> filter = new ArrayList<IrSetExpr>();
+        for(IrSetExpr operand : flatten.toArray(new IrSetExpr[flatten.size()])) {
+            if(!operand.getEnv().isEmpty()) {
+                filter.add(operand);
+            }
+        }
+        operands = filter.toArray(new IrSetExpr[filter.size()]);
         switch (operands.length) {
             case 0:
                 return EmptySet;

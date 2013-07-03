@@ -18,21 +18,6 @@ public class IrBoolConstant extends IrBoolVar {
     }
 
     @Override
-    public IrBoolVar asDecision() {
-        return this;
-    }
-
-    @Override
-    public IrBoolVar asNoDecision() {
-        return this;
-    }
-
-    @Override
-    public boolean isDecision() {
-        return false;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

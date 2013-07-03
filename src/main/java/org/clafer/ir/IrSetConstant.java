@@ -20,21 +20,6 @@ public class IrSetConstant extends IrSetVar {
     }
 
     @Override
-    public IrSetVar asDecision() {
-        return this;
-    }
-
-    @Override
-    public IrSetVar asNoDecision() {
-        return this;
-    }
-
-    @Override
-    public boolean isDecision() {
-        return false;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
