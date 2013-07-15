@@ -322,7 +322,7 @@ public class TypeAnalyzer implements Analyzer {
                 for (AstLocal local : decl.getLocals()) {
                     put(body.getType(), local);
                 }
-                decls[i] = decl(decl.getLocals(), body.getExpr());
+                decls[i] = decl(decl.isDisjoint(), decl.getLocals(), body.getExpr());
             }
             TypedExpr<AstBoolExpr> body = typeCheck(ast.getBody());
             return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
