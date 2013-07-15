@@ -849,9 +849,12 @@ public class Irs {
     public static IrBoolExpr filterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result) {
         int[] constant = IrUtil.getConstant(set);
         if (constant != null) {
-            IrBoolExpr[] ands = new IrBoolExpr[constant.length];
-            for (int i = 0; i < ands.length; i++) {
+            IrBoolExpr[] ands = new IrBoolExpr[result.length];
+            for (int i = 0; i < constant.length; i++) {
                 ands[i] = equal(string[constant[i] - offset], result[i]);
+            }
+            for (int i = constant.length; i < result.length; i++) {
+                ands[i] = equal(result[i], -1);
             }
             return and(ands);
         }
@@ -1474,8 +1477,8 @@ public class Irs {
             flattenUnion(operand, flatten);
         }
         List<IrSetExpr> filter = new ArrayList<IrSetExpr>();
-        for(IrSetExpr operand : flatten.toArray(new IrSetExpr[flatten.size()])) {
-            if(!operand.getEnv().isEmpty()) {
+        for (IrSetExpr operand : flatten) {
+            if (!operand.getEnv().isEmpty()) {
                 filter.add(operand);
             }
         }
