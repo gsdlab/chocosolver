@@ -1,0 +1,21 @@
+defaultScope(1);
+intRange(-8, 7);
+
+c1_TimeLevel = Abstract("c1_TimeLevel");
+c12_YearLevel = Abstract("c12_YearLevel").extending(c1_TimeLevel);
+c15_MonthLevel = Abstract("c15_MonthLevel").extending(c1_TimeLevel);
+c19_WeekLevel = Abstract("c19_WeekLevel").extending(c1_TimeLevel);
+c2_aggregatesTo = c1_TimeLevel.addChild("c2_aggregatesTo").withCard(0, 1);
+c23_Year2012 = Clafer("c23_Year2012").withCard(1, 1).extending(c12_YearLevel);
+c24_Jan2012 = Clafer("c24_Jan2012").withCard(1, 1).extending(c15_MonthLevel);
+c28_Week1 = Clafer("c28_Week1").withCard(1, 1).extending(c19_WeekLevel);
+c32_Week1AggregatesTo = Clafer("c32_Week1AggregatesTo");
+c2_aggregatesTo.refToUnique(c1_TimeLevel);
+c32_Week1AggregatesTo.refToUnique(c1_TimeLevel);
+Constraint(equal(joinRef(global(c32_Week1AggregatesTo)), union(joinRef(join(global(c28_Week1), c2_aggregatesTo)), joinRef(join(joinRef(join(global(c28_Week1), c2_aggregatesTo)), c2_aggregatesTo)))));
+Constraint(equal(joinRef(global(c32_Week1AggregatesTo)), union(global(c24_Jan2012), global(c23_Year2012))));
+c12_YearLevel.addConstraint(none(join($this(), c2_aggregatesTo)));
+c15_MonthLevel.addConstraint($in(joinRef(join($this(), c2_aggregatesTo)), global(c12_YearLevel)));
+c19_WeekLevel.addConstraint($in(joinRef(join($this(), c2_aggregatesTo)), global(c15_MonthLevel)));
+c24_Jan2012.addConstraint(equal(joinRef(join($this(), c2_aggregatesTo)), global(c23_Year2012)));
+c28_Week1.addConstraint(equal(joinRef(join($this(), c2_aggregatesTo)), global(c24_Jan2012)));

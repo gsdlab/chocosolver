@@ -1,0 +1,27 @@
+defaultScope(1);
+intRange(-8, 7);
+
+c1_Office = Clafer("c1_Office").withCard(1, 1);
+c2_Printer = c1_Office.addChild("c2_Printer").withCard(0, 1);
+c3_resolution = c2_Printer.addChild("c3_resolution").withCard(1, 1);
+c4_Cartridge = c2_Printer.addChild("c4_Cartridge").withCard(1, 4);
+c5_inkVolume = c4_Cartridge.addChild("c5_inkVolume").withCard(1, 1);
+c6_Speed = c4_Cartridge.addChild("c6_Speed").withCard(1, 1).withGroupCard(1);
+c7_High = c6_Speed.addChild("c7_High").withCard(0, 1);
+c8_Low = c6_Speed.addChild("c8_Low").withCard(0, 1);
+c9_Turbo = c4_Cartridge.addChild("c9_Turbo").withCard(0, 1);
+c10_Type = c2_Printer.addChild("c10_Type").withCard(1, 1).withGroupCard(1, 1);
+c11_Color = c10_Type.addChild("c11_Color").withCard(0, 1);
+c12_BW = c10_Type.addChild("c12_BW").withCard(0, 1);
+c13_Scanner = c1_Office.addChild("c13_Scanner").withCard(0, 1);
+c14_GreenMode = c13_Scanner.addChild("c14_GreenMode").withCard(0, 1);
+c15_Head = c13_Scanner.addChild("c15_Head").withCard(1, 2);
+c16_PrinterPool = Clafer("c16_PrinterPool").withCard(1, 1);
+c17_fax = c16_PrinterPool.addChild("c17_fax").withCard(0, 1);
+c18_printer = c16_PrinterPool.addChild("c18_printer").withCard(0, 1);
+c19_copier = c16_PrinterPool.addChild("c19_copier").withCard(0, 1);
+c20_scan = c16_PrinterPool.addChild("c20_scan").withCard(0, 1);
+c3_resolution.refTo(Int);
+c5_inkVolume.refTo(Int);
+Constraint(and(implies(some(join(global(c16_PrinterPool), c17_fax)), some(join(global(c16_PrinterPool), c18_printer))), implies(some(join(global(c16_PrinterPool), c19_copier)), and(some(join(global(c16_PrinterPool), c17_fax)), some(join(global(c16_PrinterPool), c18_printer))))));
+c16_PrinterPool.addConstraint(implies(some(join($this(), c17_fax)), some(join($this(), c18_printer))));
