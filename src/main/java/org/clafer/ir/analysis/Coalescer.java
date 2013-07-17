@@ -138,7 +138,7 @@ public class Coalescer {
 
         CoalesceRewriter(Map<IrIntVar, IrIntVar> coalescedInts, Map<IrSetVar, IrSetVar> coalescedSets) {
             this.coalescedInts = coalescedInts;
-            this.coalescedSets = coalescedSets;a=true;
+            this.coalescedSets = coalescedSets;
         }
 
         @Override

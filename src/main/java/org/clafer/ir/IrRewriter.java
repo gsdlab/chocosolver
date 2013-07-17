@@ -12,7 +12,7 @@ import static org.clafer.ir.Irs.*;
  */
 public abstract class IrRewriter<T>
         implements IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
-public boolean a;
+
     private static <T> boolean changed(T t1, T t2) {
         return t1 != t2;
     }
@@ -44,12 +44,7 @@ public boolean a;
     public IrModule rewrite(IrModule module, T t) {
         List<IrBoolExpr> rewrittenConstraints = new ArrayList<IrBoolExpr>(module.getConstraints().size());
         for (IrBoolExpr constraint : module.getConstraints()) {
-            IrBoolExpr e = rewrite(constraint, t);
-//            if(a && constraint.toString().contains("c708_cc_system_on_off@Membership#0")) {
-//                System.out.println(constraint);
-//                System.out.println("    " + e);
-//            }
-            rewrittenConstraints.add(e);
+            rewrittenConstraints.add(rewrite(constraint, t));
         }
         return module.withConstraints(rewrittenConstraints);
     }
