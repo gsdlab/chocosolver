@@ -80,6 +80,6 @@ public class IrFilterString extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public String toString() {
-        return "filterString(" + set + ", " + Arrays.toString(string) + ", " + Arrays.toString(result) + ")";
+        return "filterString(" + set + " >> " + offset + ", " + Arrays.toString(string) + ", " + Arrays.toString(result) + ")";
     }
 }

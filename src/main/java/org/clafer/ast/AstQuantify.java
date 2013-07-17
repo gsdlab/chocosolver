@@ -1,6 +1,7 @@
 package org.clafer.ast;
 
 import org.clafer.common.Check;
+import org.clafer.common.Util;
 
 /**
  *
@@ -34,6 +35,13 @@ public class AstQuantify implements AstBoolExpr {
     public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public String toString() {
+        return quantifier.getSyntax() + " " + Util.commaSeparate(decls) + " | " + body;
+    }
+    
+    
 
     public static enum Quantifier {
 

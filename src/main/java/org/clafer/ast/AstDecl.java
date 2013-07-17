@@ -1,6 +1,7 @@
 package org.clafer.ast;
 
 import org.clafer.common.Check;
+import org.clafer.common.Util;
 
 /**
  *
@@ -32,5 +33,10 @@ public class AstDecl {
 
     public AstDecl withBody(AstSetExpr body) {
         return new AstDecl(disjoint, locals, body);
+    }
+
+    @Override
+    public String toString() {
+        return (isDisjoint() ? "disj " : "") + Util.intercalate(";", locals) + ":" + body;
     }
 }

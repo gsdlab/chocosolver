@@ -47,6 +47,6 @@ public class IrOffset extends IrAbstractSet implements IrSetExpr {
 
     @Override
     public String toString() {
-        return set + " >> " + offset;
+        return set + " << " + offset;
     }
 }
