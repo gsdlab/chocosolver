@@ -2,9 +2,6 @@ package org.clafer.ast.analysis;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 
 /**

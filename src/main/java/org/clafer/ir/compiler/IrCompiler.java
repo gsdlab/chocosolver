@@ -26,7 +26,6 @@ import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSetUnion;
-import solver.constraints.nary.cnf.ConjunctiveNormalForm;
 import org.clafer.ir.IrAnd;
 import org.clafer.common.Check;
 import org.clafer.choco.constraint.Constraints;
@@ -82,7 +81,6 @@ import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.constraints.Operator;
-import solver.constraints.nary.cnf.LogOp;
 import solver.constraints.nary.sum.Sum;
 import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
@@ -1143,10 +1141,6 @@ public class IrCompiler {
                     _equal(reify, alternative));
         }
     };
-
-    private ConjunctiveNormalForm _clauses(LogOp tree) {
-        return ICF.clauses(tree, solver);
-    }
 
     private static Constraint _implies(BoolVar antecedent, Constraint consequent) {
         return _implies(antecedent, consequent.reif());
