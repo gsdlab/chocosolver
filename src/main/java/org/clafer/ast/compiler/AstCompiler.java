@@ -381,16 +381,18 @@ public class AstCompiler {
             AstClafer tar = ref.getTargetType();
             IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
                     refOffset, refOffset + getScope(clafer));
-            if (ref.isUnique() && getCard(clafer).getHigh() > 1) {
-                if (getGlobalCard(clafer).isExact()) {
-                    assert getGlobalCard(clafer).getLow() == refs.length;
-                    module.addConstraint(allDifferent(refs));
-                } else {
-                    for (int i = 0; i < refs.length - 1; i++) {
-                        module.addConstraint(
-                                implies(and(members[i], members[i + 1],
-                                equal(parents[i], parents[i + 1])),
-                                notEqual(refs[i], refs[i + 1])));
+            if (ref.isUnique()) {
+                if (getCard(clafer).getHigh() > 1) {
+                    if (getGlobalCard(clafer).isExact()) {
+                        assert getGlobalCard(clafer).getLow() == refs.length;
+                        module.addConstraint(allDifferent(refs));
+                    } else {
+                        for (int i = 0; i < refs.length - 1; i++) {
+                            module.addConstraint(
+                                    implies(and(members[i], members[i + 1],
+                                    equal(parents[i], parents[i + 1])),
+                                    notEqual(refs[i], refs[i + 1])));
+                        }
                     }
                 }
                 IrIntExpr size =
@@ -455,9 +457,7 @@ public class AstCompiler {
                             IrIntVar[] sourceRefs = refPointers.get(sourceRef);
 
                             IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
-                            for (int j = 0; j < array.length; j++) {
-                                array[j] = sourceRefs[j];
-                            }
+                            System.arraycopy(sourceRefs, 0, array, 0, array.length);
                             childIndex.add(new IrIntExpr[]{
                                 count(hierarchy.getSnd().intValue(), array)
                             });

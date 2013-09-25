@@ -20,6 +20,9 @@ import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import org.clafer.compiler.ClaferObjective.Objective;
+import org.clafer.graph.GraphUtil;
+import org.clafer.graph.KeyGraph;
+import org.clafer.graph.Vertex;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntVar;
@@ -53,13 +56,29 @@ public class ClaferCompiler {
     }
 
     private static SetVar[] getSetVars(AstModel model, ClaferSolutionMap map) {
+        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
+        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
+            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
+            for (AstClafer sub : abstractClafer.getSubs()) {
+                node.addNeighbour(dependency.getVertex(sub));
+            }
+        }
+        for (AstConcreteClafer concreteClafer : AstUtil.getConcreteClafers(model)) {
+            if (concreteClafer.hasParent()) {
+                dependency.addEdge(concreteClafer, concreteClafer.getParent());
+            }
+        }
         List<SetVar> vars = new ArrayList<SetVar>();
-        for (AstConcreteClafer clafer : AstUtil.getConcreteClafers(model)) {
-            for (IrSetVar setVar : map.getAstSolution().getSiblingVars(clafer)) {
-                if (!(setVar instanceof IrSetConstant)) {
-                    SetVar var = map.getIrSolution().getSetVar(setVar);
-                    if (var != null) {
-                        vars.add(var);
+        for (Set<AstClafer> component : GraphUtil.computeStronglyConnectedComponents(dependency)) {
+            for (AstClafer clafer : component) {
+                if (clafer instanceof AstConcreteClafer) {
+                    for (IrSetVar setVar : map.getAstSolution().getSiblingVars(clafer)) {
+                        if (!(setVar instanceof IrSetConstant)) {
+                            SetVar var = map.getIrSolution().getSetVar(setVar);
+                            if (var != null) {
+                                vars.add(var);
+                            }
+                        }
                     }
                 }
             }
@@ -174,7 +193,7 @@ public class ClaferCompiler {
             softVars[i] = irSolution.getBoolVar(irSoftVarPairs[i].getSnd());
             softVarPairs[i] = new Pair<AstConstraint, BoolVar>(irSoftVarPairs[i].getFst(), softVars[i]);
         }
-        int[] bounds = Sum.getSumBounds(softVars);
+        int[] bounds = getSumBounds(softVars);
         IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
         solver.post(ICF.sum(softVars, sum));
 
@@ -184,6 +203,16 @@ public class ClaferCompiler {
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
 //                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         return new ClaferUnsat(solver, solution, softVarPairs, sum);
+    }
+
+    private static int[] getSumBounds(IntVar... vars) {
+        int low = 0;
+        int high = 0;
+        for (IntVar var : vars) {
+            low += var.getLB();
+            high += var.getUB();
+        }
+        return new int[]{low, high};
     }
 
     public static ClaferSolver compilePartial(AstModel in, ScopeBuilder scope, AstConcreteClafer... concretize) {

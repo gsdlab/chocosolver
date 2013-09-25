@@ -81,7 +81,6 @@ import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.constraints.Operator;
-import solver.constraints.nary.sum.Sum;
 import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -171,7 +170,7 @@ public class IrCompiler {
     private void post(Constraint constraint) {
         solver.post(constraint);
     }
-
+    
     private BoolVar boolVar(String name, IrBoolDomain domain) {
         switch (domain) {
             case TrueDomain:
@@ -1150,10 +1149,6 @@ public class IrCompiler {
         Constraint thenClause = _implies(antecedent, consequent);
         Constraint elseClause = _implies(antecedent.not(), alternative);
         return _and(thenClause.reif(), elseClause.reif());
-    }
-
-    private static IntVar _sum(IntVar var1, IntVar var2) {
-        return Sum.var(var1, var2);
     }
 
     private static Constraint _difference(IntVar difference, IntVar... vars) {

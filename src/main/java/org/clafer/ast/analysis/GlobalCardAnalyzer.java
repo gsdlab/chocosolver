@@ -1,12 +1,18 @@
 package org.clafer.ast.analysis;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstException;
+import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
+import org.clafer.graph.GraphUtil;
+import org.clafer.graph.KeyGraph;
+import org.clafer.graph.Vertex;
 
 /**
  *
@@ -18,13 +24,29 @@ public class GlobalCardAnalyzer implements Analyzer {
     public Analysis analyze(Analysis analysis) {
         Map<AstClafer, Card> globalCardMap = new HashMap<AstClafer, Card>();
         globalCardMap.put(analysis.getModel(), new Card(1, 1));
-        for (AstConcreteClafer child : analysis.getModel().getChildren()) {
-            analyze(child, new Card(1, 1), analysis, globalCardMap);
-        }
-        // Abstract clafers that are the super clafer of other abstract clafers are
-        // analyzed last. Higher depth clafers go first.
+
+        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
         for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
-            analyze(abstractClafer, analysis, globalCardMap);
+            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
+            for (AstClafer sub : abstractClafer.getSubs()) {
+                node.addNeighbour(dependency.getVertex(sub));
+            }
+        }
+        for (AstConcreteClafer concreteClafer : analysis.getConcreteClafers()) {
+            if (concreteClafer.hasParent()) {
+                dependency.addEdge(concreteClafer, concreteClafer.getParent());
+            }
+        }
+        List<Set<AstClafer>> components = GraphUtil.computeStronglyConnectedComponents(dependency);
+
+        for (Set<AstClafer> component : components) {
+            for (AstClafer clafer : component) {
+                if (clafer instanceof AstConcreteClafer) {
+                    analyze((AstConcreteClafer) clafer, analysis, globalCardMap);
+                } else {
+                    analyze((AstAbstractClafer) clafer, analysis, globalCardMap);
+                }
+            }
         }
         return analysis.setGlobalCardMap(globalCardMap);
     }
@@ -41,12 +63,19 @@ public class GlobalCardAnalyzer implements Analyzer {
             globalCard = globalCard.add(subGlobalCard);
         }
         globalCardMap.put(clafer, globalCard);
-        for (AstConcreteClafer child : clafer.getChildren()) {
-            analyze(child, globalCard, analysis, globalCardMap);
-        }
     }
 
-    private static void analyze(AstConcreteClafer clafer, Card parentGlobalCard, Analysis analysis, Map<AstClafer, Card> globalCardMap) {
+    private static void analyze(AstConcreteClafer clafer, Analysis analysis, Map<AstClafer, Card> globalCardMap) {
+        Card parentGlobalCard;
+        if (!clafer.hasParent()) {
+            parentGlobalCard = new Card(1, 1);
+        } else {
+            parentGlobalCard = globalCardMap.get(clafer.getParent());
+            if (parentGlobalCard == null) {
+                // Not analyzed yet due to cycle.
+                parentGlobalCard = new Card(0, analysis.getScope(clafer.getParent()));
+            }
+        }
         // Cap by scope
         Card globalCard = parentGlobalCard.mult(analysis.getCard(clafer));
         int scope = analysis.getScope(clafer);
@@ -57,8 +86,5 @@ public class GlobalCardAnalyzer implements Analyzer {
                 globalCard.getLow(),
                 Math.min(globalCard.getHigh(), analysis.getScope(clafer)));
         globalCardMap.put(clafer, globalCard);
-        for (AstConcreteClafer child : clafer.getChildren()) {
-            analyze(child, globalCard, analysis, globalCardMap);
-        }
     }
 }

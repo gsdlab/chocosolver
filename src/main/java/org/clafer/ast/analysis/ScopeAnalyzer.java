@@ -37,7 +37,9 @@ public class ScopeAnalyzer implements Analyzer {
             }
         }
         for (AstConcreteClafer concreteClafer : analysis.getConcreteClafers()) {
-            dependency.getVertex(concreteClafer);
+            if (concreteClafer.hasParent()) {
+                dependency.addEdge(concreteClafer, concreteClafer.getParent());
+            }
         }
         List<Set<AstClafer>> components = GraphUtil.computeStronglyConnectedComponents(dependency);
 
