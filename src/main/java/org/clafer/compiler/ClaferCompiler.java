@@ -35,7 +35,6 @@ import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.ICF;
-import solver.constraints.nary.sum.Sum;
 import solver.search.loop.monitors.IMonitorSolution;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;

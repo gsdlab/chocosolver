@@ -1,5 +1,7 @@
 package org.clafer;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstraint;
@@ -19,9 +21,13 @@ import org.junit.Test;
  */
 public class UnsatTest {
 
+    private static <T> Set<T> set(T... items) {
+        return new HashSet<T>(Arrays.asList(items));
+    }
+
     /**
      * <pre>
-     * Mob
+     * Mob ?
      * Duck ?
      * Witch ?
      * Floats ?
@@ -29,24 +35,27 @@ public class UnsatTest {
      * [Floats &lt;=&gt; Witch]
      * [!Duck]
      * [Witch]
+     * [Mob]
      * </pre>
      */
     @Test(timeout = 60000)
     public void testWitchsFloatDucksFloat() {
         AstModel model = newModel();
 
-        AstConcreteClafer mob = model.addChild("Mob").withCard(1, 1);
+        AstConcreteClafer mob = model.addChild("Mob").withCard(0, 1);
         AstConcreteClafer duck = model.addChild("Duck").withCard(0, 1);
         AstConcreteClafer witch = model.addChild("Witch").withCard(0, 1);
         AstConcreteClafer floats = model.addChild("Floats").withCard(0, 1);
-        model.addConstraint(implies(some(floats), some(duck)));
-        model.addConstraint(ifOnlyIf(some(floats), some(witch)));
-        model.addConstraint(none(duck));
-        model.addConstraint(some(witch));
+        AstConstraint c1 = model.addConstraint(implies(some(floats), some(duck)));
+        AstConstraint c2 = model.addConstraint(ifOnlyIf(some(floats), some(witch)));
+        AstConstraint c3 = model.addConstraint(none(duck));
+        AstConstraint c4 = model.addConstraint(some(witch));
+        AstConstraint c5 = model.addConstraint(some(mob));
 
-        ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
-
-        assertEquals(1, unsat.minUnsat().getFst().size());
+        assertEquals(set(c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
+                .minUnsat().getFst());
+        assertEquals(set(c1, c2, c3, c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
+                .unsatCore());
     }
 
     /**

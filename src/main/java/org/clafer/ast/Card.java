@@ -120,7 +120,7 @@ public class Card implements Serializable {
     }
 
     /**
-     * Multiply two cardinalities toegether.
+     * Multiply two cardinalities together.
      *
      * @param factor the other cardinality
      * @return the product of this and the other cardinality

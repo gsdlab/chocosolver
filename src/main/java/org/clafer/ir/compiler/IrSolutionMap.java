@@ -1,16 +1,13 @@
 package org.clafer.ir.compiler;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
-import org.clafer.ir.IrUtil;
+import solver.Solver;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -24,16 +21,19 @@ import solver.variables.SetVar;
  */
 public class IrSolutionMap {
 
-    private final Map<IrIntVar, IrIntVar> coalescedIntVars;
-    private final Map<IrIntVar, IntVar> intVars;
+    private final Solver solver;
+    public final Map<IrIntVar, IrIntVar> coalescedIntVars;
+    public final Map<IrIntVar, IntVar> intVars;
     private final Map<IrSetVar, IrSetVar> coalescedSetVars;
     private final Map<IrSetVar, SetVar> setVars;
 
     IrSolutionMap(
+            Solver solver,
             Map<IrIntVar, IrIntVar> coalescedIntVars,
             Map<IrIntVar, IntVar> intVars,
             Map<IrSetVar, IrSetVar> coalescedSetVars,
             Map<IrSetVar, SetVar> setVars) {
+        this.solver = solver;
         this.coalescedIntVars = coalescedIntVars;
         this.intVars = intVars;
         this.coalescedSetVars = coalescedSetVars;
@@ -45,6 +45,9 @@ public class IrSolutionMap {
         if (boolVar == null) {
             boolVar = var;
         }
+        if (boolVar instanceof IrBoolConstant) {
+            return ((IrBoolConstant) boolVar).getValue() ? solver.ONE : solver.ZERO;
+        }
         return (BoolVar) intVars.get(boolVar);
     }
 
@@ -53,8 +56,8 @@ public class IrSolutionMap {
         if (boolVar == null) {
             boolVar = var;
         }
-        if (var instanceof IrBoolConstant) {
-            return ((IrBoolConstant) var).getValue();
+        if (boolVar instanceof IrBoolConstant) {
+            return ((IrBoolConstant) boolVar).getValue();
         }
         return intVars.get(boolVar).getValue() != 0;
     }

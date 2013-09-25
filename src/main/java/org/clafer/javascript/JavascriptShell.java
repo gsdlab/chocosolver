@@ -58,6 +58,7 @@ public class JavascriptShell {
                 + "maximize(Clafer) find a solution where Clafer.ref is maximal\n"
                 + "minimize(Clafer) find a solution where Clafer.ref is minimal\n"
                 + "minUnsat()       find the smallest set of unsatisfiable constraints and a near-miss\n"
+                + "unsatCore()      find a small set of mutually unsatisfiable constraints\n"
                 + "exit()           stop the session");
     }
 
@@ -202,15 +203,25 @@ public class JavascriptShell {
     }
 
     /**
-     * Find the min Unsat and near-miss example. The min Unsat is empty if the
+     * Find the Min-Unsat and near-miss example. The Min-Unsat is empty if the
      * model is satisfiable, in which case the near-miss example is a real
      * instance of the model.
      *
-     * @return the min Unsat and near-miss example
+     * @return the Min-Unsat and near-miss example
      */
     public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
         ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
         return unsat.minUnsat();
+    }
+
+    /**
+     * Find the Min-Unsat-Core. Undefined if the model is satisfiable.
+     *
+     * @return the Min-Unsat-Core
+     */
+    public Set<AstConstraint> unsatCore() {
+        ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
+        return unsat.unsatCore();
     }
 
     /**

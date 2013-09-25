@@ -121,8 +121,8 @@ solver = ClaferCompiler.compileMinimize(model,
 System.out.println(solver.optimal());
 ```
 
-Finding Min Unsat
-----------------
+Finding Min-Unsat
+-----------------
 Consider the following Clafer model.
 ```clafer
 Mob
@@ -137,20 +137,31 @@ Floats ?
 The model is overconstraint and has no solutions. The solver can help here as well.
 ```java
 AstModel model = newModel();
-model.addChild("Mob").withCard(1);
+model.addChild("Mob").withCard(0, 1);
 AstConcreteClafer duck = model.addChild("Duck").withCard(0, 1);
 AstConcreteClafer witch = model.addChild("Witch").withCard(0, 1);
 AstConcreteClafer floats = model.addChild("Floats").withCard(0, 1);
+model.addConstraint(some(mob));
 model.addConstraint(implies(some(floats), some(duck)));
 model.addConstraint(ifOnlyIf(some(floats), some(witch)));
 model.addConstraint(none(duck));
 model.addConstraint(some(witch));
 
 ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
-// Print the min Unsat and near-miss example.
+// Print the Min-Unsat and near-miss example.
 System.out.println(unsat.minUnsat());
 ```
-The above code will print two things. First it will print "#(Witch) >= 1" which is the constraint that is unsatisfiable in the model, ie. the last constraint that enforces there to be some witch. Next it will print the near-miss example "Mob#0". What this means is that removing the "some(witch)" constraint would make the model satisfiable and an example of a solution (after removing the constraint), is the instance with exactly one mob and nothing else.
+The above code will print two things. First it will print "#(Witch) >= 1" which is the constraint that is unsatisfiable in the model, ie. the last constraint that enforces there to be some witch. Next it will print the near-miss example "Mob#0". What this means is that removing the "some(Witch)" constraint would make the model satisfiable and an example of a solution (after removing the constraint), is the instance with exactly one mob and nothing else.
+
+Finding Unsat-Core
+----------------------
+The above example found that removing one constraint will *fix* the model but you may be wondering why the model cannot have a witch. In this case, it is more useful to compute the Unsat-Core instead.
+```java
+ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
+// Print the Unsat-Core and near-miss example.
+System.out.println(unsat.unsatCore());
+```
+The above code will print the last 4 constraints which are the constraints that are mutually unsatisfiable. What this means is that if you removed all constraints but these 4, the model is still unsatisfiable. The set of constraints is not guaranteed to be minimal but will likely be small.
 
 Getting Started with the CLI
 ----------------------------
@@ -178,9 +189,9 @@ import org.clafer.javascript.Javascript;
 
 public static void main(String[] args) {
     Javascript.readModel(
-                "scope({Installation:1, Status:1, Ok:1, Bad:1, Time:1})\n" +
-                "intRange(-16, 16)" +
-                "Installation = clafer('Installation').withCard(1, 1);" +
+                "scope({Installation:1, Status:1, Ok:1, Bad:1, Time:1});" +
+                "intRange(-16, 16);" +
+                "Installation = Clafer('Installation').withCard(1, 1);" +
                 ...
 }
 ```
