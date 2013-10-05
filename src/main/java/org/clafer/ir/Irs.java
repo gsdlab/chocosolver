@@ -839,6 +839,9 @@ public class Irs {
     }
 
     public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
+        if (set.getEnv().isEmpty()) {
+            return filterString(set, 0, new IrIntExpr[0], result);
+        }
         int offset = set.getEnv().getLowBound();
         int end = set.getEnv().getHighBound();
         return filterString(set, offset,
