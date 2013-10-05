@@ -16,6 +16,7 @@ import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.choco.constraint.SetSearchRemoveStrategy;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Util;
@@ -38,6 +39,7 @@ import solver.constraints.ICF;
 import solver.search.loop.monitors.IMonitorSolution;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
+import solver.search.strategy.strategy.AbstractStrategy;
 import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -110,11 +112,18 @@ public class ClaferCompiler {
         return vars.toArray(new IntVar[vars.size()]);
     }
 
-    public static ClaferSolver compile(AstModel in, ScopeBuilder scope) {
-        return compile(in, scope.toScope());
+    private static AbstractStrategy<SetVar> setStrategy(SetVar[] vars, ClaferOptions... options) {
+        if (Util.in(ClaferOptions.Prefer_Smaller_Instances, options)) {
+            return new SetSearchRemoveStrategy(vars);
+        }
+        return SetStrategyFactory.setLex(vars);
     }
 
-    public static ClaferSolver compile(AstModel in, Scope scope) {
+    public static ClaferSolver compile(AstModel in, ScopeBuilder scope, ClaferOptions... options) {
+        return compile(in, scope.toScope(), options);
+    }
+
+    public static ClaferSolver compile(AstModel in, Scope scope, ClaferOptions... options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
@@ -123,7 +132,8 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(getSetVars(in, solution)),
+                setStrategy(getSetVars(in, solution), options),
+//                SetStrategyFactory.setLex(getSetVars(in, solution)),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
 //                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         return new ClaferSolver(solver, solution);
