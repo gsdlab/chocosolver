@@ -64,7 +64,7 @@ public class ClaferUnsat {
      * Undefined behaviour if the model is satisfiable. This method is always
      * slower to compute than {@link #minUnsat()}. Not guaranteed to be minimum.
      *
-     * @return the Min-Unsat-Core
+     * @return the Unsat-Core
      */
     public Set<AstConstraint> unsatCore() {
         Set<AstConstraint> unsat = new HashSet<AstConstraint>();
