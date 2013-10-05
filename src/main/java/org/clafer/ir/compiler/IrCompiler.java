@@ -77,6 +77,7 @@ import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.CardinalityPropagator;
 import org.clafer.ir.analysis.Coalescer;
+import org.clafer.ir.analysis.DuplicateConstraints;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.ICF;
@@ -125,6 +126,7 @@ public class IrCompiler {
             coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
             optModule = propagatedPair.getSnd();
         }
+        optModule = DuplicateConstraints.removeDuplicates(optModule);
 
         List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
         for (IrBoolExpr constraint : optModule.getConstraints()) {
@@ -171,7 +173,7 @@ public class IrCompiler {
     private void post(Constraint constraint) {
         solver.post(constraint);
     }
-    
+
     private BoolVar boolVar(String name, IrBoolDomain domain) {
         switch (domain) {
             case TrueDomain:

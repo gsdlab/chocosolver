@@ -552,7 +552,7 @@ public class SimpleStructureTest {
      * <pre>
      * abstract A
      * abstract B
-     * C : B
+     * C : B *
      * </pre>
      */
     @Test(timeout = 60000)
@@ -564,6 +564,23 @@ public class SimpleStructureTest {
         AstConcreteClafer c = model.addChild("C").extending(b);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1));
+        assertTrue(solver.find());
+    }
+
+    /**
+     * <pre>
+     * A 1..2
+     *     B +
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testForceEmptySecondChild() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 2);
+        AstConcreteClafer b = a.addChild("B").withCard(2);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(a, 2).set(b, 3));
         assertTrue(solver.find());
     }
 
