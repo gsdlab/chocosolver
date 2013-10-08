@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.clafer.common.Check;
@@ -14,15 +13,7 @@ import org.clafer.common.Check;
  */
 public class IrModule {
 
-    private final List<IrBoolExpr> constraints;
-
-    private IrModule(List<IrBoolExpr> constraints) {
-        this.constraints = constraints;
-    }
-
-    public IrModule() {
-        this(new ArrayList<IrBoolExpr>());
-    }
+    private final List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>();
 
     public IrModule addConstraint(IrBoolExpr expr) {
         Check.notNull(expr);
@@ -37,6 +28,13 @@ public class IrModule {
         return this;
     }
 
+    public IrModule addConstraints(IrBoolExpr[] exprs) {
+        for (IrBoolExpr expr : exprs) {
+            addConstraint(expr);
+        }
+        return this;
+    }
+
     public IrModule addConstraints(Iterable<? extends IrBoolExpr> exprs) {
         for (IrBoolExpr expr : exprs) {
             addConstraint(expr);
@@ -46,24 +44,6 @@ public class IrModule {
 
     public List<IrBoolExpr> getConstraints() {
         return Collections.unmodifiableList(constraints);
-    }
-
-    @Deprecated
-    public IrModule withConstraints(IrBoolExpr... constraints) {
-        IrModule module = new IrModule(new ArrayList<IrBoolExpr>());
-        for (IrBoolExpr constraint : constraints) {
-            module.addConstraint(constraint);
-        }
-        return module;
-    }
-
-    @Deprecated
-    public IrModule withConstraints(Collection<IrBoolExpr> constraints) {
-        IrModule module = new IrModule(new ArrayList<IrBoolExpr>());
-        for (IrBoolExpr constraint : constraints) {
-            module.addConstraint(constraint);
-        }
-        return module;
     }
 
     @Override
