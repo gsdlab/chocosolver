@@ -31,7 +31,7 @@ public class IrEmptyDomain implements IrDomain {
      */
     @Override
     public int getLowBound() {
-        throw new IrException();
+        throw new IrException("Emtpy domain does not have a low bound.");
     }
 
     /**
@@ -39,7 +39,7 @@ public class IrEmptyDomain implements IrDomain {
      */
     @Override
     public int getHighBound() {
-        throw new IrException();
+        throw new IrException("Emtpy domain does not have a high bound.");
     }
 
     /**

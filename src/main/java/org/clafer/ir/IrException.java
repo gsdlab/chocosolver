@@ -17,7 +17,4 @@ public class IrException extends RuntimeException {
     public IrException(Throwable cause) {
         super(cause);
     }
-
-    public IrException() {
-    }
 }

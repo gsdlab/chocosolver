@@ -592,7 +592,7 @@ public class IrCompiler {
                 case NotEqual:
                     return _not_equal(compile(ir.getLeft()), compile(ir.getRight()));
                 default:
-                    throw new IrException();
+                    throw new IllegalArgumentException("Unexpected operator.");
             }
         }
 
