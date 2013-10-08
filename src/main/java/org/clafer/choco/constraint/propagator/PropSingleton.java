@@ -126,6 +126,6 @@ public class PropSingleton extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return "{" + i + "} = " + s;
+        return "singleton({" + i + "} = " + s + ")";
     }
 }

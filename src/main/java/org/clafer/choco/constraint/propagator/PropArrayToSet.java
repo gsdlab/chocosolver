@@ -195,6 +195,6 @@ public class PropArrayToSet extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return "{" + Util.commaSeparate(as) + "} = " + s;
+        return "arrayToSet({" + Util.commaSeparate(as) + "} = " + s + ")";
     }
 }

@@ -31,6 +31,7 @@ import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.constraints.binary.PropEqualX_Y;
 import solver.constraints.set.PropCardinality;
+import solver.constraints.unary.PropEqualXC;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -45,13 +46,15 @@ public class Constraints {
     private Constraints() {
     }
 
-    public static Constraint singleton(SetVar svar, IntVar ivar) {
-        return singleton(ivar, svar);
-    }
-
     public static Constraint singleton(IntVar ivar, SetVar svar) {
         Constraint constraint = new Constraint(new Variable[]{ivar, svar}, ivar.getSolver());
         constraint.setPropagators(new PropSingleton(ivar, svar));
+        return constraint;
+    }
+
+    public static Constraint singleton(IntVar ivar, SetVar svar, IntVar svarCard) {
+        Constraint constraint = new Constraint(new Variable[]{ivar, svar}, ivar.getSolver());
+        constraint.setPropagators(new PropSingleton(ivar, svar), new PropEqualXC(svarCard, 1));
         return constraint;
     }
 

@@ -1043,7 +1043,7 @@ public class IrCompiler {
                 post(Constraints.singleton(value, singleton));
                 return new CSet(singleton, VF.one(solver));
             }
-            return Constraints.singleton(value, reify.getSet());
+            return Constraints.singleton(value, reify.getSet(), reify.getCard());
         }
 
         @Override
