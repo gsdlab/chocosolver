@@ -122,4 +122,24 @@ public class SetSumTest extends ConstraintTest {
         }
         assertEquals(2, count);
     }
+
+    @Test
+    public void testSumKnown() {
+        Solver solver = new Solver();
+
+        SetVar set = VF.set("set", Util.range(0, 10), solver);
+        IntVar sum = VF.enumerated("sum", 2, 2, solver);
+        IntVar setCard = VF.enumerated("|set|", new int[]{1, 2}, solver);
+
+        solver.post(Constraints.setSum(set, sum, setCard));
+
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                checkCorrectness(set, sum, setCard);
+                count++;
+            } while (solver.nextSolution());
+        }
+        assertEquals(2, count);
+    }
 }

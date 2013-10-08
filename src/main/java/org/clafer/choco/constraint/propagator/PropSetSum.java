@@ -74,26 +74,6 @@ public class PropSetSum extends Propagator<Variable> {
         return new Triple<int[], int[], int[]>(ker, smallest, largest);
     }
 
-    private int lowestMinus(int val, int[] ker, int[] free) {
-        int lb = card.getLB() - ker.length;
-        int ub = card.getUB() - ker.length;
-        int index = 0;
-        int low = Util.sum(ker);
-        for (int i = 0; i < free.length; i++) {
-            if (free[i] != val) {
-                if (index < lb) {
-                    low += free[i];
-                } else if (index < ub) {
-                    low += Math.min(free[i], 0);
-                } else {
-                    break;
-                }
-                index++;
-            }
-        }
-        return low;
-    }
-
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         boolean changed;
@@ -116,31 +96,30 @@ public class PropSetSum extends Propagator<Variable> {
             int kerSum = Util.sum(ker);
             int low = kerSum;
             int lowEnd;
+            int lowCandidate = 0; // Remove this value when adding another.
             for (lowEnd = 0; lowEnd < ubEnd; lowEnd++) {
                 int val = smallest[lowEnd];
                 if (!(lowEnd < lbEnd || val < 0)) {
+                    // Still room left. Don't remove lowCandidate if it's negative.
+                    lowCandidate = Math.max(lowCandidate, 0);
                     break;
                 }
+                lowCandidate = val;
                 low += val;
             }
-            int lowCandidate = // Remove this value when adding anothe.
-                    lowEnd > 0 && lowEnd == ubEnd
-                    ? smallest[lowEnd - 1]
-                    : (lowEnd < smallest.length && smallest[lowEnd] < 0 ? smallest[lowEnd] : 0);
-
             int high = kerSum;
             int highStart;
+            int highCandidate = 0; // Remove this value when adding another.
             for (highStart = 0; highStart < ubEnd; highStart++) {
                 int val = largest[highStart];
                 if (!(highStart < lbEnd || val > 0)) {
+                    // Still room left. Don't remove highCandidate if it's positive.
+                    highCandidate = Math.min(highCandidate, 0);
                     break;
                 }
+                highCandidate = val;
                 high += val;
             }
-            int highCandidate = // Remove this value when adding another.
-                    highStart > 0 && highStart == ubEnd
-                    ? largest[highStart - 1]
-                    : (highStart < largest.length && largest[highStart] < 0 ? largest[highStart] : 0);
             highStart = envSize - kerSize - highStart;
 
             sum.updateLowerBound(low, aCause);
