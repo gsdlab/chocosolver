@@ -158,37 +158,6 @@ public class AstCompiler {
         return clafers;
     }
 
-    /**
-     * @return the order to initialize weight variables for symmetry breaking
-     */
-    private List<AstClafer> initWeightOrder() {
-        List<AstAbstractClafer> abstractClafers = analysis.getAbstractClafers();
-        List<AstConcreteClafer> concreteClafers = analysis.getConcreteClafers();
-
-        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
-        for (AstAbstractClafer abstractClafer : abstractClafers) {
-            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            for (AstClafer sub : abstractClafer.getSubs()) {
-                node.addNeighbour(dependency.getVertex(sub));
-            }
-        }
-        for (AstConcreteClafer concreteClafer : concreteClafers) {
-            if (concreteClafer.hasParent()) {
-                dependency.getVertex(concreteClafer.getParent()).addNeighbour(
-                        dependency.getVertex(concreteClafer));
-            }
-        }
-        List<Set<AstClafer>> components = GraphUtil.computeStronglyConnectedComponents(dependency);
-        List<AstClafer> clafers = new ArrayList<AstClafer>();
-        for (Set<AstClafer> component : components) {
-            if (component.size() != 1) {
-                throw new AstException("Cannot satisfy the cycle " + component);
-            }
-            clafers.addAll(component);
-        }
-        return clafers;
-    }
-
     private AstSolutionMap compile() {
         Pair<AstConstraint, IrBoolVar>[] softVarPairs = doCompile();
         return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers, softVarPairs, analysis);
@@ -228,13 +197,6 @@ public class AstCompiler {
                 initConcrete((AstConcreteClafer) clafer);
             } else if (clafer instanceof AstAbstractClafer) {
                 initAbstract((AstAbstractClafer) clafer);
-            }
-        }
-        for (AstClafer clafer : initWeightOrder()) {
-            if (clafer instanceof AstConcreteClafer && !AstUtil.isRoot((AstConcreteClafer) clafer)) {
-                initConcreteWeight((AstConcreteClafer) clafer);
-            } else if (clafer instanceof AstAbstractClafer) {
-                initAbstractWeight((AstAbstractClafer) clafer);
             }
         }
         for (AstClafer clafer : clafers) {
@@ -321,10 +283,8 @@ public class AstCompiler {
                 sets.put(clafer, set);
                 break;
         }
-    }
-
-    private void initConcreteWeight(AstConcreteClafer clafer) {
-        int scope = getScope(clafer);
+        
+            int scope = getScope(clafer);
         int parentScope = getScope(clafer.getParent());
         IrIntExpr[][] index;
         AstRef ref = AstUtil.getInheritedRef(clafer);
@@ -688,13 +648,6 @@ public class AstCompiler {
         if (clafer.hasRef()) {
             refPointers.put(clafer.getRef(), buildRefPointers(clafer.getRef()));
         }
-    }
-
-    private void initAbstractWeight(AstAbstractClafer clafer) {
-//        int scope = getScope(clafer);
-//        for (int i = 0; i < scope; i++) {
-//            Pair<AstClafer, Integer> subId = analysis.getSubId(clafer, i);
-//        }
     }
 
     private void constrainAbstract(AstAbstractClafer clafer) {
