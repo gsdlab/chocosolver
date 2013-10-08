@@ -11,14 +11,20 @@ import org.clafer.common.Util;
 public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
 
     private final IrIntExpr[][] strings;
+    private final boolean strict;
 
-    IrSortStrings(IrIntExpr[][] strings, IrBoolDomain domain) {
+    IrSortStrings(IrIntExpr[][] strings, boolean strict, IrBoolDomain domain) {
         super(domain);
         this.strings = Check.noNullsNotEmpty(strings);
+        this.strict = strict;
     }
 
     public IrIntExpr[][] getStrings() {
         return strings;
+    }
+
+    public boolean isStrict() {
+        return strict;
     }
 
     @Override
@@ -45,18 +51,13 @@ public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
     public boolean equals(Object obj) {
         if (obj instanceof IrSortStrings) {
             IrSortStrings other = (IrSortStrings) obj;
-            return Arrays.deepEquals(strings, other.strings);
+            return Arrays.deepEquals(strings, other.strings) && strict == other.strict;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(strings);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
+        return Arrays.deepHashCode(strings) ^ (strict ? 1 : 0);
     }
 }

@@ -300,7 +300,7 @@ public abstract class IrRewriter<T>
     public IrBoolExpr visit(IrSortStrings ir, T a) {
         IrIntExpr[][] strings = rewrite(ir.getStrings(), a);
         return changed(ir.getStrings(), strings)
-                ? sort(strings)
+                ? (ir.isStrict() ? sortStrict(strings) : sort(strings))
                 : ir;
     }
 
@@ -311,6 +311,7 @@ public abstract class IrRewriter<T>
                 ? sort(sets)
                 : ir;
     }
+
     @Override
     public IrBoolExpr visit(IrSortStringsChannel ir, T a) {
         IrIntExpr[][] strings = rewrite(ir.getStrings(), a);

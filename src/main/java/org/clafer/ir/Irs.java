@@ -743,6 +743,17 @@ public class Irs {
         return and(sort);
     }
 
+    public static IrBoolExpr sortStrict(IrIntExpr... array) {
+        if (array.length <= 1) {
+            return True;
+        }
+        IrBoolExpr[] sort = new IrBoolExpr[array.length - 1];
+        for (int i = 0; i < array.length - 1; i++) {
+            sort[i] = lessThan(array[i], array[i + 1]);
+        }
+        return and(sort);
+    }
+
     public static IrBoolExpr sort(IrSetExpr... sets) {
         if (sets.length <= 1) {
             return True;
@@ -750,11 +761,27 @@ public class Irs {
         return new IrSortSets(sets, BoolDomain);
     }
 
-    public static IrBoolExpr sort(IrIntExpr[]... strings) {
+    private static IrBoolExpr sortStrings(IrIntExpr[][] strings, boolean strict) {
         if (strings.length < 2) {
             return True;
         }
-        return new IrSortStrings(strings, BoolDomain);
+        IrIntExpr[] array = new IrIntExpr[strings.length];
+        for (int i = 0; i < strings.length; i++) {
+            IrIntExpr[] string = strings[i];
+            if (string.length != 1) {
+                return new IrSortStrings(strings, strict, BoolDomain);
+            }
+            array[i] = strings[i][0];
+        }
+        return strict ? sortStrict(array) : sort(array);
+    }
+
+    public static IrBoolExpr sort(IrIntExpr[]... strings) {
+        return sortStrings(strings, false);
+    }
+
+    public static IrBoolExpr sortStrict(IrIntExpr[]... strings) {
+        return sortStrings(strings, true);
     }
 
     public static IrBoolExpr sortChannel(IrIntExpr[][] strings, IrIntExpr[] ints) {

@@ -38,7 +38,7 @@ public class ArithmeticTest {
     /**
      * <pre>
      * Feature
-     *     Cost -> Int 2
+     *     Cost ->> Int 2
      *     [this.Cost + 3 = 5]
      * </pre>
      */

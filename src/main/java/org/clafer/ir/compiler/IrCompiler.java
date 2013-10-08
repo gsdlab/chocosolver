@@ -631,7 +631,7 @@ public class IrCompiler {
             for (int i = 0; i < strings.length; i++) {
                 strings[i] = compile(ir.getStrings()[i]);
             }
-            return _lex_chain_less_eq(strings);
+            return ir.isStrict() ? _lex_chain_less(strings) : _lex_chain_less_eq(strings);
         }
 
         @Override
@@ -1308,6 +1308,13 @@ public class IrCompiler {
 
     private static Constraint _not_member(IntVar element, SetVar set) {
         return Constraints.notMember(element, set);
+    }
+
+    private static Constraint _lex_chain_less(IntVar[]... vars) {
+        if (vars.length == 2) {
+            return ICF.lex_less(vars[0], vars[1]);
+        }
+        return ICF.lex_chain_less(vars);
     }
 
     private static Constraint _lex_chain_less_eq(IntVar[]... vars) {

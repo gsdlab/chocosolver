@@ -462,7 +462,6 @@ public class AstCompiler {
             for (int i = 0; i < weight.length; i++) {
                 weight[i] =
                         childIndices[i].length == 0 ? Zero
-//                        : childIndices[i].length == 1 ? childIndices[i][0]
                         : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             module.addConstraint(sortChannel(childIndices, weight));
@@ -472,10 +471,10 @@ public class AstCompiler {
             for (int i = 0; i < parents.length - 1; i++) {
                 if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
                     module.addConstraint(implies(and(equal(parents[i], parents[i + 1]), members[i]),
-                            greaterThan(weight[i], weight[i + 1])));
+                            sortStrict(childIndices[i + 1], childIndices[i])));
                 } else {
                     module.addConstraint(implies(equal(parents[i], parents[i + 1]),
-                            greaterThanEqual(weight[i], weight[i + 1])));
+                            sort(childIndices[i + 1], childIndices[i])));
                 }
             }
         }
