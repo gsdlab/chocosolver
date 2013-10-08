@@ -20,7 +20,9 @@ public class AnalysisUtil {
     public static Pair<IrIntExpr, IrSetVar> getAssignCardinality(IrBoolExpr expr) {
         if (expr instanceof IrCompare) {
             IrCompare compare = (IrCompare) expr;
-            return getAssignCardinality(compare.getLeft(), compare.getRight());
+            if (IrCompare.Op.Equal.equals(compare.getOp())) {
+                return getAssignCardinality(compare.getLeft(), compare.getRight());
+            }
         } else if (expr instanceof IrIfOnlyIf) {
             IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) expr;
             return getAssignCardinality(ifOnlyIf.getLeft(), ifOnlyIf.getRight());
