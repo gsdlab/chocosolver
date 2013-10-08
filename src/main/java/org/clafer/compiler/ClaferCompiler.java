@@ -112,11 +112,11 @@ public class ClaferCompiler {
         return vars.toArray(new IntVar[vars.size()]);
     }
 
-    private static AbstractStrategy<SetVar> setStrategy(SetVar[] vars, ClaferOptions... options) {
+    private static AbstractStrategy<SetVar> setStrategy(SetVar[] vars, ClaferOptions[] options) {
         if (Util.in(ClaferOptions.Prefer_Smaller_Instances, options)) {
-            return new SetSearchRemoveStrategy(vars);
+            return SetStrategyFactory.remove_first(vars);
         }
-        return SetStrategyFactory.setLex(vars);
+        return SetStrategyFactory.force_first(vars);
     }
 
     public static ClaferSolver compile(AstModel in, ScopeBuilder scope, ClaferOptions... options) {
@@ -133,17 +133,15 @@ public class ClaferCompiler {
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 setStrategy(getSetVars(in, solution), options),
-//                SetStrategyFactory.setLex(getSetVars(in, solution)),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-//                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         return new ClaferSolver(solver, solution);
     }
 
-    public static ClaferObjective compileMaximize(AstModel in, ScopeBuilder scope, AstRef ref) {
-        return compileMaximize(in, scope.toScope(), ref);
+    public static ClaferObjective compileMaximize(AstModel in, ScopeBuilder scope, AstRef ref, ClaferOptions... options) {
+        return compileMaximize(in, scope.toScope(), ref, options);
     }
 
-    public static ClaferObjective compileMaximize(AstModel in, Scope scope, AstRef ref) {
+    public static ClaferObjective compileMaximize(AstModel in, Scope scope, AstRef ref, ClaferOptions... options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
@@ -153,18 +151,17 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(getSetVars(in, solution)),
+                setStrategy(getSetVars(in, solution), options),
                 IntStrategyFactory.firstFail_InDomainMax(irSolution.getIntVars(triple.getSnd())),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-//                IntStrategyFactory.firstFail_InDomainMax(irSolution.getBoolDecisionVars())));
         return new ClaferObjective(solver, solution, Objective.Maximize, irSolution.getIntVar(triple.getThd()));
     }
 
-    public static ClaferObjective compileMinimize(AstModel in, ScopeBuilder scope, AstRef ref) {
-        return compileMinimize(in, scope.toScope(), ref);
+    public static ClaferObjective compileMinimize(AstModel in, ScopeBuilder scope, AstRef ref, ClaferOptions... options) {
+        return compileMinimize(in, scope.toScope(), ref, options);
     }
 
-    public static ClaferObjective compileMinimize(AstModel in, Scope scope, AstRef ref) {
+    public static ClaferObjective compileMinimize(AstModel in, Scope scope, AstRef ref, ClaferOptions... options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
@@ -174,18 +171,17 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                SetStrategyFactory.setLex(getSetVars(in, solution)),
+                setStrategy(getSetVars(in, solution), options),
                 IntStrategyFactory.firstFail_InDomainMin(irSolution.getIntVars(triple.getSnd())),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-//                IntStrategyFactory.firstFail_InDomainMax(irSolution.getBoolDecisionVars())));
         return new ClaferObjective(solver, solution, Objective.Minimize, irSolution.getIntVar(triple.getThd()));
     }
 
-    public static ClaferUnsat compileUnsat(AstModel in, ScopeBuilder scope) {
-        return compileUnsat(in, scope.toScope());
+    public static ClaferUnsat compileUnsat(AstModel in, ScopeBuilder scope, ClaferOptions... options) {
+        return compileUnsat(in, scope.toScope(), options);
     }
 
-    public static ClaferUnsat compileUnsat(AstModel in, Scope scope) {
+    public static ClaferUnsat compileUnsat(AstModel in, Scope scope, ClaferOptions... options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
@@ -208,9 +204,8 @@ public class ClaferCompiler {
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 IntStrategyFactory.firstFail_InDomainMax(softVars),
-                SetStrategyFactory.setLex(getSetVars(in, solution)),
+                setStrategy(getSetVars(in, solution), options),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-//                IntStrategyFactory.firstFail_InDomainMax(solution.getIrSolution().getBoolDecisionVars())));
         return new ClaferUnsat(solver, solution, softVarPairs, sum);
     }
 
