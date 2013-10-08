@@ -743,6 +743,13 @@ public class Irs {
         return and(sort);
     }
 
+    public static IrBoolExpr sort(IrSetExpr... sets) {
+        if (sets.length <= 1) {
+            return True;
+        }
+        return new IrSortSets(sets, BoolDomain);
+    }
+
     public static IrBoolExpr sort(IrIntExpr[]... strings) {
         if (strings.length < 2) {
             return True;

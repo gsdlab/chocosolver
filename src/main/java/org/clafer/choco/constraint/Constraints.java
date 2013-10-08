@@ -25,6 +25,8 @@ import org.clafer.choco.constraint.propagator.PropSetNotEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
 import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
+import org.clafer.choco.constraint.propagator.PropSortedSets;
+import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.constraints.binary.PropEqualX_Y;
@@ -262,6 +264,13 @@ public class Constraints {
         Constraint<IntVar, PropLexChainChannel> constraint =
                 new Constraint<IntVar, PropLexChainChannel>(PropLexChainChannel.buildArray(strings, ints), strings[0][0].getSolver());
         constraint.setPropagators(new PropLexChainChannel(strings, ints));
+        return constraint;
+    }
+
+    public static Constraint sortedSets(SetVar[] sets, IntVar[] cards) {
+        Constraint constraint = new Constraint(PropSortedSetsCard.buildArray(sets, cards), sets[0].getSolver());
+        constraint.setPropagators(new PropSortedSets(sets));
+        constraint.setPropagators(new PropSortedSetsCard(sets, cards));
         return constraint;
     }
 }

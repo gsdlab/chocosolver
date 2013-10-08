@@ -28,7 +28,7 @@ public class SetSumTest extends ConstraintTest {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() throws Throwable {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
 

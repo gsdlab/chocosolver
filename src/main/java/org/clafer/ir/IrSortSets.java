@@ -2,23 +2,22 @@ package org.clafer.ir;
 
 import java.util.Arrays;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 
 /**
  *
  * @author jimmy
  */
-public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
+public class IrSortSets extends IrAbstractBool implements IrBoolExpr {
 
-    private final IrIntExpr[][] strings;
+    private final IrSetExpr[] sets;
 
-    IrSortStrings(IrIntExpr[][] strings, IrBoolDomain domain) {
+    public IrSortSets(IrSetExpr[] sets, IrBoolDomain domain) {
         super(domain);
-        this.strings = Check.noNullsNotEmpty(strings);
+        this.sets = Check.noNullsNotEmpty(sets);
     }
 
-    public IrIntExpr[][] getStrings() {
-        return strings;
+    public IrSetExpr[] getSets() {
+        return sets;
     }
 
     @Override
@@ -43,20 +42,15 @@ public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrSortStrings) {
-            IrSortStrings other = (IrSortStrings) obj;
-            return Arrays.deepEquals(strings, other.strings);
+        if (obj instanceof IrSortSets) {
+            IrSortSets other = (IrSortSets) obj;
+            return Arrays.deepEquals(sets, other.sets);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(strings);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
+        return Arrays.deepHashCode(sets);
     }
 }

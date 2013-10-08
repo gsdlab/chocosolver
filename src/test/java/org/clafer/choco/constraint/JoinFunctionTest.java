@@ -31,7 +31,7 @@ public class JoinFunctionTest extends ConstraintTest {
     }
 
     @Test()
-    public void quickTest() throws Throwable {
+    public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
             int num = nextInt(10);

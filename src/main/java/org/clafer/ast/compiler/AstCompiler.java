@@ -324,20 +324,14 @@ public class AstCompiler {
     }
 
     private void initConcreteWeight(AstConcreteClafer clafer) {
-        IrSetVar[] siblings = siblingSets.get(clafer);
         int scope = getScope(clafer);
         int parentScope = getScope(clafer.getParent());
-        IrIntExpr[] weight;
         IrIntExpr[][] index;
         AstRef ref = AstUtil.getInheritedRef(clafer);
         // If the Clafer either needs children or reference to be introduce symmetry.
         if (analysis.hasInteritedBreakableChildren(clafer)
                 || (ref != null && analysis.isBreakableRef(ref))
                 || analysis.isInheritedBreakableTarget(clafer)) {
-            weight = new IrIntExpr[scope];
-            for (int i = 0; i < weight.length; i++) {
-                weight[i] = boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
-            }
             index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
             for (int i = 0; i < index.length; i++) {
                 for (int j = 0; j < index[i].length; j++) {
@@ -348,14 +342,12 @@ public class AstCompiler {
         } else {
             // Optimize for nonsymmetric nodes. Don't compute the smallest indices, 
             // just use the cardinalities.
-            weight = Util.replicate(Zero, scope);
             IrSetVar[] childSet = siblingSets.get(clafer);
             index = new IrIntExpr[childSet.length][];
             for (int i = 0; i < index.length; i++) {
                 index[i] = new IrIntExpr[]{card(childSet[i])};
             }
         }
-        weights.put(clafer, weight);
         indices.put(clafer, index);
     }
 
@@ -372,7 +364,7 @@ public class AstCompiler {
             }
         }
 
-        Pair<AstRef, Integer> refPair = analysis.getInheritedRefId(clafer, 0);
+        Pair<AstRef, Integer> refPair = analysis.getInheritedRefId(clafer);
         AstRef ref = refPair == null ? null : refPair.getFst();
         int refOffset = refPair == null ? 0 : refPair.getSnd().intValue();
 
@@ -424,7 +416,8 @@ public class AstCompiler {
         if (analysis.hasInteritedBreakableChildren(clafer)
                 || (ref != null && analysis.isBreakableRef(ref))
                 || analysis.isInheritedBreakableTarget(clafer)) {
-            IrIntExpr[] weight = weights.get(clafer);
+            int scope = getScope(clafer);
+            IrIntExpr[] weight = new IrIntExpr[scope];
             IrIntExpr[][] index = indices.get(clafer);
 
             analysis.getHierarcyIds(clafer, refOffset);
@@ -465,6 +458,12 @@ public class AstCompiler {
                     }
                 }
                 childIndices[i] = Util.concat(childIndex.toArray(new IrIntExpr[childIndex.size()][]));
+            }
+            for (int i = 0; i < weight.length; i++) {
+                weight[i] =
+                        childIndices[i].length == 0 ? Zero
+//                        : childIndices[i].length == 1 ? childIndices[i][0]
+                        : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             module.addConstraint(sortChannel(childIndices, weight));
             for (int i = 0; i < siblingSet.length; i++) {
@@ -512,7 +511,7 @@ public class AstCompiler {
                     cards[j] = card(childrenSets[j][i]);
                 }
                 if (featureGroup) {
-                    // Translate common cases more efficiently.
+                    // TODO: Translate common cases more efficiently.
 //                    if (groupCard.getLow() == 0 && groupCard.getHigh() == 1) {
 //                        // "lone"
 //                        module.addConstraint(implies(members[i], lone(asBools(cards))));
@@ -560,12 +559,13 @@ public class AstCompiler {
         IrBoolExpr[] members = memberships.get(clafer);
         IrSetVar set = sets.get(clafer);
 
-        module.addConstraint(selectN(members, card(set)));
-
         IrBoolExpr[] parentMembership = memberships.get(clafer.getParent());
         Card card = getCard(clafer);
-
         IrSetVar[] childSet = siblingSets.get(clafer);
+
+        module.addConstraint(selectN(members, card(set)));
+        module.addConstraint(sort(childSet));
+
         for (int i = 0; i < parentMembership.length; i++) {
             IrBoolExpr parentMember = parentMembership[i];
             if (card.isBounded()) {
@@ -706,7 +706,6 @@ public class AstCompiler {
     private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<AstClafer, IrBoolExpr[]>();
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<AstRef, IrIntVar[]>();
-    private final Map<AstClafer, IrIntExpr[]> weights = new HashMap<AstClafer, IrIntExpr[]>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<AstClafer, IrIntExpr[][]>();
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {

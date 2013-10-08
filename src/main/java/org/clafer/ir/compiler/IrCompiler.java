@@ -67,6 +67,7 @@ import org.clafer.ir.IrSetNop;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrSortSets;
 import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrSub;
 import org.clafer.ir.IrSubsetEq;
@@ -634,6 +635,12 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrSortSets ir, BoolArg a) {
+            CSet[] sets = compile(ir.getSets());
+            return Constraints.sortedSets(mapSet(sets), mapCard(sets));
+        }
+
+        @Override
         public Object visit(IrSortStringsChannel ir, BoolArg a) {
             IntVar[][] strings = new IntVar[ir.getStrings().length][];
             for (int i = 0; i < strings.length; i++) {
@@ -985,6 +992,11 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrSortStrings ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSortSets ir, IntVar a) {
             return compileBool(ir, a);
         }
 

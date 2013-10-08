@@ -305,6 +305,13 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrBoolExpr visit(IrSortSets ir, T a) {
+        IrSetExpr[] sets = rewrite(ir.getSets(), a);
+        return changed(ir.getSets(), sets)
+                ? sort(sets)
+                : ir;
+    }
+    @Override
     public IrBoolExpr visit(IrSortStringsChannel ir, T a) {
         IrIntExpr[][] strings = rewrite(ir.getStrings(), a);
         IrIntExpr[] ints = rewrite(ir.getInts(), a);

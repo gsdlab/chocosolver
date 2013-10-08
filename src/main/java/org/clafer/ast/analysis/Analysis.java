@@ -300,9 +300,9 @@ public class Analysis {
         return superIds;
     }
 
-    public Pair<AstRef, Integer> getInheritedRefId(AstClafer clafer, int id) {
+    public Pair<AstRef, Integer> getInheritedRefId(AstClafer clafer) {
         AstClafer sup = clafer;
-        int curId = id;
+        int curId = 0;
         do {
             if (sup.hasRef()) {
                 return new Pair<AstRef, Integer>(sup.getRef(), curId);
