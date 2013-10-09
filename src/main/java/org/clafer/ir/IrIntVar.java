@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrIntVar extends IrAbstractInt implements IrIntExpr, IrVar {
+public class IrIntVar extends IrAbstractInt implements IrVar {
 
     private final String name;
 

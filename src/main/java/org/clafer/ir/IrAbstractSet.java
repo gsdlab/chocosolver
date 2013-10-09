@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public abstract class IrAbstractSet implements IrSet {
+public abstract class IrAbstractSet implements IrSetExpr {
 
     private final IrDomain env, ker, card;
 
@@ -33,19 +33,25 @@ public abstract class IrAbstractSet implements IrSet {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IrDomain getEnv() {
         return env;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IrDomain getKer() {
         return ker;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IrDomain getCard() {
         return card;

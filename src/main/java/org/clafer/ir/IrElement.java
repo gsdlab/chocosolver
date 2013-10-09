@@ -8,7 +8,7 @@ import org.clafer.common.Check;
  * 
  * @author jimmy
  */
-public class IrElement extends IrAbstractInt implements IrIntExpr {
+public class IrElement extends IrAbstractInt {
 
     private final IrIntExpr[] array;
     private final IrIntExpr index;

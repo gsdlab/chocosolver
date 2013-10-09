@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  * 
  * @author jimmy
  */
-public class IrMul extends IrAbstractInt implements IrIntExpr {
+public class IrMul extends IrAbstractInt {
 
     /**
      * Multiplication is internally represented as a binary operation unlike

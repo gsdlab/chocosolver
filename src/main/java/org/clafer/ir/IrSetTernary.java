@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSetTernary extends IrAbstractSet implements IrSetExpr {
+public class IrSetTernary extends IrAbstractSet {
 
     private final IrBoolExpr antecedent;
     private final IrSetExpr consequent;

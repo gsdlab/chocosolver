@@ -9,7 +9,7 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrAdd extends IrAbstractInt implements IrIntExpr {
+public class IrAdd extends IrAbstractInt {
 
     private final IrIntExpr[] addends;
 

@@ -57,12 +57,12 @@ public class IrUtil {
         }
     }
 
-    public static boolean isConstant(IrInt i) {
+    public static boolean isConstant(IrIntExpr i) {
         IrDomain domain = i.getDomain();
         return domain.size() == 1;
     }
 
-    public static Integer getConstant(IrInt i) {
+    public static Integer getConstant(IrIntExpr i) {
         IrDomain domain = i.getDomain();
         return domain.size() == 1 ? domain.getLowBound() : null;
     }
@@ -72,14 +72,14 @@ public class IrUtil {
         return domain.size() == 1 ? Irs.constant(domain.getLowBound()) : i;
     }
 
-    public static boolean isConstant(IrSet s) {
+    public static boolean isConstant(IrSetExpr s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
         assert IrUtil.isSubsetOf(ker, env);
         return env.size() == ker.size();
     }
 
-    public static int[] getConstant(IrSet s) {
+    public static int[] getConstant(IrSetExpr s) {
         IrDomain env = s.getEnv();
         IrDomain ker = s.getKer();
         assert IrUtil.isSubsetOf(ker, env);

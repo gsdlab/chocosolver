@@ -8,7 +8,7 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrSetIntersection extends IrAbstractSet implements IrSetExpr {
+public class IrSetIntersection extends IrAbstractSet {
 
     private final IrSetExpr[] operands;
 

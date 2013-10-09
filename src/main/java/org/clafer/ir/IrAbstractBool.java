@@ -14,9 +14,6 @@ public abstract class IrAbstractBool {
         this.domain = Check.notNull(domain);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public IrBoolDomain getDomain() {
         return domain;
     }

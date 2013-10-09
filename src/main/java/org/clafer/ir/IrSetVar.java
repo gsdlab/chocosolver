@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSetVar extends IrAbstractSet implements IrSetExpr, IrVar {
+public class IrSetVar extends IrAbstractSet implements IrVar {
 
     private final String name;
 

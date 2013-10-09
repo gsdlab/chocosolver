@@ -9,7 +9,7 @@ import org.clafer.common.Util;
  * 
  * @author jimmy
  */
-public class IrSub extends IrAbstractInt implements IrIntExpr {
+public class IrSub extends IrAbstractInt {
 
     private final IrIntExpr[] subtrahends;
 

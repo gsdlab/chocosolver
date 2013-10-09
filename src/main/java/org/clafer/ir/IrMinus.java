@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrMinus extends IrAbstractInt implements IrIntExpr {
+public class IrMinus extends IrAbstractInt {
 
     private final IrIntExpr expr;
 

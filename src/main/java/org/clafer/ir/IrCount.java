@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrCount extends IrAbstractInt implements IrIntExpr {
+public class IrCount extends IrAbstractInt {
 
     private final int value;
     private final IrIntExpr[] array;

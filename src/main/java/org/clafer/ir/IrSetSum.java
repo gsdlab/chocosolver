@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSetSum extends IrAbstractInt implements IrIntExpr {
+public class IrSetSum extends IrAbstractInt {
 
     private final IrSetExpr set;
 

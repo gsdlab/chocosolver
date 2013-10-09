@@ -8,7 +8,7 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrJoinFunction extends IrAbstractSet implements IrSetExpr {
+public class IrJoinFunction extends IrAbstractSet {
 
     private final IrSetExpr take;
     private final IrIntExpr[] refs;

@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public abstract class IrAbstractInt implements IrInt {
+public abstract class IrAbstractInt implements IrIntExpr {
 
     private final IrDomain domain;
 
@@ -18,7 +18,9 @@ public abstract class IrAbstractInt implements IrInt {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IrDomain getDomain() {
         return domain;

@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSetDifference extends IrAbstractSet implements IrSetExpr {
+public class IrSetDifference extends IrAbstractSet {
 
     private final IrSetExpr minuend, subtrahend;
 

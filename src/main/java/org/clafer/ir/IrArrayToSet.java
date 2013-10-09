@@ -8,7 +8,7 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrArrayToSet extends IrAbstractSet implements IrSetExpr {
+public class IrArrayToSet extends IrAbstractSet {
 
     private final IrIntExpr[] array;
     private final Integer globalCardinality;

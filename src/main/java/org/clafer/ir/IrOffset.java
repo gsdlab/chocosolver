@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrOffset extends IrAbstractSet implements IrSetExpr {
+public class IrOffset extends IrAbstractSet {
 
     private final IrSetExpr set;
     private final int offset;

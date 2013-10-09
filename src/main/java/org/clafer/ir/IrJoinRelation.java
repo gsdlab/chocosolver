@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrJoinRelation extends IrAbstractSet implements IrSetExpr {
+public class IrJoinRelation extends IrAbstractSet {
 
     private final IrSetExpr take;
     private final IrSetExpr[] children;

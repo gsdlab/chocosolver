@@ -8,7 +8,7 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrSetUnion extends IrAbstractSet implements IrSetExpr {
+public class IrSetUnion extends IrAbstractSet {
 
     private final IrSetExpr[] operands;
 

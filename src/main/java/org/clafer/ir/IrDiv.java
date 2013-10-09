@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  * 
  * @author jimmy
  */
-public class IrDiv extends IrAbstractInt implements IrIntExpr {
+public class IrDiv extends IrAbstractInt {
 
     /**
      * Division is internally represented as a binary operation unlike
