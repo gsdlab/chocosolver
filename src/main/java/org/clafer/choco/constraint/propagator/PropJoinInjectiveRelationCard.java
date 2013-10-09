@@ -87,9 +87,10 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
             int lb = toCard.getLB();
             int ub = toCard.getUB();
+
             int minCardInc = 0;
             int maxCardDec = 0;
-            
+
             for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
                 if (!take.kernelContains(i)) {
                     IntVar childCard = childrenCards[i];
@@ -107,6 +108,36 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             minCard += minCardInc;
             maxCard -= maxCardDec;
         } while (changed);
+
+        // TODO: update toCard?
+        int lb = toCard.getLB();
+        int ub = toCard.getUB();
+        int[] envLbs = new int[take.getEnvelopeSize() - take.getKernelSize()];
+        int[] envUbs = new int[envLbs.length];
+        int kerMinCard = 0;
+        int kerMaxCard = 0;
+        int env = 0;
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (take.kernelContains(i)) {
+                kerMinCard += childrenCards[i].getLB();
+                kerMaxCard += childrenCards[i].getUB();
+            } else {
+                envLbs[env] = childrenCards[i].getLB();
+                envUbs[env] = childrenCards[i].getUB();
+                env++;
+            }
+        }
+        Arrays.sort(envLbs);
+        Arrays.sort(envUbs);
+        int i;
+        for (i = 0; i < envLbs.length && (kerMinCard < ub || envLbs[i] == 0); i++) {
+            kerMinCard += envLbs[i];
+        }
+        takeCard.updateUpperBound(i + take.getKernelSize(), aCause);
+        for(i = envUbs.length - 1; i >= 0 && kerMaxCard < lb; i--) {
+            kerMaxCard += envUbs[i];
+        }
+        takeCard.updateLowerBound(envUbs.length - 1 - i + take.getKernelSize(), aCause);
     }
 
     @Override
