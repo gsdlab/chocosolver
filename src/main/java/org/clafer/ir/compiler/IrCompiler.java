@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
@@ -77,6 +78,7 @@ import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.CardinalityPropagator;
 import org.clafer.ir.analysis.Coalescer;
+import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
@@ -142,6 +144,16 @@ public class IrCompiler {
                 constraints.add(constraint);
             }
         }
+
+        Pair<List<IrJoinFunction>, List<IrJoinRelation>> commonSubexpressions =
+                CommonSubexpression.findCommonSubexpressions(optModule);
+        for (IrJoinFunction function : commonSubexpressions.getFst()) {
+            cachedJoinFunction.put(function, compile(function));
+        }
+        for (IrJoinRelation relation : commonSubexpressions.getSnd()) {
+            cachedJoinRelation.put(relation, compile(relation));
+        }
+
         for (IrBoolExpr constraint : constraints) {
             Constraint compiled = compileAsConstraint(constraint);
             if (!compiled.equals(solver.TRUE)) {
@@ -169,6 +181,8 @@ public class IrCompiler {
         }
         return composed;
     }
+    private final Map<IrJoinFunction, CSet> cachedJoinFunction = new HashMap<IrJoinFunction, CSet>();
+    private final Map<IrJoinRelation, CSet> cachedJoinRelation = new HashMap<IrJoinRelation, CSet>();
 
     private void post(Constraint constraint) {
         solver.post(constraint);
@@ -1059,7 +1073,10 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrJoinRelation ir, CSet reify) {
-            assert ir.isInjective();
+            CSet cache = cachedJoinRelation.get(ir);
+            if (cache != null) {
+                return cache;
+            }
             CSet take = compile(ir.getTake());
             CSet[] children = compile(ir.getChildren());
             if (reify == null) {
@@ -1082,6 +1099,10 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrJoinFunction ir, CSet reify) {
+            CSet cache = cachedJoinFunction.get(ir);
+            if (cache != null) {
+                return cache;
+            }
             CSet take = compile(ir.getTake());
             IntVar[] refs = compile(ir.getRefs());
             if (reify == null) {

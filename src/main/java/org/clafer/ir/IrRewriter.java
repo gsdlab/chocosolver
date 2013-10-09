@@ -18,6 +18,9 @@ public abstract class IrRewriter<T>
     }
 
     private static <T> boolean changed(T[] t1, T[] t2) {
+        if (t1 == t2) {
+            return false;
+        }
         if (t1.length != t2.length) {
             return true;
         }
@@ -30,6 +33,9 @@ public abstract class IrRewriter<T>
     }
 
     private static <T> boolean changed(T[][] t1, T[][] t2) {
+        if (t1 == t2) {
+            return false;
+        }
         if (t1.length != t2.length) {
             return true;
         }
