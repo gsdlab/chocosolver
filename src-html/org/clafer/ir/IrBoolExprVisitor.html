@@ -17,7 +17,7 @@
 <span class="sourceLineNo">009</span> */<a name="line.9"></a>
 <span class="sourceLineNo">010</span>public interface IrBoolExprVisitor&lt;A, B&gt; {<a name="line.10"></a>
 <span class="sourceLineNo">011</span><a name="line.11"></a>
-<span class="sourceLineNo">012</span>    public B visit(IrBoolLiteral ir, A a);<a name="line.12"></a>
+<span class="sourceLineNo">012</span>    public B visit(IrBoolVar ir, A a);<a name="line.12"></a>
 <span class="sourceLineNo">013</span><a name="line.13"></a>
 <span class="sourceLineNo">014</span>    public B visit(IrNot ir, A a);<a name="line.14"></a>
 <span class="sourceLineNo">015</span><a name="line.15"></a>
@@ -53,13 +53,13 @@
 <span class="sourceLineNo">045</span><a name="line.45"></a>
 <span class="sourceLineNo">046</span>    public B visit(IrSubsetEq ir, A a);<a name="line.46"></a>
 <span class="sourceLineNo">047</span><a name="line.47"></a>
-<span class="sourceLineNo">048</span>    public B visit(IrBoolCast ir, A a);<a name="line.48"></a>
+<span class="sourceLineNo">048</span>    public B visit(IrBoolChannel ir, A a);<a name="line.48"></a>
 <span class="sourceLineNo">049</span><a name="line.49"></a>
-<span class="sourceLineNo">050</span>    public B visit(IrBoolChannel ir, A a);<a name="line.50"></a>
+<span class="sourceLineNo">050</span>    public B visit(IrIntChannel ir, A a);<a name="line.50"></a>
 <span class="sourceLineNo">051</span><a name="line.51"></a>
-<span class="sourceLineNo">052</span>    public B visit(IrIntChannel ir, A a);<a name="line.52"></a>
+<span class="sourceLineNo">052</span>    public B visit(IrSortStrings ir, A a);<a name="line.52"></a>
 <span class="sourceLineNo">053</span><a name="line.53"></a>
-<span class="sourceLineNo">054</span>    public B visit(IrSortStrings ir, A a);<a name="line.54"></a>
+<span class="sourceLineNo">054</span>    public B visit(IrSortSets ir, A a);<a name="line.54"></a>
 <span class="sourceLineNo">055</span><a name="line.55"></a>
 <span class="sourceLineNo">056</span>    public B visit(IrSortStringsChannel ir, A a);<a name="line.56"></a>
 <span class="sourceLineNo">057</span><a name="line.57"></a>
@@ -68,7 +68,11 @@
 <span class="sourceLineNo">060</span>    public B visit(IrSelectN ir, A a);<a name="line.60"></a>
 <span class="sourceLineNo">061</span><a name="line.61"></a>
 <span class="sourceLineNo">062</span>    public B visit(IrFilterString ir, A a);<a name="line.62"></a>
-<span class="sourceLineNo">063</span>}<a name="line.63"></a>
+<span class="sourceLineNo">063</span><a name="line.63"></a>
+<span class="sourceLineNo">064</span>    public B visit(IrIntNop ir, A a);<a name="line.64"></a>
+<span class="sourceLineNo">065</span><a name="line.65"></a>
+<span class="sourceLineNo">066</span>    public B visit(IrSetNop ir, A a);<a name="line.66"></a>
+<span class="sourceLineNo">067</span>}<a name="line.67"></a>
 
 
 

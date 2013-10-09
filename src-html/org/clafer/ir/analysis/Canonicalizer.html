@@ -27,41 +27,41 @@
 <span class="sourceLineNo">019</span>import org.clafer.ir.IrIntVar;<a name="line.19"></a>
 <span class="sourceLineNo">020</span>import org.clafer.ir.IrModule;<a name="line.20"></a>
 <span class="sourceLineNo">021</span>import org.clafer.ir.IrSetExpr;<a name="line.21"></a>
-<span class="sourceLineNo">022</span>import org.clafer.ir.IrSetLiteral;<a name="line.22"></a>
-<span class="sourceLineNo">023</span>import org.clafer.ir.IrSetVar;<a name="line.23"></a>
-<span class="sourceLineNo">024</span>import org.clafer.ir.IrUtil;<a name="line.24"></a>
-<span class="sourceLineNo">025</span>import static org.clafer.ir.Irs.*;<a name="line.25"></a>
-<span class="sourceLineNo">026</span><a name="line.26"></a>
-<span class="sourceLineNo">027</span>/**<a name="line.27"></a>
-<span class="sourceLineNo">028</span> *<a name="line.28"></a>
-<span class="sourceLineNo">029</span> * @author jimmy<a name="line.29"></a>
-<span class="sourceLineNo">030</span> */<a name="line.30"></a>
-<span class="sourceLineNo">031</span>public class Canonicalizer {<a name="line.31"></a>
-<span class="sourceLineNo">032</span><a name="line.32"></a>
-<span class="sourceLineNo">033</span>    private Canonicalizer() {<a name="line.33"></a>
-<span class="sourceLineNo">034</span>    }<a name="line.34"></a>
-<span class="sourceLineNo">035</span><a name="line.35"></a>
-<span class="sourceLineNo">036</span>    /**<a name="line.36"></a>
-<span class="sourceLineNo">037</span>     * Rewrites the module in a form that is easier to pattern match and makes<a name="line.37"></a>
-<span class="sourceLineNo">038</span>     * some implicit constraints explicit.<a name="line.38"></a>
-<span class="sourceLineNo">039</span>     *<a name="line.39"></a>
-<span class="sourceLineNo">040</span>     * @param module the module to canonicalize<a name="line.40"></a>
-<span class="sourceLineNo">041</span>     * @return the canonicalized module<a name="line.41"></a>
-<span class="sourceLineNo">042</span>     */<a name="line.42"></a>
-<span class="sourceLineNo">043</span>    public static IrModule canonical(IrModule module) {<a name="line.43"></a>
-<span class="sourceLineNo">044</span>        CanonicalRewriter rewriter = new CanonicalRewriter();<a name="line.44"></a>
-<span class="sourceLineNo">045</span>        IrModule optModule = module.withConstraints(rewriter.rewrite(and(module.getConstraints()), null));<a name="line.45"></a>
+<span class="sourceLineNo">022</span>import org.clafer.ir.IrSetVar;<a name="line.22"></a>
+<span class="sourceLineNo">023</span>import org.clafer.ir.IrUtil;<a name="line.23"></a>
+<span class="sourceLineNo">024</span>import static org.clafer.ir.Irs.*;<a name="line.24"></a>
+<span class="sourceLineNo">025</span><a name="line.25"></a>
+<span class="sourceLineNo">026</span>/**<a name="line.26"></a>
+<span class="sourceLineNo">027</span> *<a name="line.27"></a>
+<span class="sourceLineNo">028</span> * @author jimmy<a name="line.28"></a>
+<span class="sourceLineNo">029</span> */<a name="line.29"></a>
+<span class="sourceLineNo">030</span>public class Canonicalizer {<a name="line.30"></a>
+<span class="sourceLineNo">031</span><a name="line.31"></a>
+<span class="sourceLineNo">032</span>    private Canonicalizer() {<a name="line.32"></a>
+<span class="sourceLineNo">033</span>    }<a name="line.33"></a>
+<span class="sourceLineNo">034</span><a name="line.34"></a>
+<span class="sourceLineNo">035</span>    /**<a name="line.35"></a>
+<span class="sourceLineNo">036</span>     * Rewrites the module in a form that is easier to pattern match and makes<a name="line.36"></a>
+<span class="sourceLineNo">037</span>     * some implicit constraints explicit.<a name="line.37"></a>
+<span class="sourceLineNo">038</span>     *<a name="line.38"></a>
+<span class="sourceLineNo">039</span>     * @param module the module to canonicalize<a name="line.39"></a>
+<span class="sourceLineNo">040</span>     * @return the canonicalized module<a name="line.40"></a>
+<span class="sourceLineNo">041</span>     */<a name="line.41"></a>
+<span class="sourceLineNo">042</span>    public static IrModule canonical(IrModule module) {<a name="line.42"></a>
+<span class="sourceLineNo">043</span>        CanonicalRewriter rewriter = new CanonicalRewriter();<a name="line.43"></a>
+<span class="sourceLineNo">044</span><a name="line.44"></a>
+<span class="sourceLineNo">045</span>        IrModule optModule = rewriter.rewriteAndNonNops(module, null);<a name="line.45"></a>
 <span class="sourceLineNo">046</span>        for (Entry&lt;IrSetVar, IrIntVar&gt; entry : rewriter.setVarCards.entrySet()) {<a name="line.46"></a>
-<span class="sourceLineNo">047</span>            optModule.addConstraint(equal($(entry.getValue()), card($(entry.getKey()))));<a name="line.47"></a>
+<span class="sourceLineNo">047</span>            optModule.addConstraint(equal(entry.getValue(), card(entry.getKey())));<a name="line.47"></a>
 <span class="sourceLineNo">048</span>        }<a name="line.48"></a>
-<span class="sourceLineNo">049</span>//        rewriter.setVars.removeAll(rewriter.setVarCards.keySet());<a name="line.49"></a>
+<span class="sourceLineNo">049</span>        rewriter.setVars.removeAll(rewriter.setVarCards.keySet());<a name="line.49"></a>
 <span class="sourceLineNo">050</span>        for (IrSetVar setVar : rewriter.setVars) {<a name="line.50"></a>
 <span class="sourceLineNo">051</span>            if (setVar.getCard().getLowBound() &gt; setVar.getKer().size()<a name="line.51"></a>
 <span class="sourceLineNo">052</span>                    || setVar.getCard().getHighBound() &lt; setVar.getEnv().size()) {<a name="line.52"></a>
 <span class="sourceLineNo">053</span>                // These variables need to have their cardinalities constrainted.<a name="line.53"></a>
 <span class="sourceLineNo">054</span>                optModule.addConstraint(equal(<a name="line.54"></a>
-<span class="sourceLineNo">055</span>                        $(domainInt("|" + setVar.getName() + "|", setVar.getCard())),<a name="line.55"></a>
-<span class="sourceLineNo">056</span>                        card($(setVar))));<a name="line.56"></a>
+<span class="sourceLineNo">055</span>                        domainInt("|" + setVar.getName() + "|", setVar.getCard()),<a name="line.55"></a>
+<span class="sourceLineNo">056</span>                        card(setVar)));<a name="line.56"></a>
 <span class="sourceLineNo">057</span>            }<a name="line.57"></a>
 <span class="sourceLineNo">058</span>        }<a name="line.58"></a>
 <span class="sourceLineNo">059</span>        return optModule;<a name="line.59"></a>
@@ -69,7 +69,7 @@
 <span class="sourceLineNo">061</span><a name="line.61"></a>
 <span class="sourceLineNo">062</span>    private static class CanonicalRewriter extends IrRewriter&lt;Void&gt; {<a name="line.62"></a>
 <span class="sourceLineNo">063</span><a name="line.63"></a>
-<span class="sourceLineNo">064</span>        private final List&lt;IrSetVar&gt; setVars = new ArrayList&lt;IrSetVar&gt;();<a name="line.64"></a>
+<span class="sourceLineNo">064</span>        private final Set&lt;IrSetVar&gt; setVars = new HashSet&lt;IrSetVar&gt;();<a name="line.64"></a>
 <span class="sourceLineNo">065</span>        private final Map&lt;IrSetVar, IrIntVar&gt; setVarCards = new HashMap&lt;IrSetVar, IrIntVar&gt;();<a name="line.65"></a>
 <span class="sourceLineNo">066</span><a name="line.66"></a>
 <span class="sourceLineNo">067</span>        @Override<a name="line.67"></a>
@@ -170,26 +170,25 @@
 <span class="sourceLineNo">162</span>             * to |Literal| can use the same variable.<a name="line.162"></a>
 <span class="sourceLineNo">163</span>             */<a name="line.163"></a>
 <span class="sourceLineNo">164</span>            IrSetExpr set = rewrite(ir.getSet(), a);<a name="line.164"></a>
-<span class="sourceLineNo">165</span>            if (set instanceof IrSetLiteral) {<a name="line.165"></a>
-<span class="sourceLineNo">166</span>                IrSetLiteral setLiteral = (IrSetLiteral) set;<a name="line.166"></a>
-<span class="sourceLineNo">167</span>                IrSetVar setVar = setLiteral.getVar();<a name="line.167"></a>
-<span class="sourceLineNo">168</span>                IrIntVar card = setVarCards.get(setVar);<a name="line.168"></a>
-<span class="sourceLineNo">169</span>                if (card == null) {<a name="line.169"></a>
-<span class="sourceLineNo">170</span>                    card = domainInt("|" + setVar.getName() + "|", setVar.getCard());<a name="line.170"></a>
-<span class="sourceLineNo">171</span>                    setVarCards.put(setVar, card);<a name="line.171"></a>
-<span class="sourceLineNo">172</span>                }<a name="line.172"></a>
-<span class="sourceLineNo">173</span>                return $(card);<a name="line.173"></a>
-<span class="sourceLineNo">174</span>            }<a name="line.174"></a>
-<span class="sourceLineNo">175</span>            return card(set);<a name="line.175"></a>
-<span class="sourceLineNo">176</span>        }<a name="line.176"></a>
-<span class="sourceLineNo">177</span><a name="line.177"></a>
-<span class="sourceLineNo">178</span>        @Override<a name="line.178"></a>
-<span class="sourceLineNo">179</span>        public IrSetExpr visit(IrSetLiteral ir, Void a) {<a name="line.179"></a>
-<span class="sourceLineNo">180</span>            setVars.add(ir.getVar());<a name="line.180"></a>
-<span class="sourceLineNo">181</span>            return ir;<a name="line.181"></a>
-<span class="sourceLineNo">182</span>        }<a name="line.182"></a>
-<span class="sourceLineNo">183</span>    };<a name="line.183"></a>
-<span class="sourceLineNo">184</span>}<a name="line.184"></a>
+<span class="sourceLineNo">165</span>            if (set instanceof IrSetVar) {<a name="line.165"></a>
+<span class="sourceLineNo">166</span>                IrSetVar setVar = (IrSetVar) set;<a name="line.166"></a>
+<span class="sourceLineNo">167</span>                IrIntVar card = setVarCards.get(setVar);<a name="line.167"></a>
+<span class="sourceLineNo">168</span>                if (card == null) {<a name="line.168"></a>
+<span class="sourceLineNo">169</span>                    card = domainInt("|" + setVar.getName() + "|", setVar.getCard());<a name="line.169"></a>
+<span class="sourceLineNo">170</span>                    setVarCards.put(setVar, card);<a name="line.170"></a>
+<span class="sourceLineNo">171</span>                }<a name="line.171"></a>
+<span class="sourceLineNo">172</span>                return card;<a name="line.172"></a>
+<span class="sourceLineNo">173</span>            }<a name="line.173"></a>
+<span class="sourceLineNo">174</span>            return card(set);<a name="line.174"></a>
+<span class="sourceLineNo">175</span>        }<a name="line.175"></a>
+<span class="sourceLineNo">176</span><a name="line.176"></a>
+<span class="sourceLineNo">177</span>        @Override<a name="line.177"></a>
+<span class="sourceLineNo">178</span>        public IrSetExpr visit(IrSetVar ir, Void a) {<a name="line.178"></a>
+<span class="sourceLineNo">179</span>            setVars.add(ir);<a name="line.179"></a>
+<span class="sourceLineNo">180</span>            return ir;<a name="line.180"></a>
+<span class="sourceLineNo">181</span>        }<a name="line.181"></a>
+<span class="sourceLineNo">182</span>    };<a name="line.182"></a>
+<span class="sourceLineNo">183</span>}<a name="line.183"></a>
 
 
 

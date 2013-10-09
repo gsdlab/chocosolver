@@ -40,7 +40,7 @@
 <span class="sourceLineNo">032</span>     * @return the optimized module<a name="line.32"></a>
 <span class="sourceLineNo">033</span>     */<a name="line.33"></a>
 <span class="sourceLineNo">034</span>    public static IrModule optimize(IrModule module) {<a name="line.34"></a>
-<span class="sourceLineNo">035</span>        return module.withConstraints(optimizer.rewrite(and(module.getConstraints()), null));<a name="line.35"></a>
+<span class="sourceLineNo">035</span>        return optimizer.rewriteAndNonNops(module, null);<a name="line.35"></a>
 <span class="sourceLineNo">036</span>    }<a name="line.36"></a>
 <span class="sourceLineNo">037</span>    private static final IrRewriter&lt;Void&gt; optimizer = new IrRewriter&lt;Void&gt;() {<a name="line.37"></a>
 <span class="sourceLineNo">038</span>        @Override<a name="line.38"></a>
@@ -174,7 +174,7 @@
 <span class="sourceLineNo">166</span>                    //     asInt(bool) &lt;= 888 - int<a name="line.166"></a>
 <span class="sourceLineNo">167</span>                    //     asInt(bool) + int &lt;= 888<a name="line.167"></a>
 <span class="sourceLineNo">168</span>                    if (domain.getHighBound() == constant.intValue()) {<a name="line.168"></a>
-<span class="sourceLineNo">169</span>                        return lessThanEqual(add(asInt(antecedent), left),<a name="line.169"></a>
+<span class="sourceLineNo">169</span>                        return lessThanEqual(add(antecedent, left),<a name="line.169"></a>
 <span class="sourceLineNo">170</span>                                domain.getHighBound());<a name="line.170"></a>
 <span class="sourceLineNo">171</span>                    }<a name="line.171"></a>
 <span class="sourceLineNo">172</span>                    // Rewrite<a name="line.172"></a>
@@ -183,7 +183,7 @@
 <span class="sourceLineNo">175</span>                    // to<a name="line.175"></a>
 <span class="sourceLineNo">176</span>                    //     asInt(bool) &lt;= int - (-3)<a name="line.176"></a>
 <span class="sourceLineNo">177</span>                    if (domain.getLowBound() == constant.intValue()) {<a name="line.177"></a>
-<span class="sourceLineNo">178</span>                        return lessThanEqual(asInt(antecedent),<a name="line.178"></a>
+<span class="sourceLineNo">178</span>                        return lessThanEqual(antecedent,<a name="line.178"></a>
 <span class="sourceLineNo">179</span>                                sub(left, domain.getLowBound()));<a name="line.179"></a>
 <span class="sourceLineNo">180</span>                    }<a name="line.180"></a>
 <span class="sourceLineNo">181</span>                    break;<a name="line.181"></a>
@@ -194,7 +194,7 @@
 <span class="sourceLineNo">186</span>                    // to<a name="line.186"></a>
 <span class="sourceLineNo">187</span>                    //     asInt(bool) &lt;= int - (-3)<a name="line.187"></a>
 <span class="sourceLineNo">188</span>                    if (domain.getHighBound() == constant.intValue()) {<a name="line.188"></a>
-<span class="sourceLineNo">189</span>                        return lessThanEqual(asInt(antecedent),<a name="line.189"></a>
+<span class="sourceLineNo">189</span>                        return lessThanEqual(antecedent,<a name="line.189"></a>
 <span class="sourceLineNo">190</span>                                sub(left, domain.getLowBound()));<a name="line.190"></a>
 <span class="sourceLineNo">191</span>                    }<a name="line.191"></a>
 <span class="sourceLineNo">192</span>                    // Rewrite<a name="line.192"></a>
@@ -204,7 +204,7 @@
 <span class="sourceLineNo">196</span>                    //     asInt(bool) &lt;= 888 - int<a name="line.196"></a>
 <span class="sourceLineNo">197</span>                    //     asInt(bool) + int &lt;= 888<a name="line.197"></a>
 <span class="sourceLineNo">198</span>                    if (domain.getLowBound() == constant.intValue()) {<a name="line.198"></a>
-<span class="sourceLineNo">199</span>                        return lessThanEqual(add(asInt(antecedent), left),<a name="line.199"></a>
+<span class="sourceLineNo">199</span>                        return lessThanEqual(add(antecedent, left),<a name="line.199"></a>
 <span class="sourceLineNo">200</span>                                domain.getHighBound());<a name="line.200"></a>
 <span class="sourceLineNo">201</span>                    }<a name="line.201"></a>
 <span class="sourceLineNo">202</span>                    break;<a name="line.202"></a>
@@ -229,7 +229,7 @@
 <span class="sourceLineNo">221</span>                    //     asInt(bool) &gt; (-3) - int<a name="line.221"></a>
 <span class="sourceLineNo">222</span>                    //     asInt(bool) + int &gt; (-3)<a name="line.222"></a>
 <span class="sourceLineNo">223</span>                    if (domain.getHighBound() == constant.intValue()) {<a name="line.223"></a>
-<span class="sourceLineNo">224</span>                        return greaterThan(add(asInt(antecedent), left),<a name="line.224"></a>
+<span class="sourceLineNo">224</span>                        return greaterThan(add(antecedent, left),<a name="line.224"></a>
 <span class="sourceLineNo">225</span>                                domain.getLowBound());<a name="line.225"></a>
 <span class="sourceLineNo">226</span>                    }<a name="line.226"></a>
 <span class="sourceLineNo">227</span>                    // Rewrite<a name="line.227"></a>
@@ -238,7 +238,7 @@
 <span class="sourceLineNo">230</span>                    // to<a name="line.230"></a>
 <span class="sourceLineNo">231</span>                    //     asInt(bool) &gt; int - 888<a name="line.231"></a>
 <span class="sourceLineNo">232</span>                    if (domain.getLowBound() == constant.intValue()) {<a name="line.232"></a>
-<span class="sourceLineNo">233</span>                        return greaterThan(asInt(antecedent),<a name="line.233"></a>
+<span class="sourceLineNo">233</span>                        return greaterThan(antecedent,<a name="line.233"></a>
 <span class="sourceLineNo">234</span>                                sub(left, domain.getHighBound()));<a name="line.234"></a>
 <span class="sourceLineNo">235</span>                    }<a name="line.235"></a>
 <span class="sourceLineNo">236</span>                    break;<a name="line.236"></a>
@@ -249,7 +249,7 @@
 <span class="sourceLineNo">241</span>                    // to<a name="line.241"></a>
 <span class="sourceLineNo">242</span>                    //     asInt(bool) &gt; int - 888<a name="line.242"></a>
 <span class="sourceLineNo">243</span>                    if (domain.getHighBound() == constant.intValue()) {<a name="line.243"></a>
-<span class="sourceLineNo">244</span>                        return greaterThan(asInt(antecedent),<a name="line.244"></a>
+<span class="sourceLineNo">244</span>                        return greaterThan(antecedent,<a name="line.244"></a>
 <span class="sourceLineNo">245</span>                                sub(left, domain.getHighBound()));<a name="line.245"></a>
 <span class="sourceLineNo">246</span>                    }<a name="line.246"></a>
 <span class="sourceLineNo">247</span>                    // Rewrite<a name="line.247"></a>
@@ -259,7 +259,7 @@
 <span class="sourceLineNo">251</span>                    //     asInt(bool) &gt; (-3) - int<a name="line.251"></a>
 <span class="sourceLineNo">252</span>                    //     asInt(bool) + int &gt; (-3)<a name="line.252"></a>
 <span class="sourceLineNo">253</span>                    if (domain.getLowBound() == constant.intValue()) {<a name="line.253"></a>
-<span class="sourceLineNo">254</span>                        return greaterThan(add(asInt(antecedent), left),<a name="line.254"></a>
+<span class="sourceLineNo">254</span>                        return greaterThan(add(antecedent, left),<a name="line.254"></a>
 <span class="sourceLineNo">255</span>                                domain.getLowBound());<a name="line.255"></a>
 <span class="sourceLineNo">256</span>                    }<a name="line.256"></a>
 <span class="sourceLineNo">257</span>                    break;<a name="line.257"></a>
@@ -283,7 +283,7 @@
 <span class="sourceLineNo">275</span>                    // to<a name="line.275"></a>
 <span class="sourceLineNo">276</span>                    //     asInt(bool) &lt;= int - (-3)<a name="line.276"></a>
 <span class="sourceLineNo">277</span>                    if (domain.getHighBound() == constant.intValue()) {<a name="line.277"></a>
-<span class="sourceLineNo">278</span>                        return lessThanEqual(asInt(antecedent),<a name="line.278"></a>
+<span class="sourceLineNo">278</span>                        return lessThanEqual(antecedent,<a name="line.278"></a>
 <span class="sourceLineNo">279</span>                                sub(left, domain.getLowBound()));<a name="line.279"></a>
 <span class="sourceLineNo">280</span>                    }<a name="line.280"></a>
 <span class="sourceLineNo">281</span>                    // Rewrite<a name="line.281"></a>
@@ -293,7 +293,7 @@
 <span class="sourceLineNo">285</span>                    //     asInt(bool) &lt;= 888 - int<a name="line.285"></a>
 <span class="sourceLineNo">286</span>                    //     asInt(bool) + int &lt;= 888<a name="line.286"></a>
 <span class="sourceLineNo">287</span>                    if (domain.getLowBound() == constant.intValue()) {<a name="line.287"></a>
-<span class="sourceLineNo">288</span>                        return lessThanEqual(add(asInt(antecedent), left),<a name="line.288"></a>
+<span class="sourceLineNo">288</span>                        return lessThanEqual(add(antecedent, left),<a name="line.288"></a>
 <span class="sourceLineNo">289</span>                                domain.getHighBound());<a name="line.289"></a>
 <span class="sourceLineNo">290</span>                    }<a name="line.290"></a>
 <span class="sourceLineNo">291</span>                    break;<a name="line.291"></a>
@@ -305,7 +305,7 @@
 <span class="sourceLineNo">297</span>                    //     asInt(bool) &lt;= 888 - int<a name="line.297"></a>
 <span class="sourceLineNo">298</span>                    //     asInt(bool) + int &lt;= 888<a name="line.298"></a>
 <span class="sourceLineNo">299</span>                    if (domain.getHighBound() == constant.intValue()) {<a name="line.299"></a>
-<span class="sourceLineNo">300</span>                        return lessThanEqual(add(asInt(antecedent), left),<a name="line.300"></a>
+<span class="sourceLineNo">300</span>                        return lessThanEqual(add(antecedent, left),<a name="line.300"></a>
 <span class="sourceLineNo">301</span>                                domain.getHighBound());<a name="line.301"></a>
 <span class="sourceLineNo">302</span>                    }<a name="line.302"></a>
 <span class="sourceLineNo">303</span>                    // Rewrite<a name="line.303"></a>
@@ -314,7 +314,7 @@
 <span class="sourceLineNo">306</span>                    // to<a name="line.306"></a>
 <span class="sourceLineNo">307</span>                    //     asInt(bool) &lt;= int - (-3)<a name="line.307"></a>
 <span class="sourceLineNo">308</span>                    if (domain.getLowBound() == constant.intValue()) {<a name="line.308"></a>
-<span class="sourceLineNo">309</span>                        return lessThanEqual(asInt(antecedent),<a name="line.309"></a>
+<span class="sourceLineNo">309</span>                        return lessThanEqual(antecedent,<a name="line.309"></a>
 <span class="sourceLineNo">310</span>                                sub(left, domain.getLowBound()));<a name="line.310"></a>
 <span class="sourceLineNo">311</span>                    }<a name="line.311"></a>
 <span class="sourceLineNo">312</span>                    break;<a name="line.312"></a>

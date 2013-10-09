@@ -41,7 +41,7 @@
 <span class="sourceLineNo">033</span>        for (IrBoolExpr constraint : module.getConstraints()) {<a name="line.33"></a>
 <span class="sourceLineNo">034</span>            constraints.add(flattener.rewrite(constraint, null));<a name="line.34"></a>
 <span class="sourceLineNo">035</span>        }<a name="line.35"></a>
-<span class="sourceLineNo">036</span>        return module.withConstraints(constraints);<a name="line.36"></a>
+<span class="sourceLineNo">036</span>        return new IrModule().addConstraints(constraints);<a name="line.36"></a>
 <span class="sourceLineNo">037</span>    }<a name="line.37"></a>
 <span class="sourceLineNo">038</span>    private static final IrRewriter&lt;Void&gt; flattener = new IrRewriter&lt;Void&gt;() {<a name="line.38"></a>
 <span class="sourceLineNo">039</span>        @Override<a name="line.39"></a>
