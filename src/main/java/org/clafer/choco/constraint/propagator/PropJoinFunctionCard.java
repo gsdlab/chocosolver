@@ -202,9 +202,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                 if (hasGlobalCardinality()) {
                     cardChanged |= takeCard.updateUpperBound(toCard.getUB() * getGlobalCardinality(), aCause);
                 }
-                if (toCard.getLB() > 0) {
-                    cardChanged |= takeCard.updateLowerBound(1, aCause);
-                }
+                cardChanged |= takeCard.updateLowerBound(toCard.getLB(), aCause);
             } while (cardChanged);
 
 
