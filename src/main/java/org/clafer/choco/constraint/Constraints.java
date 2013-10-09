@@ -25,9 +25,9 @@ import org.clafer.choco.constraint.propagator.PropSetNotEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
 import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
+import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
-import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.constraints.binary.PropEqualX_Y;
 import solver.constraints.set.PropCardinality;
@@ -250,9 +250,16 @@ public class Constraints {
         return constraint;
     }
 
-    public static Constraint union(SetVar[] sets, SetVar union) {
-        Constraint<SetVar, PropSetUnion> constraint = new Constraint<SetVar, PropSetUnion>(Util.cons(union, sets), union.getSolver());
-        constraint.setPropagators(new PropSetUnion(sets, union));
+    public static Constraint union(SetVar[] sets, IntVar[] setCards, SetVar union, IntVar unionCard) {
+        Variable[] array = new Variable[sets.length + setCards.length + 2];
+        System.arraycopy(sets, 0, array, 0, sets.length);
+        System.arraycopy(setCards, 0, array, sets.length, setCards.length);
+        array[sets.length + setCards.length] = union;
+        array[sets.length + setCards.length + 1] = unionCard;
+        Constraint constraint = new Constraint(array, union.getSolver());
+        constraint.setPropagators(new PropSetUnion(sets, union),
+                new PropSetUnionCard(setCards, unionCard),
+                new PropCardinality(union, unionCard));
         return constraint;
     }
 

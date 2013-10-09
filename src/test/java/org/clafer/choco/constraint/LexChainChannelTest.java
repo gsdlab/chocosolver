@@ -96,6 +96,7 @@ public class LexChainChannelTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar food = VF.set("food", new int[]{0, 1, 2}, solver);
+        IntVar foodCard = VF.enumerated("|food|", 1, 3, solver);
         SetVar food0 = VF.set("food0", new int[]{0, 1, 2}, solver);
         IntVar food0Card = VF.enumerated("|food0|", 1, 3, solver);
         SetVar food1 = VF.set("food1", new int[]{0, 1, 2}, solver);
@@ -103,7 +104,8 @@ public class LexChainChannelTest extends ConstraintTest {
         IntVar[] foodParent = VF.enumeratedArray("foodparent", 3, 0, 2, solver);
         SetVar unusedFood = VF.set("foodunused", new int[]{0, 1, 2}, solver);
 
-        solver.post(Constraints.union(new SetVar[]{food0, food1}, food));
+        solver.post(Constraints.union(new SetVar[]{food0, food1}, new IntVar[]{food0Card, food1Card},
+                food, foodCard));
         solver.post(SCF.cardinality(food0, food0Card));
         solver.post(SCF.cardinality(food1, food1Card));
         solver.post(Constraints.intChannel(new SetVar[]{food0, food1, unusedFood}, foodParent));
@@ -111,6 +113,7 @@ public class LexChainChannelTest extends ConstraintTest {
         solver.post(ICF.arithm(foodParent[1], "<=", foodParent[2]));
 
         SetVar cheese = VF.set("cheese0", new int[]{0, 1, 2}, solver);
+        IntVar cheeseCard = VF.enumerated("|cheese|", 0, 3, solver);
         SetVar cheese0 = VF.set("cheese0", new int[]{0, 1, 2}, solver);
         IntVar cheese0Card = VF.enumerated("|cheese0|", 0, 3, solver);
         SetVar cheese1 = VF.set("cheese1", new int[]{0, 1, 2}, solver);
@@ -120,7 +123,8 @@ public class LexChainChannelTest extends ConstraintTest {
         IntVar[] cheeseParent = VF.enumeratedArray("cheeseparent", 3, 0, 3, solver);
         SetVar unusedCheese = VF.set("cheeseunused", new int[]{0, 1, 2}, solver);
 
-        solver.post(Constraints.union(new SetVar[]{cheese0, cheese1, cheese2}, cheese));
+        solver.post(Constraints.union(new SetVar[]{cheese0, cheese1, cheese2}, new IntVar[]{cheese0Card, cheese1Card, cheese2Card},
+                cheese, cheeseCard));
         solver.post(SCF.cardinality(cheese0, cheese0Card));
         solver.post(SCF.cardinality(cheese1, cheese1Card));
         solver.post(SCF.cardinality(cheese2, cheese2Card));

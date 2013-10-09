@@ -1119,11 +1119,11 @@ public class IrCompiler {
         public Object visit(IrSetUnion ir, CSet reify) {
             CSet[] operands = compile(ir.getOperands());
             if (reify == null) {
-                SetVar union = numSetVar("Union", ir.getEnv(), ir.getKer());
-                post(_union(mapSet(operands), union));
-                return new CSet(union, ir.getCard());
+                CSet union = numCset("Union", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(_union(mapSet(operands), mapCard(operands), union.getSet(), union.getCard()));
+                return union;
             }
-            return _union(mapSet(operands), reify.getSet());
+            return _union(mapSet(operands), mapCard(operands), reify.getSet(), reify.getCard());
         }
 
         @Override
@@ -1339,8 +1339,8 @@ public class IrCompiler {
         return SCF.intersection(operands, union);
     }
 
-    private static Constraint _union(SetVar[] operands, SetVar union) {
-        return SCF.union(operands, union);
+    private static Constraint _union(SetVar[] operands, IntVar[] operandCards, SetVar union, IntVar unionCard) {
+        return Constraints.union(operands, operandCards, union, unionCard);
     }
 
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {
