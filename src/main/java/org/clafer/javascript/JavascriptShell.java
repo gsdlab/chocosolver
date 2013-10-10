@@ -59,6 +59,7 @@ public class JavascriptShell {
                 + "minimize(Clafer) find a solution where Clafer.ref is minimal\n"
                 + "minUnsat()       find the smallest set of unsatisfiable constraints and a near-miss\n"
                 + "unsatCore()      find a small set of mutually unsatisfiable constraints\n"
+                + "stats()          display statistics about the current search\n"
                 + "exit()           stop the session");
     }
 
@@ -82,7 +83,7 @@ public class JavascriptShell {
             return "No model. Use \"load(filename)\" to load in a new model.";
         }
         if (initial) {
-            return ClaferCompiler.compile(model, scope).getInternalSolver().toString();
+            return ClaferCompiler.compile(getModel(), scope).getInternalSolver().toString();
         }
         if (solver == null) {
             return "Solve an instance first. Try \"solve()\".";
@@ -158,6 +159,13 @@ public class JavascriptShell {
         return "Loaded " + AstUtil.getNames(AstUtil.getClafers(model)) + ".";
     }
 
+    private AstModel getModel() {
+        if (model == null) {
+            throw new JavascriptException("No model. Use \"load(filename)\" to load in a new model.");
+        }
+        return model;
+    }
+
     /**
      * Find the first instance or next instances upon subsequent invocations.
      *
@@ -165,10 +173,7 @@ public class JavascriptShell {
      */
     public InstanceModel solve() {
         if (solver == null) {
-            if (model == null) {
-                throw new JavascriptException("No model. Use \"load(filename)\" to load in a new model.");
-            }
-            solver = ClaferCompiler.compile(model, scope);
+            solver = ClaferCompiler.compile(getModel(), scope);
         }
         return solver.find() ? solver.instance() : null;
     }
@@ -183,7 +188,7 @@ public class JavascriptShell {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot maximize " + clafer + ".");
         }
-        ClaferObjective objective = ClaferCompiler.compileMaximize(model, scope, clafer.getRef());
+        ClaferObjective objective = ClaferCompiler.compileMaximize(getModel(), scope, clafer.getRef());
         return objective.optimal();
 
     }
@@ -198,7 +203,7 @@ public class JavascriptShell {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot minimize " + clafer + ".");
         }
-        ClaferObjective objective = ClaferCompiler.compileMinimize(model, scope, clafer.getRef());
+        ClaferObjective objective = ClaferCompiler.compileMinimize(getModel(), scope, clafer.getRef());
         return objective.optimal();
     }
 
@@ -210,7 +215,7 @@ public class JavascriptShell {
      * @return the Min-Unsat and near-miss example
      */
     public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
-        ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
+        ClaferUnsat unsat = ClaferCompiler.compileUnsat(getModel(), scope);
         return unsat.minUnsat();
     }
 
@@ -220,8 +225,15 @@ public class JavascriptShell {
      * @return the Min-Unsat-Core
      */
     public Set<AstConstraint> unsatCore() {
-        ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
+        ClaferUnsat unsat = ClaferCompiler.compileUnsat(getModel(), scope);
         return unsat.unsatCore();
+    }
+
+    public String stats() {
+        if (solver == null) {
+            throw new JavascriptException("No solver. Use \"solve()\" to solve the model.");
+        }
+        return solver.getMeasures().toString();
     }
 
     /**
