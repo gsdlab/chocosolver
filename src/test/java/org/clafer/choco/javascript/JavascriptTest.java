@@ -1,5 +1,6 @@
 package org.clafer.choco.javascript;
 
+import java.io.IOException;
 import javax.script.ScriptException;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -18,7 +19,7 @@ import org.junit.Test;
 public class JavascriptTest {
 
     @Test
-    public void testReadModel() throws ScriptException {
+    public void testReadModel() throws IOException {
         Pair<AstModel, Scope> pair = Javascript.readModel(
                 "scope({A:3, B:2, C:1})\n"
                 + "defaultScope(2)\n"

@@ -22,8 +22,8 @@ public class JavascriptContext {
     private int intHigh = 16;
     private final AstModel model = Asts.newModel();
 
-    public void setScope(Map<String, Double> scope) {
-        for (Entry<String, Double> entry : scope.entrySet()) {
+    public void setScope(Map<String, Number> scope) {
+        for (Entry<String, Number> entry : scope.entrySet()) {
             // Javascript integers are doubles.
             this.scope.put(entry.getKey(), entry.getValue().intValue());
         }

@@ -21,6 +21,9 @@ import org.clafer.compiler.ClaferObjective;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.compiler.ClaferUnsat;
 import org.clafer.instance.InstanceModel;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.RhinoException;
+import org.mozilla.javascript.Scriptable;
 
 /**
  * The Javascript CLI.
@@ -30,7 +33,7 @@ import org.clafer.instance.InstanceModel;
 public class JavascriptShell {
 
     // The Javascript engine.
-    private final ScriptEngine engine = Javascript.newEngine();
+    private Scriptable engine = Javascript.newEngine();
     // The model. Null if the model is not successfully loaded.
     private AstModel model;
     // The scope. Null if the model is not successfully loaded.
@@ -41,26 +44,29 @@ public class JavascriptShell {
     // The last file successfully loaded.
     private File modelFile;
 
-    public void init() throws ScriptException {
-        engine.put("rsc", this);
-        // It's important to set the ScriptEngine.FILENAME since that's
-        // what will be printed in error messages.
-        engine.put(ScriptEngine.FILENAME, "solver.js");
-        // solver.js contains the mapping from Javascript to the methods
-        // in this class.
-        engine.eval(new InputStreamReader(JavascriptShell.class.getResourceAsStream("solver.js")));
-        engine.put(ScriptEngine.FILENAME, "command line");
-        engine.put("help",
-                "help             display this helpful message\n"
-                + "load()           reload the model\n"
-                + "load(filename)   load a new model\n"
-                + "solve()          find the next solution\n"
-                + "maximize(Clafer) find a solution where Clafer.ref is maximal\n"
-                + "minimize(Clafer) find a solution where Clafer.ref is minimal\n"
-                + "minUnsat()       find the smallest set of unsatisfiable constraints and a near-miss\n"
-                + "unsatCore()      find a small set of mutually unsatisfiable constraints\n"
-                + "stats()          display statistics about the current search\n"
-                + "exit()           stop the session");
+    public void init() throws IOException {
+        Context cxt = Context.enter();
+        try {
+            engine.put("rsc", engine, this);
+            // solver.js contains the mapping from Javascript to the methods
+            // in this class.
+            cxt.evaluateReader(engine,
+                    new InputStreamReader(JavascriptShell.class.getResourceAsStream("solver.js")),
+                    "solver.js", 1, null);
+            engine.put("help", engine,
+                    "help             display this helpful message\n"
+                    + "load()           reload the model\n"
+                    + "load(filename)   load a new model\n"
+                    + "solve()          find the next solution\n"
+                    + "maximize(Clafer) find a solution where Clafer.ref is maximal\n"
+                    + "minimize(Clafer) find a solution where Clafer.ref is minimal\n"
+                    + "minUnsat()       find the smallest set of unsatisfiable constraints and a near-miss\n"
+                    + "unsatCore()      find a small set of mutually unsatisfiable constraints\n"
+                    + "stats()          display statistics about the current search\n"
+                    + "exit()           stop the session");
+        } finally {
+            Context.exit();
+        }
     }
 
     /**
@@ -98,18 +104,22 @@ public class JavascriptShell {
      * @return the value of the script, or null if it is a statement
      * @throws ScriptException
      */
-    public Object eval(String script) throws ScriptException {
-        return engine.eval(script);
+    public Object eval(String script) throws IOException {
+        Context cxt = Context.enter();
+        try {
+            return Context.toString(cxt.evaluateString(engine, script, "commandline", 1, null));
+        } finally {
+            Context.exit();
+        }
     }
 
     /**
      * Reload the previous successful file.
      *
      * @return a message
-     * @throws FileNotFoundException something happened to the file
-     * @throws ScriptException most likely a syntax error in the file
+     * @throws IOException something happened to the file
      */
-    public String load() throws FileNotFoundException, ScriptException {
+    public String load() throws IOException {
         if (modelFile == null) {
             return "No model. Use \"load(filename)\" to load in a new model.";
         }
@@ -121,10 +131,9 @@ public class JavascriptShell {
      *
      * @param filename the name of the file
      * @return a message
-     * @throws FileNotFoundException something happened to the file
-     * @throws ScriptException most likely a syntax error in the file
+     * @throws IOException something happened to the file
      */
-    public String load(String filename) throws FileNotFoundException, ScriptException {
+    public String load(String filename) throws IOException {
         return load(new File(filename));
     }
 
@@ -133,25 +142,17 @@ public class JavascriptShell {
      *
      * @param file the file
      * @return a message
-     * @throws FileNotFoundException something happened to the file
-     * @throws ScriptException most likely a syntax error in the file
+     * @throws IOException something happened to the file
      */
-    public String load(File file) throws FileNotFoundException, ScriptException {
+    public String load(File file) throws IOException {
         model = null;
         scope = null;
         solver = null;
-        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+        engine = Javascript.newEngine();
         try {
-            engine.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
             Pair<AstModel, Scope> pair = Javascript.readModel(file, engine);
             model = pair.getFst();
             scope = pair.getSnd();
-        } catch (FileNotFoundException e) {
-            engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-            throw e;
-        } catch (ScriptException e) {
-            engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-            throw e;
         } finally {
             init();
         }
@@ -254,7 +255,7 @@ public class JavascriptShell {
                 System.out.println(context.load(args[0]));
             } catch (IOException e) {
                 System.out.println("Error: " + getOriginalMessage(e));
-            } catch (ScriptException e) {
+            } catch (RhinoException e) {
                 System.out.println("Error: " + getOriginalMessage(e));
             }
         } else {
@@ -277,7 +278,7 @@ public class JavascriptShell {
                         // Exit was invoked.
                         break;
                     }
-                } catch (ScriptException e) {
+                } catch (RhinoException e) {
                     System.out.println("Error: " + getOriginalMessage(e));
                 }
             }
