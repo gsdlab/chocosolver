@@ -26,7 +26,6 @@ cd clafer
 git checkout choco
 make
 ```
-* [Rhino](https://developer.mozilla.org/en/docs/Rhino) - The Rhino Javascript engine is needed to enable Javascript support. Rhino should come bundled with most Java 6+ installations.
 
 Installation
 ------------
