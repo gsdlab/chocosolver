@@ -1117,11 +1117,11 @@ public class IrCompiler {
             CSet minuend = compile(ir.getMinuend());
             CSet subtrahend = compile(ir.getSubtrahend());
             if (reify == null) {
-                SetVar difference = numSetVar("Difference", ir.getEnv(), ir.getKer());
-                post(_difference(minuend.getSet(), subtrahend.getSet(), difference));
-                return new CSet(difference, ir.getCard());
+                CSet difference = numCset("Difference", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(_difference(minuend, subtrahend, difference));
+                return difference;
             }
-            return _difference(minuend.getSet(), subtrahend.getSet(), reify.getSet());
+            return _difference(minuend, subtrahend, reify);
         }
 
         @Override
@@ -1351,8 +1351,11 @@ public class IrCompiler {
         return Constraints.filterString(set, offset, string, result);
     }
 
-    private static Constraint _difference(SetVar minuend, SetVar subtrahend, SetVar difference) {
-        return Constraints.difference(minuend, subtrahend, difference);
+    private static Constraint _difference(CSet minuend, CSet subtrahend, CSet difference) {
+        return Constraints.difference(
+                minuend.getSet(), minuend.getCard(),
+                subtrahend.getSet(), subtrahend.getCard(),
+                difference.getSet(), difference.getCard());
     }
 
     private static Constraint _intersection(CSet[] operands, CSet intersection) {

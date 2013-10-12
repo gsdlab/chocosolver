@@ -250,9 +250,26 @@ public class Constraints {
         return new OrConstraint(constraints);
     }
 
-    public static Constraint difference(SetVar minuend, SetVar subtrahend, SetVar difference) {
-        Constraint<SetVar, PropSetDifference> constraint = new Constraint<SetVar, PropSetDifference>(new SetVar[]{minuend, subtrahend, difference}, minuend.getSolver());
-        constraint.setPropagators(new PropSetDifference(minuend, subtrahend, difference));
+    public static Constraint difference(
+            SetVar minuend, IntVar minuendCard,
+            SetVar subtrahend, IntVar subtrahendCard,
+            SetVar difference, IntVar differenceCard) {
+        Variable[] variables = new Variable[]{
+            minuend, minuendCard, subtrahend, subtrahendCard, difference, differenceCard
+        };
+
+        @SuppressWarnings("unchecked")
+        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
+                new Constraint(variables, difference.getSolver());
+
+        @SuppressWarnings("unchecked")
+        Propagator< ? extends Variable>[] propagators = new Propagator[]{
+            new PropSetDifference(minuend, subtrahend, difference),
+            greaterThanEq(minuendCard, differenceCard),
+            new PropCardinality(difference, differenceCard)
+        };
+        constraint.setPropagators(propagators);
+        
         return constraint;
     }
 
@@ -294,15 +311,15 @@ public class Constraints {
     public static Constraint intersection(
             SetVar[] operands, IntVar[] operandCards,
             SetVar intersection, IntVar intersectionCard) {
-        Variable[] array = new Variable[operands.length + operandCards.length + 2];
-        System.arraycopy(operands, 0, array, 0, operands.length);
-        System.arraycopy(operandCards, 0, array, operands.length, operandCards.length);
-        array[operands.length + operandCards.length] = intersection;
-        array[operands.length + operandCards.length + 1] = intersectionCard;
+        Variable[] variables = new Variable[operands.length + operandCards.length + 2];
+        System.arraycopy(operands, 0, variables, 0, operands.length);
+        System.arraycopy(operandCards, 0, variables, operands.length, operandCards.length);
+        variables[operands.length + operandCards.length] = intersection;
+        variables[operands.length + operandCards.length + 1] = intersectionCard;
 
         @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint = 
-                new Constraint(array, intersection.getSolver());
+        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
+                new Constraint(variables, intersection.getSolver());
 
         @SuppressWarnings("unchecked")
         Propagator< ? extends Variable>[] propagators = new Propagator[operandCards.length + 3];

@@ -5,6 +5,8 @@ import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.set.SCF;
+import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
 
@@ -30,10 +32,18 @@ public class SetDifferenceTest extends ConstraintTest {
             Solver solver = new Solver();
 
             SetVar minuend = VF.set("Minuend", Util.range(-nextInt(10), nextInt(10)), solver);
+            IntVar minuendCard = cardVar(minuend);
             SetVar subtrahend = VF.set("Subtrahend", Util.range(-nextInt(10), nextInt(10)), solver);
+            IntVar subtrahendCard = cardVar(subtrahend);
             SetVar difference = VF.set("Difference", Util.range(-nextInt(10), nextInt(10)), solver);
+            IntVar differenceCard = cardVar(difference);
 
-            solver.post(Constraints.difference(minuend, subtrahend, difference));
+            solver.post(Constraints.difference(minuend, minuendCard, subtrahend, subtrahendCard, difference, differenceCard));
+
+            // The constraint does not enforce cardinality for these variables so
+            // enforce it explicitly.
+            solver.post(SCF.cardinality(minuend, minuendCard));
+            solver.post(SCF.cardinality(subtrahend, subtrahendCard));
 
             assertTrue(randomizeStrategy(solver).findSolution());
             checkCorrectness(minuend, subtrahend, difference);
@@ -61,10 +71,18 @@ public class SetDifferenceTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar minuend = VF.set("Minuend", Util.range(-2, 4), solver);
+        IntVar minuendCard = cardVar(minuend);
         SetVar subtrahend = VF.set("Subtrahend", Util.range(-4, 2), solver);
+        IntVar subtrahendCard = cardVar(subtrahend);
         SetVar difference = VF.set("Difference", Util.range(-1, 3), solver);
+        IntVar differenceCard = cardVar(difference);
 
-        solver.post(Constraints.difference(minuend, subtrahend, difference));
+        solver.post(Constraints.difference(minuend, minuendCard, subtrahend, subtrahendCard, difference, differenceCard));
+
+        // The constraint does not enforce cardinality for these variables so
+        // enforce it explicitly.
+        solver.post(SCF.cardinality(minuend, minuendCard));
+        solver.post(SCF.cardinality(subtrahend, subtrahendCard));
 
         int count = 0;
         if (randomizeStrategy(solver).findSolution()) {

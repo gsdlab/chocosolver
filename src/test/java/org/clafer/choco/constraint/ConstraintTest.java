@@ -10,6 +10,7 @@ import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.VF;
 import solver.variables.Variable;
 
 /**
@@ -22,6 +23,10 @@ public abstract class ConstraintTest {
 
     public int nextInt(int n) {
         return rand.nextInt(n);
+    }
+
+    public IntVar cardVar(SetVar set) {
+        return VF.enumerated("|" + set.getName() + "|", 0, set.getEnvelopeSize(), set.getSolver());
     }
 
     public boolean[] getValues(BoolVar[] vars) {
