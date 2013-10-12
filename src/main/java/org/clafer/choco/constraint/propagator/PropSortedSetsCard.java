@@ -28,7 +28,7 @@ public class PropSortedSetsCard extends Propagator<Variable> {
         this.cards = cards;
     }
 
-    public static Variable[] buildArray(SetVar[] sets, IntVar[] cards) {
+    private static Variable[] buildArray(SetVar[] sets, IntVar[] cards) {
         Variable[] array = new Variable[sets.length + cards.length];
         System.arraycopy(sets, 0, array, 0, sets.length);
         System.arraycopy(cards, 0, array, sets.length, cards.length);

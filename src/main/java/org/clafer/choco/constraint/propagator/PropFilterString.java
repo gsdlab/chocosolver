@@ -21,7 +21,7 @@ public class PropFilterString extends Propagator<Variable> {
 
     private final SetVar set;
     private final int offset;
-    // Sorted in decreasing order. Non-negatives
+    // Sorted in decreasing order. Non-negatives.
     private final IntVar[] string;
     private final IntVar[] result;
 

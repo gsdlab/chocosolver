@@ -257,7 +257,8 @@ public class ClaferCompiler {
                 for (SetVar var : setVars) {
                     constraints.add(Constraints.notEqual(var, var.getValue()));
                 }
-                solver.getInternalSolver().postCut(Constraints.or(constraints));
+                solver.getInternalSolver().postCut(Constraints.or(
+                        constraints.toArray(new Constraint[constraints.size()])));
             }
         });
         return solver;

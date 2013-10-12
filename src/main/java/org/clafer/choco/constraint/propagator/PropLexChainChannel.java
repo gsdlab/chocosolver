@@ -27,7 +27,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
         this.ints = ints;
     }
 
-    public static IntVar[] buildArray(IntVar[][] strings, IntVar[] ints) {
+    private static IntVar[] buildArray(IntVar[][] strings, IntVar[] ints) {
         if (strings.length != ints.length) {
             throw new IllegalArgumentException();
         }

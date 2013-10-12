@@ -20,25 +20,25 @@ import util.ESat;
 public class PropSetSum extends Propagator<Variable> {
 
     private final SetVar set;
+    private final IntVar setCard;
     private final IntVar sum;
-    private final IntVar card;
 
-    public PropSetSum(SetVar set, IntVar sum, IntVar card) {
-        super(new Variable[]{set, sum, card}, PropagatorPriority.LINEAR, false);
+    public PropSetSum(SetVar set, IntVar setCard, IntVar sum) {
+        super(new Variable[]{set, setCard, sum}, PropagatorPriority.LINEAR, false);
         this.set = set;
+        this.setCard = setCard;
         this.sum = sum;
-        this.card = card;
     }
 
     private boolean isSetVar(int idx) {
         return idx == 0;
     }
 
-    private boolean isSumVar(int idx) {
+    private boolean isSetCardVar(int idx) {
         return idx == 1;
     }
 
-    private boolean isCardVar(int idx) {
+    private boolean isSumVar(int idx) {
         return idx == 2;
     }
 
@@ -47,7 +47,7 @@ public class PropSetSum extends Propagator<Variable> {
         if (isSetVar(vIdx)) {
             return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
         }
-        assert isSumVar(vIdx) || isCardVar(vIdx);
+        assert isSumVar(vIdx) || isSetCardVar(vIdx);
         return EventType.INSTANTIATE.mask + EventType.BOUND.mask;
     }
 
@@ -82,11 +82,11 @@ public class PropSetSum extends Propagator<Variable> {
             final int envSize = set.getEnvelopeSize();
             final int kerSize = set.getKernelSize();
 
-            card.updateLowerBound(kerSize, aCause);
-            card.updateUpperBound(envSize, aCause);
+            setCard.updateLowerBound(kerSize, aCause);
+            setCard.updateUpperBound(envSize, aCause);
 
-            int lbEnd = card.getLB() - kerSize;
-            int ubEnd = card.getUB() - kerSize;
+            int lbEnd = setCard.getLB() - kerSize;
+            int ubEnd = setCard.getUB() - kerSize;
 
             final Triple<int[], int[], int[]> triple = findKerSmallestLargest(ubEnd);
             int[] ker = triple.getFst();
@@ -160,7 +160,7 @@ public class PropSetSum extends Propagator<Variable> {
     public ESat isEntailed() {
         int envSize = set.getEnvelopeSize();
         int kerSize = set.getKernelSize();
-        if (kerSize > card.getUB()) {
+        if (kerSize > setCard.getUB()) {
             return ESat.FALSE;
         }
         int[] ker = PropUtil.iterateKer(set);
@@ -168,7 +168,7 @@ public class PropSetSum extends Propagator<Variable> {
         int high = 0;
         // The number of elements seen in env but not in ker.
         int index = 0;
-        int lowEnd = Math.min(card.getLB(), envSize) - kerSize;
+        int lowEnd = Math.min(setCard.getLB(), envSize) - kerSize;
         int highStart = envSize - kerSize - lowEnd;
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (Util.in(i, ker)) {
@@ -192,6 +192,6 @@ public class PropSetSum extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return "sum(" + set + ") = " + sum + " where " + card;
+        return "sum(" + set + ") = " + sum + " where " + setCard;
     }
 }

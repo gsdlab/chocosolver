@@ -868,13 +868,12 @@ public class IrCompiler {
         @Override
         public Object visit(IrSetSum ir, IntVar reify) {
             CSet set = compile(ir.getSet());
-            int n = ir.getSet().getCard().getHighBound();
             if (reify == null) {
                 IntVar sum = numIntVar("SetSum", ir.getDomain());
-                post(Constraints.setSum(set.getSet(), sum, set.getCard()));
+                post(Constraints.setSum(set.getSet(), set.getCard(), sum));
                 return sum;
             }
-            return Constraints.setSum(set.getSet(), reify, set.getCard());
+            return Constraints.setSum(set.getSet(), set.getCard(), reify);
         }
 
         @Override
@@ -1140,10 +1139,10 @@ public class IrCompiler {
             CSet[] operands = compile(ir.getOperands());
             if (reify == null) {
                 CSet union = numCset("Union", ir.getEnv(), ir.getKer(), ir.getCard());
-                post(_union(mapSet(operands), mapCard(operands), union.getSet(), union.getCard()));
+                post(_union(operands, union));
                 return union;
             }
-            return _union(mapSet(operands), mapCard(operands), reify.getSet(), reify.getCard());
+            return _union(operands, reify);
         }
 
         @Override
@@ -1362,8 +1361,8 @@ public class IrCompiler {
         return Constraints.intersection(mapSet(operands), mapCard(operands), intersection.getSet(), intersection.getCard());
     }
 
-    private static Constraint _union(SetVar[] operands, IntVar[] operandCards, SetVar union, IntVar unionCard) {
-        return Constraints.union(operands, operandCards, union, unionCard);
+    private static Constraint _union(CSet[] operands, CSet union) {
+        return Constraints.union(mapSet(operands), mapCard(operands), union.getSet(), union.getCard());
     }
 
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {
@@ -1448,7 +1447,7 @@ public class IrCompiler {
         }
     }
 
-    private static SetVar[] mapSet(CSet... sets) {
+    private static SetVar[] mapSet(CSet[] sets) {
         SetVar[] vars = new SetVar[sets.length];
         for (int i = 0; i < sets.length; i++) {
             vars[i] = sets[i].getSet();
@@ -1456,7 +1455,7 @@ public class IrCompiler {
         return vars;
     }
 
-    private static IntVar[] mapCard(CSet... sets) {
+    private static IntVar[] mapCard(CSet[] sets) {
         IntVar[] vars = new IntVar[sets.length];
         for (int i = 0; i < sets.length; i++) {
             vars[i] = sets[i].getCard();
