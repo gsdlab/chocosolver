@@ -29,13 +29,15 @@ import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import solver.constraints.Constraint;
+import solver.constraints.Propagator;
 import solver.constraints.binary.PropEqualX_Y;
 import solver.constraints.binary.PropGreaterOrEqualX_Y;
 import solver.constraints.set.PropCardinality;
-import solver.constraints.set.PropOffSet;
+import solver.constraints.set.PropIntersection;
 import solver.constraints.set.PropSubsetEq;
-import solver.constraints.set.SCF;
 import solver.constraints.unary.PropEqualXC;
+import solver.constraints.unary.PropGreaterOrEqualXC;
+import solver.constraints.unary.PropLessOrEqualXC;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -258,7 +260,7 @@ public class Constraints {
         Constraint constraint = new Constraint(new Variable[]{sub, subCard, sup, supCard}, sub.getSolver());
         constraint.setPropagators(
                 new PropSubsetEq(sub, sup),
-                new PropGreaterOrEqualX_Y(new IntVar[]{supCard, subCard}));
+                lessThanEq(subCard, supCard));
         return constraint;
     }
 
@@ -272,6 +274,50 @@ public class Constraints {
         constraint.setPropagators(new PropSetUnion(sets, union),
                 new PropSetUnionCard(setCards, unionCard),
                 new PropCardinality(union, unionCard));
+        return constraint;
+    }
+
+    private static Propagator<IntVar> greaterThanEq(IntVar g, IntVar l) {
+        return lessThanEq(l, g);
+    }
+
+    private static Propagator<IntVar> lessThanEq(IntVar l, IntVar g) {
+        if (l.instantiated()) {
+            return new PropGreaterOrEqualXC(g, l.getValue());
+        }
+        if (g.instantiated()) {
+            return new PropLessOrEqualXC(l, g.getValue());
+        }
+        return new PropGreaterOrEqualX_Y(new IntVar[]{g, l});
+    }
+
+    public static Constraint intersection(
+            SetVar[] operands, IntVar[] operandCards,
+            SetVar intersection, IntVar intersectionCard) {
+        Variable[] array = new Variable[operands.length + operandCards.length + 2];
+        System.arraycopy(operands, 0, array, 0, operands.length);
+        System.arraycopy(operandCards, 0, array, operands.length, operandCards.length);
+        array[operands.length + operandCards.length] = intersection;
+        array[operands.length + operandCards.length + 1] = intersectionCard;
+
+        @SuppressWarnings("unchecked")
+        Constraint<? extends Variable, Propagator<? extends Variable>> constraint = 
+                new Constraint(array, intersection.getSolver());
+
+        @SuppressWarnings("unchecked")
+        Propagator< ? extends Variable>[] propagators = new Propagator[operandCards.length + 3];
+        // See SCF.intersection(operands, intersection);
+        // TODO: Needs to add the same propagator twice because the implementation
+        // is not guaranteed to be idempotent. If it ever becomes idempotent, then
+        // follow the implementation.
+        propagators[0] = new PropIntersection(operands, intersection);
+        propagators[1] = new PropIntersection(operands, intersection);
+        propagators[2] = new PropCardinality(intersection, intersectionCard);
+        for (int i = 0; i < operandCards.length; i++) {
+            propagators[i + 3] = greaterThanEq(operandCards[i], intersectionCard);
+        }
+        constraint.setPropagators(propagators);
+
         return constraint;
     }
 

@@ -1128,11 +1128,11 @@ public class IrCompiler {
         public Object visit(IrSetIntersection ir, CSet reify) {
             CSet[] operands = compile(ir.getOperands());
             if (reify == null) {
-                SetVar intersection = numSetVar("Intersection", ir.getEnv(), ir.getKer());
-                post(_intersection(mapSet(operands), intersection));
-                return new CSet(intersection, ir.getCard());
+                CSet intersection = numCset("Intersection", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(_intersection(operands, intersection));
+                return intersection;
             }
-            return _intersection(mapSet(operands), reify.getSet());
+            return _intersection(operands, reify);
         }
 
         @Override
@@ -1355,8 +1355,8 @@ public class IrCompiler {
         return Constraints.difference(minuend, subtrahend, difference);
     }
 
-    private static Constraint _intersection(SetVar[] operands, SetVar union) {
-        return SCF.intersection(operands, union);
+    private static Constraint _intersection(CSet[] operands, CSet intersection) {
+        return Constraints.intersection(mapSet(operands), mapCard(operands), intersection.getSet(), intersection.getCard());
     }
 
     private static Constraint _union(SetVar[] operands, IntVar[] operandCards, SetVar union, IntVar unionCard) {
