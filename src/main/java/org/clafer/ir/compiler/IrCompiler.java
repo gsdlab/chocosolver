@@ -21,7 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
@@ -621,7 +620,7 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrSubsetEq ir, BoolArg a) {
-            return _subset_eq(compile(ir.getSubset()).getSet(), compile(ir.getSuperset()).getSet());
+            return _subset_eq(compile(ir.getSubset()), compile(ir.getSuperset()));
         }
 
         @Override
@@ -1368,8 +1367,8 @@ public class IrCompiler {
         return SCF.offSet(set, offseted, offset);
     }
 
-    private static Constraint _subset_eq(SetVar... sets) {
-        return SCF.subsetEq(sets);
+    private static Constraint _subset_eq(CSet sub, CSet sup) {
+        return Constraints.subsetEq(sub.getSet(), sub.getCard(), sup.getSet(), sup.getCard());
     }
     private static final BoolArg ConstraintNoReify = new BoolArg(null, Preference.Constraint);
     private static final BoolArg BoolVarNoReify = new BoolArg(null, Preference.BoolVar);

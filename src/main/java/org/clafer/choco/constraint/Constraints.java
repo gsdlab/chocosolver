@@ -30,7 +30,11 @@ import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import solver.constraints.Constraint;
 import solver.constraints.binary.PropEqualX_Y;
+import solver.constraints.binary.PropGreaterOrEqualX_Y;
 import solver.constraints.set.PropCardinality;
+import solver.constraints.set.PropOffSet;
+import solver.constraints.set.PropSubsetEq;
+import solver.constraints.set.SCF;
 import solver.constraints.unary.PropEqualXC;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -247,6 +251,14 @@ public class Constraints {
     public static Constraint difference(SetVar minuend, SetVar subtrahend, SetVar difference) {
         Constraint<SetVar, PropSetDifference> constraint = new Constraint<SetVar, PropSetDifference>(new SetVar[]{minuend, subtrahend, difference}, minuend.getSolver());
         constraint.setPropagators(new PropSetDifference(minuend, subtrahend, difference));
+        return constraint;
+    }
+
+    public static Constraint subsetEq(SetVar sub, IntVar subCard, SetVar sup, IntVar supCard) {
+        Constraint constraint = new Constraint(new Variable[]{sub, subCard, sup, supCard}, sub.getSolver());
+        constraint.setPropagators(
+                new PropSubsetEq(sub, sup),
+                new PropGreaterOrEqualX_Y(new IntVar[]{supCard, subCard}));
         return constraint;
     }
 
