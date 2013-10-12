@@ -1,15 +1,10 @@
 package org.clafer.javascript;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import org.clafer.ast.AstModel;
 import org.clafer.scope.Scope;
 import org.clafer.collection.Pair;
@@ -33,6 +28,7 @@ public class Javascript {
      */
     public static Scriptable newEngine() {
         Context cxt = Context.enter();
+        cxt.setOptimizationLevel(-1);
         try {
             return new ImporterTopLevel(cxt);
         } finally {
@@ -59,6 +55,7 @@ public class Javascript {
     public static Pair<AstModel, Scope> readModel(String name, String in, Scriptable engine) throws IOException {
         JavascriptContext context = new JavascriptContext();
         Context cxt = Context.enter();
+        cxt.setOptimizationLevel(-1);
         try {
             engine.put("rc", engine, context);
             cxt.evaluateReader(engine,
@@ -78,6 +75,7 @@ public class Javascript {
     public static Pair<AstModel, Scope> readModel(String name, Reader in, Scriptable engine) throws IOException {
         JavascriptContext context = new JavascriptContext();
         Context cxt = Context.enter();
+        cxt.setOptimizationLevel(-1);
         try {
             engine.put("rc", engine, context);
             cxt.evaluateReader(engine,

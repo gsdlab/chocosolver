@@ -2,13 +2,9 @@ package org.clafer.javascript;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Set;
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
@@ -46,6 +42,7 @@ public class JavascriptShell {
 
     public void init() throws IOException {
         Context cxt = Context.enter();
+        cxt.setOptimizationLevel(-1);
         try {
             engine.put("rsc", engine, this);
             // solver.js contains the mapping from Javascript to the methods
@@ -102,10 +99,10 @@ public class JavascriptShell {
      *
      * @param script executable Javascript
      * @return the value of the script, or null if it is a statement
-     * @throws ScriptException
      */
-    public Object eval(String script) throws IOException {
+    public Object eval(String script) {
         Context cxt = Context.enter();
+        cxt.setOptimizationLevel(-1);
         try {
             return Context.toString(cxt.evaluateString(engine, script, "commandline", 1, null));
         } finally {
