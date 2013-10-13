@@ -2,6 +2,8 @@ package org.clafer.ir;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
@@ -1324,6 +1326,7 @@ public class Irs {
      *
      * @param take
      * @param children
+     * @param injective
      * @return the join expression take.children
      */
     public static IrSetExpr joinRelation(IrSetExpr take, IrSetExpr[] children, boolean injective) {
@@ -1569,6 +1572,33 @@ public class Irs {
         IrDomain ker = IrUtil.offset(set.getKer(), offset);
         IrDomain card = set.getCard();
         return new IrOffset(set, offset, env, ker, card);
+    }
+
+    public static IrSetExpr mask(IrSetExpr set, int from, int to) {
+        if (from > to) {
+            throw new IllegalArgumentException();
+        }
+
+        if (from <= set.getEnv().getLowBound() && to > set.getEnv().getHighBound()) {
+            if (from == 0) {
+                return set;
+            }
+            return offset(set, -from);
+        }
+        int[] constant = IrUtil.getConstant(set);
+        if (constant != null) {
+            TIntList mask = new TIntArrayList();
+            for (int i = 0; i < constant.length; i++) {
+                if (i >= from && i < to) {
+                    mask.add(i - from);
+                }
+            }
+            return constant(mask.toArray());
+        }
+        IrDomain env = IrUtil.mask(set.getEnv(), from, to);
+        IrDomain ker = IrUtil.mask(set.getEnv(), from, to);
+        IrDomain card = boundDomain(ker.size(), Math.min(env.size(), set.getCard().getHighBound()));
+        return new IrMask(set, from, to, env, ker, card);
     }
 
     public static IrSetExpr ternary(IrBoolExpr antecedent, IrSetExpr consequent, IrSetExpr alternative) {

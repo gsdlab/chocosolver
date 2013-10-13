@@ -55,6 +55,7 @@ import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntNop;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrLone;
+import org.clafer.ir.IrMask;
 import org.clafer.ir.IrMinus;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
@@ -95,28 +96,28 @@ import solver.variables.VF;
  * @author jimmy
  */
 public class IrCompiler {
-
+    
     private final Solver solver;
     private final boolean coalesceVariables;
     private int varNum = 0;
-
+    
     private IrCompiler(Solver solver, boolean coalesceVariables) {
         this.solver = Check.notNull(solver);
         this.coalesceVariables = coalesceVariables;
     }
-
+    
     public static IrSolutionMap compile(IrModule in, Solver out) {
         return compile(in, out, true);
     }
-
+    
     public static IrSolutionMap compile(IrModule in, Solver out, boolean coalesceVariables) {
         IrCompiler compiler = new IrCompiler(out, coalesceVariables);
         return compiler.compile(in);
     }
-
+    
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
-
+        
         List<IrBoolExpr> constraints = optModule.getConstraints();
         Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
         Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
@@ -127,7 +128,7 @@ public class IrCompiler {
             Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
             coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
             optModule = propagatedPair.getSnd();
-
+            
             while (!coalesceTriple.getFst().isEmpty()
                     || !coalesceTriple.getSnd().isEmpty()
                     || !propagatedPair.getFst().isEmpty()) {
@@ -139,14 +140,14 @@ public class IrCompiler {
                 optModule = propagatedPair.getSnd();
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
-
+            
             constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
             for (IrBoolExpr constraint : optModule.getConstraints()) {
                 Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
                 if (cardinality != null) {
                     IntVar leftInt = compile(cardinality.getFst());
                     SetVar rightSet = getSetVar(cardinality.getSnd());
-
+                    
                     post(SCF.cardinality(rightSet, leftInt));
                     assert !setCardVars.containsKey(rightSet);
                     setCardVars.put(rightSet, leftInt);
@@ -155,7 +156,7 @@ public class IrCompiler {
                 }
             }
         }
-
+        
         Pair<List<IrJoinFunction>, List<IrJoinRelation>> commonSubexpressions =
                 CommonSubexpression.findCommonSubexpressions(optModule);
         for (IrJoinFunction function : commonSubexpressions.getFst()) {
@@ -164,7 +165,7 @@ public class IrCompiler {
         for (IrJoinRelation relation : commonSubexpressions.getSnd()) {
             cachedJoinRelation.put(relation, compile(relation));
         }
-
+        
         for (IrBoolExpr constraint : constraints) {
             Constraint compiled = compileAsConstraint(constraint);
             if (!compiled.equals(solver.TRUE)) {
@@ -176,7 +177,7 @@ public class IrCompiler {
                 coalescedIntVars, intVarMap,
                 coalescedSetVars, setVarMap);
     }
-
+    
     private static <T> Map<T, T> compose(Map<T, T> f1, Map<T, T> f2) {
         if (f2.isEmpty()) {
             return f1;
@@ -194,11 +195,11 @@ public class IrCompiler {
     }
     private final Map<IrJoinFunction, CSet> cachedJoinFunction = new HashMap<IrJoinFunction, CSet>();
     private final Map<IrJoinRelation, CSet> cachedJoinRelation = new HashMap<IrJoinRelation, CSet>();
-
+    
     private void post(Constraint constraint) {
         solver.post(constraint);
     }
-
+    
     private BoolVar boolVar(String name, IrBoolDomain domain) {
         switch (domain) {
             case TrueDomain:
@@ -209,7 +210,7 @@ public class IrCompiler {
                 return VF.bool(name, solver);
         }
     }
-
+    
     private IntVar intVar(String name, IrDomain domain) {
         if (domain.size() == 1) {
             int constant = domain.getLowBound();
@@ -230,7 +231,7 @@ public class IrCompiler {
         }
         return VF.enumerated(name, domain.getValues(), solver);
     }
-
+    
     private SetVar setVar(String name, IrDomain env, IrDomain ker) {
         assert IrUtil.isSubsetOf(ker, env);
         if (env.size() == ker.size()) {
@@ -239,13 +240,13 @@ public class IrCompiler {
         }
         return VF.set(name, env.getValues(), ker.getValues(), solver);
     }
-
+    
     private CSet cset(String name, IrDomain env, IrDomain ker, IrDomain card) {
         SetVar set = setVar(name, env, ker);
         return new CSet(set, card);
     }
     private final Map<SetVar, IntVar> setCardVars = new HashMap<SetVar, IntVar>();
-
+    
     private IntVar setCardVar(SetVar set, IrDomain card) {
         IntVar setCardVar = setCardVars.get(set);
         if (setCardVar == null) {
@@ -257,23 +258,23 @@ public class IrCompiler {
         }
         return setCardVar;
     }
-
+    
     private BoolVar numBoolVar(String name) {
         return boolVar(name + "#" + varNum++, IrBoolDomain.BoolDomain);
     }
-
+    
     private IntVar numIntVar(String name, IrDomain domain) {
         return intVar(name + "#" + varNum++, domain);
     }
-
+    
     private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
         return setVar(name + "#" + varNum++, env, ker);
     }
-
+    
     private CSet numCset(String name, IrDomain env, IrDomain ker, IrDomain card) {
         return cset(name + "#" + varNum++, env, ker, card);
     }
-
+    
     private BoolVar getBoolVar(IrBoolVar var) {
         BoolVar bool = (BoolVar) intVarMap.get(var);
         if (bool == null) {
@@ -282,7 +283,7 @@ public class IrCompiler {
         }
         return bool;
     }
-
+    
     private IntVar getIntVar(IrIntVar var) {
         IntVar iint = intVarMap.get(var);
         if (iint == null) {
@@ -292,7 +293,7 @@ public class IrCompiler {
         return iint;
     }
     private final Map<IrIntVar, IntVar> intVarMap = new HashMap<IrIntVar, IntVar>();
-
+    
     private SetVar getSetVar(IrSetVar var) {
         SetVar set = setVarMap.get(var);
         if (set == null) {
@@ -302,22 +303,22 @@ public class IrCompiler {
         return set;
     }
     private final Map<IrSetVar, SetVar> setVarMap = new HashMap<IrSetVar, SetVar>();
-
+    
     private BoolVar asBoolVar(Object obj) {
         if (obj instanceof Constraint) {
             return asBoolVar((Constraint) obj);
         }
         return (BoolVar) obj;
     }
-
+    
     private BoolVar asBoolVar(Constraint op) {
         return op.reif();
     }
-
+    
     private BoolVar compileAsBoolVar(IrBoolExpr expr) {
         return asBoolVar(expr.accept(boolExprCompiler, BoolVarNoReify));
     }
-
+    
     private BoolVar[] compileAsBoolVars(IrBoolExpr[] exprs) {
         BoolVar[] vars = new BoolVar[exprs.length];
         for (int i = 0; i < vars.length; i++) {
@@ -325,11 +326,11 @@ public class IrCompiler {
         }
         return vars;
     }
-
+    
     private IntVar compileAsIntVar(IrBoolExpr expr) {
         return asBoolVar(expr.accept(boolExprCompiler, BoolVarNoReify));
     }
-
+    
     private IntVar[] compileAsIntVars(IrBoolExpr[] exprs) {
         IntVar[] vars = new IntVar[exprs.length];
         for (int i = 0; i < vars.length; i++) {
@@ -337,22 +338,22 @@ public class IrCompiler {
         }
         return vars;
     }
-
+    
     private Constraint asConstraint(Object obj) {
         if (obj instanceof BoolVar) {
             return asConstraint((BoolVar) obj);
         }
         return (Constraint) obj;
     }
-
+    
     private Constraint asConstraint(BoolVar var) {
         return _arithm(var, "=", 1);
     }
-
+    
     private Constraint compileAsConstraint(IrBoolExpr expr) {
         return asConstraint(expr.accept(boolExprCompiler, ConstraintNoReify));
     }
-
+    
     private Constraint compileAsConstraint(IrBoolExpr expr, BoolVar reify) {
         BoolArg arg = new BoolArg(reify, Preference.Constraint);
         Constraint constraint = asConstraint(expr.accept(boolExprCompiler, arg));
@@ -362,7 +363,7 @@ public class IrCompiler {
         }
         return constraint;
     }
-
+    
     private Constraint compileAsConstraint(IrIntExpr expr, IntVar reify) {
         Object result = expr.accept(intExprCompiler, reify);
         if (result instanceof IntVar) {
@@ -371,7 +372,7 @@ public class IrCompiler {
         }
         return (Constraint) result;
     }
-
+    
     private Constraint compileAsConstraint(IrSetExpr expr, CSet reify) {
         Object result = expr.accept(setExprCompiler, reify);
         if (result instanceof CSet) {
@@ -381,7 +382,7 @@ public class IrCompiler {
         }
         return (Constraint) result;
     }
-
+    
     private Constraint[] compileAsConstraints(IrBoolExpr[] exprs) {
         Constraint[] constraints = new Constraint[exprs.length];
         for (int i = 0; i < constraints.length; i++) {
@@ -389,19 +390,19 @@ public class IrCompiler {
         }
         return constraints;
     }
-
+    
     private Object compile(IrBoolExpr expr) {
         return expr.accept(boolExprCompiler, ConstraintNoReify);
     }
-
+    
     private IntVar compile(IrIntExpr expr) {
         return (IntVar) expr.accept(intExprCompiler, null);
     }
-
+    
     private Object compile(IrIntExpr expr, IntVar reify) {
         return reify == null ? compile(expr) : compileAsConstraint(expr, reify);
     }
-
+    
     private IntVar[] compile(IrIntExpr[] exprs) {
         IntVar[] vars = new IntVar[exprs.length];
         for (int i = 0; i < vars.length; i++) {
@@ -409,11 +410,11 @@ public class IrCompiler {
         }
         return vars;
     }
-
+    
     private CSet compile(IrSetExpr expr) {
         return (CSet) expr.accept(setExprCompiler, null);
     }
-
+    
     private CSet[] compile(IrSetExpr[] exprs) {
         CSet[] vars = new CSet[exprs.length];
         for (int i = 0; i < vars.length; i++) {
@@ -426,46 +427,46 @@ public class IrCompiler {
         public Object visit(IrBoolVar ir, BoolArg a) {
             return getBoolVar(ir);
         }
-
+        
         @Override
         public Object visit(IrNot ir, BoolArg a) {
             return compileAsBoolVar(ir.getExpr()).not();
         }
-
+        
         @Override
         public Object visit(IrAnd ir, BoolArg a) {
             return _and(compileAsBoolVars(ir.getOperands()));
         }
-
+        
         @Override
         public Object visit(IrLone ir, BoolArg a) {
             return _lone(compileAsBoolVars(ir.getOperands()));
         }
-
+        
         @Override
         public Object visit(IrOne ir, BoolArg a) {
             return _one(compileAsBoolVars(ir.getOperands()));
         }
-
+        
         @Override
         public Object visit(IrOr ir, BoolArg a) {
             return _or(compileAsBoolVars(ir.getOperands()));
         }
-
+        
         @Override
         public Object visit(IrImplies ir, BoolArg a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar $consequent = compileAsIntVar(ir.getConsequent());
             return _implies($antecedent, $consequent);
         }
-
+        
         @Override
         public Object visit(IrNotImplies ir, BoolArg a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar $consequent = compileAsIntVar(ir.getConsequent());
             return _not_implies($antecedent, $consequent);
         }
-
+        
         @Override
         public Object visit(IrIfThenElse ir, BoolArg a) {
             BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
@@ -475,7 +476,7 @@ public class IrCompiler {
             Constraint elseClause = _implies($antecedent.not(), $alternative);
             return _and(thenClause.reif(), elseClause.reif());
         }
-
+        
         @Override
         public Object visit(IrIfOnlyIf ir, BoolArg a) {
             if (ir.getLeft() instanceof IrCompare) {
@@ -491,14 +492,14 @@ public class IrCompiler {
             }
             return compile(ir.getRight(), compileAsIntVar(ir.getLeft()));
         }
-
+        
         @Override
         public Object visit(IrXor ir, BoolArg a) {
             IntVar $left = compileAsIntVar(ir.getLeft());
             IntVar $right = compileAsIntVar(ir.getRight());
             return _arithm($left, "!=", $right);
         }
-
+        
         @Override
         public Object visit(IrWithin ir, BoolArg a) {
             IntVar var = compile(ir.getValue());
@@ -508,7 +509,7 @@ public class IrCompiler {
             }
             return _within(var, range.getValues());
         }
-
+        
         @Override
         public Object visit(IrNotWithin ir, BoolArg a) {
             IntVar var = compile(ir.getValue());
@@ -518,7 +519,7 @@ public class IrCompiler {
             }
             return _not_within(var, range.getValues());
         }
-
+        
         @Override
         public Object visit(IrCompare ir, BoolArg a) {
             Object opt = compileCompareConstant(ir.getLeft(), ir.getOp(), ir.getRight(), a);
@@ -573,7 +574,7 @@ public class IrCompiler {
             }
             return null;
         }
-
+        
         private Triple<String, IrIntExpr, Integer> getOffset(IrIntExpr expr) {
             if (expr instanceof IrAdd) {
                 IrAdd add = (IrAdd) expr;
@@ -604,7 +605,7 @@ public class IrCompiler {
             }
             return null;
         }
-
+        
         @Override
         public Object visit(IrSetTest ir, BoolArg a) {
             switch (ir.getOp()) {
@@ -619,36 +620,36 @@ public class IrCompiler {
                     throw new IllegalArgumentException("Unexpected operator.");
             }
         }
-
+        
         @Override
         public Object visit(IrMember ir, BoolArg a) {
             return _member(compile(ir.getElement()), compile(ir.getSet()).getSet());
         }
-
+        
         @Override
         public Object visit(IrNotMember ir, BoolArg a) {
             return _not_member(compile(ir.getElement()), compile(ir.getSet()).getSet());
         }
-
+        
         @Override
         public Object visit(IrSubsetEq ir, BoolArg a) {
             return _subset_eq(compile(ir.getSubset()), compile(ir.getSuperset()));
         }
-
+        
         @Override
         public Constraint visit(IrBoolChannel ir, BoolArg a) {
             BoolVar[] bools = compileAsBoolVars(ir.getBools());
             CSet set = compile(ir.getSet());
             return SCF.bool_channel(bools, set.getSet(), 0);
         }
-
+        
         @Override
         public Constraint visit(IrIntChannel ir, BoolArg a) {
             IntVar[] ints = compile(ir.getInts());
             CSet[] sets = compile(ir.getSets());
             return SCF.int_channel(mapSet(sets), ints, 0, 0);
         }
-
+        
         @Override
         public Object visit(IrSortStrings ir, BoolArg a) {
             IntVar[][] strings = new IntVar[ir.getStrings().length][];
@@ -657,13 +658,13 @@ public class IrCompiler {
             }
             return ir.isStrict() ? _lex_chain_less(strings) : _lex_chain_less_eq(strings);
         }
-
+        
         @Override
         public Object visit(IrSortSets ir, BoolArg a) {
             CSet[] sets = compile(ir.getSets());
             return Constraints.sortedSets(mapSet(sets), mapCard(sets));
         }
-
+        
         @Override
         public Object visit(IrSortStringsChannel ir, BoolArg a) {
             IntVar[][] strings = new IntVar[ir.getStrings().length][];
@@ -672,18 +673,18 @@ public class IrCompiler {
             }
             return _lex_chain_channel(strings, compile(ir.getInts()));
         }
-
+        
         @Override
         public Constraint visit(IrAllDifferent ir, BoolArg a) {
             IrIntExpr[] operands = ir.getOperands();
-
+            
             IntVar[] $operands = new IntVar[operands.length];
             for (int i = 0; i < $operands.length; i++) {
                 $operands[i] = compile(operands[i]);
             }
             return _all_different($operands);
         }
-
+        
         @Override
         public Constraint visit(IrSelectN ir, BoolArg a) {
             IrBoolExpr[] bools = ir.getBools();
@@ -695,12 +696,12 @@ public class IrCompiler {
             IntVar $n = compile(n);
             return Constraints.selectN($bools, $n);
         }
-
+        
         @Override
         public Object visit(IrFilterString ir, BoolArg a) {
             return _filter_string(compile(ir.getSet()).getSet(), ir.getOffset(), compile(ir.getString()), compile(ir.getResult()));
         }
-
+        
         @Override
         public Object visit(IrIntNop ir, BoolArg a) {
             if (ir.getExpr() instanceof IrBoolExpr) {
@@ -710,7 +711,7 @@ public class IrCompiler {
             }
             return solver.TRUE;
         }
-
+        
         @Override
         public Object visit(IrSetNop ir, BoolArg a) {
             compile(ir.getExpr());
@@ -722,18 +723,18 @@ public class IrCompiler {
         public IntVar visit(IrIntVar ir, IntVar reify) {
             return getIntVar(ir);
         }
-
+        
         @Override
         public IntVar visit(IrMinus ir, IntVar reify) {
             return VF.minus(compile(ir.getExpr()));
         }
-
+        
         @Override
         public Object visit(IrCard ir, IntVar reify) {
             CSet set = compile(ir.getSet());
             return set.getCard();
         }
-
+        
         @Override
         public Object visit(IrAdd ir, IntVar reify) {
             int constants = 0;
@@ -765,7 +766,7 @@ public class IrCompiler {
                     return _sum(reify, addends);
             }
         }
-
+        
         @Override
         public Object visit(IrSub ir, IntVar reify) {
             int constants = 0;
@@ -805,7 +806,7 @@ public class IrCompiler {
                     return _difference(reify, subtractends);
             }
         }
-
+        
         @Override
         public Object visit(IrMul ir, IntVar reify) {
             IrIntExpr multiplicand = ir.getMultiplicand();
@@ -843,7 +844,7 @@ public class IrCompiler {
             }
             return _times(compile(multiplicand), compile(multiplier), reify);
         }
-
+        
         @Override
         public Object visit(IrDiv ir, IntVar reify) {
             IrIntExpr dividend = ir.getDividend();
@@ -855,7 +856,7 @@ public class IrCompiler {
             }
             return _div(compile(dividend), compile(divisor), reify);
         }
-
+        
         @Override
         public Object visit(IrElement ir, IntVar reify) {
             if (reify == null) {
@@ -865,7 +866,7 @@ public class IrCompiler {
             }
             return _element(compile(ir.getIndex()), compile(ir.getArray()), reify);
         }
-
+        
         @Override
         public Object visit(IrCount ir, IntVar reify) {
             IntVar[] array = compile(ir.getArray());
@@ -876,7 +877,7 @@ public class IrCompiler {
             }
             return _count(ir.getValue(), array, reify);
         }
-
+        
         @Override
         public Object visit(IrSetSum ir, IntVar reify) {
             CSet set = compile(ir.getSet());
@@ -887,7 +888,7 @@ public class IrCompiler {
             }
             return Constraints.setSum(set.getSet(), set.getCard(), reify);
         }
-
+        
         @Override
         public Object visit(IrTernary ir, IntVar reify) {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
@@ -904,7 +905,7 @@ public class IrCompiler {
                     _arithm(reify, "=", consequent),
                     _arithm(reify, "=", alternative));
         }
-
+        
         private Object compileBool(IrBoolExpr expr, IntVar a) {
             if (a instanceof BoolVar) {
                 return compileAsConstraint(expr, (BoolVar) a);
@@ -912,142 +913,142 @@ public class IrCompiler {
             IntVar var = compileAsIntVar(expr);
             return a == null ? var : _arithm(var, "=", a);
         }
-
+        
         @Override
         public Object visit(IrBoolVar ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrNot ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrAnd ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrLone ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrOne ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrOr ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrImplies ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrNotImplies ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrIfThenElse ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrIfOnlyIf ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrXor ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrWithin ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrNotWithin ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrCompare ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrSetTest ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrMember ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrNotMember ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrSubsetEq ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrBoolChannel ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrIntChannel ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrSortStrings ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrSortSets ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrSortStringsChannel ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrAllDifferent ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrSelectN ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrFilterString ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrIntNop ir, IntVar a) {
             return compileBool(ir, a);
         }
-
+        
         @Override
         public Object visit(IrSetNop ir, IntVar a) {
             return compileBool(ir, a);
@@ -1058,7 +1059,7 @@ public class IrCompiler {
         public Object visit(IrSetVar ir, CSet reify) {
             return new CSet(getSetVar(ir), ir.getCard());
         }
-
+        
         @Override
         public Object visit(IrSingleton ir, CSet reify) {
             IntVar value = compile(ir.getValue());
@@ -1069,7 +1070,7 @@ public class IrCompiler {
             }
             return Constraints.singleton(value, reify.getSet(), reify.getCard());
         }
-
+        
         @Override
         public Object visit(IrArrayToSet ir, CSet reify) {
             IntVar[] array = compile(ir.getArray());
@@ -1080,7 +1081,7 @@ public class IrCompiler {
             }
             return Constraints.arrayToSet(array, reify.getSet(), reify.getCard(), ir.getGlobalCardinality());
         }
-
+        
         @Override
         public Object visit(IrJoinRelation ir, CSet reify) {
             CSet cache = cachedJoinRelation.get(ir);
@@ -1106,7 +1107,7 @@ public class IrCompiler {
             }
             return Constraints.joinRelation(take.getSet(), mapSet(children), reify.getSet());
         }
-
+        
         @Override
         public Object visit(IrJoinFunction ir, CSet reify) {
             CSet cache = cachedJoinFunction.get(ir);
@@ -1122,7 +1123,7 @@ public class IrCompiler {
             }
             return Constraints.joinFunction(take.getSet(), take.getCard(), refs, reify.getSet(), reify.getCard(), ir.getGlobalCardinality());
         }
-
+        
         @Override
         public Object visit(IrSetDifference ir, CSet reify) {
             CSet minuend = compile(ir.getMinuend());
@@ -1134,7 +1135,7 @@ public class IrCompiler {
             }
             return _difference(minuend, subtrahend, reify);
         }
-
+        
         @Override
         public Object visit(IrSetIntersection ir, CSet reify) {
             CSet[] operands = compile(ir.getOperands());
@@ -1145,7 +1146,7 @@ public class IrCompiler {
             }
             return _intersection(operands, reify);
         }
-
+        
         @Override
         public Object visit(IrSetUnion ir, CSet reify) {
             CSet[] operands = compile(ir.getOperands());
@@ -1156,7 +1157,7 @@ public class IrCompiler {
             }
             return _union(operands, reify);
         }
-
+        
         @Override
         public Object visit(IrOffset ir, CSet reify) {
             CSet set = compile(ir.getSet());
@@ -1167,7 +1168,18 @@ public class IrCompiler {
             }
             return _offset(set.getSet(), reify.getSet(), ir.getOffset());
         }
-
+        
+        @Override
+        public Object visit(IrMask ir, CSet reify) {
+            CSet set = compile(ir.getSet());
+            if (reify == null) {
+                CSet mask = numCset("Mask", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(_mask(set, mask, ir.getFrom(), ir.getTo()));
+                return mask;
+            }
+            return _mask(set, reify, ir.getFrom(), ir.getTo());
+        }
+        
         @Override
         public Object visit(IrSetTernary ir, CSet reify) {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
@@ -1185,17 +1197,17 @@ public class IrCompiler {
                     _equal(reify, alternative));
         }
     };
-
+    
     private static Constraint _implies(BoolVar antecedent, Constraint consequent) {
         return _implies(antecedent, consequent.reif());
     }
-
+    
     private static Constraint _ifThenElse(BoolVar antecedent, Constraint consequent, Constraint alternative) {
         Constraint thenClause = _implies(antecedent, consequent);
         Constraint elseClause = _implies(antecedent.not(), alternative);
         return _and(thenClause.reif(), elseClause.reif());
     }
-
+    
     private static Constraint _difference(IntVar difference, IntVar... vars) {
         int[] coeffiecients = new int[vars.length];
         coeffiecients[0] = 1;
@@ -1204,23 +1216,23 @@ public class IrCompiler {
         }
         return ICF.scalar(vars, coeffiecients, difference);
     }
-
+    
     private static Constraint _sum(IntVar sum, IntVar... vars) {
         return ICF.sum(vars, sum);
     }
-
+    
     private static Constraint _sum(IntVar sum, BoolVar... vars) {
         return ICF.sum(vars, sum);
     }
-
+    
     private static Constraint _times(IntVar multiplicand, IntVar multiplier, IntVar product) {
         return ICF.times(multiplicand, multiplier, product);
     }
-
+    
     private static Constraint _div(IntVar dividend, IntVar divisor, IntVar quotient) {
         return ICF.eucl_div(dividend, divisor, quotient);
     }
-
+    
     private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {
         if (cste == 0) {
             switch (Operator.get(op2)) {
@@ -1232,7 +1244,7 @@ public class IrCompiler {
         }
         return ICF.arithm(var1, op1, var2, op2, cste);
     }
-
+    
     private static Constraint _and(BoolVar... vars) {
         switch (vars.length) {
             case 1:
@@ -1243,7 +1255,7 @@ public class IrCompiler {
                 return Constraints.and(vars);
         }
     }
-
+    
     private static Constraint _lone(BoolVar... vars) {
         switch (vars.length) {
             case 1:
@@ -1254,7 +1266,7 @@ public class IrCompiler {
                 return Constraints.lone(vars);
         }
     }
-
+    
     private static Constraint _one(BoolVar... vars) {
         switch (vars.length) {
             case 1:
@@ -1265,7 +1277,7 @@ public class IrCompiler {
                 return Constraints.one(vars);
         }
     }
-
+    
     private static Constraint _or(BoolVar... vars) {
         switch (vars.length) {
             case 1:
@@ -1276,117 +1288,121 @@ public class IrCompiler {
                 return Constraints.or(vars);
         }
     }
-
+    
     private static Constraint _implies(BoolVar antecedent, IntVar consequent) {
         return _arithm(antecedent, "<=", consequent);
     }
-
+    
     private static Constraint _not_implies(BoolVar antecedent, IntVar consequent) {
         return _arithm(antecedent, ">", consequent);
     }
-
+    
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
         if (var2.instantiated()) {
             return ICF.arithm(var1, op, var2.getValue());
         }
         return ICF.arithm(var1, op, var2);
     }
-
+    
     private static Constraint _arithm(IntVar var1, String op, int c) {
         return ICF.arithm(var1, op, c);
     }
-
+    
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
         return ICF.element(value, array, index, 0);
     }
-
+    
     private static Constraint _count(int value, IntVar[] array, IntVar count) {
         return ICF.count(value, array, count);
     }
-
+    
     private static Constraint _equal(CSet var1, CSet var2) {
         return Constraints.equal(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
     }
-
+    
     private static Constraint _not_equal(CSet var1, CSet var2) {
         return Constraints.notEqual(var1.getSet(), var2.getSet());
     }
-
+    
     private static Constraint _all_different(IntVar... vars) {
         return ICF.alldifferent(vars, "AC");
     }
-
+    
     private static Constraint _within(IntVar var, int low, int high) {
         return ICF.member(var, low, high);
     }
-
+    
     private static Constraint _within(IntVar var, int[] values) {
         return ICF.member(var, values);
     }
-
+    
     private static Constraint _not_within(IntVar var, int low, int high) {
         return ICF.not_member(var, low, high);
     }
-
+    
     private static Constraint _not_within(IntVar var, int[] values) {
         return ICF.not_member(var, values);
     }
-
+    
     private static Constraint _member(IntVar element, SetVar set) {
         return SCF.member(element, set);
     }
-
+    
     private static Constraint _not_member(IntVar element, SetVar set) {
         return Constraints.notMember(element, set);
     }
-
+    
     private static Constraint _lex_chain_less(IntVar[]... vars) {
         if (vars.length == 2) {
             return ICF.lex_less(vars[0], vars[1]);
         }
         return ICF.lex_chain_less(vars);
     }
-
+    
     private static Constraint _lex_chain_less_eq(IntVar[]... vars) {
         if (vars.length == 2) {
             return ICF.lex_less_eq(vars[0], vars[1]);
         }
         return ICF.lex_chain_less_eq(vars);
     }
-
+    
     private static Constraint _lex_chain_channel(IntVar[][] strings, IntVar[] ints) {
         return Constraints.lexChainChannel(strings, ints);
     }
-
+    
     private static Constraint _filter_string(SetVar set, int offset, IntVar[] string, IntVar[] result) {
         return Constraints.filterString(set, offset, string, result);
     }
-
+    
     private static Constraint _difference(CSet minuend, CSet subtrahend, CSet difference) {
         return Constraints.difference(
                 minuend.getSet(), minuend.getCard(),
                 subtrahend.getSet(), subtrahend.getCard(),
                 difference.getSet(), difference.getCard());
     }
-
+    
     private static Constraint _intersection(CSet[] operands, CSet intersection) {
         return Constraints.intersection(mapSet(operands), mapCard(operands), intersection.getSet(), intersection.getCard());
     }
-
+    
     private static Constraint _union(CSet[] operands, CSet union) {
         return Constraints.union(mapSet(operands), mapCard(operands), union.getSet(), union.getCard());
     }
-
+    
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {
         return SCF.offSet(set, offseted, offset);
     }
-
+    
+    private static Constraint _mask(CSet set, CSet masked, int from, int to) {
+        return Constraints.mask(set.getSet(), set.getCard(), masked.getSet(), masked.getCard(), from, to);
+    }
+    
     private static Constraint _subset_eq(CSet sub, CSet sup) {
         return Constraints.subsetEq(sub.getSet(), sub.getCard(), sup.getSet(), sup.getCard());
     }
     private static final BoolArg ConstraintNoReify = new BoolArg(null, Preference.Constraint);
     private static final BoolArg BoolVarNoReify = new BoolArg(null, Preference.BoolVar);
-
+    
     private static class BoolArg {
 
         // The solution needs to be reified in this variable.
@@ -1394,39 +1410,39 @@ public class IrCompiler {
         private BoolVar reify;
         // The prefered type of solution.
         private final Preference preference;
-
+        
         BoolArg(BoolVar reify, Preference preference) {
             this.reify = reify;
             this.preference = preference;
         }
-
+        
         boolean hasReify() {
             return reify != null;
         }
-
+        
         BoolVar useReify() {
             BoolVar tmp = reify;
             reify = null;
             return tmp;
         }
-
+        
         Preference getPreference() {
             return preference;
         }
     }
-
+    
     private static enum Preference {
-
+        
         Constraint,
         BoolVar;
     }
-
+    
     private class CSet {
-
+        
         private final SetVar set;
         private final IrDomain cardDomain;
         private IntVar card;
-
+        
         CSet(SetVar set, IrDomain cardDomain) {
             this.set = Check.notNull(set);
             this.cardDomain = Check.notNull(cardDomain);
@@ -1435,21 +1451,21 @@ public class IrCompiler {
                     ? setCardVar(set, cardDomain)
                     : null;
         }
-
+        
         CSet(SetVar set, IntVar card) {
             this.set = Check.notNull(set);
             this.cardDomain = null;
             this.card = Check.notNull(card);
         }
-
+        
         SetVar getSet() {
             return set;
         }
-
+        
         boolean hasCardCached() {
             return card != null;
         }
-
+        
         IntVar getCard() {
             if (card == null) {
                 assert cardDomain != null;
@@ -1458,7 +1474,7 @@ public class IrCompiler {
             return card;
         }
     }
-
+    
     private static SetVar[] mapSet(CSet[] sets) {
         SetVar[] vars = new SetVar[sets.length];
         for (int i = 0; i < sets.length; i++) {
@@ -1466,7 +1482,7 @@ public class IrCompiler {
         }
         return vars;
     }
-
+    
     private static IntVar[] mapCard(CSet[] sets) {
         IntVar[] vars = new IntVar[sets.length];
         for (int i = 0; i < sets.length; i++) {

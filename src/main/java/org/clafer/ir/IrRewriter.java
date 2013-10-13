@@ -535,6 +535,14 @@ public abstract class IrRewriter<T>
                 ? offset(set, ir.getOffset())
                 : ir;
     }
+    
+    @Override
+    public IrSetExpr visit(IrMask ir, T a) {
+        IrSetExpr set = rewrite(ir.getSet(), a);
+        return changed(ir.getSet(), set)
+                ? mask(set, ir.getFrom(), ir.getTo())
+                : ir;
+    }
 
     @Override
     public IrSetExpr visit(IrSetTernary ir, T a) {

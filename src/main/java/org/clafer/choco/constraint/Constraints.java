@@ -14,6 +14,7 @@ import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
+import org.clafer.choco.constraint.propagator.PropMask;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
@@ -43,6 +44,9 @@ import solver.variables.SetVar;
 import solver.variables.Variable;
 
 /**
+ * Custom Choco constraints. Designed for Clafer. Note that these constraints
+ * requires that the envelope and kernel to be in sorted order from lowest to
+ * highest, which is not explicitly enforced by Choco.
  *
  * @author jimmy
  */
@@ -260,6 +264,7 @@ public class Constraints {
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropSubsetEq(sub, sup),
+            // Simple cardinality propagation.
             lessThanEq(subCard, supCard)
         };
         constraint.setPropagators(propagators);
@@ -681,6 +686,7 @@ public class Constraints {
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropSetDifference(minuend, subtrahend, difference),
+            // Simple cardinality propagation.
             greaterThanEq(minuendCard, differenceCard),
             new PropCardinality(difference, differenceCard)
         };
@@ -729,6 +735,7 @@ public class Constraints {
         propagators[1] = new PropIntersection(operands, intersection);
         propagators[2] = new PropCardinality(intersection, intersectionCard);
         for (int i = 0; i < operandCards.length; i++) {
+            // Simple cardinality propagation.
             propagators[i + 3] = greaterThanEq(operandCards[i], intersectionCard);
         }
         constraint.setPropagators(propagators);
@@ -769,6 +776,42 @@ public class Constraints {
             new PropSetUnion(operands, union),
             new PropSetUnionCard(operandCards, unionCard),
             new PropCardinality(union, unionCard)
+        };
+        constraint.setPropagators(propagators);
+
+        return constraint;
+    }
+
+    /**
+     * A constraint enforcing
+     * {@code {i + from | i ∈ member} = set ∩ {from, from + 1, ..., to - 1}}.
+     * Does not enforce that {@code setCard = |set|} because of how the
+     * compilation works, it is already enforced elsewhere.
+     *
+     *
+     * @param set the set
+     * @param setCard the cardinality of {@code set}
+     * @param masked the masked set
+     * @param maskedCard the cardinality of {@code masked}
+     * @param from the inclusive start of the mask
+     * @param to the exclusive end of the mask
+     * @return constraint
+     * {@code {i + from | i ∈ member} = set ∩ {from, from + 1, ..., to - 1}}
+     */
+    public static Constraint mask(
+            SetVar set, IntVar setCard,
+            SetVar masked, IntVar maskedCard,
+            int from, int to) {
+        @SuppressWarnings("unchecked")
+        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
+                new Constraint(new Variable[]{set, setCard, masked, maskedCard}, set.getSolver());
+
+        @SuppressWarnings("unchecked")
+        Propagator<? extends Variable>[] propagators = new Propagator[]{
+            new PropMask(set, masked, from, to),
+            // Simple cardinality propagation.
+            greaterThanEq(setCard, maskedCard),
+            new PropCardinality(masked, maskedCard)
         };
         constraint.setPropagators(propagators);
 

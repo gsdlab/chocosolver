@@ -1,6 +1,8 @@
 package org.clafer.ir;
 
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 
 /**
@@ -328,5 +330,28 @@ public class IrUtil {
             offsetValues[i] = values[i] + offset;
         }
         return Irs.enumDomain(offsetValues);
+    }
+
+    public static IrDomain mask(IrDomain domain, int from, int to) {
+        if (from > to) {
+            throw new IllegalArgumentException();
+        }
+        if (to > domain.getHighBound() + 1) {
+            throw new IllegalArgumentException();
+        }
+        if (from == to || domain.isEmpty()) {
+            return Irs.EmptyDomain;
+        }
+        if (domain.isBounded()) {
+            return Irs.boundDomain(0, to - from - 1);
+        }
+        int[] values = domain.getValues();
+        TIntList mask = new TIntArrayList();
+        for (int i = 0; i < values.length; i++) {
+            if (i >= from && i < to) {
+                mask.add(i - from);
+            }
+        }
+        return Irs.enumDomain(mask);
     }
 }
