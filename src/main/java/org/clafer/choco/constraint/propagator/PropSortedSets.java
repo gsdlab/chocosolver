@@ -1,14 +1,12 @@
 package org.clafer.choco.constraint.propagator;
 
+import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.delta.SetDelta;
-import solver.variables.delta.monitor.SetDeltaMonitor;
 import util.ESat;
-import util.procedure.IntProcedure;
 
 /**
  *
@@ -17,12 +15,10 @@ import util.procedure.IntProcedure;
 public class PropSortedSets extends Propagator<SetVar> {
 
     private final SetVar[] sets;
-    private final SetDeltaMonitor[] setsD;
 
     public PropSortedSets(SetVar[] sets) {
-        super(sets, PropagatorPriority.QUADRATIC, true);
+        super(sets, PropagatorPriority.QUADRATIC, false);
         this.sets = sets;
-        this.setsD = PropUtil.monitorDeltas(sets, aCause);
     }
 
     @Override
@@ -32,28 +28,49 @@ public class PropSortedSets extends Propagator<SetVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        // Right now, it don't does a very simple propagation. It does not
+        // enforce sorted sets by itself, requires PropSortedSetsCard in conjunction.
+        // Can make it better if necessary but might turn out slower.
+        for (int i = 0; i < sets.length; i++) {
+            SetVar set = sets[i];
+            int cur = set.getKernelFirst();
+            if (cur != SetVar.END) {
+                for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
+                    for (int j = cur + 1; j < next; j++) {
+                        set.addToKernel(j, aCause);
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public void propagate(final int idxVarInProp, int mask) throws ContradictionException {
-        final SetVar set = sets[idxVarInProp];
-        final IntProcedure pickKerOnKer = new IntProcedure() {
-            @Override
-            public void execute(int ker) throws ContradictionException {
-                int low = set.getKernelFirst();
-                for (int i = low + 1; i < ker; i++) {
-                    set.addToKernel(i, aCause);
-                }
-            }
-        };
-        final SetDeltaMonitor setD = setsD[idxVarInProp];
-        setD.freeze();
-        setD.forEach(pickKerOnKer, EventType.ADD_TO_KER);
-        setD.unfreeze();
+        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override
     public ESat isEntailed() {
-        return ESat.TRUE;
+        boolean allInstantiated = true;
+        for (int i = 0; i < sets.length; i++) {
+            SetVar set = sets[i];
+            allInstantiated &= set.instantiated();
+            int cur = set.getKernelFirst();
+            if (cur != SetVar.END) {
+                for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
+                    for (int j = cur + 1; cur < next; cur++) {
+                        if (!set.envelopeContains(j)) {
+                            return ESat.FALSE;
+                        }
+                    }
+                }
+            }
+        }
+        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return "sortedSets(" + Arrays.toString(sets) + ")";
     }
 }
