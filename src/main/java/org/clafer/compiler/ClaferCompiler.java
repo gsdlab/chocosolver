@@ -31,6 +31,7 @@ import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
+import org.clafer.scope.Scopable;
 import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
 import solver.constraints.Constraint;
@@ -111,23 +112,24 @@ public class ClaferCompiler {
         return vars.toArray(new IntVar[vars.size()]);
     }
 
-    private static AbstractStrategy<SetVar> setStrategy(SetVar[] vars, ClaferOptions[] options) {
-        if (Util.in(ClaferOptions.Prefer_Smaller_Instances, options)) {
+    private static AbstractStrategy<SetVar> setStrategy(SetVar[] vars, ClaferOptions options) {
+        if (options.isPreferSmallerInstances()) {
             return SetStrategyFactory.remove_first(vars);
         }
         return SetStrategyFactory.force_first(vars);
     }
 
-    public static ClaferSolver compile(AstModel in, ScopeBuilder scope, ClaferOptions... options) {
-        return compile(in, scope.toScope(), options);
+    public static ClaferSolver compile(AstModel in, Scopable scope) {
+        return compile(in, scope.toScope(), ClaferOptions.Default);
     }
 
-    public static ClaferSolver compile(AstModel in, Scope scope, ClaferOptions... options) {
+    public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(in, scope, module);
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver);
+        AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
+                options.isFullSymmetryBreaking());
+        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
@@ -136,17 +138,19 @@ public class ClaferCompiler {
         return new ClaferSolver(solver, solution);
     }
 
-    public static ClaferObjective compileMaximize(AstModel in, ScopeBuilder scope, AstRef ref, ClaferOptions... options) {
-        return compileMaximize(in, scope.toScope(), ref, options);
+    public static ClaferObjective compileMaximize(AstModel in, Scopable scope, AstRef ref) {
+        return compileMaximize(in, scope.toScope(), ref, ClaferOptions.Default);
     }
 
-    public static ClaferObjective compileMaximize(AstModel in, Scope scope, AstRef ref, ClaferOptions... options) {
+    public static ClaferObjective compileMaximize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(in, scope, ref, module);
+        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(
+                in, scope.toScope(), ref, module,
+                options.isFullSymmetryBreaking());
         AstSolutionMap astSolution = triple.getFst();
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver);
+        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
@@ -156,17 +160,19 @@ public class ClaferCompiler {
         return new ClaferObjective(solver, solution, Objective.Maximize, irSolution.getIntVar(triple.getThd()));
     }
 
-    public static ClaferObjective compileMinimize(AstModel in, ScopeBuilder scope, AstRef ref, ClaferOptions... options) {
-        return compileMinimize(in, scope.toScope(), ref, options);
+    public static ClaferObjective compileMinimize(AstModel in, Scopable scope, AstRef ref) {
+        return compileMinimize(in, scope.toScope(), ref, ClaferOptions.Default);
     }
 
-    public static ClaferObjective compileMinimize(AstModel in, Scope scope, AstRef ref, ClaferOptions... options) {
+    public static ClaferObjective compileMinimize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(in, scope, ref, module);
+        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(
+                in, scope.toScope(), ref, module,
+                options.isFullSymmetryBreaking());
         AstSolutionMap astSolution = triple.getFst();
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver);
+        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
@@ -176,17 +182,18 @@ public class ClaferCompiler {
         return new ClaferObjective(solver, solution, Objective.Minimize, irSolution.getIntVar(triple.getThd()));
     }
 
-    public static ClaferUnsat compileUnsat(AstModel in, ScopeBuilder scope, ClaferOptions... options) {
-        return compileUnsat(in, scope.toScope(), options);
+    public static ClaferUnsat compileUnsat(AstModel in, Scopable scope) {
+        return compileUnsat(in, scope.toScope(), ClaferOptions.Default);
     }
 
-    public static ClaferUnsat compileUnsat(AstModel in, Scope scope, ClaferOptions... options) {
+    public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(in, scope, module,
-                Util.cons(new UnsatAnalyzer(), AstCompiler.DefaultAnalyzers));
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver);
+        AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
+                Util.cons(new UnsatAnalyzer(), AstCompiler.DefaultAnalyzers),
+                options.isFullSymmetryBreaking());
+        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         Pair<AstConstraint, IrBoolVar>[] irSoftVarPairs = astSolution.getSoftVars();

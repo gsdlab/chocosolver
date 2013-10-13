@@ -1,6 +1,7 @@
 package org.clafer.ir.compiler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrElement;
@@ -96,51 +97,62 @@ import solver.variables.VF;
 public class IrCompiler {
 
     private final Solver solver;
+    private final boolean coalesceVariables;
     private int varNum = 0;
 
-    private IrCompiler(Solver solver) {
+    private IrCompiler(Solver solver, boolean coalesceVariables) {
         this.solver = Check.notNull(solver);
+        this.coalesceVariables = coalesceVariables;
     }
 
     public static IrSolutionMap compile(IrModule in, Solver out) {
-        IrCompiler compiler = new IrCompiler(out);
+        return compile(in, out, true);
+    }
+
+    public static IrSolutionMap compile(IrModule in, Solver out, boolean coalesceVariables) {
+        IrCompiler compiler = new IrCompiler(out, coalesceVariables);
         return compiler.compile(in);
     }
 
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
 
-        Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
-        Map<IrIntVar, IrIntVar> coalescedIntVars = coalesceTriple.getFst();
-        Map<IrSetVar, IrSetVar> coalescedSetVars = coalesceTriple.getSnd();
-        Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
-        coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
-        optModule = propagatedPair.getSnd();
-
-        while (!coalesceTriple.getFst().isEmpty()
-                || !coalesceTriple.getSnd().isEmpty()
-                || !propagatedPair.getFst().isEmpty()) {
-            coalesceTriple = Coalescer.coalesce(optModule);
-            coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
-            coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
-            propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
+        List<IrBoolExpr> constraints = optModule.getConstraints();
+        Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
+        Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
+        if (coalesceVariables) {
+            Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
+            coalescedIntVars = coalesceTriple.getFst();
+            coalescedSetVars = coalesceTriple.getSnd();
+            Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
             coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
             optModule = propagatedPair.getSnd();
-        }
-        optModule = DuplicateConstraints.removeDuplicates(optModule);
 
-        List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
-        for (IrBoolExpr constraint : optModule.getConstraints()) {
-            Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
-            if (cardinality != null) {
-                IntVar leftInt = compile(cardinality.getFst());
-                SetVar rightSet = getSetVar(cardinality.getSnd());
+            while (!coalesceTriple.getFst().isEmpty()
+                    || !coalesceTriple.getSnd().isEmpty()
+                    || !propagatedPair.getFst().isEmpty()) {
+                coalesceTriple = Coalescer.coalesce(optModule);
+                coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
+                coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
+                propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
+                coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
+                optModule = propagatedPair.getSnd();
+            }
+            optModule = DuplicateConstraints.removeDuplicates(optModule);
 
-                post(SCF.cardinality(rightSet, leftInt));
-                assert !setCardVars.containsKey(rightSet);
-                setCardVars.put(rightSet, leftInt);
-            } else {
-                constraints.add(constraint);
+            constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
+            for (IrBoolExpr constraint : optModule.getConstraints()) {
+                Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
+                if (cardinality != null) {
+                    IntVar leftInt = compile(cardinality.getFst());
+                    SetVar rightSet = getSetVar(cardinality.getSnd());
+
+                    post(SCF.cardinality(rightSet, leftInt));
+                    assert !setCardVars.containsKey(rightSet);
+                    setCardVars.put(rightSet, leftInt);
+                } else {
+                    constraints.add(constraint);
+                }
             }
         }
 

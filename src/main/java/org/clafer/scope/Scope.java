@@ -5,10 +5,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
-import solver.Solver;
-import solver.constraints.ICF;
-import solver.variables.BoolVar;
-import solver.variables.VF;
 
 /**
  * <p>
@@ -75,7 +71,7 @@ import solver.variables.VF;
  * @author jimmy
  * @see ScopeBuilder
  */
-public class Scope {
+public class Scope implements Scopable {
 
     private final Map<AstClafer, Integer> scopes;
     private final int defaultScope;
@@ -200,6 +196,14 @@ public class Scope {
      */
     public static ScopeBuilder intHigh(int intHigh) {
         return builder().intHigh(intHigh);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Scope toScope() {
+        return this;
     }
 
     /**

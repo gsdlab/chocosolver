@@ -10,11 +10,11 @@ import org.clafer.ast.AstClafer;
  * {@link Scope#intLow}, or {@link Scope#intHigh} to construct the builder. The
  * default scope and lowest and highest integers will be given a default if not
  * set explicitly.
- * 
+ *
  * @author jimmy
  * @see Scope
  */
-public class ScopeBuilder {
+public class ScopeBuilder implements Scopable {
 
     private final Map<AstClafer, Integer> scope = new HashMap<AstClafer, Integer>();
     private int defaultScope = 1;
@@ -27,7 +27,7 @@ public class ScopeBuilder {
     /**
      * Set the scope of the Clafer. If the scope is already set for the Clafer,
      * then the new scope overrides the previous one.
-     * 
+     *
      * @param clafer the Clafer
      * @param scope the scope of the clafer
      * @return this builder
@@ -38,9 +38,9 @@ public class ScopeBuilder {
     }
 
     /**
-     * Set the scope for unspecified Clafers. If the default scope is already set,
-     * then the new default scope overrides the previous one.
-     * 
+     * Set the scope for unspecified Clafers. If the default scope is already
+     * set, then the new default scope overrides the previous one.
+     *
      * @param defaultScope the default scope
      * @return this builder
      */
@@ -50,9 +50,10 @@ public class ScopeBuilder {
     }
 
     /**
-     * Set the lowest (inclusive) integer used for solving. If the lowest integer
-     * is already set, then the new lowest integer overrides the previous one.
-     * 
+     * Set the lowest (inclusive) integer used for solving. If the lowest
+     * integer is already set, then the new lowest integer overrides the
+     * previous one.
+     *
      * @param intLow the lowest integer
      * @return this builder
      */
@@ -62,9 +63,10 @@ public class ScopeBuilder {
     }
 
     /**
-     * Set the highest (inclusive) integer used for solving. If the highest integer
-     * is already set, then the new highest integer overrides the previous one.
-     * 
+     * Set the highest (inclusive) integer used for solving. If the highest
+     * integer is already set, then the new highest integer overrides the
+     * previous one.
+     *
      * @param intHigh the highest integer
      * @return this builder
      */
@@ -77,7 +79,7 @@ public class ScopeBuilder {
      * Finalizes all the decisions made in the builder. Further changes to this
      * builder is permitted for building more scopes, but the returned scope
      * will not be affected.
-     * 
+     *
      * @return the built scope
      */
     public Scope toScope() {

@@ -14,6 +14,7 @@ import org.clafer.scope.Scope;
 import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferObjective;
+import org.clafer.compiler.ClaferOptions;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.compiler.ClaferUnsat;
 import org.clafer.instance.InstanceModel;
@@ -39,6 +40,8 @@ public class JavascriptShell {
     private ClaferSolver solver;
     // The last file successfully loaded.
     private File modelFile;
+    // Configurable options.
+    private final Options options = new Options();
 
     public void init() throws IOException {
         Context cxt = Context.enter();
@@ -60,7 +63,9 @@ public class JavascriptShell {
                     + "minUnsat()       find the smallest set of unsatisfiable constraints and a near-miss\n"
                     + "unsatCore()      find a small set of mutually unsatisfiable constraints\n"
                     + "stats()          display statistics about the current search\n"
+                    + "options          display and modify the compiler options\n"
                     + "exit()           stop the session");
+            engine.put("options", engine, options);
         } finally {
             Context.exit();
         }
@@ -100,11 +105,15 @@ public class JavascriptShell {
      * @param script executable Javascript
      * @return the value of the script, or null if it is a statement
      */
-    public Object eval(String script) {
+    String eval(String script) {
         Context cxt = Context.enter();
         cxt.setOptimizationLevel(-1);
         try {
-            return Context.toString(cxt.evaluateString(engine, script, "commandline", 1, null));
+            Object obj = cxt.evaluateString(engine, script, "commandline", 1, null);
+            if (obj instanceof Messagable) {
+                return ((Messagable) obj).toMessage();
+            }
+            return Context.toString(obj);
         } finally {
             Context.exit();
         }
@@ -298,5 +307,67 @@ public class JavascriptShell {
             return getOriginalMessage(e.getCause());
         }
         return e.getMessage();
+    }
+
+    public static interface Messagable {
+
+        /**
+         * @return a message for the shell
+         */
+        public String toMessage();
+    }
+
+    public static class Options implements Messagable {
+
+        private ClaferOptions options = ClaferOptions.Default;
+
+        public String preferSmallerInstances() {
+            options = options.preferSmallerInstances();
+            return "Updated options.";
+        }
+
+        public String preferLargerInstances() {
+            options = options.preferLargerInstances();
+            return "Updated options.";
+        }
+
+        public String basicSymmetryBreaking() {
+            options = options.basicSymmetryBreaking();
+            return "Updated options.";
+        }
+
+        public String fullSymmetryBreaking() {
+            options = options.fullSymmetryBreaking();
+            return "Updated options.";
+        }
+
+        public String basicOptimizations() {
+            options = options.basicOptimizations();
+            return "Updated options.";
+        }
+
+        public String fullOptimizations() {
+            options = options.fullOptimizations();
+            return "Updated options.";
+        }
+
+        // Convenience function for the toString method.
+        private static String star(boolean bool) {
+            return bool ? " * " : "   ";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toMessage() {
+            return "(*) marks the current setting\n"
+                    + star(options.isPreferSmallerInstances()) + "options.preferSmallerInstances() bias the search towards smaller instances\n"
+                    + star(options.isPreferLargerInstances()) + "options.preferLargerInstances()  bias the search towards larger instances\n"
+                    + star(options.isBasicSymmetryBreaking()) + "options.basicSymmetryBreaking()  basic symmetry breaking\n"
+                    + star(options.isFullSymmetryBreaking()) + "options.fullSymmetryBreaking()   full symmetry breaking\n"
+                    + star(options.isBasicOptimizations()) + "options.basicOptimizations()     basic optimizations\n"
+                    + star(options.isFullOptimizations()) + "options.fullOptimizations()      full optimizations";
+        }
     }
 }

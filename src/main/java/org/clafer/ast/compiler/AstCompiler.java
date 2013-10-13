@@ -103,27 +103,29 @@ public class AstCompiler {
     };
     private final Analysis analysis;
     private final IrModule module;
+    private final boolean fullSymmetryBreaking;
 
-    private AstCompiler(AstModel model, Scope scope, IrModule module, Analyzer[] analyzers) {
+    private AstCompiler(AstModel model, Scope scope, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, analyzers);
         this.module = Check.notNull(module);
+        this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
 
-    public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out) {
-        return compile(in, scope, out, DefaultAnalyzers);
+    public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out, boolean fullSymmetryBreaking) {
+        return compile(in, scope, out, DefaultAnalyzers, fullSymmetryBreaking);
     }
 
-    public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out, Analyzer[] analyzers) {
-        AstCompiler compiler = new AstCompiler(in, scope, out, analyzers);
+    public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        AstCompiler compiler = new AstCompiler(in, scope, out, analyzers, fullSymmetryBreaking);
         return compiler.compile();
     }
 
-    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out) {
-        return compile(in, scope, objective, out, DefaultAnalyzers);
+    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out, boolean fullSymmetryBreaking) {
+        return compile(in, scope, objective, out, DefaultAnalyzers, fullSymmetryBreaking);
     }
 
-    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out, Analyzer[] analyzers) {
-        AstCompiler compiler = new AstCompiler(in, scope, out, analyzers);
+    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        AstCompiler compiler = new AstCompiler(in, scope, out, analyzers, fullSymmetryBreaking);
         return compiler.compile(objective);
     }
 
@@ -283,32 +285,34 @@ public class AstCompiler {
                 sets.put(clafer, set);
                 break;
         }
-        
+
+        if (fullSymmetryBreaking) {
             int scope = getScope(clafer);
-        int parentScope = getScope(clafer.getParent());
-        IrIntExpr[][] index;
-        AstRef ref = AstUtil.getInheritedRef(clafer);
-        // If the Clafer either needs children or reference to be introduce symmetry.
-        if (analysis.hasInteritedBreakableChildren(clafer)
-                || (ref != null && analysis.isBreakableRef(ref))
-                || analysis.isInheritedBreakableTarget(clafer)) {
-            index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
-            for (int i = 0; i < index.length; i++) {
-                for (int j = 0; j < index[i].length; j++) {
-                    index[i][j] =
-                            boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope);
+            int parentScope = getScope(clafer.getParent());
+            IrIntExpr[][] index;
+            AstRef ref = AstUtil.getInheritedRef(clafer);
+            // If the Clafer either needs children or reference to be introduce symmetry.
+            if (analysis.hasInteritedBreakableChildren(clafer)
+                    || (ref != null && analysis.isBreakableRef(ref))
+                    || analysis.isInheritedBreakableTarget(clafer)) {
+                index = new IrIntExpr[parentScope][getCard(clafer).getHigh()];
+                for (int i = 0; i < index.length; i++) {
+                    for (int j = 0; j < index[i].length; j++) {
+                        index[i][j] =
+                                boundInt(clafer.getName() + "@Index#" + i + "#" + j, -1, scope);
+                    }
+                }
+            } else {
+                // Optimize for nonsymmetric nodes. Don't compute the smallest indices, 
+                // just use the cardinalities.
+                IrSetVar[] childSet = siblingSets.get(clafer);
+                index = new IrIntExpr[childSet.length][];
+                for (int i = 0; i < index.length; i++) {
+                    index[i] = new IrIntExpr[]{card(childSet[i])};
                 }
             }
-        } else {
-            // Optimize for nonsymmetric nodes. Don't compute the smallest indices, 
-            // just use the cardinalities.
-            IrSetVar[] childSet = siblingSets.get(clafer);
-            index = new IrIntExpr[childSet.length][];
-            for (int i = 0; i < index.length; i++) {
-                index[i] = new IrIntExpr[]{card(childSet[i])};
-            }
+            indices.put(clafer, index);
         }
-        indices.put(clafer, index);
     }
 
     private void constrainConcrete(AstConcreteClafer clafer) {
@@ -373,9 +377,10 @@ public class AstCompiler {
         }
 
         // If the Clafer either needs children or reference to be introduce symmetry.
-        if (analysis.hasInteritedBreakableChildren(clafer)
+        if (fullSymmetryBreaking
+                && (analysis.hasInteritedBreakableChildren(clafer)
                 || (ref != null && analysis.isBreakableRef(ref))
-                || analysis.isInheritedBreakableTarget(clafer)) {
+                || analysis.isInheritedBreakableTarget(clafer))) {
             int scope = getScope(clafer);
             IrIntExpr[] weight = new IrIntExpr[scope];
             IrIntExpr[][] index = indices.get(clafer);
@@ -522,8 +527,10 @@ public class AstCompiler {
         Card card = getCard(clafer);
         IrSetVar[] childSet = siblingSets.get(clafer);
 
-        module.addConstraint(selectN(members, card(set)));
-        module.addConstraint(sort(childSet));
+        if (fullSymmetryBreaking) {
+            module.addConstraint(selectN(members, card(set)));
+            module.addConstraint(sort(childSet));
+        }
 
         for (int i = 0; i < parentMembership.length; i++) {
             IrBoolExpr parentMember = parentMembership[i];
@@ -554,7 +561,9 @@ public class AstCompiler {
          * Hand1 belongs to Person0. Otherwise, the children can swap around
          * creating many isomorphic solutions.
          */
-        module.addConstraint(sort(parentPointers.get(clafer)));
+        if (fullSymmetryBreaking) {
+            module.addConstraint(sort(parentPointers.get(clafer)));
+        }
     }
 
     private void initParentGroupConcrete(AstConcreteClafer clafer) {
