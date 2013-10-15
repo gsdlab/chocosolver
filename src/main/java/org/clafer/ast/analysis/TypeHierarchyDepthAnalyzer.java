@@ -28,7 +28,7 @@ public class TypeHierarchyDepthAnalyzer implements Analyzer {
         }
 
         List<AstAbstractClafer> abstractClafers = new ArrayList<AstAbstractClafer>(analysis.getAbstractClafers());
-        AnalysisUtil.descendingDepths(abstractClafers, depthMap);
+        AnalysisUtil.descendingDepths(abstractClafers);
 
         return analysis.setAbstractClafers(abstractClafers).setDepthMap(depthMap);
     }

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.clafer.common.Check;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 
 /**
@@ -26,10 +27,8 @@ public class AnalysisUtil {
         return t;
     }
 
-    public static void descendingDepths(
-            List<AstAbstractClafer> abstractClafers,
-            Map<AstAbstractClafer, Integer> depths) {
-        Collections.sort(abstractClafers, new DepthComparator(depths));
+    public static void descendingDepths(List<AstAbstractClafer> abstractClafers) {
+        Collections.sort(abstractClafers, DepthComparator);
     }
 
     public static void descendingGlobalCardRatio(
@@ -37,22 +36,14 @@ public class AnalysisUtil {
             Map<AstClafer, Card> globalCards) {
         Collections.sort(clafers, new GlobalCardRatioComparator(globalCards));
     }
-
-    private static class DepthComparator implements Comparator<AstAbstractClafer> {
-
-        private final Map<AstAbstractClafer, Integer> depths;
-
-        DepthComparator(Map<AstAbstractClafer, Integer> depths) {
-            this.depths = Check.notNull(depths);
-        }
-
+    private static final Comparator<AstAbstractClafer> DepthComparator = new Comparator<AstAbstractClafer>() {
         @Override
         public int compare(AstAbstractClafer o1, AstAbstractClafer o2) {
-            int depth1 = notNull(o1 + " Depth not analyzed yet", depths.get(o1)).intValue();
-            int depth2 = notNull(o2 + " Depth not analyzed yet", depths.get(o2)).intValue();
+            int depth1 = AstUtil.getDepth(o1);
+            int depth2 = AstUtil.getDepth(o2);
             return depth1 > depth2 ? -1 : (depth1 == depth2 ? 0 : 1);
         }
-    }
+    };
 
     private static class GlobalCardRatioComparator implements Comparator<AstClafer> {
 
@@ -68,7 +59,7 @@ public class AnalysisUtil {
             Card card2 = notNull(o2 + " Global card not analyzed yet", globalCards.get(o2));
             double ratio1 = ((double) card1.getLow()) / ((double) card1.getHigh());
             double ratio2 = ((double) card2.getLow()) / ((double) card2.getHigh());
-            return (ratio1 > ratio2) ? -1 : ((ratio1 == ratio2) ? 0 : 1);
+            return Double.compare(ratio1, ratio2);
         }
     }
 }
