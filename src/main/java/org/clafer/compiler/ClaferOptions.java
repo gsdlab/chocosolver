@@ -29,7 +29,7 @@ public class ClaferOptions {
      * Use the default options.
      */
     public static ClaferOptions Optimized = new ClaferOptions(false, false, false);
-    public static ClaferOptions Unoptimized = new ClaferOptions(false, true, true);
+    public static ClaferOptions Basic = new ClaferOptions(false, true, true);
     public static ClaferOptions Default = Optimized;
 
     private ClaferOptions(boolean preferSmallerInstances, boolean basicSymmetryBreaking, boolean basicOptimizations) {
