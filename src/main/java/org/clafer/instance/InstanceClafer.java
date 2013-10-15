@@ -1,11 +1,11 @@
 package org.clafer.instance;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstIntClafer;
-import org.clafer.ast.AstRef;
-import org.clafer.ast.AstUtil;
+import org.clafer.ast.AstConcreteClafer;
 
 /**
  *
@@ -47,6 +47,16 @@ public class InstanceClafer {
 
     public InstanceClafer[] getChildren() {
         return children;
+    }
+    
+    public InstanceClafer[] getChildren(AstConcreteClafer type) {
+        List<InstanceClafer> typedChildren = new ArrayList<InstanceClafer>();
+        for(InstanceClafer child : children) {
+            if(type.equals(child.getType())) {
+                typedChildren.add(child);
+            }
+        }
+        return typedChildren.toArray(new InstanceClafer[typedChildren.size()]);
     }
 
     /**

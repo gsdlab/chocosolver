@@ -3,9 +3,11 @@ package org.clafer.ast;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.clafer.common.Check;
@@ -226,13 +228,28 @@ public class AstUtil {
      */
     public static List<AstClafer> getSuperHierarchy(final AstClafer clafer) {
         List<AstClafer> supers = new ArrayList<AstClafer>();
-        supers.add(clafer);
-        AstAbstractClafer sup = clafer.getSuperClafer();
+        AstClafer sup = clafer;
         while (sup != null) {
             supers.add(sup);
             sup = sup.getSuperClafer();
         }
         return supers;
+    }
+
+    /**
+     * Equal to {@code getSuperHierarchy(clafer).size()}.
+     *
+     * @param clafer the Clafer
+     * @return {@code getSuperHierarchy(clafer).size()}
+     */
+    public static int getDepth(final AstClafer clafer) {
+        int i = 0;
+        AstClafer sup = clafer;
+        while (sup != null) {
+            i++;
+            sup = sup.getSuperClafer();
+        }
+        return i;
     }
 
     /**
@@ -310,21 +327,39 @@ public class AstUtil {
     }
 
     /**
-     * Finds the lowest common supertype or null if none.
+     * Finds the lowest common supertype.
      *
-     * @param partitions the partitions of the union type
-     * @return the lowest common supertype of {@code partitions}
+     * @param unionType the union type
+     * @return the lowest common supertype of {@code unionType}
      */
-    public static AstClafer getUnionType(AstClafer... partitions) {
-        List<AstClafer> supers = getSuperHierarchy(partitions[0]);
-        for (int i = 1; i < partitions.length; i++) {
-            List<AstClafer> otherSupers = getSuperHierarchy(partitions[i]);
+    public static AstClafer getLowestCommonSupertype(Iterable<AstClafer> unionType) {
+        Iterator<AstClafer> iter = unionType.iterator();
+        if (!iter.hasNext()) {
+            throw new IllegalArgumentException();
+        }
+        AstClafer first = iter.next();
+        if (!iter.hasNext()) {
+            return first;
+        }
+        List<AstClafer> supers = getSuperHierarchy(first);
+        while (iter.hasNext()) {
+            List<AstClafer> otherSupers = getSuperHierarchy(iter.next());
             supers = getUnionTypeHierarchy(supers, otherSupers);
             if (supers.isEmpty()) {
-                return null;
+                throw new IllegalArgumentException();
             }
         }
         return supers.get(0);
+    }
+
+    /**
+     * Finds the lowest common supertype.
+     *
+     * @param unionType the union type
+     * @return the lowest common supertype of {@code unionType}
+     */
+    public static AstClafer getLowestCommonSupertype(AstClafer... unionType) {
+        return getLowestCommonSupertype(Arrays.asList(unionType));
     }
 
     public static boolean hasInheritedRef(AstClafer clafer) {

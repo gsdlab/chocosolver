@@ -1,6 +1,9 @@
 package org.clafer.instance;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.clafer.ast.AstConcreteClafer;
 import org.clafer.common.Check;
 
 /**
@@ -17,6 +20,16 @@ public class InstanceModel {
 
     public InstanceClafer[] getTopClafers() {
         return topClafers;
+    }
+    
+    public InstanceClafer[] getTopClafers(AstConcreteClafer type) {
+        List<InstanceClafer> typedTopClafers = new ArrayList<InstanceClafer>();
+        for(InstanceClafer topClafer : topClafers) {
+            if(type.equals(topClafer.getType())) {
+                typedTopClafers.add(topClafer);
+            }
+        }
+        return typedTopClafers.toArray(new InstanceClafer[typedTopClafers.size()]);
     }
 
     /**

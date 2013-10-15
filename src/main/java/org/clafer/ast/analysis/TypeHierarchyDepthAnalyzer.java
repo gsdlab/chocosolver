@@ -17,7 +17,7 @@ public class TypeHierarchyDepthAnalyzer implements Analyzer {
         Map<AstAbstractClafer, Integer> depthMap = new HashMap<AstAbstractClafer, Integer>();
 
         for (final AstAbstractClafer clafer : analysis.getAbstractClafers()) {
-            List<AstAbstractClafer> hierarchy = new ArrayList<AstAbstractClafer>(0);
+            List<AstAbstractClafer> hierarchy = new ArrayList<AstAbstractClafer>();
             for (AstAbstractClafer sup = clafer; sup.hasSuperClafer(); sup = sup.getSuperClafer()) {
                 if (hierarchy.contains(sup)) {
                     throw new AnalysisException("Cycle in type hierarchy " + hierarchy);

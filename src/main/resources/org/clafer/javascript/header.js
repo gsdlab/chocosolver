@@ -54,15 +54,9 @@ function or(o1, o2) {
 function xor(x1, x2) {
     return Asts.xor([x1, x2]);
 }
-function union(u1, u2) {
-    return Asts.union([u1, u2]);
-}
-function diff(d1, d2) {
-    return Asts.diff([d1, d2]);
-}
-function inter(i1, i2) {
-    return Asts.inter([i1, i2]);
-}
+var diff = Asts.diff;
+var inter = Asts.inter;
+var union = Asts.union;
 var membership = Asts.membership;
 var ifThenElse = Asts.ifThenElse;
 var $in = Asts["in"];

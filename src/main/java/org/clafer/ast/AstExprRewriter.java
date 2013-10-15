@@ -99,8 +99,18 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
-    public AstExpr visit(AstSetArithm ast, T a) {
-        return arithm(ast.getOp(), rewrite(ast.getOperands(), a));
+    public AstExpr visit(AstDifference ast, T a) {
+        return diff(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstIntersection ast, T a) {
+        return inter(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstUnion ast, T a) {
+        return union(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
     }
 
     @Override
@@ -116,6 +126,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     @Override
     public AstExpr visit(AstIfThenElse ast, T a) {
         return ifThenElse(rewrite(ast.getAntecedent(), a), rewrite(ast.getConsequent(), a), rewrite(ast.getAlternative(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstDowncast ast, T a) {
+        return downcast(rewrite(ast.getBase(), a), ast.getTarget());
     }
 
     @Override

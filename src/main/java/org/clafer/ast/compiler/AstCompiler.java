@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Union;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
 import org.clafer.ast.AstUtil;
@@ -41,18 +42,21 @@ import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstDecl;
+import org.clafer.ast.AstDifference;
+import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
+import org.clafer.ast.AstIntersection;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
-import org.clafer.ast.AstSetArithm;
 import org.clafer.ast.AstTernary;
+import org.clafer.ast.AstUnion;
 import org.clafer.ast.Card;
 import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
 import org.clafer.ast.analysis.Analyzer;
@@ -64,6 +68,7 @@ import org.clafer.ast.analysis.PartialIntAnalyzer;
 import org.clafer.ast.analysis.PartialSolutionAnalyzer;
 import org.clafer.ast.analysis.ScopeAnalyzer;
 import org.clafer.ast.analysis.SymmetryAnalyzer;
+import org.clafer.ast.analysis.Type;
 import org.clafer.ast.analysis.TypeAnalyzer;
 import org.clafer.ast.analysis.TypeHierarchyDepthAnalyzer;
 import org.clafer.collection.Pair;
@@ -87,8 +92,8 @@ import static org.clafer.ir.Irs.*;
 public class AstCompiler {
 
     public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
-        new TypeAnalyzer(),
         new TypeHierarchyDepthAnalyzer(),
+        new TypeAnalyzer(),
         new GlobalCardAnalyzer(),
         new ScopeAnalyzer(),
         new CardAnalyzer(),
@@ -790,7 +795,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoinParent ast, Void a) {
-            AstConcreteClafer childrenType = (AstConcreteClafer) getType(ast.getChildren());
+            AstConcreteClafer childrenType = (AstConcreteClafer) getCommonSupertype(ast.getChildren());
 
             IrExpr children = compile(ast.getChildren());
             if (children instanceof IrIntExpr) {
@@ -818,7 +823,7 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstJoinRef ast, Void a) {
             AstSetExpr deref = ast.getDeref();
-            AstClafer derefType = getType(deref);
+            AstClafer derefType = getCommonSupertype(deref);
 
             Integer globalCardinality = null;
             IrExpr $deref;
@@ -967,22 +972,24 @@ public class AstCompiler {
         }
 
         @Override
-        public IrExpr visit(AstSetArithm ast, Void a) {
-            IrSetExpr[] operands = asSets(compile(ast.getOperands()));
-            switch (ast.getOp()) {
-                case Union:
-                    return union(operands);
-                case Difference:
-                    IrSetExpr difference = operands[0];
-                    for (int i = 1; i < operands.length; i++) {
-                        difference = difference(difference, operands[i]);
-                    }
-                    return difference;
-                case Intersection:
-                    return intersection(operands);
-                default:
-                    throw new AstException();
-            }
+        public IrExpr visit(AstDifference ast, Void a) {
+            return difference(
+                    asSet(compile(ast.getLeft())),
+                    asSet(compile(ast.getRight())));
+        }
+
+        @Override
+        public IrExpr visit(AstIntersection ast, Void a) {
+            return intersection(
+                    asSet(compile(ast.getLeft())),
+                    asSet(compile(ast.getRight())));
+        }
+
+        @Override
+        public IrExpr visit(AstUnion ast, Void a) {
+            return union(
+                    asSet(compile(ast.getLeft())),
+                    asSet(compile(ast.getRight())));
         }
 
         @Override
@@ -1026,9 +1033,22 @@ public class AstCompiler {
         }
 
         @Override
+        public IrExpr visit(AstDowncast ast, Void a) {
+            AstSetExpr base = ast.getBase();
+            int offset = getOffset((AstAbstractClafer) getCommonSupertype(base), ast.getTarget());
+
+            IrExpr $base = compile(ast.getBase());
+            if ($base instanceof IrIntExpr) {
+                IrIntExpr intBase = (IrIntExpr) $base;
+                return sub(intBase, constant(offset));
+            }
+            return mask((IrSetExpr) $base, offset, offset + getScope(ast.getTarget()));
+        }
+
+        @Override
         public IrExpr visit(AstUpcast ast, Void a) {
             AstSetExpr base = ast.getBase();
-            int offset = getOffset(ast.getTarget(), getType(base));
+            int offset = getOffset(ast.getTarget(), getCommonSupertype(base));
 
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
@@ -1325,8 +1345,12 @@ public class AstCompiler {
         return analysis.getDepth(clafer);
     }
 
-    private AstClafer getType(AstExpr expr) {
+    private Type getType(AstExpr expr) {
         return analysis.getType(expr);
+    }
+
+    private AstClafer getCommonSupertype(AstExpr expr) {
+        return analysis.getCommonSupertype(expr);
     }
 
     private List<AstConstraint> getConstraints() {

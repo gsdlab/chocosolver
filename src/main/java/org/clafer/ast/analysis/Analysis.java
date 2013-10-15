@@ -40,7 +40,7 @@ public class Analysis {
     private Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap;
     private Map<AstRef, int[]> breakableRefsMap;
     private Map<AstClafer, AstRef[]> breakableTargetsMap;
-    private Map<AstExpr, AstClafer> typeMap;
+    private Map<AstExpr, Type> typeMap;
 
     Analysis(AstModel model, Scope scope) {
         this(model, scope, model.getAbstracts(), AstUtil.getConcreteClafers(model));
@@ -74,7 +74,7 @@ public class Analysis {
             Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap,
             Map<AstRef, int[]> breakableRefsMap,
             Map<AstClafer, AstRef[]> breakableTargetsMap,
-            Map<AstExpr, AstClafer> typeMap) {
+            Map<AstExpr, Type> typeMap) {
         this.model = model;
         this.scope = scope;
         this.clafers = clafers;
@@ -432,15 +432,19 @@ public class Analysis {
         return this;
     }
 
-    public AstClafer getType(AstExpr expr) {
+    public Type getType(AstExpr expr) {
         return notNull(expr.toString(), "Type", getTypeMap().get(expr));
     }
+    
+    public AstClafer getCommonSupertype(AstExpr expr) {
+        return notNull(expr.toString(), "Type", getTypeMap().get(expr)).getCommonSuperType();
+    }
 
-    public Map<AstExpr, AstClafer> getTypeMap() {
+    public Map<AstExpr, Type> getTypeMap() {
         return notNull("Type", typeMap);
     }
 
-    public Analysis setTypeMap(Map<AstExpr, AstClafer> typeMap) {
+    public Analysis setTypeMap(Map<AstExpr, Type> typeMap) {
         this.typeMap = typeMap;
         return this;
     }

@@ -192,7 +192,14 @@ public abstract class AstClafer implements AstVar {
     public AstConcreteClafer addChild(String name) {
         AstConcreteClafer child = new AstConcreteClafer(name, this);
         children.add(child);
-        return child;
+        AstAbstractClafer topMost = getSuperClafer();
+        if(topMost == null) {
+            System.out.println(this);
+        }
+        while(topMost.hasSuperClafer()) {
+            topMost = topMost.getSuperClafer();
+        }
+        return child.extending(topMost);
     }
 
     /**

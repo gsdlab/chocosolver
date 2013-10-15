@@ -39,6 +39,7 @@ public class AstModel extends AstConcreteClafer {
         this.claferClafer = new AstAbstractClafer("#clafer#");
         this.abstracts = new ArrayList<AstAbstractClafer>();
         this.abstracts.add(claferClafer);
+        super.extending(claferClafer);
     }
 
     /**
@@ -69,11 +70,6 @@ public class AstModel extends AstConcreteClafer {
         AstAbstractClafer abstractClafer = new AstAbstractClafer(name).extending(claferClafer);
         abstracts.add(abstractClafer);
         return abstractClafer;
-    }
-
-    @Override
-    public AstConcreteClafer addChild(String name) {
-        return super.addChild(name).extending(claferClafer);
     }
 
     @Override

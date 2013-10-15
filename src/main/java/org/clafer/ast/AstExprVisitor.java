@@ -35,13 +35,19 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstBoolArithm ast, A a);
 
-    public B visit(AstSetArithm ast, A a);
+    public B visit(AstDifference ast, A a);
+
+    public B visit(AstIntersection ast, A a);
+
+    public B visit(AstUnion ast, A a);
 
     public B visit(AstMembership ast, A a);
 
     public B visit(AstTernary ast, A a);
 
     public B visit(AstIfThenElse ast, A a);
+
+    public B visit(AstDowncast ast, A a);
 
     public B visit(AstUpcast ast, A a);
 

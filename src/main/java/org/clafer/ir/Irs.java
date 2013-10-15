@@ -1491,6 +1491,7 @@ public class Irs {
     }
 
     public static IrSetExpr intersection(IrSetExpr... operands) {
+        // TODO flatten intersection
         switch (operands.length) {
             case 0:
                 return EmptySet;

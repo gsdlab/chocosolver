@@ -9,7 +9,6 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferSolver;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.search.loop.monitors.SMF;
 
 /**
  *
@@ -262,7 +261,7 @@ public class SimpleConstraintTest {
 
         AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
         AstConcreteClafer cost = feature.addChild("Cost").refToUnique(IntType);
-        feature.addConstraint(equal(joinRef(join($this(), cost)), union(constant(5), constant(2), constant(3), constant(4))));
+        feature.addConstraint(equal(joinRef(join($this(), cost)), union(union(union(constant(5), constant(2)), constant(3)), constant(4))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(20));
         assertEquals(1, solver.allInstances().length);
@@ -436,7 +435,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer e = d.addChild("E").extending(c).withCard(Mandatory);
         AstConcreteClafer f = d.addChild("F").extending(c).withCard(Mandatory);
         AstConcreteClafer g = d.addChild("G").extending(c).withCard(Mandatory);
-        d.addConstraint(equal(joinRef(join($this(), b)), union(join($this(), e), join($this(), f), join($this(), g))));
+        d.addConstraint(equal(joinRef(join($this(), b)), union(union(join($this(), e), join($this(), f)), join($this(), g))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(20));
         assertTrue(solver.find());
@@ -471,7 +470,7 @@ public class SimpleConstraintTest {
         AstConcreteClafer g = d.addChild("G").extending(c).withCard(Mandatory);
         AstConcreteClafer h = d.addChild("H").withCard(Optional);
         AstConcreteClafer i = d.addChild("I").refToUnique(c);
-        d.addConstraint(equal(joinRef(join($this(), i)), union(join($this(), e), join($this(), f), join($this(), g))));
+        d.addConstraint(equal(joinRef(join($this(), i)), union(union(join($this(), e), join($this(), f)), join($this(), g))));
         d.addConstraint(implies(some(join($this(), h)),
                 equal(joinRef(join($this(), i)), joinRef(join($this(), b)))));
 

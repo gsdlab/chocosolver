@@ -38,7 +38,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
     public AstExpr visit(AstJoin ast, Analysis a) {
         AstSetExpr left = rewrite(ast.getLeft(), a);
         if (left instanceof AstThis) {
-            if (a.getScope(a.getType(ast.getLeft())) == 1) {
+            if (a.getScope(a.getCommonSupertype(ast.getLeft())) == 1) {
                 Card childCard = a.getCard(ast.getRight());
                 if (childCard.isExact()) {
                     return constant(ast.getRight(), Util.fromTo(0, childCard.getLow()));
@@ -71,21 +71,21 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
     public AstExpr visit(AstJoinParent ast, Analysis a) {
         AstSetExpr children = rewrite(ast.getChildren(), a);
         if (children instanceof AstThis) {
-            AstClafer type = a.getType(ast);
+            AstClafer type = a.getCommonSupertype(ast);
             if (a.getScope(type) == 1) {
                 return constant(type, 0);
             }
         } else if (children instanceof AstGlobal) {
-            AstClafer childType = a.getType(ast.getChildren());
+            AstClafer childType = a.getCommonSupertype(ast.getChildren());
             if (childType instanceof AstConcreteClafer) {
                 AstConcreteClafer concreteChildType = (AstConcreteClafer) childType;
                 if (a.getCard(concreteChildType).hasLow()) {
-                    return global(a.getType(ast));
+                    return global(a.getCommonSupertype(ast));
                 }
             }
         } else if (children instanceof AstConstant) {
             AstConstant constant = (AstConstant) children;
-            AstClafer type = a.getType(ast);
+            AstClafer type = a.getCommonSupertype(ast);
             if (constant.getValue().length > 0 && a.getScope(type) == 1) {
                 return constant(type, 0);
             }
