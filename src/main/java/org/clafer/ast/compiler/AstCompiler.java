@@ -1,6 +1,5 @@
 package org.clafer.ast.compiler;
 
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Union;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
 import org.clafer.ast.AstUtil;
