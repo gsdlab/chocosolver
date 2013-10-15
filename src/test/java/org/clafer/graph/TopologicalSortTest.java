@@ -18,6 +18,17 @@ public class TopologicalSortTest {
     }
 
     @Test
+    public void testSingletonNodes() {
+        KeyGraph<Character> graph = new KeyGraph<Character>();
+        graph.getVertex('a');
+        graph.getVertex('b');
+
+        List<Set<Character>> components = GraphUtil.computeStronglyConnectedComponents(graph);
+
+        assertEquals(2, components.size());
+    }
+
+    @Test
     public void testSelfReference() {
         KeyGraph<Character> graph = new KeyGraph<Character>();
         graph.getVertex('a').addNeighbour(graph.getVertex('b'));
