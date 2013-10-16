@@ -1,4 +1,4 @@
-defaultScope(1);
+defaultScope(25);
 intRange(-8, 7);
 
 c1_AADLMember = Abstract("c1_AADLMember");

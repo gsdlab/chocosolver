@@ -26,7 +26,7 @@ public class TypingConstraintTest {
      *     b -> int
      * C : B
      *     c -> int
-     * D : B
+     * D : B ?
      *     d -> int
      *
      * [(C ++ D).b.ref = 1]
@@ -42,7 +42,7 @@ public class TypingConstraintTest {
         AstConcreteClafer b = B.addChild("b").withCard(Mandatory).refToUnique(IntType);
         AstConcreteClafer C = model.addChild("C").extending(B).withCard(Mandatory);
         AstConcreteClafer c = C.addChild("c").withCard(Mandatory).refToUnique(IntType);
-        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Mandatory);
+        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Optional);
         AstConcreteClafer d = D.addChild("d").withCard(Mandatory).refToUnique(IntType);
 
         model.addConstraint(equal(joinRef(join(union(global(C), global(D)), b)), constant(1)));
@@ -63,7 +63,7 @@ public class TypingConstraintTest {
             }
             count++;
         }
-        assertEquals(81, count);
+        assertEquals(90, count);
     }
 
     /**
@@ -74,7 +74,7 @@ public class TypingConstraintTest {
      *     b -> int
      * C : B
      *     c -> int
-     * D : B
+     * D : B ?
      *     d -> int
      *
      * [(C ++ D).d.ref = 1]
@@ -90,7 +90,7 @@ public class TypingConstraintTest {
         AstConcreteClafer b = B.addChild("b").withCard(Mandatory).refToUnique(IntType);
         AstConcreteClafer C = model.addChild("C").extending(B).withCard(Mandatory);
         AstConcreteClafer c = C.addChild("c").withCard(Mandatory).refToUnique(IntType);
-        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Mandatory);
+        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Optional);
         AstConcreteClafer d = D.addChild("d").withCard(Mandatory).refToUnique(IntType);
 
         model.addConstraint(equal(joinRef(join(union(global(C), global(D)), d)), constant(1)));
@@ -117,7 +117,7 @@ public class TypingConstraintTest {
      *     b -> int
      * C : B
      *     c -> int
-     * D : B
+     * D : B ?
      *     d -> int
      *
      * [(C ++ D).a.ref = 1]
@@ -133,7 +133,7 @@ public class TypingConstraintTest {
         AstConcreteClafer b = B.addChild("b").withCard(Mandatory).refToUnique(IntType);
         AstConcreteClafer C = model.addChild("C").extending(B).withCard(Mandatory);
         AstConcreteClafer c = C.addChild("c").withCard(Mandatory).refToUnique(IntType);
-        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Mandatory);
+        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Optional);
         AstConcreteClafer d = D.addChild("d").withCard(Mandatory).refToUnique(IntType);
 
         model.addConstraint(equal(joinRef(join(union(global(C), global(D)), a)), constant(1)));
@@ -154,7 +154,7 @@ public class TypingConstraintTest {
             }
             count++;
         }
-        assertEquals(81, count);
+        assertEquals(90, count);
     }
 
     /**
@@ -165,7 +165,7 @@ public class TypingConstraintTest {
      *     b -> int
      * C : B
      *     c -> int
-     * D : B
+     * D : B ?
      *     d -> int
      *
      * [(C ++ B).d.ref = 1]
@@ -181,7 +181,7 @@ public class TypingConstraintTest {
         AstConcreteClafer b = B.addChild("b").withCard(Mandatory).refToUnique(IntType);
         AstConcreteClafer C = model.addChild("C").extending(B).withCard(Mandatory);
         AstConcreteClafer c = C.addChild("c").withCard(Mandatory).refToUnique(IntType);
-        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Mandatory);
+        AstConcreteClafer D = model.addChild("D").extending(B).withCard(Optional);
         AstConcreteClafer d = D.addChild("d").withCard(Mandatory).refToUnique(IntType);
 
         model.addConstraint(equal(joinRef(join(union(global(C), global(B)), d)), constant(1)));
