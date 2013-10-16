@@ -757,10 +757,16 @@ public class Irs {
     }
 
     public static IrBoolExpr sort(IrSetExpr... sets) {
-        if (sets.length <= 1) {
+        List<IrSetExpr> filter = new ArrayList<IrSetExpr>(sets.length);
+        for (IrSetExpr set : sets) {
+            if (!set.getEnv().isEmpty()) {
+                filter.add(set);
+            }
+        }
+        if (filter.isEmpty()) {
             return True;
         }
-        return new IrSortSets(sets, BoolDomain);
+        return new IrSortSets(filter.toArray(new IrSetExpr[filter.size()]), BoolDomain);
     }
 
     private static IrBoolExpr sortStrings(IrIntExpr[][] strings, boolean strict) {
@@ -1523,27 +1529,27 @@ public class Irs {
                 filter.add(operand);
             }
         }
-        operands = filter.toArray(new IrSetExpr[filter.size()]);
-        switch (operands.length) {
+        IrSetExpr[] ops = filter.toArray(new IrSetExpr[filter.size()]);
+        switch (ops.length) {
             case 0:
                 return EmptySet;
             case 1:
-                return operands[0];
+                return ops[0];
             default:
-                IrDomain env = IrUtil.unionEnvs(operands);
-                IrDomain ker = IrUtil.unionKers(operands);
-                IrDomain operandCard = operands[0].getCard();
+                IrDomain env = IrUtil.unionEnvs(ops);
+                IrDomain ker = IrUtil.unionKers(ops);
+                IrDomain operandCard = ops[0].getCard();
                 int low = operandCard.getLowBound();
                 int high = operandCard.getHighBound();
-                for (int i = 1; i < operands.length; i++) {
-                    operandCard = operands[i].getCard();
+                for (int i = 1; i < ops.length; i++) {
+                    operandCard = ops[i].getCard();
                     low = Math.max(low, operandCard.getLowBound());
                     high += operandCard.getHighBound();
                 }
                 IrDomain card = boundDomain(
                         Math.max(low, ker.size()),
                         Math.min(high, env.size()));
-                return IrUtil.asConstant(new IrSetUnion(operands, env, ker, card));
+                return IrUtil.asConstant(new IrSetUnion(ops, env, ker, card));
         }
     }
 
@@ -1611,11 +1617,6 @@ public class Irs {
         }
         if (consequent.equals(alternative)) {
             return consequent;
-        }
-        int[] consequentConstant = IrUtil.getConstant(consequent);
-        int[] alternativeConstant = IrUtil.getConstant(alternative);
-        if (consequentConstant != null && alternativeConstant != null && Arrays.equals(consequentConstant, alternativeConstant)) {
-            return constant(consequentConstant);
         }
         IrDomain env = IrUtil.union(consequent.getEnv(), alternative.getEnv());
         IrDomain ker = IrUtil.intersection(consequent.getKer(), alternative.getKer());
