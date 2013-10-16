@@ -65,8 +65,9 @@ public class ClaferCompiler {
             }
         }
         for (AstConcreteClafer concreteClafer : AstUtil.getConcreteClafers(model)) {
+            Vertex<AstClafer> node = dependency.getVertex(concreteClafer);
             if (concreteClafer.hasParent()) {
-                dependency.addEdge(concreteClafer, concreteClafer.getParent());
+                node.addNeighbour(dependency.getVertex(concreteClafer.getParent()));
             }
         }
         List<SetVar> vars = new ArrayList<SetVar>();

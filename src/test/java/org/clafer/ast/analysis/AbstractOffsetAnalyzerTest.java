@@ -59,7 +59,6 @@ public class AbstractOffsetAnalyzerTest {
         Scope scope = Scope.defaultScope(10).toScope();
 
         Analysis analysis = Analysis.analyze(model, scope,
-                new TypeHierarchyDepthAnalyzer(),
                 new GlobalCardAnalyzer(),
                 new AbstractOffsetAnalyzer());
 

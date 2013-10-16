@@ -38,9 +38,7 @@ public class GlobalCardAnalyzerTest {
 
         Scope scope = Scope.defaultScope(10).toScope();
 
-        Analysis analysis = Analysis.analyze(model, scope,
-                new TypeHierarchyDepthAnalyzer(),
-                new GlobalCardAnalyzer());
+        Analysis analysis = Analysis.analyze(model, scope, new GlobalCardAnalyzer());
 
         assertEquals(new Card(7, 14), analysis.getGlobalCard(object));
         assertEquals(new Card(7, 10), analysis.getGlobalCard(id));

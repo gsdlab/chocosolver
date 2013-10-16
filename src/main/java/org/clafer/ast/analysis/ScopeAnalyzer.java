@@ -29,21 +29,7 @@ public class ScopeAnalyzer implements Analyzer {
         Map<AstClafer, Integer> optimizedScope = new HashMap<AstClafer, Integer>();
         optimizedScope.put(analysis.getModel(), 1);
 
-        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
-        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
-            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            for (AstClafer sub : abstractClafer.getSubs()) {
-                node.addNeighbour(dependency.getVertex(sub));
-            }
-        }
-        for (AstConcreteClafer concreteClafer : analysis.getConcreteClafers()) {
-            if (concreteClafer.hasParent()) {
-                dependency.addEdge(concreteClafer, concreteClafer.getParent());
-            }
-        }
-        List<Set<AstClafer>> components = GraphUtil.computeStronglyConnectedComponents(dependency);
-
-        for (Set<AstClafer> component : components) {
+        for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {
             for (AstClafer clafer : component) {
                 if (clafer instanceof AstConcreteClafer) {
                     Card globalCard = analysis.getGlobalCard(clafer);

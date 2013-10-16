@@ -25,21 +25,7 @@ public class GlobalCardAnalyzer implements Analyzer {
         Map<AstClafer, Card> globalCardMap = new HashMap<AstClafer, Card>();
         globalCardMap.put(analysis.getModel(), new Card(1, 1));
 
-        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
-        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
-            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            for (AstClafer sub : abstractClafer.getSubs()) {
-                node.addNeighbour(dependency.getVertex(sub));
-            }
-        }
-        for (AstConcreteClafer concreteClafer : analysis.getConcreteClafers()) {
-            if (concreteClafer.hasParent()) {
-                dependency.addEdge(concreteClafer, concreteClafer.getParent());
-            }
-        }
-        List<Set<AstClafer>> components = GraphUtil.computeStronglyConnectedComponents(dependency);
-
-        for (Set<AstClafer> component : components) {
+        for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {
             for (AstClafer clafer : component) {
                 if (clafer instanceof AstConcreteClafer) {
                     analyze((AstConcreteClafer) clafer, analysis, globalCardMap);

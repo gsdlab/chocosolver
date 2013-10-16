@@ -69,7 +69,6 @@ import org.clafer.ast.analysis.ScopeAnalyzer;
 import org.clafer.ast.analysis.SymmetryAnalyzer;
 import org.clafer.ast.analysis.Type;
 import org.clafer.ast.analysis.TypeAnalyzer;
-import org.clafer.ast.analysis.TypeHierarchyDepthAnalyzer;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.graph.KeyGraph;
@@ -91,7 +90,6 @@ import static org.clafer.ir.Irs.*;
 public class AstCompiler {
 
     public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
-        new TypeHierarchyDepthAnalyzer(),
         new TypeAnalyzer(),
         new GlobalCardAnalyzer(),
         new ScopeAnalyzer(),
@@ -150,6 +148,18 @@ public class AstCompiler {
         for (AstConcreteClafer concreteClafer : concreteClafers) {
             Vertex<AstClafer> node = dependency.getVertex(concreteClafer);
             if (Format.ParentGroup.equals(getFormat(concreteClafer))) {
+                /*
+                 * Low group does not create the dependency because it does not
+                 * require the parent to initialize first. This allows for
+                 * models like the one below.
+                 *
+                 * abstract Path
+                 *     p : Path ?
+                 *
+                 * If the "?" were a fixed cardinality instead, then an
+                 * exception will occur, but the model would not be satisfiable
+                 * anyways for any fixed cardinality greater than zero.
+                 */
                 node.addNeighbour(dependency.getVertex(concreteClafer.getParent()));
             }
         }
@@ -157,6 +167,7 @@ public class AstCompiler {
         List<AstClafer> clafers = new ArrayList<AstClafer>();
         for (Set<AstClafer> component : components) {
             if (component.size() != 1) {
+                // See the above comment about low groups.
                 throw new AstException("Cannot satisfy the cycle " + component);
             }
             clafers.addAll(component);
@@ -1338,10 +1349,6 @@ public class AstCompiler {
 
     private Card getGlobalCard(AstClafer clafer) {
         return analysis.getGlobalCard(clafer);
-    }
-
-    private int getDepth(AstAbstractClafer clafer) {
-        return analysis.getDepth(clafer);
     }
 
     private Type getType(AstExpr expr) {

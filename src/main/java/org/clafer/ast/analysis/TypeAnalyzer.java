@@ -139,8 +139,8 @@ public class TypeAnalyzer implements Analyzer {
          * @return the same expression but with the target type
          */
         private AstSetExpr castTo(TypedExpr<AstSetExpr> expr, AstClafer target) {
-            int exprDepth = AstUtil.getDepth(expr.getCommonSupertype());
-            int targetDepth = AstUtil.getDepth(target);
+            int exprDepth = AstUtil.getSuperHierarchy(expr.getCommonSupertype()).size();
+            int targetDepth = AstUtil.getSuperHierarchy(target).size();
 
             if (exprDepth < targetDepth) {
                 return downcastTo(expr, target);

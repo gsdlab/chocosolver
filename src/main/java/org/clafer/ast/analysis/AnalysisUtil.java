@@ -27,23 +27,11 @@ public class AnalysisUtil {
         return t;
     }
 
-    public static void descendingDepths(List<AstAbstractClafer> abstractClafers) {
-        Collections.sort(abstractClafers, DepthComparator);
-    }
-
     public static void descendingGlobalCardRatio(
             List<AstClafer> clafers,
             Map<AstClafer, Card> globalCards) {
         Collections.sort(clafers, new GlobalCardRatioComparator(globalCards));
     }
-    private static final Comparator<AstAbstractClafer> DepthComparator = new Comparator<AstAbstractClafer>() {
-        @Override
-        public int compare(AstAbstractClafer o1, AstAbstractClafer o2) {
-            int depth1 = AstUtil.getDepth(o1);
-            int depth2 = AstUtil.getDepth(o2);
-            return depth1 > depth2 ? -1 : (depth1 == depth2 ? 0 : 1);
-        }
-    };
 
     private static class GlobalCardRatioComparator implements Comparator<AstClafer> {
 
