@@ -394,7 +394,7 @@ public class AstUtil {
             List<AstClafer> otherSupers = getSuperHierarchy(iter.next());
             supers = getUnionTypeHierarchy(supers, otherSupers);
             if (supers.isEmpty()) {
-                throw new IllegalArgumentException();
+                return null;
             }
         }
         return supers.get(0);

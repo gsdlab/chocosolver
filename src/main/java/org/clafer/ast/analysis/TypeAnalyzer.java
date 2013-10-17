@@ -403,6 +403,10 @@ public class TypeAnalyzer implements Analyzer {
 
             Type type = new Type(unionType);
 
+            if(type.getCommonSuperType() == null) {
+                throw new TypeException("Cannot " + left.getType() + " ++ " + right.getType());
+            }
+            
             return put(type, union(
                     upcastTo(left, type.getCommonSuperType()),
                     upcastTo(right, type.getCommonSuperType())));

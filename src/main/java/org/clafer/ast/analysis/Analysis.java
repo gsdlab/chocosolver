@@ -17,6 +17,7 @@ import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
+import org.clafer.scope.Scopable;
 import org.clafer.scope.Scope;
 
 /**
@@ -118,8 +119,8 @@ public class Analysis {
         return clafers;
     }
 
-    public static Analysis analyze(AstModel model, Scope scope, Analyzer... analyzers) {
-        Analysis analysis = new Analysis(model, scope);
+    public static Analysis analyze(AstModel model, Scopable scope, Analyzer... analyzers) {
+        Analysis analysis = new Analysis(model, scope.toScope());
         for (Analyzer analyzer : analyzers) {
             analysis = analyzer.analyze(analysis);
         }
