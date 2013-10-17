@@ -13,11 +13,15 @@ import static org.clafer.ir.Irs.*;
 public abstract class IrRewriter<T>
         implements IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
 
-    private static <T> boolean changed(T t1, T t2) {
-        return t1 != t2;
+    protected static <T> boolean changed(T t1, T t2) {
+        if (t1 == t2) {
+            return false;
+        }
+        assert !t1.equals(t2) : "Likely not optimized, the rewriter duplicated an object. Possible false negative.";
+        return true;
     }
 
-    private static <T> boolean changed(T[] t1, T[] t2) {
+    protected static <T> boolean changed(T[] t1, T[] t2) {
         if (t1 == t2) {
             return false;
         }
@@ -32,7 +36,7 @@ public abstract class IrRewriter<T>
         return false;
     }
 
-    private static <T> boolean changed(T[][] t1, T[][] t2) {
+    protected static <T> boolean changed(T[][] t1, T[][] t2) {
         if (t1 == t2) {
             return false;
         }
@@ -535,7 +539,7 @@ public abstract class IrRewriter<T>
                 ? offset(set, ir.getOffset())
                 : ir;
     }
-    
+
     @Override
     public IrSetExpr visit(IrMask ir, T a) {
         IrSetExpr set = rewrite(ir.getSet(), a);

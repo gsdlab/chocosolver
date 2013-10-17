@@ -503,6 +503,12 @@ public class Irs {
                 }
                 int[] constant = IrUtil.getConstant(left);
                 if (constant != null) {
+                    /*
+                     * The idea is that integer constraints are easier to
+                     * optimize than set constraints. If the expression is a top
+                     * level expression than the cardinality propagator will
+                     * optimize this expression away anyways.
+                     */
                     if (constant.length == 0) {
                         return equal(card(right), 0);
                     }

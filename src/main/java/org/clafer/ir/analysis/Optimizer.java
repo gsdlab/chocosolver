@@ -62,7 +62,9 @@ public class Optimizer {
                     }
                 }
             }
-            return lone(operands);
+            return changed(ir.getOperands(), operands)
+                    ? lone(operands)
+                    : ir;
         }
 
         @Override
@@ -92,7 +94,9 @@ public class Optimizer {
                     }
                 }
             }
-            return or(operands);
+            return changed(ir.getOperands(), operands)
+                    ? or(operands)
+                    : ir;
         }
 
         @Override
@@ -130,7 +134,10 @@ public class Optimizer {
                     return opt;
                 }
             }
-            return implies(antecedent, consequent);
+            return changed(ir.getAntecedent(), antecedent)
+                    || changed(ir.getConsequent(), consequent)
+                    ? implies(antecedent, consequent)
+                    : ir;
         }
 
         @Override

@@ -95,7 +95,9 @@ public class Coalescer {
                 } else {
                     IrIntVar coalesced = domainInt(name.toString(), domain);
                     for (IrIntVar coalesce : component) {
-                        coalescedInts.put(coalesce, coalesced);
+                        if (!coalesced.equals(coalesce)) {
+                            coalescedInts.put(coalesce, coalesced);
+                        }
                     }
                 }
             }
@@ -120,7 +122,9 @@ public class Coalescer {
                 } else {
                     IrSetVar coalesced = set(name.toString(), env, ker, card);
                     for (IrSetVar coalesce : component) {
-                        coalescedSets.put(coalesce, coalesced);
+                        if (!coalesced.equals(coalesce)) {
+                            coalescedSets.put(coalesce, coalesced);
+                        }
                     }
                 }
             }

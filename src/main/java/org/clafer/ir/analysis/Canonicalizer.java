@@ -112,7 +112,10 @@ public class Canonicalizer {
                     consequents.clear();
                 }
             }
-            return and(opts);
+            IrBoolExpr[] operands = opts.toArray(new IrBoolExpr[opts.size()]);
+            return changed(ir.getOperands(), operands)
+                    ? and(operands)
+                    : ir;
         }
 
         @Override
@@ -151,7 +154,9 @@ public class Canonicalizer {
                     }
                 }
             }
-            return compare(left, ir.getOp(), right);
+            return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
+                    ? compare(left, ir.getOp(), right)
+                    : ir;
         }
 
         @Override
@@ -171,7 +176,9 @@ public class Canonicalizer {
                 }
                 return card;
             }
-            return card(set);
+            return changed(ir.getSet(), set)
+                    ? card(set)
+                    : ir;
         }
 
         @Override
