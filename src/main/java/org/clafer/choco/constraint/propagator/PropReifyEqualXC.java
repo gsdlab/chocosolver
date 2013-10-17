@@ -104,6 +104,6 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
 
     @Override
     public String toString() {
-        return reify + " => (" + x + " = " + c + ")";
+        return reify + " <=> (" + x + " = " + c + ")";
     }
 }
