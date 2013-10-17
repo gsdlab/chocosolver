@@ -13,8 +13,8 @@ public class AstAbstractClafer extends AstClafer {
 
     private final List<AstClafer> subs = new ArrayList<AstClafer>();
 
-    AstAbstractClafer(String name) {
-        super(name);
+    AstAbstractClafer(String name, AstAbstractClafer claferClafer) {
+        super(name, claferClafer);
     }
 
     /**

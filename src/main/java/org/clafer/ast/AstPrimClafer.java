@@ -9,7 +9,7 @@ package org.clafer.ast;
 public abstract class AstPrimClafer extends AstClafer {
 
     AstPrimClafer(String name) {
-        super(name);
+        super(name, null);
     }
 
     /**

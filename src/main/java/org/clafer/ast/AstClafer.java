@@ -14,14 +14,17 @@ import org.clafer.common.Check;
 public abstract class AstClafer implements AstVar {
 
     private final String name;
+    // The topmost Clafer in the type hierarchy.
+    protected final AstAbstractClafer claferClafer;
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard = new Card();
     private final List<AstConcreteClafer> children = new ArrayList<AstConcreteClafer>();
     private final List<AstConstraint> constraints = new ArrayList<AstConstraint>();
 
-    AstClafer(String name) {
+    AstClafer(String name, AstAbstractClafer claferClafer) {
         this.name = Check.notNull(name);
+        this.claferClafer = claferClafer;
     }
 
     /**
@@ -190,13 +193,9 @@ public abstract class AstClafer implements AstVar {
      * @return the new child
      */
     public AstConcreteClafer addChild(String name) {
-        AstConcreteClafer child = new AstConcreteClafer(name, this);
+        AstConcreteClafer child = new AstConcreteClafer(name, this, claferClafer);
         children.add(child);
-        AstAbstractClafer topMost = getSuperClafer();
-        while(topMost.hasSuperClafer()) {
-            topMost = topMost.getSuperClafer();
-        }
-        return child.extending(topMost);
+        return child.extending(claferClafer);
     }
 
     /**
