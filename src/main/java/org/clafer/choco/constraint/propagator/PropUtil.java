@@ -4,19 +4,8 @@ import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import java.io.File;
-import java.io.FileNotFoundException;
-import javax.script.ScriptException;
-import org.clafer.ast.AstModel;
-import org.clafer.collection.Pair;
-import org.clafer.compiler.ClaferCompiler;
-import org.clafer.compiler.ClaferSolver;
-import org.clafer.javascript.Javascript;
-import org.clafer.scope.Scope;
-import solver.Configuration;
 import solver.ICause;
 import solver.exception.ContradictionException;
-import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.delta.IIntDeltaMonitor;
@@ -28,75 +17,6 @@ import solver.variables.delta.monitor.SetDeltaMonitor;
  * @author jimmy
  */
 public class PropUtil {
-
-    public static void main(String[] args) throws FileNotFoundException, ScriptException {
-        Pair<AstModel, Scope> p = Javascript.readModel(new File("/home/jimmy/Programming/clafer/AADL_simplified.js"));
-        System.out.println(Configuration.IDEMPOTENCY);
-        ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
-//        System.out.println(s.getInternalSolver());
-//        SearchMonitorFactory.log(s.getInternalSolver(), true, true);
-//        SearchMonitorFactory.logContradiction(s.getInternalSolver());
-//        SearchMonitorFactory.limitNode(s.getInternalSolver(), 2000);
-        System.out.println(s.getInternalSolver().getVars().length);
-        System.out.println(s.getInternalSolver().getCstrs().length);
-//        52596
-//        34450
-//        59188
-//        41436
-//        58558
-//        40809
-//        48310
-//        30327
-//        48056
-//        30093
-//        46158
-//        28195
-//        34206
-//        19987
-//        33150
-//        19277
-//        32278
-//        18067
-//        31389
-//        17176
-//        31389
-//        17062 
-//        Two pass
-//        30918
-//        16440
-//        28419
-//        15504
-//        28419
-//        13986
-//        28175
-//        13879
-//        Three pass
-//        26970
-//        12574
-//        Four pass
-//        26164
-//        11765
-//        Fix point
-//        26156
-//        11757
-//        Merge bool into int
-//        25679
-//        11297
-//        24383
-//        10218
-//        24243
-//        10212
-//        20526
-//        6317
-//        20495
-//        6274
-        if (s.find()) {
-            System.out.println(s.instance());
-        }
-        // 84,272 + 27,598
-        // 73,902 + 27,011
-        System.out.println(s.getMeasures());
-    }
 
     private PropUtil() {
     }
