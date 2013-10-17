@@ -13,6 +13,7 @@ import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIfOnlyIf;
+import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
@@ -46,6 +47,22 @@ public class Coalescer {
                     IrIntVar left = (IrIntVar) compare.getLeft();
                     IrIntVar right = (IrIntVar) compare.getRight();
                     intGraph.addUndirectedEdge(left, right);
+                } else if (IrCompare.Op.NotEqual.equals(compare.getOp())) {
+                    if (compare.getLeft() instanceof IrIntVar
+                            && compare.getRight() instanceof IrIntConstant) {
+                        IrIntVar left = (IrIntVar) compare.getLeft();
+                        IrIntConstant right = (IrIntConstant) compare.getRight();
+                        IrDomain notRight = IrUtil.difference(left.getDomain(), right.getDomain());
+                        intGraph.addUndirectedEdge(left,
+                                domainInt("Remove " + right + " from " + left, notRight));
+                    } else if (compare.getLeft() instanceof IrIntConstant
+                            && compare.getRight() instanceof IrIntVar) {
+                        IrIntConstant left = (IrIntConstant) compare.getLeft();
+                        IrIntVar right = (IrIntVar) compare.getRight();
+                        IrDomain notLeft = IrUtil.difference(right.getDomain(), left.getDomain());
+                        intGraph.addUndirectedEdge(right,
+                                domainInt("Remove " + left + " from " + right, notLeft));
+                    }
                 }
             } else if (constraint instanceof IrIfOnlyIf) {
                 IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) constraint;

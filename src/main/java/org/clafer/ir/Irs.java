@@ -395,6 +395,9 @@ public class Irs {
                 if (left.equals(right)) {
                     return True;
                 }
+                if (!IrUtil.intersects(leftDomain, rightDomain)) {
+                    return False;
+                }
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return constant(leftDomain.getLowBound() == rightDomain.getLowBound());
                 }
@@ -405,6 +408,9 @@ public class Irs {
             case NotEqual:
                 if (left.equals(right)) {
                     return False;
+                }
+                if (!IrUtil.intersects(leftDomain, rightDomain)) {
+                    return True;
                 }
                 if (leftDomain.size() == 1 && rightDomain.size() == 1) {
                     return constant(leftDomain.getLowBound() != rightDomain.getLowBound());
@@ -769,6 +775,23 @@ public class Irs {
         }
         if (filter.isEmpty()) {
             return True;
+        }
+        if (filter.size() == 1) {
+            IrDomain env = filter.get(0).getEnv();
+            IrDomain ker = filter.get(0).getKer();
+            if (env.getLowBound() == 0) {
+                int i;
+                for (i = 0; i < env.getHighBound(); i++) {
+                    if (!ker.contains(i)) {
+                        break;
+                    }
+                }
+                if (i == env.getHighBound()) {
+                    // env = [0,1,...,n]
+                    // ker = [0,1,...,n] or [0,1,...,n-1]
+                    return True;
+                }
+            }
         }
         return new IrSortSets(filter.toArray(new IrSetExpr[filter.size()]), BoolDomain);
     }
