@@ -1,4 +1,4 @@
-defaultScope(1);
+defaultScope(4);
 intRange(-8, 7);
 
 c10_Car = Clafer("c10_Car").withCard(4, 4);

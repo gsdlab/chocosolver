@@ -1,4 +1,4 @@
-defaultScope(1);
+defaultScope(3);
 intRange(-8, 7);
 
 c1_Person = Abstract("c1_Person");

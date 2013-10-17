@@ -1,18 +1,13 @@
 package org.clafer.ast.analysis;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstException;
-import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
-import org.clafer.graph.GraphUtil;
-import org.clafer.graph.KeyGraph;
-import org.clafer.graph.Vertex;
 
 /**
  *

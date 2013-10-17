@@ -26,7 +26,7 @@ public class PositiveTest {
 
         for (File test : dir.listFiles()) {
             Pair<AstModel, Scope> p = Javascript.readModel(test);
-            ClaferSolver s = ClaferCompiler.compile(p.getFst(), Scope.defaultScope(20).intLow(-20).intHigh(20));
+            ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
 
             assertTrue(test + " failed", s.find());
         }

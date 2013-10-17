@@ -1,4 +1,4 @@
-defaultScope(1);
+defaultScope(2);
 intRange(-8, 7);
 
 c1_Course = Abstract("c1_Course");

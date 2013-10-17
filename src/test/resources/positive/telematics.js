@@ -1,4 +1,4 @@
-defaultScope(1);
+defaultScope(6);
 intRange(-8, 7);
 
 c1_options = Abstract("c1_options");

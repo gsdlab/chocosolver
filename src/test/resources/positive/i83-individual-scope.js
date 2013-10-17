@@ -1,4 +1,4 @@
-defaultScope(1);
+defaultScope(4);
 intRange(-8, 7);
 
 c1_a = Clafer("c1_a").withCard(0, 1);
