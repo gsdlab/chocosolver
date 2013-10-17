@@ -2,8 +2,6 @@ package org.clafer.ir;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
@@ -1598,18 +1596,8 @@ public class Irs {
             }
             return offset(set, -from);
         }
-        int[] constant = IrUtil.getConstant(set);
-        if (constant != null) {
-            TIntList mask = new TIntArrayList();
-            for (int i = 0; i < constant.length; i++) {
-                if (i >= from && i < to) {
-                    mask.add(i - from);
-                }
-            }
-            return constant(mask.toArray());
-        }
         IrDomain env = IrUtil.mask(set.getEnv(), from, to);
-        IrDomain ker = IrUtil.mask(set.getEnv(), from, to);
+        IrDomain ker = IrUtil.mask(set.getKer(), from, to);
         IrDomain card = boundDomain(ker.size(), Math.min(env.size(), set.getCard().getHighBound()));
         return new IrMask(set, from, to, env, ker, card);
     }
