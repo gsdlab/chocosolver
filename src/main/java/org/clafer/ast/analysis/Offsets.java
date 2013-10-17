@@ -22,7 +22,11 @@ public class Offsets {
     }
 
     public int getOffset(AstClafer sub) {
-        return AnalysisUtil.notNull(sub + " is not a direct sub clafer of " + sup, offsets.get(sub)).intValue();
+        Integer offset = offsets.get(sub);
+        if (offset == null) {
+            throw new AnalysisException(sub + " is not a direct sub clafer of " + sup);
+        }
+        return offset.intValue();
     }
 
     public AstClafer getClafer(int offset) {

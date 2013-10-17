@@ -403,10 +403,10 @@ public class TypeAnalyzer implements Analyzer {
 
             Type type = new Type(unionType);
 
-            if(type.getCommonSuperType() == null) {
+            if (type.getCommonSuperType() == null) {
                 throw new TypeException("Cannot " + left.getType() + " ++ " + right.getType());
             }
-            
+
             return put(type, union(
                     upcastTo(left, type.getCommonSuperType()),
                     upcastTo(right, type.getCommonSuperType())));
@@ -470,7 +470,11 @@ public class TypeAnalyzer implements Analyzer {
 
         @Override
         public TypedExpr<AstLocal> visit(AstLocal ast, Void a) {
-            return put(AnalysisUtil.notNull(ast + " type not analyzed yet", typeMap.get(ast)), ast);
+            Type localType = typeMap.get(ast);
+            if (localType == null) {
+                throw new AnalysisException(ast + " type not analyzed yet.");
+            }
+            return put(localType, ast);
         }
 
         @Override
