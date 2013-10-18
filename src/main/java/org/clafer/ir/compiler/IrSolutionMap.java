@@ -94,6 +94,9 @@ public class IrSolutionMap {
         if (intVar instanceof IrIntConstant) {
             return ((IrIntConstant) intVar).getValue();
         }
+        if (intVar instanceof IrBoolConstant) {
+            return ((IrBoolConstant) intVar).getValue() ? 1 : 0;
+        }
         return intVars.get(intVar).getValue();
     }
 

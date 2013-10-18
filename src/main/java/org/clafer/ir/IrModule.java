@@ -6,8 +6,9 @@ import java.util.List;
 import org.clafer.common.Check;
 
 /**
- * The compiled model in IR. A module contains variables and constraints. Adding
- * variables is only required for unconstrained variables.
+ * The compiled model in IR. A module contains variables and constraints. The IR
+ * is permitted to throw away any variables during the optimization, except for
+ * variables that are "nop".
  *
  * @author jimmy
  */

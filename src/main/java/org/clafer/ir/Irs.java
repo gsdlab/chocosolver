@@ -200,8 +200,7 @@ public class Irs {
                 if (count > 1) {
                     return False;
                 }
-            }
-            if (!IrUtil.isFalse(operand)) {
+            } else if (!IrUtil.isFalse(operand)) {
                 filter.add(operand);
             }
         }
@@ -398,9 +397,6 @@ public class Irs {
                 if (!IrUtil.intersects(leftDomain, rightDomain)) {
                     return False;
                 }
-                if (leftDomain.size() == 1 && rightDomain.size() == 1) {
-                    return constant(leftDomain.getLowBound() == rightDomain.getLowBound());
-                }
                 if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
                     return ifOnlyIf((IrBoolExpr) left, (IrBoolExpr) right);
                 }
@@ -411,9 +407,6 @@ public class Irs {
                 }
                 if (!IrUtil.intersects(leftDomain, rightDomain)) {
                     return True;
-                }
-                if (leftDomain.size() == 1 && rightDomain.size() == 1) {
-                    return constant(leftDomain.getLowBound() != rightDomain.getLowBound());
                 }
                 if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
                     return xor((IrBoolExpr) left, (IrBoolExpr) right);
@@ -505,6 +498,13 @@ public class Irs {
                 if (left.equals(right)) {
                     return True;
                 }
+                if (!IrUtil.isSubsetOf(left.getKer(), right.getEnv())
+                        || !IrUtil.isSubsetOf(right.getKer(), left.getEnv())) {
+                    return False;
+                }
+                if (!IrUtil.intersects(left.getCard(), right.getCard())) {
+                    return False;
+                }
                 int[] constant = IrUtil.getConstant(left);
                 if (constant != null) {
                     /*
@@ -517,9 +517,8 @@ public class Irs {
                         return equal(card(right), 0);
                     }
                     if (constant.length == right.getEnv().size()) {
-                        if (IrUtil.containsAll(constant, right.getEnv())) {
-                            return equal(card(right), constant.length);
-                        }
+                        return IrUtil.containsAll(constant, right.getEnv())
+                                ? equal(card(right), constant.length) : False;
                     }
                 }
                 constant = IrUtil.getConstant(right);
@@ -528,9 +527,8 @@ public class Irs {
                         return equal(card(left), 0);
                     }
                     if (constant.length == left.getEnv().size()) {
-                        if (IrUtil.containsAll(constant, left.getEnv())) {
-                            return equal(card(left), constant.length);
-                        }
+                        return IrUtil.containsAll(constant, left.getEnv())
+                                ? equal(card(left), constant.length) : False;
                     }
                 }
                 break;
@@ -538,26 +536,31 @@ public class Irs {
                 if (left.equals(right)) {
                     return False;
                 }
+                if (!IrUtil.isSubsetOf(left.getKer(), right.getEnv())
+                        || !IrUtil.isSubsetOf(right.getKer(), left.getEnv())) {
+                    return True;
+                }
+                if (!IrUtil.intersects(left.getCard(), right.getCard())) {
+                    return True;
+                }
                 constant = IrUtil.getConstant(left);
                 if (constant != null) {
                     if (constant.length == 0) {
-                        return equal(card(right), 0);
+                        return notEqual(card(right), 0);
                     }
                     if (constant.length == right.getEnv().size()) {
-                        if (IrUtil.containsAll(constant, right.getEnv())) {
-                            return notEqual(card(right), constant.length);
-                        }
+                        return IrUtil.containsAll(constant, right.getEnv())
+                                ? notEqual(card(right), constant.length) : True;
                     }
                 }
                 constant = IrUtil.getConstant(right);
                 if (constant != null) {
                     if (constant.length == 0) {
-                        return equal(card(left), 0);
+                        return notEqual(card(left), 0);
                     }
                     if (constant.length == left.getEnv().size()) {
-                        if (IrUtil.containsAll(constant, left.getEnv())) {
-                            return notEqual(card(left), constant.length);
-                        }
+                        return IrUtil.containsAll(constant, left.getEnv())
+                                ? notEqual(card(left), constant.length) : True;
                     }
                 }
                 break;
@@ -1595,17 +1598,10 @@ public class Irs {
         if (offset == 0) {
             return set;
         }
-        int[] constant = IrUtil.getConstant(set);
-        if (constant != null) {
-            for (int i = 0; i < constant.length; i++) {
-                constant[i] += offset;
-            }
-            return constant(constant);
-        }
         IrDomain env = IrUtil.offset(set.getEnv(), offset);
         IrDomain ker = IrUtil.offset(set.getKer(), offset);
         IrDomain card = set.getCard();
-        return new IrOffset(set, offset, env, ker, card);
+        return IrUtil.asConstant(new IrOffset(set, offset, env, ker, card));
     }
 
     public static IrSetExpr mask(IrSetExpr set, int from, int to) {
@@ -1622,7 +1618,7 @@ public class Irs {
         IrDomain env = IrUtil.mask(set.getEnv(), from, to);
         IrDomain ker = IrUtil.mask(set.getKer(), from, to);
         IrDomain card = boundDomain(ker.size(), Math.min(env.size(), set.getCard().getHighBound()));
-        return new IrMask(set, from, to, env, ker, card);
+        return IrUtil.asConstant(new IrMask(set, from, to, env, ker, card));
     }
 
     public static IrSetExpr ternary(IrBoolExpr antecedent, IrSetExpr consequent, IrSetExpr alternative) {

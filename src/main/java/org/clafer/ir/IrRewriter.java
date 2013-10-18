@@ -60,24 +60,10 @@ public abstract class IrRewriter<T>
     }
 
     public IrModule rewriteAndNonNops(IrModule module, T t) {
-        Pair<List<IrNop>, List<IrBoolExpr>> pair = partitionNops(module.getConstraints());
+        Pair<List<IrNop>, List<IrBoolExpr>> pair = IrUtil.partitionNops(module.getConstraints());
         IrModule rewritten = new IrModule().addConstraint(rewrite(and(pair.getSnd()), t));
         rewritten.addConstraints(pair.getFst());
         return rewritten;
-    }
-
-    private static Pair<List<IrNop>, List<IrBoolExpr>> partitionNops(List<IrBoolExpr> constraints) {
-        List<IrNop> nops = new ArrayList<IrNop>();
-        List<IrBoolExpr> nonNops = new ArrayList<IrBoolExpr>(constraints.size());
-
-        for (IrBoolExpr constraint : constraints) {
-            if (constraint instanceof IrNop) {
-                nops.add((IrNop) constraint);
-            } else {
-                nonNops.add(constraint);
-            }
-        }
-        return new Pair<List<IrNop>, List<IrBoolExpr>>(nops, nonNops);
     }
 
     public IrBoolExpr rewrite(IrBoolExpr expr, T t) {

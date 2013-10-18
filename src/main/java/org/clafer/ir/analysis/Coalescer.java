@@ -1,7 +1,9 @@
 package org.clafer.ir.analysis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.collection.Triple;
@@ -96,6 +98,7 @@ public class Coalescer {
                 }
             }
         }
+        List<IrBoolExpr> nops = new ArrayList<IrBoolExpr>();
         for (Set<IrIntVar> component : GraphUtil.computeStronglyConnectedComponents(intGraph)) {
             if (component.size() > 1) {
                 Iterator<IrIntVar> iter = component.iterator();
@@ -146,10 +149,10 @@ public class Coalescer {
                 }
             }
         }
+        IrModule optModule = new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null);
+        optModule.addConstraints(nops);
         return new Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule>(
-                coalescedInts,
-                coalescedSets,
-                new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null));
+                coalescedInts, coalescedSets, optModule);
     }
 
     private static class CoalesceRewriter extends IrRewriter<Void> {
