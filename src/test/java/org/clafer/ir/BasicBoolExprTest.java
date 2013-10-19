@@ -1,6 +1,7 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
+import org.clafer.choco.constraint.Constraints;
 import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
 import org.clafer.ir.compiler.IrCompiler;
@@ -13,7 +14,6 @@ import solver.constraints.LCF;
 import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.SetVar;
 import solver.variables.VF;
 
 /**
@@ -312,12 +312,13 @@ public class BasicBoolExprTest extends ExprTest {
             }
 
             Solver solver = new Solver();
-            SetVar v1 = toSetVar(s1, solver);
-            SetVar v2 = toSetVar(s2, solver);
-            solver.post(SCF.all_equal(new SetVar[]{v1, v2}));
+            solver.post(Constraints.equal(
+                    toSetVar(s1, solver),
+                    toSetVar(s2, solver)));
 
             assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
+        System.out.println("done");
     }
 
     @Test(timeout = 60000)
@@ -340,9 +341,9 @@ public class BasicBoolExprTest extends ExprTest {
             }
 
             Solver solver = new Solver();
-            SetVar v1 = toSetVar(s1, solver);
-            SetVar v2 = toSetVar(s2, solver);
-            solver.post(SCF.all_different(new SetVar[]{v1, v2}));
+            solver.post(Constraints.notEqual(
+                    toSetVar(s1, solver),
+                    toSetVar(s2, solver)));
 
             assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }

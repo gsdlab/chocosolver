@@ -206,10 +206,10 @@ public class Coalescer {
                     ker = IrUtil.union(ker, var.getKer());
                     card = IrUtil.intersection(card, var.getCard());
                 }
-                if (!IrUtil.isSubsetOf(ker, env)) {
+                card = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
+                if (!IrUtil.isSubsetOf(ker, env) || card.isEmpty()) {
                     // Model is unsatisfiable. Compile anyways?
                 } else {
-                    card = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
                     IrSetVar coalesced = set(name.toString(), env, ker, card);
                     for (IrSetVar coalesce : component) {
                         if (!coalesced.equals(coalesce)) {

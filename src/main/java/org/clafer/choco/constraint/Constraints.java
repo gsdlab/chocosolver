@@ -177,6 +177,29 @@ public class Constraints {
     }
 
     /**
+     * A constraint enforcing {@code set1 = set2}. Prefer
+     * {@link #equal(solver.variables.SetVar, solver.variables.IntVar, solver.variables.SetVar, solver.variables.IntVar)}
+     * when the cardinalities are known.
+     *
+     * @param set1 the left set
+     * @param set2 the right set
+     * @return constraint {@code set1 = set2}
+     */
+    public static Constraint equal(SetVar set1, SetVar set2) {
+        @SuppressWarnings("unchecked")
+        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
+                new Constraint(new Variable[]{set1, set2}, set1.getSolver());
+
+        @SuppressWarnings("unchecked")
+        Propagator<? extends Variable>[] propagators = new Propagator[]{
+            new PropSetEqual(set1, set2)
+        };
+        constraint.setPropagators(propagators);
+
+        return constraint;
+    }
+
+    /**
      * A constraint enforcing {@code set1 = set2}. Does not enforce that
      * {@code set1Card = |set1Card|} nor {@code set2Card = |set2Card|} because
      * of how the compilation works, it is already enforced elsewhere.

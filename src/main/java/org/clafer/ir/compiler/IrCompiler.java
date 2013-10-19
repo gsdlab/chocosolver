@@ -1309,6 +1309,12 @@ public class IrCompiler {
     }
 
     private static Constraint _not_equal(CSet var1, CSet var2) {
+        if (var1.getSet().instantiated()) {
+            return Constraints.notEqual(var2.getSet(), var1.getSet().getValue());
+        }
+        if (var2.getSet().instantiated()) {
+            return Constraints.notEqual(var1.getSet(), var2.getSet().getValue());
+        }
         return Constraints.notEqual(var1.getSet(), var2.getSet());
     }
 
