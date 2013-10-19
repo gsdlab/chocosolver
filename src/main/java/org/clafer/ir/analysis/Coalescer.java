@@ -14,6 +14,7 @@ import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntConstant;
+import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
@@ -39,12 +40,23 @@ public class Coalescer {
         for (IrBoolExpr constraint : module.getConstraints()) {
             if (constraint instanceof IrCompare) {
                 IrCompare compare = (IrCompare) constraint;
-                if (IrCompare.Op.Equal.equals(compare.getOp())
-                        && compare.getLeft() instanceof IrIntVar
-                        && compare.getRight() instanceof IrIntVar) {
-                    IrIntVar left = (IrIntVar) compare.getLeft();
-                    IrIntVar right = (IrIntVar) compare.getRight();
-                    intGraph.addUndirectedEdge(left, right);
+                if (IrCompare.Op.Equal.equals(compare.getOp())) {
+                    if (compare.getLeft() instanceof IrIntVar
+                            && compare.getRight() instanceof IrIntVar) {
+                        IrIntVar left = (IrIntVar) compare.getLeft();
+                        IrIntVar right = (IrIntVar) compare.getRight();
+                        intGraph.addUndirectedEdge(left, right);
+                    } else if (compare.getLeft() instanceof IrIntVar
+                            && !IrUtil.isSubsetOf(compare.getLeft().getDomain(), compare.getRight().getDomain())) {
+                        IrIntVar left = (IrIntVar) compare.getLeft();
+                        IrIntExpr right = compare.getRight();
+                        intGraph.addUndirectedEdge(left, domainInt("Equal " + right.getDomain() + " from " + left, right.getDomain()));
+                    } else if (compare.getRight() instanceof IrIntVar
+                            && !IrUtil.isSubsetOf(compare.getRight().getDomain(), compare.getLeft().getDomain())) {
+                        IrIntExpr left = compare.getLeft();
+                        IrIntVar right = (IrIntVar) compare.getRight();
+                        intGraph.addUndirectedEdge(right, domainInt("Equal " + left.getDomain() + " from " + right, left.getDomain()));
+                    }
                 } else if (IrCompare.Op.NotEqual.equals(compare.getOp())) {
                     if (compare.getLeft() instanceof IrIntVar
                             && compare.getRight() instanceof IrIntConstant) {
@@ -135,6 +147,7 @@ public class Coalescer {
                 if (!IrUtil.isSubsetOf(ker, env)) {
                     // Model is unsatisfiable. Compile anyways?
                 } else {
+                    card = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
                     IrSetVar coalesced = set(name.toString(), env, ker, card);
                     for (IrSetVar coalesce : component) {
                         if (!coalesced.equals(coalesce)) {
