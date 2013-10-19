@@ -431,6 +431,9 @@ public class Irs {
                 if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
                     return not(implies((IrBoolExpr) right, (IrBoolExpr) left));
                 }
+                if (left instanceof IrMinus && right instanceof IrMinus) {
+                    return greaterThan(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
+                }
                 break;
             case LessThanEqual:
                 if (left.equals(right)) {
@@ -448,6 +451,9 @@ public class Irs {
                 if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
                     return implies((IrBoolExpr) left, (IrBoolExpr) right);
                 }
+                if (left instanceof IrMinus && right instanceof IrMinus) {
+                    return greaterThanEqual(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
+                }
                 break;
             case GreaterThan:
                 if (left.equals(right)) {
@@ -461,6 +467,9 @@ public class Irs {
                 }
                 if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
                     return not(implies((IrBoolExpr) left, (IrBoolExpr) right));
+                }
+                if (left instanceof IrMinus && right instanceof IrMinus) {
+                    return lessThan(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
                 }
                 break;
             case GreaterThanEqual:
@@ -478,6 +487,9 @@ public class Irs {
                 }
                 if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
                     return implies((IrBoolExpr) right, (IrBoolExpr) left);
+                }
+                if (left instanceof IrMinus && right instanceof IrMinus) {
+                    return lessThanEqual(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
                 }
                 break;
             default:
@@ -783,9 +795,11 @@ public class Irs {
 
     public static IrBoolExpr sort(IrSetExpr... sets) {
         List<IrSetExpr> filter = new ArrayList<IrSetExpr>(sets.length);
+        boolean fixedCard = true;
         for (IrSetExpr set : sets) {
             if (!set.getEnv().isEmpty()) {
                 filter.add(set);
+                fixedCard &= set.getCard().size() == 1;
             }
         }
         if (filter.isEmpty()) {
@@ -807,6 +821,17 @@ public class Irs {
                     return True;
                 }
             }
+        }
+        if (fixedCard) {
+            List<IrBoolExpr> ands = new ArrayList<IrBoolExpr>();
+            int i = 0;
+            for (IrSetExpr set : filter) {
+                assert set.getCard().size() == 1;
+                int card = set.getCard().getLowBound();
+                ands.add(equal(set, constant(Util.fromTo(i, i + card))));
+                i += card;
+            }
+            return and(ands);
         }
         return new IrSortSets(filter.toArray(new IrSetExpr[filter.size()]), BoolDomain);
     }

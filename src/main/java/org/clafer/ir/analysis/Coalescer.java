@@ -40,39 +40,101 @@ public class Coalescer {
         for (IrBoolExpr constraint : module.getConstraints()) {
             if (constraint instanceof IrCompare) {
                 IrCompare compare = (IrCompare) constraint;
-                if (IrCompare.Op.Equal.equals(compare.getOp())) {
-                    if (compare.getLeft() instanceof IrIntVar
-                            && compare.getRight() instanceof IrIntVar) {
-                        IrIntVar left = (IrIntVar) compare.getLeft();
-                        IrIntVar right = (IrIntVar) compare.getRight();
-                        intGraph.addUndirectedEdge(left, right);
-                    } else if (compare.getLeft() instanceof IrIntVar
-                            && !IrUtil.isSubsetOf(compare.getLeft().getDomain(), compare.getRight().getDomain())) {
-                        IrIntVar left = (IrIntVar) compare.getLeft();
-                        IrIntExpr right = compare.getRight();
-                        intGraph.addUndirectedEdge(left, domainInt("Equal " + right.getDomain() + " from " + left, right.getDomain()));
-                    } else if (compare.getRight() instanceof IrIntVar
-                            && !IrUtil.isSubsetOf(compare.getRight().getDomain(), compare.getLeft().getDomain())) {
-                        IrIntExpr left = compare.getLeft();
-                        IrIntVar right = (IrIntVar) compare.getRight();
-                        intGraph.addUndirectedEdge(right, domainInt("Equal " + left.getDomain() + " from " + right, left.getDomain()));
-                    }
-                } else if (IrCompare.Op.NotEqual.equals(compare.getOp())) {
-                    if (compare.getLeft() instanceof IrIntVar
-                            && compare.getRight() instanceof IrIntConstant) {
-                        IrIntVar left = (IrIntVar) compare.getLeft();
-                        IrIntConstant right = (IrIntConstant) compare.getRight();
-                        IrDomain notRight = IrUtil.difference(left.getDomain(), right.getDomain());
-                        intGraph.addUndirectedEdge(left,
-                                domainInt("Remove " + right + " from " + left, notRight));
-                    } else if (compare.getLeft() instanceof IrIntConstant
-                            && compare.getRight() instanceof IrIntVar) {
-                        IrIntConstant left = (IrIntConstant) compare.getLeft();
-                        IrIntVar right = (IrIntVar) compare.getRight();
-                        IrDomain notLeft = IrUtil.difference(right.getDomain(), left.getDomain());
-                        intGraph.addUndirectedEdge(right,
-                                domainInt("Remove " + left + " from " + right, notLeft));
-                    }
+                IrIntExpr left = compare.getLeft();
+                IrIntExpr right = compare.getRight();
+                switch (compare.getOp()) {
+                    case Equal:
+                        if (left instanceof IrIntVar && right instanceof IrIntVar) {
+                            intGraph.addUndirectedEdge((IrIntVar) left, (IrIntVar) right);
+                        } else if (left instanceof IrIntVar
+                                && !IrUtil.isSubsetOf(left.getDomain(), right.getDomain())) {
+                            IrIntVar leftVar = (IrIntVar) left;
+                            intGraph.addUndirectedEdge(leftVar,
+                                    domainInt("Equal " + right.getDomain() + " from " + leftVar.getName(), right.getDomain()));
+                        } else if (right instanceof IrIntVar
+                                && !IrUtil.isSubsetOf(right.getDomain(), left.getDomain())) {
+                            IrIntVar rightVar = (IrIntVar) right;
+                            intGraph.addUndirectedEdge(rightVar,
+                                    domainInt("Equal " + left.getDomain() + " from " + rightVar.getName(), left.getDomain()));
+                        }
+                        break;
+                    case NotEqual:
+                        if (left instanceof IrIntVar && right instanceof IrIntConstant) {
+                            IrIntVar leftVar = (IrIntVar) left;
+                            IrDomain notRight = IrUtil.difference(leftVar.getDomain(), right.getDomain());
+                            intGraph.addUndirectedEdge(leftVar,
+                                    domainInt("Remove " + right + " from " + leftVar, notRight));
+                        } else if (left instanceof IrIntConstant && right instanceof IrIntVar) {
+                            IrIntVar rightVar = (IrIntVar) right;
+                            IrDomain notLeft = IrUtil.difference(rightVar.getDomain(), left.getDomain());
+                            intGraph.addUndirectedEdge(rightVar,
+                                    domainInt("Remove " + left + " from " + rightVar, notLeft));
+                        }
+                        break;
+                    case LessThan:
+                        if (left instanceof IrIntVar
+                                && left.getDomain().getHighBound() >= right.getDomain().getHighBound()) {
+                            IrIntVar leftVar = (IrIntVar) left;
+                            IrDomain lessThanLeft = IrUtil.intersection(left.getDomain(), boundDomain(left.getDomain().getLowBound(), right.getDomain().getHighBound() - 1));
+                            intGraph.addUndirectedEdge(leftVar,
+                                    domainInt("Less than " + right.getDomain() + " from " + leftVar.getName(), lessThanLeft));
+                        }
+                        if (right instanceof IrIntVar
+                                && right.getDomain().getLowBound() <= left.getDomain().getLowBound()) {
+                            IrIntVar rightVar = (IrIntVar) right;
+                            IrDomain greaterThanRight = IrUtil.intersection(right.getDomain(), boundDomain(left.getDomain().getLowBound() + 1, right.getDomain().getHighBound()));
+                            intGraph.addUndirectedEdge(rightVar,
+                                    domainInt("Greater than " + left.getDomain() + " from " + rightVar.getName(), greaterThanRight));
+                        }
+                        break;
+                    case LessThanEqual:
+                        if (left instanceof IrIntVar
+                                && left.getDomain().getHighBound() > right.getDomain().getHighBound()) {
+                            IrIntVar leftVar = (IrIntVar) left;
+                            IrDomain lessThanEqualLeft = IrUtil.intersection(left.getDomain(), boundDomain(left.getDomain().getLowBound(), right.getDomain().getHighBound()));
+                            intGraph.addUndirectedEdge(leftVar,
+                                    domainInt("Less than equal " + right.getDomain() + " from " + leftVar.getName(), lessThanEqualLeft));
+                        }
+                        if (right instanceof IrIntVar
+                                && right.getDomain().getLowBound() < left.getDomain().getLowBound()) {
+                            IrIntVar rightVar = (IrIntVar) right;
+                            IrDomain greaterThanEqualRight = IrUtil.intersection(right.getDomain(), boundDomain(left.getDomain().getLowBound(), right.getDomain().getHighBound()));
+                            intGraph.addUndirectedEdge(rightVar,
+                                    domainInt("Greater than equal " + left.getDomain() + " from " + rightVar.getName(), greaterThanEqualRight));
+                        }
+                        break;
+                    case GreaterThan:
+                        if (left instanceof IrIntVar
+                                && left.getDomain().getLowBound() <= right.getDomain().getLowBound()) {
+                            IrIntVar leftVar = (IrIntVar) left;
+                            IrDomain greaterThanLeft = IrUtil.intersection(left.getDomain(), boundDomain(right.getDomain().getLowBound() + 1, left.getDomain().getHighBound()));
+                            intGraph.addUndirectedEdge(leftVar,
+                                    domainInt("Greater than " + right.getDomain() + " from " + leftVar.getName(), greaterThanLeft));
+                        }
+                        if (right instanceof IrIntVar
+                                && right.getDomain().getHighBound() >= left.getDomain().getHighBound()) {
+                            IrIntVar rightVar = (IrIntVar) right;
+                            IrDomain lessThanRight = IrUtil.intersection(right.getDomain(), boundDomain(right.getDomain().getLowBound(), left.getDomain().getHighBound() - 1));
+                            intGraph.addUndirectedEdge(rightVar,
+                                    domainInt("Less than " + left.getDomain() + " from " + rightVar.getName(), lessThanRight));
+                        }
+                        break;
+                    case GreaterThanEqual:
+                        if (left instanceof IrIntVar
+                                && left.getDomain().getLowBound() < right.getDomain().getLowBound()) {
+                            IrIntVar leftVar = (IrIntVar) left;
+                            IrDomain greaterThanLeft = IrUtil.intersection(left.getDomain(), boundDomain(right.getDomain().getLowBound(), left.getDomain().getHighBound()));
+                            intGraph.addUndirectedEdge(leftVar,
+                                    domainInt("Greater than equal " + right.getDomain() + " from " + leftVar.getName(), greaterThanLeft));
+                        }
+                        if (right instanceof IrIntVar
+                                && right.getDomain().getHighBound() > left.getDomain().getHighBound()) {
+                            IrIntVar rightVar = (IrIntVar) right;
+                            IrDomain lessThanRight = IrUtil.intersection(right.getDomain(), boundDomain(right.getDomain().getLowBound(), left.getDomain().getHighBound()));
+                            intGraph.addUndirectedEdge(rightVar,
+                                    domainInt("Less than equal " + left.getDomain() + " from " + rightVar.getName(), lessThanRight));
+                        }
+                        break;
                 }
             } else if (constraint instanceof IrIfOnlyIf) {
                 IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) constraint;
