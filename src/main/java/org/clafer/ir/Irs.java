@@ -361,6 +361,9 @@ public class Irs {
                 || domain.getHighBound() < range.getLowBound()) {
             return False;
         }
+        if (range.size() == 1) {
+            return equal(value, range.getLowBound());
+        }
         return new IrWithin(value, range, BoolDomain);
     }
 
@@ -374,6 +377,9 @@ public class Irs {
         if (domain.getLowBound() > range.getHighBound()
                 || domain.getHighBound() < range.getLowBound()) {
             return True;
+        }
+        if (range.size() == 1) {
+            return notEqual(value, range.getLowBound());
         }
         return new IrNotWithin(value, range, BoolDomain);
     }
