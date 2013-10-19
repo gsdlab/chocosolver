@@ -143,13 +143,10 @@ public class IrCompiler {
             constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
             for (IrBoolExpr constraint : optModule.getConstraints()) {
                 Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
-                if (cardinality != null) {
-                    IntVar leftInt = compile(cardinality.getFst());
+                if (cardinality != null && cardinality.getFst() instanceof IrIntVar) {
+                    IrIntVar leftInt = (IrIntVar) cardinality.getFst();
                     SetVar rightSet = getSetVar(cardinality.getSnd());
-
-                    post(SCF.cardinality(rightSet, leftInt));
-                    assert !cachedSetCardVars.containsKey(rightSet);
-                    cachedSetCardVars.put(rightSet, leftInt);
+                    cardIntVarMap.put(leftInt, new CSet(rightSet, cardinality.getSnd().getCard()));
                 } else {
                     constraints.add(constraint);
                 }
@@ -262,6 +259,7 @@ public class IrCompiler {
             if (!(set.instantiated() && card.size() == 1 && card.getLowBound() == set.getKernelSize())) {
                 post(SCF.cardinality(set, setCardVar));
             }
+            assert !cachedSetCardVars.containsKey(set);
             cachedSetCardVars.put(set, setCardVar);
         }
         return setCardVar;
@@ -286,7 +284,8 @@ public class IrCompiler {
     private BoolVar getBoolVar(IrBoolVar var) {
         BoolVar bool = (BoolVar) intVarMap.get(var);
         if (bool == null) {
-            bool = boolVar(var.getName(), var.getDomain());
+            CSet set = cardIntVarMap.get(var);
+            bool = set == null ? boolVar(var.getName(), var.getDomain()) : (BoolVar) set.getCard();
             intVarMap.put(var, bool);
         }
         return bool;
@@ -295,12 +294,14 @@ public class IrCompiler {
     private IntVar getIntVar(IrIntVar var) {
         IntVar iint = intVarMap.get(var);
         if (iint == null) {
-            iint = intVar(var.getName(), var.getDomain());
+            CSet set = cardIntVarMap.get(var);
+            iint = set == null ? intVar(var.getName(), var.getDomain()) : set.getCard();
             intVarMap.put(var, iint);
         }
         return iint;
     }
     private final Map<IrIntVar, IntVar> intVarMap = new HashMap<IrIntVar, IntVar>();
+    private final Map<IrIntVar, CSet> cardIntVarMap = new HashMap<IrIntVar, CSet>();
 
     private SetVar getSetVar(IrSetVar var) {
         SetVar set = setVarMap.get(var);
@@ -480,7 +481,6 @@ public class IrCompiler {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar consequent = compileAsIntVar(ir.getConsequent());
             IntVar alternative = compileAsIntVar(ir.getAlternative());
-            System.out.println(antecedent + " => " + consequent + " ? " + alternative);
             Constraint thenClause = _implies(antecedent, consequent);
             Constraint elseClause = _implies(antecedent.not(), alternative);
             return _and(thenClause.reif(), elseClause.reif());

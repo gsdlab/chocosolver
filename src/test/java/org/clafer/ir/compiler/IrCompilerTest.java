@@ -42,6 +42,7 @@ public class IrCompilerTest {
         IrSetVar var = set("set", boundDomain(0, 3));
         IrIntVar card1 = domainInt("|set1|", boundDomain(0, 4));
         IrIntVar card2 = domainInt("|set2|", boundDomain(0, 4));
+        module.addVariables(var, card1, card2);
 
         module.addConstraint(equal(card1, card(var)));
         module.addConstraint(equal(card2, card(var)));
