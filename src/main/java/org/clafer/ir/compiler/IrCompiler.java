@@ -52,20 +52,17 @@ import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIntExprVisitor;
-import org.clafer.ir.IrIntNop;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrMask;
 import org.clafer.ir.IrMinus;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
-import org.clafer.ir.IrNop;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
 import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
-import org.clafer.ir.IrSetNop;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetVar;
@@ -75,6 +72,7 @@ import org.clafer.ir.IrSub;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
+import org.clafer.ir.IrVar;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
@@ -150,8 +148,8 @@ public class IrCompiler {
                     SetVar rightSet = getSetVar(cardinality.getSnd());
 
                     post(SCF.cardinality(rightSet, leftInt));
-                    assert !setCardVars.containsKey(rightSet);
-                    setCardVars.put(rightSet, leftInt);
+                    assert !cachedSetCardVars.containsKey(rightSet);
+                    cachedSetCardVars.put(rightSet, leftInt);
                 } else {
                     constraints.add(constraint);
                 }
@@ -166,12 +164,17 @@ public class IrCompiler {
         for (IrJoinRelation relation : commonSubexpressions.getSnd()) {
             cachedJoinRelation.put(relation, compile(relation));
         }
-        Pair<List<IrNop>, List<IrBoolExpr>> pair = IrUtil.partitionNops(constraints);
-        for (IrBoolExpr constraint : pair.getSnd()) {
+        for (IrBoolExpr constraint : constraints) {
             post(compileAsConstraint(constraint));
         }
-        for (IrNop constraint : pair.getFst()) {
-            compileAsConstraint(constraint);
+        for (IrVar variable : optModule.getVariables()) {
+            if (variable instanceof IrBoolVar) {
+                compile((IrBoolVar) variable);
+            } else if (variable instanceof IrIntVar) {
+                compile((IrIntVar) variable);
+            } else {
+                compile((IrSetVar) variable);
+            }
         }
         return new IrSolutionMap(
                 solver,
@@ -194,6 +197,9 @@ public class IrCompiler {
         }
         return composed;
     }
+    private final Map<SetVar, IntVar> cachedSetCardVars = new HashMap<SetVar, IntVar>();
+    private final Map<IntVar, IntVar> cachedMinus = new HashMap<IntVar, IntVar>();
+    private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<Pair<IntVar, Integer>, IntVar>();
     private final Map<IrJoinFunction, CSet> cachedJoinFunction = new HashMap<IrJoinFunction, CSet>();
     private final Map<IrJoinRelation, CSet> cachedJoinRelation = new HashMap<IrJoinRelation, CSet>();
 
@@ -248,16 +254,15 @@ public class IrCompiler {
         SetVar set = setVar(name, env, ker);
         return new CSet(set, card);
     }
-    private final Map<SetVar, IntVar> setCardVars = new HashMap<SetVar, IntVar>();
 
     private IntVar setCardVar(SetVar set, IrDomain card) {
-        IntVar setCardVar = setCardVars.get(set);
+        IntVar setCardVar = cachedSetCardVars.get(set);
         if (setCardVar == null) {
             setCardVar = intVar("|" + set.getName() + "|", card);
             if (!(set.instantiated() && card.size() == 1 && card.getLowBound() == set.getKernelSize())) {
                 post(SCF.cardinality(set, setCardVar));
             }
-            setCardVars.put(set, setCardVar);
+            cachedSetCardVars.put(set, setCardVar);
         }
         return setCardVar;
     }
@@ -704,22 +709,6 @@ public class IrCompiler {
         public Object visit(IrFilterString ir, BoolArg a) {
             return _filter_string(compile(ir.getSet()).getSet(), ir.getOffset(), compile(ir.getString()), compile(ir.getResult()));
         }
-
-        @Override
-        public Object visit(IrIntNop ir, BoolArg a) {
-            if (ir.getExpr() instanceof IrBoolExpr) {
-                compileAsBoolVar((IrBoolExpr) ir.getExpr());
-            } else {
-                compile(ir.getExpr());
-            }
-            return solver.TRUE;
-        }
-
-        @Override
-        public Object visit(IrSetNop ir, BoolArg a) {
-            compile(ir.getExpr());
-            return solver.TRUE;
-        }
     };
     private final IrIntExprVisitor<IntVar, Object> intExprCompiler = new IrIntExprVisitor<IntVar, Object>() {
         @Override
@@ -729,7 +718,13 @@ public class IrCompiler {
 
         @Override
         public IntVar visit(IrMinus ir, IntVar reify) {
-            return VF.minus(compile(ir.getExpr()));
+            IntVar expr = compile(ir.getExpr());
+            IntVar minus = cachedMinus.get(expr);
+            if (minus == null) {
+                minus = VF.minus(compile(ir.getExpr()));
+                cachedMinus.put(expr, minus);
+            }
+            return minus;
         }
 
         @Override
@@ -756,12 +751,12 @@ public class IrCompiler {
                     // This case should have already been optimized earlier.
                     return VF.fixed(constants, solver);
                 case 1:
-                    return VF.offset(addends[0], constants);
+                    return _offset(addends[0], constants);
                 default:
                     if (reify == null) {
                         IntVar sum = numIntVar("Sum", IrUtil.offset(ir.getDomain(), -constants));
                         post(_sum(sum, addends));
-                        return VF.offset(sum, constants);
+                        return _offset(sum, constants);
                     }
                     if (constants != 0) {
                         addends = Util.cons(VF.fixed(constants, solver), addends);
@@ -796,12 +791,12 @@ public class IrCompiler {
                 case 0:
                     return VF.fixed(minuend, solver);
                 case 1:
-                    return VF.offset(subtractends[0], -constants);
+                    return _offset(subtractends[0], -constants);
                 default:
                     if (reify == null) {
                         IntVar diff = numIntVar("Diff", IrUtil.offset(ir.getDomain(), constants));
                         post(_difference(diff, subtractends));
-                        return VF.offset(diff, -constants);
+                        return _offset(diff, -constants);
                     }
                     if (constants != 0) {
                         subtractends = Util.cons(VF.fixed(0, solver), subtractends);
@@ -1044,16 +1039,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrFilterString ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrIntNop ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrSetNop ir, IntVar a) {
             return compileBool(ir, a);
         }
     };
@@ -1390,6 +1375,16 @@ public class IrCompiler {
 
     private static Constraint _union(CSet[] operands, CSet union) {
         return Constraints.union(mapSet(operands), mapCard(operands), union.getSet(), union.getCard());
+    }
+
+    private IntVar _offset(IntVar var, int offset) {
+        Pair<IntVar, Integer> pair = new Pair<IntVar, Integer>(var, offset);
+        IntVar cache = cachedOffset.get(pair);
+        if (cache == null) {
+            cache = VF.offset(var, offset);
+            cachedOffset.put(pair, cache);
+        }
+        return cache;
     }
 
     private static Constraint _offset(SetVar set, SetVar offseted, int offset) {

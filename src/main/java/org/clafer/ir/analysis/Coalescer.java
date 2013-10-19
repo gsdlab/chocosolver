@@ -1,9 +1,7 @@
 package org.clafer.ir.analysis;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.collection.Triple;
@@ -16,12 +14,10 @@ import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntConstant;
-import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrRewriter;
-import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
@@ -98,7 +94,6 @@ public class Coalescer {
                 }
             }
         }
-        List<IrBoolExpr> nops = new ArrayList<IrBoolExpr>();
         for (Set<IrIntVar> component : GraphUtil.computeStronglyConnectedComponents(intGraph)) {
             if (component.size() > 1) {
                 Iterator<IrIntVar> iter = component.iterator();
@@ -149,10 +144,10 @@ public class Coalescer {
                 }
             }
         }
-        IrModule optModule = new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null);
-        optModule.addConstraints(nops);
         return new Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule>(
-                coalescedInts, coalescedSets, optModule);
+                coalescedInts,
+                coalescedSets,
+                new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null));
     }
 
     private static class CoalesceRewriter extends IrRewriter<Void> {
@@ -166,19 +161,19 @@ public class Coalescer {
         }
 
         @Override
-        public IrBoolExpr visit(IrBoolVar ir, Void a) {
+        public IrBoolVar visit(IrBoolVar ir, Void a) {
             IrBoolVar var = (IrBoolVar) coalescedInts.get(ir);
             return var == null ? ir : var;
         }
 
         @Override
-        public IrIntExpr visit(IrIntVar ir, Void a) {
+        public IrIntVar visit(IrIntVar ir, Void a) {
             IrIntVar var = coalescedInts.get(ir);
             return var == null ? ir : var;
         }
 
         @Override
-        public IrSetExpr visit(IrSetVar ir, Void a) {
+        public IrSetVar visit(IrSetVar ir, Void a) {
             IrSetVar var = coalescedSets.get(ir);
             return var == null ? ir : var;
         }

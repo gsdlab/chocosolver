@@ -24,9 +24,7 @@ public class BasicBoolExprTest extends ExprTest {
             IrModule module = new IrModule();
             IrBoolVar[] is = randBools(nextInt(5));
             module.addConstraint(lone(is));
-            for (IrBoolVar i : is) {
-                module.addConstraint(nop(i));
-            }
+            module.addVariables(is);
 
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
@@ -60,9 +58,7 @@ public class BasicBoolExprTest extends ExprTest {
             IrModule module = new IrModule();
             IrBoolVar[] is = randBools(nextInt(5));
             module.addConstraint(one(is));
-            for (IrBoolVar i : is) {
-                module.addConstraint(nop(i));
-            }
+            module.addVariables(is);
 
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
@@ -97,9 +93,7 @@ public class BasicBoolExprTest extends ExprTest {
             IrBoolVar b2 = randBool();
             IrBoolVar b3 = randBool();
             module.addConstraint(ifThenElse(b1, b2, b3));
-            module.addConstraint(nop(b1));
-            module.addConstraint(nop(b2));
-            module.addConstraint(nop(b3));
+            module.addVariables(b1, b2, b3);
 
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
@@ -132,8 +126,7 @@ public class BasicBoolExprTest extends ExprTest {
             IrIntVar i1 = randInt();
             IrIntVar i2 = randInt();
             module.addConstraint(equal(i1, i2));
-            module.addConstraint(nop(i1));
-            module.addConstraint(nop(i2));
+            module.addVariables(i1, i2);
 
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
@@ -161,8 +154,7 @@ public class BasicBoolExprTest extends ExprTest {
             IrIntVar i1 = randInt();
             IrIntVar i2 = randInt();
             module.addConstraint(notEqual(i1, i2));
-            module.addConstraint(nop(i1));
-            module.addConstraint(nop(i2));
+            module.addVariables(i1, i2);
 
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
@@ -190,8 +182,7 @@ public class BasicBoolExprTest extends ExprTest {
             IrIntVar i1 = randInt();
             IrIntVar i2 = randInt();
             module.addConstraint(greaterThan(i1, i2));
-            module.addConstraint(nop(i1));
-            module.addConstraint(nop(i2));
+            module.addVariables(i1, i2);
 
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);

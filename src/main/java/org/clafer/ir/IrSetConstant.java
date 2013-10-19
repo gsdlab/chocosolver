@@ -6,7 +6,7 @@ import java.util.Arrays;
  *
  * @author jimmy
  */
-public class IrSetConstant extends IrSetVar {
+public class IrSetConstant extends IrSetVar implements IrConstant {
 
     private final int[] value;
 

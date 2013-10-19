@@ -60,8 +60,4 @@ public interface IrBoolExprVisitor<A, B> {
     public B visit(IrSelectN ir, A a);
 
     public B visit(IrFilterString ir, A a);
-
-    public B visit(IrIntNop ir, A a);
-
-    public B visit(IrSetNop ir, A a);
 }

@@ -357,18 +357,4 @@ public class IrUtil {
         }
         return Irs.enumDomain(mask);
     }
-
-    public static Pair<List<IrNop>, List<IrBoolExpr>> partitionNops(List<IrBoolExpr> constraints) {
-        List<IrNop> nops = new ArrayList<IrNop>();
-        List<IrBoolExpr> nonNops = new ArrayList<IrBoolExpr>(constraints.size());
-
-        for (IrBoolExpr constraint : constraints) {
-            if (constraint instanceof IrNop) {
-                nops.add((IrNop) constraint);
-            } else {
-                nonNops.add(constraint);
-            }
-        }
-        return new Pair<List<IrNop>, List<IrBoolExpr>>(nops, nonNops);
-    }
 }

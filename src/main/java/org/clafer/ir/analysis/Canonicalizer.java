@@ -42,7 +42,7 @@ public class Canonicalizer {
     public static IrModule canonical(IrModule module) {
         CanonicalRewriter rewriter = new CanonicalRewriter();
 
-        IrModule optModule = rewriter.rewriteAndNonNops(module, null);
+        IrModule optModule = rewriter.rewrite(module, null);
         for (Entry<IrSetVar, IrIntVar> entry : rewriter.setVarCards.entrySet()) {
             optModule.addConstraint(equal(entry.getValue(), card(entry.getKey())));
         }
@@ -182,7 +182,7 @@ public class Canonicalizer {
         }
 
         @Override
-        public IrSetExpr visit(IrSetVar ir, Void a) {
+        public IrSetVar visit(IrSetVar ir, Void a) {
             setVars.add(ir);
             return ir;
         }

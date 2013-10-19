@@ -246,17 +246,17 @@ public class AstCompiler {
                     IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
                     module.addConstraint(ifOnlyIf(soft, implies(memberships.get(clafer)[j], thisConstraint)));
                 }
-                module.addConstraint(nop(soft));
+                module.addVariable(soft);
             }
         }
         for (IrSetVar[] childSet : siblingSets.values()) {
             for (IrSetVar set : childSet) {
-                module.addConstraint(nop(set));
+                module.addVariable(set);
             }
         }
         for (IrIntVar[] refs : refPointers.values()) {
             for (IrIntVar ref : refs) {
-                module.addConstraint(nop(ref));
+                module.addVariable(ref);
             }
         }
         @SuppressWarnings("unchecked")
@@ -683,6 +683,7 @@ public class AstCompiler {
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<AstRef, IrIntVar[]>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<AstClafer, IrIntExpr[][]>();
+    private int localCount = 0;
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 
@@ -1101,7 +1102,7 @@ public class AstCompiler {
                 for (int i = env.getLowBound(); i <= env.getHighBound(); i++) {
                     members[i] = new Pair<IrIntExpr, IrBoolExpr>(constant(i),
                             ker.contains(i) ? True
-                            : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i));
+                            : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
                 }
                 module.addConstraint(boolChannel(Util.mapSnd(Arrays.asList(members)), setBody));
                 Pair<IrIntExpr, IrBoolExpr>[][] sequence = decl.isDisjoint() ? Util.permutations(members,

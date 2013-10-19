@@ -20,7 +20,7 @@ public class IrCompilerTest {
     public void testSetVarCard() {
         IrModule module = new IrModule();
         IrSetVar var = set("set", boundDomain(0, 10), boundDomain(1, 2), boundDomain(2, 3));
-        module.addConstraint(nop(var));
+        module.addVariable(var);
 
         Solver solver = new Solver();
         IrSolutionMap map = IrCompiler.compile(module, solver);

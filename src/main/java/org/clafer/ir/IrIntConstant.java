@@ -4,7 +4,7 @@ package org.clafer.ir;
  *
  * @author jimmy
  */
-public class IrIntConstant extends IrIntVar {
+public class IrIntConstant extends IrIntVar implements IrConstant {
 
     private final int value;
 

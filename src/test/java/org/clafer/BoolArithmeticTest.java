@@ -490,19 +490,6 @@ public class BoolArithmeticTest {
      */
     @Test(timeout = 60000)
     public void testBooleanSpaghetti() {
-        /*
-         * Solver solver = new Solver();
-         * BoolVar a = VF.bool("A", solver);
-         * BoolVar b = VF.bool("B", solver);
-         * BoolVar c = VF.bool("C", solver);
-         * BoolVar d = VF.bool("D", solver);
-         * BoolVar e = VF.bool("E", solver);
-         * solver.post(ICF.clauses(
-         *     LogOp.and(LogOp.xor(e, LogOp.and(LogOp.ifOnlyIf(a, b), LogOp.or(a, c, d), LogOp.implies(b, c))),
-         *               LogOp.or(d, LogOp.xor(LogOp.ifOnlyIf(a, d), LogOp.implies(LogOp.implies(b, c), e)))),
-         *     solver));
-         * System.out.println(solver.findAllSolutions());
-         */
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A").withCard(0, 1);

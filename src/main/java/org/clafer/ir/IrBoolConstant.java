@@ -4,7 +4,7 @@ package org.clafer.ir;
  *
  * @author jimmy
  */
-public class IrBoolConstant extends IrBoolVar {
+public class IrBoolConstant extends IrBoolVar implements IrConstant {
 
     private final boolean value;
 

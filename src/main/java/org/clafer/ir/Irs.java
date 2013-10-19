@@ -935,20 +935,6 @@ public class Irs {
         }
         return new IrFilterString(set, offset, string, result, BoolDomain);
     }
-
-    public static IrBoolExpr nop(IrIntExpr var) {
-        if (var instanceof IrBoolConstant || var instanceof IrIntConstant) {
-            return True;
-        }
-        return new IrIntNop(var);
-    }
-
-    public static IrBoolExpr nop(IrSetExpr var) {
-        if (var instanceof IrSetConstant) {
-            return True;
-        }
-        return new IrSetNop(var);
-    }
     /**
      *******************
      *

@@ -2,19 +2,47 @@ package org.clafer.ir;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.clafer.common.Check;
 
 /**
  * The compiled model in IR. A module contains variables and constraints. The IR
  * is permitted to throw away any variables during the optimization, except for
- * variables that are "nop".
+ * variables that are explicitly added.
  *
  * @author jimmy
  */
 public class IrModule {
 
+    private final Set<IrVar> variables = new HashSet<IrVar>();
     private final List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>();
+
+    public IrModule addVariable(IrVar var) {
+        if (!(var instanceof IrConstant)) {
+            variables.add(var);
+        }
+        return this;
+    }
+
+    public IrModule addVariables(IrVar... vars) {
+        for (IrVar var : vars) {
+            addVariable(var);
+        }
+        return this;
+    }
+
+    public IrModule addVariables(Iterable<? extends IrVar> vars) {
+        for (IrVar var : vars) {
+            addVariable(var);
+        }
+        return this;
+    }
+
+    public Set<IrVar> getVariables() {
+        return Collections.unmodifiableSet(variables);
+    }
 
     public IrModule addConstraint(IrBoolExpr expr) {
         Check.notNull(expr);
@@ -29,7 +57,7 @@ public class IrModule {
         return this;
     }
 
-    public IrModule addConstraints(IrBoolExpr[] exprs) {
+    public IrModule addConstraints(IrBoolExpr... exprs) {
         for (IrBoolExpr expr : exprs) {
             addConstraint(expr);
         }
@@ -51,6 +79,9 @@ public class IrModule {
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append("IrModule").append('\n');
+        for (IrVar variable : variables) {
+            result.append("++").append(variable).append('\n');
+        }
         for (IrBoolExpr constraint : constraints) {
             result.append("--").append(constraint).append('\n');
         }

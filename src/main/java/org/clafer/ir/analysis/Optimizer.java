@@ -32,7 +32,7 @@ public class Optimizer {
      * @return the optimized module
      */
     public static IrModule optimize(IrModule module) {
-        return optimizer.rewriteAndNonNops(module, null);
+        return optimizer.rewrite(module, null);
     }
     private static final IrRewriter<Void> optimizer = new IrRewriter<Void>() {
         @Override

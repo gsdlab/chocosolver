@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrVar;
 
 /**
  * Due to coalescing, it is possible to end up with multiple cardinality
@@ -17,7 +18,8 @@ public class DuplicateConstraints {
     }
 
     public static IrModule removeDuplicates(IrModule module) {
+        Set<IrVar> variables = new HashSet<IrVar>(module.getVariables());
         Set<IrBoolExpr> constraints = new HashSet<IrBoolExpr>(module.getConstraints());
-        return new IrModule().addConstraints(constraints);
+        return new IrModule().addVariables(variables).addConstraints(constraints);
     }
 }

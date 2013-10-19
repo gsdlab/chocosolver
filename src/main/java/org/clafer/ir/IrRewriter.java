@@ -1,8 +1,5 @@
 package org.clafer.ir;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.clafer.collection.Pair;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -52,18 +49,20 @@ public abstract class IrRewriter<T>
     }
 
     public IrModule rewrite(IrModule module, T t) {
-        List<IrBoolExpr> rewrittenConstraints = new ArrayList<IrBoolExpr>(module.getConstraints().size());
-        for (IrBoolExpr constraint : module.getConstraints()) {
-            rewrittenConstraints.add(rewrite(constraint, t));
+        IrModule optModule = new IrModule();
+        for (IrVar variable : module.getVariables()) {
+            if (variable instanceof IrBoolVar) {
+                optModule.addVariable(visit((IrBoolVar) variable, t));
+            } else if (variable instanceof IrIntVar) {
+                optModule.addVariable(visit((IrIntVar) variable, t));
+            } else {
+                optModule.addVariable(visit((IrSetVar) variable, t));
+            }
         }
-        return new IrModule().addConstraints(rewrittenConstraints);
-    }
-
-    public IrModule rewriteAndNonNops(IrModule module, T t) {
-        Pair<List<IrNop>, List<IrBoolExpr>> pair = IrUtil.partitionNops(module.getConstraints());
-        IrModule rewritten = new IrModule().addConstraint(rewrite(and(pair.getSnd()), t));
-        rewritten.addConstraints(pair.getFst());
-        return rewritten;
+        for (IrBoolExpr constraint : module.getConstraints()) {
+            optModule.addConstraint(rewrite(constraint, t));
+        }
+        return optModule;
     }
 
     public IrBoolExpr rewrite(IrBoolExpr expr, T t) {
@@ -119,7 +118,7 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrBoolVar ir, T a) {
+    public IrBoolVar visit(IrBoolVar ir, T a) {
         return ir;
     }
 
@@ -347,23 +346,7 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrIntNop ir, T a) {
-        IrIntExpr expr = rewrite(ir.getExpr(), a);
-        return changed(ir.getExpr(), expr)
-                ? nop(expr)
-                : ir;
-    }
-
-    @Override
-    public IrBoolExpr visit(IrSetNop ir, T a) {
-        IrSetExpr expr = rewrite(ir.getExpr(), a);
-        return changed(ir.getExpr(), expr)
-                ? nop(expr)
-                : ir;
-    }
-
-    @Override
-    public IrIntExpr visit(IrIntVar ir, T a) {
+    public IrIntVar visit(IrIntVar ir, T a) {
         return ir;
     }
 
@@ -455,7 +438,7 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrSetExpr visit(IrSetVar ir, T a) {
+    public IrSetVar visit(IrSetVar ir, T a) {
         return ir;
     }
 
