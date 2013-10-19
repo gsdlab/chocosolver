@@ -14,7 +14,7 @@ public class IrBoolChannel extends IrAbstractBool implements IrBoolExpr {
 
     IrBoolChannel(IrBoolExpr[] bools, IrSetExpr set, IrBoolDomain domain) {
         super(domain);
-        this.bools = Check.noNullsNotEmpty(bools);
+        this.bools = Check.noNulls(bools);
         this.set = Check.notNull(set);
     }
 

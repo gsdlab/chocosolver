@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
@@ -8,6 +9,7 @@ import org.junit.Test;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.constraints.LCF;
+import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.VF;
@@ -29,7 +31,7 @@ public class BasicBoolExprTest extends ExprTest {
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
             int count = 0;
-            if (irSolver.findSolution()) {
+            if (randomizeStrategy(irSolver).findSolution()) {
                 do {
                     int sum = 0;
                     for (IrIntVar i : is) {
@@ -44,10 +46,10 @@ public class BasicBoolExprTest extends ExprTest {
                 assertEquals(1, count);
             } else {
                 Solver solver = new Solver();
-                BoolVar[] vs = toBoolVar(is, solver);
+                BoolVar[] vs = toBoolVars(is, solver);
                 IntVar sum = VF.enumerated("sum", 0, 1, solver);
                 solver.post(ICF.sum(vs, sum));
-                assertEquals(solver.findAllSolutions(), count);
+                assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
             }
         }
     }
@@ -63,7 +65,7 @@ public class BasicBoolExprTest extends ExprTest {
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
             int count = 0;
-            if (irSolver.findSolution()) {
+            if (randomizeStrategy(irSolver).findSolution()) {
                 do {
                     int sum = 0;
                     for (IrIntVar i : is) {
@@ -78,9 +80,9 @@ public class BasicBoolExprTest extends ExprTest {
                 assertEquals(0, count);
             } else {
                 Solver solver = new Solver();
-                BoolVar[] vs = toBoolVar(is, solver);
+                BoolVar[] vs = toBoolVars(is, solver);
                 solver.post(ICF.sum(vs, VF.one(solver)));
-                assertEquals(solver.findAllSolutions(), count);
+                assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
             }
         }
     }
@@ -98,7 +100,7 @@ public class BasicBoolExprTest extends ExprTest {
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
             int count = 0;
-            if (irSolver.findSolution()) {
+            if (randomizeStrategy(irSolver).findSolution()) {
                 do {
                     assertTrue(map.getBoolValue(b1)
                             ? map.getBoolValue(b2)
@@ -115,7 +117,7 @@ public class BasicBoolExprTest extends ExprTest {
                     ICF.arithm(v2, "=", 1),
                     ICF.arithm(v3, "=", 1)));
 
-            assertEquals(solver.findAllSolutions(), count);
+            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
     }
 
@@ -131,7 +133,7 @@ public class BasicBoolExprTest extends ExprTest {
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
             int count = 0;
-            if (irSolver.findSolution()) {
+            if (randomizeStrategy(irSolver).findSolution()) {
                 do {
                     assertEquals(map.getIntValue(i1), map.getIntValue(i2));
                     count++;
@@ -143,7 +145,7 @@ public class BasicBoolExprTest extends ExprTest {
             IntVar v2 = toIntVar(i2, solver);
             solver.post(ICF.arithm(v1, "=", v2));
 
-            assertEquals(solver.findAllSolutions(), count);
+            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
     }
 
@@ -159,7 +161,7 @@ public class BasicBoolExprTest extends ExprTest {
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
             int count = 0;
-            if (irSolver.findSolution()) {
+            if (randomizeStrategy(irSolver).findSolution()) {
                 do {
                     assertNotEquals(map.getIntValue(i1), map.getIntValue(i2));
                     count++;
@@ -171,7 +173,7 @@ public class BasicBoolExprTest extends ExprTest {
             IntVar v2 = toIntVar(i2, solver);
             solver.post(ICF.arithm(v1, "!=", v2));
 
-            assertEquals(solver.findAllSolutions(), count);
+            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
     }
 
@@ -187,7 +189,7 @@ public class BasicBoolExprTest extends ExprTest {
             Solver irSolver = new Solver();
             IrSolutionMap map = IrCompiler.compile(module, irSolver);
             int count = 0;
-            if (irSolver.findSolution()) {
+            if (randomizeStrategy(irSolver).findSolution()) {
                 do {
                     assertTrue(map.getIntValue(i1) > map.getIntValue(i2));
                     count++;
@@ -199,7 +201,39 @@ public class BasicBoolExprTest extends ExprTest {
             IntVar v2 = toIntVar(i2, solver);
             solver.post(ICF.arithm(v1, ">", v2));
 
-            assertEquals(solver.findAllSolutions(), count);
+            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testBoolChannel() {
+        for (int repeat = 0; repeat < 20; repeat++) {
+            IrModule module = new IrModule();
+            IrBoolVar[] bs = randBools(nextInt(5));
+            IrSetVar s = randPositiveSet();
+            module.addConstraint(boolChannel(bs, s));
+            module.addVariables(bs);
+            module.addVariable(s);
+
+            Solver irSolver = new Solver();
+            IrSolutionMap map = IrCompiler.compile(module, irSolver);
+            int count = 0;
+            if (randomizeStrategy(irSolver).findSolution()) {
+                do {
+                    for (int i = 0; i < bs.length; i++) {
+                        assertEquals(map.getBoolValue(bs[i]), Util.in(i, map.getSetValue(s)));
+                    }
+                    count++;
+                } while (irSolver.nextSolution());
+            }
+
+            Solver solver = new Solver();
+            solver.post(SCF.bool_channel(
+                    toBoolVars(bs, solver),
+                    toSetVar(s, solver),
+                    0));
+
+            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
     }
 }

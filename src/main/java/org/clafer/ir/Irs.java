@@ -679,49 +679,55 @@ public class Irs {
     }
 
     public static IrBoolExpr boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
-        {
-            int[] constant = IrUtil.getConstant(set);
-            if (constant != null) {
-                IrBoolExpr[] ands = new IrBoolExpr[bools.length];
-                for (int i = 0; i < ands.length; i++) {
-                    ands[i] = equal(bools[i], Util.in(i, constant) ? True : False);
+        if (set.getEnv().isEmpty()
+                || (set.getEnv().getLowBound() >= 0 && set.getEnv().getHighBound() < bools.length)) {
+            {
+                int[] constant = IrUtil.getConstant(set);
+                if (constant != null) {
+                    IrBoolExpr[] ands = new IrBoolExpr[bools.length];
+                    for (int i = 0; i < ands.length; i++) {
+                        ands[i] = equal(bools[i], Util.in(i, constant) ? True : False);
+                    }
+                    return and(ands);
                 }
-                return and(ands);
+                if (bools.length == 1) {
+                    return equal(bools[0], card(set));
+                }
             }
-        }
-        TIntHashSet values = new TIntHashSet();
-        IrDomain env = set.getEnv();
-        IrDomain ker = set.getKer();
-        boolean entailed = true;
-        for (int i = 0; i < bools.length; i++) {
-            Boolean constant = IrUtil.getConstant(bools[i]);
-            if (Boolean.TRUE.equals(constant)) {
-                if (values != null) {
-                    values.add(i);
-                }
-                if (!env.contains(i)) {
-                    return False;
-                }
-                if (!ker.contains(i)) {
+            TIntHashSet values = new TIntHashSet();
+            IrDomain env = set.getEnv();
+            IrDomain ker = set.getKer();
+            boolean entailed = true;
+            for (int i = 0; i < bools.length; i++) {
+                Boolean constant = IrUtil.getConstant(bools[i]);
+                if (Boolean.TRUE.equals(constant)) {
+                    if (values != null) {
+                        values.add(i);
+                    }
+                    if (!env.contains(i)) {
+                        return False;
+                    }
+                    if (!ker.contains(i)) {
+                        entailed = false;
+                    }
+                } else if (Boolean.FALSE.equals(constant)) {
+                    if (ker.contains(i)) {
+                        return False;
+                    }
+                    if (env.contains(i)) {
+                        entailed = false;
+                    }
+                } else {
+                    values = null;
                     entailed = false;
                 }
-            } else if (Boolean.FALSE.equals(constant)) {
-                if (ker.contains(i)) {
-                    return False;
-                }
-                if (env.contains(i)) {
-                    entailed = false;
-                }
-            } else {
-                values = null;
-                entailed = false;
             }
-        }
-        if (entailed) {
-            return True;
-        }
-        if (values != null) {
-            return equal(set, constant(enumDomain(values)));
+            if (entailed) {
+                return True;
+            }
+            if (values != null) {
+                return equal(set, constant(enumDomain(values)));
+            }
         }
         return new IrBoolChannel(bools, set, BoolDomain);
     }
