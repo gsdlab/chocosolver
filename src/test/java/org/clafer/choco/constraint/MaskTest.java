@@ -3,7 +3,6 @@ package org.clafer.choco.constraint;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
-import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -13,15 +12,6 @@ import solver.variables.VF;
  * @author jimmy
  */
 public class MaskTest extends ConstraintTest {
-
-    private void checkCorrectness(SetVar[] sets) {
-        int i = 0;
-        for (SetVar set : sets) {
-            for (int j = set.getKernelFirst(); j != SetVar.END; j = set.getKernelNext()) {
-                assertEquals(i++, j);
-            }
-        }
-    }
 
     private void checkCorrectness(SetVar set, SetVar masked, int from, int to) {
         int count = 0;
@@ -43,12 +33,11 @@ public class MaskTest extends ConstraintTest {
             int maskedHigh = maskedLow + nextInt(5);
             int from = nextInt(3);
             int to = from + nextInt(5);
-            
+
             SetVar set = VF.set("set", setLow, setHigh, solver);
-            IntVar setCard = cardVar(set);
-            solver.post(SCF.cardinality(set, setCard));
+            IntVar setCard = enforcedCardVar(set);
             SetVar masked = VF.set("masked", maskedLow, maskedHigh, solver);
-            IntVar maskedCard = cardVar(masked);
+            IntVar maskedCard = enforcedCardVar(masked);
 
             solver.post(Constraints.mask(set, setCard, masked, maskedCard, from, to));
 
@@ -70,10 +59,9 @@ public class MaskTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar set = VF.set("set", 1, 6, solver);
-        IntVar setCard = cardVar(set);
-        solver.post(SCF.cardinality(set, setCard));
+        IntVar setCard = enforcedCardVar(set);
         SetVar masked = VF.set("masked", 0, 3, solver);
-        IntVar maskedCard = cardVar(masked);
+        IntVar maskedCard = enforcedCardVar(masked);
 
         int from = 2;
         int to = 5;

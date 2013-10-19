@@ -52,7 +52,7 @@ public class ArrayToSetTest extends ConstraintTest {
 
             IntVar[] array = VF.enumeratedArray("array", low + high, -low - nextInt(10), high + nextInt(10), solver);
             SetVar set = VF.set("set", Util.range(-low - nextInt(10), high + nextInt(10)), solver);
-            IntVar setCard = VF.enumerated("|set|", 0, set.getEnvelopeSize(), solver);
+            IntVar setCard = enforcedCardVar(set);
 
             solver.post(Constraints.arrayToSet(array, set, setCard));
 
@@ -75,7 +75,7 @@ public class ArrayToSetTest extends ConstraintTest {
 
             IntVar[] array = VF.enumeratedArray("array", low + high, -low - nextInt(10), high + nextInt(10), solver);
             SetVar set = VF.set("set", Util.range(-low - nextInt(10), high + nextInt(10)), solver);
-            IntVar setCard = VF.enumerated("|set|", 0, set.getEnvelopeSize(), solver);
+            IntVar setCard = enforcedCardVar(set);
 
             solver.post(Constraints.arrayToSet(array, set, setCard, globalCardinality));
 
@@ -93,7 +93,7 @@ public class ArrayToSetTest extends ConstraintTest {
 
         IntVar[] array = VF.enumeratedArray("array", 5, 0, 10000, solver);
         SetVar set = VF.set("set", Util.range(0, 10000), solver);
-        IntVar setCard = VF.enumerated("|set|", 0, set.getEnvelopeSize(), solver);
+        IntVar setCard = enforcedCardVar(set);
 
         solver.post(Constraints.arrayToSet(array, set, setCard));
 
@@ -110,7 +110,7 @@ public class ArrayToSetTest extends ConstraintTest {
 
         IntVar[] ivars = VF.enumeratedArray("ivar", 3, 0, 5, solver);
         SetVar svar = VF.set("svar", new int[]{0, 1, 2, 3, 4, 5}, solver);
-        IntVar svarCard = VF.enumerated("|svar|", 0, 6, solver);
+        IntVar svarCard = enforcedCardVar(svar);
 
         solver.post(Constraints.arrayToSet(ivars, svar, svarCard));
 
@@ -136,7 +136,7 @@ public class ArrayToSetTest extends ConstraintTest {
 
         IntVar[] ivars = VF.enumeratedArray("ivar", 3, 0, 5, solver);
         SetVar svar = VF.set("svar", new int[]{0, 1, 2, 3, 4, 5}, solver);
-        IntVar svarCard = VF.enumerated("|svar|", 0, 4, solver);
+        IntVar svarCard = enforcedCardVar(svar, 0, 4);
         int globalCardinality = 1;
 
         solver.post(Constraints.arrayToSet(ivars, svar, svarCard, globalCardinality));
@@ -166,7 +166,7 @@ public class ArrayToSetTest extends ConstraintTest {
         ivars[1] = VF.enumerated("ivar1", new int[]{1, 2}, solver);
         ivars[2] = VF.enumerated("ivar2", new int[]{0, 1, 2, 3}, solver);
         SetVar svar = VF.set("svar", new int[]{0, 1, 2, 3}, solver);
-        IntVar svarCard = VF.enumerated("|svar|", 0, 4, solver);
+        IntVar svarCard = enforcedCardVar(svar);
         int globalCardinality = 1;
 
         solver.post(Constraints.arrayToSet(ivars, svar, svarCard, globalCardinality));

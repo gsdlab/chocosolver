@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import solver.Solver;
+import solver.constraints.set.SCF;
 import solver.propagation.PropagationEngineFactory;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
@@ -25,8 +26,38 @@ public abstract class ConstraintTest {
         return rand.nextInt(n);
     }
 
+    public IntVar cardVar(SetVar set, int low, int high) {
+        return VF.enumerated("|" + set.getName() + "|", low, high, set.getSolver());
+    }
+
     public IntVar cardVar(SetVar set) {
-        return VF.enumerated("|" + set.getName() + "|", 0, set.getEnvelopeSize(), set.getSolver());
+        return cardVar(set, 0, set.getEnvelopeSize());
+    }
+
+    public IntVar[] cardVars(SetVar[] sets) {
+        IntVar[] cards = new IntVar[sets.length];
+        for (int i = 0; i < cards.length; i++) {
+            cards[i] = cardVar(sets[i]);
+        }
+        return cards;
+    }
+
+    public IntVar enforcedCardVar(SetVar set, int low, int high) {
+        IntVar card = cardVar(set, low, high);
+        set.getSolver().post(SCF.cardinality(set, card));
+        return card;
+    }
+
+    public IntVar enforcedCardVar(SetVar set) {
+        return enforcedCardVar(set, 0, set.getEnvelopeSize());
+    }
+
+    public IntVar[] enforcedCardVars(SetVar[] sets) {
+        IntVar[] cards = new IntVar[sets.length];
+        for (int i = 0; i < cards.length; i++) {
+            cards[i] = enforcedCardVar(sets[i]);
+        }
+        return cards;
     }
 
     public boolean[] getValues(BoolVar[] vars) {

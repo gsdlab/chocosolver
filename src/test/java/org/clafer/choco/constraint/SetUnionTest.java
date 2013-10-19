@@ -2,12 +2,10 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import org.clafer.common.Util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import solver.Solver;
-import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -32,14 +30,12 @@ public class SetUnionTest extends ConstraintTest {
             Solver solver = new Solver();
 
             SetVar[] sets = new SetVar[nextInt(3) + 1];
-            IntVar[] setCards = new IntVar[sets.length];
             for (int i = 0; i < sets.length; i++) {
                 sets[i] = VF.set("s" + i, -nextInt(10), nextInt(10), solver);
-                setCards[i] = VF.enumerated("|s" + i + "|", 0, sets[i].getEnvelopeSize(), solver);
-                solver.post(SCF.cardinality(sets[i], setCards[i]));
             }
+            IntVar[] setCards = enforcedCardVars(sets);
             SetVar union = VF.set("union", -nextInt(10), nextInt(10), solver);
-            IntVar unionCard = VF.enumerated("|union|", 0, union.getEnvelopeSize(), solver);
+            IntVar unionCard = enforcedCardVar(union);
 
             solver.post(Constraints.union(sets, setCards, union, unionCard));
 
@@ -69,14 +65,12 @@ public class SetUnionTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar s1 = VF.set("s1", -4, 2, solver);
-        IntVar s1Card = VF.enumerated("|s1|", 0, s1.getEnvelopeSize(), solver);
+        IntVar s1Card = enforcedCardVar(s1);
         SetVar s2 = VF.set("s2", -2, 4, solver);
-        IntVar s2Card = VF.enumerated("|s2|", 0, s2.getEnvelopeSize(), solver);
+        IntVar s2Card = enforcedCardVar(s2);
         SetVar s3 = VF.set("s3", -2, 2, solver);
-        IntVar s3Card = VF.enumerated("|s3|", 0, s3.getEnvelopeSize(), solver);
+        IntVar s3Card = enforcedCardVar(s3);
 
-        solver.post(SCF.cardinality(s1, s1Card));
-        solver.post(SCF.cardinality(s2, s2Card));
         solver.post(Constraints.union(new SetVar[]{s1, s2}, new IntVar[]{s1Card, s2Card},
                 s3, s3Card));
 

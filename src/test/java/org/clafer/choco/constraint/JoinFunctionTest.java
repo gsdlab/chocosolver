@@ -37,13 +37,13 @@ public class JoinFunctionTest extends ConstraintTest {
             int num = nextInt(10);
 
             SetVar take = VF.set("take", Util.fromTo(0, num), solver);
-            IntVar takeCard = VF.enumerated("|take|", 0, take.getEnvelopeSize(), solver);
+            IntVar takeCard = enforcedCardVar(take);
             IntVar[] refs = new IntVar[num];
             for (int i = 0; i < refs.length; i++) {
                 refs[i] = VF.enumerated("ref" + i, 0, nextInt(10), solver);
             }
             SetVar to = VF.set("to", Util.fromTo(0, nextInt(10)), solver);
-            IntVar toCard = VF.enumerated("|to|", 0, to.getEnvelopeSize(), solver);
+            IntVar toCard = enforcedCardVar(to);
 
             solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard));
 
@@ -60,13 +60,13 @@ public class JoinFunctionTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", Util.fromTo(0, 2), solver);
-        IntVar takeCard = VF.enumerated("|take|", 0, take.getEnvelopeSize(), solver);
+        IntVar takeCard = enforcedCardVar(take);
         IntVar[] refs = new IntVar[2];
         for (int i = 0; i < refs.length; i++) {
             refs[i] = VF.enumerated("ref" + i, 5, 5, solver);
         }
         SetVar to = VF.set("to", Util.range(0, 5), solver);
-        IntVar toCard = VF.enumerated("|to|", 0, to.getEnvelopeSize(), solver);
+        IntVar toCard = enforcedCardVar(to);
 
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard));
 
@@ -86,13 +86,13 @@ public class JoinFunctionTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
-        IntVar takeCard = VF.enumerated("|take|", 0, 3, solver);
+        IntVar takeCard = enforcedCardVar(take);
         IntVar[] refs = new IntVar[3];
         for (int i = 0; i < refs.length; i++) {
             refs[i] = VF.enumerated("ref" + i, 0, 4, solver);
         }
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
-        IntVar toCard = VF.enumerated("|to|", 0, 5, solver);
+        IntVar toCard = enforcedCardVar(to);
 
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard));
 
@@ -126,13 +126,13 @@ public class JoinFunctionTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
-        IntVar takeCard = VF.enumerated("|take|", 0, 3, solver);
+        IntVar takeCard = enforcedCardVar(take);
         IntVar[] refs = new IntVar[3];
         for (int i = 0; i < refs.length; i++) {
             refs[i] = VF.enumerated("ref" + i, 0, 4, solver);
         }
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
-        IntVar toCard = VF.enumerated("|to|", 0, 5, solver);
+        IntVar toCard = enforcedCardVar(to);
 
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard, 1));
 
@@ -166,13 +166,13 @@ public class JoinFunctionTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
-        IntVar takeCard = VF.enumerated("|take|", 0, 3, solver);
+        IntVar takeCard = enforcedCardVar(take);
         IntVar[] refs = new IntVar[3];
         for (int i = 0; i < refs.length; i++) {
             refs[i] = VF.enumerated("ref" + i, 0, 4, solver);
         }
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
-        IntVar toCard = VF.enumerated("|to|", 0, 5, solver);
+        IntVar toCard = enforcedCardVar(to);
 
         solver.post(Constraints.joinFunction(take, takeCard, refs, to, toCard, 2));
 

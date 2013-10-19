@@ -799,7 +799,7 @@ public class Irs {
         for (IrSetExpr set : sets) {
             if (!set.getEnv().isEmpty()) {
                 filter.add(set);
-                fixedCard &= set.getCard().size() == 1;
+                fixedCard = fixedCard && set.getCard().size() == 1;
             }
         }
         if (filter.isEmpty()) {

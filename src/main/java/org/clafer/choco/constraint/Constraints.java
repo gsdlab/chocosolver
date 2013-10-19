@@ -32,7 +32,6 @@ import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.binary.PropEqualX_Y;
 import solver.constraints.binary.PropGreaterOrEqualX_Y;
-import solver.constraints.set.PropCardinality;
 import solver.constraints.set.PropIntersection;
 import solver.constraints.set.PropSubsetEq;
 import solver.constraints.unary.PropEqualXC;
@@ -513,6 +512,8 @@ public class Constraints {
     /**
      * A constraint enforcing {@code {ivar[0], ivar[1], ..., ivar[n]} = svar}
      * and {@code for all constant k, |{i | ivar[i] = k}| ≤ globalCardinality}.
+     * Does not enforce that {@code svarCard = |svar|} because of how the
+     * compilation works, it is already enforced elsewhere.
      *
      * @param ivars the array
      * @param svar the set
@@ -534,8 +535,7 @@ public class Constraints {
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropArrayToSet(ivars, svar),
-            new PropArrayToSetCard(ivars, svarCard, globalCardinality),
-            new PropCardinality(svar, svarCard)
+            new PropArrayToSetCard(ivars, svarCard, globalCardinality)
         };
         constraint.setPropagators(propagators);
 
@@ -559,8 +559,9 @@ public class Constraints {
      * A constraint enforcing {@code take.children = to} where children is an
      * injective relation. The representation of the relation is explained in
      * {@link PropJoinRelation}. Does not enforce that the children relation is
-     * injective nor that {@code childrenCards[i] = |children[i]|} because of
-     * how the compilation works, it is already enforced elsewhere.
+     * injective nor {@code takeCard = |take|} nor
+     * {@code childrenCards[i] = |children[i]|} nor {@code toCard = |to|}
+     * because of how the compilation works, it is already enforced elsewhere.
      *
      * @param take the left-hand side set
      * @param takeCard the cardinality of {@code take}
@@ -591,8 +592,7 @@ public class Constraints {
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropJoinRelation(take, children, to),
-            new PropJoinInjectiveRelationCard(take, takeCard, childrenCards, toCard),
-            new PropCardinality(to, toCard)
+            new PropJoinInjectiveRelationCard(take, takeCard, childrenCards, toCard)
         };
         constraint.setPropagators(propagators);
 
@@ -602,7 +602,9 @@ public class Constraints {
     /**
      * A constraint enforcing {@code take.refs = to} where refs is a function.
      * The representation of the function is explained in
-     * {@link PropJoinFunction}.
+     * {@link PropJoinFunction}. Does not enforce that {@code takeCard = |take|}
+     * nor {@code toCard = |to|} because of how the compilation works, it is
+     * already enforced elsewhere.
      *
      * @param take the left-hand side set
      * @param takeCard the cardinality of {@code take}
@@ -620,7 +622,9 @@ public class Constraints {
      * A constraint enforcing {@code take.refs = to} where refs is a function
      * and {@code for all k in take, |{i | refs[i] = k}| ≤ globalCardinality}.
      * The representation of the function is explained in
-     * {@link PropJoinFunction}.
+     * {@link PropJoinFunction}. Does not enforce that {@code takeCard = |take|}
+     * nor {@code toCard = |to|} because of how the compilation works, it is
+     * already enforced elsewhere.
      *
      * @param take the left-hand side set
      * @param takeCard the cardinality of {@code take}
@@ -649,8 +653,7 @@ public class Constraints {
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropJoinFunction(take, refs, to),
-            new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality),
-            new PropCardinality(to, toCard)
+            new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality)
         };
         constraint.setPropagators(propagators);
 
@@ -660,7 +663,8 @@ public class Constraints {
     /**
      * A constraint enforcing {@code minuend - subtrahend = difference}. Does
      * not enforce that {@code minuendCard = |minuend|} nor
-     * {@code subtrahendCard = |subtrahend|} because of how the compilation
+     * {@code subtrahendCard = |subtrahend|} nor
+     * {@code differenceCard = |difference|} because of how the compilation
      * works, it is already enforced elsewhere.
      *
      * @param minuend the minuend
@@ -687,8 +691,7 @@ public class Constraints {
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropSetDifference(minuend, subtrahend, difference),
             // Simple cardinality propagation.
-            greaterThanEq(minuendCard, differenceCard),
-            new PropCardinality(difference, differenceCard)
+            greaterThanEq(minuendCard, differenceCard)
         };
         constraint.setPropagators(propagators);
 
@@ -698,8 +701,9 @@ public class Constraints {
     /**
      * A constraint enforcing
      * {@code operands[0] ∩ operands[1] ∩ ... ∩ operands[n] = intersection}.
-     * Does not enforce that {@code operandCards[i] = |operands[i]|} because of
-     * how the compilation works, it is already enforced elsewhere.
+     * Does not enforce that {@code operandCards[i] = |operands[i]|} nor
+     * {@code intersectionCard = |intersection|} because of how the compilation
+     * works, it is already enforced elsewhere.
      *
      * @param operands the operands
      * @param operandCards the cardinalities of {@code operands}
@@ -726,17 +730,16 @@ public class Constraints {
                 new Constraint(variables, intersection.getSolver());
 
         @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[operandCards.length + 3];
+        Propagator<? extends Variable>[] propagators = new Propagator[operandCards.length + 2];
         // See SCF.intersection(operands, intersection);
         // TODO: Needs to add the same propagator twice because the implementation
         // is not guaranteed to be idempotent. If it ever becomes idempotent, then
         // follow their implementation.
         propagators[0] = new PropIntersection(operands, intersection);
         propagators[1] = new PropIntersection(operands, intersection);
-        propagators[2] = new PropCardinality(intersection, intersectionCard);
         for (int i = 0; i < operandCards.length; i++) {
             // Simple cardinality propagation.
-            propagators[i + 3] = greaterThanEq(operandCards[i], intersectionCard);
+            propagators[i + 2] = greaterThanEq(operandCards[i], intersectionCard);
         }
         constraint.setPropagators(propagators);
 
@@ -746,8 +749,9 @@ public class Constraints {
     /**
      * A constraint enforcing
      * {@code operands[0] ∪ operands[1] ∪ ... ∪ operands[n] = union}. Does not
-     * enforce that {@code operandCards[i] = |operands[i]|} because of how the
-     * compilation works, it is already enforced elsewhere.
+     * enforce that {@code operandCards[i] = |operands[i]|} nor
+     * {@code unionCard = |union|} because of how the compilation works, it is
+     * already enforced elsewhere.
      *
      * @param operands the operands
      * @param operandCards the cardinalities of {@code operands}
@@ -774,8 +778,7 @@ public class Constraints {
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropSetUnion(operands, union),
-            new PropSetUnionCard(operandCards, unionCard),
-            new PropCardinality(union, unionCard)
+            new PropSetUnionCard(operandCards, unionCard)
         };
         constraint.setPropagators(propagators);
 
@@ -785,8 +788,9 @@ public class Constraints {
     /**
      * A constraint enforcing
      * {@code {i + from | i ∈ member} = set ∩ {from, from + 1, ..., to - 1}}.
-     * Does not enforce that {@code setCard = |set|} because of how the
-     * compilation works, it is already enforced elsewhere.
+     * Does not enforce that {@code setCard = |set|} nor
+     * {@code maskedCard = |masked|} because of how the compilation works, it is
+     * already enforced elsewhere.
      *
      *
      * @param set the set
@@ -810,8 +814,7 @@ public class Constraints {
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropMask(set, masked, from, to),
             // Simple cardinality propagation.
-            greaterThanEq(setCard, maskedCard),
-            new PropCardinality(masked, maskedCard)
+            greaterThanEq(setCard, maskedCard)
         };
         constraint.setPropagators(propagators);
 

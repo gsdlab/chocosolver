@@ -37,16 +37,19 @@ public class JoinRelationTest extends ConstraintTest {
     public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
-            int num = nextInt(100);
+            int num = nextInt(5);
 
             SetVar take = VF.set("take", Util.fromTo(0, num), solver);
+            IntVar takeCard = enforcedCardVar(take);
             SetVar[] children = new SetVar[num];
             for (int i = 0; i < children.length; i++) {
-                children[i] = VF.set("child" + i, Util.range(0, nextInt(100)), solver);
+                children[i] = VF.set("child" + i, Util.range(0, nextInt(10)), solver);
             }
-            SetVar to = VF.set("to", Util.range(0, nextInt(100)), solver);
+            IntVar[] childrenCards = enforcedCardVars(children);
+            SetVar to = VF.set("to", Util.range(0, nextInt(10)), solver);
+            IntVar toCard = enforcedCardVar(to);
 
-            solver.post(Constraints.joinRelation(take, children, to));
+            solver.post(Constraints.joinInjectiveRelation(take, takeCard, children, childrenCards, to, toCard));
             if (num > 1) {
                 solver.post(SCF.all_disjoint(children));
             }
@@ -81,17 +84,14 @@ public class JoinRelationTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
-        IntVar takeCard = VF.enumerated("|take|", 0, take.getEnvelopeSize(), solver);
-        solver.post(SCF.cardinality(take, takeCard));
+        IntVar takeCard = enforcedCardVar(take);
         SetVar[] children = new SetVar[3];
-        IntVar[] childrenCards = new IntVar[children.length];
         for (int i = 0; i < children.length; i++) {
             children[i] = VF.set("child" + i, new int[]{0, 1, 2, 3, 4}, solver);
-            childrenCards[i] = VF.enumerated("|child" + i + "|", 0, children[i].getEnvelopeSize(), solver);
-            solver.post(SCF.cardinality(children[i], childrenCards[i]));
         }
+        IntVar[] childrenCards = enforcedCardVars(children);
         SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
-        IntVar toCard = VF.enumerated("|to|", 0, to.getEnvelopeSize(), solver);
+        IntVar toCard = enforcedCardVar(to);
 
         solver.post(Constraints.joinInjectiveRelation(take, takeCard, children, childrenCards, to, toCard));
         solver.post(SCF.all_disjoint(children));

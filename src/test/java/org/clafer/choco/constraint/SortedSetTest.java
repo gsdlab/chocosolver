@@ -3,7 +3,6 @@ package org.clafer.choco.constraint;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
-import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -29,14 +28,12 @@ public class SortedSetTest extends ConstraintTest {
             Solver solver = new Solver();
 
             SetVar[] sets = new SetVar[nextInt(5) + 1];
-            IntVar[] cards = new IntVar[sets.length];
             for (int i = 0; i < sets.length; i++) {
                 int low = nextInt(3);
                 int high = low + nextInt(10);
                 sets[i] = VF.set("set" + i, low, high, solver);
-                cards[i] = VF.enumerated("|set" + i + "|", 0, high - low + 1, solver);
-                solver.post(SCF.cardinality(sets[i], cards[i]));
             }
+            IntVar[] cards = enforcedCardVars(sets);
 
             solver.post(Constraints.sortedSets(sets, cards));
 
@@ -63,12 +60,10 @@ public class SortedSetTest extends ConstraintTest {
         Solver solver = new Solver();
 
         SetVar[] sets = new SetVar[3];
-        IntVar[] cards = new IntVar[sets.length];
         for (int i = 0; i < sets.length; i++) {
             sets[i] = VF.set("set" + i, 0, 9, solver);
-            cards[i] = VF.enumerated("|set" + i + "|", 0, 10, solver);
-            solver.post(SCF.cardinality(sets[i], cards[i]));
         }
+        IntVar[] cards = enforcedCardVars(sets);
 
         solver.post(Constraints.sortedSets(sets, cards));
 
