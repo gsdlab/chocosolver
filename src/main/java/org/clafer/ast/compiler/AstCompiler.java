@@ -477,11 +477,11 @@ public class AstCompiler {
         if (groupCard.isBounded()) {
             IrBoolExpr[] members = memberships.get(clafer);
             IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
-            boolean featureGroup = true;
+//            boolean featureGroup = true;
             for (int i = 0; i < childrenSets.length; i++) {
                 AstConcreteClafer child = children.get(i);
                 childrenSets[i] = siblingSets.get(child);
-                featureGroup &= getCard(child).getHigh() == 1;
+//                featureGroup &= getCard(child).getHigh() == 1;
             }
             int scope = getScope(clafer);
             for (int i = 0; i < scope; i++) {
@@ -489,8 +489,8 @@ public class AstCompiler {
                 for (int j = 0; j < cards.length; j++) {
                     cards[j] = card(childrenSets[j][i]);
                 }
-                if (featureGroup) {
-                    // TODO: Translate common cases more efficiently.
+//                if (featureGroup) {
+//                    TODO: Translate common cases more efficiently.
 //                    if (groupCard.getLow() == 0 && groupCard.getHigh() == 1) {
 //                        // "lone"
 //                        module.addConstraint(implies(members[i], lone(asBools(cards))));
@@ -507,7 +507,7 @@ public class AstCompiler {
 //                        module.addConstraint(implies(members[i], one(asBools(cards))));
 //                        continue;
 //                    }
-                }
+//                }
                 module.addConstraint(implies(members[i], constrainCard(add(cards), groupCard)));
             }
         }

@@ -54,7 +54,7 @@ public class PropSortedSets extends Propagator<SetVar> {
         boolean allInstantiated = true;
         for (int i = 0; i < sets.length; i++) {
             SetVar set = sets[i];
-            allInstantiated &= set.instantiated();
+            allInstantiated = allInstantiated && set.instantiated();
             int cur = set.getKernelFirst();
             if (cur != SetVar.END) {
                 for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {

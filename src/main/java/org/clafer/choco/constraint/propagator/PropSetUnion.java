@@ -132,12 +132,12 @@ public class PropSetUnion extends Propagator<SetVar> {
             if (!PropUtil.isKerSubsetEnv(set, union)) {
                 return ESat.FALSE;
             }
-            allInstantiated &= set.instantiated();
+            allInstantiated = allInstantiated && set.instantiated();
         }
         if (!PropUtil.isEnvSubsetEnvs(union, sets)) {
             return ESat.FALSE;
         }
-        allInstantiated &= union.instantiated();
+        allInstantiated = allInstantiated && union.instantiated();
         return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
 
