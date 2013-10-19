@@ -463,9 +463,9 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrImplies ir, BoolArg a) {
-            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-            IntVar $consequent = compileAsIntVar(ir.getConsequent());
-            return _implies($antecedent, $consequent);
+            BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
+            IntVar consequent = compileAsIntVar(ir.getConsequent());
+            return _implies(antecedent, consequent);
         }
 
         @Override
@@ -477,11 +477,12 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrIfThenElse ir, BoolArg a) {
-            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-            IntVar $consequent = compileAsIntVar(ir.getConsequent());
-            IntVar $alternative = compileAsIntVar(ir.getAlternative());
-            Constraint thenClause = _implies($antecedent, $consequent);
-            Constraint elseClause = _implies($antecedent.not(), $alternative);
+            BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
+            IntVar consequent = compileAsIntVar(ir.getConsequent());
+            IntVar alternative = compileAsIntVar(ir.getAlternative());
+            System.out.println(antecedent + " => " + consequent + " ? " + alternative);
+            Constraint thenClause = _implies(antecedent, consequent);
+            Constraint elseClause = _implies(antecedent.not(), alternative);
             return _and(thenClause.reif(), elseClause.reif());
         }
 
@@ -560,9 +561,9 @@ public class IrCompiler {
          * Optimize when one of the operands is a constant.
          */
         private Object compileCompareConstant(IrIntExpr left, IrCompare.Op op, IrIntExpr right, BoolArg a) {
-            boolean preferBoolVar = Preference.BoolVar.equals(a.getPreference());
             Integer constant = IrUtil.getConstant(right);
             if (constant != null) {
+                boolean preferBoolVar = Preference.BoolVar.equals(a.getPreference());
                 if (op.isEquality() && (a.hasReify() || preferBoolVar)) {
                     BoolVar reify = a.hasReify() ? a.useReify() : numBoolVar("ReifyEquality");
                     Constraint constraint =
@@ -895,13 +896,13 @@ public class IrCompiler {
             if (reify == null) {
                 IntVar ternary = numIntVar("Ternary", ir.getDomain());
                 post(_ifThenElse(antecedent,
-                        _arithm(ternary, "=", consequent),
-                        _arithm(ternary, "=", alternative)));
+                        _reify_equal(ternary, consequent),
+                        _reify_equal(ternary, alternative)));
                 return ternary;
             }
             return _ifThenElse(antecedent,
-                    _arithm(reify, "=", consequent),
-                    _arithm(reify, "=", alternative));
+                    _reify_equal(reify, consequent),
+                    _reify_equal(reify, alternative));
         }
 
         private Object compileBool(IrBoolExpr expr, IntVar a) {
@@ -1190,6 +1191,12 @@ public class IrCompiler {
         return _implies(antecedent, consequent.reif());
     }
 
+    private static Constraint _ifThenElse(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
+        Constraint thenClause = _implies(antecedent, consequent);
+        Constraint elseClause = _implies(antecedent.not(), alternative);
+        return _and(thenClause.reif(), elseClause.reif());
+    }
+
     private static Constraint _ifThenElse(BoolVar antecedent, Constraint consequent, Constraint alternative) {
         Constraint thenClause = _implies(antecedent, consequent);
         Constraint elseClause = _implies(antecedent.not(), alternative);
@@ -1294,6 +1301,20 @@ public class IrCompiler {
 
     private static Constraint _arithm(IntVar var1, String op, int c) {
         return ICF.arithm(var1, op, c);
+    }
+
+    private BoolVar _reify_equal(IntVar var1, IntVar var2) {
+        if (var1.instantiated()) {
+            BoolVar reify = numBoolVar("ReifyEqual");
+            solver.post(Constraints.reifyEqual(reify, var2, var1.getValue()));
+            return reify;
+        }
+        if (var2.instantiated()) {
+            BoolVar reify = numBoolVar("ReifyEqual");
+            solver.post(Constraints.reifyEqual(reify, var1, var2.getValue()));
+            return reify;
+        }
+        return _arithm(var1, "=", var2).reif();
     }
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
