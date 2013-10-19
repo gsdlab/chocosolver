@@ -236,4 +236,33 @@ public class BasicBoolExprTest extends ExprTest {
             assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
     }
+
+    @Test(timeout = 60000)
+    public void testAllDifferent() {
+        for (int repeat = 0; repeat < 20; repeat++) {
+            IrModule module = new IrModule();
+            IrIntVar[] is = randInts(1 + nextInt(5));
+            module.addConstraint(allDifferent(is));
+            module.addVariables(is);
+
+            Solver irSolver = new Solver();
+            IrSolutionMap map = IrCompiler.compile(module, irSolver);
+            int count = 0;
+            if (randomizeStrategy(irSolver).findSolution()) {
+                do {
+                    for (int i = 0; i < is.length; i++) {
+                        for (int j = i + 1; j < is.length; j++) {
+                            assertNotEquals(map.getIntValue(is[i]), map.getIntValue(is[j]));
+                        }
+                    }
+                    count++;
+                } while (irSolver.nextSolution());
+            }
+
+            Solver solver = new Solver();
+            solver.post(ICF.alldifferent(toIntVars(is, solver), "AC"));
+
+            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
+        }
+    }
 }
