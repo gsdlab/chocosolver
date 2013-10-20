@@ -153,13 +153,16 @@ public class IrCompiler {
             }
         }
 
-        Pair<List<IrJoinFunction>, List<IrJoinRelation>> commonSubexpressions =
+        Triple<List<IrArrayToSet>, List<IrJoinRelation>, List<IrJoinFunction>> commonSubexpressions =
                 CommonSubexpression.findCommonSubexpressions(optModule);
-        for (IrJoinFunction function : commonSubexpressions.getFst()) {
-            cachedJoinFunction.put(function, compile(function));
+        for (IrArrayToSet array : commonSubexpressions.getFst()) {
+            cachedArrayToSet.put(array, compile(array));
         }
         for (IrJoinRelation relation : commonSubexpressions.getSnd()) {
             cachedJoinRelation.put(relation, compile(relation));
+        }
+        for (IrJoinFunction function : commonSubexpressions.getThd()) {
+            cachedJoinFunction.put(function, compile(function));
         }
         for (IrBoolExpr constraint : constraints) {
             post(compileAsConstraint(constraint));
@@ -197,8 +200,9 @@ public class IrCompiler {
     private final Map<SetVar, IntVar> cachedSetCardVars = new HashMap<SetVar, IntVar>();
     private final Map<IntVar, IntVar> cachedMinus = new HashMap<IntVar, IntVar>();
     private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<Pair<IntVar, Integer>, IntVar>();
-    private final Map<IrJoinFunction, CSet> cachedJoinFunction = new HashMap<IrJoinFunction, CSet>();
+    private final Map<IrArrayToSet, CSet> cachedArrayToSet = new HashMap<IrArrayToSet, CSet>();
     private final Map<IrJoinRelation, CSet> cachedJoinRelation = new HashMap<IrJoinRelation, CSet>();
+    private final Map<IrJoinFunction, CSet> cachedJoinFunction = new HashMap<IrJoinFunction, CSet>();
 
     private void post(Constraint constraint) {
         if (!solver.TRUE.equals(constraint)) {
@@ -1062,6 +1066,10 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrArrayToSet ir, CSet reify) {
+            CSet cache = cachedArrayToSet.get(ir);
+            if (cache != null) {
+                return cache;
+            }
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {
                 CSet set = numCset("ArrayToSet", ir.getEnv(), ir.getKer(), ir.getCard());
