@@ -29,7 +29,7 @@ public class IrUtil {
         return IrBoolDomain.FalseDomain.equals(b.getDomain());
     }
 
-    public static Boolean isConstant(IrBoolExpr b) {
+    public static boolean isConstant(IrBoolExpr b) {
         return !IrBoolDomain.BoolDomain.equals(b.getDomain());
     }
 
