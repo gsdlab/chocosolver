@@ -85,15 +85,18 @@ public class ClaferCompiler {
                 }
             }
         }
-//        Collections.sort(vars, new Comparator<SetVar>() {
-//            @Override
-//            public int compare(SetVar o1, SetVar o2) {
-//                int a1 = o1.getEnvelopeSize() - o1.getKernelSize();
-//                int a2 = o2.getEnvelopeSize() - o2.getKernelSize();
-//                return (a1 < a2) ? -1 : ((a1 == a2) ? 0 : 1);
-//            }
-//        });
         return vars.toArray(new SetVar[vars.size()]);
+    }
+
+    private static IntVar[] getScoreVars(IrIntVar[] scores, IrSolutionMap map) {
+        List<IntVar> vars = new ArrayList<IntVar>(scores.length);
+        for (IrIntVar score : scores) {
+            IntVar var = map.getIntVar(score);
+            if (var != null) {
+                vars.add(var);
+            }
+        }
+        return vars.toArray(new IntVar[vars.size()]);
     }
 
     private static IntVar[] getIntVars(AstModel model, ClaferSolutionMap map) {
@@ -156,7 +159,7 @@ public class ClaferCompiler {
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 setStrategy(getSetVars(in, solution), options),
-                IntStrategyFactory.firstFail_InDomainMax(irSolution.getIntVars(triple.getSnd())),
+                IntStrategyFactory.firstFail_InDomainMax(getScoreVars(triple.getSnd(), irSolution)),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
         return new ClaferObjective(solver, solution, Objective.Maximize, irSolution.getIntVar(triple.getThd()));
     }
@@ -178,7 +181,7 @@ public class ClaferCompiler {
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 setStrategy(getSetVars(in, solution), options),
-                IntStrategyFactory.firstFail_InDomainMin(irSolution.getIntVars(triple.getSnd())),
+                IntStrategyFactory.firstFail_InDomainMin(getScoreVars(triple.getSnd(), irSolution)),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
         return new ClaferObjective(solver, solution, Objective.Minimize, irSolution.getIntVar(triple.getThd()));
     }

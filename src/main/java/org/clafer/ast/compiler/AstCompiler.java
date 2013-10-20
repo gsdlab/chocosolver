@@ -189,7 +189,7 @@ public class AstCompiler {
 
         IrIntVar[] score = new IrIntVar[refs.length];
         for (int i = 0; i < members.length; i++) {
-            score[i] = domainInt("Score@" + refs[i], IrUtil.union(ZeroDomain, refs[i].getDomain()));
+            score[i] = domainInt("Score@" + i, IrUtil.union(ZeroDomain, refs[i].getDomain()));
             module.addConstraint(ifThenElse(members[i],
                     equal(score[i], refs[i]), equal(score[i], 0)));
         }

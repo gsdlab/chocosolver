@@ -9,8 +9,7 @@ import org.clafer.common.Check;
 
 /**
  * The compiled model in IR. A module contains variables and constraints. The IR
- * is permitted to throw away any variables during the optimization, except for
- * variables that are explicitly added.
+ * is permitted to throw away any variables during the optimization.
  *
  * @author jimmy
  */
