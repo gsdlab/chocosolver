@@ -4,9 +4,6 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.ArrayList;
-import java.util.List;
-import org.clafer.collection.Pair;
 
 /**
  *

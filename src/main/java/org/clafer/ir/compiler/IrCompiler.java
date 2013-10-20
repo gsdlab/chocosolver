@@ -18,10 +18,12 @@ import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetTest;
 import org.clafer.ir.IrSingleton;
@@ -50,6 +52,7 @@ import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
+import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntVar;
@@ -153,17 +156,8 @@ public class IrCompiler {
             }
         }
 
-        Triple<List<IrArrayToSet>, List<IrJoinRelation>, List<IrJoinFunction>> commonSubexpressions =
-                CommonSubexpression.findCommonSubexpressions(optModule);
-        for (IrArrayToSet array : commonSubexpressions.getFst()) {
-            cachedArrayToSet.put(array, compile(array));
-        }
-        for (IrJoinRelation relation : commonSubexpressions.getSnd()) {
-            cachedJoinRelation.put(relation, compile(relation));
-        }
-        for (IrJoinFunction function : commonSubexpressions.getThd()) {
-            cachedJoinFunction.put(function, compile(function));
-        }
+        commonSubexpressions.addAll(CommonSubexpression.findCommonSubexpressions(optModule));
+
         for (IrBoolExpr constraint : constraints) {
             post(compileAsConstraint(constraint));
         }
@@ -200,9 +194,9 @@ public class IrCompiler {
     private final Map<SetVar, IntVar> cachedSetCardVars = new HashMap<SetVar, IntVar>();
     private final Map<IntVar, IntVar> cachedMinus = new HashMap<IntVar, IntVar>();
     private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<Pair<IntVar, Integer>, IntVar>();
-    private final Map<IrArrayToSet, CSet> cachedArrayToSet = new HashMap<IrArrayToSet, CSet>();
-    private final Map<IrJoinRelation, CSet> cachedJoinRelation = new HashMap<IrJoinRelation, CSet>();
-    private final Map<IrJoinFunction, CSet> cachedJoinFunction = new HashMap<IrJoinFunction, CSet>();
+    private final Set<IrExpr> commonSubexpressions = new HashSet<IrExpr>();
+    private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<IrIntExpr, IntVar>();
+    private final Map<IrSetExpr, CSet> cachedCommonSetSubexpressions = new HashMap<IrSetExpr, CSet>();
 
     private void post(Constraint constraint) {
         if (!solver.TRUE.equals(constraint)) {
@@ -378,7 +372,9 @@ public class IrCompiler {
     }
 
     private Constraint compileAsConstraint(IrIntExpr expr, IntVar reify) {
-        Object result = expr.accept(intExprCompiler, reify);
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(intExprCompiler, reify);
         if (result instanceof IntVar) {
             // The compliation failed to reify, explicitly reify now.
             return _arithm(reify, "=", (IntVar) result);
@@ -387,7 +383,9 @@ public class IrCompiler {
     }
 
     private Constraint compileAsConstraint(IrSetExpr expr, CSet reify) {
-        Object result = expr.accept(setExprCompiler, reify);
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(setExprCompiler, reify);
         if (result instanceof CSet) {
             CSet set = (CSet) result;
             // The compliation failed to reify, explicitly reify now.
@@ -396,24 +394,19 @@ public class IrCompiler {
         return (Constraint) result;
     }
 
-    private Constraint[] compileAsConstraints(IrBoolExpr[] exprs) {
-        Constraint[] constraints = new Constraint[exprs.length];
-        for (int i = 0; i < constraints.length; i++) {
-            constraints[i] = compileAsConstraint(exprs[i]);
-        }
-        return constraints;
-    }
-
     private Object compile(IrBoolExpr expr) {
         return expr.accept(boolExprCompiler, ConstraintNoReify);
     }
 
     private IntVar compile(IrIntExpr expr) {
-        return (IntVar) expr.accept(intExprCompiler, null);
-    }
-
-    private Object compile(IrIntExpr expr, IntVar reify) {
-        return reify == null ? compile(expr) : compileAsConstraint(expr, reify);
+        IntVar var = cachedCommonIntSubexpressions.get(expr);
+        if (var == null) {
+            var = (IntVar) expr.accept(intExprCompiler, null);
+            if (commonSubexpressions.contains(expr)) {
+                cachedCommonIntSubexpressions.put(expr, var);
+            }
+        }
+        return var;
     }
 
     private IntVar[] compile(IrIntExpr[] exprs) {
@@ -425,7 +418,14 @@ public class IrCompiler {
     }
 
     private CSet compile(IrSetExpr expr) {
-        return (CSet) expr.accept(setExprCompiler, null);
+        CSet set = cachedCommonSetSubexpressions.get(expr);
+        if (set == null) {
+            set = (CSet) expr.accept(setExprCompiler, null);
+            if (commonSubexpressions.contains(expr)) {
+                cachedCommonSetSubexpressions.put(expr, set);
+            }
+        }
+        return set;
     }
 
     private CSet[] compile(IrSetExpr[] exprs) {
@@ -501,9 +501,9 @@ public class IrCompiler {
                 return compileAsConstraint(ir.getRight(), left);
             }
             if (ir.getRight() instanceof IrBoolVar) {
-                return compile(ir.getLeft(), compileAsIntVar(ir.getRight()));
+                return compileAsConstraint(ir.getLeft(), compileAsIntVar(ir.getRight()));
             }
-            return compile(ir.getRight(), compileAsIntVar(ir.getLeft()));
+            return compileAsConstraint(ir.getRight(), compileAsIntVar(ir.getLeft()));
         }
 
         @Override
@@ -819,9 +819,9 @@ public class IrCompiler {
             if (multiplicandConstant != null) {
                 switch (multiplicandConstant.intValue()) {
                     case 0:
-                        return compile(multiplicand, reify);
+                        return compileAsConstraint(multiplicand, reify);
                     case 1:
-                        return compile(multiplier, reify);
+                        return compileAsConstraint(multiplier, reify);
                     default:
                         if (multiplicandConstant.intValue() >= -1) {
                             return VF.scale(compile(multiplier), multiplicandConstant.intValue());
@@ -831,9 +831,9 @@ public class IrCompiler {
             if (multiplierConstant != null) {
                 switch (multiplierConstant.intValue()) {
                     case 0:
-                        return compile(multiplier, reify);
+                        return compileAsConstraint(multiplier, reify);
                     case 1:
-                        return compile(multiplicand, reify);
+                        return compileAsConstraint(multiplicand, reify);
                     default:
                         if (multiplierConstant.intValue() >= -1) {
                             return VF.scale(compile(multiplicand), multiplierConstant.intValue());
@@ -1066,10 +1066,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrArrayToSet ir, CSet reify) {
-            CSet cache = cachedArrayToSet.get(ir);
-            if (cache != null) {
-                return cache;
-            }
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {
                 CSet set = numCset("ArrayToSet", ir.getEnv(), ir.getKer(), ir.getCard());
@@ -1081,10 +1077,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrJoinRelation ir, CSet reify) {
-            CSet cache = cachedJoinRelation.get(ir);
-            if (cache != null) {
-                return cache;
-            }
             CSet take = compile(ir.getTake());
             CSet[] children = compile(ir.getChildren());
             if (reify == null) {
@@ -1107,10 +1099,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrJoinFunction ir, CSet reify) {
-            CSet cache = cachedJoinFunction.get(ir);
-            if (cache != null) {
-                return cache;
-            }
             CSet take = compile(ir.getTake());
             IntVar[] refs = compile(ir.getRefs());
             if (reify == null) {
