@@ -483,11 +483,9 @@ public class IrCompiler {
         @Override
         public Object visit(IrIfThenElse ir, BoolArg a) {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
-            IntVar consequent = compileAsIntVar(ir.getConsequent());
-            IntVar alternative = compileAsIntVar(ir.getAlternative());
-            Constraint thenClause = _implies(antecedent, consequent);
-            Constraint elseClause = _implies(antecedent.not(), alternative);
-            return _and(thenClause.reif(), elseClause.reif());
+            BoolVar consequent = compileAsBoolVar(ir.getConsequent());
+            BoolVar alternative = compileAsBoolVar(ir.getAlternative());
+            return _ifThenElse(antecedent, consequent, alternative);
         }
 
         @Override
@@ -1188,9 +1186,7 @@ public class IrCompiler {
     }
 
     private static Constraint _ifThenElse(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
-        Constraint thenClause = _implies(antecedent, consequent);
-        Constraint elseClause = _implies(antecedent.not(), alternative);
-        return _and(thenClause.reif(), elseClause.reif());
+        return Constraints.ifThenElse(antecedent, consequent, alternative);
     }
 
     private static Constraint _ifThenElse(BoolVar antecedent, Constraint consequent, Constraint alternative) {

@@ -8,6 +8,7 @@ import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropFilterString;
+import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
@@ -144,6 +145,23 @@ public class Constraints {
      */
     public static Constraint or(Constraint... constraints) {
         return new OrConstraint(constraints);
+    }
+
+    /**
+     * A constraint enforcing
+     * {@code antecedent => consequent && !antecedent => alternative}.
+     *
+     * @param antecedent the antecedent
+     * @param consequent the consequent
+     * @param alternative the alternative
+     * @return constraint
+     * {@code antecedent => consequent && !antecedent => alternative}
+     */
+    public static Constraint ifThenElse(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
+        Constraint<BoolVar, PropIfThenElse> constraint =
+                new Constraint<BoolVar, PropIfThenElse>(new BoolVar[]{antecedent, consequent, alternative}, antecedent.getSolver());
+        constraint.setPropagators(new PropIfThenElse(antecedent, consequent, alternative));
+        return constraint;
     }
 
     /**
