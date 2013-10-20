@@ -318,7 +318,6 @@ public class BasicBoolExprTest extends ExprTest {
 
             assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
-        System.out.println("done");
     }
 
     @Test(timeout = 60000)
