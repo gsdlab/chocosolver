@@ -20,10 +20,6 @@ public class IrSetVar extends IrAbstractSet implements IrVar {
         return name;
     }
 
-    public IrSetVar withCard(IrDomain card) {
-        return new IrSetVar(name, getEnv(), getKer(), card);
-    }
-
     @Override
     public <A, B> B accept(IrSetExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);

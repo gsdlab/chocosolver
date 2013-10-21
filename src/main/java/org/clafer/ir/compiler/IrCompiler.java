@@ -653,7 +653,7 @@ public class IrCompiler {
         public Constraint visit(IrIntChannel ir, BoolArg a) {
             IntVar[] ints = compile(ir.getInts());
             CSet[] sets = compile(ir.getSets());
-            return SCF.int_channel(mapSet(sets), ints, 0, 0);
+            return Constraints.intChannel(mapSet(sets), ints);
         }
 
         @Override
