@@ -69,7 +69,7 @@ public class Irs {
         return enumDomain(new TIntHashSet(values));
     }
 
-    public static IrDomain enumDomain(TIntHashSet values) {
+    public static IrDomain enumDomain(TIntSet values) {
         switch (values.size()) {
             case 0:
                 return EmptyDomain;

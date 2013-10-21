@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import org.clafer.collection.BoundIntIterator;
 import org.clafer.collection.ReverseBoundIntIterator;
@@ -20,7 +21,7 @@ public class IrBoundDomain implements IrDomain {
      */
     public IrBoundDomain(int low, int high) {
         if (low > high) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(low + ">" + high);
         }
         this.low = low;
         this.high = high;
@@ -100,6 +101,16 @@ public class IrBoundDomain implements IrDomain {
     @Override
     public TIntIterator iterator(boolean increasing) {
         return increasing ? new BoundIntIterator(low, high) : new ReverseBoundIntIterator(low, high);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void transferTo(TIntCollection collection) {
+        for (int i = low; i <= high; i++) {
+            collection.add(i);
+        }
     }
 
     /**

@@ -1,6 +1,8 @@
 package org.clafer.ir.analysis;
 
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -101,14 +103,18 @@ public class Coalescer {
                     ker = IrUtil.union(ker, var.getKer());
                     card = IrUtil.intersection(card, var.getCard());
                 }
-                card = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
-                if (!IrUtil.isSubsetOf(ker, env) || card.isEmpty()) {
+                if (!IrUtil.isSubsetOf(ker, env) || ker.size() > env.size()) {
                     // Model is unsatisfiable. Compile anyways?
                 } else {
-                    IrSetVar coalesced = set(name.toString(), env, ker, card);
-                    for (IrSetVar coalesce : component) {
-                        if (!coalesced.equals(coalesce)) {
-                            coalescedSets.put(coalesce, coalesced);
+                    card = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
+                    if (card.isEmpty()) {
+                        // Model is unsatisfiable. Compile anyways?
+                    } else {
+                        IrSetVar coalesced = set(name.toString(), env, ker, card);
+                        for (IrSetVar coalesce : component) {
+                            if (!coalesced.equals(coalesce)) {
+                                coalescedSets.put(coalesce, coalesced);
+                            }
                         }
                     }
                 }
@@ -121,6 +127,9 @@ public class Coalescer {
     }
 
     private static void propagateDomain(IrDomain left, IrIntExpr right, KeyGraph<IrIntVar> intGraph) {
+        if (left.equals(right.getDomain())) {
+            return;
+        }
         if (right instanceof IrIntVar) {
             IrDomain domain = IrUtil.intersection(left, right.getDomain());
             if (!domain.equals(right.getDomain())) {
@@ -140,6 +149,9 @@ public class Coalescer {
     }
 
     private static void propagateEnv(IrDomain left, IrSetExpr right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+        if (left.equals(right.getEnv())) {
+            return;
+        }
         if (right instanceof IrSetVar) {
             IrDomain env = IrUtil.intersection(left, right.getEnv());
             if (!env.equals(right.getEnv())) {
@@ -176,6 +188,9 @@ public class Coalescer {
     }
 
     private static void propagateCard(IrDomain left, IrSetExpr right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+        if (left.equals(right.getCard())) {
+            return;
+        }
         if (right instanceof IrSetVar) {
             IrDomain card = IrUtil.intersection(left, right.getCard());
             if (!card.equals(right.getCard())) {
@@ -487,10 +502,14 @@ public class Coalescer {
         @Override
         public Boolean visit(IrBoolChannel ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
             KeyGraph<IrIntVar> intGraph = a.getFst();
+            KeyGraph<IrSetVar> setGraph = a.getSnd();
             IrBoolExpr[] bools = ir.getBools();
             IrSetExpr set = ir.getSet();
             IrDomain env = set.getEnv();
             IrDomain ker = set.getKer();
+            TIntSet notFalses = new TIntHashSet();
+            env.transferTo(notFalses);
+            boolean changed = false;
             for (int i = 0; i < bools.length; i++) {
                 if (bools[i] instanceof IrBoolVar && !IrUtil.isConstant(bools[i])) {
                     if (!env.contains(i)) {
@@ -499,6 +518,12 @@ public class Coalescer {
                         intGraph.addUndirectedEdge((IrBoolVar) bools[i], True);
                     }
                 }
+                if (IrUtil.isFalse(bools[i])) {
+                    changed |= notFalses.remove(i);
+                }
+            }
+            if (changed) {
+                propagateEnv(enumDomain(notFalses), set, intGraph, setGraph);
             }
             return null;
         }
@@ -506,16 +531,34 @@ public class Coalescer {
         @Override
         public Boolean visit(IrIntChannel ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
             KeyGraph<IrIntVar> intGraph = a.getFst();
+            KeyGraph<IrSetVar> setGraph = a.getSnd();
             IrIntExpr[] ints = ir.getInts();
             IrSetExpr[] sets = ir.getSets();
-            for (int i = 0; i < sets.length; i++) {
-                TIntIterator iter = sets[i].getKer().iterator();
-                while (iter.hasNext()) {
-                    int j = iter.next();
-                    if (ints[j] instanceof IrIntVar && !IrUtil.isConstant(ints[j])) {
-                        intGraph.addUndirectedEdge((IrIntVar) ints[j], constant(i));
+
+            TIntSet kers = new TIntHashSet();
+
+            for (int i = 0; i < ints.length; i++) {
+                TIntSet domain = new TIntHashSet();
+                for (int j = 0; j < sets.length; j++) {
+                    if (sets[j].getEnv().contains(i)) {
+                        domain.add(j);
                     }
                 }
+                propagateDomain(enumDomain(domain), ints[i], intGraph);
+            }
+            for (IrSetExpr set : sets) {
+                set.getKer().transferTo(kers);
+            }
+            for (int i = 0; i < sets.length; i++) {
+                TIntSet env = new TIntHashSet();
+                for (int j = 0; j < ints.length; j++) {
+                    if (ints[j].getDomain().contains(i)) {
+                        env.add(j);
+                    }
+                }
+                env.removeAll(kers);
+                sets[i].getKer().transferTo(env);
+                propagateEnv(enumDomain(env), sets[i], intGraph, setGraph);
             }
             return null;
         }

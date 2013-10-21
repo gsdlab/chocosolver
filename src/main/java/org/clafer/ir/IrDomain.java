@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 
 /**
@@ -74,10 +75,17 @@ public interface IrDomain {
     public TIntIterator iterator();
 
     /**
-     * * Iterate over the domain in the specified order.
+     * Iterate over the domain in the specified order.
      *
      * @param increasing increasing or decreasing order
      * @return an iterator over the values in this domain in the order specified
      */
     public TIntIterator iterator(boolean increasing);
+
+    /**
+     * Put the contents of this domain inside the collection.
+     *
+     * @param collection the collection
+     */
+    public void transferTo(TIntCollection collection);
 }

@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import org.clafer.collection.EmptyIntIterator;
 
@@ -80,6 +81,13 @@ public class IrEmptyDomain implements IrDomain {
     @Override
     public TIntIterator iterator(boolean increasing) {
         return EmptyIntIterator.getIterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void transferTo(TIntCollection collection) {
     }
 
     /**

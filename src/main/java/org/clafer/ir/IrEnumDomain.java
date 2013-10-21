@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import java.util.Arrays;
 import org.clafer.collection.ArrayIntIterator;
@@ -7,7 +8,7 @@ import org.clafer.collection.ReverseArrayIntIterator;
 
 /**
  * A domain over explicitly defined values.
- * 
+ *
  * @author jimmy
  */
 public class IrEnumDomain implements IrDomain {
@@ -96,6 +97,14 @@ public class IrEnumDomain implements IrDomain {
     @Override
     public TIntIterator iterator(boolean increasing) {
         return increasing ? new ArrayIntIterator(values) : new ReverseArrayIntIterator(values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void transferTo(TIntCollection collection) {
+        collection.addAll(values);
     }
 
     /**

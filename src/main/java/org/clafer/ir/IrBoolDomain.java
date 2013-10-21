@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import org.clafer.collection.BoundIntIterator;
 import org.clafer.collection.ReverseBoundIntIterator;
@@ -118,6 +119,16 @@ public enum IrBoolDomain implements IrDomain {
                 return increasing ? new BoundIntIterator(0, 1) : new ReverseBoundIntIterator(0, 1);
             default:
                 throw new IllegalStateException();
+        }
+    }
+
+    @Override
+    public void transferTo(TIntCollection collection) {
+        if (hasTrue) {
+            collection.add(1);
+        }
+        if (hasFalse) {
+            collection.add(0);
         }
     }
 }
