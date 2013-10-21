@@ -838,14 +838,21 @@ public class AstCompiler {
 
             Integer globalCardinality = null;
             IrExpr $deref;
-            if (derefType.getRef().isUnique() && deref instanceof AstJoin) {
-                AstJoin join = (AstJoin) deref;
-                IrExpr left = compile(join.getLeft());
-                $deref = doJoin(left, join.getRight());
+            if (derefType.getRef().isUnique()) {
+                if (deref instanceof AstJoin) {
+                    AstJoin join = (AstJoin) deref;
+                    IrExpr left = compile(join.getLeft());
+                    $deref = doJoin(left, join.getRight());
 
-                globalCardinality = left instanceof IrSetExpr
-                        ? ((IrSetExpr) left).getCard().getHighBound()
-                        : 1;
+                    globalCardinality = left instanceof IrSetExpr
+                            ? ((IrSetExpr) left).getCard().getHighBound()
+                            : 1;
+                } else {
+                    $deref = compile(deref);
+                    if(derefType instanceof AstConcreteClafer) {
+                        globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
+                    }
+                }
             } else {
                 $deref = compile(deref);
             }
