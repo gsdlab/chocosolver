@@ -49,7 +49,7 @@ public abstract class IrRewriter<T>
     }
 
     public IrModule rewrite(IrModule module, T t) {
-        IrModule optModule = new IrModule();
+        IrModule optModule = new IrModule(module.getVariables().size(), module.getConstraints().size());
         for (IrVar variable : module.getVariables()) {
             if (variable instanceof IrBoolVar) {
                 optModule.addVariable(visit((IrBoolVar) variable, t));

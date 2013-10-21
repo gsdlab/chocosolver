@@ -15,8 +15,17 @@ import org.clafer.common.Check;
  */
 public class IrModule {
 
-    private final Set<IrVar> variables = new HashSet<IrVar>();
-    private final List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>();
+    private final Set<IrVar> variables;
+    private final List<IrBoolExpr> constraints;
+
+    public IrModule() {
+        this(100, 100);
+    }
+
+    public IrModule(int initialVariableCapacity, int initialConstraintCapacity) {
+        this.variables = new HashSet<IrVar>(initialVariableCapacity);
+        this.constraints = new ArrayList<IrBoolExpr>(initialConstraintCapacity);
+    }
 
     public IrModule addVariable(IrVar var) {
         if (!(var instanceof IrConstant)) {

@@ -79,7 +79,6 @@ import org.clafer.ir.IrVar;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
-import org.clafer.ir.analysis.CardinalityPropagator;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
@@ -127,19 +126,13 @@ public class IrCompiler {
             Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
             coalescedIntVars = coalesceTriple.getFst();
             coalescedSetVars = coalesceTriple.getSnd();
-            Pair<Map<IrSetVar, IrSetVar>, IrModule> propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
-            coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
-            optModule = propagatedPair.getSnd();
-
+            optModule = coalesceTriple.getThd();
             while (!coalesceTriple.getFst().isEmpty()
-                    || !coalesceTriple.getSnd().isEmpty()
-                    || !propagatedPair.getFst().isEmpty()) {
+                    || !coalesceTriple.getSnd().isEmpty()) {
                 coalesceTriple = Coalescer.coalesce(optModule);
                 coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
                 coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
-                propagatedPair = CardinalityPropagator.propagate(coalesceTriple.getThd());
-                coalescedSetVars = compose(coalescedSetVars, propagatedPair.getFst());
-                optModule = propagatedPair.getSnd();
+                optModule = coalesceTriple.getThd();
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
 
@@ -149,7 +142,9 @@ public class IrCompiler {
                 if (cardinality != null && cardinality.getFst() instanceof IrIntVar) {
                     IrIntVar leftInt = (IrIntVar) cardinality.getFst();
                     SetVar rightSet = getSetVar(cardinality.getSnd());
-                    cardIntVarMap.put(leftInt, new CSet(rightSet, cardinality.getSnd().getCard()));
+                    cardIntVarMap.put(leftInt,
+                            new CSet(rightSet,
+                            IrUtil.intersection(leftInt.getDomain(), cardinality.getSnd().getCard())));
                 } else {
                     constraints.add(constraint);
                 }
