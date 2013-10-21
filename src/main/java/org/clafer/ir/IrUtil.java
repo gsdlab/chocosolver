@@ -125,6 +125,17 @@ public class IrUtil {
         return s;
     }
 
+    public static IrIntExpr asInt(IrSetExpr s) {
+        if (s instanceof IrSingleton) {
+            return ((IrSingleton) s).getValue();
+        }
+        int[] constant = getConstant(s);
+        if (constant != null && constant.length == 1) {
+            return Irs.constant(constant[0]);
+        }
+        return null;
+    }
+
     public static boolean containsAll(int[] values, IrDomain domain) {
         for (int value : values) {
             if (!domain.contains(value)) {

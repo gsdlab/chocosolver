@@ -274,6 +274,13 @@ public class Irs {
         if (IrUtil.isFalse(consequent)) {
             return not(antecedent);
         }
+        if (consequent instanceof IrImplies) {
+            // a => (b => c) <=> !a or !b or c
+            IrImplies consequentImplies = (IrImplies) consequent;
+            return or(not(antecedent),
+                    not(consequentImplies.getAntecedent()),
+                    consequentImplies.getConsequent());
+        }
         return new IrImplies(antecedent, consequent, BoolDomain);
     }
 
@@ -551,6 +558,13 @@ public class Irs {
                                 ? equal(card(left), constant.length) : False;
                     }
                 }
+                IrIntExpr leftInt = IrUtil.asInt(left);
+                if (leftInt != null) {
+                    IrIntExpr rightInt = IrUtil.asInt(right);
+                    if (rightInt != null) {
+                        return equal(leftInt, rightInt);
+                    }
+                }
                 break;
             case NotEqual:
                 if (left.equals(right)) {
@@ -581,6 +595,13 @@ public class Irs {
                     if (constant.length == left.getEnv().size()) {
                         return IrUtil.containsAll(constant, left.getEnv())
                                 ? notEqual(card(left), constant.length) : True;
+                    }
+                }
+                leftInt = IrUtil.asInt(left);
+                if (leftInt != null) {
+                    IrIntExpr rightInt = IrUtil.asInt(right);
+                    if (rightInt != null) {
+                        return notEqual(leftInt, rightInt);
                     }
                 }
                 break;
@@ -1373,13 +1394,11 @@ public class Irs {
                         values.add(constant.intValue());
                     }
                 }
-                IrDomain ker = Irs.enumDomain(values);
-                // TODO: every set expr function should do this
-                if (env.size() == ker.size()) {
-                    return constant(env);
-                }
-                IrDomain card = Irs.boundDomain(1, Math.min(array.length, env.size()));
-                return new IrArrayToSet(array, env, ker, card, globalCardinality);
+                IrDomain ker = enumDomain(values);
+                IrDomain card = boundDomain(
+                        Math.max(1, ker.size()),
+                        Math.min(array.length, env.size()));
+                return IrUtil.asConstant(new IrArrayToSet(array, env, ker, card, globalCardinality));
         }
     }
 
@@ -1421,7 +1440,7 @@ public class Irs {
             }
             env = domain;
         } else {
-            env = Irs.EmptyDomain;
+            env = EmptyDomain;
         }
 
         // Compute ker
@@ -1434,7 +1453,7 @@ public class Irs {
             }
             ker = domain;
         } else {
-            ker = Irs.EmptyDomain;
+            ker = EmptyDomain;
         }
 
         // Compute card
@@ -1506,7 +1525,7 @@ public class Irs {
             }
             env = domain;
         } else {
-            env = Irs.EmptyDomain;
+            env = EmptyDomain;
         }
 
         // Compute ker
@@ -1518,7 +1537,7 @@ public class Irs {
                 values.add(constantRef.intValue());
             }
         }
-        IrDomain ker = values.isEmpty() ? Irs.EmptyDomain : new IrEnumDomain(values.toArray());
+        IrDomain ker = values.isEmpty() ? EmptyDomain : new IrEnumDomain(values.toArray());
 
         // Compute card
         IrDomain takeCard = take.getCard();
