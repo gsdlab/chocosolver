@@ -30,6 +30,7 @@ import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrBoolExprVisitorAdapter;
+import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIntChannel;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrJoinFunction;
@@ -601,6 +602,27 @@ public class Coalescer {
                 if (bools[i] instanceof IrBoolVar && !IrUtil.isConstant(bools[i])) {
                     intGraph.addUndirectedEdge((IrBoolVar) bools[i], False);
                 }
+            }
+            return null;
+        }
+
+        @Override
+        public Boolean visit(IrFilterString ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
+            KeyGraph<IrIntVar> intGraph = a.getFst();
+            TIntIterator iter = ir.getSet().getEnv().iterator();
+            int i = 0;
+            while (iter.hasNext()) {
+                int env = iter.next();
+                if (!ir.getSet().getKer().contains(env)) {
+                    break;
+                }
+                IrIntExpr string = ir.getString()[env - ir.getOffset()];
+                IrIntExpr result = ir.getResult()[i];
+                // TODO reuse code above in IrCompare
+                if (string instanceof IrIntVar && result instanceof IrIntVar) {
+                    intGraph.addUndirectedEdge((IrIntVar) string, (IrIntVar) result);
+                }
+                i++;
             }
             return null;
         }

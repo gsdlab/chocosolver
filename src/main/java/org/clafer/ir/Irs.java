@@ -262,6 +262,9 @@ public class Irs {
     }
 
     public static IrBoolExpr implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
+        if (antecedent.equals(consequent)) {
+            return True;
+        }
         if (IrUtil.isTrue(antecedent)) {
             return consequent;
         }
@@ -285,6 +288,9 @@ public class Irs {
     }
 
     public static IrBoolExpr notImplies(IrBoolExpr antecedent, IrBoolExpr consequent) {
+        if (antecedent.equals(consequent)) {
+            return False;
+        }
         if (IrUtil.isTrue(antecedent)) {
             return not(consequent);
         }
@@ -996,7 +1002,21 @@ public class Irs {
             }
             return and(ands);
         }
-        return new IrFilterString(set, offset, string, result, BoolDomain);
+        IrIntExpr[] filterString = Arrays.copyOf(string, string.length);
+        IrIntExpr[] filterResult = Arrays.copyOf(result, result.length);
+        TIntIterator iter = set.getEnv().iterator();
+        int i = 0;
+        while (iter.hasNext()) {
+            int env = iter.next();
+            int x = env - offset;
+            if (!set.getKer().contains(env) || !filterString[x].equals(filterResult[i])) {
+                break;
+            }
+            filterString[x] = Zero;
+            filterResult[i] = Zero;
+            i++;
+        }
+        return new IrFilterString(set, offset, filterString, filterResult, BoolDomain);
     }
     /**
      *******************
@@ -1360,6 +1380,14 @@ public class Irs {
         return constant(enumDomain(value));
     }
 
+    public static IrSetVar constant(TIntCollection value) {
+        return constant(enumDomain(value));
+    }
+
+    public static IrSetVar constant(TIntSet value) {
+        return constant(enumDomain(value));
+    }
+
     public static IrSetVar constant(IrDomain value) {
         if (value.isEmpty()) {
             return EmptySet;
@@ -1600,11 +1628,18 @@ public class Irs {
         for (IrSetExpr operand : operands) {
             flattenUnion(operand, flatten);
         }
+        TIntSet constants = new TIntHashSet();
         List<IrSetExpr> filter = new ArrayList<IrSetExpr>();
         for (IrSetExpr operand : flatten) {
-            if (!operand.getEnv().isEmpty()) {
+            int[] constant = IrUtil.getConstant(operand);
+            if (constant == null) {
                 filter.add(operand);
+            } else {
+                constants.addAll(constant);
             }
+        }
+        if (!constants.isEmpty()) {
+            filter.add(constant(constants));
         }
         IrSetExpr[] ops = filter.toArray(new IrSetExpr[filter.size()]);
         switch (ops.length) {
