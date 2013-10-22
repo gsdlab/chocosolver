@@ -182,7 +182,7 @@ public class PartialIntAnalyzer implements Analyzer {
                 FList<AstConcreteClafer> path = assignment.getFst();
                 Integer value = assignment.getSnd();
                 if (symbol.equals(path.getHead())) {
-                    if (isEmpty(path.getTail())) {
+                    if (path.getTail().isEmpty()) {
                         return new FinalAutomata(value.intValue());
                     }
                     next.add(new Pair<FList<AstConcreteClafer>, Integer>(path.getTail(), value));

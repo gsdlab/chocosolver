@@ -1,5 +1,6 @@
 package org.clafer.collection;
 
+import org.clafer.common.Check;
 import org.clafer.common.Util;
 
 /**
@@ -22,8 +23,8 @@ public class Pair<A, B> {
      * @param snd
      */
     public Pair(A fst, B snd) {
-        this.fst = fst;
-        this.snd = snd;
+        this.fst = Check.notNull(fst);
+        this.snd = Check.notNull(snd);
     }
 
     public Pair(Pair<? extends A, ? extends B> pair) {

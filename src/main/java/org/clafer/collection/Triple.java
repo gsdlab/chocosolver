@@ -1,5 +1,6 @@
 package org.clafer.collection;
 
+import org.clafer.common.Check;
 import org.clafer.common.Util;
 
 /**
@@ -18,21 +19,21 @@ public class Triple<A, B, C> {
     private final C thd;
 
     public Triple(A fst, B snd, C thd) {
-        this.fst = fst;
-        this.snd = snd;
-        this.thd = thd;
+        this.fst = Check.notNull(fst);
+        this.snd = Check.notNull(snd);
+        this.thd = Check.notNull(thd);
     }
 
-    public Triple(Pair<A, B> pair, C thd) {
-        this.fst = pair.getFst();
-        this.snd = pair.getSnd();
-        this.thd = thd;
+    public Triple(Pair<? extends A, ? extends B> pair, C thd) {
+        this(pair.getFst(), pair.getSnd(), thd);
     }
 
-    public Triple(A fst, Pair<B, C> pair) {
-        this.fst = fst;
-        this.snd = pair.getFst();
-        this.thd = pair.getSnd();
+    public Triple(A fst, Pair<? extends B, ? extends C> pair) {
+        this(fst, pair.getFst(), pair.getSnd());
+    }
+
+    public Triple(Triple<? extends A, ? extends B, ? extends C> triple) {
+        this(triple.getFst(), triple.getSnd(), triple.getThd());
     }
 
     public A getFst() {

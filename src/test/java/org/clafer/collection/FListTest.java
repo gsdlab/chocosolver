@@ -20,15 +20,15 @@ public class FListTest {
 
     @Test
     public void testEmpty() {
-        assertTrue(isEmpty(empty()));
-        assertFalse(isEmpty(single(1)));
+        assertTrue(empty().isEmpty());
+        assertFalse(single(1).isEmpty());
     }
 
     @Test
     public void testSingle() {
         FList<Integer> list = single(1);
         assertEquals(1, list.getHead().intValue());
-        assertTrue(isEmpty(list.getTail()));
+        assertTrue(list.getTail().isEmpty());
     }
 
     @Test
