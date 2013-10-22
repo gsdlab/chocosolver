@@ -1,5 +1,6 @@
 package org.clafer.compiler;
 
+import org.clafer.collection.Either;
 import org.clafer.common.Check;
 import org.clafer.collection.Pair;
 import org.clafer.instance.InstanceModel;
@@ -18,9 +19,10 @@ public class ClaferObjective {
     public final Solver solver;
     private final ClaferSolutionMap solutionMap;
     private final Objective objective;
-    private final IntVar score;
+    private final Either<Integer, IntVar> score;
 
-    ClaferObjective(Solver solver, ClaferSolutionMap solutionMap, Objective objective, IntVar score) {
+    ClaferObjective(Solver solver, ClaferSolutionMap solutionMap,
+            Objective objective, Either<Integer, IntVar> score) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);
         this.objective = Check.notNull(objective);
@@ -40,10 +42,17 @@ public class ClaferObjective {
     }
 
     public Pair<Integer, InstanceModel> optimal() {
-        solver.findOptimalSolution(objective.getPolicy(), score);
-        return ESat.TRUE.equals(solver.isFeasible())
-                ? new Pair<Integer, InstanceModel>(score.getValue(), solutionMap.getInstance())
-                : null;
+        if(score.isLeft()) {
+            solver.findSolution();
+            return ESat.TRUE.equals(solver.isFeasible()) 
+                    ? new Pair<Integer, InstanceModel>(score.getLeft(), solutionMap.getInstance())
+                    : null;
+        }else {
+            solver.findOptimalSolution(objective.getPolicy(), score.getRight());
+            return ESat.TRUE.equals(solver.isFeasible())
+                    ? new Pair<Integer, InstanceModel>(score.getRight().getValue(), solutionMap.getInstance())
+                    : null;
+        }
     }
 
     public static enum Objective {

@@ -24,7 +24,7 @@ public class IrCompilerTest {
 
         Solver solver = new Solver();
         IrSolutionMap map = IrCompiler.compile(module, solver);
-        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getSetVar(var)}));
+        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getSetVar(var).getRight()}));
 
         int count = 0;
         if (solver.findSolution()) {
@@ -49,7 +49,7 @@ public class IrCompilerTest {
 
         Solver solver = new Solver();
         IrSolutionMap map = IrCompiler.compile(module, solver);
-        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getSetVar(var)}));
+        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getSetVar(var).getRight()}));
 
         int count = 0;
         if (solver.findSolution()) {

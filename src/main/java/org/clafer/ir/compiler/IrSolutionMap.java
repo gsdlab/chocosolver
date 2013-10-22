@@ -1,6 +1,7 @@
 package org.clafer.ir.compiler;
 
 import java.util.Map;
+import org.clafer.collection.Either;
 import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntConstant;
@@ -13,9 +14,12 @@ import solver.variables.IntVar;
 import solver.variables.SetVar;
 
 /**
- * Maps IR non-constant variables to their translated Choco variables. The
- * get&lt;Type&gt;Var methods fail on constants. The get&lt;Type&gt;Value
- * methods handles constants, and is the preferred way of lookup.
+ * Maps IR non-constant variables to their translated Choco variables. IR
+ * variables can be optimized away. The get&lt;Type&gt;Var methods will return
+ * either the constant it optimized to or the Choco variable. The
+ * get&lt;Type&gt;Value will return the value, regardless of the optimizations.
+ * The get&lt;Type&gt;Value methods are undefined if the solver has not found a
+ * solution yet.
  *
  * @author jimmy
  */
@@ -40,34 +44,31 @@ public class IrSolutionMap {
         this.setVars = setVars;
     }
 
-    public BoolVar getBoolVar(IrBoolVar var) {
+    public Either<Boolean, BoolVar> getBoolVar(IrBoolVar var) {
         IrBoolVar boolVar = (IrBoolVar) coalescedIntVars.get(var);
         if (boolVar == null) {
             boolVar = var;
         }
         if (boolVar instanceof IrBoolConstant) {
-            return ((IrBoolConstant) boolVar).getValue() ? solver.ONE : solver.ZERO;
+            return Either.left(((IrBoolConstant) boolVar).getValue());
         }
-        return (BoolVar) intVars.get(boolVar);
+        return Either.right((BoolVar) intVars.get(boolVar));
     }
 
-    public boolean getBoolValue(IrBoolVar var) {
-        IrBoolVar boolVar = (IrBoolVar) coalescedIntVars.get(var);
-        if (boolVar == null) {
-            boolVar = var;
-        }
-        if (boolVar instanceof IrBoolConstant) {
-            return ((IrBoolConstant) boolVar).getValue();
-        }
-        return intVars.get(boolVar).getValue() != 0;
-    }
-
-    public BoolVar[] getBoolVars(IrBoolVar... vars) {
-        BoolVar[] bvars = new BoolVar[vars.length];
+    public Either<Boolean, BoolVar>[] getBoolVars(IrBoolVar... vars) {
+        @SuppressWarnings("unchecked")
+        Either<Boolean, BoolVar>[] bvars = new Either[vars.length];
         for (int i = 0; i < bvars.length; i++) {
             bvars[i] = getBoolVar(vars[i]);
         }
         return bvars;
+    }
+
+    public boolean getBoolValue(IrBoolVar var) {
+        Either<Boolean, BoolVar> boolVar = getBoolVar(var);
+        return boolVar.isLeft()
+                ? boolVar.getLeft()
+                : boolVar.getRight().getValue() != 0;
     }
 
     public boolean[] getBoolValues(IrBoolVar... vars) {
@@ -78,34 +79,34 @@ public class IrSolutionMap {
         return bvalues;
     }
 
-    public IntVar getIntVar(IrIntVar var) {
-        IrIntVar intVar = coalescedIntVars.get(var);
-        if (intVar == null) {
-            intVar = var;
-        }
-        return intVars.get(intVar);
-    }
-
-    public int getIntValue(IrIntVar var) {
+    public Either<Integer, IntVar> getIntVar(IrIntVar var) {
         IrIntVar intVar = coalescedIntVars.get(var);
         if (intVar == null) {
             intVar = var;
         }
         if (intVar instanceof IrIntConstant) {
-            return ((IrIntConstant) intVar).getValue();
+            return Either.left(((IrIntConstant) intVar).getValue());
         }
         if (intVar instanceof IrBoolConstant) {
-            return ((IrBoolConstant) intVar).getValue() ? 1 : 0;
+            return Either.left(((IrBoolConstant) intVar).getValue() ? 1 : 0);
         }
-        return intVars.get(intVar).getValue();
+        return Either.right(intVars.get(intVar));
     }
 
-    public IntVar[] getIntVars(IrIntVar... vars) {
-        IntVar[] ivars = new IntVar[vars.length];
+    public Either<Integer, IntVar>[] getIntVars(IrIntVar... vars) {
+        @SuppressWarnings("unchecked")
+        Either<Integer, IntVar>[] ivars = new Either[vars.length];
         for (int i = 0; i < ivars.length; i++) {
             ivars[i] = getIntVar(vars[i]);
         }
         return ivars;
+    }
+
+    public int getIntValue(IrIntVar var) {
+        Either<Integer, IntVar> intVar = getIntVar(var);
+        return intVar.isLeft()
+                ? intVar.getLeft()
+                : intVar.getRight().getValue();
     }
 
     public int[] getIntValues(IrIntVar... vars) {
@@ -116,31 +117,31 @@ public class IrSolutionMap {
         return ivalues;
     }
 
-    public SetVar getSetVar(IrSetVar var) {
-        IrSetVar setVar = coalescedSetVars.get(var);
-        if (setVar == null) {
-            setVar = var;
-        }
-        return setVars.get(setVar);
-    }
-
-    public int[] getSetValue(IrSetVar var) {
+    public Either<int[], SetVar> getSetVar(IrSetVar var) {
         IrSetVar setVar = coalescedSetVars.get(var);
         if (setVar == null) {
             setVar = var;
         }
         if (setVar instanceof IrSetConstant) {
-            return ((IrSetConstant) setVar).getValue();
+            return Either.left(((IrSetConstant) setVar).getValue());
         }
-        return setVars.get(setVar).getValue();
+        return Either.right(setVars.get(setVar));
     }
 
-    public SetVar[] getSetVars(IrSetVar... vars) {
-        SetVar[] svars = new SetVar[vars.length];
+    public Either<int[], SetVar>[] getSetVars(IrSetVar... vars) {
+        @SuppressWarnings("unchecked")
+        Either<int[], SetVar>[] svars = new Either[vars.length];
         for (int i = 0; i < svars.length; i++) {
             svars[i] = getSetVar(vars[i]);
         }
         return svars;
+    }
+
+    public int[] getSetValue(IrSetVar var) {
+        Either<int[], SetVar> setVar = getSetVar(var);
+        return setVar.isLeft()
+                ? setVar.getLeft()
+                : setVar.getRight().getValue();
     }
 
     public int[][] getSetValues(IrSetVar... vars) {

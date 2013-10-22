@@ -16,6 +16,7 @@ import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Util;
@@ -76,9 +77,9 @@ public class ClaferCompiler {
                 if (clafer instanceof AstConcreteClafer) {
                     for (IrSetVar setVar : map.getAstSolution().getSiblingVars(clafer)) {
                         if (!(setVar instanceof IrSetConstant)) {
-                            SetVar var = map.getIrSolution().getSetVar(setVar);
-                            if (var != null) {
-                                vars.add(var);
+                            Either<int[], SetVar> var = map.getIrSolution().getSetVar(setVar);
+                            if (var.isRight()) {
+                                vars.add(var.getRight());
                             }
                         }
                     }
@@ -91,9 +92,9 @@ public class ClaferCompiler {
     private static IntVar[] getScoreVars(IrIntVar[] scores, IrSolutionMap map) {
         List<IntVar> vars = new ArrayList<IntVar>(scores.length);
         for (IrIntVar score : scores) {
-            IntVar var = map.getIntVar(score);
-            if (var != null) {
-                vars.add(var);
+            Either<Integer, IntVar> var = map.getIntVar(score);
+            if (var.isRight()) {
+                vars.add(var.getRight());
             }
         }
         return vars.toArray(new IntVar[vars.size()]);
@@ -105,9 +106,9 @@ public class ClaferCompiler {
             if (clafer.hasRef()) {
                 for (IrIntVar intVar : map.getAstSolution().getRefVars(clafer.getRef())) {
                     if (!(intVar instanceof IrIntConstant)) {
-                        IntVar var = map.getIrSolution().getIntVar(intVar);
-                        if (var != null) {
-                            vars.add(var);
+                        Either<Integer, IntVar> var = map.getIrSolution().getIntVar(intVar);
+                        if (var.isRight()) {
+                            vars.add(var.getRight());
                         }
                     }
                 }
@@ -205,7 +206,7 @@ public class ClaferCompiler {
         @SuppressWarnings("unchecked")
         Pair<AstConstraint, BoolVar>[] softVarPairs = new Pair[irSoftVarPairs.length];
         for (int i = 0; i < softVars.length; i++) {
-            softVars[i] = irSolution.getBoolVar(irSoftVarPairs[i].getSnd());
+            softVars[i] = irSolution.getBoolVar(irSoftVarPairs[i].getSnd()).getRight();
             softVarPairs[i] = new Pair<AstConstraint, BoolVar>(irSoftVarPairs[i].getFst(), softVars[i]);
         }
         int[] bounds = getSumBounds(softVars);
@@ -243,17 +244,19 @@ public class ClaferCompiler {
         final List<SetVar> setVars = new ArrayList<SetVar>();
         for (AstConcreteClafer clafer : transitiveConcretize) {
             IrSetVar[] siblingVars = solver.getSolutionMap().getAstSolution().getSiblingVars(clafer);
-            for (IrSetVar var : siblingVars) {
-                if (!(var instanceof IrSetConstant)) {
-                    setVars.add(solver.getSolutionMap().getIrSolution().getSetVar(var));
+            for (IrSetVar siblingVar : siblingVars) {
+                Either<int[], SetVar> var = solver.getSolutionMap().getIrSolution().getSetVar(siblingVar);
+                if (var.isRight()) {
+                    setVars.add(var.getRight());
                 }
             }
             AstRef ref = AstUtil.getInheritedRef(clafer);
             if (ref != null) {
                 IrIntVar[] refVars = solver.getSolutionMap().getAstSolution().getRefVars(ref);
-                for (IrIntVar var : refVars) {
-                    if (!(var instanceof IrIntConstant)) {
-                        intVars.add(solver.getSolutionMap().getIrSolution().getIntVar(var));
+                for (IrIntVar refVar : refVars) {
+                    Either<Integer, IntVar> var = solver.getSolutionMap().getIrSolution().getIntVar(refVar);
+                    if (var.isRight()) {
+                        intVars.add(var.getRight());
                     }
                 }
             }
