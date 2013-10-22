@@ -142,9 +142,21 @@ public class IrCompiler {
                 if (cardinality != null && cardinality.getFst() instanceof IrIntVar) {
                     IrIntVar leftInt = (IrIntVar) cardinality.getFst();
                     SetVar rightSet = getSetVar(cardinality.getSnd());
-                    cardIntVarMap.put(leftInt,
-                            new CSet(rightSet,
-                            IrUtil.intersection(leftInt.getDomain(), cardinality.getSnd().getCard())));
+
+                    CSet duplicate = cardIntVarMap.get(leftInt);
+                    if (duplicate == null) {
+                        cardIntVarMap.put(leftInt,
+                                new CSet(rightSet,
+                                IrUtil.intersection(leftInt.getDomain(), cardinality.getSnd().getCard())));
+                    } else {
+                        /*
+                         * Case where
+                         *     c = |A|
+                         *     c = |B|
+                         */
+                        cardIntVarMap.put(leftInt, new CSet(rightSet, duplicate.getCard()));
+                        post(SCF.cardinality(rightSet, duplicate.getCard()));
+                    }
                 } else {
                     constraints.add(constraint);
                 }
