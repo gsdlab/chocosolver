@@ -23,18 +23,21 @@ public class AstSolutionMap {
     private final Map<AstClafer, IrSetVar[]> siblingVars;
     private final Map<AstRef, IrIntVar[]> refVars;
     private final Pair<AstConstraint, IrBoolVar>[] softVars;
+    private final IrIntVar sumSoftVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
             Map<AstClafer, IrSetVar[]> sibling,
             Map<AstRef, IrIntVar[]> refVars,
             Pair<AstConstraint, IrBoolVar>[] softVars,
+            IrIntVar sumSoftVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
         this.siblingVars = Check.notNull(sibling);
         this.refVars = Check.notNull(refVars);
         this.softVars = Check.noNulls(softVars);
-        this.analysis = analysis;
+        this.sumSoftVars = Check.notNull(sumSoftVars);
+        this.analysis = Check.notNull(analysis);
     }
 
     public AstModel getModel() {
@@ -60,6 +63,15 @@ public class AstSolutionMap {
      */
     public Pair<AstConstraint, IrBoolVar>[] getSoftVars() {
         return softVars;
+    }
+
+    /**
+     * Returns the variable equal to the sum of the soft variables.
+     *
+     * @return the variable equal to the sum of the soft variables
+     */
+    public IrIntVar getSumSoftVars() {
+        return sumSoftVars;
     }
 
     private static <T> T notNull(String message, T t) {

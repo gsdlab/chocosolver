@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.clafer.common.Util;
@@ -1087,6 +1088,10 @@ public class Irs {
     }
 
     public static IrIntExpr add(IrIntExpr... addends) {
+        return add(Arrays.asList(addends));
+    }
+
+    public static IrIntExpr add(Iterable<? extends IrIntExpr> addends) {
         int constants = 0;
         Deque<IrIntExpr> filter = new LinkedList<IrIntExpr>();
         for (IrIntExpr operand : addends) {
@@ -1106,11 +1111,12 @@ public class Irs {
         if (filter.size() == 1) {
             return filter.getFirst();
         }
-        IrDomain domain = addends[0].getDomain();
+        Iterator<IrIntExpr> iter = filter.iterator();
+        IrDomain domain = iter.next().getDomain();
         int low = domain.getLowBound();
         int high = domain.getHighBound();
-        for (int i = 1; i < addends.length; i++) {
-            domain = addends[i].getDomain();
+        while (iter.hasNext()) {
+            domain = iter.next().getDomain();
             low += domain.getLowBound();
             high += domain.getHighBound();
         }
@@ -1127,10 +1133,19 @@ public class Irs {
     }
 
     public static IrIntExpr sub(IrIntExpr... subtrahends) {
+        return sub(Arrays.asList(subtrahends));
+    }
+
+    public static IrIntExpr sub(Iterable<IrIntExpr> subtrahends) {
         int constants = 0;
+        Iterator<IrIntExpr> iter = subtrahends.iterator();
+        if (!iter.hasNext()) {
+            return Zero;
+        }
+        IrIntExpr minuend = iter.next();
         Deque<IrIntExpr> filter = new LinkedList<IrIntExpr>();
-        for (int i = 1; i < subtrahends.length; i++) {
-            IrIntExpr operand = subtrahends[i];
+        while (iter.hasNext()) {
+            IrIntExpr operand = iter.next();
             Integer constant = IrUtil.getConstant(operand);
             if (constant != null) {
                 constants += constant.intValue();
@@ -1138,22 +1153,27 @@ public class Irs {
                 filter.add(operand);
             }
         }
-        Integer head = IrUtil.getConstant(subtrahends[0]);
-        if (head != null && filter.isEmpty()) {
-            return constant(head - constants);
+        Integer head = IrUtil.getConstant(minuend);
+        if (head != null) {
+            if (filter.isEmpty()) {
+                return constant(head - constants);
+            }
+            minuend = constant(head - constants);
+            constants = 0;
         }
-        filter.addFirst(subtrahends[0]);
+        filter.addFirst(minuend);
         if (constants != 0) {
             filter.add(constant(constants));
         }
         if (filter.size() == 1) {
             return filter.getFirst();
         }
-        IrDomain domain = subtrahends[0].getDomain();
+        iter = subtrahends.iterator();
+        IrDomain domain = iter.next().getDomain();
         int low = domain.getLowBound();
         int high = domain.getHighBound();
-        for (int i = 1; i < subtrahends.length; i++) {
-            domain = subtrahends[i].getDomain();
+        while (iter.hasNext()) {
+            domain = iter.next().getDomain();
             low -= domain.getHighBound();
             high -= domain.getLowBound();
         }

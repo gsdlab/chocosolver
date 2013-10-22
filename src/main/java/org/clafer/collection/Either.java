@@ -1,5 +1,7 @@
 package org.clafer.collection;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 
@@ -44,6 +46,26 @@ public class Either<A, B> {
 
     public static <A, B> Either<A, B> right(B right) {
         return new Either<A, B>(null, Check.notNull(right));
+    }
+
+    public static <A, B> List<A> filterLefts(List<Either<A, B>> eithers) {
+        List<A> lefts = new ArrayList<A>();
+        for (Either<A, B> either : eithers) {
+            if (either.isLeft()) {
+                lefts.add(either.getLeft());
+            }
+        }
+        return lefts;
+    }
+
+    public static <A, B> List<B> filterRights(List<Either<A, B>> eithers) {
+        List<B> lefts = new ArrayList<B>();
+        for (Either<A, B> either : eithers) {
+            if (either.isRight()) {
+                lefts.add(either.getRight());
+            }
+        }
+        return lefts;
     }
 
     @Override

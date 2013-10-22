@@ -1,5 +1,7 @@
 package org.clafer.collection;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 
@@ -37,6 +39,22 @@ public class Pair<A, B> {
 
     public B getSnd() {
         return snd;
+    }
+
+    public static <A, B> List<A> mapFst(List<Pair<A, B>> pairs) {
+        List<A> fsts = new ArrayList<A>(pairs.size());
+        for (Pair<A, B> pair : pairs) {
+            fsts.add(pair.getFst());
+        }
+        return fsts;
+    }
+
+    public static <A, B> List<B> mapSnd(List<Pair<A, B>> pairs) {
+        List<B> snds = new ArrayList<B>(pairs.size());
+        for (Pair<A, B> pair : pairs) {
+            snds.add(pair.getSnd());
+        }
+        return snds;
     }
 
     @Override

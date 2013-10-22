@@ -19,10 +19,29 @@ import org.junit.Test;
  *
  * @author jimmy
  */
-public class UnsatTest {
+public class SimpleUnsatTest {
 
     private static <T> Set<T> set(T... items) {
         return new HashSet<T>(Arrays.asList(items));
+    }
+
+    /**
+     * <pre>
+     * A ?
+     * [#A = 2]
+     * [#A = 1]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testUnsatSolutionKnown() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Optional);
+        AstConstraint bad = model.addConstraint(equal(card(global(a)), constant(2)));
+        AstConstraint good = model.addConstraint(equal(card(global(a)), constant(1)));
+
+        assertEquals(set(bad), ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).minUnsat().getFst());
+        assertEquals(set(bad), ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).unsatCore());
     }
 
     /**

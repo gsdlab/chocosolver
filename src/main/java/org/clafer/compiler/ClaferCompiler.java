@@ -45,7 +45,6 @@ import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VF;
 
 /**
  * Compiles from AST -> Choco
@@ -202,32 +201,25 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         Pair<AstConstraint, IrBoolVar>[] irSoftVarPairs = astSolution.getSoftVars();
-        BoolVar[] softVars = new BoolVar[irSoftVarPairs.length];
         @SuppressWarnings("unchecked")
-        Pair<AstConstraint, BoolVar>[] softVarPairs = new Pair[irSoftVarPairs.length];
-        for (int i = 0; i < softVars.length; i++) {
-            softVars[i] = irSolution.getBoolVar(irSoftVarPairs[i].getSnd()).getRight();
-            softVarPairs[i] = new Pair<AstConstraint, BoolVar>(irSoftVarPairs[i].getFst(), softVars[i]);
+        List<BoolVar> softVars = new ArrayList<BoolVar>(irSoftVarPairs.length);
+        @SuppressWarnings("unchecked")
+        Pair<AstConstraint, Either<Boolean, BoolVar>>[] softVarPairs = new Pair[irSoftVarPairs.length];
+        for (int i = 0; i < irSoftVarPairs.length; i++) {
+            Either<Boolean, BoolVar> softVar = irSolution.getBoolVar(irSoftVarPairs[i].getSnd());
+            softVarPairs[i] = new Pair<AstConstraint, Either<Boolean, BoolVar>>(
+                    irSoftVarPairs[i].getFst(), softVar);
+            if (softVar.isRight()) {
+                softVars.add(softVar.getRight());
+            }
         }
-        int[] bounds = getSumBounds(softVars);
-        IntVar sum = VF.bounded("Score", bounds[0], bounds[1], solver);
-        solver.post(ICF.sum(softVars, sum));
+        Either<Integer, IntVar> sum = irSolution.getIntVar(astSolution.getSumSoftVars());
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                IntStrategyFactory.firstFail_InDomainMax(softVars),
+                IntStrategyFactory.firstFail_InDomainMax(softVars.toArray(new BoolVar[softVars.size()])),
                 setStrategy(getSetVars(in, solution), options),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
         return new ClaferUnsat(solver, solution, softVarPairs, sum);
-    }
-
-    private static int[] getSumBounds(IntVar... vars) {
-        int low = 0;
-        int high = 0;
-        for (IntVar var : vars) {
-            low += var.getLB();
-            high += var.getUB();
-        }
-        return new int[]{low, high};
     }
 
     public static ClaferSolver compilePartial(AstModel in, ScopeBuilder scope, AstConcreteClafer... concretize) {

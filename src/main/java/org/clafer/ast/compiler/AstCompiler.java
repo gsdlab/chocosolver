@@ -176,12 +176,13 @@ public class AstCompiler {
     }
 
     private AstSolutionMap compile() {
-        Pair<AstConstraint, IrBoolVar>[] softVarPairs = doCompile();
-        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers, softVarPairs, analysis);
+        Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> softVarPairs = doCompile();
+        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
+                softVarPairs.getFst(), softVarPairs.getSnd(), analysis);
     }
 
     private Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstRef objective) {
-        Pair<AstConstraint, IrBoolVar>[] softVarPairs = doCompile();
+        Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> softVarPairs = doCompile();
 
         IrBoolExpr[] members = memberships.get(objective.getSourceType());
         IrIntVar[] refs = refPointers.get(objective);
@@ -198,11 +199,12 @@ public class AstCompiler {
         module.addConstraint(equal(sumScore, sum));
 
         return new Triple<AstSolutionMap, IrIntVar[], IrIntVar>(
-                new AstSolutionMap(analysis.getModel(), siblingSets, refPointers, softVarPairs, analysis),
+                new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
+                softVarPairs.getFst(), softVarPairs.getSnd(), analysis),
                 score, sumScore);
     }
 
-    private Pair<AstConstraint, IrBoolVar>[] doCompile() {
+    private Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> doCompile() {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
         siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
@@ -249,6 +251,10 @@ public class AstCompiler {
                 module.addVariable(soft);
             }
         }
+        IrIntExpr softSum = add(Pair.mapSnd(softVars));
+        IrIntVar sumSoftVars = domainInt("SumSoftVar", softSum.getDomain());
+        module.addConstraint(equal(sumSoftVars, softSum));
+
         for (IrSetVar[] childSet : siblingSets.values()) {
             for (IrSetVar set : childSet) {
                 module.addVariable(set);
@@ -261,7 +267,7 @@ public class AstCompiler {
         }
         @SuppressWarnings("unchecked")
         Pair<AstConstraint, IrBoolVar>[] softVarPairs = softVars.toArray(new Pair[softVars.size()]);
-        return softVarPairs;
+        return new Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar>(softVarPairs, sumSoftVars);
     }
 
     private void initConcrete(AstConcreteClafer clafer) {

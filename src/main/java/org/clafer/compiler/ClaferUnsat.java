@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.clafer.ast.AstConstraint;
+import org.clafer.collection.Either;
 import org.clafer.common.Check;
 import org.clafer.collection.Pair;
 import org.clafer.instance.InstanceModel;
@@ -25,10 +26,12 @@ public class ClaferUnsat {
 
     private final Solver solver;
     private final ClaferSolutionMap solutionMap;
-    private final Pair<AstConstraint, BoolVar>[] softVars;
-    private final IntVar score;
+    private final Pair<AstConstraint, Either<Boolean, BoolVar>>[] softVars;
+    private final Either<Integer, IntVar> score;
 
-    ClaferUnsat(Solver solver, ClaferSolutionMap solutionMap, Pair<AstConstraint, BoolVar>[] softVars, IntVar score) {
+    ClaferUnsat(Solver solver, ClaferSolutionMap solutionMap,
+            Pair<AstConstraint, Either<Boolean, BoolVar>>[] softVars,
+            Either<Integer, IntVar> score) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);
         this.softVars = Check.noNulls(softVars);
@@ -49,8 +52,11 @@ public class ClaferUnsat {
     public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
         if (ESat.TRUE.equals(maximize())) {
             Set<AstConstraint> unsat = new HashSet<AstConstraint>();
-            for (Pair<AstConstraint, BoolVar> softVar : softVars) {
-                if (softVar.getSnd().instantiatedTo(0)) {
+            for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
+                Either<Boolean, BoolVar> var = softVar.getSnd();
+                if (var.isLeft()
+                        ? !var.getLeft().booleanValue()
+                        : var.getRight().instantiatedTo(0)) {
                     unsat.add(softVar.getFst());
                 }
             }
@@ -72,10 +78,15 @@ public class ClaferUnsat {
         while (changed && ESat.TRUE.equals(maximize())) {
             changed = false;
             List<BoolVar> minUnsat = new ArrayList<BoolVar>();
-            for (Pair<AstConstraint, BoolVar> softVar : softVars) {
-                if (softVar.getSnd().instantiatedTo(0)) {
+            for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
+                Either<Boolean, BoolVar> var = softVar.getSnd();
+                if (var.isLeft()
+                        ? !var.getLeft().booleanValue()
+                        : var.getRight().instantiatedTo(0)) {
                     changed |= unsat.add(softVar.getFst());
-                    minUnsat.add(softVar.getSnd());
+                    if (var.isRight()) {
+                        minUnsat.add(var.getRight());
+                    }
                 }
             }
             solver.getSearchLoop().reset();
@@ -87,7 +98,11 @@ public class ClaferUnsat {
     }
 
     private ESat maximize() {
-        solver.findOptimalSolution(ResolutionPolicy.MAXIMIZE, score);
+        if (score.isLeft()) {
+            solver.findSolution();
+        } else {
+            solver.findOptimalSolution(ResolutionPolicy.MAXIMIZE, score.getRight());
+        }
         return solver.isFeasible();
     }
 }

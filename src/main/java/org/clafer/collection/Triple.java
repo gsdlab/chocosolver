@@ -1,5 +1,7 @@
 package org.clafer.collection;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 
@@ -54,6 +56,30 @@ public class Triple<A, B, C> {
 
     public Pair<B, C> getSndThd() {
         return new Pair<B, C>(snd, thd);
+    }
+
+    public static <A, B, C> List<A> mapFst(List<Triple<A, B, C>> triples) {
+        List<A> fsts = new ArrayList<A>(triples.size());
+        for (Triple<A, B, C> triple : triples) {
+            fsts.add(triple.getFst());
+        }
+        return fsts;
+    }
+
+    public static <A, B, C> List<B> mapSnd(List<Triple<A, B, C>> triples) {
+        List<B> snds = new ArrayList<B>(triples.size());
+        for (Triple<A, B, C> triple : triples) {
+            snds.add(triple.getSnd());
+        }
+        return snds;
+    }
+
+    public static <A, B, C> List<C> mapThd(List<Triple<A, B, C>> triples) {
+        List<C> snds = new ArrayList<C>(triples.size());
+        for (Triple<A, B, C> triple : triples) {
+            snds.add(triple.getThd());
+        }
+        return snds;
     }
 
     @Override
