@@ -626,10 +626,15 @@ public class AstCompiler {
         int lowCard = getCard(clafer).getLow();
         for (int i = 0; i < children.length; i++) {
             if (!partialParentSolution.hasClafer(i)) {
+                if (lowCard == 1) {
+                    module.addConstraint(equal(memberships.get(clafer.getParent())[i],
+                            card(children[i])));
+                }
                 module.addConstraint(implies(memberships.get(clafer.getParent())[i],
                         equal(children[i], constant(Util.fromTo(i * lowCard, i * lowCard + lowCard)))));
                 module.addConstraint(implies(not(memberships.get(clafer.getParent())[i]),
                         equal(children[i], EmptySet)));
+
             }
         }
     }
@@ -849,7 +854,7 @@ public class AstCompiler {
                             : 1;
                 } else {
                     $deref = compile(deref);
-                    if(derefType instanceof AstConcreteClafer) {
+                    if (derefType instanceof AstConcreteClafer) {
                         globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
                     }
                 }
