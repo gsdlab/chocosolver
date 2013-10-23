@@ -118,14 +118,19 @@ public class Irs {
         return proposition.negate();
     }
 
-    public static IrBoolExpr and(Collection<IrBoolExpr> operands) {
+    public static IrBoolExpr and(Collection<? extends IrBoolExpr> operands) {
         return and(operands.toArray(new IrBoolExpr[operands.size()]));
     }
 
     public static IrBoolExpr and(IrBoolExpr... operands) {
         List<IrBoolExpr> flatten = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {
-            flattenAnd(operand, flatten);
+            if (operand instanceof IrAnd) {
+                // Invariant: No nested IrAnd
+                flatten.addAll(Arrays.asList(((IrAnd) operand).getOperands()));
+            } else {
+                flatten.add(operand);
+            }
         }
         List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(flatten.size());
         for (IrBoolExpr operand : flatten) {
@@ -146,18 +151,7 @@ public class Irs {
         }
     }
 
-    private static void flattenAnd(IrBoolExpr expr, List<IrBoolExpr> flatten) {
-        if (expr instanceof IrAnd) {
-            IrAnd and = (IrAnd) expr;
-            for (IrBoolExpr subexpr : and.getOperands()) {
-                flattenAnd(subexpr, flatten);
-            }
-        } else {
-            flatten.add(expr);
-        }
-    }
-
-    public static IrBoolExpr lone(Collection<IrBoolExpr> operands) {
+    public static IrBoolExpr lone(Collection<? extends IrBoolExpr> operands) {
         return lone(operands.toArray(new IrBoolExpr[operands.size()]));
     }
 
@@ -188,7 +182,7 @@ public class Irs {
         }
     }
 
-    public static IrBoolExpr one(Collection<IrBoolExpr> operands) {
+    public static IrBoolExpr one(Collection<? extends IrBoolExpr> operands) {
         return one(operands.toArray(new IrBoolExpr[operands.size()]));
     }
 
@@ -223,14 +217,19 @@ public class Irs {
         }
     }
 
-    public static IrBoolExpr or(Collection<IrBoolExpr> operands) {
+    public static IrBoolExpr or(Collection<? extends IrBoolExpr> operands) {
         return or(operands.toArray(new IrBoolExpr[operands.size()]));
     }
 
     public static IrBoolExpr or(IrBoolExpr... operands) {
         List<IrBoolExpr> flatten = new ArrayList<IrBoolExpr>(operands.length);
         for (IrBoolExpr operand : operands) {
-            flattenOr(operand, flatten);
+            if (operand instanceof IrOr) {
+                // Invariant: No nested IrOr
+                flatten.addAll(Arrays.asList(((IrOr) operand).getOperands()));
+            } else {
+                flatten.add(operand);
+            }
         }
         List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(flatten.size());
         for (IrBoolExpr operand : flatten) {
@@ -248,17 +247,6 @@ public class Irs {
                 return filter.get(0);
             default:
                 return new IrOr(filter.toArray(new IrBoolExpr[filter.size()]), BoolDomain);
-        }
-    }
-
-    private static void flattenOr(IrBoolExpr expr, List<IrBoolExpr> flatten) {
-        if (expr instanceof IrOr) {
-            IrOr and = (IrOr) expr;
-            for (IrBoolExpr subexpr : and.getOperands()) {
-                flattenOr(subexpr, flatten);
-            }
-        } else {
-            flatten.add(expr);
         }
     }
 
@@ -722,7 +710,7 @@ public class Irs {
         return new IrSubsetEq(subset, superset, BoolDomain);
     }
 
-    public static IrBoolExpr boolChannel(Collection<IrBoolExpr> bools, IrSetExpr set) {
+    public static IrBoolExpr boolChannel(Collection<? extends IrBoolExpr> bools, IrSetExpr set) {
         return boolChannel(bools.toArray(new IrBoolExpr[bools.size()]), set);
     }
 
@@ -1087,14 +1075,23 @@ public class Irs {
         return add(addend1, constant(addend2));
     }
 
-    public static IrIntExpr add(IrIntExpr... addends) {
-        return add(Arrays.asList(addends));
+    public static IrIntExpr add(Collection<? extends IrIntExpr> addends) {
+        return add(addends.toArray(new IrIntExpr[addends.size()]));
     }
 
-    public static IrIntExpr add(Iterable<? extends IrIntExpr> addends) {
+    public static IrIntExpr add(IrIntExpr... addends) {
+        List<IrIntExpr> flatten = new ArrayList<IrIntExpr>(addends.length);
+        for (IrIntExpr addend : addends) {
+            if (addend instanceof IrAdd) {
+                // Invariant: No nested IrAdd
+                flatten.addAll(Arrays.asList(((IrAdd) addend).getAddends()));
+            } else {
+                flatten.add(addend);
+            }
+        }
         int constants = 0;
-        Deque<IrIntExpr> filter = new LinkedList<IrIntExpr>();
-        for (IrIntExpr operand : addends) {
+        List<IrIntExpr> filter = new ArrayList<IrIntExpr>(flatten.size());
+        for (IrIntExpr operand : flatten) {
             Integer constant = IrUtil.getConstant(operand);
             if (constant != null) {
                 constants += constant.intValue();
@@ -1109,7 +1106,7 @@ public class Irs {
             return Zero;
         }
         if (filter.size() == 1) {
-            return filter.getFirst();
+            return filter.get(0);
         }
         Iterator<IrIntExpr> iter = filter.iterator();
         IrDomain domain = iter.next().getDomain();
@@ -1622,31 +1619,62 @@ public class Irs {
     }
 
     public static IrSetExpr intersection(IrSetExpr... operands) {
-        // TODO flatten intersection
-        switch (operands.length) {
+        List<IrSetExpr> flatten = new ArrayList<IrSetExpr>(operands.length);
+        for (IrSetExpr operand : operands) {
+            if (operand instanceof IrSetIntersection) {
+                // Invariant: No nested IrSetIntersection
+                flatten.addAll(Arrays.asList(((IrSetIntersection) operand).getOperands()));
+            } else {
+                flatten.add(operand);
+            }
+        }
+        TIntSet constants = null;
+        List<IrSetExpr> filter = new ArrayList<IrSetExpr>();
+        for (IrSetExpr operand : flatten) {
+            int[] constant = IrUtil.getConstant(operand);
+            if (constant == null) {
+                filter.add(operand);
+            } else {
+                if (constants == null) {
+                    constants = new TIntHashSet(constant);
+                } else {
+                    constants.retainAll(constant);
+                }
+            }
+        }
+        if (constants != null) {
+            filter.add(constant(constants));
+        }
+        IrSetExpr[] ops = filter.toArray(new IrSetExpr[filter.size()]);
+        switch (ops.length) {
             case 0:
                 return EmptySet;
             case 1:
-                return operands[0];
+                return ops[0];
             default:
-                IrDomain env = IrUtil.intersectionEnvs(operands);
-                IrDomain ker = IrUtil.intersectionKers(operands);
+                IrDomain env = IrUtil.intersectionEnvs(ops);
+                IrDomain ker = IrUtil.intersectionKers(ops);
                 int low = 0;
-                int high = operands[0].getCard().getHighBound();
-                for (int i = 1; i < operands.length; i++) {
-                    high = Math.max(high, operands[0].getCard().getHighBound());
+                int high = ops[0].getCard().getHighBound();
+                for (int i = 1; i < ops.length; i++) {
+                    high = Math.max(high, ops[0].getCard().getHighBound());
                 }
                 IrDomain card = boundDomain(
                         Math.max(low, ker.size()),
                         Math.min(high, env.size()));
-                return new IrSetIntersection(operands, env, ker, card);
+                return new IrSetIntersection(ops, env, ker, card);
         }
     }
 
     public static IrSetExpr union(IrSetExpr... operands) {
         List<IrSetExpr> flatten = new ArrayList<IrSetExpr>(operands.length);
         for (IrSetExpr operand : operands) {
-            flattenUnion(operand, flatten);
+            if (operand instanceof IrSetUnion) {
+                // Invariant: No nested IrSetUnion
+                flatten.addAll(Arrays.asList(((IrSetUnion) operand).getOperands()));
+            } else {
+                flatten.add(operand);
+            }
         }
         TIntSet constants = new TIntHashSet();
         List<IrSetExpr> filter = new ArrayList<IrSetExpr>();
@@ -1685,20 +1713,13 @@ public class Irs {
         }
     }
 
-    private static void flattenUnion(IrSetExpr expr, List<IrSetExpr> flatten) {
-        if (expr instanceof IrSetUnion) {
-            IrSetUnion union = (IrSetUnion) expr;
-            for (IrSetExpr subexpr : union.getOperands()) {
-                flattenUnion(subexpr, flatten);
-            }
-        } else {
-            flatten.add(expr);
-        }
-    }
-
     public static IrSetExpr offset(IrSetExpr set, int offset) {
         if (offset == 0) {
             return set;
+        }
+        if (set instanceof IrOffset) {
+            IrOffset nested = (IrOffset) set;
+            return offset(nested.getSet(), offset + nested.getOffset());
         }
         IrDomain env = IrUtil.offset(set.getEnv(), offset);
         IrDomain ker = IrUtil.offset(set.getKer(), offset);
