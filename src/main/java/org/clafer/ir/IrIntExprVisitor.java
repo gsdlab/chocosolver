@@ -17,8 +17,6 @@ public interface IrIntExprVisitor<A, B> extends IrBoolExprVisitor<A, B> {
 
     public B visit(IrAdd ir, A a);
 
-    public B visit(IrSub ir, A a);
-
     public B visit(IrMul ir, A a);
 
     public B visit(IrDiv ir, A a);

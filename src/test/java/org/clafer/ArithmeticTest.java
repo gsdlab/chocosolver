@@ -7,6 +7,8 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.scope.Scope;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.instance.InstanceClafer;
+import org.clafer.instance.InstanceModel;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -32,7 +34,18 @@ public class ArithmeticTest {
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)), constant(5)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10));
-        assertEquals(1, solver.allInstances().length);
+        
+        int count = 0;
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer f : instance.getTopClafers(feature)) {
+                for (InstanceClafer c : f.getChildren(cost)) {
+                    assertEquals(2, c.getRef().getValue());
+                }
+            }
+            count++;
+        }
+        assertEquals(1, count);
     }
 
     /**

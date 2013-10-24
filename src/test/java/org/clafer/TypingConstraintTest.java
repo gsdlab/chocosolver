@@ -4,10 +4,10 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
-import org.clafer.ast.analysis.TypeException;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;
+import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -51,12 +51,13 @@ public class TypingConstraintTest {
 
         int count = 0;
         while (solver.find()) {
-            for (InstanceClafer Ci : solver.instance().getTopClafers(C)) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer Ci : instance.getTopClafers(C)) {
                 for (InstanceClafer bi : Ci.getChildren(b)) {
                     assertEquals(1, bi.getRef().getValue());
                 }
             }
-            for (InstanceClafer Di : solver.instance().getTopClafers(D)) {
+            for (InstanceClafer Di : instance.getTopClafers(D)) {
                 for (InstanceClafer bi : Di.getChildren(b)) {
                     assertEquals(1, bi.getRef().getValue());
                 }

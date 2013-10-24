@@ -138,13 +138,10 @@ public class Coalescer {
                         domainInt("domain" + domain, domain));
             }
         } else if (right instanceof IrAdd) {
-            IrIntExpr[] addends = ((IrAdd) right).getAddends();
-            if (addends.length == 2) {
-                // Constants addends are combined and put at the end.
-                Integer constant = IrUtil.getConstant(addends[1]);
-                if (constant != null) {
-                    propagateDomain(IrUtil.offset(left, -constant), addends[0], intGraph);
-                }
+            IrAdd add = (IrAdd) right;
+            IrIntExpr[] addends = add.getAddends();
+            if (addends.length == 1) {
+                propagateDomain(IrUtil.offset(left, -add.getOffset()), addends[0], intGraph);
             }
         }
     }

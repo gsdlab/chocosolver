@@ -5,21 +5,27 @@ import org.clafer.common.Check;
 import org.clafer.common.Util;
 
 /**
- * foldl (+) addends
+ * offset + foldl (+) addends
  *
  * @author jimmy
  */
 public class IrAdd extends IrAbstractInt {
 
     private final IrIntExpr[] addends;
+    private final int offset;
 
-    IrAdd(IrIntExpr[] addends, IrDomain domain) {
+    IrAdd(IrIntExpr[] addends, int offset, IrDomain domain) {
         super(domain);
         this.addends = Check.noNullsNotEmpty(addends);
+        this.offset = offset;
     }
 
     public IrIntExpr[] getAddends() {
         return addends;
+    }
+
+    public int getOffset() {
+        return offset;
     }
 
     @Override
@@ -31,18 +37,19 @@ public class IrAdd extends IrAbstractInt {
     public boolean equals(Object obj) {
         if (obj instanceof IrAdd) {
             IrAdd other = (IrAdd) obj;
-            return Arrays.equals(addends, other.addends) && super.equals(other);
+            return Arrays.equals(addends, other.addends) && offset == other.offset && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(addends);
+        return Arrays.hashCode(addends) ^ offset;
     }
 
     @Override
     public String toString() {
-        return "(" + Util.intercalate(") + (", getAddends()) + ")";
+        return "(" + Util.intercalate(") + (", getAddends()) + ")" + (offset == 0 ? "" : " + "
+                + offset);
     }
 }

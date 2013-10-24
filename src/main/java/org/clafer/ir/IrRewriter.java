@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -370,15 +371,7 @@ public abstract class IrRewriter<T>
     public IrIntExpr visit(IrAdd ir, T a) {
         IrIntExpr[] addends = rewrite(ir.getAddends(), a);
         return changed(ir.getAddends(), addends)
-                ? add(addends)
-                : ir;
-    }
-
-    @Override
-    public IrIntExpr visit(IrSub ir, T a) {
-        IrIntExpr[] subtrahends = rewrite(ir.getSubtrahends(), a);
-        return changed(ir.getSubtrahends(), subtrahends)
-                ? sub(subtrahends)
+                ? add(Util.cons(constant(ir.getOffset()), addends))
                 : ir;
     }
 

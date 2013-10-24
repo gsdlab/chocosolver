@@ -16,10 +16,8 @@ import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrOr;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -71,7 +69,6 @@ import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSortSets;
 import org.clafer.ir.IrSortStringsChannel;
-import org.clafer.ir.IrSub;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
@@ -597,28 +594,8 @@ public class IrCompiler {
             if (expr instanceof IrAdd) {
                 IrAdd add = (IrAdd) expr;
                 IrIntExpr[] addends = add.getAddends();
-                if (addends.length == 2) {
-                    Integer constant = IrUtil.getConstant(addends[0]);
-                    if (constant != null) {
-                        return new Triple<String, IrIntExpr, Integer>("-", addends[1], constant);
-                    }
-                    constant = IrUtil.getConstant(addends[1]);
-                    if (constant != null) {
-                        return new Triple<String, IrIntExpr, Integer>("-", addends[0], constant);
-                    }
-                }
-            } else if (expr instanceof IrSub) {
-                IrSub sub = (IrSub) expr;
-                IrIntExpr[] subtrahends = sub.getSubtrahends();
-                if (subtrahends.length == 2) {
-                    Integer constant = IrUtil.getConstant(subtrahends[0]);
-                    if (constant != null) {
-                        return new Triple<String, IrIntExpr, Integer>("+", subtrahends[1], constant);
-                    }
-                    constant = IrUtil.getConstant(subtrahends[1]);
-                    if (constant != null) {
-                        return new Triple<String, IrIntExpr, Integer>("-", subtrahends[0], -constant);
-                    }
+                if (addends.length == 1) {
+                    return new Triple<String, IrIntExpr, Integer>("-", addends[0], add.getOffset());
                 }
             }
             return null;
@@ -743,75 +720,61 @@ public class IrCompiler {
             return set.getCard();
         }
 
-        @Override
-        public Object visit(IrAdd ir, IntVar reify) {
-            int constants = 0;
-            Deque<IntVar> filter = new LinkedList<IntVar>();
-            for (IrIntExpr addend : ir.getAddends()) {
-                Integer constant = IrUtil.getConstant(addend);
+        private Pair<Integer, IrIntExpr> getCoefficient(IrIntExpr e) {
+            if (e instanceof IrMinus) {
+                return new Pair<Integer, IrIntExpr>(-1, ((IrMinus) e).getExpr());
+            } else if (e instanceof IrMul) {
+                IrMul mul = (IrMul) e;
+                Integer constant = IrUtil.getConstant(mul.getMultiplicand());
                 if (constant != null) {
-                    constants += constant.intValue();
-                } else {
-                    filter.add(compile(addend));
+                    return new Pair<Integer, IrIntExpr>(constant, mul.getMultiplier());
+                }
+                constant = IrUtil.getConstant(mul.getMultiplier());
+                if (constant != null) {
+                    return new Pair<Integer, IrIntExpr>(constant, mul.getMultiplicand());
                 }
             }
-            IntVar[] addends = filter.toArray(new IntVar[filter.size()]);
-            switch (addends.length) {
-                case 0:
-                    // This case should have already been optimized earlier.
-                    return VF.fixed(constants, solver);
-                case 1:
-                    return _offset(addends[0], constants);
-                default:
-                    if (reify == null) {
-                        IntVar sum = numIntVar("Sum", IrUtil.offset(ir.getDomain(), -constants));
-                        post(_sum(sum, addends));
-                        return _offset(sum, constants);
-                    }
-                    if (constants != 0) {
-                        addends = Util.cons(VF.fixed(constants, solver), addends);
-                    }
-                    return _sum(reify, addends);
+            return new Pair<Integer, IrIntExpr>(1, e);
+        }
+
+        private Pair<int[], IrIntExpr[]> getCoefficients(IrIntExpr[] es) {
+            int[] coefficients = new int[es.length];
+            IrIntExpr[] exprs = new IrIntExpr[es.length];
+            for (int i = 0; i < es.length; i++) {
+                Pair<Integer, IrIntExpr> coef = getCoefficient(es[i]);
+                coefficients[i] = coef.getFst();
+                exprs[i] = coef.getSnd();
             }
+            return new Pair<int[], IrIntExpr[]>(coefficients, exprs);
         }
 
         @Override
-        public Object visit(IrSub ir, IntVar reify) {
-            int constants = 0;
-            IrIntExpr[] operands = ir.getSubtrahends();
-            Deque<IntVar> filter = new LinkedList<IntVar>();
-            for (int i = 1; i < operands.length; i++) {
-                Integer constant = IrUtil.getConstant(operands[i]);
-                if (constant != null) {
-                    constants += constant.intValue();
-                } else {
-                    filter.add(compile(operands[i]));
-                }
-            }
-            Integer constant = IrUtil.getConstant(operands[0]);
-            int minuend;
-            if (constant != null) {
-                minuend = constant - constants;
-            } else {
-                minuend = -constants;
-            }
-            filter.addFirst(compile(operands[0]));
-            IntVar[] subtractends = filter.toArray(new IntVar[filter.size()]);
-            switch (subtractends.length) {
+        public Object visit(IrAdd ir, IntVar reify) {
+            int offset = ir.getOffset();
+            IrIntExpr[] addends = ir.getAddends();
+            switch (addends.length) {
                 case 0:
-                    return VF.fixed(minuend, solver);
+                    // This case should have already been optimized earlier.
+                    return VF.fixed(offset, solver);
                 case 1:
-                    return _offset(subtractends[0], -constants);
-                default:
                     if (reify == null) {
-                        IntVar diff = numIntVar("Diff", IrUtil.offset(ir.getDomain(), constants));
-                        post(_difference(diff, subtractends));
-                        return _offset(diff, -constants);
+                        return _offset(compile(addends[0]), offset);
                     }
-                    if (constants != 0) {
-                        subtractends = Util.cons(VF.fixed(0, solver), subtractends);
+                    return _arithm(reify, "-", compile(addends[0]), "=", offset);
+                default:
+                    Pair<int[], IrIntExpr[]> coeffs = getCoefficients(addends);
+                    int[] coefficients = coeffs.getFst();
+                    IntVar[] operands = compile(coeffs.getSnd());
+                    if (reify == null) {
+                        IntVar sum = numIntVar("Sum", IrUtil.offset(ir.getDomain(), -offset));
+                        post(_scalar(sum, coefficients, operands));
+                        return _offset(sum, offset);
                     }
-                    return _difference(reify, subtractends);
+                    if (offset != 0) {
+                        coefficients = Util.cons(1, coefficients);
+                        operands = Util.cons(VF.fixed(offset, solver), operands);
+                    }
+                    return _scalar(reify, coefficients, operands);
             }
         }
 
@@ -1202,21 +1165,26 @@ public class IrCompiler {
         return _and(thenClause.reif(), elseClause.reif());
     }
 
-    private static Constraint _difference(IntVar difference, IntVar... vars) {
-        int[] coeffiecients = new int[vars.length];
-        coeffiecients[0] = 1;
-        for (int i = 1; i < coeffiecients.length; i++) {
-            coeffiecients[i] = -1;
-        }
-        return ICF.scalar(vars, coeffiecients, difference);
-    }
-
     private static Constraint _sum(IntVar sum, IntVar... vars) {
         return ICF.sum(vars, sum);
     }
 
     private static Constraint _sum(IntVar sum, BoolVar... vars) {
         return ICF.sum(vars, sum);
+    }
+
+    private static Constraint _scalar(IntVar sum, int[] coefficients, IntVar[] vars) {
+        boolean allOnes = true;
+        for (int coefficient : coefficients) {
+            if (coefficient != 1) {
+                allOnes = false;
+                break;
+            }
+        }
+        if (allOnes) {
+            return _sum(sum, vars);
+        }
+        return ICF.scalar(vars, coefficients, sum);
     }
 
     private static Constraint _times(IntVar multiplicand, IntVar multiplier, IntVar product) {
