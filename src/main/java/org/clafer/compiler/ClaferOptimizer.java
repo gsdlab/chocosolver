@@ -14,14 +14,14 @@ import util.ESat;
  *
  * @author jimmy
  */
-public class ClaferObjective {
+public class ClaferOptimizer {
 
     public final Solver solver;
     private final ClaferSolutionMap solutionMap;
     private final Objective objective;
     private final Either<Integer, IntVar> score;
 
-    ClaferObjective(Solver solver, ClaferSolutionMap solutionMap,
+    ClaferOptimizer(Solver solver, ClaferSolutionMap solutionMap,
             Objective objective, Either<Integer, IntVar> score) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);

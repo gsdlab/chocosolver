@@ -1,7 +1,7 @@
 package org.clafer;
 
 import org.clafer.scope.Scope;
-import org.clafer.compiler.ClaferObjective;
+import org.clafer.compiler.ClaferOptimizer;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -29,7 +29,7 @@ public class FeatureModelTest {
             f.addConstraint(equal(joinRef(join($this(), footprint)), constant(n - i * 2 + 1)));
         }
 
-        ClaferObjective solver = ClaferCompiler.compileMinimize(model,
+        ClaferOptimizer solver = ClaferCompiler.compileMinimize(model,
                 Scope.defaultScope(100).intLow(-1000).intHigh(1000), footprint.getRef());
         assertEquals(-576, solver.optimal().getFst().intValue());
     }
@@ -406,7 +406,7 @@ public class FeatureModelTest {
         c554_SQLITE_DEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(9)));
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
-        ClaferObjective solver = ClaferCompiler.compileMinimize(model, Scope.defaultScope(200)
+        ClaferOptimizer solver = ClaferCompiler.compileMinimize(model, Scope.defaultScope(200)
                 .intLow(-10000).intHigh(10000), c2_footprint.getRef());
         assertEquals(-299, solver.optimal().getFst().intValue());
     }

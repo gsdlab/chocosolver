@@ -13,7 +13,7 @@ import org.clafer.ast.AstUtil;
 import org.clafer.scope.Scope;
 import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
-import org.clafer.compiler.ClaferObjective;
+import org.clafer.compiler.ClaferOptimizer;
 import org.clafer.compiler.ClaferOptions;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.compiler.ClaferUnsat;
@@ -195,7 +195,7 @@ public class JavascriptShell {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot maximize " + clafer + ".");
         }
-        ClaferObjective objective = ClaferCompiler.compileMaximize(getModel(), scope, clafer.getRef());
+        ClaferOptimizer objective = ClaferCompiler.compileMaximize(getModel(), scope, clafer.getRef());
         return objective.optimal();
 
     }
@@ -210,7 +210,7 @@ public class JavascriptShell {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot minimize " + clafer + ".");
         }
-        ClaferObjective objective = ClaferCompiler.compileMinimize(getModel(), scope, clafer.getRef());
+        ClaferOptimizer objective = ClaferCompiler.compileMinimize(getModel(), scope, clafer.getRef());
         return objective.optimal();
     }
 

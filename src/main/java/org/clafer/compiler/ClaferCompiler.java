@@ -20,7 +20,7 @@ import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Util;
-import org.clafer.compiler.ClaferObjective.Objective;
+import org.clafer.compiler.ClaferOptimizer.Objective;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
@@ -142,11 +142,11 @@ public class ClaferCompiler {
         return new ClaferSolver(solver, solution);
     }
 
-    public static ClaferObjective compileMaximize(AstModel in, Scopable scope, AstRef ref) {
+    public static ClaferOptimizer compileMaximize(AstModel in, Scopable scope, AstRef ref) {
         return compileMaximize(in, scope.toScope(), ref, ClaferOptions.Default);
     }
 
-    public static ClaferObjective compileMaximize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
+    public static ClaferOptimizer compileMaximize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
@@ -161,14 +161,14 @@ public class ClaferCompiler {
                 setStrategy(getSetVars(in, solution), options),
                 IntStrategyFactory.firstFail_InDomainMax(getScoreVars(triple.getSnd(), irSolution)),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-        return new ClaferObjective(solver, solution, Objective.Maximize, irSolution.getIntVar(triple.getThd()));
+        return new ClaferOptimizer(solver, solution, Objective.Maximize, irSolution.getIntVar(triple.getThd()));
     }
 
-    public static ClaferObjective compileMinimize(AstModel in, Scopable scope, AstRef ref) {
+    public static ClaferOptimizer compileMinimize(AstModel in, Scopable scope, AstRef ref) {
         return compileMinimize(in, scope.toScope(), ref, ClaferOptions.Default);
     }
 
-    public static ClaferObjective compileMinimize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
+    public static ClaferOptimizer compileMinimize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
@@ -183,7 +183,7 @@ public class ClaferCompiler {
                 setStrategy(getSetVars(in, solution), options),
                 IntStrategyFactory.firstFail_InDomainMin(getScoreVars(triple.getSnd(), irSolution)),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-        return new ClaferObjective(solver, solution, Objective.Minimize, irSolution.getIntVar(triple.getThd()));
+        return new ClaferOptimizer(solver, solution, Objective.Minimize, irSolution.getIntVar(triple.getThd()));
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope) {
