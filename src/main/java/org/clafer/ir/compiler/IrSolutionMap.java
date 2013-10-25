@@ -102,6 +102,10 @@ public class IrSolutionMap {
         return ivars;
     }
 
+    public IntVar[] getIntVars() {
+        return intVars.values().toArray(new IntVar[intVars.size()]);
+    }
+
     public int getIntValue(IrIntVar var) {
         Either<Integer, IntVar> intVar = getIntVar(var);
         return intVar.isLeft()
@@ -135,6 +139,10 @@ public class IrSolutionMap {
             svars[i] = getSetVar(vars[i]);
         }
         return svars;
+    }
+
+    public SetVar[] getSetVars() {
+        return setVars.values().toArray(new SetVar[setVars.size()]);
     }
 
     public int[] getSetValue(IrSetVar var) {

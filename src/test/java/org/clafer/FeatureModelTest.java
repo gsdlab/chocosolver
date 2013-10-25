@@ -31,7 +31,8 @@ public class FeatureModelTest {
 
         ClaferOptimizer solver = ClaferCompiler.compileMinimize(model,
                 Scope.defaultScope(100).intLow(-1000).intHigh(1000), footprint.getRef());
-        assertEquals(-576, solver.optimal().getFst().intValue());
+        assertTrue(solver.find());
+        assertEquals(-576, solver.instance().getFst().intValue());
     }
 
     /**
@@ -408,6 +409,7 @@ public class FeatureModelTest {
 
         ClaferOptimizer solver = ClaferCompiler.compileMinimize(model, Scope.defaultScope(200)
                 .intLow(-10000).intHigh(10000), c2_footprint.getRef());
-        assertEquals(-299, solver.optimal().getFst().intValue());
+        assertTrue(solver.find());
+        assertEquals(-299, solver.instance().getFst().intValue());
     }
 }

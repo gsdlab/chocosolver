@@ -5,13 +5,12 @@ import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import solver.Solver;
-import solver.search.measure.IMeasures;
 
 /**
  *
  * @author jimmy
  */
-public class ClaferSolver {
+public class ClaferSolver implements ClaferSearch<InstanceModel> {
 
     private final Solver solver;
     private final ClaferSolutionMap solutionMap;
@@ -23,18 +22,11 @@ public class ClaferSolver {
         this.solutionMap = Check.notNull(solutionMap);
     }
 
-    public IMeasures getMeasures() {
-        return solver.getMeasures();
-    }
-
-    public Solver getInternalSolver() {
-        return solver;
-    }
-
     public ClaferSolutionMap getSolutionMap() {
         return solutionMap;
     }
 
+    @Override
     public boolean find() {
         if (!more) {
             return false;
@@ -48,16 +40,23 @@ public class ClaferSolver {
         return more;
     }
 
+    @Override
     public InstanceModel instance() {
         return solutionMap.getInstance();
     }
 
+    @Override
     public InstanceModel[] allInstances() {
         List<InstanceModel> instances = new ArrayList<InstanceModel>();
         while (find()) {
             instances.add(instance());
         }
         return instances.toArray(new InstanceModel[instances.size()]);
+    }
+
+    @Override
+    public Solver getInternalSolver() {
+        return solver;
     }
 
     @Override
