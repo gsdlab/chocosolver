@@ -133,6 +133,9 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
         return true;
     }
 
+    /**
+     * @return the optimal value and the optimal instance
+     */
     @Override
     public Pair<Integer, InstanceModel> instance() {
         return new Pair<Integer, InstanceModel>(

@@ -96,7 +96,7 @@ public static void main(String[] args) {
         // intLow is the "suggested" lowest integer for solving. intHigh is the "suggested"
         // highest integer.
     // find will return true when the solver finds another instance.
-    while(solver.find()) {
+    while (solver.find()) {
         // Print the solution in a format similar to ClaferIG.
         System.out.println(solver.instance());
     }
@@ -110,14 +110,18 @@ Optimizing on a single objective is supported.
 ClaferObjective solver = ClaferCompiler.compileMaximize(model, 
     Scope.defaultScope(1).intLow(-16).intHigh(16), 
     time.getRef());
-// The instance where time is maximal.
-System.out.println(solver.optimal());
+while (solver.find)) {
+    // The instances where time is maximal.
+    System.out.println(solver.instance());
+}
 
 solver = ClaferCompiler.compileMinimize(model, 
     Scope.defaultScope(1).intLow(-16).intHigh(16), 
     time.getRef());
-// The instance where time is minimal.
-System.out.println(solver.optimal());
+while (solver.find()) {
+    // The instances where time is minimal.
+    System.out.println(solver.instance());
+}
 ```
 
 Finding Min-Unsat
