@@ -7,7 +7,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import org.clafer.ast.AstModel;
 import org.clafer.scope.Scope;
-import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
+import org.clafer.objective.Objective;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
@@ -36,23 +37,23 @@ public class Javascript {
         }
     }
 
-    public static Pair<AstModel, Scope> readModel(String in) throws IOException {
+    public static Triple<AstModel, Scope, Objective[]> readModel(String in) throws IOException {
         return readModel("<unknown>", in, newEngine());
     }
 
-    public static Pair<AstModel, Scope> readModel(File in) throws IOException {
+    public static Triple<AstModel, Scope, Objective[]> readModel(File in) throws IOException {
         return readModel(in, newEngine());
     }
 
-    public static Pair<AstModel, Scope> readModel(Reader in) throws IOException {
+    public static Triple<AstModel, Scope, Objective[]> readModel(Reader in) throws IOException {
         return readModel("<unknown>", in, newEngine());
     }
 
-    public static Pair<AstModel, Scope> readModel(File in, Scriptable engine) throws IOException {
+    public static Triple<AstModel, Scope, Objective[]> readModel(File in, Scriptable engine) throws IOException {
         return readModel(in.getName(), in, engine);
     }
 
-    public static Pair<AstModel, Scope> readModel(String name, String in, Scriptable engine) throws IOException {
+    public static Triple<AstModel, Scope, Objective[]> readModel(String name, String in, Scriptable engine) throws IOException {
         JavascriptContext context = new JavascriptContext();
         Context cxt = Context.enter();
         cxt.setOptimizationLevel(-1);
@@ -62,17 +63,20 @@ public class Javascript {
                     new InputStreamReader(Javascript.class.getResourceAsStream("header.js")),
                     "header.js", 1, null);
             cxt.evaluateString(engine, in, name, 1, null);
-            return new Pair<AstModel, Scope>(context.getModel(), context.getScope());
+            return new Triple<AstModel, Scope, Objective[]>(
+                    context.getModel(),
+                    context.getScope(),
+                    context.getObjectives());
         } finally {
             Context.exit();
         }
     }
 
-    public static Pair<AstModel, Scope> readModel(String name, File in, Scriptable engine) throws IOException {
+    public static Triple<AstModel, Scope, Objective[]> readModel(String name, File in, Scriptable engine) throws IOException {
         return readModel(name, new FileReader(in), engine);
     }
 
-    public static Pair<AstModel, Scope> readModel(String name, Reader in, Scriptable engine) throws IOException {
+    public static Triple<AstModel, Scope, Objective[]> readModel(String name, Reader in, Scriptable engine) throws IOException {
         JavascriptContext context = new JavascriptContext();
         Context cxt = Context.enter();
         cxt.setOptimizationLevel(-1);
@@ -82,7 +86,10 @@ public class Javascript {
                     new InputStreamReader(Javascript.class.getResourceAsStream("header.js")),
                     "header.js", 1, null);
             cxt.evaluateReader(engine, in, name, 1, null);
-            return new Pair<AstModel, Scope>(context.getModel(), context.getScope());
+            return new Triple<AstModel, Scope, Objective[]>(
+                    context.getModel(),
+                    context.getScope(),
+                    context.getObjectives());
         } finally {
             Context.exit();
         }

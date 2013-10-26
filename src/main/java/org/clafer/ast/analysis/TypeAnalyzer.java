@@ -41,12 +41,14 @@ import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
+import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
 import org.clafer.common.Util;
+import org.clafer.objective.Objective;
 
 /**
  * <p>
@@ -95,23 +97,29 @@ public class TypeAnalyzer implements Analyzer {
     public Analysis analyze(Analysis analysis) {
         Map<AstExpr, Type> typeMap = new HashMap<AstExpr, Type>();
         List<AstConstraint> typedConstraints = new ArrayList<AstConstraint>();
+        List<Objective> typedObjectives = new ArrayList<Objective>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
-            TypeVisitor visitor = new TypeVisitor(analysis, Type.basicType(clafer), typeMap);
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(clafer), typeMap);
             TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(constraint.getExpr());
             typedConstraints.add(constraint.withExpr(typedConstraint.getExpr()));
         }
-        return analysis.setTypeMap(typeMap).setConstraints(typedConstraints);
+        for (Objective objective : analysis.getObjectives()) {
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
+            TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(objective.getExpr());
+            typedObjectives.add(objective.withExpr(typedObjective.getExpr()));
+        }
+        return analysis.setTypeMap(typeMap)
+                .setConstraints(typedConstraints)
+                .setObjectives(typedObjectives);
     }
 
     private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {
 
-        private final Analysis analysis;
         private final Type context;
         private final Map<AstExpr, Type> typeMap;
 
-        TypeVisitor(Analysis analysis, Type context, Map<AstExpr, Type> typeMap) {
-            this.analysis = analysis;
+        TypeVisitor(Type context, Map<AstExpr, Type> typeMap) {
             this.context = context;
             this.typeMap = typeMap;
         }
@@ -344,6 +352,28 @@ public class TypeAnalyzer implements Analyzer {
                 }
             }
             return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
+        }
+
+        @Override
+        public TypedExpr<AstSetExpr> visit(AstSum ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+
+            Set<AstRef> refs = new HashSet<AstRef>();
+            for (AstClafer type : set.getUnionType()) {
+                AstRef ref = AstUtil.getInheritedRef(type);
+                if (ref != null) {
+                    refs.add(ref);
+                }
+            }
+            switch (refs.size()) {
+                case 0:
+                    throw new TypeException("Cannot sum(" + set.getType() + ")");
+                case 1:
+                    AstRef ref = refs.iterator().next();
+                    return put(ref.getTargetType(), sum(castTo(set, ref.getSourceType())));
+                default:
+                    throw new TypeException("Ambiguous sum(" + set.getType() + ")");
+            }
         }
 
         @Override

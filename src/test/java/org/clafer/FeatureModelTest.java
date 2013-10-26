@@ -9,6 +9,7 @@ import org.clafer.ast.AstModel;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import static org.clafer.ast.Asts.*;
+import org.clafer.objective.Objective;
 
 /**
  *
@@ -29,21 +30,19 @@ public class FeatureModelTest {
             f.addConstraint(equal(joinRef(join($this(), footprint)), constant(n - i * 2 + 1)));
         }
 
-        ClaferOptimizer solver = ClaferCompiler.compileMinimize(model,
-                Scope.defaultScope(100).intLow(-1000).intHigh(1000), footprint.getRef());
+        ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(100).intLow(-1000).intHigh(1000),
+                Objective.minimize(sum(global(footprint))));
         assertTrue(solver.find());
         assertEquals(-576, solver.instance().getFst().intValue());
     }
 
     /**
-     * Adapted from Scalable Prediction of Non-functional Properties in
-     * Software Product Lines. Scaled down by dividing numbers by 2000 and
-     * rounding.
-     * 
+     * Adapted from Scalable Prediction of Non-functional Properties in Software
+     * Product Lines. Scaled down by dividing numbers by 2000 and rounding.
+     *
      * <pre>
      * abstract IMeasurable
      *     footprint : integer
-     *
      *
      * abstract SQLite
      *     OperatingSystemCharacteristics : IMeasurable
@@ -218,12 +217,10 @@ public class FeatureModelTest {
      *         [ this.footprint = 9]
      *     SQLITE_MEMDEBUG : IMeasurable  ?
      *         [ this.footprint = 2]
-     *     total_footprint : integer
-     *         [ total_footprint =  sum IMeasurable.footprint ]
      *
      * simpleConfig : SQLite
      *
-     * << min simpleConfig.total_footprint >>
+     * << min sum(footprint) >>
      * </pre>
      */
     @Test(timeout = 60000)
@@ -407,8 +404,8 @@ public class FeatureModelTest {
         c554_SQLITE_DEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(9)));
         c560_SQLITE_MEMDEBUG.addConstraint(equal(joinRef(join($this(), c2_footprint)), constant(2)));
 
-        ClaferOptimizer solver = ClaferCompiler.compileMinimize(model, Scope.defaultScope(200)
-                .intLow(-10000).intHigh(10000), c2_footprint.getRef());
+        ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(200)
+                .intLow(-10000).intHigh(10000), Objective.minimize(sum(global(c2_footprint))));
         assertTrue(solver.find());
         assertEquals(-299, solver.instance().getFst().intValue());
     }

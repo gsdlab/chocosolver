@@ -137,6 +137,10 @@ public class Asts {
         return arithm(AstArithm.Op.Div, divisors);
     }
 
+    public static AstSetExpr sum(AstSetExpr set) {
+        return new AstSum(set);
+    }
+
     public static AstBoolExpr arithm(AstBoolArithm.Op op, AstBoolExpr... operands) {
         if (operands.length == 1) {
             return operands[0];

@@ -6,6 +6,8 @@ var intRange = rc.setIntRange.bind(rc);
 var Clafer = rc.getModel().addChild.bind(rc.getModel());
 var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript engine versions has "abstract" as a keyword.
 var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
+var max = rc.addMaximizeObjective.bind(rc);
+var min = rc.addMinimizeObjective.bind(rc);
 
 var Int = Asts.IntType; // Some Javascript engine versions has "int" as a keyword.
 var Bool = Asts.BoolType;
@@ -42,6 +44,7 @@ function div(d1, d2) {
 function and(a1, a2) {
     return Asts.and([a1, a2]);
 }
+var sum = Asts.sum;
 function ifOnlyIf(i1, i2) {
     return Asts.ifOnlyIf([i1, i2]);
 }

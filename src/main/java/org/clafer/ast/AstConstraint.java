@@ -52,9 +52,9 @@ public class AstConstraint {
     }
 
     /**
-     * Creates a new orphan constraint that is the same as this constraint
-     * except it is a hard constraint. It is orphan because the Clafer defining
-     * this constraint does not recognize the new constraint.
+     * Create a new orphan constraint that is the same as this constraint except
+     * it is a hard constraint. It is orphan because the Clafer defining this
+     * constraint does not recognize the new constraint.
      *
      * @return an orphan hard version of this constraint
      */
@@ -67,9 +67,9 @@ public class AstConstraint {
     }
 
     /**
-     * Creates a new orphan constraint that is the same as this constraint
-     * except it is a soft constraint. It is orphan because the Clafer defining
-     * this constraint does not recognize the new constraint.
+     * Create a new orphan constraint that is the same as this constraint except
+     * it is a soft constraint. It is orphan because the Clafer defining this
+     * constraint does not recognize the new constraint.
      *
      * @return an orphan soft version of this constraint
      */
@@ -82,9 +82,9 @@ public class AstConstraint {
     }
 
     /**
-     * Creates a new orphan constraint that is the same as this constraint
-     * except it is a different expression. It is orphan because the Clafer
-     * defining this constraint does not recognize the new constraint.
+     * Create a new orphan constraint that is the same as this constraint except
+     * with a different expression. It is orphan because the Clafer defining
+     * this constraint does not recognize the new constraint.
      *
      * @param expr the new expression
      * @return an orphan version of this constraint with a new expression

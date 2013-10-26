@@ -10,9 +10,12 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstUtil;
+import org.clafer.ast.Asts;
 import org.clafer.scope.Scope;
 import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
+import org.clafer.objective.Objective;
 import org.clafer.compiler.ClaferOptions;
 import org.clafer.compiler.ClaferSearch;
 import org.clafer.compiler.ClaferUnsat;
@@ -34,6 +37,8 @@ public class JavascriptShell {
     private AstModel model;
     // The scope. Null if the model is not successfully loaded.
     private Scope scope;
+    // The objectives.
+    private Objective[] objectives;
     // The solver which solved the previous instance.
     // Null if first instance not yet solved.
     private ClaferSearch solver;
@@ -155,9 +160,10 @@ public class JavascriptShell {
         solver = null;
         engine = Javascript.newEngine();
         try {
-            Pair<AstModel, Scope> pair = Javascript.readModel(file, engine);
+            Triple<AstModel, Scope, Objective[]> pair = Javascript.readModel(file, engine);
             model = pair.getFst();
             scope = pair.getSnd();
+            objectives = pair.getThd();
         } finally {
             init();
         }
@@ -179,7 +185,13 @@ public class JavascriptShell {
      */
     public Object solve() {
         if (solver == null) {
-            solver = ClaferCompiler.compile(getModel(), scope);
+            if (objectives.length == 0) {
+                solver = ClaferCompiler.compile(getModel(), scope);
+            } else if (objectives.length == 1) {
+                solver = ClaferCompiler.compile(getModel(), scope, objectives[0]);
+            } else {
+                return "Muliobjective optimization not yet supported.";
+            }
         }
         return solver.find() ? solver.instance() : null;
     }
@@ -194,7 +206,8 @@ public class JavascriptShell {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot maximize " + clafer + ".");
         }
-        solver = ClaferCompiler.compileMaximize(getModel(), scope, clafer.getRef());
+        solver = ClaferCompiler.compile(getModel(), scope,
+                Objective.maximize(Asts.global(clafer)));
         return solver.find() ? solver.instance() : null;
 
     }
@@ -209,7 +222,8 @@ public class JavascriptShell {
         if (!clafer.hasRef()) {
             throw new JavascriptException("Cannot minimize " + clafer + ".");
         }
-        solver = ClaferCompiler.compileMinimize(getModel(), scope, clafer.getRef());
+        solver = ClaferCompiler.compile(getModel(), scope,
+                Objective.minimize(Asts.global(clafer)));
         return solver.find() ? solver.instance() : null;
     }
 

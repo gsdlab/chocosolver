@@ -1,5 +1,6 @@
 package org.clafer.javascript;
 
+import java.util.ArrayList;
 import org.clafer.scope.Scope;
 import java.util.HashMap;
 import java.util.List;
@@ -8,7 +9,9 @@ import java.util.Map.Entry;
 import org.clafer.ast.Asts;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstUtil;
+import org.clafer.objective.Objective;
 
 /**
  *
@@ -17,6 +20,7 @@ import org.clafer.ast.AstUtil;
 public class JavascriptContext {
 
     private final Map<String, Integer> scope = new HashMap<String, Integer>();
+    private final List<Objective> objectives = new ArrayList<Objective>(0);
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
@@ -57,6 +61,18 @@ public class JavascriptContext {
             resolvedScope.put(clafer, entry.getValue());
         }
         return new Scope(resolvedScope, defaultScope, intLow, intHigh);
+    }
+
+    public void addMaximizeObjective(AstSetExpr expr) {
+        objectives.add(Objective.maximize(expr));
+    }
+
+    public void addMinimizeObjective(AstSetExpr expr) {
+        objectives.add(Objective.minimize(expr));
+    }
+
+    public Objective[] getObjectives() {
+        return objectives.toArray(new Objective[objectives.size()]);
     }
 
     public AstModel getModel() {

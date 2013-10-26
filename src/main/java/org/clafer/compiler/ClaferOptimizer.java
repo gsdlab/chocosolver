@@ -27,7 +27,7 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
 
     public final Solver solver;
     private final ClaferSolutionMap solutionMap;
-    private final Objective objective;
+    private final boolean maximize;
     private final Either<Integer, IntVar> score;
     private boolean first = true;
     private boolean more = true;
@@ -35,10 +35,10 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
     private final Solution firstSolution = new Solution();
 
     ClaferOptimizer(Solver solver, ClaferSolutionMap solutionMap,
-            Objective objective, Either<Integer, IntVar> score) {
+            boolean maximize, Either<Integer, IntVar> score) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);
-        this.objective = Check.notNull(objective);
+        this.maximize = maximize;
         this.score = Check.notNull(score);
     }
 
@@ -46,8 +46,12 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
         return solutionMap;
     }
 
-    public Objective getObjective() {
-        return objective;
+    public boolean isMaximize() {
+        return maximize;
+    }
+
+    public boolean isMinimize() {
+        return !maximize;
     }
 
     @Override
@@ -75,7 +79,7 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
         IntVar scoreVar = score.getRight();
         solver.getSearchLoop().setObjectivemanager(new IntObjectiveManager(
                 scoreVar,
-                Objective.Minimize.equals(objective) ? ResolutionPolicy.MINIMIZE : ResolutionPolicy.MAXIMIZE,
+                maximize ? ResolutionPolicy.MAXIMIZE : ResolutionPolicy.MINIMIZE,
                 solver));
         solver.getSearchLoop().plugSearchMonitor(new IMonitorSolution() {
             private static final long serialVersionUID = 1L;
@@ -157,20 +161,5 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
     @Override
     public Solver getInternalSolver() {
         return solver;
-    }
-
-    public static enum Objective {
-
-        Maximize(ResolutionPolicy.MAXIMIZE),
-        Minimize(ResolutionPolicy.MINIMIZE);
-        private final ResolutionPolicy policy;
-
-        Objective(ResolutionPolicy policy) {
-            this.policy = policy;
-        }
-
-        ResolutionPolicy getPolicy() {
-            return policy;
-        }
     }
 }

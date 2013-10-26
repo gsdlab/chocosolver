@@ -18,9 +18,8 @@ import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
 import org.clafer.common.Util;
-import org.clafer.compiler.ClaferOptimizer.Objective;
+import org.clafer.objective.Objective;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
@@ -88,17 +87,6 @@ public class ClaferCompiler {
         return vars.toArray(new SetVar[vars.size()]);
     }
 
-    private static IntVar[] getScoreVars(IrIntVar[] scores, IrSolutionMap map) {
-        List<IntVar> vars = new ArrayList<IntVar>(scores.length);
-        for (IrIntVar score : scores) {
-            Either<Integer, IntVar> var = map.getIntVar(score);
-            if (var.isRight()) {
-                vars.add(var.getRight());
-            }
-        }
-        return vars.toArray(new IntVar[vars.size()]);
-    }
-
     private static IntVar[] getIntVars(AstModel model, ClaferSolutionMap map) {
         List<IntVar> vars = new ArrayList<IntVar>();
         for (AstClafer clafer : AstUtil.getClafers(model)) {
@@ -124,7 +112,7 @@ public class ClaferCompiler {
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
-        return compile(in, scope.toScope(), ClaferOptions.Default);
+        return compile(in, scope, ClaferOptions.Default);
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOptions options) {
@@ -142,48 +130,30 @@ public class ClaferCompiler {
         return new ClaferSolver(solver, solution);
     }
 
-    public static ClaferOptimizer compileMaximize(AstModel in, Scopable scope, AstRef ref) {
-        return compileMaximize(in, scope.toScope(), ref, ClaferOptions.Default);
+    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective objective) {
+        return compile(in, scope, objective, ClaferOptions.Default);
     }
 
-    public static ClaferOptimizer compileMaximize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
+    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective objective, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
-        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(
-                in, scope.toScope(), ref, module,
+        AstSolutionMap astSolution = AstCompiler.compile(
+                in, scope.toScope(), objective, module,
                 options.isFullSymmetryBreaking());
-        AstSolutionMap astSolution = triple.getFst();
         IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                setStrategy(getSetVars(in, solution), options),
-                IntStrategyFactory.firstFail_InDomainMax(getScoreVars(triple.getSnd(), irSolution)),
-                IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-        return new ClaferOptimizer(solver, solution, Objective.Maximize, irSolution.getIntVar(triple.getThd()));
-    }
-
-    public static ClaferOptimizer compileMinimize(AstModel in, Scopable scope, AstRef ref) {
-        return compileMinimize(in, scope.toScope(), ref, ClaferOptions.Default);
-    }
-
-    public static ClaferOptimizer compileMinimize(AstModel in, Scopable scope, AstRef ref, ClaferOptions options) {
-        Solver solver = new Solver();
-        IrModule module = new IrModule();
-
-        Triple<AstSolutionMap, IrIntVar[], IrIntVar> triple = AstCompiler.compile(
-                in, scope.toScope(), ref, module,
-                options.isFullSymmetryBreaking());
-        AstSolutionMap astSolution = triple.getFst();
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
-        ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
+        Either<Integer, IntVar> objectiveVar = irSolution.getIntVar(astSolution.getObjectiveVar(objective));
+        IntVar[] objectiveVars = objectiveVar.isLeft() ? new IntVar[0] : new IntVar[]{objectiveVar.getRight()};
 
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
                 setStrategy(getSetVars(in, solution), options),
-                IntStrategyFactory.firstFail_InDomainMin(getScoreVars(triple.getSnd(), irSolution)),
+                objective.isMaximize()
+                ? IntStrategyFactory.firstFail_InDomainMax(objectiveVars)
+                : IntStrategyFactory.firstFail_InDomainMin(objectiveVars),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-        return new ClaferOptimizer(solver, solution, Objective.Minimize, irSolution.getIntVar(triple.getThd()));
+        return new ClaferOptimizer(solver, solution, objective.isMaximize(), objectiveVar);
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope) {
@@ -254,6 +224,8 @@ public class ClaferCompiler {
             }
         }
         solver.getInternalSolver().getSearchLoop().plugSearchMonitor(new IMonitorSolution() {
+            private static final long serialVersionUID = 1L;
+
             @Override
             public void onSolution() {
                 List<Constraint> constraints = new ArrayList<Constraint>();

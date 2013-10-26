@@ -33,6 +33,20 @@ public class AstGlobal implements AstSetExpr {
         return visitor.visit(this, a);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AstGlobal) {
+            AstGlobal other = (AstGlobal) obj;
+            return type.equals(other.getType());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return type.hashCode() + 91;
+    }
+
     /**
      * {@inheritDoc}
      */

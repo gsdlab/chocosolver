@@ -17,6 +17,7 @@ import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
+import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
 import org.clafer.scope.Scope;
 
@@ -28,6 +29,7 @@ public class Analysis {
 
     private final AstModel model;
     private Scope scope;
+    private List<Objective> objectives;
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
     private final List<AstConcreteClafer> concreteClafers;
@@ -45,60 +47,30 @@ public class Analysis {
     private Map<AstExpr, Type> typeMap;
 
     Analysis(AstModel model, Scope scope) {
-        this(model, scope,
+        this(model, scope, Collections.<Objective>emptyList());
+    }
+
+    Analysis(AstModel model, Scope scope, List<Objective> objectives) {
+        this(model, scope, objectives,
                 AstUtil.getAbstractClafersInSubOrder(model),
                 AstUtil.getConcreteClafers(model),
                 AstUtil.getClafersInParentAndSubOrder(model));
     }
 
     Analysis(AstModel model, Scope scope,
+            List<Objective> objectives,
             List<AstAbstractClafer> abstractClafers,
             List<AstConcreteClafer> concreteClafers,
             List<Set<AstClafer>> clafersInParentAndSubOrder) {
-        this(model, scope, append(abstractClafers, concreteClafers), abstractClafers, concreteClafers, clafersInParentAndSubOrder);
-    }
-
-    Analysis(AstModel model, Scope scope,
-            List<AstClafer> clafers,
-            List<AstAbstractClafer> abstractClafers,
-            List<AstConcreteClafer> concreteClafers,
-            List<Set<AstClafer>> clafersInParentAndSubOrder) {
-        this(model, scope, AstUtil.getClafers(model), abstractClafers, concreteClafers, clafersInParentAndSubOrder, AstUtil.getNestedConstraints(model), buildCardMap(clafers), null, null, null, null, null, null, null, null, null);
-    }
-
-    Analysis(AstModel model, Scope scope,
-            List<AstClafer> clafers,
-            List<AstAbstractClafer> abstractClafers,
-            List<AstConcreteClafer> concreteClafers,
-            List<Set<AstClafer>> clafersInParentAndSubOrder,
-            List<AstConstraint> constraints,
-            Map<AstConcreteClafer, Card> cardMap,
-            Map<AstClafer, Card> globalCardMap,
-            Map<AstClafer, Format> formatMap,
-            Map<AstAbstractClafer, Offsets> offsetMap,
-            Map<AstClafer, PartialSolution> partialSolutionMap,
-            Map<AstRef, int[][]> partialIntsMap,
-            Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap,
-            Map<AstRef, int[]> breakableRefsMap,
-            Map<AstClafer, AstRef[]> breakableTargetsMap,
-            Map<AstExpr, Type> typeMap) {
         this.model = model;
         this.scope = scope;
-        this.clafers = clafers;
+        this.objectives = objectives;
+        this.clafers = append(abstractClafers, concreteClafers);
         this.abstractClafers = abstractClafers;
         this.concreteClafers = concreteClafers;
         this.clafersInParentAndSubOrder = clafersInParentAndSubOrder;
-        this.constraints = constraints;
-        this.cardMap = cardMap;
-        this.globalCardMap = globalCardMap;
-        this.formatMap = formatMap;
-        this.offsetMap = offsetMap;
-        this.partialSolutionMap = partialSolutionMap;
-        this.partialIntsMap = partialIntsMap;
-        this.breakableChildrenMap = breakableChildrenMap;
-        this.breakableRefsMap = breakableRefsMap;
-        this.breakableTargetsMap = breakableTargetsMap;
-        this.typeMap = typeMap;
+        this.constraints = AstUtil.getNestedConstraints(model);
+        this.cardMap = buildCardMap(clafers);
     }
 
     private static Map<AstConcreteClafer, Card> buildCardMap(List<AstClafer> clafers) {
@@ -120,7 +92,11 @@ public class Analysis {
     }
 
     public static Analysis analyze(AstModel model, Scopable scope, Analyzer... analyzers) {
-        Analysis analysis = new Analysis(model, scope.toScope());
+        return analyze(model, scope, Collections.<Objective>emptyList(), analyzers);
+    }
+
+    public static Analysis analyze(AstModel model, Scopable scope, List<Objective> objectives, Analyzer... analyzers) {
+        Analysis analysis = new Analysis(model, scope.toScope(), objectives);
         for (Analyzer analyzer : analyzers) {
             analysis = analyzer.analyze(analysis);
         }
@@ -165,6 +141,15 @@ public class Analysis {
 
     public Analysis setScope(Scope scope) {
         this.scope = scope;
+        return this;
+    }
+
+    public List<Objective> getObjectives() {
+        return Collections.unmodifiableList(objectives);
+    }
+
+    public Analysis setObjectives(List<Objective> objectives) {
+        this.objectives = objectives;
         return this;
     }
 

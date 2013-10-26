@@ -34,7 +34,6 @@ public class ArithmeticTest {
         feature.addConstraint(equal(add(joinRef(join($this(), cost)), constant(3)), constant(5)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-10).intHigh(10));
-        
         int count = 0;
         while (solver.find()) {
             InstanceModel instance = solver.instance();
@@ -183,6 +182,96 @@ public class ArithmeticTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-3).intHigh(3));
         assertEquals(7, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 2..3
+     *     B ->> Int 2
+     *     total -> int
+     *     [this.total.ref = sum(this.B)]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSum() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *       
+         * solutions = genAs 2 ++ genAs 3
+         *  
+         * genAs n = nub $ map sort $ replicateM n genA
+         *  
+         * genA = do
+         *     b1 <- [-2..2]
+         *     b2 <- [b1..2]
+         *     totalCost <- [-2..2]
+         *     guard $ b1 + b2 == totalCost
+         *     return (b1, b2, totalCost)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(2, 3);
+        AstConcreteClafer b = a.addChild("B").refTo(IntType).withCard(2, 2);
+        AstConcreteClafer total = a.addChild("total").refToUnique(IntType).withCard(Mandatory);
+        a.addConstraint(equal(joinRef(join($this(), total)), sum(join($this(), b))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(6).intLow(-2).intHigh(2));
+        int count = 0;
+        while (solver.find()) {
+            for (InstanceClafer ai : solver.instance().getTopClafers(a)) {
+                int sum = 0;
+                for (InstanceClafer bi : ai.getChildren(b)) {
+                    sum += bi.getRef().getValue();
+                }
+                for (InstanceClafer ti : ai.getChildren(total)) {
+                    assertEquals(sum, ti.getRef().getValue());
+                }
+            }
+            count++;
+        }
+        assertEquals(352, count);
+    }
+
+    /**
+     * <pre>
+     * Feature
+     *     Cost -> Int
+     * A : Feature 2
+     *     [this.Cost.ref = 3]
+     * B : Feature 2
+     *     [this.Cost.ref = 2]
+     * C : Feature
+     *     [this.Cost.ref = 3]
+     *
+     * totalCost -> Int
+     *     [this.ref = sum (Feature.Cost)]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSumGlobal() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstract("Feature");
+        AstConcreteClafer cost = feature.addChild("Cost").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer a = model.addChild("A").extending(feature).withCard(2, 2);
+        a.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
+        AstConcreteClafer b = model.addChild("B").extending(feature).withCard(2, 2);
+        b.addConstraint(equal(joinRef(join($this(), cost)), constant(2)));
+        AstConcreteClafer c = model.addChild("C").extending(feature).withCard(Mandatory);
+        c.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
+        AstConcreteClafer totalCost = model.addChild("totalCost").refToUnique(IntType).withCard(Mandatory);
+        totalCost.addConstraint(equal(joinRef($this()), sum(join(global(feature), cost))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5));
+        int count = 0;
+        while (solver.find()) {
+            for (InstanceClafer tc : solver.instance().getTopClafers(totalCost)) {
+                assertEquals(13, tc.getRef().getValue());
+            }
+            count++;
+        }
+        assertEquals(1, count);
     }
 
     /**

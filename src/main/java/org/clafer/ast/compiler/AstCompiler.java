@@ -2,6 +2,7 @@ package org.clafer.ast.compiler;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.AstConstraint;
 import java.util.Set;
@@ -26,6 +27,7 @@ import org.clafer.common.Util;
 import org.clafer.ir.IrBoolVar;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,7 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.Card;
@@ -71,6 +74,7 @@ import org.clafer.ast.analysis.Type;
 import org.clafer.ast.analysis.TypeAnalyzer;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
+import org.clafer.objective.Objective;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
 import org.clafer.graph.GraphUtil;
@@ -108,7 +112,11 @@ public class AstCompiler {
     private final boolean fullSymmetryBreaking;
 
     private AstCompiler(AstModel model, Scope scope, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
-        this.analysis = Analysis.analyze(model, scope, analyzers);
+        this(model, scope, Collections.<Objective>emptyList(), module, analyzers, fullSymmetryBreaking);
+    }
+
+    private AstCompiler(AstModel model, Scope scope, List<Objective> objectives, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        this.analysis = Analysis.analyze(model, scope, objectives, analyzers);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
@@ -122,13 +130,14 @@ public class AstCompiler {
         return compiler.compile();
     }
 
-    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out, boolean fullSymmetryBreaking) {
+    public static AstSolutionMap compile(AstModel in, Scope scope, Objective objective, IrModule out, boolean fullSymmetryBreaking) {
         return compile(in, scope, objective, out, DefaultAnalyzers, fullSymmetryBreaking);
     }
 
-    public static Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstModel in, Scope scope, AstRef objective, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
-        AstCompiler compiler = new AstCompiler(in, scope, out, analyzers, fullSymmetryBreaking);
-        return compiler.compile(objective);
+    public static AstSolutionMap compile(AstModel in, Scope scope, Objective objective, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        AstCompiler compiler = new AstCompiler(in, scope, Collections.singletonList(objective),
+                out, analyzers, fullSymmetryBreaking);
+        return compiler.compile();
     }
 
     /**
@@ -177,31 +186,19 @@ public class AstCompiler {
 
     private AstSolutionMap compile() {
         Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> softVarPairs = doCompile();
-        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
-                softVarPairs.getFst(), softVarPairs.getSnd(), analysis);
-    }
-
-    private Triple<AstSolutionMap, IrIntVar[], IrIntVar> compile(AstRef objective) {
-        Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> softVarPairs = doCompile();
-
-        IrBoolExpr[] members = memberships.get(objective.getSourceType());
-        IrIntVar[] refs = refPointers.get(objective);
-        assert members.length == refs.length;
-
-        IrIntVar[] score = new IrIntVar[refs.length];
-        for (int i = 0; i < members.length; i++) {
-            score[i] = domainInt("Score@" + i, IrUtil.union(ZeroDomain, refs[i].getDomain()));
-            module.addConstraint(ifThenElse(members[i],
-                    equal(score[i], refs[i]), equal(score[i], 0)));
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
+        TIntObjectMap<IrIntVar> objectiveVars = new TIntObjectHashMap<IrIntVar>();
+        for (Objective objective : getObjectives()) {
+            IrIntExpr objectiveExpr = expressionCompiler.asInt(
+                    expressionCompiler.compile(objective.getExpr()));
+            IrIntVar objectiveVar = domainInt("objective" + objective.getId(),
+                    objectiveExpr.getDomain());
+            module.addConstraint(equal(objectiveVar, objectiveExpr));
+            objectiveVars.put(objective.getId(), objectiveVar);
         }
-        IrIntExpr sum = add(score);
-        IrIntVar sumScore = domainInt("SumScore@" + objective, sum.getDomain());
-        module.addConstraint(equal(sumScore, sum));
-
-        return new Triple<AstSolutionMap, IrIntVar[], IrIntVar>(
-                new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
-                softVarPairs.getFst(), softVarPairs.getSnd(), analysis),
-                score, sumScore);
+        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
+                softVarPairs.getFst(), softVarPairs.getSnd(),
+                objectiveVars, analysis);
     }
 
     private Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> doCompile() {
@@ -970,6 +967,41 @@ public class AstCompiler {
         }
 
         @Override
+        public IrExpr visit(AstSum ast, Void a) {
+            AstSetExpr set = ast.getSet();
+            AstClafer setType = getCommonSupertype(set);
+            assert setType.hasRef();
+            IrIntVar[] refs = refPointers.get(setType.getRef());
+
+            IrBoolExpr[] members;
+            if (ast.getSet() instanceof AstGlobal) {
+                members = memberships.get(setType);
+            } else {
+                IrExpr $set = compile(ast.getSet());
+                if (set instanceof IrIntExpr) {
+                    IrIntExpr intSet = (IrIntExpr) set;
+                    return element(refs, intSet);
+                }
+                IrSetExpr setSet = (IrSetExpr) $set;
+                assert setSet.getEnv().getLowBound() >= 0;
+                members = new IrBoolExpr[setSet.getEnv().getHighBound() + 1];
+                for (int i = 0; i < members.length; i++) {
+                    members[i] = bool("SumMember@" + i);
+                }
+                module.addConstraint(boolChannel(members, setSet));
+            }
+            assert members.length <= refs.length;
+
+            IrIntVar[] score = new IrIntVar[members.length];
+            for (int i = 0; i < members.length; i++) {
+                score[i] = domainInt("Score@" + i, IrUtil.union(ZeroDomain, refs[i].getDomain()));
+                module.addConstraint(ifThenElse(members[i],
+                        equal(score[i], refs[i]), equal(score[i], 0)));
+            }
+            return add(score);
+        }
+
+        @Override
         public IrExpr visit(AstBoolArithm ast, Void a) {
             IrBoolExpr[] operands = compile(ast.getOperands());
             switch (ast.getOp()) {
@@ -1380,5 +1412,9 @@ public class AstCompiler {
 
     private List<AstConstraint> getConstraints() {
         return analysis.getConstraints();
+    }
+
+    private List<Objective> getObjectives() {
+        return analysis.getObjectives();
     }
 }

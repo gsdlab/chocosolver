@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import gnu.trove.map.TIntObjectMap;
 import java.util.Map;
 import org.clafer.common.Check;
 import org.clafer.ast.analysis.Analysis;
@@ -9,6 +10,7 @@ import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.collection.Pair;
+import org.clafer.objective.Objective;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
@@ -24,6 +26,7 @@ public class AstSolutionMap {
     private final Map<AstRef, IrIntVar[]> refVars;
     private final Pair<AstConstraint, IrBoolVar>[] softVars;
     private final IrIntVar sumSoftVars;
+    private final TIntObjectMap<IrIntVar> objectiveVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
@@ -31,12 +34,14 @@ public class AstSolutionMap {
             Map<AstRef, IrIntVar[]> refVars,
             Pair<AstConstraint, IrBoolVar>[] softVars,
             IrIntVar sumSoftVars,
+            TIntObjectMap<IrIntVar> objectiveVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
         this.siblingVars = Check.notNull(sibling);
         this.refVars = Check.notNull(refVars);
         this.softVars = Check.noNulls(softVars);
         this.sumSoftVars = Check.notNull(sumSoftVars);
+        this.objectiveVars = Check.notNull(objectiveVars);
         this.analysis = Check.notNull(analysis);
     }
 
@@ -72,6 +77,16 @@ public class AstSolutionMap {
      */
     public IrIntVar getSumSoftVars() {
         return sumSoftVars;
+    }
+
+    /**
+     * Returns the variable equal to the objective.
+     *
+     * @param objective the objective
+     * @return the variable equal to the objective
+     */
+    public IrIntVar getObjectiveVar(Objective objective) {
+        return notNull(objective + " not a compiled objective", objectiveVars.get(objective.getId()));
     }
 
     private static <T> T notNull(String message, T t) {

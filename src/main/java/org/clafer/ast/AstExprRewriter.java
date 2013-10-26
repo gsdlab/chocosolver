@@ -94,6 +94,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstSum ast, T a) {
+        return sum(rewrite(ast.getSet(), a));
+    }
+
+    @Override
     public AstExpr visit(AstBoolArithm ast, T a) {
         return arithm(ast.getOp(), rewrite(ast.getOperands(), a));
     }
