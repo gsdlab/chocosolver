@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import org.clafer.collection.Pair;
 import util.iterators.IntIterator;
 
 /**
@@ -344,40 +343,6 @@ public class Util {
         int[] r = Arrays.copyOf(array, array.length + 1);
         r[array.length] = item;
         return r;
-    }
-
-    /**
-     * Returns the first element of the tuples in the same order. Equivalent to
-     * the Haskell code {@code map fst}.
-     *
-     * @param <A> the type of first element in the pairs
-     * @param <B> the type of second element in the pairs
-     * @param pairs the tuples
-     * @return the first element of the tuples
-     */
-    public static <A, B> List<A> mapFst(List<Pair<A, B>> pairs) {
-        List<A> fsts = new ArrayList<A>(pairs.size());
-        for (Pair<A, ?> pair : pairs) {
-            fsts.add(pair.getFst());
-        }
-        return fsts;
-    }
-
-    /**
-     * Returns the second element of the tuples in the same order. Equivalent to
-     * the Haskell code {@code map snd}.
-     *
-     * @param <A> the type of first element in the pairs
-     * @param <B> the type of second element in the pairs
-     * @param pairs the tuples
-     * @return the second element of the tuples
-     */
-    public static <A, B> List<B> mapSnd(List<Pair<A, B>> pairs) {
-        List<B> fsts = new ArrayList<B>(pairs.size());
-        for (Pair<?, B> pair : pairs) {
-            fsts.add(pair.getSnd());
-        }
-        return fsts;
     }
 
     /**

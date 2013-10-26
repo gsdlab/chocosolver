@@ -185,23 +185,6 @@ public class AstCompiler {
     }
 
     private AstSolutionMap compile() {
-        Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> softVarPairs = doCompile();
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
-        TIntObjectMap<IrIntVar> objectiveVars = new TIntObjectHashMap<IrIntVar>();
-        for (Objective objective : getObjectives()) {
-            IrIntExpr objectiveExpr = expressionCompiler.asInt(
-                    expressionCompiler.compile(objective.getExpr()));
-            IrIntVar objectiveVar = domainInt("objective" + objective.getId(),
-                    objectiveExpr.getDomain());
-            module.addConstraint(equal(objectiveVar, objectiveExpr));
-            objectiveVars.put(objective.getId(), objectiveVar);
-        }
-        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
-                softVarPairs.getFst(), softVarPairs.getSnd(),
-                objectiveVars, analysis);
-    }
-
-    private Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar> doCompile() {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
         siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
@@ -224,9 +207,7 @@ public class AstCompiler {
             constrainGroupCardinality(clafer);
         }
 
-        // Map the identifiers to the ORIGINAL constraints.
-        TIntObjectMap<AstConstraint> constraintMap = AstUtil.getConstraintMap(analysis.getModel());
-        List<Pair<AstConstraint, IrBoolVar>> softVars = new ArrayList<Pair<AstConstraint, IrBoolVar>>();
+        TIntObjectMap<IrBoolVar> softVars = new TIntObjectHashMap<IrBoolVar>();
         for (AstConstraint constraint : getConstraints()) {
             AstClafer clafer = constraint.getContext();
             int scope = getScope(clafer);
@@ -237,18 +218,17 @@ public class AstCompiler {
                     module.addConstraint(implies(memberships.get(clafer)[j], thisConstraint));
                 }
             } else {
-                IrBoolVar soft = bool(constraint.toString());
-                AstConstraint originalConstraint = constraintMap.get(constraint.getId());
-                softVars.add(new Pair<AstConstraint, IrBoolVar>(originalConstraint, soft));
+                IrBoolVar softVar = bool(constraint.toString());
+                softVars.put(constraint.getId(), softVar);
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
                     IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
-                    module.addConstraint(ifOnlyIf(soft, implies(memberships.get(clafer)[j], thisConstraint)));
+                    module.addConstraint(ifOnlyIf(softVar, implies(memberships.get(clafer)[j], thisConstraint)));
                 }
-                module.addVariable(soft);
+                module.addVariable(softVar);
             }
         }
-        IrIntExpr softSum = add(Pair.mapSnd(softVars));
+        IrIntExpr softSum = add(softVars.valueCollection());
         IrIntVar sumSoftVars = domainInt("SumSoftVar", softSum.getDomain());
         module.addConstraint(equal(sumSoftVars, softSum));
 
@@ -262,9 +242,20 @@ public class AstCompiler {
                 module.addVariable(ref);
             }
         }
-        @SuppressWarnings("unchecked")
-        Pair<AstConstraint, IrBoolVar>[] softVarPairs = softVars.toArray(new Pair[softVars.size()]);
-        return new Pair<Pair<AstConstraint, IrBoolVar>[], IrIntVar>(softVarPairs, sumSoftVars);
+
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
+        TIntObjectMap<IrIntVar> objectiveVars = new TIntObjectHashMap<IrIntVar>();
+        for (Objective objective : getObjectives()) {
+            IrIntExpr objectiveExpr = expressionCompiler.asInt(
+                    expressionCompiler.compile(objective.getExpr()));
+            IrIntVar objectiveVar = domainInt("objective" + objective.getId(),
+                    objectiveExpr.getDomain());
+            module.addConstraint(equal(objectiveVar, objectiveExpr));
+            objectiveVars.put(objective.getId(), objectiveVar);
+        }
+        return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
+                softVars, sumSoftVars,
+                objectiveVars, analysis);
     }
 
     private void initConcrete(AstConcreteClafer clafer) {
@@ -1154,7 +1145,7 @@ public class AstCompiler {
                             ker.contains(i) ? True
                             : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
                 }
-                module.addConstraint(boolChannel(Util.mapSnd(Arrays.asList(members)), setBody));
+                module.addConstraint(boolChannel(Pair.mapSnd(members), setBody));
                 Pair<IrIntExpr, IrBoolExpr>[][] sequence = decl.isDisjoint() ? Util.permutations(members,
                         decl.getLocals().length) : Util.sequence(members, decl.getLocals().length);
 

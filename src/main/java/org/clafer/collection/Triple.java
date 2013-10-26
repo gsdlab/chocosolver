@@ -1,5 +1,6 @@
 package org.clafer.collection;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.common.Check;
@@ -58,6 +59,16 @@ public class Triple<A, B, C> {
         return new Pair<B, C>(snd, thd);
     }
 
+    /**
+     * Returns the first element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map fst}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param <C> the type of third element in the pairs
+     * @param triples the tuples
+     * @return the first element of the tuples
+     */
     public static <A, B, C> List<A> mapFst(List<Triple<A, B, C>> triples) {
         List<A> fsts = new ArrayList<A>(triples.size());
         for (Triple<A, B, C> triple : triples) {
@@ -66,6 +77,38 @@ public class Triple<A, B, C> {
         return fsts;
     }
 
+    /**
+     * Returns the first element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map fst}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param <C> the type of third element in the pairs
+     * @param triples the tuples
+     * @param array the array to write to if the size is correct
+     * @return the first element of the tuples
+     */
+    public static <A, B, C> A[] mapFst(Triple<A, B, C>[] triples, A... array) {
+        @SuppressWarnings("unchecked")
+        A[] to = array.length == triples.length
+                ? array
+                : (A[]) Array.newInstance(array.getClass().getComponentType(), triples.length);
+        for (int i = 0; i < to.length; i++) {
+            to[i] = triples[i].getFst();
+        }
+        return to;
+    }
+
+    /**
+     * Returns the second element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map snd}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param <C> the type of third element in the pairs
+     * @param triples the tuples
+     * @return the second element of the tuples
+     */
     public static <A, B, C> List<B> mapSnd(List<Triple<A, B, C>> triples) {
         List<B> snds = new ArrayList<B>(triples.size());
         for (Triple<A, B, C> triple : triples) {
@@ -74,12 +117,66 @@ public class Triple<A, B, C> {
         return snds;
     }
 
-    public static <A, B, C> List<C> mapThd(List<Triple<A, B, C>> triples) {
-        List<C> snds = new ArrayList<C>(triples.size());
-        for (Triple<A, B, C> triple : triples) {
-            snds.add(triple.getThd());
+    /**
+     * Returns the second element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map snd}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param <C> the type of third element in the pairs
+     * @param triples the tuples
+     * @param array the array to write to if the size is correct
+     * @return the second element of the tuples
+     */
+    public static <A, B, C> B[] mapSnd(Triple<A, B, C>[] triples, B... array) {
+        @SuppressWarnings("unchecked")
+        B[] to = array.length == triples.length
+                ? array
+                : (B[]) Array.newInstance(array.getClass().getComponentType(), triples.length);
+        for (int i = 0; i < to.length; i++) {
+            to[i] = triples[i].getSnd();
         }
-        return snds;
+        return to;
+    }
+
+    /**
+     * Returns the third element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map thd}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param <C> the type of third element in the pairs
+     * @param triples the tuples
+     * @return the third element of the tuples
+     */
+    public static <A, B, C> List<C> mapThd(List<Triple<A, B, C>> triples) {
+        List<C> thds = new ArrayList<C>(triples.size());
+        for (Triple<A, B, C> triple : triples) {
+            thds.add(triple.getThd());
+        }
+        return thds;
+    }
+
+    /**
+     * Returns the third element of the tuples in the same order. Equivalent to
+     * the Haskell code {@code map thd}.
+     *
+     * @param <A> the type of first element in the pairs
+     * @param <B> the type of second element in the pairs
+     * @param <C> the type of third element in the pairs
+     * @param triples the tuples
+     * @param array the array to write to if the size is correct
+     * @return the third element of the tuples
+     */
+    public static <A, B, C> C[] mapThd(Triple<A, B, C>[] triples, C... array) {
+        @SuppressWarnings("unchecked")
+        C[] to = array.length == triples.length
+                ? array
+                : (C[]) Array.newInstance(array.getClass().getComponentType(), triples.length);
+        for (int i = 0; i < to.length; i++) {
+            to[i] = triples[i].getThd();
+        }
+        return to;
     }
 
     @Override

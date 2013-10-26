@@ -175,7 +175,6 @@ public class IrCompiler {
             }
         }
         return new IrSolutionMap(
-                solver,
                 coalescedIntVars, intVarMap,
                 coalescedSetVars, setVarMap);
     }

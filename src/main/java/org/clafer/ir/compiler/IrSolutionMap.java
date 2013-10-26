@@ -8,7 +8,6 @@ import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
-import solver.Solver;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -25,19 +24,16 @@ import solver.variables.SetVar;
  */
 public class IrSolutionMap {
 
-    private final Solver solver;
-    public final Map<IrIntVar, IrIntVar> coalescedIntVars;
-    public final Map<IrIntVar, IntVar> intVars;
+    private final Map<IrIntVar, IrIntVar> coalescedIntVars;
+    private final Map<IrIntVar, IntVar> intVars;
     private final Map<IrSetVar, IrSetVar> coalescedSetVars;
     private final Map<IrSetVar, SetVar> setVars;
 
     IrSolutionMap(
-            Solver solver,
             Map<IrIntVar, IrIntVar> coalescedIntVars,
             Map<IrIntVar, IntVar> intVars,
             Map<IrSetVar, IrSetVar> coalescedSetVars,
             Map<IrSetVar, SetVar> setVars) {
-        this.solver = solver;
         this.coalescedIntVars = coalescedIntVars;
         this.intVars = intVars;
         this.coalescedSetVars = coalescedSetVars;

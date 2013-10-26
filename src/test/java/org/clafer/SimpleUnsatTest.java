@@ -71,7 +71,7 @@ public class SimpleUnsatTest {
         AstConstraint c4 = model.addConstraint(some(witch));
         AstConstraint c5 = model.addConstraint(some(mob));
 
-        assertEquals(set(c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
+        assertEquals(set(c1), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
                 .minUnsat().getFst());
         assertEquals(set(c1, c2, c3, c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
                 .unsatCore());
@@ -82,6 +82,7 @@ public class SimpleUnsatTest {
      * A -> integer ?
      * B ?
      * C ?
+     * [A.ref = 2]
      * [A & !B]
      * [A & !C]
      * [!A]
@@ -94,20 +95,61 @@ public class SimpleUnsatTest {
         AstConcreteClafer a = model.addChild("A").withCard(0, 1).refTo(IntType);
         AstConcreteClafer b = model.addChild("B").withCard(0, 1);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
-        model.addConstraint(equal(joinRef(global(a)), constant(2)));
-        model.addConstraint(and(some(a), none(b)));
-        model.addConstraint(and(some(a), none(c)));
-        AstConstraint unsatConstraint = model.addConstraint(none(a));
+        AstConstraint c1 = model.addConstraint(equal(joinRef(global(a)), constant(2)));
+        AstConstraint c2 = model.addConstraint(and(some(a), none(b)));
+        AstConstraint c3 = model.addConstraint(and(some(a), none(c)));
+        AstConstraint c4 = model.addConstraint(none(a));
 
         ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
         Pair<Set<AstConstraint>, InstanceModel> unsatInstance = unsat.minUnsat();
 
         assertEquals(1, unsatInstance.getFst().size());
-        assertEquals(unsatConstraint, unsatInstance.getFst().iterator().next());
+        assertEquals(c4, unsatInstance.getFst().iterator().next());
         assertEquals(1, unsatInstance.getSnd().getTopClafers().length);
         assertEquals(a, unsatInstance.getSnd().getTopClafers()[0].getType());
         assertEquals(0, unsatInstance.getSnd().getTopClafers()[0].getId());
         assertEquals(IntType, unsatInstance.getSnd().getTopClafers()[0].getRef().getType());
         assertEquals(2, unsatInstance.getSnd().getTopClafers()[0].getRef().getValue());
+
+        assertEquals(set(c1, c2, c3, c4),
+                ClaferCompiler.compileUnsat(model, Scope.defaultScope(1)).unsatCore());
+    }
+
+    /**
+     * <pre>
+     * A
+     * B -> A 2
+     * [one B]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNoUnsat() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 2);
+        model.addConstraint(one(b));
+
+        assertEquals(null, ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).minUnsat());
+        assertEquals(null, ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).unsatCore());
+    }
+
+    /**
+     * <pre>
+     * A
+     * B -> A 1..2
+     * [one B]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSat() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(1, 2);
+        model.addConstraint(one(b));
+
+        assertEquals(set(), ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).minUnsat().getFst());
+        assertEquals(set(), ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).unsatCore());
     }
 }

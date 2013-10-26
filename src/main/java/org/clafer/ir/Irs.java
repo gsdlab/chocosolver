@@ -707,10 +707,6 @@ public class Irs {
         return new IrSubsetEq(subset, superset, BoolDomain);
     }
 
-    public static IrBoolExpr boolChannel(Collection<? extends IrBoolExpr> bools, IrSetExpr set) {
-        return boolChannel(bools.toArray(new IrBoolExpr[bools.size()]), set);
-    }
-
     public static IrBoolExpr boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
         if (set.getEnv().isEmpty()
                 || (set.getEnv().getLowBound() >= 0 && set.getEnv().getHighBound() < bools.length)) {

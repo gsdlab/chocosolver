@@ -154,7 +154,7 @@ ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
 // Print the Min-Unsat and near-miss example.
 System.out.println(unsat.minUnsat());
 ```
-The above code will print two things. First it will print "#(Witch) >= 1" which is the constraint that is unsatisfiable in the model, ie. the last constraint that enforces there to be some witch. Next it will print the near-miss example "Mob#0". What this means is that removing the "some(Witch)" constraint would make the model satisfiable and an example of a solution (after removing the constraint), is the instance with exactly one mob and nothing else.
+The above code will print two things. First it will print "#(Witch) >= 1" which is the constraint that is unsatisfiable in the model, ie. the last constraint that enforces there to be some witch. Next it will print the near-miss example "Mob#0". What this means is that removing the "some(Witch)" constraint would make the model satisfiable and an example of a solution (after removing the constraint), is the instance with exactly one mob and nothing else. For this example, the min-unsat is not unique, so it is possible that the library may report another set of constraints although the set of constraints is guaranteed to have a size of one.
 
 Finding Unsat-Core
 ----------------------

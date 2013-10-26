@@ -7,7 +7,6 @@ import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.ast.AstConstraint;
 import org.clafer.scope.Scope;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
@@ -17,13 +16,11 @@ import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Either;
-import org.clafer.collection.Pair;
 import org.clafer.common.Util;
 import org.clafer.objective.Objective;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
-import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
@@ -41,7 +38,6 @@ import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.AbstractStrategy;
 import solver.search.strategy.strategy.StrategiesSequencer;
-import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 
@@ -170,26 +166,11 @@ public class ClaferCompiler {
         IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        Pair<AstConstraint, IrBoolVar>[] irSoftVarPairs = astSolution.getSoftVars();
-        @SuppressWarnings("unchecked")
-        List<BoolVar> softVars = new ArrayList<BoolVar>(irSoftVarPairs.length);
-        @SuppressWarnings("unchecked")
-        Pair<AstConstraint, Either<Boolean, BoolVar>>[] softVarPairs = new Pair[irSoftVarPairs.length];
-        for (int i = 0; i < irSoftVarPairs.length; i++) {
-            Either<Boolean, BoolVar> softVar = irSolution.getBoolVar(irSoftVarPairs[i].getSnd());
-            softVarPairs[i] = new Pair<AstConstraint, Either<Boolean, BoolVar>>(
-                    irSoftVarPairs[i].getFst(), softVar);
-            if (softVar.isRight()) {
-                softVars.add(softVar.getRight());
-            }
-        }
-        Either<Integer, IntVar> sum = irSolution.getIntVar(astSolution.getSumSoftVars());
-
         solver.set(new StrategiesSequencer(solver.getEnvironment(),
-                IntStrategyFactory.firstFail_InDomainMax(softVars.toArray(new BoolVar[softVars.size()])),
+                IntStrategyFactory.firstFail_InDomainMax(Either.filterRights(irSolution.getBoolVars(astSolution.getSoftVars()))),
                 setStrategy(getSetVars(in, solution), options),
                 IntStrategyFactory.firstFail_InDomainMin(getIntVars(in, solution))));
-        return new ClaferUnsat(solver, solution, softVarPairs, sum);
+        return new ClaferUnsat(solver, solution);
     }
 
     public static ClaferSolver compilePartial(AstModel in, ScopeBuilder scope, AstConcreteClafer... concretize) {
