@@ -122,7 +122,7 @@ public class SetSumTest extends ConstraintTest {
         assertEquals(2, count);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSumKnown() {
         Solver solver = new Solver();
 

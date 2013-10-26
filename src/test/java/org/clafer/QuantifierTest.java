@@ -27,7 +27,7 @@ public class QuantifierTest {
      * [all a : Backup ++ Firewall | a.Cost.ref = 1]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testAll() {
         /*
          * import Control.Monad
@@ -80,7 +80,7 @@ public class QuantifierTest {
      * [lone a : Backup ++ Firewall | a.Cost.ref = 2]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testLone() {
         /*
          * import Control.Monad
@@ -133,7 +133,7 @@ public class QuantifierTest {
      * [no a : Backup ++ Firewall | a.Cost.ref = 2]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testNone() {
         /*
          * import Control.Monad
@@ -186,7 +186,7 @@ public class QuantifierTest {
      * [one a : Backup ++ Firewall | a.Cost.ref = 2]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testOne() {
         /*
          * import Control.Monad
@@ -239,7 +239,7 @@ public class QuantifierTest {
      * [some a : Backup ++ Firewall | a.Cost.ref = 2]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testSome() {
         /*
          * import Control.Monad

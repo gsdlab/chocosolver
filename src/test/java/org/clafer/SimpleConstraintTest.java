@@ -22,7 +22,7 @@ public class SimpleConstraintTest {
      * [Age.ref = 3]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testGlobal() {
         AstModel model = newModel();
 
@@ -41,7 +41,7 @@ public class SimpleConstraintTest {
      *     [#this.Hand.Finger = 3]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testVariableJoin() {
         AstModel model = newModel();
 
@@ -60,7 +60,7 @@ public class SimpleConstraintTest {
      *     [this.ref = 3]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testFixedJoinRef() {
         AstModel model = newModel();
 
@@ -81,7 +81,7 @@ public class SimpleConstraintTest {
      *     [this.Cost.ref = 5]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testFixedJoinAndJoinRefOverAbstract() {
         AstModel model = newModel();
 
@@ -106,7 +106,7 @@ public class SimpleConstraintTest {
      *     [this.Cost.ref = 5]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testMaybeJoinAndJoinRefOverAbstract() {
         AstModel model = newModel();
 
@@ -132,7 +132,7 @@ public class SimpleConstraintTest {
      *     [this.Cost.ref = 5]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testFixedJoinAndJoinRefOverMultipleAbstract() {
         AstModel model = newModel();
 
@@ -159,7 +159,7 @@ public class SimpleConstraintTest {
      *     [this.Cost.ref = 5]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testMaybeJoinAndJoinRefOverMultipleAbstract() {
         AstModel model = newModel();
 
@@ -190,7 +190,7 @@ public class SimpleConstraintTest {
      *     [this.Software.Cost.ref = 3]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testVariableJoinAndJoinRefOverMultipleAbstract() {
         AstModel model = newModel();
 
@@ -217,7 +217,7 @@ public class SimpleConstraintTest {
      *     [this.Cost.ref = 3]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testMaybeJoinRef() {
         AstModel model = newModel();
 
@@ -236,7 +236,7 @@ public class SimpleConstraintTest {
      *     [this.Cost.ref = 5]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testJoinRefSingleValue() {
         AstModel model = newModel();
 
@@ -255,7 +255,7 @@ public class SimpleConstraintTest {
      *     [this.Cost.ref = 5 ++ 2 ++ 3 ++ 4]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testJoinRefMultiValue() {
         AstModel model = newModel();
 
@@ -276,7 +276,7 @@ public class SimpleConstraintTest {
      *     [this.ref = 5]
      * </pre>
      */
-    @Test
+    @Test(timeout = 60000)
     public void testVariableJoinAbstractRef() {
         AstModel model = newModel();
 
