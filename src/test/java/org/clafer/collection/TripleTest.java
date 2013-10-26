@@ -1,5 +1,6 @@
 package org.clafer.collection;
 
+import java.util.Arrays;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -58,6 +59,36 @@ public class TripleTest {
         assertEquals(pair(2, 3), triple(1, 2, 3).getSndThd());
         assertEquals(pair(2, 3), triple(pair(1, 2), 3).getSndThd());
         assertEquals(pair(2, 3), triple(1, pair(2, 3)).getSndThd());
+    }
+
+    @Test
+    public void testMapFst() {
+        @SuppressWarnings("unchecked")
+        Triple<Integer, Integer, Integer>[] triples = new Triple[]{
+            triple(1, 3, 10), triple(2, 6, 9), triple(3, 9, 8)};
+        Integer[] fsts = new Integer[]{1, 2, 3};
+        assertArrayEquals(fsts, Triple.mapFst(triples));
+        assertEquals(Arrays.asList(fsts), Triple.mapFst(Arrays.asList(triples)));
+    }
+
+    @Test
+    public void testMapSnd() {
+        @SuppressWarnings("unchecked")
+        Triple<Integer, Integer, Integer>[] triples = new Triple[]{
+            triple(1, 3, 10), triple(2, 6, 9), triple(3, 9, 8)};
+        Integer[] fsts = new Integer[]{3, 6, 9};
+        assertArrayEquals(fsts, Triple.mapSnd(triples));
+        assertEquals(Arrays.asList(fsts), Triple.mapSnd(Arrays.asList(triples)));
+    }
+
+    @Test
+    public void testMapThd() {
+        @SuppressWarnings("unchecked")
+        Triple<Integer, Integer, Integer>[] triples = new Triple[]{
+            triple(1, 3, 10), triple(2, 6, 9), triple(3, 9, 8)};
+        Integer[] fsts = new Integer[]{10, 9, 8};
+        assertArrayEquals(fsts, Triple.mapThd(triples));
+        assertEquals(Arrays.asList(fsts), Triple.mapThd(Arrays.asList(triples)));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package org.clafer.collection;
 
+import java.util.Arrays;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -21,6 +22,24 @@ public class PairTest {
     @Test
     public void testGetSnd() {
         assertEquals(2, pair(1, 2).getSnd().intValue());
+    }
+
+    @Test
+    public void testMapFst() {
+        @SuppressWarnings("unchecked")
+        Pair<Integer, Integer>[] pairs = new Pair[]{pair(1, 3), pair(2, 6), pair(3, 9)};
+        Integer[] fsts = new Integer[]{1, 2, 3};
+        assertArrayEquals(fsts, Pair.mapFst(pairs));
+        assertEquals(Arrays.asList(fsts), Pair.mapFst(Arrays.asList(pairs)));
+    }
+
+    @Test
+    public void testMapSnd() {
+        @SuppressWarnings("unchecked")
+        Pair<Integer, Integer>[] pairs = new Pair[]{pair(1, 3), pair(2, 6), pair(3, 9)};
+        Integer[] fsts = new Integer[]{3, 6, 9};
+        assertArrayEquals(fsts, Pair.mapSnd(pairs));
+        assertEquals(Arrays.asList(fsts), Pair.mapSnd(Arrays.asList(pairs)));
     }
 
     @Test
