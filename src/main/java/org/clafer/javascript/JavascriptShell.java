@@ -207,7 +207,7 @@ public class JavascriptShell {
             throw new JavascriptException("Cannot maximize " + clafer + ".");
         }
         solver = ClaferCompiler.compile(getModel(), scope,
-                Objective.maximize(Asts.global(clafer)));
+                Objective.maximize(Asts.sum(Asts.global(clafer))));
         return solver.find() ? solver.instance() : null;
 
     }
@@ -223,7 +223,7 @@ public class JavascriptShell {
             throw new JavascriptException("Cannot minimize " + clafer + ".");
         }
         solver = ClaferCompiler.compile(getModel(), scope,
-                Objective.minimize(Asts.global(clafer)));
+                Objective.minimize(Asts.sum(Asts.global(clafer))));
         return solver.find() ? solver.instance() : null;
     }
 

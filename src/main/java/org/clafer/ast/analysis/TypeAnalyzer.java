@@ -107,6 +107,9 @@ public class TypeAnalyzer implements Analyzer {
         for (Objective objective : analysis.getObjectives()) {
             TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
             TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(objective.getExpr());
+            if (!(typedObjective.getCommonSupertype() instanceof AstIntClafer)) {
+                throw new TypeException("Cannot optimize on " + typedObjective.getType());
+            }
             typedObjectives.add(objective.withExpr(typedObjective.getExpr()));
         }
         return analysis.setTypeMap(typeMap)

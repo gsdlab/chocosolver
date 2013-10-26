@@ -409,4 +409,28 @@ public class FeatureModelTest {
         assertTrue(solver.find());
         assertEquals(-299, solver.instance().getFst().intValue());
     }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     cost -> int
+     *
+     * A : Feature
+     * B : Feature
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSumFeatureCost() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstract("Feature");
+        AstConcreteClafer cost = feature.addChild("cost").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer a = model.addChild("A").extending(feature).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").extending(feature).withCard(Mandatory);
+
+        ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(200)
+                .intLow(-8).intHigh(7), Objective.minimize(sum(global(cost))));
+        assertTrue(solver.find());
+        assertEquals(-16, solver.instance().getFst().intValue());
+    }
 }

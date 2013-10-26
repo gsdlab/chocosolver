@@ -248,7 +248,7 @@ public class AstCompiler {
         for (Objective objective : getObjectives()) {
             IrIntExpr objectiveExpr = expressionCompiler.asInt(
                     expressionCompiler.compile(objective.getExpr()));
-            IrIntVar objectiveVar = domainInt("objective" + objective.getId(),
+            IrIntVar objectiveVar = domainInt("Objective" + objective.getId(),
                     objectiveExpr.getDomain());
             module.addConstraint(equal(objectiveVar, objectiveExpr));
             objectiveVars.put(objective.getId(), objectiveVar);
@@ -985,7 +985,14 @@ public class AstCompiler {
 
             IrIntVar[] score = new IrIntVar[members.length];
             for (int i = 0; i < members.length; i++) {
-                score[i] = domainInt("Score@" + i, IrUtil.union(ZeroDomain, refs[i].getDomain()));
+                IrDomain domain = refs[i].getDomain();
+                int uninitializedRef = getUninitalizedRef(setType.getRef().getTargetType());
+                if (domain.contains(uninitializedRef)) {
+                    // Score's use 0 as the uninitialized value.
+                    domain = IrUtil.difference(domain, constantDomain(uninitializedRef));
+                }
+                domain = IrUtil.union(ZeroDomain, domain);
+                score[i] = domainInt("Score@" + i, domain);
                 module.addConstraint(ifThenElse(members[i],
                         equal(score[i], refs[i]), equal(score[i], 0)));
             }
