@@ -105,19 +105,19 @@ public static void main(String[] args) {
 
 Finding Optimal Instances
 -------------------------
-Optimizing on a single objective is supported.
+Optimizing on a single objective is supported. Suppose we wanted to optimize on the expression "sum time".
 ```java
-ClaferObjective solver = ClaferCompiler.compileMaximize(model, 
+ClaferOptimizer solver = ClaferCompiler.compile(model, 
     Scope.defaultScope(1).intLow(-16).intHigh(16), 
-    time.getRef());
+    Objective.maximize(sum(global(time))));
 while (solver.find)) {
     // The instances where time is maximal.
     System.out.println(solver.instance());
 }
 
-solver = ClaferCompiler.compileMinimize(model, 
+solver = ClaferCompiler.compile(model, 
     Scope.defaultScope(1).intLow(-16).intHigh(16), 
-    time.getRef());
+    Objective.minimize(sum(global(time))));
 while (solver.find()) {
     // The instances where time is minimal.
     System.out.println(solver.instance());
