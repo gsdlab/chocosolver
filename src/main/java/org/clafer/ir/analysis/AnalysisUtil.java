@@ -30,7 +30,7 @@ public class AnalysisUtil {
         return null;
     }
 
-    private static Pair<IrIntExpr, IrSetVar> getAssignCardinality(IrIntExpr left, IrIntExpr right) {
+    public static Pair<IrIntExpr, IrSetVar> getAssignCardinality(IrIntExpr left, IrIntExpr right) {
         Pair<IrIntExpr, IrSetVar> cardinality = getAssignCardinalityImpl(left, right);
         if (cardinality == null) {
             cardinality = getAssignCardinalityImpl(right, left);
