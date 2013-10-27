@@ -58,11 +58,17 @@ public class ClaferCompiler {
             for (AstClafer sub : abstractClafer.getSubs()) {
                 node.addNeighbour(dependency.getVertex(sub));
             }
+            if (abstractClafer.hasRef()) {
+                node.addNeighbour(dependency.getVertex(abstractClafer.getRef().getTargetType()));
+            }
         }
         for (AstConcreteClafer concreteClafer : AstUtil.getConcreteClafers(model)) {
             Vertex<AstClafer> node = dependency.getVertex(concreteClafer);
             if (concreteClafer.hasParent()) {
                 node.addNeighbour(dependency.getVertex(concreteClafer.getParent()));
+            }
+            if (concreteClafer.hasRef()) {
+                node.addNeighbour(dependency.getVertex(concreteClafer.getRef().getTargetType()));
             }
         }
         List<SetVar> vars = new ArrayList<SetVar>();

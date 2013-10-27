@@ -8,10 +8,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
-import org.clafer.graph.GraphUtil;
-import org.clafer.graph.KeyGraph;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
@@ -60,13 +59,13 @@ public class Coalescer {
     }
 
     public static Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesce(IrModule module) {
-        Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> graphs = findEquivalences(module.getConstraints());
-        KeyGraph<IrIntVar> intGraph = graphs.getFst();
-        KeyGraph<IrSetVar> setGraph = graphs.getSnd();
+        Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> graphs = findEquivalences(module.getConstraints());
+        DisjointSets<IrIntVar> intGraph = graphs.getFst();
+        DisjointSets<IrSetVar> setGraph = graphs.getSnd();
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<IrIntVar, IrIntVar>();
         Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<IrSetVar, IrSetVar>();
 
-        for (Set<IrIntVar> component : GraphUtil.computeStronglyConnectedComponents(intGraph)) {
+        for (Set<IrIntVar> component : intGraph.connectedComponents()) {
             if (component.size() > 1) {
                 Iterator<IrIntVar> iter = component.iterator();
                 IrIntVar var = iter.next();
@@ -89,7 +88,7 @@ public class Coalescer {
                 }
             }
         }
-        for (Set<IrSetVar> component : GraphUtil.computeStronglyConnectedComponents(setGraph)) {
+        for (Set<IrSetVar> component : setGraph.connectedComponents()) {
             if (component.size() > 1) {
                 Iterator<IrSetVar> iter = component.iterator();
                 IrSetVar var = iter.next();
@@ -127,15 +126,14 @@ public class Coalescer {
                 new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null));
     }
 
-    private static void propagateDomain(IrDomain left, IrIntExpr right, KeyGraph<IrIntVar> intGraph) {
+    private static void propagateDomain(IrDomain left, IrIntExpr right, DisjointSets<IrIntVar> intGraph) {
         if (left.equals(right.getDomain())) {
             return;
         }
         if (right instanceof IrIntVar) {
             IrDomain domain = IrUtil.intersection(left, right.getDomain());
             if (!domain.equals(right.getDomain())) {
-                intGraph.addUndirectedEdge((IrIntVar) right,
-                        domainInt("domain" + domain, domain));
+                intGraph.union((IrIntVar) right, domainInt("domain" + domain, domain));
             }
         } else if (right instanceof IrAdd) {
             IrAdd add = (IrAdd) right;
@@ -146,14 +144,14 @@ public class Coalescer {
         }
     }
 
-    private static void propagateEnv(IrDomain left, IrSetExpr right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+    private static void propagateEnv(IrDomain left, IrSetExpr right, DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
         if (left.equals(right.getEnv())) {
             return;
         }
         if (right instanceof IrSetVar) {
             IrDomain env = IrUtil.intersection(left, right.getEnv());
             if (!env.equals(right.getEnv())) {
-                setGraph.addUndirectedEdge((IrSetVar) right, set("env" + env, env));
+                setGraph.union((IrSetVar) right, set("env" + env, env));
             }
         } else if (right instanceof IrSingleton) {
             propagateDomain(left, ((IrSingleton) right).getValue(), intGraph);
@@ -166,33 +164,33 @@ public class Coalescer {
         }
     }
 
-    private static void propagateEnvArrayToSet(IrDomain left, IrArrayToSet right, KeyGraph<IrIntVar> intGraph) {
+    private static void propagateEnvArrayToSet(IrDomain left, IrArrayToSet right, DisjointSets<IrIntVar> intGraph) {
         for (IrIntExpr child : right.getArray()) {
             propagateDomain(left, child, intGraph);
         }
     }
 
-    private static void propagateEnvJoinFunction(IrDomain left, IrJoinFunction right, KeyGraph<IrIntVar> intGraph) {
+    private static void propagateEnvJoinFunction(IrDomain left, IrJoinFunction right, DisjointSets<IrIntVar> intGraph) {
         TIntIterator iter = right.getTake().getKer().iterator();
         while (iter.hasNext()) {
             propagateDomain(left, right.getRefs()[iter.next()], intGraph);
         }
     }
 
-    private static void propagateEnvSetUnion(IrDomain left, IrSetUnion right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+    private static void propagateEnvSetUnion(IrDomain left, IrSetUnion right, DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
         for (IrSetExpr operand : right.getOperands()) {
             propagateEnv(left, operand, intGraph, setGraph);
         }
     }
 
-    private static void propagateCard(IrDomain left, IrSetExpr right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+    private static void propagateCard(IrDomain left, IrSetExpr right, DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
         if (left.equals(right.getCard())) {
             return;
         }
         if (right instanceof IrSetVar) {
             IrDomain card = IrUtil.intersection(left, right.getCard());
             if (!card.equals(right.getCard())) {
-                setGraph.addUndirectedEdge(
+                setGraph.union(
                         (IrSetVar) right,
                         set("card" + card, right.getEnv(), EmptyDomain, card));
             }
@@ -205,7 +203,7 @@ public class Coalescer {
         }
     }
 
-    private static void propagateCardJoinRelation(IrDomain left, IrJoinRelation right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+    private static void propagateCardJoinRelation(IrDomain left, IrJoinRelation right, DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
         if (right.isInjective()) {
             IrSetExpr take = right.getTake();
             IrSetExpr[] children = right.getChildren();
@@ -245,7 +243,7 @@ public class Coalescer {
         }
     }
 
-    private static void propagateCardJoinFunction(IrDomain left, IrJoinFunction right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+    private static void propagateCardJoinFunction(IrDomain left, IrJoinFunction right, DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
         IrSetExpr take = right.getTake();
         int low = Math.max(take.getKer().size(), left.getLowBound());
         int high = Math.min(take.getEnv().size(),
@@ -257,17 +255,17 @@ public class Coalescer {
         }
     }
 
-    private static void propagateCardSetUnion(IrDomain left, IrSetUnion right, KeyGraph<IrIntVar> intGraph, KeyGraph<IrSetVar> setGraph) {
+    private static void propagateCardSetUnion(IrDomain left, IrSetUnion right, DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
         for (IrSetExpr operand : right.getOperands()) {
             propagateCard(boundDomain(0, left.getHighBound()), operand, intGraph, setGraph);
         }
     }
 
-    private static Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> findEquivalences(Iterable<IrBoolExpr> constraints) {
-        KeyGraph<IrIntVar> intGraph = new KeyGraph<IrIntVar>();
-        KeyGraph<IrSetVar> setGraph = new KeyGraph<IrSetVar>();
-        Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> pair =
-                new Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>>(intGraph, setGraph);
+    private static Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> findEquivalences(Iterable<IrBoolExpr> constraints) {
+        DisjointSets<IrIntVar> intGraph = new DisjointSets<IrIntVar>();
+        DisjointSets<IrSetVar> setGraph = new DisjointSets<IrSetVar>();
+        Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> pair =
+                new Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>>(intGraph, setGraph);
         EquivalenceFinder finder = new EquivalenceFinder();
         for (IrBoolExpr constraint : constraints) {
             constraint.accept(finder, pair);
@@ -275,69 +273,69 @@ public class Coalescer {
         return pair;
     }
 
-    private static class EquivalenceFinder extends IrBoolExprVisitorAdapter<Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>>, Boolean> {
+    private static class EquivalenceFinder extends IrBoolExprVisitorAdapter<Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>>, Void> {
 
         private final Map<IrSetVar, IrIntVar> duplicates = new HashMap<IrSetVar, IrIntVar>();
 
         @Override
-        public Boolean visit(IrBoolVar ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
+        public Void visit(IrBoolVar ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
             if (IrBoolDomain.BoolDomain.equals(ir.getDomain())) {
-                intGraph.addUndirectedEdge(ir, True);
+                intGraph.union(ir, True);
             }
             return null;
         }
 
         @Override
-        public Boolean visit(IrNot ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
+        public Void visit(IrNot ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
             if (ir.getExpr() instanceof IrBoolVar) {
                 IrBoolVar bool = (IrBoolVar) ir.getExpr();
                 if (IrBoolDomain.BoolDomain.equals(bool.getDomain())) {
-                    intGraph.addUndirectedEdge(bool, False);
+                    intGraph.union(bool, False);
                 }
             }
             return null;
         }
 
         @Override
-        public Boolean visit(IrNotImplies ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
+        public Void visit(IrNotImplies ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
             if (ir.getAntecedent() instanceof IrBoolVar) {
-                intGraph.addUndirectedEdge((IrBoolVar) ir.getAntecedent(), True);
+                intGraph.union((IrBoolVar) ir.getAntecedent(), True);
             }
             if (ir.getConsequent() instanceof IrBoolVar) {
-                intGraph.addUndirectedEdge((IrBoolVar) ir.getConsequent(), False);
+                intGraph.union((IrBoolVar) ir.getConsequent(), False);
             }
             return null;
         }
 
         @Override
-        public Boolean visit(IrIfOnlyIf ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
+        public Void visit(IrIfOnlyIf ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
             if (ir.getLeft() instanceof IrBoolVar
                     && ir.getRight() instanceof IrBoolVar) {
                 IrBoolVar left = (IrBoolVar) ir.getLeft();
                 IrBoolVar right = (IrBoolVar) ir.getRight();
-                intGraph.addUndirectedEdge(left, right);
+                intGraph.union(left, right);
             }
             return null;
         }
 
         @Override
-        public Boolean visit(IrWithin ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
+        public Void visit(IrWithin ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
             if (ir.getValue() instanceof IrIntVar) {
-                intGraph.addUndirectedEdge((IrIntVar) ir.getValue(),
+                intGraph.union((IrIntVar) ir.getValue(),
                         domainInt("within" + ir.getRange(), ir.getRange()));
             }
             return null;
         }
 
         @Override
-        public Boolean visit(IrCompare ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
-            KeyGraph<IrSetVar> setGraph = a.getSnd();
+        public Void visit(IrCompare ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
+            DisjointSets<IrSetVar> setGraph = a.getSnd();
             IrIntExpr left = ir.getLeft();
             IrIntExpr right = ir.getRight();
             switch (ir.getOp()) {
@@ -351,7 +349,7 @@ public class Coalescer {
                             IrIntVar cardVar = (IrIntVar) cardExpr;
                             IrIntVar duplicate = duplicates.put(setVar, cardVar);
                             if (duplicate != null) {
-                                intGraph.addUndirectedEdge(cardVar, duplicate);
+                                intGraph.union(cardVar, duplicate);
                                 return null;
                             }
                         }
@@ -359,16 +357,16 @@ public class Coalescer {
                             propagateCard(cardExpr.getDomain(), setVar, intGraph, setGraph);
                         }
                     } else if (left instanceof IrIntVar && right instanceof IrIntVar) {
-                        intGraph.addUndirectedEdge((IrIntVar) left, (IrIntVar) right);
+                        intGraph.union((IrIntVar) left, (IrIntVar) right);
                     } else if (left instanceof IrIntVar
                             && !IrUtil.isSubsetOf(left.getDomain(), right.getDomain())) {
                         IrIntVar leftVar = (IrIntVar) left;
-                        intGraph.addUndirectedEdge(leftVar,
+                        intGraph.union(leftVar,
                                 domainInt("equal" + right.getDomain(), right.getDomain()));
                     } else if (right instanceof IrIntVar
                             && !IrUtil.isSubsetOf(right.getDomain(), left.getDomain())) {
                         IrIntVar rightVar = (IrIntVar) right;
-                        intGraph.addUndirectedEdge(rightVar,
+                        intGraph.union(rightVar,
                                 domainInt("equal" + left.getDomain(), left.getDomain()));
                     }
                     break;
@@ -376,12 +374,12 @@ public class Coalescer {
                     if (left instanceof IrIntVar && right instanceof IrIntConstant) {
                         IrIntVar leftVar = (IrIntVar) left;
                         IrDomain notRight = IrUtil.difference(leftVar.getDomain(), right.getDomain());
-                        intGraph.addUndirectedEdge(leftVar,
+                        intGraph.union(leftVar,
                                 domainInt("notEqual" + right.getDomain(), notRight));
                     } else if (left instanceof IrIntConstant && right instanceof IrIntVar) {
                         IrIntVar rightVar = (IrIntVar) right;
                         IrDomain notLeft = IrUtil.difference(rightVar.getDomain(), left.getDomain());
-                        intGraph.addUndirectedEdge(rightVar,
+                        intGraph.union(rightVar,
                                 domainInt("notEqual" + left.getDomain(), notLeft));
                     }
                     break;
@@ -390,14 +388,14 @@ public class Coalescer {
                             && left.getDomain().getHighBound() >= right.getDomain().getHighBound()) {
                         IrIntVar leftVar = (IrIntVar) left;
                         IrDomain lessThanLeft = IrUtil.intersection(left.getDomain(), boundDomain(left.getDomain().getLowBound(), right.getDomain().getHighBound() - 1));
-                        intGraph.addUndirectedEdge(leftVar,
+                        intGraph.union(leftVar,
                                 domainInt("lessThan" + right.getDomain(), lessThanLeft));
                     }
                     if (right instanceof IrIntVar
                             && right.getDomain().getLowBound() <= left.getDomain().getLowBound()) {
                         IrIntVar rightVar = (IrIntVar) right;
                         IrDomain greaterThanRight = IrUtil.intersection(right.getDomain(), boundDomain(left.getDomain().getLowBound() + 1, right.getDomain().getHighBound()));
-                        intGraph.addUndirectedEdge(rightVar,
+                        intGraph.union(rightVar,
                                 domainInt("greaterThan" + left.getDomain(), greaterThanRight));
                     }
                     break;
@@ -406,14 +404,14 @@ public class Coalescer {
                             && left.getDomain().getHighBound() > right.getDomain().getHighBound()) {
                         IrIntVar leftVar = (IrIntVar) left;
                         IrDomain lessThanEqualLeft = IrUtil.intersection(left.getDomain(), boundDomain(left.getDomain().getLowBound(), right.getDomain().getHighBound()));
-                        intGraph.addUndirectedEdge(leftVar,
+                        intGraph.union(leftVar,
                                 domainInt("lessThanEqual" + right.getDomain(), lessThanEqualLeft));
                     }
                     if (right instanceof IrIntVar
                             && right.getDomain().getLowBound() < left.getDomain().getLowBound()) {
                         IrIntVar rightVar = (IrIntVar) right;
                         IrDomain greaterThanEqualRight = IrUtil.intersection(right.getDomain(), boundDomain(left.getDomain().getLowBound(), right.getDomain().getHighBound()));
-                        intGraph.addUndirectedEdge(rightVar,
+                        intGraph.union(rightVar,
                                 domainInt("greaterThanEqual" + left.getDomain(), greaterThanEqualRight));
                     }
                     break;
@@ -422,14 +420,14 @@ public class Coalescer {
                             && left.getDomain().getLowBound() <= right.getDomain().getLowBound()) {
                         IrIntVar leftVar = (IrIntVar) left;
                         IrDomain greaterThanLeft = IrUtil.intersection(left.getDomain(), boundDomain(right.getDomain().getLowBound() + 1, left.getDomain().getHighBound()));
-                        intGraph.addUndirectedEdge(leftVar,
+                        intGraph.union(leftVar,
                                 domainInt("greaterThan" + right.getDomain(), greaterThanLeft));
                     }
                     if (right instanceof IrIntVar
                             && right.getDomain().getHighBound() >= left.getDomain().getHighBound()) {
                         IrIntVar rightVar = (IrIntVar) right;
                         IrDomain lessThanRight = IrUtil.intersection(right.getDomain(), boundDomain(right.getDomain().getLowBound(), left.getDomain().getHighBound() - 1));
-                        intGraph.addUndirectedEdge(rightVar,
+                        intGraph.union(rightVar,
                                 domainInt("lessThan" + left.getDomain(), lessThanRight));
                     }
                     break;
@@ -438,14 +436,14 @@ public class Coalescer {
                             && left.getDomain().getLowBound() < right.getDomain().getLowBound()) {
                         IrIntVar leftVar = (IrIntVar) left;
                         IrDomain greaterThanLeft = IrUtil.intersection(left.getDomain(), boundDomain(right.getDomain().getLowBound(), left.getDomain().getHighBound()));
-                        intGraph.addUndirectedEdge(leftVar,
+                        intGraph.union(leftVar,
                                 domainInt("greaterThanEqual" + right.getDomain(), greaterThanLeft));
                     }
                     if (right instanceof IrIntVar
                             && right.getDomain().getHighBound() > left.getDomain().getHighBound()) {
                         IrIntVar rightVar = (IrIntVar) right;
                         IrDomain lessThanRight = IrUtil.intersection(right.getDomain(), boundDomain(right.getDomain().getLowBound(), left.getDomain().getHighBound()));
-                        intGraph.addUndirectedEdge(rightVar,
+                        intGraph.union(rightVar,
                                 domainInt("lessThanEqual" + left.getDomain(), lessThanRight));
                     }
                     break;
@@ -454,15 +452,15 @@ public class Coalescer {
         }
 
         @Override
-        public Boolean visit(IrSetTest ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
-            KeyGraph<IrSetVar> setGraph = a.getSnd();
+        public Void visit(IrSetTest ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
+            DisjointSets<IrSetVar> setGraph = a.getSnd();
             IrSetExpr left = ir.getLeft();
             IrSetExpr right = ir.getRight();
             if (IrSetTest.Op.Equal.equals(ir.getOp())) {
                 if (ir.getLeft() instanceof IrSetVar
                         && ir.getRight() instanceof IrSetVar) {
-                    setGraph.addUndirectedEdge((IrSetVar) left, (IrSetVar) right);
+                    setGraph.union((IrSetVar) left, (IrSetVar) right);
                 } else {
                     if (!left.getEnv().equals(right.getEnv())) {
                         propagateEnv(left.getEnv(), right, intGraph, setGraph);
@@ -478,29 +476,29 @@ public class Coalescer {
         }
 
         @Override
-        public Boolean visit(IrMember ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrSetVar> setGraph = a.getSnd();
+        public Void visit(IrMember ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrSetVar> setGraph = a.getSnd();
             IrSetExpr set = ir.getSet();
             IrDomain env = set.getEnv();
             IrDomain ker = set.getKer();
             IrDomain card = set.getCard();
             Integer constant = IrUtil.getConstant(ir.getElement());
             if (constant != null && set instanceof IrSetVar && !ker.contains(constant)) {
-                ker = IrUtil.union(ker, constantDomain(constant));
+                ker = IrUtil.add(ker, constant);
                 card = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
                 if (card.isEmpty()) {
                     // Model is unsatisfiable. Compile anyways?
                 } else {
-                    setGraph.addUndirectedEdge((IrSetVar) set, set("member" + constant, env, ker, card));
+                    setGraph.union((IrSetVar) set, set("member" + constant, env, ker, card));
                 }
             }
             return null;
         }
 
         @Override
-        public Boolean visit(IrBoolChannel ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
-            KeyGraph<IrSetVar> setGraph = a.getSnd();
+        public Void visit(IrBoolChannel ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
+            DisjointSets<IrSetVar> setGraph = a.getSnd();
             IrBoolExpr[] bools = ir.getBools();
             IrSetExpr set = ir.getSet();
             IrDomain env = set.getEnv();
@@ -511,9 +509,9 @@ public class Coalescer {
             for (int i = 0; i < bools.length; i++) {
                 if (bools[i] instanceof IrBoolVar && !IrUtil.isConstant(bools[i])) {
                     if (!env.contains(i)) {
-                        intGraph.addUndirectedEdge((IrBoolVar) bools[i], False);
+                        intGraph.union((IrBoolVar) bools[i], False);
                     } else if (ker.contains(i)) {
-                        intGraph.addUndirectedEdge((IrBoolVar) bools[i], True);
+                        intGraph.union((IrBoolVar) bools[i], True);
                     }
                 }
                 if (IrUtil.isFalse(bools[i])) {
@@ -527,9 +525,9 @@ public class Coalescer {
         }
 
         @Override
-        public Boolean visit(IrIntChannel ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
-            KeyGraph<IrSetVar> setGraph = a.getSnd();
+        public Void visit(IrIntChannel ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
+            DisjointSets<IrSetVar> setGraph = a.getSnd();
             IrIntExpr[] ints = ir.getInts();
             IrSetExpr[] sets = ir.getSets();
 
@@ -562,9 +560,9 @@ public class Coalescer {
         }
 
         @Override
-        public Boolean visit(IrSortSets ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
-            KeyGraph<IrSetVar> setGraph = a.getSnd();
+        public Void visit(IrSortSets ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
+            DisjointSets<IrSetVar> setGraph = a.getSnd();
             int low = 0;
             int high = 0;
             for (IrSetExpr set : ir.getSets()) {
@@ -577,35 +575,35 @@ public class Coalescer {
         }
 
         @Override
-        public Boolean visit(IrSelectN ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
+        public Void visit(IrSelectN ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
             IrBoolExpr[] bools = ir.getBools();
             IrIntExpr n = ir.getN();
             for (int i = 0; i < bools.length; i++) {
                 if (n instanceof IrIntVar) {
                     if (IrUtil.isTrue(bools[i]) && i >= n.getDomain().getLowBound()) {
-                        intGraph.addUndirectedEdge((IrIntVar) n, boundInt("selectN" + i, i + 1, bools.length));
+                        intGraph.union((IrIntVar) n, boundInt("selectN" + i, i + 1, bools.length));
                     } else if (IrUtil.isFalse(bools[i]) && i < n.getDomain().getHighBound()) {
-                        intGraph.addUndirectedEdge((IrIntVar) n, boundInt("selectN" + i, 0, i));
+                        intGraph.union((IrIntVar) n, boundInt("selectN" + i, 0, i));
                     }
                 }
             }
             for (int i = 0; i < n.getDomain().getLowBound(); i++) {
                 if (bools[i] instanceof IrBoolVar && !IrUtil.isConstant(bools[i])) {
-                    intGraph.addUndirectedEdge((IrBoolVar) bools[i], True);
+                    intGraph.union((IrBoolVar) bools[i], True);
                 }
             }
             for (int i = n.getDomain().getHighBound(); i < bools.length; i++) {
                 if (bools[i] instanceof IrBoolVar && !IrUtil.isConstant(bools[i])) {
-                    intGraph.addUndirectedEdge((IrBoolVar) bools[i], False);
+                    intGraph.union((IrBoolVar) bools[i], False);
                 }
             }
             return null;
         }
 
         @Override
-        public Boolean visit(IrFilterString ir, Pair<KeyGraph<IrIntVar>, KeyGraph<IrSetVar>> a) {
-            KeyGraph<IrIntVar> intGraph = a.getFst();
+        public Void visit(IrFilterString ir, Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> a) {
+            DisjointSets<IrIntVar> intGraph = a.getFst();
             TIntIterator iter = ir.getSet().getEnv().iterator();
             int i = 0;
             while (iter.hasNext()) {
@@ -617,7 +615,7 @@ public class Coalescer {
                 IrIntExpr result = ir.getResult()[i];
                 // TODO reuse code above in IrCompare
                 if (string instanceof IrIntVar && result instanceof IrIntVar) {
-                    intGraph.addUndirectedEdge((IrIntVar) string, (IrIntVar) result);
+                    intGraph.union((IrIntVar) string, (IrIntVar) result);
                 }
                 i++;
             }

@@ -111,6 +111,22 @@ public class PropLexChainChannel extends Propagator<IntVar> {
         return Ordering.UNKNOWN;
     }
 
+    private boolean equalString(IntVar[] a, IntVar[] b) throws ContradictionException {
+        boolean changed = false;
+        for (int i = 0; i < a.length; i++) {
+            changed |= equal(a[i], b[i]);
+        }
+        return changed;
+    }
+
+    private boolean equal(IntVar a, IntVar b) throws ContradictionException {
+        // Don't use short-circuit or
+        return a.updateLowerBound(b.getLB(), aCause)
+                | a.updateUpperBound(b.getUB(), aCause)
+                | b.updateLowerBound(a.getLB(), aCause)
+                | b.updateUpperBound(a.getUB(), aCause);
+    }
+
     private boolean lessThanString(IntVar[] a, IntVar[] b) throws ContradictionException {
         boolean changed = false;
         for (int x = 0; x < a.length - 1; x++) {
@@ -150,63 +166,6 @@ public class PropLexChainChannel extends Propagator<IntVar> {
         // Don't use short-circuit or
         return a.updateUpperBound(b.getUB(), aCause)
                 | b.updateLowerBound(a.getLB(), aCause);
-    }
-
-    private boolean greaterThanString(IntVar[] a, IntVar[] b) throws ContradictionException {
-        boolean changed = false;
-        for (int x = 0; x < a.length - 1; x++) {
-            switch (compare(a[x], b[x])) {
-                case GT:
-                case GE:
-                case UNKNOWN:
-                    return changed;
-                case LT:
-                case LE:
-                    changed |= equal(a[x], b[x]);
-                    break;
-            }
-        }
-        // All equal except for the last character.
-        return greaterThan(a[a.length - 1], b[a.length - 1]) || changed;
-    }
-
-    private boolean greaterThan(IntVar a, IntVar b) throws ContradictionException {
-        // Don't use short-circuit or
-        return a.updateLowerBound(b.getLB() + 1, aCause)
-                | b.updateUpperBound(a.getUB() - 1, aCause);
-    }
-
-    private boolean greaterThanEqualString(IntVar[] a, IntVar[] b) throws ContradictionException {
-        for (int x = 0; x < a.length; x++) {
-            Ordering charOrd = compare(a[x], b[x]);
-            if (!Ordering.EQ.equals(charOrd)) {
-                return greaterThanEqual(a[x], b[x]);
-            }
-        }
-        // The two strings are equal.
-        return false;
-    }
-
-    private boolean greaterThanEqual(IntVar a, IntVar b) throws ContradictionException {
-        // Don't use short-circuit or
-        return a.updateLowerBound(b.getLB(), aCause)
-                | b.updateUpperBound(a.getUB(), aCause);
-    }
-
-    private boolean equalString(IntVar[] a, IntVar[] b) throws ContradictionException {
-        boolean changed = false;
-        for (int i = 0; i < a.length; i++) {
-            changed |= equal(a[i], b[i]);
-        }
-        return changed;
-    }
-
-    private boolean equal(IntVar a, IntVar b) throws ContradictionException {
-        // Don't use short-circuit or
-        return a.updateLowerBound(b.getLB(), aCause)
-                | a.updateUpperBound(b.getUB(), aCause)
-                | b.updateLowerBound(a.getLB(), aCause)
-                | b.updateUpperBound(a.getUB(), aCause);
     }
 
     // Idempotent.
@@ -302,11 +261,11 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     private static enum Ordering {
 
+        EQ,
         LT,
         LE,
         GT,
         GE,
-        EQ,
         UNKNOWN;
     }
 
@@ -337,20 +296,20 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 int x = updates[i];
                 int y = updates[i + 1];
                 switch (updates[i + 2]) {
-                    case 0: // LT
+                    case 0: // EQ
+                        changed |= equalString(strings[x], strings[y]);
+                        break;
+                    case 1: // LT
                         changed |= lessThanString(strings[x], strings[y]);
                         break;
-                    case 1: // LE
+                    case 2: // LE
                         changed |= lessThanEqualString(strings[x], strings[y]);
                         break;
-                    case 2: // GT
-                        changed |= greaterThanString(strings[x], strings[y]);
+                    case 3: // GT
+                        changed |= lessThanString(strings[y], strings[x]);
                         break;
-                    case 3: // GE
-                        changed |= greaterThanEqualString(strings[x], strings[y]);
-                        break;
-                    case 4: // EQ
-                        changed |= equalString(strings[x], strings[y]);
+                    case 4: // GE
+                        changed |= lessThanEqualString(strings[y], strings[x]);
                         break;
                     default:
                         throw new IllegalStateException();
@@ -366,20 +325,20 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 int x = updates[i];
                 int y = updates[i + 1];
                 switch (updates[i + 2]) {
-                    case 0: // LT
+                    case 0: // EQ
+                        changed |= equal(ints[x], ints[y]);
+                        break;
+                    case 1: // LT
                         changed |= lessThan(ints[x], ints[y]);
                         break;
-                    case 1: // LE
+                    case 2: // LE
                         changed |= lessThanEqual(ints[x], ints[y]);
                         break;
-                    case 2: // GT
-                        changed |= greaterThan(ints[x], ints[y]);
+                    case 3: // GT
+                        changed |= lessThan(ints[y], ints[x]);
                         break;
-                    case 3: // GE
-                        changed |= greaterThanEqual(ints[x], ints[y]);
-                        break;
-                    case 4: // EQ
-                        changed |= equal(ints[x], ints[y]);
+                    case 4: // GE
+                        changed |= lessThanEqual(ints[y], ints[x]);
                         break;
                     default:
                         throw new IllegalStateException();

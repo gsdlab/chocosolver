@@ -4,7 +4,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 
 /**
  * A 3-tuple.
@@ -183,14 +182,14 @@ public class Triple<A, B, C> {
     public boolean equals(Object obj) {
         if (obj instanceof Triple<?, ?, ?>) {
             Triple<?, ?, ?> other = (Triple<?, ?, ?>) obj;
-            return Util.equals(fst, other.fst) && Util.equals(snd, other.snd) && Util.equals(thd, other.thd);
+            return fst.equals(other.fst) && snd.equals(other.snd) && thd.equals(other.thd);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Util.hashCode(fst) ^ Util.hashCode(snd) ^ Util.hashCode(thd);
+        return fst.hashCode() ^ snd.hashCode() ^ thd.hashCode();
     }
 
     @Override

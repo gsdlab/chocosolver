@@ -12,6 +12,10 @@ public class IrUtilTest {
 
     private final Random rand = new Random();
 
+    private int randInt() {
+        return rand.nextInt(201) - 100;
+    }
+
     private IrDomain randDomain() {
         switch (rand.nextInt(20)) {
             case 0:
@@ -51,7 +55,7 @@ public class IrUtilTest {
         IrDomain d2 = randDomain();
         assertEquals(!IrUtil.intersection(d1, d2).isEmpty(), IrUtil.intersects(d1, d2));
     }
-    
+
     @Test
     public void testIsSubsetOf() {
         IrDomain d1 = randDomain();
@@ -60,14 +64,52 @@ public class IrUtilTest {
     }
 
     @Test
+    public void testAdd() {
+        IrDomain d = randDomain();
+        int val = randInt();
+        IrDomain add = IrUtil.add(d, val);
+        for (int i = -100; i <= 200; i++) {
+            assertEquals(d.contains(i) || val == i, add.contains(i));
+        }
+    }
+
+    @Test
+    public void testRemove() {
+        IrDomain d = randDomain();
+        int val = randInt();
+        IrDomain remove = IrUtil.remove(d, val);
+        for (int i = -100; i <= 200; i++) {
+            assertEquals(d.contains(i) && val != i, remove.contains(i));
+        }
+    }
+
+    @Test
+    public void testBoundLow() {
+        IrDomain d = randDomain();
+        int low = randInt();
+        IrDomain bound = IrUtil.boundLow(d, low);
+        for (int i = -100; i <= 200; i++) {
+            assertEquals(d.contains(i) && i >= low, bound.contains(i));
+        }
+    }
+
+    @Test
+    public void testBoundHigh() {
+        IrDomain d = randDomain();
+        int high = randInt();
+        IrDomain bound = IrUtil.boundHigh(d, high);
+        for (int i = -100; i <= 200; i++) {
+            assertEquals(d.contains(i) && i <= high, bound.contains(i));
+        }
+    }
+
+    @Test
     public void testDifference() {
         IrDomain d1 = randDomain();
         IrDomain d2 = randDomain();
         IrDomain difference = IrUtil.difference(d1, d2);
         for (int i = -100; i <= 200; i++) {
-            assertEquals(
-                    i + " : " + d1 + " : " + d2,
-                    d1.contains(i) && !d2.contains(i), difference.contains(i));
+            assertEquals(d1.contains(i) && !d2.contains(i), difference.contains(i));
         }
     }
 

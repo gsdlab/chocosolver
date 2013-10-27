@@ -79,13 +79,12 @@ public class Irs {
                 Arrays.sort(array);
                 // If the values are over a contiguous interval, then return a bound domain.
                 int low = array[0];
-                for (int i = 1; i < array.length; i++) {
-                    if (low + i != array[i]) {
-                        return new IrEnumDomain(array);
-                    }
+                int high = array[array.length - 1];
+                if (high - low + 1 == array.length) {
+                    // A contigious interval.
+                    return boundDomain(low, high);
                 }
-                // A contigious interval.
-                return boundDomain(low, array[array.length - 1]);
+                return new IrEnumDomain(array);
         }
     }
     /**
@@ -1072,19 +1071,6 @@ public class Irs {
         return add(addends.toArray(new IrIntExpr[addends.size()]));
     }
 
-    private static IrIntExpr a(IrIntExpr... addends) {
-        if (addends.length == 0) {
-            return Zero;
-        }
-        int low = 0;
-        int high = 0;
-        for (IrIntExpr addend : addends) {
-            low += addend.getDomain().getLowBound();
-            high += addend.getDomain().getHighBound();
-        }
-        return new IrAdd(addends, 0, boundDomain(low, high));
-    }
-
     public static IrIntExpr add(IrIntExpr... addends) {
         int constants = 0;
         List<IrIntExpr> filter = new ArrayList<IrIntExpr>(addends.length);
@@ -1106,8 +1092,13 @@ public class Irs {
         if (filter.isEmpty()) {
             return constant(constants);
         }
-        if (filter.size() == 1 && constants == 0) {
-            return filter.get(0);
+        if (filter.size() == 1) {
+            IrIntExpr first = filter.get(0);
+            if (constants == 0) {
+                return first;
+            }
+            return new IrAdd(new IrIntExpr[]{first}, constants,
+                    IrUtil.offset(first.getDomain(), constants));
         }
         int low = constants;
         int high = constants;

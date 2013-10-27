@@ -987,11 +987,8 @@ public class AstCompiler {
             for (int i = 0; i < members.length; i++) {
                 IrDomain domain = refs[i].getDomain();
                 int uninitializedRef = getUninitalizedRef(setType.getRef().getTargetType());
-                if (domain.contains(uninitializedRef)) {
-                    // Score's use 0 as the uninitialized value.
-                    domain = IrUtil.difference(domain, constantDomain(uninitializedRef));
-                }
-                domain = IrUtil.union(ZeroDomain, domain);
+                // Score's use 0 as the uninitialized value.
+                domain = IrUtil.add(IrUtil.remove(domain, uninitializedRef), 0);
                 score[i] = domainInt("Score@" + i, domain);
                 module.addConstraint(ifThenElse(members[i],
                         equal(score[i], refs[i]), equal(score[i], 0)));
@@ -1313,7 +1310,7 @@ public class AstCompiler {
                 int tarHigh = getScopeHigh(tar);
                 IrDomain domain = tarLow <= tarHigh ? boundDomain(tarLow, tarHigh) : ZeroDomain;
                 if (!partialSolution.hasClafer(i)) { // The ref may need to be zeroed out.
-                    domain = IrUtil.union(constantDomain(getUninitalizedRef(tar)), domain); // <-- add zero to the domain.
+                    domain = IrUtil.add(domain, getUninitalizedRef(tar));
                 }
                 ivs[i] = domainInt(src.getName() + "@Ref" + i, domain);
             } else {

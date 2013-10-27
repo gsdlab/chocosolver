@@ -20,12 +20,12 @@ public class PropSelectN extends Propagator<IntVar> {
     private final IntVar n;
 
     public PropSelectN(BoolVar[] bools, IntVar n) {
-        super(init(bools, n), PropagatorPriority.LINEAR, true);
+        super(buildArray(bools, n), PropagatorPriority.BINARY, true);
         this.bools = bools;
         this.n = n;
     }
 
-    private static IntVar[] init(BoolVar[] bools, IntVar n) {
+    private static IntVar[] buildArray(BoolVar[] bools, IntVar n) {
         IntVar[] init = new IntVar[bools.length + 1];
         System.arraycopy(bools, 0, init, 0, bools.length);
         init[bools.length] = n;

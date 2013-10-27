@@ -146,6 +146,9 @@ public class IrUtil {
     }
 
     public static boolean intersects(IrDomain d1, IrDomain d2) {
+        if (d1 == d2) {
+            return true;
+        }
         if (d1.isEmpty() || d2.isEmpty()) {
             return false;
         }
@@ -178,6 +181,9 @@ public class IrUtil {
     }
 
     public static boolean isSubsetOf(IrDomain sub, IrDomain sup) {
+        if (sub == sup) {
+            return true;
+        }
         if (sub.isEmpty()) {
             return true;
         }
@@ -203,6 +209,103 @@ public class IrUtil {
         return true;
     }
 
+    public static IrDomain add(IrDomain domain, int value) {
+        if (domain.isEmpty()) {
+            return Irs.constantDomain(value);
+        }
+        if (domain.contains(value)) {
+            return domain;
+        }
+        if (domain.isBounded()) {
+            if (value == domain.getLowBound() - 1) {
+                return Irs.boundDomain(domain.getLowBound() - 1, domain.getHighBound());
+            }
+            if (value == domain.getHighBound() + 1) {
+                return Irs.boundDomain(domain.getLowBound(), domain.getHighBound() + 1);
+            }
+        }
+        TIntHashSet values = new TIntHashSet(domain.size() + 1);
+        domain.transferTo(values);
+        values.add(value);
+        return Irs.enumDomain(values);
+    }
+
+    public static IrDomain remove(IrDomain domain, int value) {
+        if (!domain.contains(value)) {
+            return domain;
+        }
+        if (domain.isBounded()) {
+            if (value == domain.getLowBound()) {
+                return domain.size() == 1
+                        ? Irs.EmptyDomain
+                        : Irs.boundDomain(domain.getLowBound() + 1, domain.getHighBound());
+            }
+            if (value == domain.getHighBound()) {
+                return domain.size() == 1
+                        ? Irs.EmptyDomain
+                        : Irs.boundDomain(domain.getLowBound(), domain.getHighBound() - 1);
+            }
+        }
+        TIntHashSet values = new TIntHashSet(domain.size());
+        domain.transferTo(values);
+        values.remove(value);
+        return Irs.enumDomain(values);
+    }
+
+    public static IrDomain boundLow(IrDomain domain, int lb) {
+        if (domain.isEmpty()) {
+            return domain;
+        }
+        if (lb > domain.getHighBound()) {
+            return Irs.EmptyDomain;
+        }
+        if (lb == domain.getHighBound()) {
+            return Irs.constantDomain(lb);
+        }
+        if (lb <= domain.getLowBound()) {
+            return domain;
+        }
+        if (domain.isBounded()) {
+            return Irs.boundDomain(lb, domain.getHighBound());
+        }
+        TIntHashSet values = new TIntHashSet(Math.min(domain.size(), domain.getHighBound() - lb + 1));
+        TIntIterator iter = domain.iterator();
+        while (iter.hasNext()) {
+            int value = iter.next();
+            if (value >= lb) {
+                values.add(value);
+            }
+        }
+        return Irs.enumDomain(values);
+    }
+
+    public static IrDomain boundHigh(IrDomain domain, int hb) {
+        if (domain.isEmpty()) {
+            return domain;
+        }
+        if (hb < domain.getLowBound()) {
+            return Irs.EmptyDomain;
+        }
+        if (hb == domain.getLowBound()) {
+            return Irs.constantDomain(hb);
+        }
+        if (hb >= domain.getHighBound()) {
+            return domain;
+        }
+        if (domain.isBounded()) {
+            return Irs.boundDomain(domain.getLowBound(), hb);
+        }
+        TIntHashSet values = new TIntHashSet(Math.min(domain.size(), hb - domain.getLowBound() + 1));
+        TIntIterator iter = domain.iterator();
+        while (iter.hasNext()) {
+            int value = iter.next();
+            if (value <= hb) {
+                values.add(value);
+            }
+        }
+        return Irs.enumDomain(values);
+    }
+
     public static IrDomain difference(IrDomain minuend, IrDomain subtrahend) {
         if (!intersects(minuend, subtrahend)) {
             return minuend;
@@ -217,8 +320,8 @@ public class IrUtil {
                 return Irs.boundDomain(subtrahend.getHighBound() + 1, minuend.getHighBound());
             }
         }
-        TIntHashSet values = new TIntHashSet();
-        values.addAll(minuend.getValues());
+        TIntHashSet values = new TIntHashSet(minuend.size());
+        minuend.transferTo(values);
         values.removeAll(subtrahend.getValues());
         return Irs.enumDomain(values);
     }
@@ -240,8 +343,8 @@ public class IrUtil {
                 return Irs.boundDomain(d1.getLowBound(), d2.getHighBound());
             }
         }
-        TIntHashSet values = new TIntHashSet();
-        values.addAll(d1.getValues());
+        TIntHashSet values = new TIntHashSet(d1.size());
+        d1.transferTo(values);
         values.retainAll(d2.getValues());
         return Irs.enumDomain(values);
     }
@@ -285,9 +388,9 @@ public class IrUtil {
                 return Irs.boundDomain(d2.getLowBound(), d1.getHighBound());
             }
         }
-        TIntHashSet values = new TIntHashSet();
-        values.addAll(d1.getValues());
-        values.addAll(d2.getValues());
+        TIntHashSet values = new TIntHashSet(d1.size() + d2.size());
+        d1.transferTo(values);
+        d2.transferTo(values);
         return Irs.enumDomain(values);
     }
 

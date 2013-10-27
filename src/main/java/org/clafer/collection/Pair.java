@@ -4,7 +4,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 
 /**
  * A 2-tuple.
@@ -122,14 +121,14 @@ public class Pair<A, B> {
     public boolean equals(Object obj) {
         if (obj instanceof Pair<?, ?>) {
             Pair<?, ?> other = (Pair<?, ?>) obj;
-            return Util.equals(fst, other.fst) && Util.equals(snd, other.snd);
+            return fst.equals(other.fst) && snd.equals(other.snd);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Util.hashCode(fst) ^ Util.hashCode(snd.hashCode());
+        return fst.hashCode() ^ snd.hashCode();
     }
 
     @Override
