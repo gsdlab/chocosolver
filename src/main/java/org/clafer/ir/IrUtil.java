@@ -69,6 +69,25 @@ public class IrUtil {
         return domain.size() == 1 ? domain.getLowBound() : null;
     }
 
+    public static int[] getConstant(IrIntExpr[] is) {
+        if (is.length == 0) {
+            return new int[0];
+        }
+        if (is[0].getDomain().size() == 1) {
+            int[] constant = new int[is.length];
+            constant[0] = is[0].getDomain().getLowBound();
+            for (int i = 1; i < is.length; i++) {
+                if (is[i].getDomain().size() == 1) {
+                    constant[i] = is[i].getDomain().getLowBound();
+                } else {
+                    return null;
+                }
+            }
+            return constant;
+        }
+        return null;
+    }
+
     public static IrIntVar asConstant(IrIntVar i) {
         IrDomain domain = i.getDomain();
         return domain.size() == 1 ? Irs.constant(domain.getLowBound()) : i;
@@ -467,5 +486,81 @@ public class IrUtil {
             }
         }
         return Irs.enumDomain(mask);
+    }
+
+    public static Ordering compare(IrIntExpr a, IrIntExpr b) {
+        IrDomain da = a.getDomain();
+        IrDomain db = b.getDomain();
+        if (da.size() == 1 && db.size() == 1 && da.getLowBound() == db.getLowBound()) {
+            return Ordering.EQ;
+        }
+        int aLb = da.getLowBound();
+        int aUb = da.getHighBound();
+        int bLb = db.getLowBound();
+        int bUb = db.getHighBound();
+        if (aLb > bUb) {
+            return Ordering.GT;
+        }
+        if (aLb >= bUb) {
+            return Ordering.GE;
+        }
+        if (aUb < bLb) {
+            return Ordering.LT;
+        }
+        if (aUb <= bLb) {
+            return Ordering.LE;
+        }
+        return Ordering.UNKNOWN;
+    }
+
+    public static Ordering compareString(IrIntExpr[] a, IrIntExpr[] b) {
+        return compareString(a, b, 0);
+    }
+
+    public static Ordering compareString(IrIntExpr[] a, IrIntExpr[] b, int index) {
+        if (index == a.length) {
+            return a.length == b.length ? Ordering.EQ : Ordering.LT;
+        }
+        if (index == b.length) {
+            assert a.length != b.length;
+            return Ordering.GT;
+        }
+        Ordering ord = compare(a[index], b[index]);
+        switch (ord) {
+            case EQ:
+                return compareString(a, b, index + 1);
+            case LE:
+                switch (compareString(a, b, index + 1)) {
+                    case LT:
+                        return Ordering.LT;
+                    case LE:
+                    case EQ:
+                        return Ordering.LE;
+                    default:
+                        return Ordering.UNKNOWN;
+                }
+            case GE:
+                switch (compareString(a, b, index + 1)) {
+                    case GT:
+                        return Ordering.GT;
+                    case GE:
+                    case EQ:
+                        return Ordering.GE;
+                    default:
+                        return Ordering.UNKNOWN;
+                }
+            default:
+                return ord;
+        }
+    }
+
+    public static enum Ordering {
+
+        LT,
+        LE,
+        GT,
+        GE,
+        EQ,
+        UNKNOWN;
     }
 }

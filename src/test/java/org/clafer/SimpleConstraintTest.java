@@ -477,4 +477,33 @@ public class SimpleConstraintTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(20));
         assertTrue(solver.find());
     }
+
+    /**
+     * <pre>
+     * abstract Person
+     *     age -> int
+     *     child -> Person *
+     *         [this.ref.age.ref &lt; 6]
+     *
+     * Alice : Person
+     *     [ this.age.ref = 6 ]
+     * Bob: Person
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testPredicate() {
+        AstModel model = newModel();
+
+        AstAbstractClafer person = model.addAbstract("Person");
+        AstConcreteClafer age = person.addChild("age").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer child = person.addChild("child").refToUnique(person);
+        child.addConstraint(lessThan(joinRef(join(joinRef($this()), age)),
+                constant(6)));
+        AstConcreteClafer alice = model.addChild("Alice").extending(person).withCard(Mandatory);
+        alice.addConstraint(equal(joinRef(join($this(), age)), constant(6)));
+        AstConcreteClafer bob = model.addChild("Bob").extending(person).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(10));
+        assertTrue(solver.find());
+    }
 }

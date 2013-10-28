@@ -446,7 +446,13 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrNot ir, BoolArg a) {
-            return compileAsBoolVar(ir.getExpr()).not();
+            BoolVar var = compileAsBoolVar(ir.getExpr());
+            if (a.hasReify()) {
+                return _arithm(a.useReify(), "!=", var);
+            }
+            return Preference.Constraint.equals(a.getPreference())
+                    ? _arithm(var, "=", 0)
+                    : var.not();
         }
 
         @Override

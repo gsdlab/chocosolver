@@ -399,24 +399,22 @@ public class AstCompiler {
 
             List<Pair<AstClafer, Integer>> offsets = analysis.getHierarcyOffsets(clafer);
             for (int i = 0; i < childIndices.length; i++) {
-                List<IrIntExpr[]> childIndex = new ArrayList<IrIntExpr[]>();
+                List<IrIntExpr> childIndex = new ArrayList<IrIntExpr>();
                 for (Pair<AstClafer, Integer> offset : offsets) {
                     for (AstConcreteClafer child : analysis.getBreakableChildren(offset.getFst())) {
-                        childIndex.add(indices.get(child)[i + offset.getSnd()]);
+                        childIndex.addAll(Arrays.asList(indices.get(child)[i + offset.getSnd()]));
                     }
                 }
                 if (ref != null && analysis.isBreakableRef(ref)) {
                     // References need a positive weight, so to use their value as
                     // a weight, need to offset it so that it always positive.
-                    childIndex.add(new IrIntExpr[]{
-                        analysis.isBreakableRefId(ref, i + refOffset)
-                        // The id of the target is the weight.
-                        //                        ? sub(mul(asInt(members[i]), refHigh + 1), $(refPointers.get(ref)[i + refOffset]))
-                        ? minus(refPointers.get(ref)[i + refOffset])
-                        // If analysis says that this id does not need breaking
-                        // then give it a constant weight. Any constant is fine.
-                        : Zero
-                    });
+                    childIndex.add(
+                            analysis.isBreakableRefId(ref, i + refOffset)
+                            // The id of the target is the weight.
+                            ? minus(refPointers.get(ref)[i + refOffset])
+                            // If analysis says that this id does not need breaking
+                            // then give it a constant weight. Any constant is fine.
+                            : Zero);
                 }
                 if (analysis.isInheritedBreakableTarget(clafer)) {
                     for (Pair<AstClafer, Integer> hierarchy : analysis.getHierarcyIds(clafer, i)) {
@@ -425,13 +423,14 @@ public class AstCompiler {
 
                             IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
                             System.arraycopy(sourceRefs, 0, array, 0, array.length);
-                            childIndex.add(new IrIntExpr[]{
-                                count(hierarchy.getSnd().intValue(), array)
-                            });
+                            IrIntExpr count = count(hierarchy.getSnd().intValue(), array);
+                            IrIntVar countVar = domainInt("CountVar" + countCount++, count.getDomain());
+                            module.addConstraint(equal(countVar, count));
+                            childIndex.add(countVar);
                         }
                     }
                 }
-                childIndices[i] = Util.concat(childIndex.toArray(new IrIntExpr[childIndex.size()][]));
+                childIndices[i] = childIndex.toArray(new IrIntExpr[childIndex.size()]);
             }
             for (int i = 0; i < weight.length; i++) {
                 weight[i] =
@@ -682,6 +681,7 @@ public class AstCompiler {
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<AstRef, IrIntVar[]>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<AstClafer, IrIntExpr[][]>();
+    private int countCount = 0;
     private int localCount = 0;
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {

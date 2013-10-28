@@ -52,6 +52,7 @@ import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortSets;
 import org.clafer.ir.IrSortStrings;
+import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrWithin;
@@ -354,55 +355,55 @@ public class Coalescer {
             return null;
         }
 
-        // This requires too much work for very little gain. Not worth it.
-        //        @Override
-        //        public Void visit(IrSortStringsChannel ir, Void a) {
-        //            IrIntExpr[][] strings = ir.getStrings();
-        //            IrIntExpr[] ints = ir.getInts();
-        //            for (int i = 0; i < strings.length; i++) {
-        //                for (int j = i + 1; j < strings.length; j++) {
-        //                    switch (compareString(strings[i], strings[j])) {
-        //                        case EQ:
-        //                            propagateEqual(ints[i], ints[j]);
-        //                            break;
-        //                        case LT:
-        //                            propagateLessThan(ints[i], ints[j]);
-        //                            break;
-        //                        case LE:
-        //                            propagateLessThanEqual(ints[i], ints[j]);
-        //                            break;
-        //                        case GT:
-        //                            propagateLessThan(ints[j], ints[i]);
-        //                            break;
-        //                        case GE:
-        //                            propagateLessThanEqual(ints[j], ints[i]);
-        //                            break;
-        //                    }
-        //                }
-        //            }
-        //            for (int i = 0; i < ints.length; i++) {
-        //                for (int j = i + 1; j < ints.length; j++) {
-        //                    switch (compare(ints[i], ints[j])) {
-        //                        case EQ:
-        //                            propagateEqualString(strings[i], strings[j]);
-        //                            break;
-        //                        case LT:
-        //                            propagateLessThanString(strings[i], strings[j]);
-        //                            break;
-        //                        case LE:
-        //                            propagateLessThanEqualString(strings[i], strings[j]);
-        //                            break;
-        //                        case GT:
-        //                            propagateLessThanString(strings[j], strings[i]);
-        //                            break;
-        //                        case GE:
-        //                            propagateLessThanEqualString(strings[j], strings[i]);
-        //                            break;
-        //                    }
-        //                }
-        //            }
-        //            return null;
-        //        }
+        @Override
+        public Void visit(IrSortStringsChannel ir, Void a) {
+            IrIntExpr[][] strings = ir.getStrings();
+            IrIntExpr[] ints = ir.getInts();
+            for (int i = 0; i < strings.length; i++) {
+                for (int j = i + 1; j < strings.length; j++) {
+                    switch (IrUtil.compareString(strings[i], strings[j])) {
+                        case EQ:
+                            propagateEqual(ints[i], ints[j]);
+                            break;
+                        case LT:
+                            propagateLessThan(ints[i], ints[j]);
+                            break;
+                        case LE:
+                            propagateLessThanEqual(ints[i], ints[j]);
+                            break;
+                        case GT:
+                            propagateLessThan(ints[j], ints[i]);
+                            break;
+                        case GE:
+                            propagateLessThanEqual(ints[j], ints[i]);
+                            break;
+                    }
+                }
+            }
+            for (int i = 0; i < ints.length; i++) {
+                for (int j = i + 1; j < ints.length; j++) {
+                    switch (IrUtil.compare(ints[i], ints[j])) {
+                        case EQ:
+                            propagateEqualString(strings[i], strings[j]);
+                            break;
+                        case LT:
+                            propagateLessThanString(strings[i], strings[j]);
+                            break;
+                        case LE:
+                            propagateLessThanEqualString(strings[i], strings[j]);
+                            break;
+                        case GT:
+                            propagateLessThanString(strings[j], strings[i]);
+                            break;
+                        case GE:
+                            propagateLessThanEqualString(strings[j], strings[i]);
+                            break;
+                    }
+                }
+            }
+            return null;
+        }
+
         @Override
         public Void visit(IrAllDifferent ir, Void a) {
             IrIntExpr[] operands = ir.getOperands();
@@ -516,7 +517,7 @@ public class Coalescer {
 
         private void propagateLessThanString(IrIntExpr[] a, IrIntExpr[] b) {
             for (int x = 0; x < a.length - 1; x++) {
-                switch (compare(a[x], b[x])) {
+                switch (IrUtil.compare(a[x], b[x])) {
                     case LT:
                     case LE:
                     case UNKNOWN:
@@ -544,8 +545,8 @@ public class Coalescer {
 
         private void propagateLessThanEqualString(IrIntExpr[] a, IrIntExpr[] b) {
             for (int x = 0; x < a.length; x++) {
-                Ordering charOrd = compare(a[x], b[x]);
-                if (!Ordering.EQ.equals(charOrd)) {
+                IrUtil.Ordering charOrd = IrUtil.compare(a[x], b[x]);
+                if (!IrUtil.Ordering.EQ.equals(charOrd)) {
                     propagateLessThanEqual(a[x], b[x]);
                 }
             }
@@ -776,82 +777,6 @@ public class Coalescer {
             IrSetVar var = coalescedSets.get(ir);
             return var == null ? ir : var;
         }
-    }
-
-    private static Ordering compare(IrIntExpr a, IrIntExpr b) {
-        IrDomain da = a.getDomain();
-        IrDomain db = b.getDomain();
-        if (da.size() == 1 && db.size() == 1 && da.getLowBound() == db.getLowBound()) {
-            return Ordering.EQ;
-        }
-        int aLb = da.getLowBound();
-        int aUb = da.getHighBound();
-        int bLb = db.getLowBound();
-        int bUb = db.getHighBound();
-        if (aLb > bUb) {
-            return Ordering.GT;
-        }
-        if (aLb >= bUb) {
-            return Ordering.GE;
-        }
-        if (aUb < bLb) {
-            return Ordering.LT;
-        }
-        if (aUb <= bLb) {
-            return Ordering.LE;
-        }
-        return Ordering.UNKNOWN;
-    }
-
-    private static Ordering compareString(IrIntExpr[] a, IrIntExpr[] b) {
-        return compareString(a, b, 0);
-    }
-
-    private static Ordering compareString(IrIntExpr[] a, IrIntExpr[] b, int index) {
-        if (index == a.length) {
-            return a.length == b.length ? Ordering.EQ : Ordering.LT;
-        }
-        if (index == b.length) {
-            assert a.length != b.length;
-            return Ordering.GT;
-        }
-        Ordering ord = compare(a[index], b[index]);
-        switch (ord) {
-            case EQ:
-                return compareString(a, b, index + 1);
-            case LE:
-                switch (compareString(a, b, index + 1)) {
-                    case LT:
-                        return Ordering.LT;
-                    case LE:
-                    case EQ:
-                        return Ordering.LE;
-                    default:
-                        return Ordering.UNKNOWN;
-                }
-            case GE:
-                switch (compareString(a, b, index + 1)) {
-                    case GT:
-                        return Ordering.GT;
-                    case GE:
-                    case EQ:
-                        return Ordering.GE;
-                    default:
-                        return Ordering.UNKNOWN;
-                }
-            default:
-                return ord;
-        }
-    }
-
-    private static enum Ordering {
-
-        LT,
-        LE,
-        GT,
-        GE,
-        EQ,
-        UNKNOWN;
     }
 
     private static PartialSet env(IrDomain env) {
