@@ -63,6 +63,7 @@ import org.clafer.ast.Card;
 import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
 import org.clafer.ast.analysis.Analyzer;
 import org.clafer.ast.analysis.CardAnalyzer;
+import org.clafer.ast.analysis.CircularityAnalyzer;
 import org.clafer.ast.analysis.FormatAnalyzer;
 import org.clafer.ast.analysis.GlobalCardAnalyzer;
 import org.clafer.ast.analysis.OptimizerAnalyzer;
@@ -94,6 +95,7 @@ import static org.clafer.ir.Irs.*;
 public class AstCompiler {
 
     public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
+        new CircularityAnalyzer(),
         new TypeAnalyzer(),
         new GlobalCardAnalyzer(),
         new ScopeAnalyzer(),

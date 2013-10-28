@@ -506,4 +506,28 @@ public class SimpleConstraintTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(10));
         assertTrue(solver.find());
     }
+
+    /**
+     * <pre>
+     * abstract Path
+     *     p : Path ?
+     *     isDir
+     *     [this.isDir -> this.p]
+     *
+     * pth : Path
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testCircular() {
+        AstModel model = newModel();
+
+        AstAbstractClafer path = model.addAbstract("Path");
+        AstConcreteClafer p = path.addChild("p").extending(path).withCard(0, 1);
+        AstConcreteClafer isDir = path.addChild("isDir").withCard(0, 1);
+        path.addConstraint(implies(some(join($this(), isDir)), some(join($this(), p))));
+        AstConcreteClafer pth = model.addChild("pth").extending(path).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(7, solver.allInstances().length);
+    }
 }

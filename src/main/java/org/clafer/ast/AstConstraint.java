@@ -15,11 +15,11 @@ public class AstConstraint {
     private AstBoolExpr expr;
     private final boolean soft;
 
-    AstConstraint(AstClafer context, AstBoolExpr expr) {
+    public AstConstraint(AstClafer context, AstBoolExpr expr) {
         this(idFactory++, context, expr);
     }
 
-    AstConstraint(AstClafer context, AstBoolExpr expr, boolean soft) {
+    public AstConstraint(AstClafer context, AstBoolExpr expr, boolean soft) {
         this(idFactory++, context, expr, soft);
     }
 
