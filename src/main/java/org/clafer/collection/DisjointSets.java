@@ -1,7 +1,7 @@
 package org.clafer.collection;
 
 import gnu.trove.iterator.TObjectIntIterator;
-import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.Collection;
@@ -15,18 +15,18 @@ import java.util.Set;
  */
 public class DisjointSets<V> {
 
-    private final TObjectIntHashMap<V> nodes = new TObjectIntHashMap<V>();
-    private final TIntIntHashMap parents = new TIntIntHashMap();
-    private final TIntIntHashMap ranks = new TIntIntHashMap();
+    private final TObjectIntHashMap<V> nodes = new TObjectIntHashMap<V>(16, 0.5f, -1);
+    private final TIntArrayList parents = new TIntArrayList(16);
 
     private int getNode(V i) {
-        int n = nodes.get(i);
-        if (n == 0) {
-            n = nodes.size() + 1;
-            nodes.put(i, n);
-            parents.put(n, n);
+        int n = nodes.size();
+        int v = nodes.putIfAbsent(i, n);
+        if (v == -1) {
+            parents.add(n);
+            assert nodes.size() == parents.size();
+            return n;
         }
-        return n;
+        return v;
     }
 
     private int find(int n) {
@@ -35,7 +35,7 @@ public class DisjointSets<V> {
             return n;
         }
         p = find(p);
-        parents.put(n, p);
+        parents.set(n, p);
         return p;
     }
 
@@ -51,19 +51,8 @@ public class DisjointSets<V> {
         int r1 = find(i1);
         int r2 = find(i2);
 
-        if (r1 == r2) {
-            return;
-        }
-
-        int rank1 = ranks.get(r1);
-        int rank2 = ranks.get(r2);
-        if (rank1 > rank2) {
-            parents.put(r2, r1);
-        } else if (rank1 < rank2) {
-            parents.put(r1, r2);
-        } else {
-            parents.put(r2, r1);
-            ranks.adjustValue(r1, 1);
+        if (r1 != r2) {
+            parents.set(r2, r1);
         }
     }
 
