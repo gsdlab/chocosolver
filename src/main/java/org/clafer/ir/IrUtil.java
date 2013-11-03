@@ -144,15 +144,35 @@ public class IrUtil {
         return s;
     }
 
-    public static IrIntExpr asInt(IrSetExpr s) {
-        if (s instanceof IrSingleton) {
-            return ((IrSingleton) s).getValue();
+    public static IrIntExpr asInt(IrSetExpr set) {
+        if (set instanceof IrSingleton) {
+            return ((IrSingleton) set).getValue();
         }
-        int[] constant = getConstant(s);
+        int[] constant = getConstant(set);
         if (constant != null && constant.length == 1) {
             return Irs.constant(constant[0]);
         }
         return null;
+    }
+
+    public static IrIntExpr[] asInts(IrSetExpr[] sets) {
+        if (sets.length == 0) {
+            return new IrIntExpr[0];
+        }
+        IrIntExpr asInt = asInt(sets[0]);
+        if (asInt == null) {
+            return null;
+        }
+        IrIntExpr[] ints = new IrIntExpr[sets.length];
+        ints[0] = asInt;
+        for (int i = 1; i < sets.length; i++) {
+            asInt = asInt(sets[i]);
+            if (asInt == null) {
+                return null;
+            }
+            ints[i] = asInt;
+        }
+        return ints;
     }
 
     public static boolean containsAll(int[] values, IrDomain domain) {

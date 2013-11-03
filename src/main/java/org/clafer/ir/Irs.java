@@ -2,8 +2,6 @@ package org.clafer.ir;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
@@ -1498,13 +1496,18 @@ public class Irs {
             $children = Arrays.copyOf(children, take.getEnv().getHighBound() + 1);
         }
 
+        IrIntExpr[] ints = IrUtil.asInts(children);
+        if (ints != null) {
+            return joinFunction(take, ints, injective ? 1 : 0);
+        }
+
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
             IrSetExpr[] to = new IrSetExpr[constant.length];
             for (int i = 0; i < to.length; i++) {
                 to[i] = $children[constant[i]];
             }
-            return union(to);
+            return union(to, injective);
         }
 
         // Compute env
@@ -1699,6 +1702,10 @@ public class Irs {
     }
 
     public static IrSetExpr union(IrSetExpr... operands) {
+        return union(operands, false);
+    }
+
+    public static IrSetExpr union(IrSetExpr[] operands, boolean disjoint) {
         List<IrSetExpr> flatten = new ArrayList<IrSetExpr>(operands.length);
         for (IrSetExpr operand : operands) {
             if (operand instanceof IrSetUnion) {
@@ -1735,13 +1742,15 @@ public class Irs {
                 int high = operandCard.getHighBound();
                 for (int i = 1; i < ops.length; i++) {
                     operandCard = ops[i].getCard();
-                    low = Math.max(low, operandCard.getLowBound());
+                    low = disjoint
+                            ? low + operandCard.getLowBound()
+                            : Math.max(low, operandCard.getLowBound());
                     high += operandCard.getHighBound();
                 }
                 IrDomain card = boundDomain(
                         Math.max(low, ker.size()),
                         Math.min(high, env.size()));
-                return IrUtil.asConstant(new IrSetUnion(ops, env, ker, card));
+                return IrUtil.asConstant(new IrSetUnion(ops, env, ker, card, disjoint));
         }
     }
 

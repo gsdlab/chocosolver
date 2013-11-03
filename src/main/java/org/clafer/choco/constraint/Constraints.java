@@ -1,5 +1,7 @@
 package org.clafer.choco.constraint;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropJoinRelation;
 import org.clafer.choco.constraint.propagator.PropJoinFunction;
@@ -29,10 +31,14 @@ import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
+import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
+import solver.constraints.binary.PropEqualXY_C;
 import solver.constraints.binary.PropEqualX_Y;
+import solver.constraints.binary.PropEqualX_YC;
 import solver.constraints.binary.PropGreaterOrEqualX_Y;
+import solver.constraints.nary.sum.PropSumEq;
 import solver.constraints.set.PropIntersection;
 import solver.constraints.set.PropSubsetEq;
 import solver.constraints.unary.PropEqualXC;
@@ -41,6 +47,7 @@ import solver.constraints.unary.PropLessOrEqualXC;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.VF;
 import solver.variables.Variable;
 
 /**
@@ -67,6 +74,40 @@ public class Constraints {
 
     private static Propagator<IntVar> greaterThanEq(IntVar g, IntVar l) {
         return lessThanEq(l, g);
+    }
+
+    private static Propagator<IntVar> sumEq(IntVar[] ints, IntVar sum) {
+        List<IntVar> filter = new ArrayList<IntVar>(ints.length);
+        int constant = 0;
+        for (IntVar var : ints) {
+            if (var.instantiated()) {
+                constant += var.getValue();
+            } else {
+                filter.add(var);
+            }
+        }
+        IntVar[] filtered =
+                filter.size() == ints.length
+                ? ints
+                : filter.toArray(new IntVar[filter.size()]);
+        switch (filtered.length) {
+            case 0:
+                return new PropEqualXC(sum, constant);
+            case 1:
+                if (sum.instantiated()) {
+                    return new PropEqualXC(filtered[0], sum.getValue() - constant);
+                }
+                return constant == 0
+                        ? new PropEqualX_Y(filtered[0], sum)
+                        : new PropEqualX_YC(new IntVar[]{filtered[0], sum}, -constant);
+            case 2:
+                if (sum.instantiated()) {
+                    return new PropEqualXY_C(filtered, sum.getValue() - constant);
+                }
+            // fallthrough
+            default:
+                return new PropSumEq(Util.cons(VF.fixed(constant, sum.getSolver()), filtered), sum);
+        }
     }
 
     /**
@@ -798,10 +839,14 @@ public class Constraints {
      * @param operandCards the cardinalities of {@code operands}
      * @param union the union
      * @param unionCard the cardinality of {@code union}
+     * @param disjoint the sets are disjoint
      * @return constraint
      * {@code operands[0] ∪ operands[1] ∪ ... ∪ operands[n] = union}
      */
-    public static Constraint union(SetVar[] operands, IntVar[] operandCards, SetVar union, IntVar unionCard) {
+    public static Constraint union(
+            SetVar[] operands, IntVar[] operandCards,
+            SetVar union, IntVar unionCard,
+            boolean disjoint) {
         if (operands.length != operandCards.length) {
             throw new IllegalArgumentException();
         }
@@ -819,7 +864,9 @@ public class Constraints {
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[]{
             new PropSetUnion(operands, union),
-            new PropSetUnionCard(operandCards, unionCard)
+            disjoint
+            ? sumEq(operandCards, unionCard)
+            : new PropSetUnionCard(operandCards, unionCard)
         };
         constraint.setPropagators(propagators);
 

@@ -285,14 +285,9 @@ public class AstCompiler {
                 sets.put(clafer, siblingSet[0]);
                 break;
             default:
-                IrSetExpr union = union(siblingSet);
-                IrIntExpr[] cards = new IrIntExpr[siblingSet.length];
-                for (int i = 0; i < cards.length; i++) {
-                    cards[i] = card(siblingSet[i]);
-                }
+                IrSetExpr union = union(siblingSet,true);
                 IrSetVar set = set(clafer.getName(), union.getEnv(), union.getKer(), union.getCard());
                 module.addConstraint(equal(set, union));
-                module.addConstraint(equal(card(set), add(cards)));
                 sets.put(clafer, set);
                 break;
         }

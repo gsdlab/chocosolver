@@ -11,14 +11,20 @@ import org.clafer.common.Util;
 public class IrSetUnion extends IrAbstractSet {
 
     private final IrSetExpr[] operands;
+    private final boolean disjoint;
 
-    IrSetUnion(IrSetExpr[] operands, IrDomain env, IrDomain ker, IrDomain card) {
+    IrSetUnion(IrSetExpr[] operands, IrDomain env, IrDomain ker, IrDomain card, boolean disjoint) {
         super(env, ker, card);
         this.operands = Check.noNullsNotEmpty(operands);
+        this.disjoint = disjoint;
     }
 
     public IrSetExpr[] getOperands() {
         return operands;
+    }
+
+    public boolean isDisjoint() {
+        return disjoint;
     }
 
     @Override
@@ -30,18 +36,20 @@ public class IrSetUnion extends IrAbstractSet {
     public boolean equals(Object obj) {
         if (obj instanceof IrSetUnion) {
             IrSetUnion other = (IrSetUnion) obj;
-            return Arrays.equals(operands, other.operands) && super.equals(other);
+            return Arrays.equals(operands, other.operands)
+                    && disjoint == other.disjoint
+                    && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(operands);
+        return Arrays.hashCode(operands) ^ (disjoint ? 1231 : 1237);
     }
 
     @Override
     public String toString() {
-        return "(" + Util.intercalate(") ∪ (", operands) + ")";
+        return "(" + Util.intercalate(") ∪ (", operands) + ")" + (disjoint ? " where disjoint" : "");
     }
 }

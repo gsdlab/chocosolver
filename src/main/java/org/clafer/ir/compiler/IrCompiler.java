@@ -1110,10 +1110,10 @@ public class IrCompiler {
             CSet[] operands = compile(ir.getOperands());
             if (reify == null) {
                 CSet union = numCset("Union", ir.getEnv(), ir.getKer(), ir.getCard());
-                post(_union(operands, union));
+                post(_union(operands, union, ir.isDisjoint()));
                 return union;
             }
-            return _union(operands, reify);
+            return _union(operands, reify, ir.isDisjoint());
         }
 
         @Override
@@ -1372,8 +1372,11 @@ public class IrCompiler {
         return Constraints.intersection(mapSet(operands), mapCard(operands), intersection.getSet(), intersection.getCard());
     }
 
-    private static Constraint _union(CSet[] operands, CSet union) {
-        return Constraints.union(mapSet(operands), mapCard(operands), union.getSet(), union.getCard());
+    private static Constraint _union(CSet[] operands, CSet union, boolean disjoint) {
+        return Constraints.union(
+                mapSet(operands), mapCard(operands),
+                union.getSet(), union.getCard(),
+                disjoint);
     }
 
     private IntVar _offset(IntVar var, int offset) {

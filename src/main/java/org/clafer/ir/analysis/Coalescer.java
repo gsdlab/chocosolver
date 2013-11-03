@@ -226,8 +226,7 @@ public class Coalescer {
             IrSetExpr left = ir.getLeft();
             IrSetExpr right = ir.getRight();
             if (IrSetTest.Op.Equal.equals(ir.getOp())) {
-                if (ir.getLeft() instanceof IrSetVar
-                        && ir.getRight() instanceof IrSetVar) {
+                if (left instanceof IrSetVar && right instanceof IrSetVar) {
                     setGraph.union((IrSetVar) left, (IrSetVar) right);
                 } else {
                     propagateSet(new PartialSet(left.getEnv(), left.getKer(), left.getCard()), right);
@@ -308,8 +307,12 @@ public class Coalescer {
                 }
                 propagateInt(enumDomain(domain), ints[i]);
             }
+            int lowCards = 0;
+            int highCards = 0;
             for (IrSetExpr set : sets) {
                 set.getKer().transferTo(kers);
+                lowCards += set.getCard().getLowBound();
+                highCards += set.getCard().getHighBound();
             }
             for (int i = 0; i < sets.length; i++) {
                 TIntSet env = new TIntHashSet();
@@ -324,7 +327,10 @@ public class Coalescer {
                 }
                 env.removeAll(kers);
                 sets[i].getKer().transferTo(env);
-                propagateSet(new PartialSet(enumDomain(env), enumDomain(ker), null), sets[i]);
+                IrDomain card = boundDomain(
+                        ints.length - highCards + sets[i].getCard().getHighBound(),
+                        ints.length - lowCards + sets[i].getCard().getLowBound());
+                propagateSet(new PartialSet(enumDomain(env), enumDomain(ker), card), sets[i]);
             }
             return null;
         }
@@ -720,11 +726,28 @@ public class Coalescer {
 
         private void propagateSetUnion(PartialSet left, IrSetUnion right) {
             if (left.isEnvMask() || left.isCardMask()) {
+                IrSetExpr[] operands = right.getOperands();
                 IrDomain env = left.getEnv();
-                IrDomain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
-                PartialSet set = new PartialSet(env, null, card);
-                for (IrSetExpr operand : right.getOperands()) {
-                    propagateSet(set, operand);
+                if (right.isDisjoint() && left.isCardMask()) {
+                    int lowCards = 0;
+                    int highCards = 0;
+                    for (IrSetExpr operand : operands) {
+                        lowCards += operand.getCard().getLowBound();
+                        highCards += operand.getCard().getHighBound();
+                    }
+                    for (IrSetExpr operand : operands) {
+                        IrDomain card = boundDomain(
+                                left.getCard().getLowBound() - highCards + operand.getCard().getHighBound(),
+                                left.getCard().getHighBound() - lowCards + operand.getCard().getLowBound());
+                        PartialSet set = new PartialSet(env, null, card);
+                        propagateSet(set, operand);
+                    }
+                } else {
+                    IrDomain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
+                    PartialSet set = new PartialSet(env, null, card);
+                    for (IrSetExpr operand : operands) {
+                        propagateSet(set, operand);
+                    }
                 }
             }
         }

@@ -490,7 +490,7 @@ public abstract class IrRewriter<T>
     public IrSetExpr visit(IrSetUnion ir, T a) {
         IrSetExpr[] operands = rewrite(ir.getOperands(), a);
         return changed(ir.getOperands(), operands)
-                ? union(operands)
+                ? union(operands, ir.isDisjoint())
                 : ir;
     }
 

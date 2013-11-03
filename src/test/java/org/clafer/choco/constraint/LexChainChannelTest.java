@@ -105,7 +105,7 @@ public class LexChainChannelTest extends ConstraintTest {
         SetVar unusedFood = VF.set("foodunused", new int[]{0, 1, 2}, solver);
 
         solver.post(Constraints.union(new SetVar[]{food0, food1}, new IntVar[]{food0Card, food1Card},
-                food, foodCard));
+                food, foodCard, true));
         solver.post(Constraints.intChannel(new SetVar[]{food0, food1, unusedFood}, foodParent));
         solver.post(ICF.arithm(foodParent[0], "<=", foodParent[1]));
         solver.post(ICF.arithm(foodParent[1], "<=", foodParent[2]));
@@ -122,7 +122,7 @@ public class LexChainChannelTest extends ConstraintTest {
         SetVar unusedCheese = VF.set("cheeseunused", new int[]{0, 1, 2}, solver);
 
         solver.post(Constraints.union(new SetVar[]{cheese0, cheese1, cheese2}, new IntVar[]{cheese0Card, cheese1Card, cheese2Card},
-                cheese, cheeseCard));
+                cheese, cheeseCard, true));
         solver.post(Constraints.intChannel(new SetVar[]{cheese0, cheese1, cheese2, unusedCheese}, cheeseParent));
         solver.post(ICF.arithm(cheeseParent[0], "<=", cheeseParent[1]));
         solver.post(ICF.arithm(cheeseParent[1], "<=", cheeseParent[2]));
