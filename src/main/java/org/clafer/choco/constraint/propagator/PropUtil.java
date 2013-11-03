@@ -256,6 +256,24 @@ public class PropUtil {
     }
 
     /**
+     * Checks if a set variable's kernel is contained entirely in the union of
+     * other set variables' envelope.
+     *
+     * @param sub the subset
+     * @param sups the superset union
+     * @return {@code true} if and only if {@code env(sub) subsetof env(union(sups))},
+     *         {@code false} otherwise
+     */
+    public static boolean isKerSubsetEnvs(SetVar sub, SetVar[] sups) {
+        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
+            if (!envsContain(sups, i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Checks if a set variable's envelope is contained entirely in a
      * collection.
      *
