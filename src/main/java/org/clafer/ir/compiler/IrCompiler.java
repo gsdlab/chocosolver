@@ -180,6 +180,9 @@ public class IrCompiler {
     }
 
     private static <T> Map<T, T> compose(Map<T, T> f1, Map<T, T> f2) {
+        if (f1.isEmpty()) {
+            return f2;
+        }
         if (f2.isEmpty()) {
             return f1;
         }

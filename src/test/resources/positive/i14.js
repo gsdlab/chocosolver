@@ -1,5 +1,5 @@
 defaultScope(1);
-intRange(-8, 7);
+intRange(-10, 10);
 
 c1_A = Abstract("c1_A");
 c2_a = c1_A.addChild("c2_a").withCard(1, 1);

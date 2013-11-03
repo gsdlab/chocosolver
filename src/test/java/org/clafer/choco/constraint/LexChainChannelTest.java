@@ -63,8 +63,8 @@ public class LexChainChannelTest extends ConstraintTest {
     public void quickTest() {
         for (int repeat = 0; repeat < 10; repeat++) {
             Solver solver = new Solver();
-            int m = nextInt(5) + 1;
-            int n = nextInt(5) + 1;
+            int m = nextInt(4) + 1;
+            int n = nextInt(4) + 1;
 
             IntVar[][] strings = new IntVar[m][];
             for (int i = 0; i < strings.length; i++) {
