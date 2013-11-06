@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import javax.script.ScriptException;
 import org.clafer.ast.AstModel;
-import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.javascript.Javascript;
+import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -25,7 +26,7 @@ public class PositiveTest {
         assertTrue(dir.isDirectory());
 
         for (File test : dir.listFiles()) {
-            Pair<AstModel, Scope> p = Javascript.readModel(test);
+            Triple<AstModel, Scope, Objective[]> p = Javascript.readModel(test);
             ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
 
             assertTrue(test + " failed", s.find());
