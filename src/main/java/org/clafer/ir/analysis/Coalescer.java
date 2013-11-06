@@ -21,12 +21,6 @@ import org.clafer.ir.IrBoolExprVisitorAdapter;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
-import static org.clafer.ir.IrCompare.Op.Equal;
-import static org.clafer.ir.IrCompare.Op.GreaterThan;
-import static org.clafer.ir.IrCompare.Op.GreaterThanEqual;
-import static org.clafer.ir.IrCompare.Op.LessThan;
-import static org.clafer.ir.IrCompare.Op.LessThanEqual;
-import static org.clafer.ir.IrCompare.Op.NotEqual;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrFilterString;
@@ -210,12 +204,6 @@ public class Coalescer {
                     break;
                 case LessThanEqual:
                     propagateLessThanEqual(left, right);
-                    break;
-                case GreaterThan:
-                    propagateLessThan(right, left);
-                    break;
-                case GreaterThanEqual:
-                    propagateLessThanEqual(right, left);
                     break;
             }
             return null;

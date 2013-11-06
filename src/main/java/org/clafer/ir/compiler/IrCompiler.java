@@ -570,15 +570,19 @@ public class IrCompiler {
             IrCompare.Op op = ir.getOp();
             IrIntExpr left = ir.getLeft();
             IrIntExpr right = ir.getRight();
-            Triple<String, IrIntExpr, Integer> offset = getOffset(left);
-            if (offset != null) {
-                return _arithm(compile(right), offset.getFst(),
-                        compile(offset.getSnd()), op.reverse().getSyntax(), offset.getThd().intValue());
+            if (left instanceof IrAdd) {
+                IrAdd add = (IrAdd) left;
+                IrIntExpr[] addends = add.getAddends();
+                if (addends.length == 1) {
+                    return _arithm(compile(addends[0]), "-", compile(right), op.getSyntax(), -add.getOffset());
+                }
             }
-            offset = getOffset(right);
-            if (offset != null) {
-                return _arithm(compile(left), offset.getFst(),
-                        compile(offset.getSnd()), op.getSyntax(), offset.getThd().intValue());
+            if (right instanceof IrAdd) {
+                IrAdd add = (IrAdd) right;
+                IrIntExpr[] addends = add.getAddends();
+                if (addends.length == 1) {
+                    return _arithm(compile(left), "-", compile(addends[0]), op.getSyntax(), add.getOffset());
+                }
             }
             if (IrCompare.Op.Equal.equals(op)) {
                 if (a.hasReify()) {

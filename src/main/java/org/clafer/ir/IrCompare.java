@@ -34,7 +34,18 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrCompare(left, op.negate(), right, getDomain().invert());
+        switch (op) {
+            case Equal:
+                return new IrCompare(left, Op.NotEqual, right, getDomain().invert());
+            case NotEqual:
+                return new IrCompare(left, Op.Equal, right, getDomain().invert());
+            case LessThan:
+                return new IrCompare(right, Op.LessThanEqual, left, getDomain().invert());
+            case LessThanEqual:
+                return new IrCompare(right, Op.LessThan, left, getDomain().invert());
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     @Override
@@ -78,9 +89,7 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
         Equal("="),
         NotEqual("!="),
         LessThan("<"),
-        LessThanEqual("<="),
-        GreaterThan(">"),
-        GreaterThanEqual(">=");
+        LessThanEqual("<=");
         private final String syntax;
 
         Op(String syntax) {
@@ -103,44 +112,6 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
 
         public boolean isInequality() {
             return !isEquality();
-        }
-
-        public Op reverse() {
-            switch (this) {
-                case Equal:
-                    return Equal;
-                case NotEqual:
-                    return NotEqual;
-                case LessThan:
-                    return GreaterThan;
-                case LessThanEqual:
-                    return GreaterThanEqual;
-                case GreaterThan:
-                    return LessThan;
-                case GreaterThanEqual:
-                    return LessThanEqual;
-                default:
-                    throw new IllegalStateException();
-            }
-        }
-
-        public Op negate() {
-            switch (this) {
-                case Equal:
-                    return NotEqual;
-                case NotEqual:
-                    return Equal;
-                case LessThan:
-                    return GreaterThanEqual;
-                case LessThanEqual:
-                    return GreaterThan;
-                case GreaterThan:
-                    return LessThanEqual;
-                case GreaterThanEqual:
-                    return LessThan;
-                default:
-                    throw new IllegalStateException();
-            }
         }
     }
 }

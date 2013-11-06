@@ -42,23 +42,27 @@ public class Optimizer {
                 if (operands[0] instanceof IrCompare) {
                     IrBoolExpr antecedent = operands[1];
                     IrCompare compare = (IrCompare) operands[0];
-                    IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                    if (opt == null) {
-                        opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
-                    }
-                    if (opt != null) {
-                        return opt;
+                    if (compare.getOp().isEquality()) {
+                        IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                        if (opt == null) {
+                            opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
+                        }
+                        if (opt != null) {
+                            return opt;
+                        }
                     }
                 }
                 if (operands[1] instanceof IrCompare) {
                     IrBoolExpr antecedent = operands[0];
                     IrCompare compare = (IrCompare) operands[1];
-                    IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                    if (opt == null) {
-                        opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
-                    }
-                    if (opt != null) {
-                        return opt;
+                    if (compare.getOp().isEquality()) {
+                        IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                        if (opt == null) {
+                            opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
+                        }
+                        if (opt != null) {
+                            return opt;
+                        }
                     }
                 }
             }
@@ -74,23 +78,27 @@ public class Optimizer {
                 if (operands[0] instanceof IrCompare) {
                     IrBoolExpr antecedent = operands[1];
                     IrCompare compare = (IrCompare) operands[0];
-                    IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                    if (opt == null) {
-                        opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
-                    }
-                    if (opt != null) {
-                        return opt;
+                    if (compare.getOp().isEquality()) {
+                        IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                        if (opt == null) {
+                            opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
+                        }
+                        if (opt != null) {
+                            return opt;
+                        }
                     }
                 }
                 if (operands[1] instanceof IrCompare) {
                     IrBoolExpr antecedent = operands[0];
                     IrCompare compare = (IrCompare) operands[1];
-                    IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                    if (opt == null) {
-                        opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
-                    }
-                    if (opt != null) {
-                        return opt;
+                    if (compare.getOp().isEquality()) {
+                        IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                        if (opt == null) {
+                            opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
+                        }
+                        if (opt != null) {
+                            return opt;
+                        }
                     }
                 }
             }
@@ -126,12 +134,14 @@ public class Optimizer {
             IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
             if (consequent instanceof IrCompare) {
                 IrCompare compare = (IrCompare) consequent;
-                IrBoolExpr opt = optimizeImplicationCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                if (opt == null) {
-                    opt = optimizeImplicationCompare(antecedent, compare.getRight(), compare.getOp().reverse(), compare.getLeft());
-                }
-                if (opt != null) {
-                    return opt;
+                if (compare.getOp().isEquality()) {
+                    IrBoolExpr opt = optimizeImplicationCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
+                    if (opt == null) {
+                        opt = optimizeImplicationCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
+                    }
+                    if (opt != null) {
+                        return opt;
+                    }
                 }
             }
             return changed(ir.getAntecedent(), antecedent)

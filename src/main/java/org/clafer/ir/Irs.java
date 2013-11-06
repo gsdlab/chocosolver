@@ -475,43 +475,6 @@ public class Irs {
                     return greaterThanEqual(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
                 }
                 break;
-            case GreaterThan:
-                if (left.equals(right)) {
-                    return False;
-                }
-                if (leftDomain.getLowBound() > rightDomain.getHighBound()) {
-                    return True;
-                }
-                if (leftDomain.getHighBound() <= rightDomain.getLowBound()) {
-                    return False;
-                }
-                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
-                    return not(implies((IrBoolExpr) left, (IrBoolExpr) right));
-                }
-                if (left instanceof IrMinus && right instanceof IrMinus) {
-                    return lessThan(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
-                }
-                break;
-            case GreaterThanEqual:
-                if (left.equals(right)) {
-                    return True;
-                }
-                if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
-                    return True;
-                }
-                if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
-                    return False;
-                }
-                if (leftDomain.getHighBound() == rightDomain.getLowBound()) {
-                    return equal(left, right);
-                }
-                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
-                    return implies((IrBoolExpr) right, (IrBoolExpr) left);
-                }
-                if (left instanceof IrMinus && right instanceof IrMinus) {
-                    return lessThanEqual(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
-                }
-                break;
             default:
                 throw new IllegalArgumentException("Unknown op: " + op);
         }
@@ -686,7 +649,7 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThan(IrIntExpr left, IrIntExpr right) {
-        return compare(left, IrCompare.Op.GreaterThan, right);
+        return compare(right, IrCompare.Op.LessThan, left);
     }
 
     public static IrBoolExpr greaterThanEqual(int left, IrIntExpr right) {
@@ -698,7 +661,7 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, IrIntExpr right) {
-        return compare(left, IrCompare.Op.GreaterThanEqual, right);
+        return compare(right, IrCompare.Op.LessThanEqual, left);
     }
 
     public static IrBoolExpr member(IrIntExpr element, IrSetExpr set) {

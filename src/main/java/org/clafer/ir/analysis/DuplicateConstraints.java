@@ -61,17 +61,6 @@ public class DuplicateConstraints {
                             lessThanEqual.add(pair);
                         }
                         break;
-                    case GreaterThan:
-                        notEqual.remove(pair);
-                        notEqual.remove(converse);
-                        lessThan.add(converse);
-                        break;
-                    case GreaterThanEqual:
-                        if (!equal.contains(pair)
-                                && !equal.contains(converse)) {
-                            lessThanEqual.add(converse);
-                        }
-                        break;
                     default:
                         throw new IllegalStateException();
                 }
