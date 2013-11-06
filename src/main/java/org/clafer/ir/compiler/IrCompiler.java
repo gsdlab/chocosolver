@@ -377,6 +377,28 @@ public class IrCompiler {
         return constraint;
     }
 
+    private Constraint compileAsEqual(IrIntExpr expr, IntVar value, BoolVar reify) {
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(intExprCompiler, value);
+        if (result instanceof IntVar) {
+            // The compliation failed to reify, explicitly reify now.
+            return _reify_equal(reify, value, (IntVar) result);
+        }
+        return _arithm(((Constraint) result).reif(), "=", reify);
+    }
+
+    private Constraint compileAsNotEqual(IrIntExpr expr, IntVar value, BoolVar reify) {
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(intExprCompiler, value);
+        if (result instanceof IntVar) {
+            // The compliation failed to reify, explicitly reify now.
+            return _reify_not_equal(reify, value, (IntVar) result);
+        }
+        return _arithm(((Constraint) result).reif(), "!=", reify);
+    }
+
     private Constraint compileAsConstraint(IrIntExpr expr, IntVar reify) {
         Object result = commonSubexpressions.contains(expr)
                 ? compile(expr)
@@ -545,57 +567,52 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrCompare ir, BoolArg a) {
-            Object opt = compileCompareConstant(ir.getLeft(), ir.getOp(), ir.getRight(), a);
-            if (opt == null) {
-                opt = compileCompareConstant(ir.getRight(), ir.getOp().reverse(), ir.getLeft(), a);
-            }
-            if (opt != null) {
-                return opt;
-            }
-            Triple<String, IrIntExpr, Integer> offset = getOffset(ir.getLeft());
+            IrCompare.Op op = ir.getOp();
+            IrIntExpr left = ir.getLeft();
+            IrIntExpr right = ir.getRight();
+            Triple<String, IrIntExpr, Integer> offset = getOffset(left);
             if (offset != null) {
-                return _arithm(compile(ir.getRight()), offset.getFst(),
-                        compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
+                return _arithm(compile(right), offset.getFst(),
+                        compile(offset.getSnd()), op.getSyntax(), offset.getThd().intValue());
             }
-            offset = getOffset(ir.getRight());
+            offset = getOffset(right);
             if (offset != null) {
-                return _arithm(compile(ir.getLeft()), offset.getFst(),
-                        compile(offset.getSnd()), ir.getOp().getSyntax(), offset.getThd().intValue());
+                return _arithm(compile(left), offset.getFst(),
+                        compile(offset.getSnd()), op.getSyntax(), offset.getThd().intValue());
             }
-            if (IrCompare.Op.Equal.equals(ir.getOp())) {
-                if (ir.getRight() instanceof IrIntVar) {
-                    return compileAsConstraint(ir.getLeft(), compile(ir.getRight()));
+            if (IrCompare.Op.Equal.equals(op)) {
+                if (a.hasReify()) {
+                    BoolVar reify = a.useReify();
+                    return right instanceof IrIntVar
+                            ? compileAsEqual(left, compile(right), reify)
+                            : compileAsEqual(right, compile(left), reify);
                 }
-                return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
+                if (a.getPreference().equals(Preference.BoolVar)) {
+                    BoolVar reify = numBoolVar("ReifyEqual");
+                    post(right instanceof IrIntVar
+                            ? compileAsEqual(left, compile(right), reify)
+                            : compileAsEqual(right, compile(left), reify));
+                    return reify;
+                }
+                return right instanceof IrIntVar
+                        ? compileAsConstraint(left, compile(right))
+                        : compileAsConstraint(right, compile(left));
+            } else if (IrCompare.Op.NotEqual.equals(op)) {
+                if (a.hasReify()) {
+                    BoolVar reify = a.useReify();
+                    return right instanceof IrIntVar
+                            ? compileAsNotEqual(left, compile(right), reify)
+                            : compileAsNotEqual(right, compile(left), reify);
+                }
+                if (a.getPreference().equals(Preference.BoolVar)) {
+                    BoolVar reify = numBoolVar("ReifyNotEqual");
+                    post(right instanceof IrIntVar
+                            ? compileAsNotEqual(left, compile(right), reify)
+                            : compileAsNotEqual(right, compile(left), reify));
+                    return reify;
+                }
             }
-            return _arithm(compile(ir.getLeft()), ir.getOp().getSyntax(), compile(ir.getRight()));
-        }
-
-        /*
-         * Optimize when one of the operands is a constant.
-         */
-        private Object compileCompareConstant(IrIntExpr left, IrCompare.Op op, IrIntExpr right, BoolArg a) {
-            Integer constant = IrUtil.getConstant(right);
-            if (constant != null) {
-                boolean preferBoolVar = Preference.BoolVar.equals(a.getPreference());
-                if (op.isEquality() && (a.hasReify() || preferBoolVar)) {
-                    BoolVar reify = a.hasReify() ? a.useReify() : numBoolVar("ReifyEquality");
-                    Constraint constraint =
-                            IrCompare.Op.Equal.equals(op)
-                            ? Constraints.reifyEqual(reify, compile(left), constant.intValue())
-                            : Constraints.reifyNotEqual(reify, compile(left), constant.intValue());
-                    if (preferBoolVar) {
-                        post(constraint);
-                        return reify;
-                    }
-                    return constraint;
-                }
-                if (IrCompare.Op.Equal.equals(op)) {
-                    return compileAsConstraint(left, compile(right));
-                }
-                return _arithm(compile(left), op.getSyntax(), constant.intValue());
-            }
-            return null;
+            return _arithm(compile(left), op.getSyntax(), compile(right));
         }
 
         private Triple<String, IrIntExpr, Integer> getOffset(IrIntExpr expr) {
@@ -875,14 +892,18 @@ public class IrCompiler {
             IntVar alternative = compile(ir.getAlternative());
             if (reify == null) {
                 IntVar ternary = numIntVar("Ternary", ir.getDomain());
-                post(_ifThenElse(antecedent,
-                        _reify_equal(ternary, consequent),
-                        _reify_equal(ternary, alternative)));
+                BoolVar reifyConsequent = numBoolVar("ReifyEqual");
+                BoolVar reifyAlternative = numBoolVar("ReifyEqual");
+                solver.post(_reify_equal(reifyConsequent, consequent, ternary));
+                solver.post(_reify_equal(reifyAlternative, alternative, ternary));
+                post(_ifThenElse(antecedent, reifyConsequent, reifyAlternative));
                 return ternary;
             }
-            return _ifThenElse(antecedent,
-                    _reify_equal(reify, consequent),
-                    _reify_equal(reify, alternative));
+            BoolVar reifyConsequent = numBoolVar("ReifyEqual");
+            BoolVar reifyAlternative = numBoolVar("ReifyEqual");
+            solver.post(_reify_equal(reifyConsequent, consequent, reify));
+            solver.post(_reify_equal(reifyAlternative, alternative, reify));
+            return _ifThenElse(antecedent, reifyConsequent, reifyAlternative);
         }
 
         private Object compileBool(IrBoolExpr expr, IntVar a) {
@@ -1278,18 +1299,30 @@ public class IrCompiler {
         return ICF.arithm(var1, op, c);
     }
 
-    private BoolVar _reify_equal(IntVar var1, IntVar var2) {
+    private Constraint _reify_equal(BoolVar reify, IntVar var1, IntVar var2) {
         if (var1.instantiated()) {
-            BoolVar reify = numBoolVar("ReifyEqual");
-            solver.post(Constraints.reifyEqual(reify, var2, var1.getValue()));
-            return reify;
+            if (var2.instantiated()) {
+                return _arithm(reify, "=", var1.getValue() == var2.getValue() ? 1 : 0);
+            }
+            return Constraints.reifyEqual(reify, var2, var1.getValue());
+        } else if (var2.instantiated()) {
+            return Constraints.reifyEqual(reify, var1, var2.getValue());
+        } else {
+            return Constraints.reifyEqual(reify, var1, var2);
         }
-        if (var2.instantiated()) {
-            BoolVar reify = numBoolVar("ReifyEqual");
-            solver.post(Constraints.reifyEqual(reify, var1, var2.getValue()));
-            return reify;
+    }
+
+    private Constraint _reify_not_equal(BoolVar reify, IntVar var1, IntVar var2) {
+        if (var1.instantiated()) {
+            if (var2.instantiated()) {
+                return _arithm(reify, "=", var1.getValue() != var2.getValue() ? 1 : 0);
+            }
+            return Constraints.reifyNotEqual(reify, var2, var1.getValue());
+        } else if (var2.instantiated()) {
+            return Constraints.reifyNotEqual(reify, var1, var2.getValue());
+        } else {
+            return Constraints.reifyNotEqual(reify, var1, var2);
         }
-        return _arithm(var1, "=", var2).reif();
     }
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {

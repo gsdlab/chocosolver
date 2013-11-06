@@ -20,8 +20,6 @@ import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropMask;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
-import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
-import org.clafer.choco.constraint.propagator.PropReifyNotEqualXC;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqual;
@@ -214,10 +212,19 @@ public class Constraints {
      * @return constraint {@code reify <=> (variable = constant)}
      */
     public static Constraint reifyEqual(BoolVar reify, IntVar variable, int constant) {
-        Constraint<IntVar, PropReifyEqualXC> constraint =
-                new Constraint<IntVar, PropReifyEqualXC>(new IntVar[]{reify, variable}, reify.getSolver());
-        constraint.setPropagators(new PropReifyEqualXC(reify, variable, constant));
-        return constraint;
+        return new ReifyEqualXC(reify, true, variable, constant);
+    }
+
+    /**
+     * A constraint enforcing {@code reify <=> (v1 = v2)}.
+     *
+     * @param reify the reified constraint
+     * @param v1 the first variable
+     * @param v2 the second variable
+     * @return constraint {@code reify <=> (v1 = v2)}
+     */
+    public static Constraint reifyEqual(BoolVar reify, IntVar v1, IntVar v2) {
+        return new ReifyEqualXY(reify, true, v1, v2);
     }
 
     /**
@@ -229,10 +236,19 @@ public class Constraints {
      * @return constraint {@code reify <=> (variable ≠ constant)}
      */
     public static Constraint reifyNotEqual(BoolVar reify, IntVar variable, int constant) {
-        Constraint<IntVar, PropReifyNotEqualXC> constraint =
-                new Constraint<IntVar, PropReifyNotEqualXC>(new IntVar[]{reify, variable}, reify.getSolver());
-        constraint.setPropagators(new PropReifyNotEqualXC(reify, variable, constant));
-        return constraint;
+        return new ReifyEqualXC(reify, false, variable, constant);
+    }
+
+    /**
+     * A constraint enforcing {@code reify <=> (v1 ≠ v2)}.
+     *
+     * @param reify the reified constraint
+     * @param v1 the first variable
+     * @param v2 the second variable
+     * @return constraint {@code reify <=> (v1 ≠ v2)}
+     */
+    public static Constraint reifyNotEqual(BoolVar reify, IntVar v1, IntVar v2) {
+        return new ReifyEqualXY(reify, false, v1, v2);
     }
 
     /**
@@ -244,6 +260,7 @@ public class Constraints {
      * @param set2 the right set
      * @return constraint {@code set1 = set2}
      */
+    @Deprecated
     public static Constraint equal(SetVar set1, SetVar set2) {
         @SuppressWarnings("unchecked")
         Constraint<? extends Variable, Propagator<? extends Variable>> constraint =

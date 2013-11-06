@@ -22,6 +22,10 @@ public abstract class ConstraintTest {
 
     protected final Random rand = new Random();
 
+    public boolean nextBool() {
+        return rand.nextBoolean();
+    }
+
     public int nextInt(int n) {
         return rand.nextInt(n);
     }

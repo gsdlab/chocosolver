@@ -293,11 +293,47 @@ public class PropUtil {
 
     /**
      * Removes every element in the subset's domain that is not in the
+     * superset's domain.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @return
+     * @throws ContradictionException
+     */
+    public static boolean domainSubsetDomain(IntVar sub, IntVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        changed |= sub.updateLowerBound(sup.getLB(), propagator);
+        changed |= sub.updateUpperBound(sup.getUB(), propagator);
+        if (sub.getDomainSize() < 2) {
+            return changed;
+        }
+        int left = Integer.MIN_VALUE;
+        int right = left;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (!sup.contains(val)) {
+                if (val == right + 1) {
+                    right = val;
+                } else {
+                    changed |= sub.removeInterval(left, right, propagator);
+                    left = val;
+                    right = val;
+                }
+            }
+        }
+        changed |= sub.removeInterval(left, right, propagator);
+        return changed;
+    }
+
+    /**
+     * Removes every element in the subset's domain that is not in the
      * collection.
      *
      * @param sub the subset
      * @param sup the superset
      * @param propagator the propagator
+     * @return
      * @throws ContradictionException
      */
     public static boolean domainSubsetOf(IntVar sub, TIntSet sup, ICause propagator) throws ContradictionException {

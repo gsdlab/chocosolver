@@ -9,18 +9,21 @@ import solver.variables.IntVar;
 import util.ESat;
 
 /**
+ * (reify = reifyC) <=> (x = c)
  *
  * @author jimmy
  */
 public class PropReifyEqualXC extends Propagator<IntVar> {
 
     private final BoolVar reify;
+    private final int reifyC;
     private final IntVar x;
     private final int c;
 
-    public PropReifyEqualXC(BoolVar reify, IntVar x, int c) {
+    public PropReifyEqualXC(BoolVar reify, boolean reifyC, IntVar x, int c) {
         super(new IntVar[]{reify, x}, PropagatorPriority.UNARY, true);
         this.reify = reify;
+        this.reifyC = reifyC ? 1 : 0;
         this.x = x;
         this.c = c;
     }
@@ -40,7 +43,7 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
 
     private void propagateReifyVar() throws ContradictionException {
         assert reify.instantiated();
-        if (reify.getValue() == 1) {
+        if (reify.getValue() == reifyC) {
             x.instantiateTo(c, aCause);
         } else {
             x.removeValue(c, aCause);
@@ -51,11 +54,11 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
     private void propagateXVar() throws ContradictionException {
         if (x.contains(c)) {
             if (x.instantiated()) {
-                reify.setToTrue(aCause);
+                reify.instantiateTo(reifyC, aCause);
                 setPassive();
             }
         } else {
-            reify.setToFalse(aCause);
+            reify.instantiateTo(1 - reifyC, aCause);
             setPassive();
         }
     }
@@ -81,29 +84,19 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        switch (reify.getBooleanValue()) {
-            case TRUE:
-                if (!x.contains(c)) {
-                    return ESat.FALSE;
-                }
-                if (x.instantiated()) {
-                    return ESat.TRUE;
-                }
-                break;
-            case FALSE:
-                if (!x.contains(c)) {
-                    return ESat.TRUE;
-                }
-                if (x.instantiated()) {
-                    return ESat.FALSE;
-                }
-                break;
+        if (reify.instantiated()) {
+            if (!x.contains(c)) {
+                return reify.getValue() == reifyC ? ESat.FALSE : ESat.TRUE;
+            }
+            if (x.instantiated()) {
+                return reify.getValue() == reifyC ? ESat.TRUE : ESat.FALSE;
+            }
         }
         return ESat.UNDEFINED;
     }
 
     @Override
     public String toString() {
-        return reify + " <=> (" + x + " = " + c + ")";
+        return (reifyC == 1 ? reify : "!" + reify) + " <=> (" + x + " = " + c + ")";
     }
 }
