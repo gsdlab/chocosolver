@@ -23,7 +23,7 @@ public class InstanceModel {
     }
     
     public InstanceClafer[] getTopClafers(AstConcreteClafer type) {
-        List<InstanceClafer> typedTopClafers = new ArrayList<InstanceClafer>();
+        List<InstanceClafer> typedTopClafers = new ArrayList<>();
         for(InstanceClafer topClafer : topClafers) {
             if(type.equals(topClafer.getType())) {
                 typedTopClafers.add(topClafer);

@@ -16,7 +16,7 @@ public class CardAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstConcreteClafer, Card> cardMap = new HashMap<AstConcreteClafer, Card>();
+        Map<AstConcreteClafer, Card> cardMap = new HashMap<>();
         cardMap.put(analysis.getModel(), new Card(1, 1));
         for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
             analyze(abstractClafer, cardMap, analysis);

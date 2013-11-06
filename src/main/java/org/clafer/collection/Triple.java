@@ -51,11 +51,11 @@ public class Triple<A, B, C> {
     }
 
     public Pair<A, B> getFstSnd() {
-        return new Pair<A, B>(fst, snd);
+        return new Pair<>(fst, snd);
     }
 
     public Pair<B, C> getSndThd() {
-        return new Pair<B, C>(snd, thd);
+        return new Pair<>(snd, thd);
     }
 
     /**
@@ -69,7 +69,7 @@ public class Triple<A, B, C> {
      * @return the first element of the tuples
      */
     public static <A, B, C> List<A> mapFst(List<Triple<A, B, C>> triples) {
-        List<A> fsts = new ArrayList<A>(triples.size());
+        List<A> fsts = new ArrayList<>(triples.size());
         for (Triple<A, B, C> triple : triples) {
             fsts.add(triple.getFst());
         }
@@ -109,7 +109,7 @@ public class Triple<A, B, C> {
      * @return the second element of the tuples
      */
     public static <A, B, C> List<B> mapSnd(List<Triple<A, B, C>> triples) {
-        List<B> snds = new ArrayList<B>(triples.size());
+        List<B> snds = new ArrayList<>(triples.size());
         for (Triple<A, B, C> triple : triples) {
             snds.add(triple.getSnd());
         }
@@ -149,7 +149,7 @@ public class Triple<A, B, C> {
      * @return the third element of the tuples
      */
     public static <A, B, C> List<C> mapThd(List<Triple<A, B, C>> triples) {
-        List<C> thds = new ArrayList<C>(triples.size());
+        List<C> thds = new ArrayList<>(triples.size());
         for (Triple<A, B, C> triple : triples) {
             thds.add(triple.getThd());
         }

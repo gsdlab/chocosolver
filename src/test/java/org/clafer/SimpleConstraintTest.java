@@ -1,12 +1,12 @@
 package org.clafer;
 
-import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.compiler.ClaferCompiler;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
+import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
 

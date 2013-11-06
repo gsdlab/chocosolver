@@ -14,7 +14,7 @@ import org.clafer.common.Check;
 public class Vertex<V> {
 
     private final V data;
-    private final Set<Vertex<V>> neighbours = new HashSet<Vertex<V>>();
+    private final Set<Vertex<V>> neighbours = new HashSet<>();
 
     public Vertex(V data) {
         this.data = Check.notNull(data);

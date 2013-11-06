@@ -16,7 +16,7 @@ import org.clafer.ast.AstClafer;
  */
 public class ScopeBuilder implements Scopable {
 
-    private final Map<AstClafer, Integer> scope = new HashMap<AstClafer, Integer>();
+    private final Map<AstClafer, Integer> scope = new HashMap<>();
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;

@@ -2,77 +2,75 @@ package org.clafer.ir.compiler;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import org.clafer.ir.IrAllDifferent;
-import org.clafer.ir.IrArrayToSet;
-import org.clafer.ir.IrElement;
-import org.clafer.ir.IrIfOnlyIf;
-import org.clafer.ir.IrIfThenElse;
-import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrWithin;
-import org.clafer.ir.IrMember;
-import org.clafer.ir.IrNotWithin;
-import org.clafer.ir.IrNotImplies;
-import org.clafer.ir.IrNotMember;
-import org.clafer.ir.IrOr;
-import org.clafer.ir.IrSelectN;
-import org.clafer.ir.IrSetExpr;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.clafer.ir.IrNot;
-import org.clafer.ir.IrSetTest;
-import org.clafer.ir.IrSingleton;
-import org.clafer.ir.IrSortStrings;
-import org.clafer.ir.IrSetUnion;
-import org.clafer.ir.IrAnd;
-import org.clafer.common.Check;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
+import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.ir.IrAdd;
+import org.clafer.ir.IrAllDifferent;
+import org.clafer.ir.IrAnd;
+import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolDomain;
-import org.clafer.ir.IrIntChannel;
-import org.clafer.ir.IrJoinRelation;
-import org.clafer.ir.IrJoinFunction;
-import org.clafer.ir.IrCard;
-import solver.variables.SetVar;
-import solver.constraints.Constraint;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
 import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrDomain;
-import org.clafer.ir.IrImplies;
+import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
+import org.clafer.ir.IrDomain;
+import org.clafer.ir.IrElement;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrFilterString;
+import org.clafer.ir.IrIfOnlyIf;
+import org.clafer.ir.IrIfThenElse;
+import org.clafer.ir.IrImplies;
+import org.clafer.ir.IrIntChannel;
+import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntVar;
+import org.clafer.ir.IrJoinFunction;
+import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrMask;
+import org.clafer.ir.IrMember;
 import org.clafer.ir.IrMinus;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
+import org.clafer.ir.IrNot;
+import org.clafer.ir.IrNotImplies;
+import org.clafer.ir.IrNotMember;
+import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
+import org.clafer.ir.IrOr;
+import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetDifference;
+import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetTernary;
+import org.clafer.ir.IrSetTest;
+import org.clafer.ir.IrSetUnion;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortSets;
+import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
+import org.clafer.ir.IrWithin;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
@@ -81,11 +79,13 @@ import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.constraints.ICF;
 import solver.constraints.Operator;
 import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
+import solver.variables.SetVar;
 import solver.variables.VF;
 
 /**
@@ -133,7 +133,7 @@ public class IrCompiler {
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
 
-            constraints = new ArrayList<IrBoolExpr>(optModule.getConstraints().size());
+            constraints = new ArrayList<>(optModule.getConstraints().size());
             for (IrBoolExpr constraint : optModule.getConstraints()) {
                 Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
                 if (cardinality != null && cardinality.getFst() instanceof IrIntVar) {
@@ -186,7 +186,7 @@ public class IrCompiler {
         if (f2.isEmpty()) {
             return f1;
         }
-        Map<T, T> composed = new HashMap<T, T>(f2);
+        Map<T, T> composed = new HashMap<>(f2);
         for (Entry<T, T> e : f1.entrySet()) {
             T key = e.getKey();
             T value = f2.get(e.getValue());
@@ -197,12 +197,12 @@ public class IrCompiler {
         }
         return composed;
     }
-    private final Map<SetVar, IntVar> cachedSetCardVars = new HashMap<SetVar, IntVar>();
-    private final Map<IntVar, IntVar> cachedMinus = new HashMap<IntVar, IntVar>();
-    private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<Pair<IntVar, Integer>, IntVar>();
-    private final Set<IrExpr> commonSubexpressions = new HashSet<IrExpr>();
-    private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<IrIntExpr, IntVar>();
-    private final Map<IrSetExpr, CSet> cachedCommonSetSubexpressions = new HashMap<IrSetExpr, CSet>();
+    private final Map<SetVar, IntVar> cachedSetCardVars = new HashMap<>();
+    private final Map<IntVar, IntVar> cachedMinus = new HashMap<>();
+    private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<>();
+    private final Set<IrExpr> commonSubexpressions = new HashSet<>();
+    private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<>();
+    private final Map<IrSetExpr, CSet> cachedCommonSetSubexpressions = new HashMap<>();
 
     private void post(Constraint constraint) {
         if (!solver.TRUE.equals(constraint)) {
@@ -304,8 +304,8 @@ public class IrCompiler {
         }
         return iint;
     }
-    private final Map<IrIntVar, IntVar> intVarMap = new HashMap<IrIntVar, IntVar>();
-    private final Map<IrIntVar, CSet> cardIntVarMap = new HashMap<IrIntVar, CSet>();
+    private final Map<IrIntVar, IntVar> intVarMap = new HashMap<>();
+    private final Map<IrIntVar, CSet> cardIntVarMap = new HashMap<>();
 
     private SetVar getSetVar(IrSetVar var) {
         SetVar set = setVarMap.get(var);
@@ -315,7 +315,7 @@ public class IrCompiler {
         }
         return set;
     }
-    private final Map<IrSetVar, SetVar> setVarMap = new HashMap<IrSetVar, SetVar>();
+    private final Map<IrSetVar, SetVar> setVarMap = new HashMap<>();
 
     private BoolVar asBoolVar(Object obj) {
         if (obj instanceof Constraint) {
@@ -620,7 +620,7 @@ public class IrCompiler {
                 IrAdd add = (IrAdd) expr;
                 IrIntExpr[] addends = add.getAddends();
                 if (addends.length == 1) {
-                    return new Triple<String, IrIntExpr, Integer>("-", addends[0], add.getOffset());
+                    return new Triple<>("-", addends[0], add.getOffset());
                 }
             }
             return null;
@@ -747,19 +747,19 @@ public class IrCompiler {
 
         private Pair<Integer, IrIntExpr> getCoefficient(IrIntExpr e) {
             if (e instanceof IrMinus) {
-                return new Pair<Integer, IrIntExpr>(-1, ((IrMinus) e).getExpr());
+                return new Pair<>(-1, ((IrMinus) e).getExpr());
             } else if (e instanceof IrMul) {
                 IrMul mul = (IrMul) e;
                 Integer constant = IrUtil.getConstant(mul.getMultiplicand());
                 if (constant != null) {
-                    return new Pair<Integer, IrIntExpr>(constant, mul.getMultiplier());
+                    return new Pair<>(constant, mul.getMultiplier());
                 }
                 constant = IrUtil.getConstant(mul.getMultiplier());
                 if (constant != null) {
-                    return new Pair<Integer, IrIntExpr>(constant, mul.getMultiplicand());
+                    return new Pair<>(constant, mul.getMultiplicand());
                 }
             }
-            return new Pair<Integer, IrIntExpr>(1, e);
+            return new Pair<>(1, e);
         }
 
         private Pair<int[], IrIntExpr[]> getCoefficients(IrIntExpr[] es) {
@@ -770,7 +770,7 @@ public class IrCompiler {
                 coefficients[i] = coef.getFst();
                 exprs[i] = coef.getSnd();
             }
-            return new Pair<int[], IrIntExpr[]>(coefficients, exprs);
+            return new Pair<>(coefficients, exprs);
         }
 
         @Override
@@ -1416,7 +1416,7 @@ public class IrCompiler {
     }
 
     private IntVar _offset(IntVar var, int offset) {
-        Pair<IntVar, Integer> pair = new Pair<IntVar, Integer>(var, offset);
+        Pair<IntVar, Integer> pair = new Pair<>(var, offset);
         IntVar cache = cachedOffset.get(pair);
         if (cache == null) {
             cache = VF.offset(var, offset);

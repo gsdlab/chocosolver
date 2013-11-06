@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public class KeyGraph<V> implements Graph<V> {
 
-    private final Map<V, Vertex<V>> vertices = new HashMap<V, Vertex<V>>();
+    private final Map<V, Vertex<V>> vertices = new HashMap<>();
 
     /**
      * Returns the vertex associated with the data. The data class should
@@ -37,7 +37,7 @@ public class KeyGraph<V> implements Graph<V> {
     public Vertex<V> getVertex(V data) {
         Vertex<V> vertex = vertices.get(data);
         if (vertex == null) {
-            vertex = new Vertex<V>(data);
+            vertex = new Vertex<>(data);
             vertices.put(data, vertex);
         }
         return vertex;

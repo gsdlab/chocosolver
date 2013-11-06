@@ -15,7 +15,7 @@ import org.clafer.common.Check;
  */
 public abstract class FList<E> implements Iterable<E> {
 
-    private static Null<Object> Null = new Null<Object>();
+    private static Null<Object> Null = new Null<>();
 
     private FList() {
     }
@@ -81,7 +81,7 @@ public abstract class FList<E> implements Iterable<E> {
      * @return a copy of the original list with head appended at the start
      */
     public static <E> FList<E> cons(E head, FList<E> tail) {
-        return new Cons<E>(head, tail);
+        return new Cons<>(head, tail);
     }
 
     /**
@@ -126,7 +126,7 @@ public abstract class FList<E> implements Iterable<E> {
 
         @Override
         public List<E> toList() {
-            List<E> list = new ArrayList<E>();
+            List<E> list = new ArrayList<>();
             for (FList<E> current = this; !current.isEmpty(); current = current.getTail()) {
                 list.add(current.getHead());
             }
@@ -135,7 +135,7 @@ public abstract class FList<E> implements Iterable<E> {
 
         @Override
         public Iterator<E> iterator() {
-            return new FListIterator<E>(this);
+            return new FListIterator<>(this);
         }
 
         @Override

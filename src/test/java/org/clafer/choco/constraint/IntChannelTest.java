@@ -1,7 +1,7 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.common.Util;
 import org.clafer.choco.constraint.propagator.PropUtil;
+import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;

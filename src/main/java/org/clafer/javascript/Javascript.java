@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import org.clafer.ast.AstModel;
-import org.clafer.scope.Scope;
 import org.clafer.collection.Triple;
 import org.clafer.objective.Objective;
+import org.clafer.scope.Scope;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
@@ -63,7 +63,7 @@ public class Javascript {
                     new InputStreamReader(Javascript.class.getResourceAsStream("header.js")),
                     "header.js", 1, null);
             cxt.evaluateString(engine, in, name, 1, null);
-            return new Triple<AstModel, Scope, Objective[]>(
+            return new Triple<>(
                     context.getModel(),
                     context.getScope(),
                     context.getObjectives());
@@ -86,7 +86,7 @@ public class Javascript {
                     new InputStreamReader(Javascript.class.getResourceAsStream("header.js")),
                     "header.js", 1, null);
             cxt.evaluateReader(engine, in, name, 1, null);
-            return new Triple<AstModel, Scope, Objective[]>(
+            return new Triple<>(
                     context.getModel(),
                     context.getScope(),
                     context.getObjectives());

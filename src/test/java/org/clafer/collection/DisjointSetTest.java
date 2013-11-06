@@ -14,16 +14,16 @@ import org.junit.Test;
 public class DisjointSetTest {
 
     private static Collection<Set<Integer>> collection(Set<Integer>... values) {
-        return new HashSet<Set<Integer>>(Arrays.asList(values));
+        return new HashSet<>(Arrays.asList(values));
     }
 
     private static Set<Integer> set(Integer... values) {
-        return new HashSet<Integer>(Arrays.asList(values));
+        return new HashSet<>(Arrays.asList(values));
     }
 
     @Test
     public void testUnionConnected() {
-        DisjointSets<Integer> sets = new DisjointSets<Integer>();
+        DisjointSets<Integer> sets = new DisjointSets<>();
 
         assertFalse(sets.connected(1, 2));
         assertFalse(sets.connected(2, 1));
@@ -92,7 +92,7 @@ public class DisjointSetTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testConnectedComponents() {
-        DisjointSets<Integer> sets = new DisjointSets<Integer>();
+        DisjointSets<Integer> sets = new DisjointSets<>();
 
         assertEquals(collection(), sets.connectedComponents());
 

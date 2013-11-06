@@ -36,7 +36,7 @@ public class SymmetryAnalyzer implements Analyzer {
      * @return the analysis
      */
     private Analysis breakableChildren(Analysis analysis) {
-        Map<AstClafer, AstConcreteClafer[]> breakableChildren = new HashMap<AstClafer, AstConcreteClafer[]>();
+        Map<AstClafer, AstConcreteClafer[]> breakableChildren = new HashMap<>();
         for (AstAbstractClafer clafer : analysis.getAbstractClafers()) {
             breakableChildren(clafer, breakableChildren, analysis);
         }
@@ -45,7 +45,7 @@ public class SymmetryAnalyzer implements Analyzer {
     }
 
     private boolean breakableChildren(AstClafer clafer, Map<AstClafer, AstConcreteClafer[]> breakableChildren, Analysis analysis) {
-        List<AstConcreteClafer> breakables = new ArrayList<AstConcreteClafer>();
+        List<AstConcreteClafer> breakables = new ArrayList<>();
         for (AstConcreteClafer child : clafer.getChildren()) {
             if (breakableChildren(child, breakableChildren, analysis)) {
                 breakables.add(child);
@@ -83,7 +83,7 @@ public class SymmetryAnalyzer implements Analyzer {
      */
     private Analysis breakableRefs(Analysis analysis) {
         // Use this graph to detect when symmetries cannot be broken.
-        KeyGraph<AstClafer> graph = new KeyGraph<AstClafer>();
+        KeyGraph<AstClafer> graph = new KeyGraph<>();
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer instanceof AstConcreteClafer) {
                 AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
@@ -102,8 +102,8 @@ public class SymmetryAnalyzer implements Analyzer {
             }
         }
 
-        Map<AstRef, int[]> breakableRefsMap = new HashMap<AstRef, int[]>();
-        Map<AstClafer, AstRef[]> breakableTargetsMap = new HashMap<AstClafer, AstRef[]>();
+        Map<AstRef, int[]> breakableRefsMap = new HashMap<>();
+        Map<AstClafer, AstRef[]> breakableTargetsMap = new HashMap<>();
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer.hasRef()) {
                 if (!GraphUtil.hasPath(

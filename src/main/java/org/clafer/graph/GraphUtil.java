@@ -19,7 +19,7 @@ public class GraphUtil {
     }
 
     public static <V> boolean hasPath(Vertex<V> start, Vertex<V> end, Graph<V> graph) {
-        Set<Vertex<V>> visited = new HashSet<Vertex<V>>();
+        Set<Vertex<V>> visited = new HashSet<>();
         return findPath(start, end, graph, visited);
     }
 
@@ -51,9 +51,9 @@ public class GraphUtil {
      */
     public static <V> List<Set<V>> computeStronglyConnectedComponents(Graph<V> graph) {
         Counter counter = new Counter();
-        Map<Vertex<V>, Index> vertexIndices = new HashMap<Vertex<V>, Index>();
-        Stack<Vertex<V>> S = new Stack<Vertex<V>>();
-        List<Set<V>> components = new ArrayList<Set<V>>();
+        Map<Vertex<V>, Index> vertexIndices = new HashMap<>();
+        Stack<Vertex<V>> S = new Stack<>();
+        List<Set<V>> components = new ArrayList<>();
 
         for (Vertex<V> vertex : graph.getVertices()) {
             if (!vertexIndices.containsKey(vertex)) {
@@ -82,7 +82,7 @@ public class GraphUtil {
         }
 
         if (vertexIndex.getLowIndex() == vertexIndex.getIndex()) {
-            Set<V> component = new HashSet<V>();
+            Set<V> component = new HashSet<>();
 
             Vertex<V> cycle;
             do {

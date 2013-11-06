@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.clafer.collection.Either;
-import org.clafer.common.Check;
 import org.clafer.collection.Pair;
+import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import solver.ResolutionPolicy;
 import solver.Solver;
@@ -142,14 +142,14 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
      */
     @Override
     public Pair<Integer, InstanceModel> instance() {
-        return new Pair<Integer, InstanceModel>(
+        return new Pair<>(
                 score.isLeft() ? score.getLeft() : score.getRight().getValue(),
                 solutionMap.getInstance());
     }
 
     @Override
     public Pair<Integer, InstanceModel>[] allInstances() {
-        List<Pair<Integer, InstanceModel>> instances = new ArrayList<Pair<Integer, InstanceModel>>();
+        List<Pair<Integer, InstanceModel>> instances = new ArrayList<>();
         while (find()) {
             instances.add(instance());
         }

@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.variables.BoolVar;
-import solver.variables.IntVar;
 import solver.variables.VF;
 
 /**

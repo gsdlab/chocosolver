@@ -1,12 +1,12 @@
 package org.clafer.choco.constraint;
 
 import org.clafer.common.Util;
+import static org.junit.Assert.*;
+import org.junit.Test;
 import solver.Solver;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import org.junit.Test;
 import solver.variables.VF;
-import static org.junit.Assert.*;
 
 /**
  *

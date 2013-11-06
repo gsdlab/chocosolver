@@ -3,8 +3,8 @@ package org.clafer.scope;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
+import org.clafer.common.Check;
 
 /**
  * <p>
@@ -98,7 +98,7 @@ public class Scope implements Scopable {
         if (intLow > intHigh) {
             throw new IllegalArgumentException("intLow(" + intLow + " > intHigh(" + intHigh + ")");
         }
-        this.scopes = new HashMap<AstClafer, Integer>(scopes);
+        this.scopes = new HashMap<>(scopes);
         this.defaultScope = defaultScope;
         this.intLow = intLow;
         this.intHigh = intHigh;

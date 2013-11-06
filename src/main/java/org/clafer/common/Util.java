@@ -266,7 +266,7 @@ public class Util {
      * @return a copy of the original list with head appended at the start
      */
     public static <T> List<T> cons(T head, List<? extends T> tail) {
-        List<T> r = new ArrayList<T>(tail.size() + 1);
+        List<T> r = new ArrayList<>(tail.size() + 1);
         r.add(head);
         r.addAll(tail);
         return r;
@@ -281,7 +281,7 @@ public class Util {
      * @return a copy of the original list with tail appended at the end
      */
     public static <T> List<T> snoc(List<? extends T> head, T tail) {
-        List<T> r = new ArrayList<T>(head.size() + 1);
+        List<T> r = new ArrayList<>(head.size() + 1);
         r.addAll(head);
         r.add(tail);
         return r;

@@ -13,18 +13,18 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
-import org.clafer.ast.AstSetTest;
-import org.clafer.ast.AstSetTest.Op;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
+import org.clafer.ast.AstSetTest;
+import org.clafer.ast.AstSetTest.Op;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
-import static org.clafer.collection.FList.*;
 import org.clafer.collection.FList;
+import static org.clafer.collection.FList.*;
 import org.clafer.collection.Pair;
 
 /**
@@ -35,9 +35,9 @@ public class PartialIntAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstRef, int[][]> partialInts = new HashMap<AstRef, int[][]>();
+        Map<AstRef, int[][]> partialInts = new HashMap<>();
 
-        List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<Pair<FList<AstConcreteClafer>, Integer>>();
+        List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
             if (constraint.isSoft()) {
@@ -48,8 +48,7 @@ public class PartialIntAnalyzer implements Analyzer {
                 FList<AstConcreteClafer> path = assignment.getFst();
                 Integer value = assignment.getSnd();
                 for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
-                    assignments.add(new Pair<FList<AstConcreteClafer>, Integer>(
-                            snoc(path, concreteClafer), value));
+                    assignments.add(new Pair<>(snoc(path, concreteClafer), value));
                 }
             } catch (NotAssignmentException e) {
                 // Only analyze assignments
@@ -104,7 +103,7 @@ public class PartialIntAnalyzer implements Analyzer {
             return false;
         }
         assert clafer instanceof AstAbstractClafer;
-        Map<AstConcreteClafer, TIntHashSet> parentIdsMap = new HashMap<AstConcreteClafer, TIntHashSet>();
+        Map<AstConcreteClafer, TIntHashSet> parentIdsMap = new HashMap<>();
         for (int id : ids) {
             Pair<AstConcreteClafer, Integer> concreteId = analysis.getConcreteId(clafer, id);
             TIntHashSet parentIds = parentIdsMap.get(concreteId.getFst());
@@ -143,7 +142,7 @@ public class PartialIntAnalyzer implements Analyzer {
             AstJoinRef exp, AstConstant constant) throws NotAssignmentException {
         int[] value = constant.getValue();
         if (value.length == 1) {
-            return new Pair<FList<AstConcreteClafer>, Integer>(analyze(exp), value[0]);
+            return new Pair<>(analyze(exp), value[0]);
         }
         throw new NotAssignmentException();
     }
@@ -176,7 +175,7 @@ public class PartialIntAnalyzer implements Analyzer {
         }
 
         public Automata transition(AstConcreteClafer symbol) {
-            List<Pair<FList<AstConcreteClafer>, Integer>> next = new ArrayList<Pair<FList<AstConcreteClafer>, Integer>>();
+            List<Pair<FList<AstConcreteClafer>, Integer>> next = new ArrayList<>();
 
             for (Pair<FList<AstConcreteClafer>, Integer> assignment : assignments) {
                 FList<AstConcreteClafer> path = assignment.getFst();
@@ -185,7 +184,7 @@ public class PartialIntAnalyzer implements Analyzer {
                     if (path.getTail().isEmpty()) {
                         return new FinalAutomata(value.intValue());
                     }
-                    next.add(new Pair<FList<AstConcreteClafer>, Integer>(path.getTail(), value));
+                    next.add(new Pair<>(path.getTail(), value));
                 }
             }
             return next.isEmpty() ? null : new AssignmentAutomata(next);

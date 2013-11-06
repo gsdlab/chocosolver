@@ -3,23 +3,22 @@ package org.clafer.choco.constraint;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.choco.constraint.propagator.PropAnd;
-import org.clafer.choco.constraint.propagator.PropJoinRelation;
-import org.clafer.choco.constraint.propagator.PropJoinFunction;
-import org.clafer.choco.constraint.propagator.PropSelectN;
-import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
+import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
+import org.clafer.choco.constraint.propagator.PropJoinRelation;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropMask;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
+import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqual;
@@ -27,6 +26,7 @@ import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
 import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.choco.constraint.propagator.PropSetUnionCard;
+import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import org.clafer.common.Util;
@@ -75,7 +75,7 @@ public class Constraints {
     }
 
     private static Propagator<IntVar> sumEq(IntVar[] ints, IntVar sum) {
-        List<IntVar> filter = new ArrayList<IntVar>(ints.length);
+        List<IntVar> filter = new ArrayList<>(ints.length);
         int constant = 0;
         for (IntVar var : ints) {
             if (var.instantiated()) {
@@ -125,7 +125,7 @@ public class Constraints {
      * @return constraint {@code operands[0] ∧ operands[1] ∧ ... ∧ operands[n]}
      */
     public static Constraint and(BoolVar... operands) {
-        Constraint<BoolVar, PropAnd> constraint = new Constraint<BoolVar, PropAnd>(operands, operands[0].getSolver());
+        Constraint<BoolVar, PropAnd> constraint = new Constraint<>(operands, operands[0].getSolver());
         constraint.setPropagators(new PropAnd(operands));
         return constraint;
     }
@@ -139,7 +139,7 @@ public class Constraints {
      * {@code operands[0] + operands[1] + ... + operands[n] ≤ 1}
      */
     public static Constraint lone(BoolVar... operands) {
-        Constraint<BoolVar, PropLone> constraint = new Constraint<BoolVar, PropLone>(operands, operands[0].getSolver());
+        Constraint<BoolVar, PropLone> constraint = new Constraint<>(operands, operands[0].getSolver());
         constraint.setPropagators(new PropLone(operands));
         return constraint;
     }
@@ -153,7 +153,7 @@ public class Constraints {
      * {@code operands[0] + operands[1] + ... + operands[n] = 1}
      */
     public static Constraint one(BoolVar... operands) {
-        Constraint<BoolVar, PropOne> constraint = new Constraint<BoolVar, PropOne>(operands, operands[0].getSolver());
+        Constraint<BoolVar, PropOne> constraint = new Constraint<>(operands, operands[0].getSolver());
         constraint.setPropagators(new PropOne(operands));
         return constraint;
     }
@@ -166,7 +166,7 @@ public class Constraints {
      * @return constraint {@code operands[0] ∨ operands[1] ∨ ... ∨ operands[n]}
      */
     public static Constraint or(BoolVar... operands) {
-        Constraint<BoolVar, PropOr> constraint = new Constraint<BoolVar, PropOr>(operands, operands[0].getSolver());
+        Constraint<BoolVar, PropOr> constraint = new Constraint<>(operands, operands[0].getSolver());
         constraint.setPropagators(new PropOr(operands));
         return constraint;
     }
@@ -198,7 +198,7 @@ public class Constraints {
      */
     public static Constraint ifThenElse(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
         Constraint<BoolVar, PropIfThenElse> constraint =
-                new Constraint<BoolVar, PropIfThenElse>(new BoolVar[]{antecedent, consequent, alternative}, antecedent.getSolver());
+                new Constraint<>(new BoolVar[]{antecedent, consequent, alternative}, antecedent.getSolver());
         constraint.setPropagators(new PropIfThenElse(antecedent, consequent, alternative));
         return constraint;
     }
@@ -310,7 +310,7 @@ public class Constraints {
      */
     public static Constraint notEqual(SetVar set1, SetVar set2) {
         Constraint<SetVar, PropSetNotEqual> constraint =
-                new Constraint<SetVar, PropSetNotEqual>(new SetVar[]{set1, set2}, set1.getSolver());
+                new Constraint<>(new SetVar[]{set1, set2}, set1.getSolver());
         constraint.setPropagators(new PropSetNotEqual(set1, set2));
         return constraint;
     }
@@ -324,7 +324,7 @@ public class Constraints {
      */
     public static Constraint notEqual(SetVar set, int[] constant) {
         Constraint<SetVar, PropSetNotEqualC> constraint =
-                new Constraint<SetVar, PropSetNotEqualC>(new SetVar[]{set}, set.getSolver());
+                new Constraint<>(new SetVar[]{set}, set.getSolver());
         constraint.setPropagators(new PropSetNotEqualC(set, constant));
         return constraint;
     }
@@ -338,7 +338,7 @@ public class Constraints {
      */
     public static Constraint notMember(IntVar element, SetVar set) {
         Constraint<Variable, PropIntNotMemberSet> constraint =
-                new Constraint<Variable, PropIntNotMemberSet>(new Variable[]{element, set}, element.getSolver());
+                new Constraint<>(new Variable[]{element, set}, element.getSolver());
         constraint.setPropagators(new PropIntNotMemberSet(element, set));
         return constraint;
     }
@@ -390,7 +390,7 @@ public class Constraints {
         System.arraycopy(ints, 0, variables, sets.length, ints.length);
 
         Constraint<Variable, PropIntChannel> constraint =
-                new Constraint<Variable, PropIntChannel>(variables, sets[0].getSolver());
+                new Constraint<>(variables, sets[0].getSolver());
         constraint.setPropagators(new PropIntChannel(sets, ints));
 
         return constraint;
@@ -455,7 +455,7 @@ public class Constraints {
         assert i == variables.length;
 
         Constraint<IntVar, PropLexChainChannel> constraint =
-                new Constraint<IntVar, PropLexChainChannel>(variables, variables[0].getSolver());
+                new Constraint<>(variables, variables[0].getSolver());
         constraint.setPropagators(new PropLexChainChannel(strings, ints));
 
         return constraint;
@@ -474,7 +474,7 @@ public class Constraints {
         variables[bools.length] = n;
 
         Constraint<IntVar, PropSelectN> constraint =
-                new Constraint<IntVar, PropSelectN>(variables, n.getSolver());
+                new Constraint<>(variables, n.getSolver());
         constraint.setPropagators(new PropSelectN(bools, n));
 
         return constraint;
@@ -494,7 +494,7 @@ public class Constraints {
      */
     public static Constraint filterString(SetVar set, int offset, IntVar[] string, IntVar[] result) {
         Constraint<Variable, PropFilterString> constraint =
-                new Constraint<Variable, PropFilterString>(PropFilterString.buildArray(set, string, result), set.getSolver());
+                new Constraint<>(PropFilterString.buildArray(set, string, result), set.getSolver());
         constraint.setPropagators(new PropFilterString(set, offset, string, result));
         return constraint;
     }
@@ -543,7 +543,7 @@ public class Constraints {
      */
     public static Constraint setSum(SetVar set, IntVar setCard, IntVar sum) {
         Constraint<Variable, PropSetSum> constraint =
-                new Constraint<Variable, PropSetSum>(new Variable[]{set, setCard, sum}, set.getSolver());
+                new Constraint<>(new Variable[]{set, setCard, sum}, set.getSolver());
         constraint.setPropagators(new PropSetSum(set, setCard, sum));
         return constraint;
     }
@@ -566,7 +566,7 @@ public class Constraints {
      */
     public static Constraint singleton(IntVar ivar, SetVar svar) {
         Constraint<Variable, PropSingleton> constraint =
-                new Constraint<Variable, PropSingleton>(new Variable[]{ivar, svar}, ivar.getSolver());
+                new Constraint<>(new Variable[]{ivar, svar}, ivar.getSolver());
         constraint.setPropagators(new PropSingleton(ivar, svar));
         return constraint;
     }
@@ -648,7 +648,7 @@ public class Constraints {
         variables[1] = to;
         System.arraycopy(children, 0, variables, 2, children.length);
 
-        Constraint<SetVar, PropJoinRelation> constraint = new Constraint<SetVar, PropJoinRelation>(variables, take.getSolver());
+        Constraint<SetVar, PropJoinRelation> constraint = new Constraint<>(variables, take.getSolver());
         constraint.setPropagators(new PropJoinRelation(take, children, to));
 
         return constraint;

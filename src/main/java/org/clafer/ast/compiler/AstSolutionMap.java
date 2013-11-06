@@ -3,17 +3,17 @@ package org.clafer.ast.compiler;
 import gnu.trove.TCollections;
 import gnu.trove.map.TIntObjectMap;
 import java.util.Map;
-import org.clafer.common.Check;
-import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
-import org.clafer.objective.Objective;
+import org.clafer.ast.analysis.Analysis;
+import org.clafer.common.Check;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
+import org.clafer.objective.Objective;
 
 /**
  *

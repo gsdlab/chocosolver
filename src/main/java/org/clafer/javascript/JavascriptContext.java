@@ -1,17 +1,17 @@
 package org.clafer.javascript;
 
 import java.util.ArrayList;
-import org.clafer.scope.Scope;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.clafer.ast.Asts;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstUtil;
+import org.clafer.ast.Asts;
 import org.clafer.objective.Objective;
+import org.clafer.scope.Scope;
 
 /**
  *
@@ -19,8 +19,8 @@ import org.clafer.objective.Objective;
  */
 public class JavascriptContext {
 
-    private final Map<String, Integer> scope = new HashMap<String, Integer>();
-    private final List<Objective> objectives = new ArrayList<Objective>(0);
+    private final Map<String, Integer> scope = new HashMap<>();
+    private final List<Objective> objectives = new ArrayList<>(0);
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
@@ -49,7 +49,7 @@ public class JavascriptContext {
     }
 
     public Scope getScope() {
-        Map<AstClafer, Integer> resolvedScope = new HashMap<AstClafer, Integer>();
+        Map<AstClafer, Integer> resolvedScope = new HashMap<>();
         Map<String, AstClafer> resolvedClafers = getClafersMap(model);
         for (Entry<String, Integer> entry : scope.entrySet()) {
             String key = entry.getKey();
@@ -81,7 +81,7 @@ public class JavascriptContext {
 
     private static Map<String, AstClafer> getClafersMap(AstModel model) {
         List<AstClafer> clafers = AstUtil.getClafers(model);
-        Map<String, AstClafer> map = new HashMap<String, AstClafer>();
+        Map<String, AstClafer> map = new HashMap<>();
         for (AstClafer clafer : clafers) {
             map.put(clafer.getName(), clafer);
         }

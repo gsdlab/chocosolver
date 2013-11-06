@@ -39,9 +39,9 @@ public class CircularityAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        List<AstConstraint> constraints = new ArrayList<AstConstraint>(0);
+        List<AstConstraint> constraints = new ArrayList<>(0);
         for (AstConcreteClafer clafer : analysis.getConcreteClafers()) {
-            Set<AstAbstractClafer> supers = new HashSet<AstAbstractClafer>(AstUtil.getSupers(clafer));
+            Set<AstAbstractClafer> supers = new HashSet<>(AstUtil.getSupers(clafer));
             // supers contains at least #clafer# which has no children.
             if (supers.size() > 1) {
                 int depth = 1;

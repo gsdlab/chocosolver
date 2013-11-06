@@ -19,8 +19,8 @@ public abstract class AstClafer implements AstVar {
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard = new Card();
-    private final List<AstConcreteClafer> children = new ArrayList<AstConcreteClafer>();
-    private final List<AstConstraint> constraints = new ArrayList<AstConstraint>();
+    private final List<AstConcreteClafer> children = new ArrayList<>();
+    private final List<AstConstraint> constraints = new ArrayList<>();
 
     AstClafer(String name, AstAbstractClafer claferClafer) {
         this.name = Check.notNull(name);

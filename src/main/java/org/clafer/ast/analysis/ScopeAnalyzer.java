@@ -1,17 +1,13 @@
 package org.clafer.ast.analysis;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.Card;
-import org.clafer.graph.GraphUtil;
-import org.clafer.graph.KeyGraph;
-import org.clafer.graph.Vertex;
+import org.clafer.scope.Scope;
 
 /**
  *
@@ -26,7 +22,7 @@ public class ScopeAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         Scope scope = analysis.getScope();
-        Map<AstClafer, Integer> optimizedScope = new HashMap<AstClafer, Integer>();
+        Map<AstClafer, Integer> optimizedScope = new HashMap<>();
         optimizedScope.put(analysis.getModel(), 1);
 
         for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {

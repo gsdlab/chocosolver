@@ -42,15 +42,15 @@ public class Either<A, B> {
     }
 
     public static <A, B> Either<A, B> left(A left) {
-        return new Either<A, B>(Check.notNull(left), null);
+        return new Either<>(Check.notNull(left), null);
     }
 
     public static <A, B> Either<A, B> right(B right) {
-        return new Either<A, B>(null, Check.notNull(right));
+        return new Either<>(null, Check.notNull(right));
     }
 
     public static <A, B> List<A> filterLefts(List<Either<A, B>> eithers) {
-        List<A> lefts = new ArrayList<A>();
+        List<A> lefts = new ArrayList<>();
         for (Either<A, B> either : eithers) {
             if (either.isLeft()) {
                 lefts.add(either.getLeft());
@@ -60,7 +60,7 @@ public class Either<A, B> {
     }
 
     public static <A, B> A[] filterLefts(Either<A, B>[] eithers, A... array) {
-        List<A> lefts = new ArrayList<A>();
+        List<A> lefts = new ArrayList<>();
         for (Either<A, B> either : eithers) {
             if (either.isLeft()) {
                 lefts.add(either.getLeft());
@@ -74,7 +74,7 @@ public class Either<A, B> {
     }
 
     public static <A, B> List<B> filterRights(List<Either<A, B>> eithers) {
-        List<B> rights = new ArrayList<B>();
+        List<B> rights = new ArrayList<>();
         for (Either<A, B> either : eithers) {
             if (either.isRight()) {
                 rights.add(either.getRight());
@@ -84,7 +84,7 @@ public class Either<A, B> {
     }
 
     public static <A, B> B[] filterRights(Either<A, B>[] eithers, B... array) {
-        List<B> rights = new ArrayList<B>();
+        List<B> rights = new ArrayList<>();
         for (Either<A, B> either : eithers) {
             if (either.isRight()) {
                 rights.add(either.getRight());

@@ -34,7 +34,7 @@ public class AstUtil {
      * @return the Clafers in the model
      */
     public static List<AstClafer> getClafers(AstModel model) {
-        List<AstClafer> clafers = new ArrayList<AstClafer>();
+        List<AstClafer> clafers = new ArrayList<>();
         clafers.add(model);
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             clafers.add(abstractClafer);
@@ -54,7 +54,7 @@ public class AstUtil {
      * @return the concrete Clafers in the model excluding the root
      */
     public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
-        List<AstConcreteClafer> clafers = new ArrayList<AstConcreteClafer>();
+        List<AstConcreteClafer> clafers = new ArrayList<>();
         clafers.add(model);
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             getNestedChildClafers(abstractClafer, clafers);
@@ -74,7 +74,7 @@ public class AstUtil {
      * @return the Clafers in the above order
      */
     public static List<Set<AstClafer>> getClafersInParentAndSubOrder(AstModel model) {
-        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
+        KeyGraph<AstClafer> dependency = new KeyGraph<>();
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
             for (AstClafer sub : abstractClafer.getSubs()) {
@@ -97,7 +97,7 @@ public class AstUtil {
      * @return the abstract Clafers in the above order
      */
     public static List<AstAbstractClafer> getAbstractClafersInSubOrder(AstModel model) {
-        List<AstAbstractClafer> clafers = new ArrayList<AstAbstractClafer>(model.getAbstracts());
+        List<AstAbstractClafer> clafers = new ArrayList<>(model.getAbstracts());
         Collections.sort(clafers, new Comparator<AstAbstractClafer>() {
             @Override
             public int compare(AstAbstractClafer o1, AstAbstractClafer o2) {
@@ -186,7 +186,7 @@ public class AstUtil {
      * @return the nested Clafers
      */
     public static List<AstClafer> getNestedClafers(AstClafer clafer) {
-        List<AstClafer> clafers = new ArrayList<AstClafer>();
+        List<AstClafer> clafers = new ArrayList<>();
         clafers.add(clafer);
         getNestedChildClafers(clafer, clafers);
         return clafers;
@@ -210,7 +210,7 @@ public class AstUtil {
         if (clafer instanceof AstConcreteClafer) {
             return Collections.singletonList((AstConcreteClafer) clafer);
         }
-        List<AstConcreteClafer> subs = new ArrayList<AstConcreteClafer>();
+        List<AstConcreteClafer> subs = new ArrayList<>();
         getConcreteSubs(clafer, subs);
         return subs;
     }
@@ -233,7 +233,7 @@ public class AstUtil {
      * @return the nested constraints
      */
     public static List<AstConstraint> getNestedConstraints(AstModel model) {
-        List<AstConstraint> constraints = new ArrayList<AstConstraint>();
+        List<AstConstraint> constraints = new ArrayList<>();
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             getNestedConstraints(abstractClafer, constraints);
         }
@@ -256,7 +256,7 @@ public class AstUtil {
      */
     public static TIntObjectMap<AstConstraint> getConstraintMap(AstModel model) {
         List<AstConstraint> constraints = getNestedConstraints(model);
-        TIntObjectMap<AstConstraint> map = new TIntObjectHashMap<AstConstraint>(constraints.size());
+        TIntObjectMap<AstConstraint> map = new TIntObjectHashMap<>(constraints.size());
         for (AstConstraint constraint : constraints) {
             map.put(constraint.getId(), constraint);
         }
@@ -270,7 +270,7 @@ public class AstUtil {
      * @return the supertypes
      */
     public static List<AstAbstractClafer> getSupers(final AstClafer clafer) {
-        List<AstAbstractClafer> supers = new ArrayList<AstAbstractClafer>();
+        List<AstAbstractClafer> supers = new ArrayList<>();
         AstAbstractClafer sup = clafer.getSuperClafer();
         while (sup != null) {
             supers.add(sup);
@@ -288,7 +288,7 @@ public class AstUtil {
      * @throws AnalysisException a cycle in the type hierarchy
      */
     public static List<AstClafer> getSuperHierarchy(final AstClafer clafer) throws AnalysisException {
-        List<AstClafer> supers = new ArrayList<AstClafer>();
+        List<AstClafer> supers = new ArrayList<>();
         AstClafer sup = clafer;
         while (sup != null) {
             if (supers.contains(sup)) {
@@ -351,9 +351,9 @@ public class AstUtil {
      * type, {@code false} otherwise
      */
     public static boolean isUnionType(AstClafer union, AstClafer[] partitions) {
-        Set<AstConcreteClafer> unionSubs = new HashSet<AstConcreteClafer>();
+        Set<AstConcreteClafer> unionSubs = new HashSet<>();
         getConcreteSubs(union, unionSubs);
-        Set<AstConcreteClafer> partitionSubs = new HashSet<AstConcreteClafer>();
+        Set<AstConcreteClafer> partitionSubs = new HashSet<>();
         for (AstClafer partition : partitions) {
             getConcreteSubs(partition, partitionSubs);
         }
@@ -454,7 +454,7 @@ public class AstUtil {
      * @return the names of the variables
      */
     public static List<String> getNames(Iterable<? extends AstVar> vars) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (AstVar var : vars) {
             names.add(var.getName());
         }

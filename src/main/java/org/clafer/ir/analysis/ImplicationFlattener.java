@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis;
 
-import org.clafer.ir.IrRewriter;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.ir.IrAnd;
@@ -9,6 +8,7 @@ import org.clafer.ir.IrIfThenElse;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNotImplies;
+import org.clafer.ir.IrRewriter;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -29,7 +29,7 @@ public class ImplicationFlattener {
      * @return the flattened module
      */
     public static IrModule flatten(IrModule module) {
-        List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>();
+        List<IrBoolExpr> constraints = new ArrayList<>();
         for (IrBoolExpr constraint : module.getConstraints()) {
             constraints.add(flattener.rewrite(constraint, null));
         }

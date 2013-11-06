@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class AstAbstractClafer extends AstClafer {
 
-    private final List<AstClafer> subs = new ArrayList<AstClafer>();
+    private final List<AstClafer> subs = new ArrayList<>();
 
     AstAbstractClafer(String name, AstAbstractClafer claferClafer) {
         super(name, claferClafer);

@@ -43,7 +43,7 @@ public class AnalysisUtil {
             IrCard card = (IrCard) right;
             if (card.getSet() instanceof IrSetVar) {
                 IrSetVar set = (IrSetVar) card.getSet();
-                return new Pair<IrIntExpr, IrSetVar>(left, set);
+                return new Pair<>(left, set);
             }
         }
         return null;

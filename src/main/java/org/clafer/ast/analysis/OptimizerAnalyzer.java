@@ -27,7 +27,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        List<AstConstraint> optimizedConstraint = new ArrayList<AstConstraint>();
+        List<AstConstraint> optimizedConstraint = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             optimizedConstraint.add(constraint.withExpr(rewrite(constraint.getExpr(), analysis)));
         }

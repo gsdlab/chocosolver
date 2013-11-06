@@ -2,13 +2,13 @@ package org.clafer.ast.analysis;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.clafer.scope.Scope;
-import org.clafer.ast.Asts;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
+import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -30,12 +30,12 @@ public class ScopeAnalyzerTest {
         AstConcreteClafer parrot = model.addChild("parrot").extending(object);
         AstConcreteClafer robin = model.addChild("robin").extending(object);
 
-        Map<AstClafer, Integer> scope = new HashMap<AstClafer, Integer>();
+        Map<AstClafer, Integer> scope = new HashMap<>();
         scope.put(id, 3);
         scope.put(hash, 5);
         scope.put(robin, 3);
 
-        Map<AstClafer, Card> globalCards = new HashMap<AstClafer, Card>();
+        Map<AstClafer, Card> globalCards = new HashMap<>();
         globalCards.put(model, new Card(1, 1));
         globalCards.put(model.getTypeHierarchyRoot(), new Card(1, 1));
         globalCards.put(object, new Card(3));

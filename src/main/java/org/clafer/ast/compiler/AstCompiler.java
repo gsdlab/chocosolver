@@ -3,71 +3,64 @@ package org.clafer.ast.compiler;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import org.clafer.ast.AstUtil;
-import org.clafer.ast.AstConstraint;
-import java.util.Set;
-import org.clafer.ast.AstSetTest;
-import org.clafer.ast.AstExpr;
-import org.clafer.ast.AstGlobal;
-import org.clafer.ast.AstSetExpr;
-import org.clafer.ast.AstCard;
-import org.clafer.ast.AstCompare;
-import org.clafer.ast.AstConstant;
-import org.clafer.ast.AstJoin;
-import org.clafer.ast.AstJoinParent;
-import org.clafer.ast.AstJoinRef;
-import org.clafer.ast.AstLocal;
-import org.clafer.ast.AstQuantify;
-import org.clafer.ast.AstThis;
-import org.clafer.ast.AstUpcast;
-import org.clafer.ir.IrExpr;
-import org.clafer.ir.IrIntVar;
-import org.clafer.ir.IrSetExpr;
-import org.clafer.common.Util;
-import org.clafer.ir.IrBoolVar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.clafer.common.Check;
-import org.clafer.scope.Scope;
-import org.clafer.ast.analysis.Analysis;
-import org.clafer.ast.analysis.Format;
-import org.clafer.ast.analysis.PartialSolution;
+import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
+import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstDifference;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstException;
+import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
+import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
+import org.clafer.ast.AstJoin;
+import org.clafer.ast.AstJoinParent;
+import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
+import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstSetExpr;
+import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
+import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUnion;
+import org.clafer.ast.AstUpcast;
+import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
+import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.Analyzer;
 import org.clafer.ast.analysis.CardAnalyzer;
 import org.clafer.ast.analysis.CircularityAnalyzer;
+import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.FormatAnalyzer;
 import org.clafer.ast.analysis.GlobalCardAnalyzer;
 import org.clafer.ast.analysis.OptimizerAnalyzer;
 import org.clafer.ast.analysis.PartialIntAnalyzer;
+import org.clafer.ast.analysis.PartialSolution;
 import org.clafer.ast.analysis.PartialSolutionAnalyzer;
 import org.clafer.ast.analysis.ScopeAnalyzer;
 import org.clafer.ast.analysis.SymmetryAnalyzer;
@@ -75,17 +68,24 @@ import org.clafer.ast.analysis.Type;
 import org.clafer.ast.analysis.TypeAnalyzer;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
-import org.clafer.objective.Objective;
+import org.clafer.common.Check;
+import org.clafer.common.Util;
+import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
-import org.clafer.graph.GraphUtil;
 import org.clafer.ir.IrBoolExpr;
+import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrDomain;
+import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntExpr;
+import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
+import org.clafer.objective.Objective;
+import org.clafer.scope.Scope;
 
 /**
  * Compile from AST to IR.
@@ -149,7 +149,7 @@ public class AstCompiler {
         List<AstAbstractClafer> abstractClafers = analysis.getAbstractClafers();
         List<AstConcreteClafer> concreteClafers = analysis.getConcreteClafers();
 
-        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
+        KeyGraph<AstClafer> dependency = new KeyGraph<>();
         for (AstAbstractClafer abstractClafer : abstractClafers) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
             for (AstClafer sub : abstractClafer.getSubs()) {
@@ -175,7 +175,7 @@ public class AstCompiler {
             }
         }
         List<Set<AstClafer>> components = GraphUtil.computeStronglyConnectedComponents(dependency);
-        List<AstClafer> clafers = new ArrayList<AstClafer>();
+        List<AstClafer> clafers = new ArrayList<>();
         for (Set<AstClafer> component : components) {
             if (component.size() != 1) {
                 // See the above comment about low groups.
@@ -209,7 +209,7 @@ public class AstCompiler {
             constrainGroupCardinality(clafer);
         }
 
-        TIntObjectMap<IrBoolVar> softVars = new TIntObjectHashMap<IrBoolVar>();
+        TIntObjectMap<IrBoolVar> softVars = new TIntObjectHashMap<>();
         for (AstConstraint constraint : getConstraints()) {
             AstClafer clafer = constraint.getContext();
             int scope = getScope(clafer);
@@ -246,7 +246,7 @@ public class AstCompiler {
         }
 
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
-        TIntObjectMap<IrIntVar> objectiveVars = new TIntObjectHashMap<IrIntVar>();
+        TIntObjectMap<IrIntVar> objectiveVars = new TIntObjectHashMap<>();
         for (Objective objective : getObjectives()) {
             IrIntExpr objectiveExpr = expressionCompiler.asInt(
                     expressionCompiler.compile(objective.getExpr()));
@@ -391,7 +391,7 @@ public class AstCompiler {
 
             List<Pair<AstClafer, Integer>> offsets = analysis.getHierarcyOffsets(clafer);
             for (int i = 0; i < childIndices.length; i++) {
-                List<IrIntExpr> childIndex = new ArrayList<IrIntExpr>();
+                List<IrIntExpr> childIndex = new ArrayList<>();
                 for (Pair<AstClafer, Integer> offset : offsets) {
                     for (AstConcreteClafer child : analysis.getBreakableChildren(offset.getFst())) {
                         childIndex.addAll(Arrays.asList(indices.get(child)[i + offset.getSnd()]));
@@ -667,19 +667,19 @@ public class AstCompiler {
     private void constrainAbstract(AstAbstractClafer clafer) {
         // Do nothing.
     }
-    private final Map<AstClafer, IrSetVar> sets = new HashMap<AstClafer, IrSetVar>();
-    private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<AstClafer, IrSetVar[]>();
-    private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<AstClafer, IrBoolExpr[]>();
-    private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<AstConcreteClafer, IrIntVar[]>();
-    private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<AstRef, IrIntVar[]>();
-    private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<AstClafer, IrIntExpr[][]>();
+    private final Map<AstClafer, IrSetVar> sets = new HashMap<>();
+    private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<>();
+    private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<>();
+    private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
+    private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<>();
+    private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<>();
     private int countCount = 0;
     private int localCount = 0;
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 
         private final int thisId;
-        private final Map<AstLocal, IrIntExpr> locals = new HashMap<AstLocal, IrIntExpr>();
+        private final Map<AstLocal, IrIntExpr> locals = new HashMap<>();
 
         private ExpressionCompiler(int thisId) {
             this.thisId = thisId;
@@ -1152,7 +1152,7 @@ public class AstCompiler {
                     @SuppressWarnings("unchecked")
                     Triple<AstLocal, IrIntExpr, IrBoolExpr>[] labeledPermutation = new Triple[permutation.length];
                     for (int j = 0; j < labeledPermutation.length; j++) {
-                        labeledPermutation[j] = new Triple<AstLocal, IrIntExpr, IrBoolExpr>(
+                        labeledPermutation[j] = new Triple<>(
                                 decl.getLocals()[j], permutation[j]);
                     }
                     labeledSequence[i] = labeledPermutation;
@@ -1173,9 +1173,9 @@ public class AstCompiler {
             }
             compiledDecls = Util.sequence(compiledDecls);
 
-            List<IrBoolExpr> compiled = new ArrayList<IrBoolExpr>();
+            List<IrBoolExpr> compiled = new ArrayList<>();
             for (Triple<AstLocal, IrIntExpr, IrBoolExpr>[][] quants : compiledDecls) {
-                List<IrBoolExpr> constraints = new ArrayList<IrBoolExpr>();
+                List<IrBoolExpr> constraints = new ArrayList<>();
                 for (Triple<AstLocal, IrIntExpr, IrBoolExpr>[] quantDecls : quants) {
                     for (Triple<AstLocal, IrIntExpr, IrBoolExpr> quantLocals : quantDecls) {
                         constraints.add(quantLocals.getThd());

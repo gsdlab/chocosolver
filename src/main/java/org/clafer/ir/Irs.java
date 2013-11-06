@@ -119,7 +119,7 @@ public class Irs {
     }
 
     public static IrBoolExpr and(IrBoolExpr... operands) {
-        List<IrBoolExpr> flatten = new ArrayList<IrBoolExpr>(operands.length);
+        List<IrBoolExpr> flatten = new ArrayList<>(operands.length);
         for (IrBoolExpr operand : operands) {
             if (operand instanceof IrAnd) {
                 // Invariant: No nested IrAnd
@@ -128,7 +128,7 @@ public class Irs {
                 flatten.add(operand);
             }
         }
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(flatten.size());
+        List<IrBoolExpr> filter = new ArrayList<>(flatten.size());
         for (IrBoolExpr operand : flatten) {
             if (IrUtil.isFalse(operand)) {
                 return False;
@@ -152,7 +152,7 @@ public class Irs {
     }
 
     public static IrBoolExpr lone(IrBoolExpr... operands) {
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
+        List<IrBoolExpr> filter = new ArrayList<>(operands.length);
         int count = 0;
         for (IrBoolExpr operand : operands) {
             if (IrUtil.isTrue(operand)) {
@@ -183,7 +183,7 @@ public class Irs {
     }
 
     public static IrBoolExpr one(IrBoolExpr... operands) {
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(operands.length);
+        List<IrBoolExpr> filter = new ArrayList<>(operands.length);
         int count = 0;
         for (IrBoolExpr operand : operands) {
             if (IrUtil.isTrue(operand)) {
@@ -218,7 +218,7 @@ public class Irs {
     }
 
     public static IrBoolExpr or(IrBoolExpr... operands) {
-        List<IrBoolExpr> flatten = new ArrayList<IrBoolExpr>(operands.length);
+        List<IrBoolExpr> flatten = new ArrayList<>(operands.length);
         for (IrBoolExpr operand : operands) {
             if (operand instanceof IrOr) {
                 // Invariant: No nested IrOr
@@ -227,7 +227,7 @@ public class Irs {
                 flatten.add(operand);
             }
         }
-        List<IrBoolExpr> filter = new ArrayList<IrBoolExpr>(flatten.size());
+        List<IrBoolExpr> filter = new ArrayList<>(flatten.size());
         for (IrBoolExpr operand : flatten) {
             if (IrUtil.isTrue(operand)) {
                 return True;
@@ -835,7 +835,7 @@ public class Irs {
     }
 
     public static IrBoolExpr sort(IrSetExpr... sets) {
-        List<IrSetExpr> filter = new ArrayList<IrSetExpr>(sets.length);
+        List<IrSetExpr> filter = new ArrayList<>(sets.length);
         boolean fixedCard = true;
         for (IrSetExpr set : sets) {
             if (!set.getEnv().isEmpty()) {
@@ -864,7 +864,7 @@ public class Irs {
             }
         }
         if (fixedCard) {
-            List<IrBoolExpr> ands = new ArrayList<IrBoolExpr>();
+            List<IrBoolExpr> ands = new ArrayList<>();
             int i = 0;
             for (IrSetExpr set : filter) {
                 assert set.getCard().size() == 1;
@@ -878,7 +878,7 @@ public class Irs {
     }
 
     private static IrBoolExpr sortStrings(IrIntExpr[][] strings, boolean strict) {
-        List<IrIntExpr[]> filterStrings = new ArrayList<IrIntExpr[]>(strings.length);
+        List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
         for (int i = 0; i < strings.length - 1; i++) {
             switch (IrUtil.compareString(strings[i], strings[i + 1])) {
                 case EQ:
@@ -928,9 +928,9 @@ public class Irs {
                 throw new IllegalArgumentException();
             }
         }
-        List<IrBoolExpr> ands = new ArrayList<IrBoolExpr>(0);
-        List<IrIntExpr[]> filterStrings = new ArrayList<IrIntExpr[]>(strings.length);
-        List<IrIntExpr> filterInts = new ArrayList<IrIntExpr>(ints.length);
+        List<IrBoolExpr> ands = new ArrayList<>(0);
+        List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
+        List<IrIntExpr> filterInts = new ArrayList<>(ints.length);
         for (int i = 0; i < strings.length; i++) {
             boolean equivalence = false;
             for (int j = i + 1; j < strings.length; j++) {
@@ -1147,7 +1147,7 @@ public class Irs {
 
     public static IrIntExpr add(IrIntExpr... addends) {
         int constants = 0;
-        List<IrIntExpr> filter = new ArrayList<IrIntExpr>(addends.length);
+        List<IrIntExpr> filter = new ArrayList<>(addends.length);
         for (IrIntExpr addend : addends) {
             if (addend instanceof IrAdd) {
                 IrAdd add = (IrAdd) addend;
@@ -1300,7 +1300,7 @@ public class Irs {
     }
 
     public static IrIntExpr count(int value, IrIntExpr[] array) {
-        List<IrIntExpr> filter = new ArrayList<IrIntExpr>();
+        List<IrIntExpr> filter = new ArrayList<>();
         int count = 0;
         for (IrIntExpr i : array) {
             Integer constant = IrUtil.getConstant(i);
@@ -1654,7 +1654,7 @@ public class Irs {
     }
 
     public static IrSetExpr intersection(IrSetExpr... operands) {
-        List<IrSetExpr> flatten = new ArrayList<IrSetExpr>(operands.length);
+        List<IrSetExpr> flatten = new ArrayList<>(operands.length);
         for (IrSetExpr operand : operands) {
             if (operand instanceof IrSetIntersection) {
                 // Invariant: No nested IrSetIntersection
@@ -1664,7 +1664,7 @@ public class Irs {
             }
         }
         TIntSet constants = null;
-        List<IrSetExpr> filter = new ArrayList<IrSetExpr>();
+        List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
             int[] constant = IrUtil.getConstant(operand);
             if (constant == null) {
@@ -1706,7 +1706,7 @@ public class Irs {
     }
 
     public static IrSetExpr union(IrSetExpr[] operands, boolean disjoint) {
-        List<IrSetExpr> flatten = new ArrayList<IrSetExpr>(operands.length);
+        List<IrSetExpr> flatten = new ArrayList<>(operands.length);
         for (IrSetExpr operand : operands) {
             if (operand instanceof IrSetUnion) {
                 // Invariant: No nested IrSetUnion
@@ -1716,7 +1716,7 @@ public class Irs {
             }
         }
         TIntSet constants = new TIntHashSet();
-        List<IrSetExpr> filter = new ArrayList<IrSetExpr>();
+        List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
             int[] constant = IrUtil.getConstant(operand);
             if (constant == null) {

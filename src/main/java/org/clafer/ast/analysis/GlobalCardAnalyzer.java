@@ -17,7 +17,7 @@ public class GlobalCardAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstClafer, Card> globalCardMap = new HashMap<AstClafer, Card>();
+        Map<AstClafer, Card> globalCardMap = new HashMap<>();
         globalCardMap.put(analysis.getModel(), new Card(1, 1));
 
         for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {

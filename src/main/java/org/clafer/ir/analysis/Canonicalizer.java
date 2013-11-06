@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis;
 
-import org.clafer.ir.IrRewriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -10,6 +9,7 @@ import org.clafer.ir.IrCard;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
 import static org.clafer.ir.Irs.*;
@@ -52,8 +52,8 @@ public class Canonicalizer {
 
     private static class CanonicalRewriter extends IrRewriter<Void> {
 
-        private final Set<IrSetVar> setVars = new HashSet<IrSetVar>();
-        private final Map<IrSetVar, IrIntVar> setVarCards = new HashMap<IrSetVar, IrIntVar>();
+        private final Set<IrSetVar> setVars = new HashSet<>();
+        private final Map<IrSetVar, IrIntVar> setVarCards = new HashMap<>();
 
         @Override
         public IrIntExpr visit(IrCard ir, Void a) {

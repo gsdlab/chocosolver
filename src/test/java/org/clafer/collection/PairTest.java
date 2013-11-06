@@ -11,7 +11,7 @@ import org.junit.Test;
 public class PairTest {
 
     private static Pair<Integer, Integer> pair(Integer fst, Integer snd) {
-        return new Pair<Integer, Integer>(fst, snd);
+        return new Pair<>(fst, snd);
     }
 
     @Test

@@ -23,8 +23,8 @@ public class IrModule {
     }
 
     public IrModule(int initialVariableCapacity, int initialConstraintCapacity) {
-        this.variables = new HashSet<IrVar>(initialVariableCapacity);
-        this.constraints = new ArrayList<IrBoolExpr>(initialConstraintCapacity);
+        this.variables = new HashSet<>(initialVariableCapacity);
+        this.constraints = new ArrayList<>(initialConstraintCapacity);
     }
 
     public IrModule addVariable(IrVar var) {

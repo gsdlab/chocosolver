@@ -14,7 +14,7 @@ public class FormatAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstClafer, Format> formatMap = new HashMap<AstClafer, Format>();
+        Map<AstClafer, Format> formatMap = new HashMap<>();
         formatMap.put(analysis.getModel(), Format.LowGroup);
         for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
             analyze(abstractClafer, analysis, formatMap);

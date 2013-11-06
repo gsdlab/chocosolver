@@ -90,8 +90,8 @@ public abstract class ConstraintTest {
 
     public Solver randomizeStrategy(Solver solver) {
         solver.set(PropagationEngineFactory.PROPAGATORDRIVEN.make(solver));
-        List<IntVar> intVars = new ArrayList<IntVar>();
-        List<SetVar> setVars = new ArrayList<SetVar>();
+        List<IntVar> intVars = new ArrayList<>();
+        List<SetVar> setVars = new ArrayList<>();
         for (Variable var : solver.getVars()) {
             if (var instanceof IntVar) {
                 intVars.add((IntVar) var);

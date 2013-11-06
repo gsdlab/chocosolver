@@ -74,7 +74,7 @@ public class Analysis {
     }
 
     private static Map<AstConcreteClafer, Card> buildCardMap(List<AstClafer> clafers) {
-        Map<AstConcreteClafer, Card> cardMap = new HashMap<AstConcreteClafer, Card>();
+        Map<AstConcreteClafer, Card> cardMap = new HashMap<>();
         for (AstClafer clafer : clafers) {
             if (clafer instanceof AstConcreteClafer) {
                 AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
@@ -85,7 +85,7 @@ public class Analysis {
     }
 
     private static List<AstClafer> append(List<? extends AstClafer> abstractClafers, List<? extends AstConcreteClafer> concreteClafers) {
-        List<AstClafer> clafers = new ArrayList<AstClafer>(abstractClafers.size() + concreteClafers.size());
+        List<AstClafer> clafers = new ArrayList<>(abstractClafers.size() + concreteClafers.size());
         clafers.addAll(abstractClafers);
         clafers.addAll(concreteClafers);
         return clafers;
@@ -237,23 +237,23 @@ public class Analysis {
             sub = offset.getClafer(curId);
             curId -= offset.getOffset(sub);
         }
-        return new Pair<AstConcreteClafer, Integer>((AstConcreteClafer) sub, curId);
+        return new Pair<>((AstConcreteClafer) sub, curId);
     }
 
     public Pair<AstClafer, Integer> getSubId(AstAbstractClafer clafer, int id) {
         Offsets offsets = getOffsets(clafer);
         AstClafer sub = offsets.getClafer(id);
-        return new Pair<AstClafer, Integer>(sub, id - offsets.getOffset(sub));
+        return new Pair<>(sub, id - offsets.getOffset(sub));
     }
 
     public Pair<AstAbstractClafer, Integer> getSuperId(AstClafer clafer, int id) {
         assert clafer.hasSuperClafer();
         int offset = getOffsets(clafer.getSuperClafer()).getOffset(clafer);
-        return new Pair<AstAbstractClafer, Integer>(clafer.getSuperClafer(), id + offset);
+        return new Pair<>(clafer.getSuperClafer(), id + offset);
     }
 
     public List<Pair<AstAbstractClafer, Integer>> getSuperIds(AstClafer clafer, int id) {
-        List<Pair<AstAbstractClafer, Integer>> superIds = new ArrayList<Pair<AstAbstractClafer, Integer>>();
+        List<Pair<AstAbstractClafer, Integer>> superIds = new ArrayList<>();
         AstClafer sup = clafer;
         int curId = id;
         while (sup.hasSuperClafer()) {
@@ -270,8 +270,8 @@ public class Analysis {
     }
 
     public List<Pair<AstClafer, Integer>> getHierarcyIds(AstClafer clafer, int id) {
-        List<Pair<AstClafer, Integer>> superIds = new ArrayList<Pair<AstClafer, Integer>>();
-        superIds.add(new Pair<AstClafer, Integer>(clafer, id));
+        List<Pair<AstClafer, Integer>> superIds = new ArrayList<>();
+        superIds.add(new Pair<>(clafer, id));
         AstClafer sup = clafer;
         int curId = id;
         while (sup.hasSuperClafer()) {
@@ -288,7 +288,7 @@ public class Analysis {
         int curId = 0;
         do {
             if (sup.hasRef()) {
-                return new Pair<AstRef, Integer>(sup.getRef(), curId);
+                return new Pair<>(sup.getRef(), curId);
             }
             if (sup.hasSuperClafer()) {
                 curId += getOffsets(sup.getSuperClafer()).getOffset(sup);

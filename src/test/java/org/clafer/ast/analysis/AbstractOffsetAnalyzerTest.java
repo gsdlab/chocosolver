@@ -1,12 +1,12 @@
 package org.clafer.ast.analysis;
 
-import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
+import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
 

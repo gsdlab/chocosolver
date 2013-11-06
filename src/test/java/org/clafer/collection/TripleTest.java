@@ -11,19 +11,19 @@ import org.junit.Test;
 public class TripleTest {
 
     private static Pair<Integer, Integer> pair(Integer fst, Integer snd) {
-        return new Pair<Integer, Integer>(fst, snd);
+        return new Pair<>(fst, snd);
     }
 
     private static Triple<Integer, Integer, Integer> triple(Integer fst, Integer snd, Integer thd) {
-        return new Triple<Integer, Integer, Integer>(fst, snd, thd);
+        return new Triple<>(fst, snd, thd);
     }
 
     private static Triple<Integer, Integer, Integer> triple(Integer fst, Pair<Integer, Integer> sndThd) {
-        return new Triple<Integer, Integer, Integer>(fst, sndThd);
+        return new Triple<>(fst, sndThd);
     }
 
     private static Triple<Integer, Integer, Integer> triple(Pair<Integer, Integer> fstSnd, Integer thd) {
-        return new Triple<Integer, Integer, Integer>(fstSnd, thd);
+        return new Triple<>(fstSnd, thd);
     }
 
     @Test

@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis;
 
-import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCompare;
 import static org.clafer.ir.IrCompare.Op.Equal;
@@ -12,6 +11,7 @@ import org.clafer.ir.IrLone;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOr;
+import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;

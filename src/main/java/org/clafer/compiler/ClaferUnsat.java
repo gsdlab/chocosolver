@@ -9,8 +9,8 @@ import java.util.Set;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstUtil;
 import org.clafer.collection.Either;
-import org.clafer.common.Check;
 import org.clafer.collection.Pair;
+import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.clafer.ir.IrBoolVar;
 import solver.ResolutionPolicy;
@@ -44,7 +44,7 @@ public class ClaferUnsat {
         TIntObjectIterator<IrBoolVar> iter = softVarsMap.iterator();
         for (int i = 0; i < soft.length; i++) {
             iter.advance();
-            soft[i] = new Pair<AstConstraint, Either<Boolean, BoolVar>>(
+            soft[i] = new Pair<>(
                     constraintMap.get(iter.key()),
                     solutionMap.getIrSolution().getBoolVar(iter.value()));
         }
@@ -66,7 +66,7 @@ public class ClaferUnsat {
      */
     public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
         if (ESat.TRUE.equals(maximize())) {
-            Set<AstConstraint> unsat = new HashSet<AstConstraint>();
+            Set<AstConstraint> unsat = new HashSet<>();
             for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
                 Either<Boolean, BoolVar> var = softVar.getSnd();
                 if (var.isLeft()
@@ -75,7 +75,7 @@ public class ClaferUnsat {
                     unsat.add(softVar.getFst());
                 }
             }
-            return new Pair<Set<AstConstraint>, InstanceModel>(unsat, solutionMap.getInstance());
+            return new Pair<>(unsat, solutionMap.getInstance());
         }
         return null;
     }
@@ -88,13 +88,13 @@ public class ClaferUnsat {
      * @return the Unsat-Core or null if unknown
      */
     public Set<AstConstraint> unsatCore() {
-        Set<AstConstraint> unsat = new HashSet<AstConstraint>();
+        Set<AstConstraint> unsat = new HashSet<>();
         switch (maximize()) {
             case TRUE:
                 boolean changed;
                 do {
                     changed = false;
-                    List<BoolVar> minUnsat = new ArrayList<BoolVar>();
+                    List<BoolVar> minUnsat = new ArrayList<>();
                     for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
                         Either<Boolean, BoolVar> var = softVar.getSnd();
                         if (var.isLeft()

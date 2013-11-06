@@ -14,7 +14,7 @@ public class UnsatAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         List<AstConstraint> constraints = analysis.getConstraints();
-        List<AstConstraint> softConstraints = new ArrayList<AstConstraint>(constraints.size());
+        List<AstConstraint> softConstraints = new ArrayList<>(constraints.size());
         for (AstConstraint constraint : constraints) {
             softConstraints.add(constraint.asSoft());
         }

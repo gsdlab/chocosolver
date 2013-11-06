@@ -29,8 +29,8 @@ public class CommonSubexpression {
 
     private static class CommonSubexpressionFinder extends IrRewriter<Void> {
 
-        private final Set<IrExpr> seen = new HashSet<IrExpr>();
-        private final Set<IrExpr> duplicates = new HashSet<IrExpr>();
+        private final Set<IrExpr> seen = new HashSet<>();
+        private final Set<IrExpr> duplicates = new HashSet<>();
 
         @Override
         public IrIntExpr visit(IrElement ir, Void a) {

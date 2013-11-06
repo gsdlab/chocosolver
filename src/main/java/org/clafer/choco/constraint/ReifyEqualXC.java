@@ -2,7 +2,6 @@ package org.clafer.choco.constraint;
 
 import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
 import solver.constraints.Constraint;
-import solver.constraints.ICF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 

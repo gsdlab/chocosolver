@@ -29,7 +29,7 @@ public class OrConstraint extends Constraint<Variable, Propagator<Variable>> {
     }
 
     private static Variable[] buildArray(Constraint... constraints) {
-        List<Variable> vars = new ArrayList<Variable>();
+        List<Variable> vars = new ArrayList<>();
         for (Constraint constraint : constraints) {
             vars.addAll(Arrays.asList(constraint.getVariables()));
             for(Propagator propagator : constraint.getPropagators()) {

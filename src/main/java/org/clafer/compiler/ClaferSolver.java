@@ -47,7 +47,7 @@ public class ClaferSolver implements ClaferSearch<InstanceModel> {
 
     @Override
     public InstanceModel[] allInstances() {
-        List<InstanceModel> instances = new ArrayList<InstanceModel>();
+        List<InstanceModel> instances = new ArrayList<>();
         while (find()) {
             instances.add(instance());
         }

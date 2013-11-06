@@ -8,10 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.clafer.common.Check;
-import org.clafer.ast.AstSetTest;
-import org.clafer.ast.AstGlobal;
-import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
@@ -27,6 +23,7 @@ import org.clafer.ast.AstDifference;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
+import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
@@ -41,12 +38,15 @@ import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
+import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
+import static org.clafer.ast.Asts.*;
+import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.objective.Objective;
 
@@ -95,9 +95,9 @@ public class TypeAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstExpr, Type> typeMap = new HashMap<AstExpr, Type>();
-        List<AstConstraint> typedConstraints = new ArrayList<AstConstraint>();
-        List<Objective> typedObjectives = new ArrayList<Objective>();
+        Map<AstExpr, Type> typeMap = new HashMap<>();
+        List<AstConstraint> typedConstraints = new ArrayList<>();
+        List<Objective> typedObjectives = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
             TypeVisitor visitor = new TypeVisitor(Type.basicType(clafer), typeMap);
@@ -162,7 +162,7 @@ public class TypeAnalyzer implements Analyzer {
         }
 
         private Collection<AstClafer> downcastTrail(AstClafer type, AstClafer target) {
-            List<AstClafer> supers = new ArrayList<AstClafer>();
+            List<AstClafer> supers = new ArrayList<>();
             AstClafer sup = target;
             while (sup != null) {
                 if (sup.equals(type)) {
@@ -225,7 +225,7 @@ public class TypeAnalyzer implements Analyzer {
 
         private <T extends AstExpr> TypedExpr<T> put(Type type, T expr) {
             typeMap.put(expr, type);
-            return new TypedExpr<T>(type, expr);
+            return new TypedExpr<>(type, expr);
         }
 
         @Override
@@ -276,7 +276,7 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<AstSetExpr> visit(AstJoinRef ast, Void a) {
             TypedExpr<AstSetExpr> deref = typeCheck(ast.getDeref());
 
-            Set<AstRef> refs = new HashSet<AstRef>();
+            Set<AstRef> refs = new HashSet<>();
             for (AstClafer type : deref.getUnionType()) {
                 AstRef ref = AstUtil.getInheritedRef(type);
                 if (ref != null) {
@@ -361,7 +361,7 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<AstSetExpr> visit(AstSum ast, Void a) {
             TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
 
-            Set<AstRef> refs = new HashSet<AstRef>();
+            Set<AstRef> refs = new HashSet<>();
             for (AstClafer type : set.getUnionType()) {
                 AstRef ref = AstUtil.getInheritedRef(type);
                 if (ref != null) {
@@ -390,7 +390,7 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
 
-            Set<AstClafer> unionType = new HashSet<AstClafer>();
+            Set<AstClafer> unionType = new HashSet<>();
             unionType.addAll(left.getUnionType());
             unionType.addAll(right.getUnionType());
 
@@ -408,7 +408,7 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
 
-            Set<AstClafer> unionType = new HashSet<AstClafer>();
+            Set<AstClafer> unionType = new HashSet<>();
             unionType.addAll(left.getUnionType());
             unionType.addAll(right.getUnionType());
 
@@ -428,7 +428,7 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
 
-            Set<AstClafer> unionType = new HashSet<AstClafer>();
+            Set<AstClafer> unionType = new HashSet<>();
             unionType.addAll(left.getUnionType());
             unionType.addAll(right.getUnionType());
 
@@ -583,7 +583,7 @@ public class TypeAnalyzer implements Analyzer {
     }
 
     private static Set<AstClafer> intersectionType(Type t1, Type t2) {
-        Set<AstClafer> interType = new HashSet<AstClafer>();
+        Set<AstClafer> interType = new HashSet<>();
         for (AstClafer leftType : t1.getUnionType()) {
             if (isAnyAssignable(leftType, t2.getUnionType())) {
                 interType.add(leftType);

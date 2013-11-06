@@ -18,12 +18,12 @@ public class AbstractOffsetAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(final Analysis analysis) {
-        Map<AstAbstractClafer, Offsets> offsetsMap = new HashMap<AstAbstractClafer, Offsets>();
+        Map<AstAbstractClafer, Offsets> offsetsMap = new HashMap<>();
         for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
-            Map<AstClafer, Integer> offsets = new HashMap<AstClafer, Integer>();
-            List<AstClafer> reverseOffsets = new ArrayList<AstClafer>();
+            Map<AstClafer, Integer> offsets = new HashMap<>();
+            List<AstClafer> reverseOffsets = new ArrayList<>();
             int offset = 0;
-            List<AstClafer> subs = new ArrayList<AstClafer>(abstractClafer.getSubs());
+            List<AstClafer> subs = new ArrayList<>(abstractClafer.getSubs());
             /*
              * What is this optimization?
              *

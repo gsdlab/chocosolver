@@ -34,7 +34,7 @@ public class AstModel extends AstConcreteClafer {
     AstModel() {
         super("#root#", new AstAbstractClafer("#clafer#", null));
         super.withCard(new Card(1, 1));
-        this.abstracts = new ArrayList<AstAbstractClafer>();
+        this.abstracts = new ArrayList<>();
         this.abstracts.add(claferClafer);
         super.extending(claferClafer);
     }

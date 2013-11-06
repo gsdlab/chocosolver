@@ -17,7 +17,9 @@ import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolDomain;
 import org.clafer.ir.IrBoolExpr;
+import org.clafer.ir.IrBoolExprVisitorAdapter;
 import org.clafer.ir.IrBoolVar;
+import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
 import static org.clafer.ir.IrCompare.Op.Equal;
 import static org.clafer.ir.IrCompare.Op.GreaterThan;
@@ -26,13 +28,11 @@ import static org.clafer.ir.IrCompare.Op.LessThan;
 import static org.clafer.ir.IrCompare.Op.LessThanEqual;
 import static org.clafer.ir.IrCompare.Op.NotEqual;
 import org.clafer.ir.IrDomain;
-import org.clafer.ir.IrIfOnlyIf;
-import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrBoolExprVisitorAdapter;
-import org.clafer.ir.IrCard;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrFilterString;
+import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntChannel;
+import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
@@ -70,8 +70,8 @@ public class Coalescer {
         Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> graphs = findEquivalences(module.getConstraints());
         DisjointSets<IrIntVar> intGraph = graphs.getFst();
         DisjointSets<IrSetVar> setGraph = graphs.getSnd();
-        Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<IrIntVar, IrIntVar>();
-        Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<IrSetVar, IrSetVar>();
+        Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
+        Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
 
         for (Set<IrIntVar> component : intGraph.connectedComponents()) {
             if (component.size() > 1) {
@@ -121,7 +121,7 @@ public class Coalescer {
                 }
             }
         }
-        return new Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule>(
+        return new Triple<>(
                 coalescedInts,
                 coalescedSets,
                 new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null));
@@ -142,20 +142,20 @@ public class Coalescer {
     }
 
     private static Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> findEquivalences(Iterable<IrBoolExpr> constraints) {
-        DisjointSets<IrIntVar> intGraph = new DisjointSets<IrIntVar>();
-        DisjointSets<IrSetVar> setGraph = new DisjointSets<IrSetVar>();
+        DisjointSets<IrIntVar> intGraph = new DisjointSets<>();
+        DisjointSets<IrSetVar> setGraph = new DisjointSets<>();
         EquivalenceFinder finder = new EquivalenceFinder(intGraph, setGraph);
         for (IrBoolExpr constraint : constraints) {
             constraint.accept(finder, null);
         }
-        return new Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>>(intGraph, setGraph);
+        return new Pair<>(intGraph, setGraph);
     }
 
     private static class EquivalenceFinder extends IrBoolExprVisitorAdapter<Void, Void> {
 
         private final DisjointSets<IrIntVar> intGraph;
         private final DisjointSets<IrSetVar> setGraph;
-        private final Map<IrSetVar, IrIntVar> duplicates = new HashMap<IrSetVar, IrIntVar>();
+        private final Map<IrSetVar, IrIntVar> duplicates = new HashMap<>();
 
         private EquivalenceFinder(DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
             this.intGraph = intGraph;

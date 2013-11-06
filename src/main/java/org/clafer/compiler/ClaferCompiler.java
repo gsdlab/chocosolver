@@ -7,7 +7,6 @@ import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.scope.Scope;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
@@ -17,7 +16,6 @@ import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Either;
 import org.clafer.common.Util;
-import org.clafer.objective.Objective;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
@@ -28,7 +26,9 @@ import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
+import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
+import org.clafer.scope.Scope;
 import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
 import solver.constraints.Constraint;
@@ -52,7 +52,7 @@ public class ClaferCompiler {
     }
 
     private static SetVar[] getSetVars(AstModel model, ClaferSolutionMap map) {
-        KeyGraph<AstClafer> dependency = new KeyGraph<AstClafer>();
+        KeyGraph<AstClafer> dependency = new KeyGraph<>();
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
             for (AstClafer sub : abstractClafer.getSubs()) {
@@ -71,7 +71,7 @@ public class ClaferCompiler {
                 node.addNeighbour(dependency.getVertex(concreteClafer.getRef().getTargetType()));
             }
         }
-        List<SetVar> vars = new ArrayList<SetVar>();
+        List<SetVar> vars = new ArrayList<>();
         for (Set<AstClafer> component : GraphUtil.computeStronglyConnectedComponents(dependency)) {
             for (AstClafer clafer : component) {
                 if (clafer instanceof AstConcreteClafer) {
@@ -90,7 +90,7 @@ public class ClaferCompiler {
     }
 
     private static IntVar[] getIntVars(AstModel model, ClaferSolutionMap map) {
-        List<IntVar> vars = new ArrayList<IntVar>();
+        List<IntVar> vars = new ArrayList<>();
         for (AstClafer clafer : AstUtil.getClafers(model)) {
             if (clafer.hasRef()) {
                 for (IrIntVar intVar : map.getAstSolution().getRefVars(clafer.getRef())) {
@@ -184,13 +184,13 @@ public class ClaferCompiler {
     }
 
     public static ClaferSolver compilePartial(AstModel in, Scope scope, AstConcreteClafer... concretize) {
-        final Set<AstConcreteClafer> transitiveConcretize = new HashSet<AstConcreteClafer>();
+        final Set<AstConcreteClafer> transitiveConcretize = new HashSet<>();
         for (AstConcreteClafer clafer : concretize) {
             concretize(clafer, transitiveConcretize);
         }
         final ClaferSolver solver = compile(in, scope);
-        final List<IntVar> intVars = new ArrayList<IntVar>();
-        final List<SetVar> setVars = new ArrayList<SetVar>();
+        final List<IntVar> intVars = new ArrayList<>();
+        final List<SetVar> setVars = new ArrayList<>();
         for (AstConcreteClafer clafer : transitiveConcretize) {
             IrSetVar[] siblingVars = solver.getSolutionMap().getAstSolution().getSiblingVars(clafer);
             for (IrSetVar siblingVar : siblingVars) {
@@ -215,7 +215,7 @@ public class ClaferCompiler {
 
             @Override
             public void onSolution() {
-                List<Constraint> constraints = new ArrayList<Constraint>();
+                List<Constraint> constraints = new ArrayList<>();
                 for (IntVar var : intVars) {
                     constraints.add(ICF.arithm(var, "!=", var.getValue()));
                 }

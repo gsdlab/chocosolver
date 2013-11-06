@@ -1,10 +1,6 @@
 package org.clafer.ast.analysis;
 
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-import org.clafer.collection.FixedCapacityIntSet;
-import org.clafer.common.Check;
 import org.clafer.common.Util;
 
 /**

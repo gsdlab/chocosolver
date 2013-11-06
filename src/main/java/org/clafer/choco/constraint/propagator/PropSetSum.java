@@ -71,7 +71,7 @@ public class PropSetSum extends Propagator<Variable> {
                 }
             }
         }
-        return new Triple<int[], int[], int[]>(ker, smallest, largest);
+        return new Triple<>(ker, smallest, largest);
     }
 
     @Override

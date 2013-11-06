@@ -22,7 +22,7 @@ import org.junit.Test;
 public class SimpleUnsatTest {
 
     private static <T> Set<T> set(T... items) {
-        return new HashSet<T>(Arrays.asList(items));
+        return new HashSet<>(Arrays.asList(items));
     }
 
     /**

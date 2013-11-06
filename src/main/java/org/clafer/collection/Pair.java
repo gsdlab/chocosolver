@@ -51,7 +51,7 @@ public class Pair<A, B> {
      * @return the first element of the tuples
      */
     public static <A, B> List<A> mapFst(List<Pair<A, B>> pairs) {
-        List<A> fsts = new ArrayList<A>(pairs.size());
+        List<A> fsts = new ArrayList<>(pairs.size());
         for (Pair<A, B> pair : pairs) {
             fsts.add(pair.getFst());
         }
@@ -89,7 +89,7 @@ public class Pair<A, B> {
      * @return the second element of the tuples
      */
     public static <A, B> List<B> mapSnd(List<Pair<A, B>> pairs) {
-        List<B> snds = new ArrayList<B>(pairs.size());
+        List<B> snds = new ArrayList<>(pairs.size());
         for (Pair<A, B> pair : pairs) {
             snds.add(pair.getSnd());
         }

@@ -3,9 +3,9 @@ package org.clafer.instance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.common.Check;
 
 /**
  *
@@ -50,7 +50,7 @@ public class InstanceClafer {
     }
     
     public InstanceClafer[] getChildren(AstConcreteClafer type) {
-        List<InstanceClafer> typedChildren = new ArrayList<InstanceClafer>();
+        List<InstanceClafer> typedChildren = new ArrayList<>();
         for(InstanceClafer child : children) {
             if(type.equals(child.getType())) {
                 typedChildren.add(child);

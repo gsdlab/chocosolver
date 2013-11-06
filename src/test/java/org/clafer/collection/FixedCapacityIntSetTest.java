@@ -5,9 +5,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.procedure.TIntProcedure;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import static org.junit.Assert.*;
 import org.junit.Test;
 

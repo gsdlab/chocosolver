@@ -14,12 +14,12 @@ import org.junit.Test;
 public class TopologicalSortTest {
 
     private static <T> HashSet<T> set(T... items) {
-        return new HashSet<T>(Arrays.asList(items));
+        return new HashSet<>(Arrays.asList(items));
     }
 
     @Test
     public void testSingletonNodes() {
-        KeyGraph<Character> graph = new KeyGraph<Character>();
+        KeyGraph<Character> graph = new KeyGraph<>();
         graph.getVertex('a');
         graph.getVertex('b');
 
@@ -30,7 +30,7 @@ public class TopologicalSortTest {
 
     @Test
     public void testSelfReference() {
-        KeyGraph<Character> graph = new KeyGraph<Character>();
+        KeyGraph<Character> graph = new KeyGraph<>();
         graph.getVertex('a').addNeighbour(graph.getVertex('b'));
         graph.getVertex('b').addNeighbour(graph.getVertex('b'));
         graph.getVertex('b').addNeighbour(graph.getVertex('c'));
@@ -46,7 +46,7 @@ public class TopologicalSortTest {
 
     @Test
     public void testCycles() {
-        KeyGraph<Character> graph = new KeyGraph<Character>();
+        KeyGraph<Character> graph = new KeyGraph<>();
         graph.getVertex('a').addNeighbour(graph.getVertex('b'));
         graph.getVertex('b').addNeighbour(graph.getVertex('c'));
         graph.getVertex('c').addNeighbour(graph.getVertex('d'));

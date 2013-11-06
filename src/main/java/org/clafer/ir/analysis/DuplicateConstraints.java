@@ -18,8 +18,8 @@ public class DuplicateConstraints {
     }
 
     public static IrModule removeDuplicates(IrModule module) {
-        Set<IrVar> variables = new HashSet<IrVar>(module.getVariables());
-        Set<IrBoolExpr> constraints = new HashSet<IrBoolExpr>(module.getConstraints());
+        Set<IrVar> variables = new HashSet<>(module.getVariables());
+        Set<IrBoolExpr> constraints = new HashSet<>(module.getConstraints());
         return new IrModule().addVariables(variables).addConstraints(constraints);
     }
 }

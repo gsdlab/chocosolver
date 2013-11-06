@@ -17,7 +17,7 @@ public class PartialSolutionAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstClafer, PartialSolution> partialSolutionMap = new HashMap<AstClafer, PartialSolution>();
+        Map<AstClafer, PartialSolution> partialSolutionMap = new HashMap<>();
 
         partialSolutionMap.put(analysis.getModel(), new PartialSolution(new boolean[]{true}, new int[0][]));
         for (AstConcreteClafer child : analysis.getModel().getChildren()) {

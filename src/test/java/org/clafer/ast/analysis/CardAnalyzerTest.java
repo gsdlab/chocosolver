@@ -2,11 +2,11 @@ package org.clafer.ast.analysis;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.clafer.ast.Asts;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
@@ -28,7 +28,7 @@ public class CardAnalyzerTest {
         AstConcreteClafer parrot = model.addChild("parrot").withCard(3).extending(animal);
         AstConcreteClafer beak = parrot.addChild("beak").withCard(1, 1);
 
-        Map<AstClafer, Card> globalCards = new HashMap<AstClafer, Card>();
+        Map<AstClafer, Card> globalCards = new HashMap<>();
         globalCards.put(animal, new Card(6, 7));
         globalCards.put(limb, new Card(30, 40));
         globalCards.put(digit, new Card(100, 200));

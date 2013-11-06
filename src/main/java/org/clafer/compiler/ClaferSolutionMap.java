@@ -3,11 +3,11 @@ package org.clafer.compiler;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.common.Check;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.collection.Pair;
+import org.clafer.common.Check;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.instance.InstanceRef;
@@ -30,7 +30,7 @@ public class ClaferSolutionMap {
     }
 
     public InstanceModel getInstance() {
-        List<InstanceClafer> topInstances = new ArrayList<InstanceClafer>();
+        List<InstanceClafer> topInstances = new ArrayList<>();
         for (AstConcreteClafer child : astSolution.getModel().getChildren()) {
             // [0] because top clafers only have exactly one children set
             IrSetVar topSetIrVar = astSolution.getSiblingVars(child)[0];
@@ -43,7 +43,7 @@ public class ClaferSolutionMap {
     }
 
     private InstanceClafer getInstanceClafer(AstConcreteClafer clafer, int id) {
-        List<InstanceClafer> children = new ArrayList<InstanceClafer>();
+        List<InstanceClafer> children = new ArrayList<>();
         InstanceRef ref = getInstanceClafer(clafer, id, children);
         return new InstanceClafer(clafer, id, ref, children.toArray(new InstanceClafer[children.size()]));
     }

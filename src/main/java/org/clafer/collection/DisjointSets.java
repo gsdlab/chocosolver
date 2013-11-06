@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class DisjointSets<V> {
 
-    private final TObjectIntHashMap<V> nodes = new TObjectIntHashMap<V>(16, 0.5f, -1);
+    private final TObjectIntHashMap<V> nodes = new TObjectIntHashMap<>(16, 0.5f, -1);
     private final TIntArrayList parents = new TIntArrayList(16);
 
     private int getNode(V i) {
@@ -57,7 +57,7 @@ public class DisjointSets<V> {
     }
 
     public Collection<Set<V>> connectedComponents() {
-        TIntObjectHashMap<Set<V>> components = new TIntObjectHashMap<Set<V>>();
+        TIntObjectHashMap<Set<V>> components = new TIntObjectHashMap<>();
         TObjectIntIterator<V> iter = nodes.iterator();
         for (int i = nodes.size(); i-- > 0;) {
             iter.advance();
@@ -65,7 +65,7 @@ public class DisjointSets<V> {
             int group = find(iter.value());
             Set<V> component = components.get(group);
             if (component == null) {
-                component = new HashSet<V>();
+                component = new HashSet<>();
                 components.put(group, component);
             }
             component.add(key);

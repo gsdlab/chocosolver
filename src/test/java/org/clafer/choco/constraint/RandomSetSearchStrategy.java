@@ -17,7 +17,7 @@ import util.PoolManager;
 public class RandomSetSearchStrategy extends AbstractStrategy<SetVar> {
 
     private final Random rand = new Random();
-    private final PoolManager<FastDecisionSet> pool = new PoolManager<FastDecisionSet>();
+    private final PoolManager<FastDecisionSet> pool = new PoolManager<>();
 
     public RandomSetSearchStrategy(SetVar[] variables) {
         super(variables);
@@ -29,7 +29,7 @@ public class RandomSetSearchStrategy extends AbstractStrategy<SetVar> {
 
     @Override
     public Decision<SetVar> getDecision() {
-        List<SetVar> eligible = new ArrayList<SetVar>();
+        List<SetVar> eligible = new ArrayList<>();
         for (SetVar var : vars) {
             if (!var.instantiated()) {
                 eligible.add(var);

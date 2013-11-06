@@ -2,7 +2,6 @@ package org.clafer;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.clafer.scope.Scope;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -10,6 +9,7 @@ import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceModel;
+import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -536,11 +536,11 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
 
-        Set<String> actual = new HashSet<String>();
+        Set<String> actual = new HashSet<>();
         for (InstanceModel instance : solver.allInstances()) {
             actual.add(instance.toString());
         }
-        Set<String> expected = new HashSet<String>();
+        Set<String> expected = new HashSet<>();
         expected.add("B#0\nB#1\nC#0\nC#1\nD#0 = B#0\n");
         expected.add("B#0\nB#1\nC#0\nC#1\nD#0 = B#1\n");
         expected.add("B#0\nB#1\nC#0\nC#1\nD#0 = C#0\n");
