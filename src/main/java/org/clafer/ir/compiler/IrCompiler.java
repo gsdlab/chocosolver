@@ -573,7 +573,7 @@ public class IrCompiler {
             Triple<String, IrIntExpr, Integer> offset = getOffset(left);
             if (offset != null) {
                 return _arithm(compile(right), offset.getFst(),
-                        compile(offset.getSnd()), op.getSyntax(), offset.getThd().intValue());
+                        compile(offset.getSnd()), op.reverse().getSyntax(), offset.getThd().intValue());
             }
             offset = getOffset(right);
             if (offset != null) {
