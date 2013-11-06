@@ -367,17 +367,12 @@ public class AstCompiler {
             }
             assert refs.length == members.length;
             for (int i = 0; i < members.length; i++) {
-                module.addConstraint(implies(not(members[i]), equal(refs[i], getUninitalizedRef(tar))));
+                module.addConstraint(ifOnlyIf(not(members[i]), equal(refs[i], getUninitalizedRef(tar))));
             }
-
-            if (ref.getTargetType() instanceof AstIntClafer) {
-                for (int i = 0; i < refs.length; i++) {
-                    module.addConstraint(implies(members[i], notEqual(refs[i], getUninitalizedRef(tar))));
-                }
-            } else {
+            if (!(ref.getTargetType() instanceof AstIntClafer)) {
                 IrSetVar targetSet = sets.get(ref.getTargetType());
                 for (int i = 0; i < refs.length; i++) {
-                    module.addConstraint(implies(members[i], member(refs[i], targetSet)));
+                    module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
                 }
             }
         }
