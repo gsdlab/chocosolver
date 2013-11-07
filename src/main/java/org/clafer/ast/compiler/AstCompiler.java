@@ -66,6 +66,7 @@ import org.clafer.ast.analysis.ScopeAnalyzer;
 import org.clafer.ast.analysis.SymmetryAnalyzer;
 import org.clafer.ast.analysis.Type;
 import org.clafer.ast.analysis.TypeAnalyzer;
+import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
@@ -285,7 +286,7 @@ public class AstCompiler {
                 sets.put(clafer, siblingSet[0]);
                 break;
             default:
-                IrSetExpr union = union(siblingSet,true);
+                IrSetExpr union = union(siblingSet, true);
                 IrSetVar set = set(clafer.getName(), union.getEnv(), union.getKer(), union.getCard());
                 module.addConstraint(equal(set, union));
                 sets.put(clafer, set);
@@ -338,51 +339,18 @@ public class AstCompiler {
         AstRef ref = refPair == null ? null : refPair.getFst();
         int refOffset = refPair == null ? 0 : refPair.getSnd().intValue();
 
+        int scope = getScope(clafer);
         IrBoolExpr[] members = memberships.get(clafer);
-        if (ref != null) {
-            AstClafer tar = ref.getTargetType();
-            IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
-                    refOffset, refOffset + getScope(clafer));
-            if (ref.isUnique()) {
-                if (getCard(clafer).getHigh() > 1) {
-                    if (getGlobalCard(clafer).isExact()) {
-                        assert getGlobalCard(clafer).getLow() == refs.length;
-                        module.addConstraint(allDifferent(refs));
-                    } else {
-                        for (int i = 0; i < refs.length - 1; i++) {
-                            module.addConstraint(
-                                    implies(and(members[i], members[i + 1],
-                                    equal(parents[i], parents[i + 1])),
-                                    notEqual(refs[i], refs[i + 1])));
-                        }
-                    }
-                }
-                IrIntExpr size =
-                        ref.getTargetType() instanceof AstIntClafer
-                        ? constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1)
-                        : card(sets.get(ref.getTargetType()));
-                for (IrSetExpr sibling : siblingSet) {
-                    module.addConstraint(lessThanEqual(card(sibling), size));
-                }
-            }
-            assert refs.length == members.length;
-            for (int i = 0; i < members.length; i++) {
-                module.addConstraint(ifOnlyIf(not(members[i]), equal(refs[i], getUninitalizedRef(tar))));
-            }
-            if (!(ref.getTargetType() instanceof AstIntClafer)) {
-                IrSetVar targetSet = sets.get(ref.getTargetType());
-                for (int i = 0; i < refs.length; i++) {
-                    module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
-                }
-            }
-        }
 
+        // Two ids a and b are in the same partition if symmetry breaking guarantees
+        // that ref[a] and ref[b] ard different.
+        DisjointSets<Integer> refPartitions = null;
         // If the Clafer either needs children or reference to be introduce symmetry.
-        if (fullSymmetryBreaking
+        if (fullSymmetryBreaking && scope > 1
                 && (analysis.hasInteritedBreakableChildren(clafer)
                 || (ref != null && analysis.isBreakableRef(ref))
                 || analysis.isInheritedBreakableTarget(clafer))) {
-            int scope = getScope(clafer);
+
             IrIntExpr[] weight = new IrIntExpr[scope];
             IrIntExpr[][] index = indices.get(clafer);
 
@@ -390,6 +358,7 @@ public class AstCompiler {
             IrIntExpr[][] childIndices = new IrIntExpr[weight.length][];
 
             List<Pair<AstClafer, Integer>> offsets = analysis.getHierarcyOffsets(clafer);
+            boolean[] breakableRefIds = new boolean[childIndices.length];
             for (int i = 0; i < childIndices.length; i++) {
                 List<IrIntExpr> childIndex = new ArrayList<>();
                 for (Pair<AstClafer, Integer> offset : offsets) {
@@ -398,10 +367,11 @@ public class AstCompiler {
                     }
                 }
                 if (ref != null && analysis.isBreakableRef(ref)) {
+                    breakableRefIds[i] = analysis.isBreakableRefId(ref, i + refOffset);
                     // References need a positive weight, so to use their value as
                     // a weight, need to offset it so that it always positive.
                     childIndex.add(
-                            analysis.isBreakableRefId(ref, i + refOffset)
+                            breakableRefIds[i]
                             // The id of the target is the weight.
                             ? minus(refPointers.get(ref)[i + refOffset])
                             // If analysis says that this id does not need breaking
@@ -429,17 +399,67 @@ public class AstCompiler {
                         childIndices[i].length == 0 ? Zero
                         : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
-            module.addConstraint(sortChannel(childIndices, weight));
-            for (int i = 0; i < siblingSet.length; i++) {
-                module.addConstraint(filterString(siblingSet[i], weight, index[i]));
+            if (getScope(clafer.getParent()) > 1) {
+                module.addConstraint(sortChannel(childIndices, weight));
+                for (int i = 0; i < siblingSet.length; i++) {
+                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
+                }
             }
             for (int i = 0; i < parents.length - 1; i++) {
                 if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
-                    module.addConstraint(implies(and(equal(parents[i], parents[i + 1]), members[i]),
+                    assert childIndices[i + 1].length == childIndices[i].length;
+                    if (childIndices[i].length == 1 && breakableRefIds[i]) {
+                        if (refPartitions == null) {
+                            refPartitions = new DisjointSets<>();
+                        }
+                        refPartitions.union(i, i + 1);
+                    }
+                    module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
                             sortStrict(childIndices[i + 1], childIndices[i])));
                 } else {
                     module.addConstraint(implies(equal(parents[i], parents[i + 1]),
                             sort(childIndices[i + 1], childIndices[i])));
+                }
+            }
+        }
+
+        if (ref != null) {
+            AstClafer tar = ref.getTargetType();
+            IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
+                    refOffset, refOffset + getScope(clafer));
+            if (ref.isUnique()) {
+                if (getCard(clafer).getHigh() > 1) {
+                    if (getGlobalCard(clafer).isExact()) {
+                        assert getGlobalCard(clafer).getLow() == refs.length;
+                        module.addConstraint(allDifferent(refs));
+                    } else {
+                        for (int i = 0; i < refs.length - 1; i++) {
+                            for (int j = i + 1; j < refs.length; j++) {
+                                if (refPartitions == null || !refPartitions.connected(i, j)) {
+                                    module.addConstraint(
+                                            implies(and(members[i], equal(parents[i], parents[j])),
+                                            notEqual(refs[i], refs[j])));
+                                }
+                            }
+                        }
+                    }
+                }
+                IrIntExpr size =
+                        ref.getTargetType() instanceof AstIntClafer
+                        ? constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1)
+                        : card(sets.get(ref.getTargetType()));
+                for (IrSetExpr sibling : siblingSet) {
+                    module.addConstraint(lessThanEqual(card(sibling), size));
+                }
+            }
+            assert refs.length == members.length;
+            for (int i = 0; i < members.length; i++) {
+                module.addConstraint(ifOnlyIf(not(members[i]), equal(refs[i], getUninitalizedRef(tar))));
+            }
+            if (!(ref.getTargetType() instanceof AstIntClafer)) {
+                IrSetVar targetSet = sets.get(ref.getTargetType());
+                for (int i = 0; i < refs.length; i++) {
+                    module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
                 }
             }
         }
