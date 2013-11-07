@@ -18,6 +18,7 @@ import solver.search.loop.monitors.IMonitorSolution;
 import solver.search.solution.Solution;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.Variable;
 
 /**
  *
@@ -125,13 +126,17 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
 
     private boolean duplicateSolution() {
         for (IntVar var : solutionMap.getIrSolution().getIntVars()) {
-            if (var.getValue() != firstSolution.getIntVal(var)) {
-                return false;
+            if ((var.getTypeAndKind() & Variable.CSTE) == 0) {
+                if (var.getValue() != firstSolution.getIntVal(var)) {
+                    return false;
+                }
             }
         }
         for (SetVar var : solutionMap.getIrSolution().getSetVars()) {
-            if (!Arrays.equals(var.getValue(), firstSolution.getSetVal(var))) {
-                return false;
+            if ((var.getTypeAndKind() & Variable.CSTE) == 0) {
+                if (!Arrays.equals(var.getValue(), firstSolution.getSetVal(var))) {
+                    return false;
+                }
             }
         }
         return true;
