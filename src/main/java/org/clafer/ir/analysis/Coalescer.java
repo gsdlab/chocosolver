@@ -226,24 +226,33 @@ public class Coalescer {
 
         @Override
         public Void visit(IrMember ir, Void a) {
+            IrIntExpr element = ir.getElement();
             IrSetExpr set = ir.getSet();
-            IrDomain ker = set.getKer();
-            Integer constant = IrUtil.getConstant(ir.getElement());
-            if (constant != null && !ker.contains(constant)) {
-                ker = IrUtil.add(ker, constant);
-                propagateKer(ker, set);
+            propagateInt(set.getEnv(), element);
+            IrDomain ker = null;
+            Integer constant = IrUtil.getConstant(element);
+            if (constant != null && !set.getKer().contains(constant)) {
+                ker = IrUtil.add(set.getKer(), constant);
+            }
+            IrDomain card = null;
+            if (set.getCard().getLowBound() == 0) {
+                card = IrUtil.remove(set.getCard(), 0);
+            }
+            if (ker != null || card != null) {
+                propagateSet(new PartialSet(null, ker, card), set);
             }
             return null;
         }
 
         @Override
         public Void visit(IrNotMember ir, Void a) {
+            IrIntExpr element = ir.getElement();
             IrSetExpr set = ir.getSet();
-            IrDomain env = set.getEnv();
-            Integer constant = IrUtil.getConstant(ir.getElement());
-            if (constant != null && env.contains(constant)) {
-                env = IrUtil.remove(env, constant);
-                propagateEnv(env, set);
+            IrDomain domain = IrUtil.difference(element.getDomain(), set.getKer());
+            propagateInt(domain, element);
+            Integer constant = IrUtil.getConstant(element);
+            if (constant != null && set.getEnv().contains(constant)) {
+                propagateEnv(IrUtil.remove(set.getEnv(), constant), set);
             }
             return null;
         }
