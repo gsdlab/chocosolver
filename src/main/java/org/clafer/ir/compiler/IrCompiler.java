@@ -428,22 +428,22 @@ public class IrCompiler {
         if (a instanceof IrMinus) {
             IrMinus minus = (IrMinus) a;
             // -a ◁ b <=> a + b ▷ 0
-            return compileArithm(minus.getExpr(), Arith.ADD, b, op.reverse(), 0);
+            return compileArithm(minus.getExpr(), Arithm.ADD, b, op.reverse(), 0);
         }
         if (b instanceof IrMinus) {
             IrMinus minus = (IrMinus) b;
             // a ◁ -b <=> a + b ◁ 0
-            return compileArithm(a, Arith.ADD, minus.getExpr(), op, 0);
+            return compileArithm(a, Arithm.ADD, minus.getExpr(), op, 0);
         }
         if (a instanceof IrNot) {
             IrNot not = (IrNot) a;
             // !a ◁ b <=> 1 - a ◁ b <=> a + b ▷ 1
-            return compileArithm(not.getExpr(), Arith.ADD, b, op.reverse(), 1);
+            return compileArithm(not.getExpr(), Arithm.ADD, b, op.reverse(), 1);
         }
         if (b instanceof IrNot) {
             IrNot not = (IrNot) b;
             // a ◁ !b <=> a ◁ 1 - b <=> a + b ◁ 1
-            return compileArithm(not.getExpr(), Arith.ADD, b, op, 1);
+            return compileArithm(not.getExpr(), Arithm.ADD, b, op, 1);
         }
         switch (op) {
             case EQ:
@@ -470,7 +470,7 @@ public class IrCompiler {
         return _arithm(compile(a), op.getSyntax(), compile(b));
     }
 
-    private Constraint compileArithm(IrIntExpr a, Rel op1, IrIntExpr b, Arith op2, int c) {
+    private Constraint compileArithm(IrIntExpr a, Rel op1, IrIntExpr b, Arithm op2, int c) {
         if (c == 0) {
             return compileArithm(a, op1, b);
         }
@@ -478,34 +478,34 @@ public class IrCompiler {
             IrMinus minus = (IrMinus) a;
             // -a ◁ b + c <=> a + b ▷ -c
             // -a ◁ b - c <=> a + b ▷ c
-            return compileArithm(minus.getExpr(), Arith.ADD, b, op1.reverse(),
-                    Arith.ADD.equals(op2) ? -c : c);
+            return compileArithm(minus.getExpr(), Arithm.ADD, b, op1.reverse(),
+                    Arithm.ADD.equals(op2) ? -c : c);
         }
         if (b instanceof IrMinus) {
             IrMinus minus = (IrMinus) b;
             // a ◁ -b + c <=> a + b ▷ c
             // a ◁ -b - c <=> a + b ▷ -c
-            return compileArithm(a, Arith.ADD, minus.getExpr(), op1.reverse(),
-                    Arith.ADD.equals(op2) ? c : -c);
+            return compileArithm(a, Arithm.ADD, minus.getExpr(), op1.reverse(),
+                    Arithm.ADD.equals(op2) ? c : -c);
         }
         if (a instanceof IrNot) {
             IrNot not = (IrNot) a;
             // !a ◁ b + c <=> 1 - a ◁ b + c <=> a + b ▷ 1 - c
             // !a ◁ b - c <=> 1 - a ◁ b - c <=> a + b ▷ 1 + c
-            return compileArithm(not.getExpr(), Arith.ADD, b, op1.reverse(),
-                    Arith.ADD.equals(op2) ? 1 - c : 1 + c);
+            return compileArithm(not.getExpr(), Arithm.ADD, b, op1.reverse(),
+                    Arithm.ADD.equals(op2) ? 1 - c : 1 + c);
         }
         if (b instanceof IrNot) {
             IrNot not = (IrNot) b;
             // a ◁ !b + c <=> a ◁ 1 - b + c <=> a + b ▷ 1 + c
             // a ◁ !b - c <=> a ◁ 1 - b - c <=> a + b ▷ 1 - c
-            return compileArithm(a, Arith.ADD, not.getExpr(), op1.reverse(),
-                    Arith.ADD.equals(op2) ? 1 + c : 1 - c);
+            return compileArithm(a, Arithm.ADD, not.getExpr(), op1.reverse(),
+                    Arithm.ADD.equals(op2) ? 1 + c : 1 - c);
         }
         return _arithm(compile(a), op1.getSyntax(), compile(b), op2.getSyntax(), c);
     }
 
-    private Constraint compileArithm(IrIntExpr a, Arith op1, IrIntExpr b, Rel op2, int c) {
+    private Constraint compileArithm(IrIntExpr a, Arithm op1, IrIntExpr b, Rel op2, int c) {
         if (b instanceof IrMinus) {
             IrMinus minus = (IrMinus) b;
             // a + (-b) ◁ c <=> a - b ◁ c
@@ -517,34 +517,34 @@ public class IrCompiler {
                 if (a instanceof IrNot) {
                     IrNot not = (IrNot) a;
                     // !a + b ◁ c <=> 1 - a + b ◁ c <=> b ◁ a + c - 1
-                    return compileArithm(b, op2, not.getExpr(), Arith.ADD, c - 1);
+                    return compileArithm(b, op2, not.getExpr(), Arithm.ADD, c - 1);
                 }
                 if (b instanceof IrNot) {
                     IrNot not = (IrNot) b;
                     // a + !b ◁ c <=> a + 1 - b ◁ c <=> a ◁ b + c - 1
-                    return compileArithm(a, op2, not.getExpr(), Arith.ADD, c - 1);
+                    return compileArithm(a, op2, not.getExpr(), Arithm.ADD, c - 1);
                 }
                 if (a instanceof IrMinus) {
                     IrMinus minus = (IrMinus) a;
                     // (-a) + b ◁ c <=> b - a ◁ c
-                    return compileArithm(b, Arith.MINUS, minus.getExpr(), op2, c);
+                    return compileArithm(b, Arithm.MINUS, minus.getExpr(), op2, c);
                 }
                 break;
             case MINUS:
                 if (a instanceof IrNot) {
                     IrNot not = (IrNot) a;
                     // !a - b ◁ c <=> 1 - a - b ◁ c <=> -a - b ◁ c - 1 <=> a + b ▷ 1 - c
-                    return compileArithm(not.getExpr(), Arith.ADD, b, op2.reverse(), 1 - c);
+                    return compileArithm(not.getExpr(), Arithm.ADD, b, op2.reverse(), 1 - c);
                 }
                 if (b instanceof IrNot) {
                     IrNot not = (IrNot) b;
                     // a - !b ◁ c <=> a - 1 + b ◁ c <=> a + b ◁ c + 1
-                    return compileArithm(a, Arith.ADD, not.getExpr(), op2, c + 1);
+                    return compileArithm(a, Arithm.ADD, not.getExpr(), op2, c + 1);
                 }
                 if (a instanceof IrMinus) {
                     IrMinus minus = (IrMinus) a;
                     // (-a) - b ◁ c <=> a + b ▷ -c
-                    return compileArithm(minus.getExpr(), Arith.ADD, b, op2.reverse(), -c);
+                    return compileArithm(minus.getExpr(), Arithm.ADD, b, op2.reverse(), -c);
                 }
                 break;
         }
@@ -555,19 +555,19 @@ public class IrCompiler {
         return compileArithm(a, Rel.from(op), b);
     }
 
-    private Constraint compileArithm(IrIntExpr a, IrCompare.Op op1, IrIntExpr b, Arith op2, int c) {
+    private Constraint compileArithm(IrIntExpr a, IrCompare.Op op1, IrIntExpr b, Arithm op2, int c) {
         return compileArithm(a, Rel.from(op1), b, op2, c);
     }
 
-    private Constraint compileArithm(IrIntExpr a, Arith op1, IrIntExpr b, IrCompare.Op op2, int c) {
+    private Constraint compileArithm(IrIntExpr a, Arithm op1, IrIntExpr b, IrCompare.Op op2, int c) {
         return compileArithm(a, op1, b, Rel.from(op2), c);
     }
 
-    private Constraint compileArithm(int c, IrCompare.Op op1, IrIntExpr a, Arith op2, IrIntExpr b) {
+    private Constraint compileArithm(int c, IrCompare.Op op1, IrIntExpr a, Arithm op2, IrIntExpr b) {
         return compileArithm(b, op2, a, Rel.from(op1).reverse(), c);
     }
 
-    private Constraint compileArithm(int c, Arith op1, IrIntExpr a, IrCompare.Op op2, IrIntExpr b) {
+    private Constraint compileArithm(int c, Arithm op1, IrIntExpr a, IrCompare.Op op2, IrIntExpr b) {
         return compileArithm(b, Rel.from(op2).reverse(), a, op1, c);
     }
 
@@ -637,7 +637,7 @@ public class IrCompiler {
                     // delegate
                     return operands[0].accept(this, a);
                 case 2:
-                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.EQ, 2);
+                    return compileArithm(operands[0], Arithm.ADD, operands[1], Rel.EQ, 2);
                 default:
                     return Constraints.and(compileAsBoolVars(ir.getOperands()));
             }
@@ -650,7 +650,7 @@ public class IrCompiler {
                 case 1:
                     return solver.TRUE;
                 case 2:
-                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.LE, 1);
+                    return compileArithm(operands[0], Arithm.ADD, operands[1], Rel.LE, 1);
                 default:
                     return Constraints.lone(compileAsBoolVars(ir.getOperands()));
             }
@@ -664,7 +664,7 @@ public class IrCompiler {
                     // delegate
                     return operands[0].accept(this, a);
                 case 2:
-                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.EQ, 1);
+                    return compileArithm(operands[0], Arithm.ADD, operands[1], Rel.EQ, 1);
                 default:
                     return Constraints.one(compileAsBoolVars(ir.getOperands()));
             }
@@ -678,7 +678,7 @@ public class IrCompiler {
                     // delegate
                     return operands[0].accept(this, a);
                 case 2:
-                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.GE, 1);
+                    return compileArithm(operands[0], Arithm.ADD, operands[1], Rel.GE, 1);
                 default:
                     return Constraints.or(compileAsBoolVars(ir.getOperands()));
             }
@@ -741,12 +741,12 @@ public class IrCompiler {
                 IrAdd add = (IrAdd) left;
                 IrIntExpr[] addends = add.getAddends();
                 if (addends.length == 1) {
-                    return compileArithm(addends[0], Arith.MINUS, right, op, -add.getOffset());
+                    return compileArithm(addends[0], Arithm.MINUS, right, op, -add.getOffset());
                 }
                 if (addends.length == 2) {
                     Integer constant = IrUtil.getConstant(right);
                     if (constant != null) {
-                        return compileArithm(addends[0], Arith.ADD, addends[1], op, constant.intValue() - add.getOffset());
+                        return compileArithm(addends[0], Arithm.ADD, addends[1], op, constant.intValue() - add.getOffset());
                     }
                 }
             }
@@ -754,12 +754,12 @@ public class IrCompiler {
                 IrAdd add = (IrAdd) right;
                 IrIntExpr[] addends = add.getAddends();
                 if (addends.length == 1) {
-                    return compileArithm(left, Arith.MINUS, addends[0], op, add.getOffset());
+                    return compileArithm(left, Arithm.MINUS, addends[0], op, add.getOffset());
                 }
                 if (addends.length == 2) {
                     Integer constant = IrUtil.getConstant(left);
                     if (constant != null) {
-                        return compileArithm(constant.intValue() - add.getOffset(), op, addends[0], Arith.ADD, addends[1]);
+                        return compileArithm(constant.intValue() - add.getOffset(), op, addends[0], Arithm.ADD, addends[1]);
                     }
                 }
             }
@@ -1626,13 +1626,13 @@ public class IrCompiler {
         }
     }
 
-    private static enum Arith {
+    private static enum Arithm {
 
         ADD("+"),
         MINUS("-");
         private final String syntax;
 
-        private Arith(String syntax) {
+        private Arithm(String syntax) {
             this.syntax = syntax;
         }
 
@@ -1640,7 +1640,7 @@ public class IrCompiler {
             return syntax;
         }
 
-        private Arith negate() {
+        private Arithm negate() {
             switch (this) {
                 case ADD:
                     return MINUS;
