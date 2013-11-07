@@ -123,22 +123,9 @@ public class IrBoundDomain implements IrDomain {
         }
         if (obj instanceof IrDomain) {
             IrDomain other = (IrDomain) obj;
-            if (other.isEmpty()) {
-                return false;
-            }
-            if (other.isBounded()) {
-                return low == other.getLowBound() && high == other.getHighBound();
-            }
-            int[] otherValues = other.getValues();
-            if (size() != other.size()) {
-                return false;
-            }
-            for (int i = 0; i < otherValues.length; i++) {
-                if (otherValues[i] != low + i) {
-                    return false;
-                }
-            }
-            return true;
+            return size() == other.size()
+                    && low == other.getLowBound()
+                    && high == other.getHighBound();
         }
         return false;
     }

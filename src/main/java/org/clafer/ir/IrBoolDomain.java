@@ -131,4 +131,18 @@ public enum IrBoolDomain implements IrDomain {
             collection.add(0);
         }
     }
+
+    @Override
+    public String toString() {
+        switch (this) {
+            case TrueDomain:
+                return "{1}";
+            case FalseDomain:
+                return "{0}";
+            case BoolDomain:
+                return "{0,1}";
+            default:
+                throw new IllegalStateException();
+        }
+    }
 }

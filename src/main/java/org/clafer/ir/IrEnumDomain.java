@@ -117,20 +117,8 @@ public class IrEnumDomain implements IrDomain {
         }
         if (obj instanceof IrDomain) {
             IrDomain other = (IrDomain) obj;
-            if (other.isEmpty()) {
+            if (size() != other.size()) {
                 return false;
-            }
-            if (other.isBounded()) {
-                if (size() != size()) {
-                    return false;
-                }
-                int otherLow = other.getLowBound();
-                for (int i = 0; i < values.length; i++) {
-                    if (values[i] != otherLow + i) {
-                        return false;
-                    }
-                }
-                return true;
             }
             return Arrays.equals(values, other.getValues());
         }

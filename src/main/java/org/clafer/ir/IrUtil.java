@@ -197,7 +197,16 @@ public class IrUtil {
         if (d1.getHighBound() < d2.getLowBound()) {
             return false;
         }
-        if (d1.isBounded() && d2.isBounded()) {
+        if (d1.isBounded()
+                && (d2.isBounded()
+                || d2.getLowBound() >= d1.getLowBound()
+                || (d2.getHighBound() <= d1.getHighBound()))) {
+            // Bounds are already checked.
+            return true;
+        }
+        if (d2.isBounded()
+                && (d1.getLowBound() >= d2.getLowBound()
+                || (d1.getHighBound() <= d2.getHighBound()))) {
             // Bounds are already checked.
             return true;
         }
@@ -235,7 +244,7 @@ public class IrUtil {
         if (sub.getHighBound() > sup.getHighBound()) {
             return false;
         }
-        if (sub.isBounded() && sup.isBounded()) {
+        if (sup.isBounded()) {
             // Bounds are already checked.
             return true;
         }
