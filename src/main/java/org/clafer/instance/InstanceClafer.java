@@ -83,14 +83,6 @@ public class InstanceClafer {
         if(hasRef()) {
             out.append(" = ").append(ref.toString());
         }
-//        AstRef typeRef = AstUtil.getInheritedRef(type);
-//        if (typeRef != null) {
-//            out.append(" = ");
-//            if (!(typeRef.getTargetType() instanceof AstIntClafer)) {
-//                out.append(typeRef.getTargetType().getName()).append("#");
-//            }
-//            out.append(Integer.toString(ref));
-//        }
         out.append('\n');
         for (InstanceClafer child : getChildren()) {
             child.print(indent + "    ", out);
