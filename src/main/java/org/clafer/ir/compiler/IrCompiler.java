@@ -1,6 +1,7 @@
 package org.clafer.ir.compiler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -186,7 +187,8 @@ public class IrCompiler {
         if (f2.isEmpty()) {
             return f1;
         }
-        Map<T, T> composed = new HashMap<>(f2);
+        Map<T, T> composed = new HashMap<>(f1.size() + f2.size());
+        composed.putAll(f2);
         for (Entry<T, T> e : f1.entrySet()) {
             T key = e.getKey();
             T value = f2.get(e.getValue());
@@ -422,6 +424,153 @@ public class IrCompiler {
         return (Constraint) result;
     }
 
+    private Constraint compileArithm(IrIntExpr a, Rel op, IrIntExpr b) {
+        if (a instanceof IrMinus) {
+            IrMinus minus = (IrMinus) a;
+            // -a ◁ b <=> a + b ▷ 0
+            return compileArithm(minus.getExpr(), Arith.ADD, b, op.reverse(), 0);
+        }
+        if (b instanceof IrMinus) {
+            IrMinus minus = (IrMinus) b;
+            // a ◁ -b <=> a + b ◁ 0
+            return compileArithm(a, Arith.ADD, minus.getExpr(), op, 0);
+        }
+        if (a instanceof IrNot) {
+            IrNot not = (IrNot) a;
+            // !a ◁ b <=> 1 - a ◁ b <=> a + b ▷ 1
+            return compileArithm(not.getExpr(), Arith.ADD, b, op.reverse(), 1);
+        }
+        if (b instanceof IrNot) {
+            IrNot not = (IrNot) b;
+            // a ◁ !b <=> a ◁ 1 - b <=> a + b ◁ 1
+            return compileArithm(not.getExpr(), Arith.ADD, b, op, 1);
+        }
+        switch (op) {
+            case EQ:
+                if (a instanceof IrBoolVar) {
+                    return compileAsConstraint(b, compile(a));
+                }
+                return compileAsConstraint(a, compile(b));
+            case NQ:
+                if (a instanceof IrBoolExpr && b instanceof IrBoolExpr) {
+                    IrBoolExpr boolA = (IrBoolExpr) a;
+                    IrBoolExpr boolB = (IrBoolExpr) b;
+                    if (boolA instanceof IrCompare) {
+                        return compileAsConstraint(boolA.negate(), compileAsIntVar(boolB));
+                    }
+                    if (boolB instanceof IrCompare) {
+                        return compileAsConstraint(boolB.negate(), compileAsIntVar(boolA));
+                    }
+                    if (boolA instanceof IrBoolVar) {
+                        return compileAsConstraint(boolB, compileAsIntVar(boolA.negate()));
+                    }
+                    return compileAsConstraint(boolA, compileAsIntVar(boolB.negate()));
+                }
+        }
+        return _arithm(compile(a), op.getSyntax(), compile(b));
+    }
+
+    private Constraint compileArithm(IrIntExpr a, Rel op1, IrIntExpr b, Arith op2, int c) {
+        if (c == 0) {
+            return compileArithm(a, op1, b);
+        }
+        if (a instanceof IrMinus) {
+            IrMinus minus = (IrMinus) a;
+            // -a ◁ b + c <=> a + b ▷ -c
+            // -a ◁ b - c <=> a + b ▷ c
+            return compileArithm(minus.getExpr(), Arith.ADD, b, op1.reverse(),
+                    Arith.ADD.equals(op2) ? -c : c);
+        }
+        if (b instanceof IrMinus) {
+            IrMinus minus = (IrMinus) b;
+            // a ◁ -b + c <=> a + b ▷ c
+            // a ◁ -b - c <=> a + b ▷ -c
+            return compileArithm(a, Arith.ADD, minus.getExpr(), op1.reverse(),
+                    Arith.ADD.equals(op2) ? c : -c);
+        }
+        if (a instanceof IrNot) {
+            IrNot not = (IrNot) a;
+            // !a ◁ b + c <=> 1 - a ◁ b + c <=> a + b ▷ 1 - c
+            // !a ◁ b - c <=> 1 - a ◁ b - c <=> a + b ▷ 1 + c
+            return compileArithm(not.getExpr(), Arith.ADD, b, op1.reverse(),
+                    Arith.ADD.equals(op2) ? 1 - c : 1 + c);
+        }
+        if (b instanceof IrNot) {
+            IrNot not = (IrNot) b;
+            // a ◁ !b + c <=> a ◁ 1 - b + c <=> a + b ▷ 1 + c
+            // a ◁ !b - c <=> a ◁ 1 - b - c <=> a + b ▷ 1 - c
+            return compileArithm(a, Arith.ADD, not.getExpr(), op1.reverse(),
+                    Arith.ADD.equals(op2) ? 1 + c : 1 - c);
+        }
+        return _arithm(compile(a), op1.getSyntax(), compile(b), op2.getSyntax(), c);
+    }
+
+    private Constraint compileArithm(IrIntExpr a, Arith op1, IrIntExpr b, Rel op2, int c) {
+        if (b instanceof IrMinus) {
+            IrMinus minus = (IrMinus) b;
+            // a + (-b) ◁ c <=> a - b ◁ c
+            // a - (-b) ◁ c <=> a + b ◁ c
+            return compileArithm(a, op1.negate(), minus.getExpr(), op2, c);
+        }
+        switch (op1) {
+            case ADD:
+                if (a instanceof IrNot) {
+                    IrNot not = (IrNot) a;
+                    // !a + b ◁ c <=> 1 - a + b ◁ c <=> b ◁ a + c - 1
+                    return compileArithm(b, op2, not.getExpr(), Arith.ADD, c - 1);
+                }
+                if (b instanceof IrNot) {
+                    IrNot not = (IrNot) b;
+                    // a + !b ◁ c <=> a + 1 - b ◁ c <=> a ◁ b + c - 1
+                    return compileArithm(a, op2, not.getExpr(), Arith.ADD, c - 1);
+                }
+                if (a instanceof IrMinus) {
+                    IrMinus minus = (IrMinus) a;
+                    // (-a) + b ◁ c <=> b - a ◁ c
+                    return compileArithm(b, Arith.MINUS, minus.getExpr(), op2, c);
+                }
+                break;
+            case MINUS:
+                if (a instanceof IrNot) {
+                    IrNot not = (IrNot) a;
+                    // !a - b ◁ c <=> 1 - a - b ◁ c <=> -a - b ◁ c - 1 <=> a + b ▷ 1 - c
+                    return compileArithm(not.getExpr(), Arith.ADD, b, op2.reverse(), 1 - c);
+                }
+                if (b instanceof IrNot) {
+                    IrNot not = (IrNot) b;
+                    // a - !b ◁ c <=> a - 1 + b ◁ c <=> a + b ◁ c + 1
+                    return compileArithm(a, Arith.ADD, not.getExpr(), op2, c + 1);
+                }
+                if (a instanceof IrMinus) {
+                    IrMinus minus = (IrMinus) a;
+                    // (-a) - b ◁ c <=> a + b ▷ -c
+                    return compileArithm(minus.getExpr(), Arith.ADD, b, op2.reverse(), -c);
+                }
+                break;
+        }
+        return _arithm(compile(a), op1.getSyntax(), compile(b), op2.getSyntax(), c);
+    }
+
+    private Constraint compileArithm(IrIntExpr a, IrCompare.Op op, IrIntExpr b) {
+        return compileArithm(a, Rel.from(op), b);
+    }
+
+    private Constraint compileArithm(IrIntExpr a, IrCompare.Op op1, IrIntExpr b, Arith op2, int c) {
+        return compileArithm(a, Rel.from(op1), b, op2, c);
+    }
+
+    private Constraint compileArithm(IrIntExpr a, Arith op1, IrIntExpr b, IrCompare.Op op2, int c) {
+        return compileArithm(a, op1, b, Rel.from(op2), c);
+    }
+
+    private Constraint compileArithm(int c, IrCompare.Op op1, IrIntExpr a, Arith op2, IrIntExpr b) {
+        return compileArithm(b, op2, a, Rel.from(op1).reverse(), c);
+    }
+
+    private Constraint compileArithm(int c, Arith op1, IrIntExpr a, IrCompare.Op op2, IrIntExpr b) {
+        return compileArithm(b, Rel.from(op2).reverse(), a, op1, c);
+    }
+
     private Object compile(IrBoolExpr expr) {
         return expr.accept(boolExprCompiler, ConstraintNoReify);
     }
@@ -482,36 +631,67 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrAnd ir, BoolArg a) {
-            return _and(compileAsBoolVars(ir.getOperands()));
+            IrBoolExpr[] operands = ir.getOperands();
+            switch (operands.length) {
+                case 1:
+                    // delegate
+                    return operands[0].accept(this, a);
+                case 2:
+                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.EQ, 2);
+                default:
+                    return Constraints.and(compileAsBoolVars(ir.getOperands()));
+            }
         }
 
         @Override
         public Object visit(IrLone ir, BoolArg a) {
-            return _lone(compileAsBoolVars(ir.getOperands()));
+            IrBoolExpr[] operands = ir.getOperands();
+            switch (operands.length) {
+                case 1:
+                    return solver.TRUE;
+                case 2:
+                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.LE, 1);
+                default:
+                    return Constraints.lone(compileAsBoolVars(ir.getOperands()));
+            }
         }
 
         @Override
         public Object visit(IrOne ir, BoolArg a) {
-            return _one(compileAsBoolVars(ir.getOperands()));
+            IrBoolExpr[] operands = ir.getOperands();
+            switch (operands.length) {
+                case 1:
+                    // delegate
+                    return operands[0].accept(this, a);
+                case 2:
+                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.EQ, 1);
+                default:
+                    return Constraints.one(compileAsBoolVars(ir.getOperands()));
+            }
         }
 
         @Override
         public Object visit(IrOr ir, BoolArg a) {
-            return _or(compileAsBoolVars(ir.getOperands()));
+            IrBoolExpr[] operands = ir.getOperands();
+            switch (operands.length) {
+                case 1:
+                    // delegate
+                    return operands[0].accept(this, a);
+                case 2:
+                    return compileArithm(operands[0], Arith.ADD, operands[1], Rel.GE, 1);
+                default:
+                    return Constraints.or(compileAsBoolVars(ir.getOperands()));
+            }
         }
 
         @Override
         public Object visit(IrImplies ir, BoolArg a) {
-            BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
-            IntVar consequent = compileAsIntVar(ir.getConsequent());
-            return _implies(antecedent, consequent);
+            return compileArithm(ir.getAntecedent(), Rel.LE, ir.getConsequent());
         }
 
         @Override
         public Object visit(IrNotImplies ir, BoolArg a) {
-            BoolVar $antecedent = compileAsBoolVar(ir.getAntecedent());
-            IntVar $consequent = compileAsIntVar(ir.getConsequent());
-            return _not_implies($antecedent, $consequent);
+            return compileArithm(ir.getAntecedent(), Rel.GT, ir.getConsequent());
         }
 
         @Override
@@ -524,25 +704,12 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrIfOnlyIf ir, BoolArg a) {
-            if (ir.getLeft() instanceof IrCompare) {
-                BoolVar right = compileAsBoolVar(ir.getRight());
-                return compileAsConstraint(ir.getLeft(), right);
-            }
-            if (ir.getRight() instanceof IrCompare) {
-                BoolVar left = compileAsBoolVar(ir.getLeft());
-                return compileAsConstraint(ir.getRight(), left);
-            }
-            if (ir.getRight() instanceof IrBoolVar) {
-                return compileAsConstraint(ir.getLeft(), compileAsIntVar(ir.getRight()));
-            }
-            return compileAsConstraint(ir.getRight(), compileAsIntVar(ir.getLeft()));
+            return compileArithm(ir.getLeft(), Rel.EQ, ir.getRight());
         }
 
         @Override
         public Object visit(IrXor ir, BoolArg a) {
-            IntVar $left = compileAsIntVar(ir.getLeft());
-            IntVar $right = compileAsIntVar(ir.getRight());
-            return _arithm($left, "!=", $right);
+            return compileArithm(ir.getLeft(), Rel.NQ, ir.getRight());
         }
 
         @Override
@@ -574,14 +741,26 @@ public class IrCompiler {
                 IrAdd add = (IrAdd) left;
                 IrIntExpr[] addends = add.getAddends();
                 if (addends.length == 1) {
-                    return _arithm(compile(addends[0]), "-", compile(right), op.getSyntax(), -add.getOffset());
+                    return compileArithm(addends[0], Arith.MINUS, right, op, -add.getOffset());
+                }
+                if (addends.length == 2) {
+                    Integer constant = IrUtil.getConstant(right);
+                    if (constant != null) {
+                        return compileArithm(addends[0], Arith.ADD, addends[1], op, constant.intValue() - add.getOffset());
+                    }
                 }
             }
             if (right instanceof IrAdd) {
                 IrAdd add = (IrAdd) right;
                 IrIntExpr[] addends = add.getAddends();
                 if (addends.length == 1) {
-                    return _arithm(compile(left), "-", compile(addends[0]), op.getSyntax(), add.getOffset());
+                    return compileArithm(left, Arith.MINUS, addends[0], op, add.getOffset());
+                }
+                if (addends.length == 2) {
+                    Integer constant = IrUtil.getConstant(left);
+                    if (constant != null) {
+                        return compileArithm(constant.intValue() - add.getOffset(), op, addends[0], Arith.ADD, addends[1]);
+                    }
                 }
             }
             if (IrCompare.Op.Equal.equals(op)) {
@@ -616,7 +795,7 @@ public class IrCompiler {
                     return reify;
                 }
             }
-            return _arithm(compile(left), op.getSyntax(), compile(right));
+            return compileArithm(left, op, right);
         }
 
         private Triple<String, IrIntExpr, Integer> getOffset(IrIntExpr expr) {
@@ -1195,11 +1374,16 @@ public class IrCompiler {
     private static Constraint _ifThenElse(BoolVar antecedent, Constraint consequent, Constraint alternative) {
         Constraint thenClause = _implies(antecedent, consequent);
         Constraint elseClause = _implies(antecedent.not(), alternative);
-        return _and(thenClause.reif(), elseClause.reif());
+        return _arithm(thenClause.reif(), "+", elseClause.reif(), "=", 2);
     }
 
     private static Constraint _sum(IntVar sum, IntVar... vars) {
-        return ICF.sum(vars, sum);
+        for (IntVar var : vars) {
+            if (!(var instanceof BoolVar)) {
+                return ICF.sum(vars, sum);
+            }
+        }
+        return _sum(sum, Arrays.copyOf(vars, vars.length, BoolVar[].class));
     }
 
     private static Constraint _sum(IntVar sum, BoolVar... vars) {
@@ -1240,56 +1424,8 @@ public class IrCompiler {
         return ICF.arithm(var1, op1, var2, op2, cste);
     }
 
-    private static Constraint _and(BoolVar... vars) {
-        switch (vars.length) {
-            case 1:
-                return _arithm(vars[0], "=", 1);
-            case 2:
-                return _arithm(vars[0], "+", vars[1], "=", 2);
-            default:
-                return Constraints.and(vars);
-        }
-    }
-
-    private static Constraint _lone(BoolVar... vars) {
-        switch (vars.length) {
-            case 1:
-                return vars[0].getSolver().TRUE;
-            case 2:
-                return _arithm(vars[0], "+", vars[1], "<=", 1);
-            default:
-                return Constraints.lone(vars);
-        }
-    }
-
-    private static Constraint _one(BoolVar... vars) {
-        switch (vars.length) {
-            case 1:
-                return _arithm(vars[0], "=", 1);
-            case 2:
-                return _arithm(vars[0], "+", vars[1], "=", 1);
-            default:
-                return Constraints.one(vars);
-        }
-    }
-
-    private static Constraint _or(BoolVar... vars) {
-        switch (vars.length) {
-            case 1:
-                return _arithm(vars[0], "=", 1);
-            case 2:
-                return _arithm(vars[0], "+", vars[1], ">=", 1);
-            default:
-                return Constraints.or(vars);
-        }
-    }
-
     private static Constraint _implies(BoolVar antecedent, IntVar consequent) {
         return _arithm(antecedent, "<=", consequent);
-    }
-
-    private static Constraint _not_implies(BoolVar antecedent, IntVar consequent) {
-        return _arithm(antecedent, ">", consequent);
     }
 
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
@@ -1439,6 +1575,81 @@ public class IrCompiler {
 
     private static Constraint _subset_eq(CSet sub, CSet sup) {
         return Constraints.subsetEq(sub.getSet(), sub.getCard(), sup.getSet(), sup.getCard());
+    }
+
+    private static enum Rel {
+
+        EQ("="),
+        NQ("!="),
+        LT("<"),
+        LE("<="),
+        GT(">"),
+        GE(">=");
+        private final String syntax;
+
+        private Rel(String syntax) {
+            this.syntax = syntax;
+        }
+
+        private String getSyntax() {
+            return syntax;
+        }
+
+        private static Rel from(IrCompare.Op op) {
+            switch (op) {
+                case Equal:
+                    return EQ;
+                case NotEqual:
+                    return NQ;
+                case LessThan:
+                    return LT;
+                case LessThanEqual:
+                    return LE;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
+
+        private Rel reverse() {
+            switch (this) {
+                case LT:
+                    return GT;
+                case LE:
+                    return GE;
+                case GT:
+                    return LT;
+                case GE:
+                    return LE;
+                default:
+                    return this;
+            }
+        }
+    }
+
+    private static enum Arith {
+
+        ADD("+"),
+        MINUS("-");
+        private final String syntax;
+
+        private Arith(String syntax) {
+            this.syntax = syntax;
+        }
+
+        private String getSyntax() {
+            return syntax;
+        }
+
+        private Arith negate() {
+            switch (this) {
+                case ADD:
+                    return MINUS;
+                case MINUS:
+                    return ADD;
+                default:
+                    throw new IllegalStateException();
+            }
+        }
     }
     private static final BoolArg ConstraintNoReify = new BoolArg(null, Preference.Constraint);
     private static final BoolArg BoolVarNoReify = new BoolArg(null, Preference.BoolVar);
