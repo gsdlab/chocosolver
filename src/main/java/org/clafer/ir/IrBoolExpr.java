@@ -14,7 +14,7 @@ public interface IrBoolExpr extends IrIntExpr {
     public IrBoolDomain getDomain();
 
     /**
-     * The negated expression is true if and only if this expression if false.
+     * The negated expression is true if and only if this expression is false.
      *
      * @return negated expression
      */

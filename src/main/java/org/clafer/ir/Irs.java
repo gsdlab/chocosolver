@@ -1413,7 +1413,6 @@ public class Irs {
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
 
-    // TODO: optimize on gc
     public static IrSetExpr arrayToSet(IrIntExpr[] array, Integer globalCardinality) {
         switch (array.length) {
             case 0:
@@ -1433,9 +1432,11 @@ public class Irs {
                     }
                 }
                 IrDomain ker = enumDomain(values);
-                IrDomain card = boundDomain(
-                        Math.max(1, ker.size()),
-                        Math.min(array.length, env.size()));
+                int lowCard = Math.max(
+                        globalCardinality == null ? 1 : divRoundUp(array.length, globalCardinality),
+                        ker.size());
+                int highCard = Math.min(array.length, env.size());
+                IrDomain card = boundDomain(lowCard, highCard);
                 return IrUtil.asConstant(new IrArrayToSet(array, env, ker, card, globalCardinality));
         }
     }

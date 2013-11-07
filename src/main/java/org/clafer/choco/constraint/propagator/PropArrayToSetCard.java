@@ -23,6 +23,9 @@ public class PropArrayToSetCard extends Propagator<Variable> {
 
     public PropArrayToSetCard(IntVar[] as, IntVar sCard, Integer globalCardinality) {
         super(buildArray(sCard, as), PropagatorPriority.LINEAR, false);
+        if (as.length == 0) {
+            throw new IllegalArgumentException();
+        }
         this.as = as;
         this.sCard = sCard;
         this.globalCardinality = globalCardinality;
@@ -153,10 +156,10 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                     uninstantiated++;
                 }
             }
-            int minCard = instCard
+            int minCard = Math.max(1, instCard
                     + (hasGlobalCardinality()
                     ? divRoundUp(Math.max(0, uninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
-                    : 0);
+                    : 0));
             int maxCard = instCard + uninstantiated;
 
             sCard.updateLowerBound(minCard, aCause);
