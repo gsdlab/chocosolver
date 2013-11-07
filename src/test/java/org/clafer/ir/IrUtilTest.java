@@ -53,8 +53,7 @@ public class IrUtilTest {
     public void testIntersects() {
         IrDomain d1 = randDomain();
         IrDomain d2 = randDomain();
-        assertEquals(!IrUtil.intersection(d1, d2).isEmpty() || (d1.isEmpty() && d2.isEmpty()),
-                IrUtil.intersects(d1, d2));
+        assertEquals(!IrUtil.intersection(d1, d2).isEmpty(), IrUtil.intersects(d1, d2));
     }
 
     @Test

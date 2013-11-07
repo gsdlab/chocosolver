@@ -185,11 +185,11 @@ public class IrUtil {
     }
 
     public static boolean intersects(IrDomain d1, IrDomain d2) {
-        if (d1 == d2) {
-            return true;
-        }
         if (d1.isEmpty() || d2.isEmpty()) {
             return false;
+        }
+        if (d1 == d2) {
+            return true;
         }
         if (d1.getLowBound() > d2.getHighBound()) {
             return false;
