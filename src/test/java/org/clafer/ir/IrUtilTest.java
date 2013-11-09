@@ -41,9 +41,9 @@ public class IrUtilTest {
             case 15:
             case 16:
             case 17:
-                int low = rand.nextBoolean() ? rand.nextInt(100) : -rand.nextInt(100);
-                int high = low + rand.nextInt(100) + 1;
-                return Irs.boundDomain(low, high);
+                int a = rand.nextBoolean() ? rand.nextInt(100) : -rand.nextInt(100);
+                int b = rand.nextBoolean() ? rand.nextInt(100) : -rand.nextInt(100);
+                return Irs.boundDomain(Math.min(a, b), Math.max(a, b));
             default:
                 return Irs.EmptyDomain;
         }
@@ -68,7 +68,7 @@ public class IrUtilTest {
         IrDomain d = randDomain();
         int val = randInt();
         IrDomain add = IrUtil.add(d, val);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d.contains(i) || val == i, add.contains(i));
         }
     }
@@ -78,7 +78,7 @@ public class IrUtilTest {
         IrDomain d = randDomain();
         int val = randInt();
         IrDomain remove = IrUtil.remove(d, val);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d.contains(i) && val != i, remove.contains(i));
         }
     }
@@ -88,7 +88,7 @@ public class IrUtilTest {
         IrDomain d = randDomain();
         int low = randInt();
         IrDomain bound = IrUtil.boundLow(d, low);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d.contains(i) && i >= low, bound.contains(i));
         }
     }
@@ -98,7 +98,7 @@ public class IrUtilTest {
         IrDomain d = randDomain();
         int high = randInt();
         IrDomain bound = IrUtil.boundHigh(d, high);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d.contains(i) && i <= high, bound.contains(i));
         }
     }
@@ -108,7 +108,7 @@ public class IrUtilTest {
         IrDomain d1 = randDomain();
         IrDomain d2 = randDomain();
         IrDomain difference = IrUtil.difference(d1, d2);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d1.contains(i) && !d2.contains(i), difference.contains(i));
         }
     }
@@ -118,7 +118,7 @@ public class IrUtilTest {
         IrDomain d1 = randDomain();
         IrDomain d2 = randDomain();
         IrDomain intersection = IrUtil.intersection(d1, d2);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d1.contains(i) && d2.contains(i), intersection.contains(i));
         }
     }
@@ -128,7 +128,7 @@ public class IrUtilTest {
         IrDomain d1 = randDomain();
         IrDomain d2 = randDomain();
         IrDomain union = IrUtil.union(d1, d2);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d1.contains(i) || d2.contains(i), union.contains(i));
         }
     }
@@ -137,7 +137,7 @@ public class IrUtilTest {
     public void testMinus() {
         IrDomain d = randDomain();
         IrDomain minus = IrUtil.minus(d);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d.contains(i), minus.contains(-i));
         }
     }
@@ -146,8 +146,17 @@ public class IrUtilTest {
     public void testOffset() {
         IrDomain d = randDomain();
         IrDomain offset = IrUtil.offset(d, 3);
-        for (int i = -100; i <= 200; i++) {
+        for (int i = -100; i <= 100; i++) {
             assertEquals(d.contains(i), offset.contains(i + 3));
+        }
+    }
+
+    @Test
+    public void testMask() {
+        IrDomain d = randDomain();
+        IrDomain mask = IrUtil.mask(d, 1, 3);
+        for (int i = -100; i <= 100; i++) {
+            assertEquals(d.contains(i) && i >= 1 && i < 3, mask.contains(i - 1));
         }
     }
 }

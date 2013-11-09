@@ -1738,9 +1738,6 @@ public class Irs {
         }
 
         if (from <= set.getEnv().getLowBound() && to > set.getEnv().getHighBound()) {
-            if (from == 0) {
-                return set;
-            }
             return offset(set, -from);
         }
         IrDomain env = IrUtil.mask(set.getEnv(), from, to);

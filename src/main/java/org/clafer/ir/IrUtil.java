@@ -14,13 +14,6 @@ public class IrUtil {
     private IrUtil() {
     }
 
-    public static <T> T notNull(String message, T t) {
-        if (t == null) {
-            throw new IrException(message);
-        }
-        return t;
-    }
-
     public static boolean isTrue(IrBoolExpr b) {
         return IrBoolDomain.TrueDomain.equals(b.getDomain());
     }
@@ -498,20 +491,21 @@ public class IrUtil {
         if (from > to) {
             throw new IllegalArgumentException();
         }
-        if (to > domain.getHighBound() + 1) {
-            throw new IllegalArgumentException();
-        }
         if (from == to || domain.isEmpty()) {
             return Irs.EmptyDomain;
         }
-        if (domain.isBounded()) {
-            return Irs.boundDomain(0, to - from - 1);
+        if (from > domain.getHighBound() || to <= domain.getLowBound()) {
+            return Irs.EmptyDomain;
         }
-        int[] values = domain.getValues();
+        if (domain.isBounded()) {
+            return Irs.boundDomain(
+                    Math.max(0, domain.getLowBound() - from), 
+                    Math.min(to - 1, domain.getHighBound()) - from);
+        }
         TIntList mask = new TIntArrayList();
-        for (int i = 0; i < values.length; i++) {
-            if (i >= from && i < to) {
-                mask.add(i - from);
+        for (int value : domain.getValues()) {
+            if (value >= from && value < to) {
+                mask.add(value - from);
             }
         }
         return Irs.enumDomain(mask);
