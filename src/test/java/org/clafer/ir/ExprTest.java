@@ -24,8 +24,12 @@ import solver.variables.Variable;
  */
 public class ExprTest {
 
-    private final Random rand = new Random();
+    protected final Random rand = new Random();
     private int varCount = 0;
+
+    public boolean nextBool() {
+        return rand.nextBoolean();
+    }
 
     public int nextInt(int n) {
         return rand.nextInt(n);
@@ -145,7 +149,7 @@ public class ExprTest {
         return randSets(n, 0, 5);
     }
 
-    public BoolVar toBoolVar(IrBoolVar var, Solver solver) {
+    public static BoolVar toBoolVar(IrBoolVar var, Solver solver) {
         switch (var.getDomain()) {
             case FalseDomain:
                 return VF.zero(solver);
@@ -158,7 +162,7 @@ public class ExprTest {
         }
     }
 
-    public BoolVar[] toBoolVars(IrBoolVar[] vars, Solver solver) {
+    public static BoolVar[] toBoolVars(IrBoolVar[] vars, Solver solver) {
         BoolVar[] bools = new BoolVar[vars.length];
         for (int i = 0; i < bools.length; i++) {
             bools[i] = toBoolVar(vars[i], solver);
@@ -166,11 +170,11 @@ public class ExprTest {
         return bools;
     }
 
-    public IntVar toIntVar(IrIntVar var, Solver solver) {
+    public static IntVar toIntVar(IrIntVar var, Solver solver) {
         return VF.enumerated(var.getName(), var.getDomain().getValues(), solver);
     }
 
-    public IntVar[] toIntVars(IrIntVar[] vars, Solver solver) {
+    public static IntVar[] toIntVars(IrIntVar[] vars, Solver solver) {
         IntVar[] ints = new IntVar[vars.length];
         for (int i = 0; i < ints.length; i++) {
             ints[i] = toIntVar(vars[i], solver);
@@ -178,14 +182,14 @@ public class ExprTest {
         return ints;
     }
 
-    public SetVar toSetVar(IrSetVar var, Solver solver) {
+    public static SetVar toSetVar(IrSetVar var, Solver solver) {
         SetVar setVar = VF.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
         IntVar cardVar = VF.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
         solver.post(SCF.cardinality(setVar, cardVar));
         return setVar;
     }
 
-    public SetVar[] toSetVars(IrSetVar[] vars, Solver solver) {
+    public static SetVar[] toSetVars(IrSetVar[] vars, Solver solver) {
         SetVar[] ints = new SetVar[vars.length];
         for (int i = 0; i < ints.length; i++) {
             ints[i] = toSetVar(vars[i], solver);

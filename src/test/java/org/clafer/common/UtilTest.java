@@ -22,15 +22,16 @@ public class UtilTest {
     @Test
     public void testConcat() {
         assertArrayEquals(array(1, 2, 3, 3, 4, 5, 6, 6, 7),
-                Util.concat(array(1, 2, 3), array(3, 4, 5, 6), array(6, 7)));
+                Util.concat(new Integer[][]{array(1, 2, 3), array(3, 4, 5, 6), array(6, 7)}));
         assertArrayEquals(array(1, 2, 3, 6, 7),
-                Util.concat(array(1, 2, 3), array(), array(6, 7)));
+                Util.concat(new Integer[][]{array(1, 2, 3), array(), array(6, 7)}));
         assertArrayEquals(array(1, 2, 3, 3, 4, 5, 6),
-                Util.concat(array(1, 2, 3), array(3, 4, 5, 6), array()));
+                Util.concat(new Integer[][]{array(1, 2, 3), array(3, 4, 5, 6), array()}));
         assertArrayEquals(array(3, 4, 5, 6, 6, 7),
-                Util.concat(array(), array(3, 4, 5, 6), array(6, 7)));
-        assertArrayEquals(array(), Util.concat(array(), array(), array()));
-        assertArrayEquals(array(), Util.concat());
+                Util.concat(new Integer[][]{array(), array(3, 4, 5, 6), array(6, 7)}));
+        assertArrayEquals(array(),
+                Util.concat(new Integer[][]{array(), array(), array()}));
+        assertArrayEquals(array(), Util.concat(new Integer[][]{}));
     }
 
     @Test
@@ -50,10 +51,11 @@ public class UtilTest {
             array(2, 4, 8), array(2, 4, 9), array(2, 5, 8), array(2, 5, 9), array(2, 6, 8), array(2, 6, 9),
             array(2, 7, 8), array(2, 7, 9), array(3, 4, 8), array(3, 4, 9), array(3, 5, 8), array(3, 5, 9),
             array(3, 6, 8), array(3, 6, 9), array(3, 7, 8), array(3, 7, 9)
-        }, Util.sequence(array(1, 2, 3), array(4, 5, 6, 7), array(8, 9))));
+        }, Util.sequence(new Integer[][]{array(1, 2, 3), array(4, 5, 6, 7), array(8, 9)})));
         assertTrue(Arrays.deepEquals(new Integer[][]{},
-                Util.sequence(array(1, 2, 3), array(4, 5, 6, 7), array(), array(8, 9))));
-        assertTrue(Arrays.deepEquals(new Integer[][]{array()}, Util.sequence()));
+                Util.sequence(new Integer[][]{array(1, 2, 3), array(4, 5, 6, 7), array(), array(8, 9)})));
+        assertTrue(Arrays.deepEquals(new Integer[][]{array()},
+                Util.sequence(new Integer[][]{})));
     }
 
     @Test

@@ -2,23 +2,13 @@ package org.clafer.common;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Reader;
-import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import util.iterators.IntIterator;
 
 /**
@@ -135,6 +125,22 @@ public class Util {
         }
         assert count == vals.length;
         return vals;
+    }
+
+    /**
+     * Randomly shuffle an array in place.
+     *
+     * @param array the array to shuffle
+     * @param rand the random number generator
+     */
+    public static <T> void shuffle(T[] array, Random rand) {
+        for (int i = 0; i < array.length; i++) {
+            int index = rand.nextInt(array.length);
+            // Simple swap
+            T temp = array[index];
+            array[index] = array[i];
+            array[i] = temp;
+        }
     }
 
     /**
@@ -353,7 +359,7 @@ public class Util {
      * @param arrays the array of arrays
      * @return the concatenation of all the arrays
      */
-    public static <T> T[] concat(T[]... arrays) {
+    public static <T> T[] concat(T[][] arrays) {
         switch (arrays.length) {
             case 0:
                 @SuppressWarnings("unchecked") T[] empty = (T[]) Array.newInstance(arrays.getClass().getComponentType().getComponentType(), 0);
@@ -462,7 +468,7 @@ public class Util {
      * @param arrays the arrays
      * @return the sequence
      */
-    public static <T> T[][] sequence(T[]... arrays) {
+    public static <T> T[][] sequence(T[][] arrays) {
         if (arrays.length == 0) {
             @SuppressWarnings("unchecked")
             T[][] sequence = (T[][]) Array.newInstance(arrays.getClass().getComponentType(), 1);
@@ -676,36 +682,6 @@ public class Util {
     }
 
     /**
-     * Returns a deep copy of the object.
-     *
-     * @param <T> the type of the object
-     * @param obj an object
-     * @return a copy of the object
-     */
-    public static <T extends Serializable> T copy(T obj) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out;
-        try {
-            out = new ObjectOutputStream(baos);
-            out.writeObject(obj);
-            out.close();
-            byte[] buf = baos.toByteArray();
-
-            ByteArrayInputStream bin = new ByteArrayInputStream(buf);
-            ObjectInputStream in = new ObjectInputStream(bin);
-            @SuppressWarnings("unchecked")
-            T copy = (T) in.readObject();
-            return copy;
-        } catch (IOException e) {
-            // ByteArrayOutputStream should not throw IOException.
-            throw new Error(e);
-        } catch (ClassNotFoundException e) {
-            // Should not throw ClassNotFoundException since the class is already loaded.
-            throw new Error(e);
-        }
-    }
-
-    /**
      * Concatenate the string representation of the items with a comma
      * separating each item.
      *
@@ -713,7 +689,7 @@ public class Util {
      * @param items the items to display
      * @return the items string form separated by commas
      */
-    public static <T> String commaSeparate(T... items) {
+    public static <T> String commaSeparate(T[] items) {
         return intercalate(", ", items);
     }
 
@@ -737,7 +713,7 @@ public class Util {
      * @param items the items to display
      * @return the items string form separated by the separator
      */
-    public static <T> String intercalate(String separator, T... items) {
+    public static <T> String intercalate(String separator, T[] items) {
         StringBuilder result = new StringBuilder();
         if (items.length > 0) {
             result.append(items[0]);
@@ -764,52 +740,6 @@ public class Util {
             while (iter.hasNext()) {
                 result.append(separator).append(iter.next());
             }
-        }
-        return result.toString();
-    }
-
-    /**
-     * Read the entire contents of a file into a string.
-     *
-     * @param in the file to read
-     * @return the contents of the file
-     * @throws IOException an I/O error occurred while reading the file
-     */
-    public static String readAll(File in) throws IOException {
-        Reader reader = new FileReader(in);
-        try {
-            return readAll(reader);
-        } finally {
-            reader.close();
-        }
-    }
-
-    /**
-     * Read the entire contents of a stream into a string. The stream is left
-     * opened, but exhausted.
-     *
-     * @param in the stream to read
-     * @return the contents of the stream
-     * @throws IOException an I/O error occurred while reading the stream
-     */
-    public static String readAll(InputStream in) throws IOException {
-        return readAll(new InputStreamReader(in));
-    }
-
-    /**
-     * Read the entire contents of a reader into a string. The reader is left
-     * opened, but exhausted.
-     *
-     * @param in the reader to read
-     * @return the contents of the reader
-     * @throws IOException an I/O error occurred while reading the reader
-     */
-    public static String readAll(Reader in) throws IOException {
-        StringBuilder result = new StringBuilder();
-        char[] buffer = new char[1024];
-        int l;
-        while ((l = in.read(buffer)) != -1) {
-            result.append(buffer, 0, l);
         }
         return result.toString();
     }
