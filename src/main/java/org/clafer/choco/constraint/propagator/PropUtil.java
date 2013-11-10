@@ -1,9 +1,7 @@
 package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.TIntCollection;
-import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import solver.ICause;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
@@ -52,489 +50,12 @@ public class PropUtil {
     }
 
     /**
-     * Checks if it is possible for the integer variables to instantiate to the
-     * same value
-     *
-     * @param i1 the integer variable
-     * @param i2 the integer variable
-     * @return {@code true} if and only if {@code (dom(i1) intersect dom(i2)) !=
-     *         empty set}, {@code false} otherwise
-     */
-    public static boolean domainIntersectDomain(IntVar i1, IntVar i2) {
-        for (int i = i1.getLB(); i <= i1.getUB(); i = i1.nextValue(i)) {
-            if (i2.contains(i)) {
-                return true;
-            }
-        }
-        return false;
-//        IntVar small;
-//        IntVar large;
-//        if (i1.getDomainSize() < i2.getDomainSize()) {
-//            small = i1;
-//            large = i2;
-//        } else {
-//            small = i2;
-//            large = i1;
-//        }
-//        DisposableRangeIterator iter = small.getRangeIterator(true);
-//        try {
-//            while (iter.hasNext()) {
-//                if (large.nextValue(iter.min() - 1) <= iter.max()) {
-//                    return true;
-//                }
-//                iter.next();
-//            }
-//        } finally {
-//            iter.dispose();
-//        }
-//        return false;
-    }
-
-    /**
-     * Checks if it is possible for an integer variable to instantiate to a
-     * value in the set variable. Assumes the set variables envelope is sorted.
-     *
-     * @param ivar the integer variable
-     * @param svar the set variable whose envelope is sorted
-     * @return {@code true} if and only if {@code (dom(ivar) intersect env(svar)) !=
-     *         empty set}, {@code false} otherwise
-     */
-    public static boolean domainIntersectEnv(IntVar ivar, SetVar svar) {
-        if (ivar.getDomainSize() < svar.getEnvelopeSize()) {
-            int i = ivar.getLB();
-            int envFirst = svar.getEnvelopeFirst();
-            if (envFirst >= i) {
-                if (envFirst == i || ivar.contains(envFirst)) {
-                    return true;
-                }
-                i = ivar.nextValue(envFirst);
-            }
-            int ub = ivar.getUB();
-            for (; i <= ub; i = ivar.nextValue(i)) {
-                if (svar.envelopeContains(i)) {
-                    return true;
-                }
-            }
-        } else {
-            for (int i = svar.getEnvelopeFirst(); i != SetVar.END;) {
-                int next = ivar.nextValue(i - 1);
-                while (i < next && i != SetVar.END) {
-                    i = svar.getEnvelopeNext();
-                }
-                if (i == next) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if it is guaranteed that an integer variable instantiates to a
-     * value in a collection.
-     *
-     * @param ivar the integer variable
-     * @param collection the collection
-     * @return {@code true} if and only if {@code dom(ivar) subsetof collection},
-     *         {@code false} otherwise
-     */
-    public static boolean isDomainSubsetOf(IntVar ivar, TIntCollection collection) {
-        if (ivar.getDomainSize() > collection.size()) {
-            return false;
-        }
-        int ub = ivar.getUB();
-        for (int i = ivar.getLB(); i <= ub; i = ivar.nextValue(i)) {
-            if (!collection.contains(i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks if it is guaranteed that an integer variable instantiates to a
-     * value in the set variable.
-     *
-     * @param ivar the integer variable
-     * @param svar the set variable
-     * @return {@code true} if and only if {@code dom(ivar) subsetof env(svar)},
-     *         {@code false} otherwise
-     */
-    public static boolean isDomainSubsetEnv(IntVar ivar, SetVar svar) {
-        if (ivar.getDomainSize() < svar.getKernelSize()) {
-            int ub = ivar.getUB();
-            for (int i = Math.max(ivar.getLB(), svar.getKernelFirst()); i <= ub; i = ivar.nextValue(i)) {
-                if (!svar.kernelContains(i)) {
-                    return false;
-                }
-            }
-        } else {
-            for (int i = svar.getKernelFirst(); i != SetVar.END;) {
-                int next = ivar.nextValue(i - 1);
-                while (i < next && i != SetVar.END) {
-                    i = svar.getKernelNext();
-                }
-                if (i == next) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks if a collection is contained entirely in a set variable's
-     * envelope.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @return {@code true} if and only if {@code sub subsetof env(sup)},
-     *         {@code false} otherwise
-     */
-    public static boolean isSubsetOfEnv(TIntCollection sub, SetVar sup) {
-        TIntIterator iter = sub.iterator();
-        while (iter.hasNext()) {
-            if (!sup.envelopeContains(iter.next())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks if a set variable's envelope is contained entirely in another set
-     * variable's envelope.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @return {@code true} if and only if {@code env(sub) subsetof env(sup)},
-     *         {@code false} otherwise
-     */
-    public static boolean isEnvSubsetEnv(SetVar sub, SetVar sup) {
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!sup.envelopeContains(i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks if a set variable's envelope is contained entirely in the union of
-     * other set variables' envelope.
-     *
-     * @param sub the subset
-     * @param sups the superset union
-     * @return {@code true} if and only if {@code env(sub) subsetof env(union(sups))},
-     *         {@code false} otherwise
-     */
-    public static boolean isEnvSubsetEnvs(SetVar sub, SetVar[] sups) {
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!envsContain(sups, i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks if a set variable's kernel is contained entirely in another set
-     * variable's envelope.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @return {@code true} if and only if {@code ker(sub) subsetof env(sup)},
-     *         {@code false} otherwise
-     */
-    public static boolean isKerSubsetEnv(SetVar sub, SetVar sup) {
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            if (!sup.envelopeContains(i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks if a set variable's kernel is contained entirely in the union of
-     * other set variables' envelope.
-     *
-     * @param sub the subset
-     * @param sups the superset union
-     * @return {@code true} if and only if {@code env(sub) subsetof env(union(sups))},
-     *         {@code false} otherwise
-     */
-    public static boolean isKerSubsetEnvs(SetVar sub, SetVar[] sups) {
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            if (!envsContain(sups, i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks if a set variable's envelope is contained entirely in a
-     * collection.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @return {@code true} if and only if {@code ker(sub) subsetof sup},
-     *         {@code false} otherwise
-     */
-    public static boolean isKerSubsetOf(SetVar sub, TIntCollection sup) {
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            if (!sup.contains(i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Removes every element in the subset's domain that is not in the
-     * superset's domain.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @param propagator the propagator
-     * @return
-     * @throws ContradictionException
-     */
-    public static boolean domainSubsetDomain(IntVar sub, IntVar sup, ICause propagator) throws ContradictionException {
-        boolean changed = false;
-        changed |= sub.updateLowerBound(sup.getLB(), propagator);
-        changed |= sub.updateUpperBound(sup.getUB(), propagator);
-        if (sub.getDomainSize() < 2) {
-            return changed;
-        }
-        int left = Integer.MIN_VALUE;
-        int right = left;
-        int ub = sub.getUB();
-        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
-            if (!sup.contains(val)) {
-                if (val == right + 1) {
-                    right = val;
-                } else {
-                    changed |= sub.removeInterval(left, right, propagator);
-                    left = val;
-                    right = val;
-                }
-            }
-        }
-        changed |= sub.removeInterval(left, right, propagator);
-        return changed;
-    }
-
-    /**
-     * Removes every element in the subset's domain that is not in the
-     * collection.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @param propagator the propagator
-     * @return
-     * @throws ContradictionException
-     */
-    public static boolean domainSubsetOf(IntVar sub, TIntSet sup, ICause propagator) throws ContradictionException {
-        int left = Integer.MIN_VALUE;
-        int right = left;
-        int ub = sub.getUB();
-        boolean changed = false;
-        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
-            if (!sup.contains(val)) {
-                if (val == right + 1) {
-                    right = val;
-                } else {
-                    changed |= sub.removeInterval(left, right, propagator);
-                    left = val;
-                    right = val;
-                }
-            }
-        }
-        changed |= sub.removeInterval(left, right, propagator);
-        return changed;
-    }
-
-    /**
-     * Adds every element in the subset's kernel to the superset's kernel.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void kerSubsetKer(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            sup.addToKernel(i, propagator);
-        }
-    }
-
-    /**
-     * Removes every element in the subset's envelope that is not in the
-     * collection.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void envSubsetOf(SetVar sub, TIntHashSet sup, ICause propagator) throws ContradictionException {
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!sup.contains(i)) {
-                sub.removeFromEnvelope(i, propagator);
-            }
-        }
-    }
-
-    /**
-     * Removes every element in the subset's envelope that is not the superset's
-     * envelope.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void envSubsetEnv(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!sup.envelopeContains(i)) {
-                sub.removeFromEnvelope(i, propagator);
-            }
-        }
-    }
-
-    /**
-     * Removes every element in the subset's envelope that is not in any of the
-     * supersets' envelope.
-     *
-     * @param sub the subset
-     * @param sups the superset union
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void envSubsetEnvs(SetVar sub, SetVar[] sups, ICause propagator) throws ContradictionException {
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!envsContain(sups, i)) {
-                sub.removeFromEnvelope(i, propagator);
-            }
-        }
-    }
-
-    /**
-     * @param union
-     * @param val
-     * @return {@code true} if and only if one of the set variables' envelope
-     * contain {@code val},
-     *         {@code false} otherwise
-     */
-    public static boolean envsContain(SetVar[] union, int val) {
-        for (SetVar var : union) {
-            if (var.envelopeContains(val)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Removes every element in the integer variable's domain that is not in the
-     * envelope of the set variable.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void intSubsetEnv(IntVar sub, SetVar sup, ICause propagator) throws ContradictionException {
-        int left = Integer.MIN_VALUE;
-        int right = left;
-        int ub = sub.getUB();
-        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
-            if (!sup.envelopeContains(val)) {
-                if (val == right + 1) {
-                    right = val;
-                } else {
-                    sub.removeInterval(left, right, propagator);
-                    left = val;
-                    right = val;
-                }
-            }
-        }
-        sub.removeInterval(left, right, propagator);
-    }
-
-    /**
-     * Removes every element in the integer variables' domain that is not in the
-     * envelope of the set variable.
-     *
-     * @param subs the subsets
-     * @param sup the superset
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void intsSubsetEnv(IntVar[] subs, SetVar sup, ICause propagator) throws ContradictionException {
-        for (IntVar sub : subs) {
-            intSubsetEnv(sub, sup, propagator);
-        }
-    }
-
-    /**
-     * Removes every element in the set variable's envelope that is not in the
-     * integer variable's domain.
-     *
-     * @param sub the subset
-     * @param sup the superset
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void envSubsetInt(SetVar sub, IntVar sup, ICause propagator) throws ContradictionException {
-        for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
-            if (!sup.contains(val)) {
-                sub.removeFromEnvelope(val, propagator);
-            }
-        }
-    }
-
-    /**
-     * Removes every element in the set variable's envelope that is not in any
-     * of integer variables' domain.
-     *
-     * @param sub the subset
-     * @param sups the superset union
-     * @param propagator the propagator
-     * @throws ContradictionException
-     */
-    public static void envSubsetInts(SetVar sub, IntVar[] sups, ICause propagator) throws ContradictionException {
-        for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
-            if (!domainsContain(sups, val)) {
-                sub.removeFromEnvelope(val, propagator);
-            }
-        }
-    }
-
-    /**
-     * @param union
-     * @param val
-     * @return {@code true} if and only if one of the integer variables contain {@code val},
-     *         {@code false} otherwise
-     */
-    public static boolean domainsContain(IntVar[] union, int val) {
-        for (IntVar var : union) {
-            if (var.contains(val)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Enumerate the domain of a integer variable.
      *
      * @param ivar the integer variable
      * @return {@code dom(int)}
      */
-    public static int[] iterateDomain(IntVar ivar) {
+    public static int[] iterateDom(IntVar ivar) {
         int[] iterate = new int[ivar.getDomainSize()];
         int count = 0;
         int ub = ivar.getUB();
@@ -543,19 +64,6 @@ public class PropUtil {
         }
         assert count == iterate.length;
         return iterate;
-    }
-
-    /**
-     * Enumerate the domain of a integer variable.
-     *
-     * @param ivar the integer variable
-     * @param collection add {@code env(set)} into here
-     */
-    public static void iterateDomain(IntVar ivar, TIntCollection collection) {
-        int ub = ivar.getUB();
-        for (int i = ivar.getLB(); i <= ub; i = ivar.nextValue(i)) {
-            collection.add(i);
-        }
     }
 
     /**
@@ -575,18 +83,6 @@ public class PropUtil {
     }
 
     /**
-     * Enumerate the envelope of a set variable.
-     *
-     * @param set the set variable
-     * @param collection add {@code env(set)} into here
-     */
-    public static void iterateEnv(SetVar set, TIntCollection collection) {
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            collection.add(i);
-        }
-    }
-
-    /**
      * Enumerate the kernel of a set variable.
      *
      * @param set the set variable
@@ -600,18 +96,6 @@ public class PropUtil {
         }
         assert count == iterate.length;
         return iterate;
-    }
-
-    /**
-     * Enumerate the kernel of a set variable.
-     *
-     * @param set the set variable
-     * @param collection add {@code ker(set)} into here
-     */
-    public static void iterateKer(SetVar set, TIntCollection collection) {
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            collection.add(i);
-        }
     }
 
     /**
@@ -644,5 +128,647 @@ public class PropUtil {
             values[i] = vars[i].getValue();
         }
         return values;
+    }
+
+    /**
+     * Checks if at least one of the integer's domain contains a value.
+     *
+     * @param union the integers
+     * @param value the value
+     * @return {@code true} if
+     * {@code value ∈ dom(union[i]) for some i}, {@code false} otherwise
+     */
+    public static boolean domsContain(IntVar[] union, int value) {
+        for (IntVar var : union) {
+            if (var.contains(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if at least one of the set's envelope contains a value.
+     *
+     * @param union the sets
+     * @param value the value
+     * @return {@code true} if
+     * {@code value ∈ env(union[i]) for some i}, {@code false} otherwise
+     */
+    public static boolean envsContain(SetVar[] union, int value) {
+        for (SetVar var : union) {
+            if (var.envelopeContains(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if at least one of the set's kernel contains a value.
+     *
+     * @param union the sets
+     * @param value the value
+     * @return {@code true} if
+     * {@code value ∈ kernel(union[i]) for some i}, {@code false} otherwise
+     */
+    public static boolean kersContain(SetVar[] union, int value) {
+        for (SetVar var : union) {
+            if (var.kernelContains(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if an integer's domain is contained entirely in the other
+     * integer's domain.
+     *
+     * @param i1 the first operand
+     * @param i2 the second operand
+     * @return {@code true} if {@code dom(i1) ⋂ dom(i2) ≠ {}}, {@code false}
+     * otherwise
+     */
+    public static boolean isDomIntersectDom(IntVar i1, IntVar i2) {
+        int s1 = i1.getDomainSize();
+        int s2 = i2.getDomainSize();
+        IntVar small = i1;
+        IntVar large = i2;
+        int s = s1;
+        if (s1 > s2) {
+            small = i2;
+            large = i1;
+            s = s2;
+        }
+        if (s == 1) {
+            return large.contains(small.getLB());
+        }
+        int lb = small.getLB();
+        int largeLb = large.getLB();
+        if (largeLb > lb) {
+            lb = small.nextValue(largeLb - 1);
+        }
+        int ub = Math.min(small.getUB(), large.getUB());
+        for (int i = lb; i <= ub; i = small.nextValue(i)) {
+            if (large.contains(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if an integer's domain is contained entirely in the set's
+     * envelope.
+     *
+     * @param i1 the first operand
+     * @param i2 the second operand
+     * @return {@code true} if {@code dom(i1) ⋂ env(i2) ≠ {}}, {@code false}
+     * otherwise
+     */
+    public static boolean isDomIntersectEnv(IntVar i1, SetVar i2) {
+        if (i1.getDomainSize() < i2.getEnvelopeSize()) {
+            int i = i1.getLB();
+            int envFirst = i2.getEnvelopeFirst();
+            if (envFirst >= i) {
+                if (envFirst == i || i1.contains(envFirst)) {
+                    return true;
+                }
+                i = i1.nextValue(envFirst);
+            }
+            int ub = i1.getUB();
+            for (; i <= ub; i = i1.nextValue(i)) {
+                if (i2.envelopeContains(i)) {
+                    return true;
+                }
+            }
+        } else {
+            for (int i = i2.getEnvelopeFirst(); i != SetVar.END;) {
+                int next = i1.nextValue(i - 1);
+                while (i < next && i != SetVar.END) {
+                    i = i2.getEnvelopeNext();
+                }
+                if (i == next) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if an integer's domain is contained entirely in the set's kernel.
+     *
+     * @param i1 the first operand
+     * @param i2 the second operand
+     * @return {@code true} if {@code dom(i1) ⋂ ker(i2) ≠ {}}, {@code false}
+     * otherwise
+     */
+    public static boolean isDomIntersectKer(IntVar i1, SetVar i2) {
+        if (i1.getDomainSize() < i2.getKernelSize()) {
+            int i = i1.getLB();
+            int envFirst = i2.getKernelFirst();
+            if (envFirst >= i) {
+                if (envFirst == i || i1.contains(envFirst)) {
+                    return true;
+                }
+                i = i1.nextValue(envFirst);
+            }
+            int ub = i1.getUB();
+            for (; i <= ub; i = i1.nextValue(i)) {
+                if (i2.kernelContains(i)) {
+                    return true;
+                }
+            }
+        } else {
+            for (int i = i2.getKernelFirst(); i != SetVar.END;) {
+                int next = i1.nextValue(i - 1);
+                while (i < next && i != SetVar.END) {
+                    i = i2.getKernelNext();
+                }
+                if (i == next) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if a set's envelope is contained entirely in the other set's
+     * envelope.
+     *
+     * @param i1 the first operand
+     * @param i2 the second operand
+     * @return {@code true} if {@code env(i1) ⋂ env(i2) ≠ {}}, {@code false}
+     * otherwise
+     */
+    public static boolean isEnvIntersectEnv(SetVar i1, SetVar i2) {
+        SetVar small = i1;
+        SetVar large = i2;
+        if (i1.getEnvelopeSize() > i2.getEnvelopeSize()) {
+            small = i2;
+            large = i1;
+        }
+        for (int i = small.getEnvelopeFirst(); i != SetVar.END; i = small.getEnvelopeNext()) {
+            if (large.envelopeContains(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if a set's envelope is contained entirely in the set's kernel.
+     *
+     * @param i1 the first operand
+     * @param i2 the second operand
+     * @return {@code true} if {@code env(i1) ⋂ ker(i2) ≠ {}}, {@code false}
+     * otherwise
+     */
+    public static boolean isEnvIntersectKer(SetVar i1, SetVar i2) {
+        if (i1.getEnvelopeSize() < i2.getEnvelopeSize()) {
+            for (int i = i1.getEnvelopeFirst(); i != SetVar.END; i = i1.getEnvelopeNext()) {
+                if (i2.kernelContains(i)) {
+                    return true;
+                }
+            }
+        } else {
+            for (int i = i2.getKernelFirst(); i != SetVar.END; i = i2.getKernelNext()) {
+                if (i1.envelopeContains(i)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a set's kernel is contained entirely in the other set's kernel.
+     *
+     * @param i1 the first operand
+     * @param i2 the second operand
+     * @return {@code true} if {@code ker(i1) ⋂ ker(i2) ≠ {}}, {@code false}
+     * otherwise
+     */
+    public static boolean isKerIntersectKer(SetVar i1, SetVar i2) {
+        SetVar small = i1;
+        SetVar large = i2;
+        if (i1.getKernelSize() > i2.getKernelSize()) {
+            small = i2;
+            large = i1;
+        }
+        for (int i = small.getKernelFirst(); i != SetVar.END; i = small.getKernelNext()) {
+            if (large.kernelContains(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if an integer's domain is contained entirely in the other
+     * integer's domain.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code dom(sub) ⊆ dom(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isDomSubsetDom(IntVar sub, IntVar sup) {
+        if (sub.getDomainSize() > sup.getDomainSize()) {
+            return false;
+        }
+        int ub = sub.getUB();
+        for (int i = sub.getLB(); i <= ub; i = sub.nextValue(i)) {
+            if (!sup.contains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if an integer's domain is contained entirely in the set's
+     * envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code dom(sub) ⊆ env(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isDomSubsetEnv(IntVar sub, SetVar sup) {
+        if (sub.getDomainSize() > sup.getEnvelopeSize()) {
+            return false;
+        }
+        int ub = sub.getUB();
+        for (int i = sub.getLB(); i <= ub; i = sub.nextValue(i)) {
+            if (!sup.envelopeContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if an integer's domain is contained entirely in the set's kernel.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code dom(sub) ⊆ ker(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isDomSubsetKer(IntVar sub, SetVar sup) {
+        if (sub.getDomainSize() > sup.getKernelSize()) {
+            return false;
+        }
+        int ub = sub.getUB();
+        for (int i = sub.getLB(); i <= ub; i = sub.nextValue(i)) {
+            if (!sup.kernelContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a set's envelope is contained entirely in the integer's domain.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code env(sub) ⊆ dom(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isEnvSubsetDom(SetVar sub, IntVar sup) {
+        if (sub.getEnvelopeSize() > sup.getDomainSize()) {
+            return false;
+        }
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!sup.contains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a set's envelope is contained entirely in the other set's
+     * envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code env(sub) ⊆ env(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isEnvSubsetEnv(SetVar sub, SetVar sup) {
+        if (sub.getEnvelopeSize() > sup.getEnvelopeSize()) {
+            return false;
+        }
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!sup.envelopeContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a set's envelope is contained entirely in the set's kernel.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code env(sub) ⊆ ker(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isEnvSubsetKer(SetVar sub, SetVar sup) {
+        if (sub.getEnvelopeSize() > sup.getKernelSize()) {
+            return false;
+        }
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!sup.kernelContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a set's kernel is contained entirely in the integer's domain.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code ker(sub) ⊆ dom(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isKerSubsetDom(SetVar sub, IntVar sup) {
+        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
+            if (!sup.contains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a set's kernel is contained entirely in the set's envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code ker(sub) ⊆ env(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isKerSubsetEnv(SetVar sub, SetVar sup) {
+        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
+            if (!sup.envelopeContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a set's kernel is contained entirely in the other set's kernel.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @return {@code true} if {@code ker(sub) ⊆ ker(sup)}, {@code false}
+     * otherwise
+     */
+    public static boolean isKerSubsetKer(SetVar sub, SetVar sup) {
+
+        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
+            if (!sup.kernelContains(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Removes every element in an integer's domain that is not in the set.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean domSubsetSet(IntVar sub, TIntSet sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        int left = Integer.MIN_VALUE;
+        int right = left;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (!sup.contains(val)) {
+                if (val == right + 1) {
+                    right = val;
+                } else {
+                    changed |= sub.removeInterval(left, right, propagator);
+                    left = val;
+                    right = val;
+                }
+            }
+        }
+        changed |= sub.removeInterval(left, right, propagator);
+        return changed;
+    }
+
+    /**
+     * Removes every element in an integer's domain that is not in the other
+     * integer's domain.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean domSubsetDom(IntVar sub, IntVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        changed |= sub.updateLowerBound(sup.getLB(), propagator);
+        changed |= sub.updateUpperBound(sup.getUB(), propagator);
+        int left = Integer.MIN_VALUE;
+        int right = left;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (!sup.contains(val)) {
+                if (val == right + 1) {
+                    right = val;
+                } else {
+                    changed |= sub.removeInterval(left, right, propagator);
+                    left = val;
+                    right = val;
+                }
+            }
+        }
+        changed |= sub.removeInterval(left, right, propagator);
+        return changed;
+    }
+
+    /**
+     * Removes every element in an integer's domain that is not in the set's
+     * envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean domSubsetEnv(IntVar sub, SetVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        int left = Integer.MIN_VALUE;
+        int right = left;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (!sup.envelopeContains(val)) {
+                if (val == right + 1) {
+                    right = val;
+                } else {
+                    changed |= sub.removeInterval(left, right, propagator);
+                    left = val;
+                    right = val;
+                }
+            }
+        }
+        changed |= sub.removeInterval(left, right, propagator);
+        return changed;
+    }
+
+    /**
+     * Removes every element in an integer's domain that is not in the set's
+     * kernel.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean domSubsetKer(IntVar sub, SetVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        int left = Integer.MIN_VALUE;
+        int right = left;
+        int ub = sub.getUB();
+        for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
+            if (!sup.kernelContains(val)) {
+                if (val == right + 1) {
+                    right = val;
+                } else {
+                    changed |= sub.removeInterval(left, right, propagator);
+                    left = val;
+                    right = val;
+                }
+            }
+        }
+        changed |= sub.removeInterval(left, right, propagator);
+        return changed;
+    }
+
+    /**
+     * Removes every element in a set's envelope that is not in the set.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean envSubsetSet(SetVar sub, TIntSet sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
+            if (!sup.contains(val)) {
+                changed |= sub.removeFromEnvelope(val, propagator);
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * Removes every element in a set's envelope that is not in the integer's
+     * domain.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean envSubsetDom(SetVar sub, IntVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
+            if (!sup.contains(val)) {
+                changed |= sub.removeFromEnvelope(val, propagator);
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * Removes every element in a set's envelope that is not in the other set's
+     * envelope.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean envSubsetEnv(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!sup.envelopeContains(i)) {
+                changed |= sub.removeFromEnvelope(i, propagator);
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * Removes every element in a set's envelope that is not in the set's
+     * kernel.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean envSubsetKer(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+            if (!sup.kernelContains(i)) {
+                changed |= sub.removeFromEnvelope(i, propagator);
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * Adds every element in a set's kernel to the other set's kernel.
+     *
+     * @param sub the subset
+     * @param sup the superset
+     * @param propagator the propagator
+     * @throws ContradictionException
+     * @return {@code true} if a variable has been changed, {@code false}
+     * otherwise
+     */
+    public static boolean kerSubsetKer(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
+        boolean changed = false;
+        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
+            changed |= sup.addToKernel(i, propagator);
+        }
+        return changed;
     }
 }

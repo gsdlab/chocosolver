@@ -57,8 +57,8 @@ public class PropSingleton extends Propagator<Variable> {
             i.instantiateTo(val, aCause);
             s.instantiateTo(new int[]{val}, aCause);
         }
-        PropUtil.intSubsetEnv(i, s, aCause);
-        PropUtil.envSubsetInt(s, i, aCause);
+        PropUtil.domSubsetEnv(i, s, aCause);
+        PropUtil.envSubsetDom(s, i, aCause);
         if (i.instantiated()) {
             s.instantiateTo(new int[]{i.getValue()}, aCause);
         } else if (s.getEnvelopeSize() == 1) {
@@ -118,7 +118,7 @@ public class PropSingleton extends Propagator<Variable> {
         if (s.getEnvelopeSize() < 1) {
             return ESat.FALSE;
         }
-        if (PropUtil.domainIntersectEnv(i, s)) {
+        if (PropUtil.isDomIntersectEnv(i, s)) {
             return i.instantiated() && s.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
         }
         return ESat.FALSE;

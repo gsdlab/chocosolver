@@ -125,7 +125,7 @@ public class PropJoinFunction extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         // Pick to and prune refs
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            PropUtil.intSubsetEnv(refs[i], to, aCause);
+            PropUtil.domSubsetEnv(refs[i], to, aCause);
             if (refs[i].instantiated()) {
                 int value = refs[i].getValue();
                 to.addToKernel(value, aCause);
@@ -134,7 +134,7 @@ public class PropJoinFunction extends Propagator<Variable> {
 
         // Prune take
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            if (!PropUtil.domainIntersectEnv(refs[i], to)) {
+            if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
                 take.removeFromEnvelope(i, aCause);
             }
         }
@@ -158,7 +158,7 @@ public class PropJoinFunction extends Propagator<Variable> {
             if ((EventType.REMOVE_FROM_ENVELOPE.mask & mask) != 0) {
                 TIntArrayList removed = null;
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-                    if (!PropUtil.domainIntersectEnv(refs[i], to)) {
+                    if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
                         take.removeFromEnvelope(i, aCause);
                         // Cannot call findMate here because we inside iterating take env.
                         // Queue up the even to do later.
@@ -206,7 +206,7 @@ public class PropJoinFunction extends Propagator<Variable> {
             refD.unfreeze();
             IntVar ref = refs[id];
             if (EventType.isRemove(mask)) {
-                if (!PropUtil.domainIntersectEnv(ref, to)) {
+                if (!PropUtil.isDomIntersectEnv(ref, to)) {
                     take.removeFromEnvelope(id, aCause);
                 }
             }
@@ -240,7 +240,7 @@ public class PropJoinFunction extends Propagator<Variable> {
             assert take.kernelContains(takeKer);
 
             IntVar ref = refs[takeKer];
-            PropUtil.intSubsetEnv(ref, to, aCause);
+            PropUtil.domSubsetEnv(ref, to, aCause);
             if (ref.instantiated()) {
                 to.addToKernel(ref.getValue(), aCause);
             }
@@ -272,7 +272,7 @@ public class PropJoinFunction extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            if (!PropUtil.domainIntersectEnv(refs[i], to)) {
+            if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
                 return ESat.FALSE;
             }
         }

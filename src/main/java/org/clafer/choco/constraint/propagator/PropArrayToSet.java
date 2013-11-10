@@ -101,7 +101,9 @@ public class PropArrayToSet extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         // Prune as
-        PropUtil.intsSubsetEnv(as, s, aCause);
+        for (IntVar a : as) {
+            PropUtil.domSubsetEnv(a, s, aCause);
+        }
         // Prune s
         findMates();
         // Pick s
@@ -172,7 +174,7 @@ public class PropArrayToSet extends Propagator<Variable> {
         boolean tsInstantiated = true;
         FixedCapacityIntSet values = new FixedCapacityIntSet(as.length);
         for (IntVar a : as) {
-            if (!PropUtil.domainIntersectEnv(a, s)) {
+            if (!PropUtil.isDomIntersectEnv(a, s)) {
                 return ESat.FALSE;
             }
             if (a.instantiated()) {
@@ -182,11 +184,8 @@ public class PropArrayToSet extends Propagator<Variable> {
             }
 
         }
-        if (!PropUtil.isSubsetOfEnv(values, s)) {
-            return ESat.FALSE;
-        }
         if (tsInstantiated) {
-            return PropUtil.isKerSubsetOf(s, values)
+            return s.getKernelSize() == values.size()
                     ? (s.instantiated() ? ESat.TRUE : ESat.UNDEFINED)
                     : ESat.FALSE;
         }

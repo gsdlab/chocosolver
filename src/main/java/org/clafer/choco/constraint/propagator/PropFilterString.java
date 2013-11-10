@@ -155,7 +155,7 @@ public class PropFilterString extends Propagator<Variable> {
                 } else {
                     boolean found = false;
                     for (int j = kerIndex; j < result.length && j <= envIndex; j++) {
-                        if (PropUtil.domainIntersectDomain(string[x], result[j])) {
+                        if (PropUtil.isDomIntersectDom(string[x], result[j])) {
                             found = true;
                             break;
                         }

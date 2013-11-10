@@ -64,8 +64,8 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
     private void propagateReifyVar() throws ContradictionException {
         assert reify.instantiated();
         if (reify.getValue() == reifyC) {
-            PropUtil.domainSubsetDomain(x, y, aCause);
-            PropUtil.domainSubsetDomain(y, x, aCause);
+            PropUtil.domSubsetDom(x, y, aCause);
+            PropUtil.domSubsetDom(y, x, aCause);
             if (x.instantiated()) {
                 assert y.instantiated();
                 setPassive();
@@ -132,7 +132,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
     }
 
     private void propagateXYVar() throws ContradictionException {
-        if (!PropUtil.domainIntersectDomain(x, y)) {
+        if (!PropUtil.isDomIntersectDom(x, y)) {
             reify.instantiateTo(1 - reifyC, aCause);
             setPassive();
         }
@@ -174,7 +174,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
     @Override
     public ESat isEntailed() {
         if (reify.instantiated()) {
-            if (!PropUtil.domainIntersectDomain(x, y)) {
+            if (!PropUtil.isDomIntersectDom(x, y)) {
                 return reify.getValue() == reifyC ? ESat.FALSE : ESat.TRUE;
             }
             if (x.instantiated() && y.instantiated()) {

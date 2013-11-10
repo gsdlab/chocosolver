@@ -94,10 +94,10 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
             }
             return set.instantiated() ? ESat.FALSE : ESat.UNDEFINED;
         }
-        if (PropUtil.isDomainSubsetEnv(element, set)) {
+        if (PropUtil.isDomSubsetKer(element, set)) {
             return ESat.FALSE;
         }
-        return PropUtil.domainIntersectEnv(element, set) ? ESat.UNDEFINED : ESat.TRUE;
+        return PropUtil.isDomIntersectEnv(element, set) ? ESat.UNDEFINED : ESat.TRUE;
     }
 
     @Override

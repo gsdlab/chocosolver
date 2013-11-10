@@ -1,6 +1,7 @@
 package org.clafer.choco.constraint.propagator;
 
 import org.clafer.common.Util;
+import solver.ICause;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -70,13 +71,30 @@ public class PropSetUnion extends Propagator<SetVar> {
         }
     }
 
+    private static boolean isKerSubsetEnvs(SetVar set, SetVar[] envs) {
+        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+            if (!PropUtil.envsContain(envs, i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void envSubsetEnvs(SetVar set, SetVar[] envs, ICause propagator) throws ContradictionException {
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            if (!PropUtil.envsContain(envs, i)) {
+                set.removeFromEnvelope(i, propagator);
+            }
+        }
+    }
+
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (SetVar set : sets) {
             PropUtil.envSubsetEnv(set, union, aCause);
             PropUtil.kerSubsetKer(set, union, aCause);
         }
-        PropUtil.envSubsetEnvs(union, sets, aCause);
+        envSubsetEnvs(union, sets, aCause);
         for (int i = union.getEnvelopeFirst(); i != SetVar.END; i = union.getEnvelopeNext()) {
             findMate(i);
         }
@@ -134,7 +152,7 @@ public class PropSetUnion extends Propagator<SetVar> {
             }
             allInstantiated = allInstantiated && set.instantiated();
         }
-        if (!PropUtil.isKerSubsetEnvs(union, sets)) {
+        if (!isKerSubsetEnvs(union, sets)) {
             return ESat.FALSE;
         }
         allInstantiated = allInstantiated && union.instantiated();

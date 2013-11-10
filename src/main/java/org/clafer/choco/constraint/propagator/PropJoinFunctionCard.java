@@ -213,7 +213,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                         IntVar ref = refs[i];
                         assert !ref.instantiated() || map.contains(ref.getValue());
                         if (!ref.instantiated()) {
-                            changed |= PropUtil.domainSubsetOf(ref, map.keySet(), aCause) && ref.instantiated();
+                            changed |= PropUtil.domSubsetSet(ref, map.keySet(), aCause) && ref.instantiated();
                         }
                     }
                 }

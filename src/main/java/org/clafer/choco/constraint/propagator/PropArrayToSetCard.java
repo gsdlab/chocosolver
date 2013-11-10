@@ -171,7 +171,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                     for (IntVar a : as) {
                         assert !a.instantiated() || map.contains(a.getValue());
                         if (!a.instantiated()) {
-                            changed |= PropUtil.domainSubsetOf(a, map.keySet(), aCause) && a.instantiated();
+                            changed |= PropUtil.domSubsetSet(a, map.keySet(), aCause) && a.instantiated();
                         }
                     }
                 }
