@@ -2,9 +2,12 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -13,12 +16,13 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class SetUnionTest extends ConstraintTest {
+public class SetUnionTest extends ConstraintTest<Triple<SetVar[], SetVar, Boolean>> {
 
-    private void checkCorrectness(SetVar[] sets, SetVar union, boolean disjoint) {
+    @Override
+    protected void check(Triple<SetVar[], SetVar, Boolean> s) {
         TIntSet answer = new TIntHashSet();
-        for (SetVar set : sets) {
-            if (disjoint) {
+        for (SetVar set : s.getFst()) {
+            if (s.getThd()) {
                 for (int c : set.getValue()) {
                     assertTrue(answer.add(c));
                 }
@@ -26,256 +30,112 @@ public class SetUnionTest extends ConstraintTest {
                 answer.addAll(set.getValue());
             }
         }
-        assertEquals(new TIntHashSet(union.getValue()), answer);
-    }
-
-    private void checkNotCorrectness(SetVar[] sets, SetVar union, boolean disjoint) {
-        try {
-            checkCorrectness(sets, union, disjoint);
-        } catch (AssertionError e) {
-            return;
-        }
-        fail();
+        assertEquals(new TIntHashSet(s.getSnd().getValue()), answer);
     }
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            SetVar[] sets = new SetVar[nextInt(3) + 1];
-            for (int i = 0; i < sets.length; i++) {
-                sets[i] = VF.set("s" + i, -nextInt(5), nextInt(5), solver);
+        randomizedTest(new TestCase<Triple<SetVar[], SetVar, Boolean>>() {
+            @Override
+            public Pair<Constraint, Triple<SetVar[], SetVar, Boolean>> setup(Solver solver) {
+                CSetVar[] sets = toCSetVars(randSets(nextInt(3) + 1), solver);
+                CSetVar union = toCSetVar(randSet(), solver);
+                return pair(
+                        Constraints.union(mapSet(sets), mapCard(sets), union.getSet(), union.getCard(), false),
+                        triple(mapSet(sets), union.getSet(), false));
             }
-            IntVar[] setCards = enforcedCardVars(sets);
-            SetVar union = VF.set("union", -nextInt(5), nextInt(5), solver);
-            IntVar unionCard = enforcedCardVar(union);
-
-            solver.post(Constraints.union(sets, setCards, union, unionCard, false));
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(sets, union, false);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(sets, union, false);
-            }
-        }
-    }
-
-    @Test(timeout = 60000)
-    public void quickNotTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            SetVar[] sets = new SetVar[nextInt(3) + 1];
-            for (int i = 0; i < sets.length; i++) {
-                sets[i] = VF.set("s" + i, -nextInt(5), nextInt(5), solver);
-            }
-            IntVar[] setCards = enforcedCardVars(sets);
-            SetVar union = VF.set("union", -nextInt(5), nextInt(5), solver);
-            IntVar unionCard = enforcedCardVar(union);
-
-            solver.post(Constraints.union(sets, setCards, union, unionCard, false).getOpposite());
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkNotCorrectness(sets, union, false);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkNotCorrectness(sets, union, false);
-            }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void quickTestDisjoint() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            SetVar[] sets = new SetVar[nextInt(3) + 1];
-            for (int i = 0; i < sets.length; i++) {
-                sets[i] = VF.set("s" + i, -nextInt(5), nextInt(5), solver);
+        randomizedTest(new TestCase<Triple<SetVar[], SetVar, Boolean>>() {
+            @Override
+            public Pair<Constraint, Triple<SetVar[], SetVar, Boolean>> setup(Solver solver) {
+                CSetVar[] sets = toCSetVars(randSets(nextInt(3) + 1), solver);
+                CSetVar union = toCSetVar(randSet(), solver);
+                return pair(
+                        Constraints.union(mapSet(sets), mapCard(sets), union.getSet(), union.getCard(), true),
+                        triple(mapSet(sets), union.getSet(), true));
             }
-            IntVar[] setCards = enforcedCardVars(sets);
-            SetVar union = VF.set("union", -nextInt(5), nextInt(5), solver);
-            IntVar unionCard = enforcedCardVar(union);
-
-            solver.post(Constraints.union(sets, setCards, union, unionCard, true));
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(sets, union, true);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(sets, union, true);
-            }
-        }
-    }
-
-    @Test(timeout = 60000)
-    public void quickNotTestDisjoint() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            SetVar[] sets = new SetVar[nextInt(3) + 1];
-            for (int i = 0; i < sets.length; i++) {
-                sets[i] = VF.set("s" + i, -nextInt(5), nextInt(5), solver);
-            }
-            IntVar[] setCards = enforcedCardVars(sets);
-            SetVar union = VF.set("union", -nextInt(5), nextInt(5), solver);
-            IntVar unionCard = enforcedCardVar(union);
-
-            solver.post(Constraints.union(sets, setCards, union, unionCard, true).getOpposite());
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkNotCorrectness(sets, union, true);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkNotCorrectness(sets, union, true);
-            }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSetUnion() {
-        /*
-         * import Control.Monad
-         * import Data.List
-         *
-         * powerset = filterM (const [True, False])
-         *
-         * solutions = do
-         *     s1 <- powerset [-4..2]
-         *     s2 <- powerset [-2..4]
-         *     s3 <- powerset [-2..2]
-         *     guard $ sort (nub $ s1 ++ s2) == sort s3
-         *     return (s1, s2, s3)
-         */
-        Solver solver = new Solver();
-
-        SetVar s1 = VF.set("s1", -4, 2, solver);
-        IntVar s1Card = enforcedCardVar(s1);
-        SetVar s2 = VF.set("s2", -2, 4, solver);
-        IntVar s2Card = enforcedCardVar(s2);
-        SetVar s3 = VF.set("s3", -2, 2, solver);
-        IntVar s3Card = enforcedCardVar(s3);
-
-        solver.post(Constraints.union(new SetVar[]{s1, s2}, new IntVar[]{s1Card, s2Card},
-                s3, s3Card, false));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(new SetVar[]{s1, s2}, s3, false);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(1024, count);
-    }
-
-    @Test(timeout = 60000)
-    public void testNotSetUnion() {
-        /*
-         * import Control.Monad
-         * import Data.List
-         *
-         * powerset = filterM (const [True, False])
-         *
-         * solutions = do
-         *     s1 <- powerset [-1..2]
-         *     s2 <- powerset [-2..1]
-         *     s3 <- powerset [-1..1]
-         *     guard $ sort (nub $ s1 ++ s2) /= sort s3
-         *     return (s1, s2, s3)
-         */
-        Solver solver = new Solver();
-
-        SetVar s1 = VF.set("s1", -1, 2, solver);
-        IntVar s1Card = enforcedCardVar(s1);
-        SetVar s2 = VF.set("s2", -2, 1, solver);
-        IntVar s2Card = enforcedCardVar(s2);
-        SetVar s3 = VF.set("s3", -1, 1, solver);
-        IntVar s3Card = enforcedCardVar(s3);
-
-        solver.post(Constraints.union(new SetVar[]{s1, s2}, new IntVar[]{s1Card, s2Card},
-                s3, s3Card, false).getOpposite());
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkNotCorrectness(new SetVar[]{s1, s2}, s3, false);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(1984, count);
-    }
-
-    @Test(timeout = 60000)
-    public void testSetUnionDisjoint() {
-        /*
-         * import Control.Monad
-         * import Data.List
-         *
-         * powerset = filterM (const [True, False])
-         *
-         * solutions = do
-         *     s1 <- powerset [-4..2]
-         *     s2 <- powerset [-2..4]
-         *     guard $ not $ any (`elem` s1) s2
-         *     s3 <- powerset [-2..2]
-         *     guard $ sort (nub $ s1 ++ s2) == sort s3
-         *     return (s1, s2, s3)
-         */
-        Solver solver = new Solver();
-
-        SetVar s1 = VF.set("s1", -4, 2, solver);
-        IntVar s1Card = enforcedCardVar(s1);
-        SetVar s2 = VF.set("s2", -2, 4, solver);
-        IntVar s2Card = enforcedCardVar(s2);
-        SetVar s3 = VF.set("s3", -2, 2, solver);
-        IntVar s3Card = enforcedCardVar(s3);
-
-        solver.post(Constraints.union(new SetVar[]{s1, s2}, new IntVar[]{s1Card, s2Card},
-                s3, s3Card, true));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(new SetVar[]{s1, s2}, s3, true);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(243, count);
+        randomizedTest(new TestCase<Triple<SetVar[], SetVar, Boolean>>() {
+            /*
+             * import Control.Monad
+             * import Data.List
+             *
+             * powerset = filterM (const [True, False])
+             *
+             * positive = do
+             *     s1 <- powerset [-1..2]
+             *     s2 <- powerset [-2..1]
+             *     s3 <- powerset [-1..1]
+             *     guard $ sort (nub $ s1 ++ s2) == sort s3
+             *     return (s1, s2, s3)
+             * 
+             * negative = do
+             *     s1 <- powerset [-1..2]
+             *     s2 <- powerset [-2..1]
+             *     s3 <- powerset [-1..1]
+             *     guard $ sort (nub $ s1 ++ s2) /= sort s3
+             *     return (s1, s2, s3)
+             */
+            @PositiveSolutions(64)
+            @NegativeSolutions(1984)
+            @Override
+            public Pair<Constraint, Triple<SetVar[], SetVar, Boolean>> setup(Solver solver) {
+                SetVar s1 = VF.set("s1", -1, 2, solver);
+                IntVar s1Card = enforcedCardVar(s1);
+                SetVar s2 = VF.set("s2", -2, 1, solver);
+                IntVar s2Card = enforcedCardVar(s2);
+                SetVar s3 = VF.set("s3", -1, 1, solver);
+                IntVar s3Card = enforcedCardVar(s3);
+                return pair(Constraints.union(new SetVar[]{s1, s2}, new IntVar[]{s1Card, s2Card}, s3, s3Card, false),
+                        triple(new SetVar[]{s1, s2}, s3, false));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testNotSetUnionDisjoint() {
-        /*
-         * import Control.Monad
-         * import Data.List
-         *
-         * powerset = filterM (const [True, False])
-         *
-         * solutions = do
-         *     s1 <- powerset [-1..2]
-         *     s2 <- powerset [-2..1]
-         *     s3 <- powerset [-1..1]
-         *     guard $ (sort (nub $ s1 ++ s2) /= sort s3) || (any (`elem` s1) s2)
-         *     return (s1, s2, s3)
-         */
-        Solver solver = new Solver();
-
-        SetVar s1 = VF.set("s1", -1, 2, solver);
-        IntVar s1Card = enforcedCardVar(s1);
-        SetVar s2 = VF.set("s2", -2, 1, solver);
-        IntVar s2Card = enforcedCardVar(s2);
-        SetVar s3 = VF.set("s3", -1, 1, solver);
-        IntVar s3Card = enforcedCardVar(s3);
-
-        solver.post(Constraints.union(new SetVar[]{s1, s2}, new IntVar[]{s1Card, s2Card},
-                s3, s3Card, true).getOpposite());
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkNotCorrectness(new SetVar[]{s1, s2}, s3, true);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(2021, count);
+        randomizedTest(new TestCase<Triple<SetVar[], SetVar, Boolean>>() {
+            /*
+             * import Control.Monad
+             * import Data.List
+             *
+             * powerset = filterM (const [True, False])
+             *
+             * positive = do
+             *     s1 <- powerset [-1..2]
+             *     s2 <- powerset [-2..1]
+             *     s3 <- powerset [-1..1]
+             *     guard $ (sort (nub $ s1 ++ s2) == sort s3) && (all (`notElem` s1) s2)
+             *     return (s1, s2, s3)
+             * 
+             * negative = do
+             *     s1 <- powerset [-1..2]
+             *     s2 <- powerset [-2..1]
+             *     s3 <- powerset [-1..1]
+             *     guard $ (sort (nub $ s1 ++ s2) /= sort s3) || (any (`elem` s1) s2)
+             *     return (s1, s2, s3)
+             */
+            @PositiveSolutions(27)
+            @NegativeSolutions(2021)
+            @Override
+            public Pair<Constraint, Triple<SetVar[], SetVar, Boolean>> setup(Solver solver) {
+                SetVar s1 = VF.set("s1", -1, 2, solver);
+                IntVar s1Card = enforcedCardVar(s1);
+                SetVar s2 = VF.set("s2", -2, 1, solver);
+                IntVar s2Card = enforcedCardVar(s2);
+                SetVar s3 = VF.set("s3", -1, 1, solver);
+                IntVar s3Card = enforcedCardVar(s3);
+                return pair(Constraints.union(new SetVar[]{s1, s2}, new IntVar[]{s1Card, s2Card}, s3, s3Card, true),
+                        triple(new SetVar[]{s1, s2}, s3, true));
+            }
+        });
     }
 }

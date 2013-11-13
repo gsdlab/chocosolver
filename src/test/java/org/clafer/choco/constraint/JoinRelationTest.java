@@ -1,12 +1,14 @@
 package org.clafer.choco.constraint;
 
 import gnu.trove.set.hash.TIntHashSet;
-import org.clafer.choco.constraint.propagator.PropUtil;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
-import solver.constraints.set.SCF;
+import solver.constraints.Constraint;
+import solver.constraints.set.PropAllDisjoint;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -15,130 +17,158 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class JoinRelationTest extends ConstraintTest {
+public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> {
 
-    private void checkCorrectness(SetVar take, SetVar[] children, SetVar to) {
-        int[] $take = take.getValue();
-        int[][] $children = PropUtil.getValues(children);
-        int[] $to = to.getValue();
-
+    @Override
+    protected void check(Pair<Triple<SetVar, SetVar[], SetVar>, Boolean> s) {
         TIntHashSet set = new TIntHashSet();
 
-        for (int t : $take) {
-            for (int c : $children[t]) {
-                assertTrue(Util.in(c, $to));
+        for (int t : s.getFst().getFst().getValue()) {
+            assertTrue(t >= 0 && t < s.getFst().getSnd().length);
+            for (int c : s.getFst().getSnd()[t].getValue()) {
+                assertTrue(Util.in(c, s.getFst().getThd().getValue()));
                 set.add(c);
             }
         }
-        assertEquals(set.size(), $to.length);
+        assertEquals(set.size(), s.getFst().getThd().getEnvelopeSize());
+        if (s.getSnd()) {
+            int sum = 0;
+            TIntHashSet disjointSet = new TIntHashSet();
+            for (SetVar child : s.getFst().getSnd()) {
+                sum += child.getEnvelopeSize();
+                disjointSet.addAll(child.getValue());
+            }
+            assertEquals(sum, disjointSet.size());
+        }
     }
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-            int num = nextInt(5);
-
-            SetVar take = VF.set("take", Util.fromTo(0, num), solver);
-            IntVar takeCard = enforcedCardVar(take);
-            SetVar[] children = new SetVar[num];
-            for (int i = 0; i < children.length; i++) {
-                children[i] = VF.set("child" + i, Util.range(0, nextInt(10)), solver);
+        randomizedTest(new TestCase<Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>>() {
+            @Override
+            public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
+                CSetVar take = toCSetVar(randPositiveSet(), solver);
+                CSetVar[] children = toCSetVars(randSets(nextInt(3) + 1), solver);
+                CSetVar to = toCSetVar(randSet(), solver);
+                Constraint constraint = Constraints.joinRelation(take.getSet(), mapSet(children), to.getSet());
+                return pair(constraint, pair(triple(take.getSet(), mapSet(children), to.getSet()), false));
             }
-            IntVar[] childrenCards = enforcedCardVars(children);
-            SetVar to = VF.set("to", Util.range(0, nextInt(10)), solver);
-            IntVar toCard = enforcedCardVar(to);
+        });
+    }
 
-            solver.post(Constraints.joinInjectiveRelation(take, takeCard, children, childrenCards, to, toCard));
-            if (num > 1) {
-                solver.post(SCF.all_disjoint(children));
+    @Test(timeout = 60000)
+    public void quickInjectiveTest() {
+        randomizedTest(new TestCase<Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>>() {
+            @Override
+            public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
+                CSetVar take = toCSetVar(randPositiveSet(), solver);
+                CSetVar[] children = toCSetVars(randSets(nextInt(3) + 1), solver);
+                CSetVar to = toCSetVar(randSet(), solver);
+                Constraint constraint = Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
+                        mapSet(children), mapCard(children), to.getSet(), to.getCard());
+                constraint.addPropagators(new PropAllDisjoint(mapSet(children)));
+                return pair(constraint, pair(triple(take.getSet(), mapSet(children), to.getSet()), true));
             }
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(take, children, to);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(take, children, to);
-            }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testJoinRelation() {
-        /*
-         * import Control.Monad
-         * import Data.List
-         *
-         * powerset = filterM (const [True, False])
-         *
-         * disjoint [] ys = True
-         * disjoint (x:xs) ys = x `notElem` ys && disjoint xs ys
-         *
-         * solutions = do
-         *     take   <- powerset [0..2]
-         *     child0 <- powerset [0..4]
-         *     child1 <- powerset [0..4]
-         *     child2 <- powerset [0..4]
-         *     guard $ child0 `disjoint` child1 && child0 `disjoint` child2 && child1 `disjoint` child2
-         *     return (take, child0, child1, child2)
-         */
-        Solver solver = new Solver();
-
-        SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
-        IntVar takeCard = enforcedCardVar(take);
-        SetVar[] children = new SetVar[3];
-        for (int i = 0; i < children.length; i++) {
-            children[i] = VF.set("child" + i, new int[]{0, 1, 2, 3, 4}, solver);
-        }
-        IntVar[] childrenCards = enforcedCardVars(children);
-        SetVar to = VF.set("to", new int[]{0, 1, 2, 3, 4}, solver);
-        IntVar toCard = enforcedCardVar(to);
-
-        solver.post(Constraints.joinInjectiveRelation(take, takeCard, children, childrenCards, to, toCard));
-        solver.post(SCF.all_disjoint(children));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(take, children, to);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(8192, count);
+        randomizedTest(new TestCase<Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>>() {
+            /*
+             * import Control.Monad
+             * import Data.List
+             *
+             * powerset = filterM (const [True, False])
+             *
+             * disjoint [] ys = True
+             * disjoint (x:xs) ys = x `notElem` ys && disjoint xs ys
+             *
+             * positive = do
+             *     take   <- powerset [0..2]
+             *     child0 <- powerset [-1..1]
+             *     child1 <- powerset [0..1]
+             *     child2 <- powerset [-1..0]
+             *     to <- powerset [0..1]
+             *     guard $ to == sort (nub $ concat [[child0, child1, child2] !! i | i <- take])
+             *     return (take, child0, child1, child2)
+             *
+             * negative= do
+             *     take   <- powerset [0..2]
+             *     child0 <- powerset [-1..1]
+             *     child1 <- powerset [0..1]
+             *     child2 <- powerset [-1..0]
+             *     to <- powerset [0..1]
+             *     guard $ to /= sort (nub $ concat [[child0, child1, child2] !! i | i <- take])
+             *     return (take, child0, child1, child2)
+             */
+            @PositiveSolutions(576)
+            @NegativeSolutions(3520)
+            @Override
+            public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
+                SetVar take = VF.set("take", 0, 2, solver);
+                SetVar[] children = new SetVar[]{
+                    VF.set("c1", -1, 1, solver),
+                    VF.set("c2", 0, 1, solver),
+                    VF.set("c3", -1, 0, solver)
+                };
+                SetVar to = VF.set("to", 0, 1, solver);
+                Constraint constraint = Constraints.joinRelation(take, children, to);
+                return pair(constraint, pair(triple(take, children, to), false));
+            }
+        });
     }
 
     @Test(timeout = 60000)
-    public void testJoinNonDisjoint() {
-        /*
-         * import Control.Monad
-         * import Data.List
-         *
-         * powerset = filterM (const [True, False])
-         *
-         * solutions = do
-         *     take   <- powerset [0..2]
-         *     child0 <- powerset [0..2]
-         *     child1 <- powerset [0..2]
-         *     child2 <- powerset [0..2]
-         *     return (take, child0, child1, child2)
-         */
-        Solver solver = new Solver();
-
-        SetVar take = VF.set("take", new int[]{0, 1, 2}, solver);
-        SetVar[] children = new SetVar[3];
-        for (int i = 0; i < children.length; i++) {
-            children[i] = VF.set("child" + i, new int[]{0, 1, 2}, solver);
-        }
-        SetVar to = VF.set("to", new int[]{0, 1, 2}, solver);
-
-        solver.post(Constraints.joinRelation(take, children, to));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(take, children, to);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(4096, count);
+    public void testJoinInjectiveRelation() {
+        randomizedTest(new TestCase<Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>>() {
+            /*
+             * import Control.Monad
+             * import Data.List
+             *
+             * powerset = filterM (const [True, False])
+             *
+             * disjoint [] ys = True
+             * disjoint (x:xs) ys = x `notElem` ys && disjoint xs ys
+             *
+             * positive = do
+             *     take   <- powerset [0..2]
+             *     child0 <- powerset [-1..1]
+             *     child1 <- powerset [0..1]
+             *     child2 <- powerset [-1..0]
+             *     guard $ child0 `disjoint` child1 && child0 `disjoint` child2 && child1 `disjoint` child2
+             *     to <- powerset [0..1]
+             *     guard $ to == sort (concat [[child0, child1, child2] !! i | i <- take])
+             *     return (take, child0, child1, child2)
+             *
+             * negative= do
+             *     take   <- powerset [0..2]
+             *     child0 <- powerset [-1..1]
+             *     child1 <- powerset [0..1]
+             *     child2 <- powerset [-1..0]
+             *     to <- powerset [0..1]
+             *     guard $ to /= sort (concat [[child0, child1, child2] !! i | i <- take]) || not (child0 `disjoint` child1 && child0 `disjoint` child2 && child1 `disjoint` child2)
+             *     return (take, child0, child1, child2)
+             */
+            @PositiveSolutions(192)
+            @NegativeSolutions(3904)
+            @Override
+            public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
+                SetVar take = VF.set("take", 0, 2, solver);
+                IntVar takeCard = enforcedCardVar(take);
+                SetVar[] children = new SetVar[]{
+                    VF.set("c1", -1, 1, solver),
+                    VF.set("c2", 0, 1, solver),
+                    VF.set("c3", -1, 0, solver)
+                };
+                IntVar[] childrenCards = enforcedCardVars(children);
+                SetVar to = VF.set("to", 0, 1, solver);
+                IntVar toCard = enforcedCardVar(to);
+                Constraint constraint = Constraints.joinInjectiveRelation(take, takeCard,
+                        children, childrenCards, to, toCard);
+                constraint.addPropagators(new PropAllDisjoint(children));
+                return pair(constraint, pair(triple(take, children, to), true));
+            }
+        });
     }
 }

@@ -1,6 +1,7 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
+import org.clafer.collection.FixedCapacityIntSet;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -237,21 +238,36 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
+        boolean[] values = new boolean[ints.length];
         for (int i = 0; i < strings.length; i++) {
             for (int j = i + 1; j < strings.length; j++) {
                 Ordering intOrdering = compare(ints[i], ints[j]);
-                Ordering ord = Ordering.EQ;
-                for (int k = 0; Ordering.EQ.equals(ord) && k < strings[i].length; k++) {
-                    ord = compare(strings[i][k], strings[j][k]);
-                }
-                if (!intOrdering.equals(ord)
-                        && !Ordering.UNKNOWN.equals(intOrdering)
-                        && !Ordering.UNKNOWN.equals(ord)) {
+                Ordering ord = compareString(strings[i], strings[j]);
+                if (intOrdering.contradicts(ord)) {
                     return ESat.FALSE;
                 }
             }
+            if (ints[i].instantiated()) {
+                int value = ints[i].getValue();
+                if (value < 0 || value >= values.length) {
+                    return ESat.FALSE;
+                }
+                values[value] = true;
+            }
         }
-        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        if (isCompletelyInstantiated()) {
+            int i = 0;
+            while (i < values.length && values[i]) {
+                i++;
+            }
+            for (; i < values.length; i++) {
+                if (values[i]) {
+                    return ESat.FALSE;
+                }
+            }
+            return ESat.TRUE;
+        }
+        return ESat.UNDEFINED;
     }
 
     @Override
@@ -267,6 +283,25 @@ public class PropLexChainChannel extends Propagator<IntVar> {
         GT,
         GE,
         UNKNOWN;
+
+        boolean contradicts(Ordering ord) {
+            switch (this) {
+                case EQ:
+                    return LT.equals(ord) || GT.equals(ord);
+                case LT:
+                    return EQ.equals(ord) || GE.equals(ord) || GT.equals(ord);
+                case LE:
+                    return GT.equals(ord);
+                case GT:
+                    return EQ.equals(ord) || LE.equals(ord) || LT.equals(ord);
+                case GE:
+                    return LT.equals(ord);
+                case UNKNOWN:
+                    return false;
+                default:
+                    throw new IllegalStateException();
+            }
+        }
     }
 
     private class Update {

@@ -1,9 +1,10 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.common.Util;
+import org.clafer.collection.Pair;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -12,50 +13,54 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class SingletonTest extends ConstraintTest {
+public class SingletonTest extends ConstraintTest<Pair<IntVar, SetVar>> {
 
-    private void checkCorrectness(IntVar i, SetVar s) {
-        int $i = i.getValue();
-        int[] $s = s.getValue();
-
-        assertEquals(1, $s.length);
-        assertEquals($i, $s[0]);
+    @Override
+    protected void check(Pair<IntVar, SetVar> s) {
+        assertEquals(1, s.getSnd().getValue().length);
+        assertEquals(s.getFst().getValue(), s.getSnd().getValue()[0]);
     }
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            IntVar i = VF.enumerated("i", -nextInt(1000), nextInt(1000), solver);
-            SetVar s = VF.set("s", Util.range(-nextInt(1000), nextInt(1000)), solver);
-
-            solver.post(Constraints.singleton(i, s));
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(i, s);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(i, s);
+        randomizedTest(new TestCase<Pair<IntVar, SetVar>>() {
+            @Override
+            public Pair<Constraint, Pair<IntVar, SetVar>> setup(Solver solver) {
+                IntVar i = toIntVar(randInt(), solver);
+                SetVar s = toSetVar(randSet(), solver);
+                return pair(Constraints.singleton(i, s), pair(i, s));
             }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSingleton() {
-        Solver solver = new Solver();
-
-        IntVar i = VF.enumerated("i", -120, 10, solver);
-        SetVar s = VF.set("s", Util.range(-10, 110), solver);
-
-        solver.post(Constraints.singleton(i, s));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(i, s);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(21, count);
+        randomizedTest(new TestCase<Pair<IntVar, SetVar>>() {
+            /*
+             * import Control.Monad
+             *
+             * powerset = filterM (const [True, False])
+             *
+             * positive = do
+             *     i <- [-3..2]
+             *     s <- powerset [-2..3]
+             *     guard $ [i] == s
+             *     return (i, s)
+             *   
+             * negative = do
+             *     i <- [-3..2]
+             *     s <- powerset [-2..3]
+             *     guard $ [i] /= s
+             *     return (i, s)
+             */
+            @PositiveSolutions(5)
+            @NegativeSolutions(379)
+            @Override
+            public Pair<Constraint, Pair<IntVar, SetVar>> setup(Solver solver) {
+                IntVar i = VF.enumerated("i", -3, 2, solver);
+                SetVar s = VF.set("s", -2, 3, solver);
+                return pair(Constraints.singleton(i, s), pair(i, s));
+            }
+        });
     }
 }

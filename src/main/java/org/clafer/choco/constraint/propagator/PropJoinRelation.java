@@ -102,17 +102,17 @@ public class PropJoinRelation extends Propagator<SetVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        // Prune take
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (i < 0 || i >= children.length || !PropUtil.isKerSubsetEnv(children[i], to)) {
+                take.removeFromEnvelope(i, aCause);
+            }
+        }
+
         // Pick to and prune child
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
             PropUtil.kerSubsetKer(children[i], to, aCause);
             PropUtil.envSubsetEnv(children[i], to, aCause);
-        }
-
-        // Prune take
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            if (!PropUtil.isKerSubsetEnv(children[i], to)) {
-                take.removeFromEnvelope(i, aCause);
-            }
         }
 
         // Pick take, pick child, pick take, prune to
@@ -254,6 +254,9 @@ public class PropJoinRelation extends Propagator<SetVar> {
     @Override
     public ESat isEntailed() {
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+            if (i < 0 || i >= children.length) {
+                return ESat.FALSE;
+            }
             for (int j = children[i].getKernelFirst(); j != SetVar.END; j = children[i].getKernelNext()) {
                 if (!to.envelopeContains(j)) {
                     return ESat.FALSE;
@@ -261,21 +264,21 @@ public class PropJoinRelation extends Propagator<SetVar> {
             }
         }
         int count = 0;
+        SetVar[] taken = new SetVar[take.getEnvelopeSize()];
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            count += children[i].getEnvelopeSize();
-        }
-        if (count < to.getKernelSize()) {
-            return ESat.FALSE;
-        }
-        if (!take.instantiated() || !to.instantiated()) {
-            return ESat.UNDEFINED;
-        }
-        for (SetVar child : children) {
-            if (!child.instantiated()) {
-                return ESat.UNDEFINED;
+            if (i >= 0 && i < children.length) {
+                taken[count++] = children[i];
             }
         }
-        return ESat.TRUE;
+        if (count < taken.length) {
+            taken = Arrays.copyOf(taken, count);
+        }
+        for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
+            if (!PropUtil.envsContain(taken, i)) {
+                return ESat.FALSE;
+            }
+        }
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

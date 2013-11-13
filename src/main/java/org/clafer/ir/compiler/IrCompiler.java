@@ -469,7 +469,7 @@ public class IrCompiler {
                 }
                 return compileAsConstraint(b, compile(a));
             case NQ:
-                if(a instanceof IrVar && b instanceof IrVar) {
+                if (a instanceof IrVar && b instanceof IrVar) {
                     return _arithm(compile(a), "!=", compile(b));
                 }
                 if (a instanceof IrBoolExpr && b instanceof IrBoolExpr) {
@@ -1540,7 +1540,7 @@ public class IrCompiler {
         if (var2.getSet().instantiated()) {
             return Constraints.notEqual(var1.getSet(), var2.getSet().getValue());
         }
-        return Constraints.notEqual(var1.getSet(), var2.getSet());
+        return Constraints.notEqual(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
     }
 
     private static Constraint _all_different(IntVar... vars) {

@@ -1,8 +1,10 @@
 package org.clafer.choco.constraint;
 
+import org.clafer.collection.Pair;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -11,9 +13,10 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class SortedSetTest extends ConstraintTest {
+public class SortedSetTest extends ConstraintTest<SetVar[]> {
 
-    private void checkCorrectness(SetVar[] sets) {
+    @Override
+    protected void check(SetVar[] sets) {
         int i = 0;
         for (SetVar set : sets) {
             for (int j = set.getKernelFirst(); j != SetVar.END; j = set.getKernelNext()) {
@@ -24,56 +27,42 @@ public class SortedSetTest extends ConstraintTest {
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 1; repeat++) {
-            Solver solver = new Solver();
-
-            SetVar[] sets = new SetVar[nextInt(5) + 1];
-            for (int i = 0; i < sets.length; i++) {
-                int low = nextInt(3);
-                int high = low + nextInt(10);
-                sets[i] = VF.set("set" + i, low, high, solver);
+        randomizedTest(new TestCase<SetVar[]>() {
+            @Override
+            public Pair<Constraint, SetVar[]> setup(Solver solver) {
+                CSetVar[] sets = toCSetVars(randPositiveSets(nextInt(2) + 1), solver);
+                return pair(Constraints.sortedSets(mapSet(sets), mapCard(sets)),
+                        mapSet(sets));
             }
-            IntVar[] cards = enforcedCardVars(sets);
-
-            solver.post(Constraints.sortedSets(sets, cards));
-
-            assertTrue(solver.toString(), randomizeStrategy(solver).findSolution());
-            checkCorrectness(sets);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(sets);
-            }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSortedSet() {
-        /*
-         * import Control.Monad
-         * 
-         * solutions = do
-         *     a <- [0..10]
-         *     b <- [0..10]
-         *     c <- [0..10]
-         *     guard $ a + b + c <= 10
-         *     return (a, b, c)
-         */
-        Solver solver = new Solver();
-
-        SetVar[] sets = new SetVar[3];
-        for (int i = 0; i < sets.length; i++) {
-            sets[i] = VF.set("set" + i, 0, 9, solver);
-        }
-        IntVar[] cards = enforcedCardVars(sets);
-
-        solver.post(Constraints.sortedSets(sets, cards));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(sets);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(286, count);
+        randomizedTest(new TestCase<SetVar[]>() {
+            /*
+             * import Control.Monad
+             *         
+             * positive = do
+             *     a <- [0..3]
+             *     b <- [0..3]
+             *     c <- [0..3]
+             *     guard $ a + b + c <= 3
+             *     return (a, b, c)
+             *   
+             *negative = 2^3 * 2^3 * 2^3 - length positive
+             */
+            @PositiveSolutions(20)
+            @NegativeSolutions(492)
+            @Override
+            public Pair<Constraint, SetVar[]> setup(Solver solver) {
+                SetVar[] sets = new SetVar[3];
+                for (int i = 0; i < sets.length; i++) {
+                    sets[i] = VF.set("set" + i, 0, 2, solver);
+                }
+                IntVar[] cards = enforcedCardVars(sets);
+                return pair(Constraints.sortedSets(sets, cards), sets);
+            }
+        });
     }
 }

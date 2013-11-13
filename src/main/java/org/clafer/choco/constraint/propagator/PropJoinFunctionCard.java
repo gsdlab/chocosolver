@@ -256,11 +256,11 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
         int instCard = map.size();
 
         int uninstantiated = 0;
-        map.clear();
+
         int minUninstantiated = Math.max(0, takeCard.getLB() - take.getKernelSize());
         int maxUninstantiated = Math.max(0, takeCard.getUB() - take.getKernelSize());
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            if (!refs[i].instantiated()) {
+            if (i >= 0 && i < refs.length && !refs[i].instantiated()) {
                 if (take.kernelContains(i)) {
                     minUninstantiated++;
                 }

@@ -1,11 +1,12 @@
 package org.clafer.choco.constraint;
 
-import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
+import org.clafer.collection.Pair;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.constraints.ICF;
 import solver.constraints.LCF;
 import solver.constraints.set.SCF;
@@ -17,26 +18,22 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class LexChainChannelTest extends ConstraintTest {
+public class LexChainChannelTest extends ConstraintTest<Pair<IntVar[][], IntVar[]>> {
 
-    private static void checkCorrectness(IntVar[][] strings, IntVar[] ints) {
-        int[][] $strings = new int[strings.length][];
-        TIntSet $ints = new TIntHashSet();
-
+    @Override
+    protected void check(Pair<IntVar[][], IntVar[]> s) {
+        int[][] strings = new int[s.getFst().length][];
+        int[] ints = getValues(s.getSnd());
         for (int i = 0; i < strings.length; i++) {
-            $strings[i] = new int[strings[i].length];
-            for (int j = 0; j < strings[i].length; j++) {
-                $strings[i][j] = strings[i][j].getValue();
-            }
-            $ints.add(ints[i].getValue());
+            strings[i] = getValues(s.getFst()[i]);
         }
 
         for (int i = 0; i < strings.length; i++) {
             for (int j = i + 1; j < strings.length; j++) {
-                assertEquals(compare($strings[i], $strings[j]), compare(ints[i].getValue(), ints[j].getValue()));
+                assertEquals(compare(strings[i], strings[j]), compare(ints[i], ints[j]));
             }
         }
-        int[] sorted = $ints.toArray();
+        int[] sorted = new TIntHashSet(ints).toArray();
         Arrays.sort(sorted);
         for (int i = 0; i < sorted.length; i++) {
             assertEquals(i, sorted[i]);
@@ -61,25 +58,58 @@ public class LexChainChannelTest extends ConstraintTest {
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-            int m = nextInt(4) + 1;
-            int n = nextInt(4) + 1;
-
-            IntVar[][] strings = new IntVar[m][];
-            for (int i = 0; i < strings.length; i++) {
-                strings[i] = VF.enumeratedArray("string" + i, n, -nextInt(3), nextInt(3), solver);
+        randomizedTest(new TestCase<Pair<IntVar[][], IntVar[]>>() {
+            @Override
+            public Pair<Constraint, Pair<IntVar[][], IntVar[]>> setup(Solver solver) {
+                int m = nextInt(3) + 1;
+                int n = nextInt(3) + 1;
+                IntVar[][] strings = new IntVar[m][];
+                for (int i = 0; i < strings.length; i++) {
+                    strings[i] = toIntVars(randInts(n), solver);
+                }
+                IntVar[] ints = toIntVars(randPositiveInts(m), solver);
+                return pair(Constraints.lexChainChannel(strings, ints), pair(strings, ints));
             }
-            IntVar[] ints = VF.enumeratedArray("int", m, 0, m, solver);
+        });
+    }
 
-            solver.post(Constraints.lexChainChannel(strings, ints));
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(strings, ints);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(strings, ints);
+    @Test(timeout = 60000)
+    public void testLexChainChannel() {
+        /*
+         * import Control.Monad
+         * 
+         * positive = do
+         *     string0 <- sequence $ replicate 2 [0..2]
+         *     string1 <- sequence $ replicate 2 [0..2]
+         *     string2 <- sequence $ replicate 2 [0..2]
+         *     int0 <- [0..2]
+         *     int1 <- [0..2]
+         *     int2 <- [0..2]
+         * 
+         *     guard $ sort (nub [int0, int1, int2]) `isPrefixOf` [0,1,2]
+         * 
+         *     guard $ compare string0 string1 == compare int0 int1
+         *     guard $ compare string0 string2 == compare int0 int2
+         *     guard $ compare string1 string2 == compare int1 int2
+         *     
+         *     return (string0, string1, string2, int0, int1, int2)
+         * 
+         * negative = (3^2)^3 * 3^3 - length positive
+         */
+        randomizedTest(new TestCase<Pair<IntVar[][], IntVar[]>>() {
+            @PositiveSolutions(729)
+            @NegativeSolutions(18954)
+            @Override
+            public Pair<Constraint, Pair<IntVar[][], IntVar[]>> setup(Solver solver) {
+                IntVar[][] strings = new IntVar[3][];
+                for (int i = 0; i < strings.length; i++) {
+                    strings[i] = VF.enumeratedArray("string" + i, 2, 0, 2, solver);
+                }
+                IntVar[] ints = VF.enumeratedArray("int", 3, 0, 2, solver);
+                return pair(Constraints.lexChainChannel(strings, ints),
+                        pair(strings, ints));
             }
-        }
+        });
     }
 
     /**
@@ -162,46 +192,5 @@ public class LexChainChannelTest extends ConstraintTest {
         solver.post(ICF.arithm(patronWeight[0], ">=", patronWeight[1]));
 
         assertEquals(19, randomizeStrategy(solver).findAllSolutions());
-    }
-
-    @Test(timeout = 60000)
-    public void testLexChainChannel() {
-        /*
-         * import Control.Monad
-         * 
-         * solutions = do
-         *     string0 <- sequence $ replicate 2 [0..2]
-         *     string1 <- sequence $ replicate 2 [0..2]
-         *     string2 <- sequence $ replicate 2 [0..2]
-         *     int0 <- [0..2]
-         *     int1 <- [0..2]
-         *     int2 <- [0..2]
-         * 
-         *     guard $ sort (nub [int0, int1, int2]) `isPrefixOf` [0,1,2]
-         * 
-         *     guard $ compare string0 string1 == compare int0 int1
-         *     guard $ compare string0 string2 == compare int0 int2
-         *     guard $ compare string1 string2 == compare int1 int2
-         *     
-         *     return (string0, string1, string2, int0, int1, int2)
-         */
-        Solver solver = new Solver();
-
-        IntVar[][] strings = new IntVar[3][];
-        for (int i = 0; i < strings.length; i++) {
-            strings[i] = VF.enumeratedArray("string" + i, 2, 0, 2, solver);
-        }
-        IntVar[] ints = VF.enumeratedArray("int", 3, 0, 2, solver);
-
-        solver.post(Constraints.lexChainChannel(strings, ints));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(strings, ints);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(729, count);
     }
 }

@@ -1,9 +1,10 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.choco.constraint.propagator.PropUtil;
+import org.clafer.collection.Pair;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.VF;
 
@@ -11,50 +12,46 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class OrTest extends ConstraintTest {
+public class OrTest extends ConstraintTest<BoolVar[]> {
 
-    private void checkCorrectness(BoolVar[] vars) {
-        int[] $vars = PropUtil.getValues(vars);
-        for (int var : $vars) {
-            if (var == 1) {
+    @Override
+    protected void check(BoolVar[] vars) {
+        for (BoolVar var : vars) {
+            if (var.getValue() == 1) {
                 return;
             }
         }
         fail("All false.");
     }
 
-    @Test(timeout = 60000)
-    public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            BoolVar[] vars = VF.boolArray("var", nextInt(100) + 1, solver);
-
-            solver.post(Constraints.or(vars));
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(vars);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(vars);
-            }
+    @Override
+    protected void checkNot(BoolVar[] vars) {
+        for (BoolVar var : vars) {
+            assertEquals(0, var.getValue());
         }
     }
 
     @Test(timeout = 60000)
+    public void quickTest() {
+        randomizedTest(new TestCase<BoolVar[]>() {
+            @Override
+            public Pair<Constraint, BoolVar[]> setup(Solver solver) {
+                BoolVar[] vars = toBoolVars(randBools(nextInt(3) + 1), solver);
+                return pair(Constraints.or(vars), vars);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
     public void testOr() {
-        Solver solver = new Solver();
-
-        BoolVar[] vars = VF.boolArray("var", 5, solver);
-
-        solver.post(Constraints.or(vars));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(vars);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(31, count);
+        randomizedTest(new TestCase<BoolVar[]>() {
+            @PositiveSolutions(31)
+            @NegativeSolutions(1)
+            @Override
+            public Pair<Constraint, BoolVar[]> setup(Solver solver) {
+                BoolVar[] vars = VF.boolArray("var", 5, solver);
+                return pair(Constraints.or(vars), vars);
+            }
+        });
     }
 }

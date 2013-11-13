@@ -1,8 +1,11 @@
 package org.clafer.choco.constraint;
 
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -11,9 +14,14 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class MaskTest extends ConstraintTest {
+public class MaskTest extends ConstraintTest<Triple<SetVar, SetVar, Pair<Integer, Integer>>> {
 
-    private void checkCorrectness(SetVar set, SetVar masked, int from, int to) {
+    @Override
+    protected void check(Triple<SetVar, SetVar, Pair<Integer, Integer>> s) {
+        SetVar set = s.getFst();
+        SetVar masked = s.getSnd();
+        int from = s.getThd().getFst();
+        int to = s.getThd().getSnd();
         int count = 0;
         for (int i = 0; i < to - from; i++) {
             assertEquals(set.kernelContains(from + i), masked.kernelContains(i));
@@ -24,57 +32,56 @@ public class MaskTest extends ConstraintTest {
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 1; repeat++) {
-            Solver solver = new Solver();
-
-            int setLow = nextInt(5);
-            int setHigh = setLow + nextInt(5);
-            int maskedLow = nextInt(5);
-            int maskedHigh = maskedLow + nextInt(5);
-            int from = nextInt(3);
-            int to = from + nextInt(5);
-
-            SetVar set = VF.set("set", setLow, setHigh, solver);
-            IntVar setCard = enforcedCardVar(set);
-            SetVar masked = VF.set("masked", maskedLow, maskedHigh, solver);
-            IntVar maskedCard = enforcedCardVar(masked);
-
-            solver.post(Constraints.mask(set, setCard, masked, maskedCard, from, to));
-
-            assertTrue(solver.toString(), randomizeStrategy(solver).findSolution());
-            checkCorrectness(set, masked, from, to);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(set, masked, from, to);
+        randomizedTest(new TestCase<Triple<SetVar, SetVar, Pair<Integer, Integer>>>() {
+            @Override
+            public Pair<Constraint, Triple<SetVar, SetVar, Pair<Integer, Integer>>> setup(Solver solver) {
+                CSetVar set = toCSetVar(randSet(), solver);
+                CSetVar masked = toCSetVar(randPositiveSet(), solver);
+                int a = nextIntBetween(-5, 5);
+                int b = nextIntBetween(-5, 5);
+                int from = Math.min(a, b);
+                int to = Math.max(a, b);
+                return pair(Constraints.mask(set.getSet(), set.getCard(),
+                        masked.getSet(), masked.getCard(), from, to),
+                        triple(set.getSet(), masked.getSet(), pair(from, to)));
             }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testMask() {
-        /*
-         * import Control.Monad
-         * 
-         * solutions = filterM (const [True, False]) [1..6]
-         */
-        Solver solver = new Solver();
-
-        SetVar set = VF.set("set", 1, 6, solver);
-        IntVar setCard = enforcedCardVar(set);
-        SetVar masked = VF.set("masked", 0, 3, solver);
-        IntVar maskedCard = enforcedCardVar(masked);
-
-        int from = 2;
-        int to = 5;
-
-        solver.post(Constraints.mask(set, setCard, masked, maskedCard, from, to));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(set, masked, from, to);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(64, count);
+        randomizedTest(new TestCase<Triple<SetVar, SetVar, Pair<Integer, Integer>>>() {
+            /*
+             * import Control.Monad
+             * import Data.List
+             *         
+             * powerset = filterM (const [True, False])
+             *         
+             * positive = do
+             *     set <- powerset [1..6]
+             *     masked <- powerset [0..3]
+             *     guard $ masked == [s - 2 | s <- set, s >= 2 && s < 5]
+             *     return (set, masked)
+             *    
+             * negative = do
+             *     set <- powerset [1..6]
+             *     masked <- powerset [0..3]
+             *     guard $ masked /= [s - 2 | s <- set, s >= 2 && s < 5]
+             *     return (set, masked)
+             */
+            @PositiveSolutions(64)
+            @NegativeSolutions(960)
+            @Override
+            public Pair<Constraint, Triple<SetVar, SetVar, Pair<Integer, Integer>>> setup(Solver solver) {
+                SetVar set = VF.set("set", 1, 6, solver);
+                IntVar setCard = enforcedCardVar(set);
+                SetVar masked = VF.set("masked", 0, 3, solver);
+                IntVar maskedCard = enforcedCardVar(masked);
+                int from = 2;
+                int to = 5;
+                return pair(Constraints.mask(set, setCard, masked, maskedCard, from, to),
+                        triple(set, masked, pair(from, to)));
+            }
+        });
     }
 }

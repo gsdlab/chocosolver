@@ -1,4 +1,4 @@
-package org.clafer.ir;
+package org.clafer;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
@@ -6,8 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import org.clafer.choco.constraint.RandomSetSearchStrategy;
+import static org.clafer.ir.IrBoolDomain.*;
+import org.clafer.ir.IrBoolVar;
+import org.clafer.ir.IrDomain;
+import org.clafer.ir.IrIntVar;
+import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 import solver.Solver;
+import solver.constraints.Constraint;
+import solver.constraints.Propagator;
 import solver.constraints.set.SCF;
 import solver.propagation.PropagationEngineFactory;
 import solver.search.strategy.IntStrategyFactory;
@@ -17,12 +25,13 @@ import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
 import solver.variables.Variable;
+import util.ESat;
 
 /**
  *
  * @author jimmy
  */
-public class ExprTest {
+public abstract class ClaferTest {
 
     protected final Random rand = new Random();
     private int varCount = 0;
@@ -117,8 +126,8 @@ public class ExprTest {
     }
 
     public IrSetVar randSet(int low, int high) {
-        IrDomain ker = randDomain(low, high);
-        IrDomain env = IrUtil.union(ker, randDomain(low, high));
+        IrDomain env = randDomain(low, high);
+        IrDomain ker = IrUtil.intersection(randDomain(low, high), env);
         int a = nextIntBetween(ker.size(), env.size());
         int b = nextIntBetween(ker.size(), env.size());
         IrDomain card = a < b ? boundDomain(a, b) : boundDomain(b, a);
@@ -147,6 +156,64 @@ public class ExprTest {
 
     public IrSetVar[] randPositiveSets(int n) {
         return randSets(n, 0, 5);
+    }
+
+    public IntVar cardVar(SetVar set, int low, int high) {
+        return VF.enumerated("|" + set.getName() + "|", low, high, set.getSolver());
+    }
+
+    public IntVar cardVar(SetVar set) {
+        return cardVar(set, 0, set.getEnvelopeSize());
+    }
+
+    public IntVar[] cardVars(SetVar[] sets) {
+        IntVar[] cards = new IntVar[sets.length];
+        for (int i = 0; i < cards.length; i++) {
+            cards[i] = cardVar(sets[i]);
+        }
+        return cards;
+    }
+
+    public IntVar enforcedCardVar(SetVar set, int low, int high) {
+        IntVar card = cardVar(set, low, high);
+        set.getSolver().post(SCF.cardinality(set, card));
+        return card;
+    }
+
+    public IntVar enforcedCardVar(SetVar set) {
+        return enforcedCardVar(set, 0, set.getEnvelopeSize());
+    }
+
+    public IntVar[] enforcedCardVars(SetVar[] sets) {
+        IntVar[] cards = new IntVar[sets.length];
+        for (int i = 0; i < cards.length; i++) {
+            cards[i] = enforcedCardVar(sets[i]);
+        }
+        return cards;
+    }
+
+    public boolean[] getValues(BoolVar[] vars) {
+        boolean[] values = new boolean[vars.length];
+        for (int i = 0; i < values.length; i++) {
+            values[i] = vars[i].getValue() == 1;
+        }
+        return values;
+    }
+
+    public int[] getValues(IntVar[] vars) {
+        int[] values = new int[vars.length];
+        for (int i = 0; i < values.length; i++) {
+            values[i] = vars[i].getValue();
+        }
+        return values;
+    }
+
+    public int[][] getValues(SetVar[] vars) {
+        int[][] values = new int[vars.length][];
+        for (int i = 0; i < values.length; i++) {
+            values[i] = vars[i].getValue();
+        }
+        return values;
     }
 
     public static BoolVar toBoolVar(IrBoolVar var, Solver solver) {
@@ -183,18 +250,43 @@ public class ExprTest {
     }
 
     public static SetVar toSetVar(IrSetVar var, Solver solver) {
-        SetVar setVar = VF.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
-        IntVar cardVar = VF.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
-        solver.post(SCF.cardinality(setVar, cardVar));
-        return setVar;
+        return toCSetVar(var, solver).getSet();
     }
 
     public static SetVar[] toSetVars(IrSetVar[] vars, Solver solver) {
-        SetVar[] ints = new SetVar[vars.length];
-        for (int i = 0; i < ints.length; i++) {
-            ints[i] = toSetVar(vars[i], solver);
+        SetVar[] sets = new SetVar[vars.length];
+        for (int i = 0; i < sets.length; i++) {
+            sets[i] = toSetVar(vars[i], solver);
         }
-        return ints;
+        return sets;
+    }
+
+    public static CSetVar toCSetVar(IrSetVar var, Solver solver) {
+        SetVar setVar = VF.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
+        IntVar cardVar = VF.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
+        solver.post(SCF.cardinality(setVar, cardVar));
+        return new CSetVar(setVar, cardVar);
+    }
+
+    public static CSetVar[] toCSetVars(IrSetVar[] vars, Solver solver) {
+        CSetVar[] sets = new CSetVar[vars.length];
+        for (int i = 0; i < sets.length; i++) {
+            sets[i] = toCSetVar(vars[i], solver);
+        }
+        return sets;
+    }
+
+    public ESat isEntailed(Constraint constraint) {
+        boolean undefined = false;
+        for (Propagator propagator : constraint.getPropagators()) {
+            switch (propagator.isEntailed()) {
+                case FALSE:
+                    return ESat.FALSE;
+                case UNDEFINED:
+                    undefined = true;
+            }
+        }
+        return undefined ? ESat.UNDEFINED : ESat.TRUE;
     }
 
     public Solver randomizeStrategy(Solver solver) {
@@ -222,5 +314,45 @@ public class ExprTest {
                     new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
         }
         return solver;
+    }
+
+    public static class CSetVar {
+
+        private final SetVar set;
+        private final IntVar card;
+
+        public CSetVar(SetVar set, IntVar card) {
+            this.set = set;
+            this.card = card;
+        }
+
+        public SetVar getSet() {
+            return set;
+        }
+
+        public IntVar getCard() {
+            return card;
+        }
+
+        @Override
+        public String toString() {
+            return "<" + set + ", " + card + ">";
+        }
+    }
+
+    public SetVar[] mapSet(CSetVar... vars) {
+        SetVar[] sets = new SetVar[vars.length];
+        for (int i = 0; i < vars.length; i++) {
+            sets[i] = vars[i].getSet();
+        }
+        return sets;
+    }
+
+    public IntVar[] mapCard(CSetVar... vars) {
+        IntVar[] cards = new IntVar[vars.length];
+        for (int i = 0; i < vars.length; i++) {
+            cards[i] = vars[i].getCard();
+        }
+        return cards;
     }
 }

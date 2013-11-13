@@ -1,9 +1,10 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.choco.constraint.propagator.PropUtil;
+import org.clafer.collection.Pair;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.VF;
@@ -12,55 +13,43 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class SelectNTest extends ConstraintTest {
+public class SelectNTest extends ConstraintTest<Pair<BoolVar[], IntVar>> {
 
-    private void checkCorrectness(BoolVar[] bools, IntVar n) {
-        int[] $bools = PropUtil.getValues(bools);
-        int $n = n.getValue();
-
-        for (int i = 0; i < $n; i++) {
-            assertEquals(1, $bools[i]);
+    @Override
+    protected void check(Pair<BoolVar[], IntVar> s) {
+        for (int i = 0; i < s.getSnd().getValue(); i++) {
+            assertEquals(1, s.getFst()[i].getValue());
         }
-        for (int i = $n; i < $bools.length; i++) {
-            assertEquals(0, $bools[i]);
+        for (int i = s.getSnd().getValue(); i < s.getFst().length; i++) {
+            assertEquals(0, s.getFst()[i].getValue());
         }
     }
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-            int num = nextInt(100) + 1;
-
-            BoolVar[] bools = VF.boolArray("bool", num, solver);
-            IntVar n = VF.enumerated("n", 0, num, solver);
-
-            solver.post(Constraints.selectN(bools, n));
-
-            assertTrue(randomizeStrategy(solver).findSolution());
-            checkCorrectness(bools, n);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(bools, n);
+        randomizedTest(new TestCase<Pair<BoolVar[], IntVar>>() {
+            @Override
+            public Pair<Constraint, Pair<BoolVar[], IntVar>> setup(Solver solver) {
+                BoolVar[] bools = toBoolVars(randBools(nextInt(5) + 1), solver);
+                IntVar n = toIntVar(randInt(0, bools.length), solver);
+                return pair(Constraints.selectN(bools, n),
+                        pair(bools, n));
             }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSelectN() {
-        Solver solver = new Solver();
-
-        BoolVar[] bools = VF.boolArray("bool", 20, solver);
-        IntVar n = VF.enumerated("n", 0, 20, solver);
-
-        solver.post(Constraints.selectN(bools, n));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(bools, n);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(21, count);
+        randomizedTest(new TestCase<Pair<BoolVar[], IntVar>>() {
+            @PositiveSolutions(5)
+            @NegativeSolutions(75)
+            @Override
+            public Pair<Constraint, Pair<BoolVar[], IntVar>> setup(Solver solver) {
+                BoolVar[] bools = VF.boolArray("bool", 4, solver);
+                IntVar n = VF.enumerated("n", 0, 4, solver);
+                return pair(Constraints.selectN(bools, n),
+                        pair(bools, n));
+            }
+        });
     }
 }

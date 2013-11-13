@@ -1,117 +1,149 @@
 package org.clafer.choco.constraint;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
+import org.clafer.ClaferTest;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import solver.Solver;
-import solver.constraints.set.SCF;
-import solver.propagation.PropagationEngineFactory;
-import solver.search.strategy.IntStrategyFactory;
-import solver.search.strategy.strategy.StrategiesSequencer;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import solver.variables.VF;
-import solver.variables.Variable;
+import solver.constraints.Constraint;
+import util.ESat;
 
 /**
  *
+ * @param <T> type of test input
  * @author jimmy
  */
-public abstract class ConstraintTest {
+public abstract class ConstraintTest<T> extends ClaferTest {
 
-    protected final Random rand = new Random();
+    protected abstract void check(T s);
 
-    public boolean nextBool() {
-        return rand.nextBoolean();
-    }
-
-    public int nextInt(int n) {
-        return rand.nextInt(n);
-    }
-
-    public IntVar cardVar(SetVar set, int low, int high) {
-        return VF.enumerated("|" + set.getName() + "|", low, high, set.getSolver());
-    }
-
-    public IntVar cardVar(SetVar set) {
-        return cardVar(set, 0, set.getEnvelopeSize());
-    }
-
-    public IntVar[] cardVars(SetVar[] sets) {
-        IntVar[] cards = new IntVar[sets.length];
-        for (int i = 0; i < cards.length; i++) {
-            cards[i] = cardVar(sets[i]);
+    protected void checkNot(T s) {
+        try {
+            check(s);
+        } catch (AssertionError e) {
+            return;
         }
-        return cards;
+        fail();
     }
 
-    public IntVar enforcedCardVar(SetVar set, int low, int high) {
-        IntVar card = cardVar(set, low, high);
-        set.getSolver().post(SCF.cardinality(set, card));
-        return card;
-    }
-
-    public IntVar enforcedCardVar(SetVar set) {
-        return enforcedCardVar(set, 0, set.getEnvelopeSize());
-    }
-
-    public IntVar[] enforcedCardVars(SetVar[] sets) {
-        IntVar[] cards = new IntVar[sets.length];
-        for (int i = 0; i < cards.length; i++) {
-            cards[i] = enforcedCardVar(sets[i]);
-        }
-        return cards;
-    }
-
-    public boolean[] getValues(BoolVar[] vars) {
-        boolean[] values = new boolean[vars.length];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = vars[i].getValue() == 1;
-        }
-        return values;
-    }
-
-    public int[] getValues(IntVar[] vars) {
-        int[] values = new int[vars.length];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = vars[i].getValue();
-        }
-        return values;
-    }
-
-    public int[][] getValues(SetVar[] vars) {
-        int[][] values = new int[vars.length][];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = vars[i].getValue();
-        }
-        return values;
-    }
-
-    public Solver randomizeStrategy(Solver solver) {
-        solver.set(PropagationEngineFactory.PROPAGATORDRIVEN.make(solver));
-        List<IntVar> intVars = new ArrayList<>();
-        List<SetVar> setVars = new ArrayList<>();
-        for (Variable var : solver.getVars()) {
-            if (var instanceof IntVar) {
-                intVars.add((IntVar) var);
-            } else if (var instanceof SetVar) {
-                setVars.add((SetVar) var);
+    protected void check(boolean positive, Constraint constraint, T s) {
+        try {
+            if (positive) {
+                check(s);
             } else {
-                throw new IllegalStateException();
+                checkNot(s);
+            }
+        } catch (AssertionError e) {
+            throw new AssertionError("Incorrect solution: " + constraint, e);
+        }
+    }
+
+    protected void randomizedTest(TestCase<T> testCase) {
+        try {
+            Method method = testCase.getClass().getMethod("setup", Solver.class);
+            PositiveSolutions positive = method.getAnnotation(PositiveSolutions.class);
+            if (positive == null) {
+                randomizedTest(testCase, true);
+            } else {
+                randomizedTest(testCase, true, positive.value());
+            }
+            NegativeSolutions negative = method.getAnnotation(NegativeSolutions.class);
+            if (negative == null) {
+                randomizedTest(testCase, false);
+            } else {
+                randomizedTest(testCase, false, negative.value());
+            }
+        } catch (NoSuchMethodException e) {
+            throw new Error(e);
+        }
+    }
+
+    private void randomizedTest(TestCase<T> testCase, boolean positive) {
+        for (int repeat = 0; repeat < 10; repeat++) {
+            Solver solver = new Solver();
+
+            Pair<Constraint, T> pair = testCase.setup(solver);
+
+            Constraint constraint = positive ? pair.getFst() : pair.getFst().getOpposite();
+            T t = pair.getSnd();
+            solver.post(constraint);
+
+            randomizeStrategy(solver);
+            ESat entailed = isEntailed(constraint);
+            if (ESat.FALSE.equals(entailed)) {
+                if (solver.findSolution()) {
+                    fail("Did not expect a solution, found " + constraint);
+                }
+            } else if (solver.findSolution()) {
+                check(positive, constraint, t);
+                for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
+                    check(positive, constraint, t);
+                }
+            } else if (ESat.TRUE.equals(entailed)) {
+                fail("Expected at least one solution, " + constraint);
             }
         }
-        if (rand.nextBoolean()) {
-            solver.set(
-                    new StrategiesSequencer(solver.getEnvironment(),
-                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
-                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
-        } else {
-            solver.set(
-                    new StrategiesSequencer(solver.getEnvironment(),
-                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime()),
-                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
+    }
+
+    private void randomizedTest(TestCase<T> testCase,
+            boolean positive,
+            int expectedNumberSolutions) {
+        for (int repeat = 0; repeat < 10; repeat++) {
+            Solver solver = new Solver();
+
+            Pair<Constraint, T> pair = testCase.setup(solver);
+
+            Constraint constraint = positive ? pair.getFst() : pair.getFst().getOpposite();
+            T t = pair.getSnd();
+            solver.post(constraint);
+
+            int count = 0;
+            if (randomizeStrategy(solver).findSolution()) {
+                do {
+                    check(positive, constraint, t);
+                    count++;
+                } while (solver.nextSolution());
+            }
+            assertEquals(expectedNumberSolutions, count);
         }
-        return solver;
+    }
+
+    protected static <A, B> Pair<A, B> pair(A a, B b) {
+        return new Pair<>(a, b);
+    }
+
+    protected static <A, B, C> Triple<A, B, C> triple(A a, B b, C c) {
+        return new Triple<>(a, b, c);
+    }
+
+    public static interface TestCase<T> {
+
+        Pair<Constraint, T> setup(Solver solver);
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public static @interface PositiveSolutions {
+
+        /**
+         * @return the expected number of solutions that satisfy the constraint
+         */
+        int value();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public static @interface NegativeSolutions {
+
+        /**
+         * @return the expected number of solutions that violate the constraint
+         */
+        int value();
     }
 }

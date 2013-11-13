@@ -171,25 +171,18 @@ public class PropArrayToSet extends Propagator<Variable> {
         if (s.getKernelSize() > as.length) {
             return ESat.FALSE;
         }
-        boolean tsInstantiated = true;
-        FixedCapacityIntSet values = new FixedCapacityIntSet(as.length);
         for (IntVar a : as) {
             if (!PropUtil.isDomIntersectEnv(a, s)) {
                 return ESat.FALSE;
             }
-            if (a.instantiated()) {
-                values.add(a.getValue());
-            } else {
-                tsInstantiated = false;
-            }
 
         }
-        if (tsInstantiated) {
-            return s.getKernelSize() == values.size()
-                    ? (s.instantiated() ? ESat.TRUE : ESat.UNDEFINED)
-                    : ESat.FALSE;
+        for (int i = s.getKernelFirst(); i != SetVar.END; i = s.getKernelNext()) {
+            if (!PropUtil.domsContain(as, i)) {
+                return ESat.FALSE;
+            }
         }
-        return ESat.UNDEFINED;
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

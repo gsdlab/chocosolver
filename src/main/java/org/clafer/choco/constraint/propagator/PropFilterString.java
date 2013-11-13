@@ -146,24 +146,28 @@ public class PropFilterString extends Propagator<Variable> {
             int envIndex = 0;
             for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
                 int x = i - offset;
-                env[envIndex] = x;
-                if (set.kernelContains(i)) {
-                    kerIndices[kerIndex] = envIndex;
-                    changed |= subset(string[x], result, kerIndex, Math.min(envIndex + 1, result.length));
-                    envIndex++;
-                    kerIndex++;
+                if (x < 0 || x >= string.length) {
+                    set.removeFromEnvelope(i, aCause);
                 } else {
-                    boolean found = false;
-                    for (int j = kerIndex; j < result.length && j <= envIndex; j++) {
-                        if (PropUtil.isDomIntersectDom(string[x], result[j])) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        changed |= set.removeFromEnvelope(i, aCause);
-                    } else {
+                    env[envIndex] = x;
+                    if (set.kernelContains(i)) {
+                        kerIndices[kerIndex] = envIndex;
+                        changed |= subset(string[x], result, kerIndex, Math.min(envIndex + 1, result.length));
                         envIndex++;
+                        kerIndex++;
+                    } else {
+                        boolean found = false;
+                        for (int j = kerIndex; j < result.length && j <= envIndex; j++) {
+                            if (PropUtil.isDomIntersectDom(string[x], result[j])) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            changed |= set.removeFromEnvelope(i, aCause);
+                        } else {
+                            envIndex++;
+                        }
                     }
                 }
             }
@@ -209,7 +213,7 @@ public class PropFilterString extends Propagator<Variable> {
                 return ESat.FALSE;
             }
             int x = i - offset;
-            if (string[x].getValue() != result[index].getValue()) {
+            if (x < 0 || x >= string.length || string[x].getValue() != result[index].getValue()) {
                 return ESat.FALSE;
             }
         }

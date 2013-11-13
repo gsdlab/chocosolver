@@ -34,8 +34,8 @@ public class DuplicateConstraints {
      * <li>a ≤ b & b ≤ a to a = b</li>
      * </ol>
      *
-     * @param module
-     * @return
+     * @param module the module to remove duplicates
+     * @return the optimized module
      */
     public static IrModule removeDuplicates(IrModule module) {
         HashSet<Pair<IrIntExpr, IrIntExpr>> equal = new HashSet<>();

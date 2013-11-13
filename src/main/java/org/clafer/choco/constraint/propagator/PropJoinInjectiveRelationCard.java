@@ -147,24 +147,25 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        int minCard = 0;
-        int maxCard = 0;
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            IntVar childCard = childrenCards[i];
-            if (take.kernelContains(i)) {
-                minCard += childCard.getLB();
-            }
-            maxCard += childCard.getUB();
-        }
-
-        if (toCard.getUB() < minCard) {
-            return ESat.FALSE;
-        }
-        if (toCard.getLB() > maxCard) {
-            return ESat.FALSE;
-        }
-
-        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return ESat.TRUE;
+//        int minCard = 0;
+//        int maxCard = 0;
+//        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+//            IntVar childCard = childrenCards[i];
+//            if (take.kernelContains(i)) {
+//                minCard += childCard.getLB();
+//            }
+//            maxCard += childCard.getUB();
+//        }
+//
+//        if (toCard.getUB() < minCard) {
+//            return ESat.FALSE;
+//        }
+//        if (toCard.getLB() > maxCard) {
+//            return ESat.FALSE;
+//        }
+//
+//        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

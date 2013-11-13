@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.ClaferTest;
 import org.clafer.common.Util;
-import static org.clafer.ir.ExprTest.toIntVars;
 import static org.clafer.ir.Irs.*;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
@@ -20,7 +20,7 @@ import solver.variables.view.IntView;
  *
  * @author jimmy
  */
-public class BasicIntExprTest extends ExprTest {
+public class BasicIntExprTest extends ClaferTest {
 
     @Test(timeout = 60000)
     public void testAdd() {

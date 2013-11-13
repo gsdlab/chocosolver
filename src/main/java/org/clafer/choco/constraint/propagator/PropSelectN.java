@@ -11,7 +11,7 @@ import util.ESat;
 
 /**
  * The first n booleans are the true, the rest are false.
- * 
+ *
  * @author jimmy
  */
 public class PropSelectN extends Propagator<IntVar> {
@@ -45,6 +45,7 @@ public class PropSelectN extends Propagator<IntVar> {
         if (isBoolsVar(vIdx)) {
             return EventType.INSTANTIATE.mask;
         }
+        assert isNVar(vIdx);
         return EventType.DECUPP.mask + EventType.INCLOW.mask + EventType.INSTANTIATE.mask;
     }
 
@@ -73,7 +74,6 @@ public class PropSelectN extends Propagator<IntVar> {
         for (int i = n.getUB(); i < bools.length; i++) {
             bools[i].setToFalse(aCause);
         }
-        assert !ESat.FALSE.equals(isEntailed());
     }
 
     @Override
@@ -84,21 +84,29 @@ public class PropSelectN extends Propagator<IntVar> {
                 for (int i = idxVarInProp + 1; i < bools.length; i++) {
                     bools[i].setToFalse(aCause);
                 }
-                n.updateUpperBound(idxVarInProp, aCause);
+                if (n.updateUpperBound(idxVarInProp, aCause) && n.getUB() < idxVarInProp) {
+                    for (int i = n.getUB(); i <= idxVarInProp; i++) {
+                        bools[i].setToFalse(aCause);
+                    }
+                }
             } else {
                 for (int i = 0; i < idxVarInProp; i++) {
                     bools[i].setToTrue(aCause);
                 }
-                n.updateLowerBound(idxVarInProp + 1, aCause);
+                if (n.updateLowerBound(idxVarInProp + 1, aCause) && n.getLB() > idxVarInProp + 1) {
+                    for (int i = idxVarInProp; i < n.getLB(); i++) {
+                        bools[i].setToTrue(aCause);
+                    }
+                }
             }
         } else {
             assert isNVar(idxVarInProp);
-            if (EventType.isInclow(mask)) {
+            if (EventType.isInclow(mask) || EventType.isInstantiate(mask)) {
                 for (int i = 0; i < n.getLB(); i++) {
                     bools[i].setToTrue(aCause);
                 }
             }
-            if (EventType.isDecupp(mask)) {
+            if (EventType.isDecupp(mask) || EventType.isInstantiate(mask)) {
                 for (int i = n.getUB(); i < bools.length; i++) {
                     bools[i].setToFalse(aCause);
                 }
@@ -121,7 +129,7 @@ public class PropSelectN extends Propagator<IntVar> {
                 allInstantiated = false;
             }
         }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        return allInstantiated && n.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

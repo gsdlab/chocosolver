@@ -168,7 +168,7 @@ public class PropSetSum extends Propagator<Variable> {
         int high = 0;
         // The number of elements seen in env but not in ker.
         int index = 0;
-        int lowEnd = Math.min(setCard.getLB(), envSize) - kerSize;
+        int lowEnd = Math.max(setCard.getLB(), envSize) - kerSize;
         int highStart = envSize - kerSize - lowEnd;
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (Util.in(i, ker)) {
@@ -184,7 +184,7 @@ public class PropSetSum extends Propagator<Variable> {
                 index++;
             }
         }
-        if (sum.getLB() > low || sum.getUB() < high) {
+        if (sum.getLB() > high || sum.getUB() < low) {
             return ESat.FALSE;
         }
         return low == high && sum.instantiated() ? ESat.TRUE : ESat.UNDEFINED;

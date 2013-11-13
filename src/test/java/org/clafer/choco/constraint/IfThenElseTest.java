@@ -1,8 +1,11 @@
 package org.clafer.choco.constraint;
 
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.VF;
 
@@ -10,66 +13,53 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class IfThenElseTest extends ConstraintTest {
+public class IfThenElseTest extends ConstraintTest<Triple<BoolVar, BoolVar, BoolVar>> {
 
-    private void checkCorrectness(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
-        if (antecedent.instantiatedTo(1)) {
-            assertTrue(antecedent + " : " + consequent + " : " + alternative, consequent.instantiatedTo(1));
+    @Override
+    protected void check(Triple<BoolVar, BoolVar, BoolVar> s) {
+        if (s.getFst().instantiatedTo(1)) {
+            assertTrue(s.getSnd().instantiatedTo(1));
         } else {
-            assertTrue(alternative.instantiatedTo(1));
+            assertTrue(s.getThd().instantiatedTo(1));
         }
     }
 
-    private BoolVar randBoolVar(String name, Solver solver) {
-        switch (nextInt(5)) {
-            case 0:
-                return solver.ZERO;
-            case 1:
-                return solver.ONE;
-            default:
-                return VF.bool(name, solver);
+    @Override
+    protected void checkNot(Triple<BoolVar, BoolVar, BoolVar> s) {
+        if (s.getFst().instantiatedTo(1)) {
+            assertFalse(s.getSnd().instantiatedTo(1));
+        } else {
+            assertFalse(s.getThd().instantiatedTo(1));
         }
     }
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            BoolVar antecedent = randBoolVar("antecedent", solver);
-            BoolVar consequent = randBoolVar("consequent", solver);
-            BoolVar alternative = randBoolVar("alternative", solver);
-
-            solver.post(Constraints.ifThenElse(antecedent, consequent, alternative));
-
-            if (randomizeStrategy(solver).findSolution()) {
-                checkCorrectness(antecedent, consequent, alternative);
-                int solutions;
-                for (solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                    checkCorrectness(antecedent, consequent, alternative);
-                }
-                assertTrue(solutions <= 4);
+        randomizedTest(new TestCase<Triple<BoolVar, BoolVar, BoolVar>>() {
+            @Override
+            public Pair<Constraint, Triple<BoolVar, BoolVar, BoolVar>> setup(Solver solver) {
+                BoolVar antecedent = toBoolVar(randBool(), solver);
+                BoolVar consequent = toBoolVar(randBool(), solver);
+                BoolVar alternative = toBoolVar(randBool(), solver);
+                return pair(Constraints.ifThenElse(antecedent, consequent, alternative),
+                        triple(antecedent, consequent, alternative));
             }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testIfThenElse() {
-        Solver solver = new Solver();
-
-        BoolVar antecedent = VF.bool("antecedent", solver);
-        BoolVar consequent = VF.bool("consequent", solver);
-        BoolVar alternative = VF.bool("alternative", solver);
-
-        solver.post(Constraints.ifThenElse(antecedent, consequent, alternative));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(antecedent, consequent, alternative);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(4, count);
+        randomizedTest(new TestCase<Triple<BoolVar, BoolVar, BoolVar>>() {
+            @PositiveSolutions(4)
+            @NegativeSolutions(4)
+            @Override
+            public Pair<Constraint, Triple<BoolVar, BoolVar, BoolVar>> setup(Solver solver) {
+                BoolVar antecedent = VF.bool("antecedent", solver);
+                BoolVar consequent = VF.bool("consequent", solver);
+                BoolVar alternative = VF.bool("alternative", solver);
+                return pair(Constraints.ifThenElse(antecedent, consequent, alternative),
+                        triple(antecedent, consequent, alternative));
+            }
+        });
     }
 }

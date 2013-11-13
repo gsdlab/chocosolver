@@ -252,30 +252,6 @@ public class Constraints {
     }
 
     /**
-     * A constraint enforcing {@code set1 = set2}. Prefer
-     * {@link #equal(solver.variables.SetVar, solver.variables.IntVar, solver.variables.SetVar, solver.variables.IntVar)}
-     * when the cardinalities are known.
-     *
-     * @param set1 the left set
-     * @param set2 the right set
-     * @return constraint {@code set1 = set2}
-     */
-    @Deprecated
-    public static Constraint equal(SetVar set1, SetVar set2) {
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(new Variable[]{set1, set2}, set1.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropSetEqual(set1, set2)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
-    }
-
-    /**
      * A constraint enforcing {@code set1 = set2}. Does not enforce that
      * {@code set1Card = |set1Card|} nor {@code set2Card = |set2Card|} because
      * of how the compilation works, it is already enforced elsewhere.
@@ -287,18 +263,7 @@ public class Constraints {
      * @return constraint {@code set1 = set2}
      */
     public static Constraint equal(SetVar set1, IntVar set1Card, SetVar set2, IntVar set2Card) {
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(new Variable[]{set1, set1Card, set2, set2Card}, set1.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropSetEqual(set1, set2),
-            new PropEqualX_Y(set1Card, set2Card)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new SetEquality(set1, set1Card, true, set2, set2Card);
     }
 
     /**
@@ -308,11 +273,8 @@ public class Constraints {
      * @param set2 the right set
      * @return constraint {@code set1 ≠ set2}
      */
-    public static Constraint notEqual(SetVar set1, SetVar set2) {
-        Constraint<SetVar, PropSetNotEqual> constraint =
-                new Constraint<>(new SetVar[]{set1, set2}, set1.getSolver());
-        constraint.setPropagators(new PropSetNotEqual(set1, set2));
-        return constraint;
+    public static Constraint notEqual(SetVar set1, IntVar set1Card, SetVar set2, IntVar set2Card) {
+        return new SetEquality(set1, set1Card, false, set2, set2Card);
     }
 
     /**

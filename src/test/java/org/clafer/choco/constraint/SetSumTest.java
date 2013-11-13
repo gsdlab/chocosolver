@@ -1,8 +1,12 @@
 package org.clafer.choco.constraint;
 
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
+import org.clafer.common.Util;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -11,134 +15,127 @@ import solver.variables.VF;
  *
  * @author jimmy
  */
-public class SetSumTest extends ConstraintTest {
+public class SetSumTest extends ConstraintTest<Triple<SetVar, IntVar, IntVar>> {
 
-    private void checkCorrectness(SetVar set, IntVar setCard, IntVar sum) {
-        int[] $set = set.getValue();
-        int $sum = sum.getValue();
+    @Override
+    protected void check(Triple<SetVar, IntVar, IntVar> s) {
+        int[] set = s.getFst().getValue();
 
-        assertTrue($set.length <= setCard.getValue());
-
-        int sumSet = 0;
-        for (int s : $set) {
-            sumSet += s;
-        }
-        assertEquals(sumSet, $sum);
+        assertTrue(set.length <= s.getSnd().getValue());
+        assertEquals(Util.sum(set), s.getThd().getValue());
     }
 
     @Test(timeout = 60000)
     public void quickTest() {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
-
-            SetVar set = VF.set("set", -nextInt(10), nextInt(10), solver);
-            IntVar setCard = VF.enumerated("|set|", 0, nextInt(10) + 1, solver);
-            IntVar sum = VF.enumerated("sum", -nextInt(100), nextInt(100), solver);
-
-            solver.post(Constraints.setSum(set, setCard, sum));
-
-            assertTrue(solver.toString(), randomizeStrategy(solver).findSolution());
-            checkCorrectness(set, setCard, sum);
-            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                checkCorrectness(set, setCard, sum);
+        randomizedTest(new TestCase<Triple<SetVar, IntVar, IntVar>>() {
+            @Override
+            public Pair<Constraint, Triple<SetVar, IntVar, IntVar>> setup(Solver solver) {
+                CSetVar set = toCSetVar(randSet(), solver);
+                IntVar sum = toIntVar(randInt(), solver);
+                return pair(Constraints.setSum(set.getSet(), set.getCard(), sum),
+                        triple(set.getSet(), set.getCard(), sum));
             }
-        }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSumSet() {
-        /*
-         * import Control.Monad
-         *
-         * solutions = do
-         *     set <- filterM (const $ [True, False]) [-4..5]
-         *     guard $ length set <= 7
-         *     guard $ -120 <= sum set && sum set <= 120
-         *     return set
-         */
-        Solver solver = new Solver();
-
-        SetVar set = VF.set("set", -4, 5, solver);
-        IntVar setCard = VF.enumerated("|set|", 0, 7, solver);
-        IntVar sum = VF.enumerated("sum", -120, 120, solver);
-
-        solver.post(Constraints.setSum(set, setCard, sum));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(set, setCard, sum);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(968, count);
+        randomizedTest(new TestCase<Triple<SetVar, IntVar, IntVar>>() {
+            /*import Control.Monad
+             *        
+             * powerset = filterM (const [True, False])
+             *        
+             * positive = do
+             *     set <- powerset [-4..3]
+             *     guard $ length set <= 2
+             *     setSum <- [-4..4]
+             *     guard $ sum set == setSum
+             *     return set
+             *   
+             * negative = do
+             *     set <- powerset [-4..3]
+             *     setSum <- [-4..4]
+             *     guard $ length set > 2 || sum set /= setSum
+             *     return set
+             */
+            @PositiveSolutions(32)
+            @NegativeSolutions(301)
+            @Override
+            public Pair<Constraint, Triple<SetVar, IntVar, IntVar>> setup(Solver solver) {
+                SetVar set = VF.set("set", -4, 3, solver);
+                IntVar setCard = enforcedCardVar(set, 0, 2);
+                IntVar sum = VF.enumerated("sum", -4, 4, solver);
+                return pair(Constraints.setSum(set, setCard, sum),
+                        triple(set, setCard, sum));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSumNonPositiveSet() {
-        /*
-         * import Control.Monad
-         *
-         * solutions = do
-         *     set <- filterM (const $ [True, False]) [-7..0]
-         *     guard $ -4 <= sum set && sum set <= 13
-         *     return set
-         */
-        Solver solver = new Solver();
-
-        SetVar set = VF.set("set", -7, 0, solver);
-        IntVar setCard = VF.enumerated("|set|", 0, 8, solver);
-        IntVar sum = VF.enumerated("sum", -4, 13, solver);
-
-        solver.post(Constraints.setSum(set, setCard, sum));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(set, setCard, sum);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(14, count);
-    }
-
-    @Test(timeout = 60000)
-    public void testPartiallySolved() {
-        Solver solver = new Solver();
-
-        SetVar set = VF.set("set", -4, 0, solver);
-        IntVar setCard = VF.enumerated("|set|", 3, 5, solver);
-        IntVar sum = VF.enumerated("sum", -4, -1, solver);
-
-        solver.post(Constraints.setSum(set, setCard, sum));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(set, setCard, sum);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(2, count);
+        randomizedTest(new TestCase<Triple<SetVar, IntVar, IntVar>>() {
+            /*
+             * import Control.Monad
+             *
+             * powerset = filterM (const [True, False])
+             *         
+             * positive = do
+             *     set <- powerset [-5..0]
+             *     guard $ length set <= 4
+             *     setSum <- [-4..2]
+             *     guard $ sum set == setSum
+             *     return set
+             *    
+             * negative = do
+             *     set <- powerset [-5..0]
+             *     guard $ length set <= 4
+             *     setSum <- [-4..2]
+             *     guard $ sum set /= setSum
+             *     return set
+             */
+            @PositiveSolutions(14)
+            @NegativeSolutions(385)
+            @Override
+            public Pair<Constraint, Triple<SetVar, IntVar, IntVar>> setup(Solver solver) {
+                SetVar set = VF.set("set", -5, 0, solver);
+                IntVar setCard = enforcedCardVar(set, 0, 4);
+                IntVar sum = VF.enumerated("sum", -4, 2, solver);
+                return pair(Constraints.setSum(set, setCard, sum),
+                        triple(set, setCard, sum));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSumKnown() {
-        Solver solver = new Solver();
-
-        SetVar set = VF.set("set", 0, 10, solver);
-        IntVar setCard = VF.enumerated("|set|", 1, 2, solver);
-        IntVar sum = VF.enumerated("sum", 2, 2, solver);
-
-        solver.post(Constraints.setSum(set, setCard, sum));
-
-        int count = 0;
-        if (randomizeStrategy(solver).findSolution()) {
-            do {
-                checkCorrectness(set, setCard, sum);
-                count++;
-            } while (solver.nextSolution());
-        }
-        assertEquals(2, count);
+        randomizedTest(new TestCase<Triple<SetVar, IntVar, IntVar>>() {
+            /*
+             * import Control.Monad
+             *
+             * powerset = filterM (const [True, False])
+             *
+             * positive = do
+             *     set <- powerset [-1..3]
+             *     guard $ length set >= 1 && length set <= 2
+             *     guard $ sum set == 2
+             *     return set
+             *
+             * negative = do
+             *     set <- powerset [-1..3]
+             *     guard $ length set >= 1 && length set <= 2
+             *     guard $ sum set /= 2
+             *     return set
+             */
+            @PositiveSolutions(3)
+            @NegativeSolutions(12)
+            @Override
+            public Pair<Constraint, Triple<SetVar, IntVar, IntVar>> setup(Solver solver) {
+                SetVar set = VF.set("set", -1, 3, solver);
+                IntVar setCard = enforcedCardVar(set, 1, 2);
+                IntVar sum = VF.enumerated("sum", 2, 2, solver);
+                return pair(Constraints.setSum(set, setCard, sum),
+                        triple(set, setCard, sum));
+            }
+        });
     }
 }

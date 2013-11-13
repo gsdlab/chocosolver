@@ -3,7 +3,6 @@ package org.clafer.choco.constraint.propagator;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
-import org.clafer.collection.FixedCapacityIntSet;
 import org.clafer.collection.MutableBoolean;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
@@ -123,19 +122,19 @@ public class PropJoinFunction extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        // Prune take
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (i < 0 || i >= refs.length || !PropUtil.isDomIntersectEnv(refs[i], to)) {
+                take.removeFromEnvelope(i, aCause);
+            }
+        }
+
         // Pick to and prune refs
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
             PropUtil.domSubsetEnv(refs[i], to, aCause);
             if (refs[i].instantiated()) {
                 int value = refs[i].getValue();
                 to.addToKernel(value, aCause);
-            }
-        }
-
-        // Prune take
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
-                take.removeFromEnvelope(i, aCause);
             }
         }
 
@@ -253,7 +252,7 @@ public class PropJoinFunction extends Propagator<Variable> {
 
             for (int takeKer = take.getKernelFirst(); takeKer != SetVar.END; takeKer = take.getKernelNext()) {
                 IntVar ref = refs[takeKer];
-                if(ref.removeValue(toEnv, aCause) && ref.instantiated()) {
+                if (ref.removeValue(toEnv, aCause) && ref.instantiated()) {
                     to.addToKernel(ref.getValue(), aCause);
                 }
             }
@@ -272,21 +271,32 @@ public class PropJoinFunction extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
+            if (i < 0 || i >= refs.length || !PropUtil.isDomIntersectEnv(refs[i], to)) {
+                return ESat.FALSE;
+            }
+            if (refs[i].instantiated()) {
+                int value = refs[i].getValue();
+                if (!to.envelopeContains(value)) {
+                    return ESat.FALSE;
+                }
+            }
+        }
+        int count = 0;
+        IntVar[] taken = new IntVar[take.getEnvelopeSize()];
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (i >= 0 && i < refs.length) {
+                taken[count++] = refs[i];
+            }
+        }
+        if(count < taken.length) {
+            taken = Arrays.copyOf(taken, count);
+        }
+        for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
+            if (!PropUtil.domsContain(taken, i)) {
                 return ESat.FALSE;
             }
         }
-        if (!take.instantiated() || !to.instantiated()) {
-            return ESat.UNDEFINED;
-        }
-        FixedCapacityIntSet values = new FixedCapacityIntSet(refs.length);
-        for (IntVar ref : refs) {
-            if (!ref.instantiated()) {
-                return ESat.UNDEFINED;
-            }
-            values.add(ref.getValue());
-        }
-        return values.containsAll(to.getValue()) ? ESat.TRUE : ESat.UNDEFINED;
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

@@ -113,7 +113,7 @@ public class PropSortedSetsCard extends Propagator<Variable> {
             high = newHigh;
         }
 
-        return isCompletelyInstantiated() ? ESat.TRUE : ESat.FALSE;
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
+import org.clafer.ClaferTest;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
@@ -14,13 +15,14 @@ import solver.constraints.LCF;
 import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
+import solver.variables.SetVar;
 import solver.variables.VF;
 
 /**
  *
  * @author jimmy
  */
-public class BasicBoolExprTest extends ExprTest {
+public class BasicBoolExprTest extends ClaferTest {
 
     @Test(timeout = 60000)
     public void testLone() {
@@ -312,9 +314,11 @@ public class BasicBoolExprTest extends ExprTest {
             }
 
             Solver solver = new Solver();
-            solver.post(Constraints.equal(
-                    toSetVar(s1, solver),
-                    toSetVar(s2, solver)));
+            SetVar v1 = toSetVar(s1, solver);
+            IntVar c1 = enforcedCardVar(v1);
+            SetVar v2 = toSetVar(s2, solver);
+            IntVar c2 = enforcedCardVar(v2);
+            solver.post(Constraints.equal(v1, c1, v2, c2));
 
             assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }
@@ -340,9 +344,11 @@ public class BasicBoolExprTest extends ExprTest {
             }
 
             Solver solver = new Solver();
-            solver.post(Constraints.notEqual(
-                    toSetVar(s1, solver),
-                    toSetVar(s2, solver)));
+            SetVar v1 = toSetVar(s1, solver);
+            IntVar c1 = enforcedCardVar(v1);
+            SetVar v2 = toSetVar(s2, solver);
+            IntVar c2 = enforcedCardVar(v2);
+            solver.post(Constraints.notEqual(v1, c1, v2, c2));
 
             assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
         }

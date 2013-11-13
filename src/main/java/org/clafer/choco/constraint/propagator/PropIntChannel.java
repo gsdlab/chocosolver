@@ -14,9 +14,9 @@ import util.ESat;
 import util.procedure.IntProcedure;
 
 /**
- * An idempotent and more efficient propagator than the default one.
- * Does not require an supplementary disjoint propagator like the default one.
- * 
+ * An idempotent and more efficient propagator than the default one. Does not
+ * require an supplementary disjoint propagator like the default one.
+ *
  * @author jimmy
  */
 public class PropIntChannel extends Propagator<Variable> {
@@ -73,7 +73,7 @@ public class PropIntChannel extends Propagator<Variable> {
         for (int i = 0; i < ints.length; i++) {
             int ub = ints[i].getUB();
             for (int j = ints[i].getLB(); j <= ub; j = ints[i].nextValue(j)) {
-                if (!sets[j].envelopeContains(i)) {
+                if (j < 0 || j >= sets.length || !sets[j].envelopeContains(i)) {
                     ints[i].removeValue(j, aCause);
                 }
             }
@@ -82,15 +82,15 @@ public class PropIntChannel extends Propagator<Variable> {
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
-                ints[j].instantiateTo(i, aCause);
+            for (int j = sets[i].getEnvelopeFirst(); j != SetVar.END; j = sets[i].getEnvelopeNext()) {
+                if (j < 0 || j >= ints.length || !ints[j].contains(i)) {
+                    sets[i].removeFromEnvelope(j, aCause);
+                }
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            for (int j = sets[i].getEnvelopeFirst(); j != SetVar.END; j = sets[i].getEnvelopeNext()) {
-                if (!ints[j].contains(i)) {
-                    sets[i].removeFromEnvelope(j, aCause);
-                }
+            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
+                ints[j].instantiateTo(i, aCause);
             }
         }
     }
@@ -102,7 +102,6 @@ public class PropIntChannel extends Propagator<Variable> {
 
             setsD[id].freeze();
             setsD[id].forEach(new IntProcedure() {
-
                 @Override
                 public void execute(int setKer) throws ContradictionException {
                     ints[setKer].instantiateTo(id, aCause);
@@ -114,7 +113,6 @@ public class PropIntChannel extends Propagator<Variable> {
                 }
             }, EventType.ADD_TO_KER);
             setsD[id].forEach(new IntProcedure() {
-
                 @Override
                 public void execute(int setEnv) throws ContradictionException {
                     if (ints[setEnv].removeValue(id, aCause) && ints[setEnv].instantiated()) {
@@ -135,7 +133,6 @@ public class PropIntChannel extends Propagator<Variable> {
 
             intsD[id].freeze();
             intsD[id].forEach(new IntProcedure() {
-
                 @Override
                 public void execute(int intRem) throws ContradictionException {
                     sets[intRem].removeFromEnvelope(id, aCause);
@@ -152,14 +149,15 @@ public class PropIntChannel extends Propagator<Variable> {
     public ESat isEntailed() {
         for (int i = 0; i < ints.length; i++) {
             if (ints[i].instantiated()) {
-                if (!sets[ints[i].getValue()].envelopeContains(i)) {
+                int value = ints[i].getValue();
+                if (value < 0 || value >= sets.length || !sets[value].envelopeContains(i)) {
                     return ESat.FALSE;
                 }
             }
         }
         for (int i = 0; i < sets.length; i++) {
             for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
-                if (!ints[j].contains(i)) {
+                if (j < 0 || j >= ints.length || !ints[j].contains(i)) {
                     return ESat.FALSE;
                 }
             }

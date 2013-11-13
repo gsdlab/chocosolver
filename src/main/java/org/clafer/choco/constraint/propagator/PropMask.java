@@ -128,11 +128,11 @@ public class PropMask extends Propagator<SetVar> {
             }
         }
         for (int i = masked.getKernelFirst(); i != SetVar.END; i = masked.getKernelNext()) {
-            if (!set.envelopeContains(i + from)) {
+            if (i < 0 || i >= to - from || !set.envelopeContains(i + from)) {
                 return ESat.FALSE;
             }
         }
-        return set.instantiated() && masked.instantiated() ? ESat.TRUE : ESat.FALSE;
+        return set.instantiated() && masked.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

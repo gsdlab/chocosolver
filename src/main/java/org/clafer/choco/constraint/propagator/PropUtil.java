@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import gnu.trove.TIntCollection;
 import gnu.trove.set.TIntSet;
 import solver.ICause;
 import solver.exception.ContradictionException;
@@ -96,38 +95,6 @@ public class PropUtil {
         }
         assert count == iterate.length;
         return iterate;
-    }
-
-    /**
-     * Returns the integer variables' values. Assumes the variables are
-     * instantiated.
-     *
-     * @param vars the variables
-     * @return the variables' values
-     */
-    public static int[] getValues(IntVar[] vars) {
-        int[] values = new int[vars.length];
-        for (int i = 0; i < values.length; i++) {
-            assert vars[i].instantiated();
-            values[i] = vars[i].getValue();
-        }
-        return values;
-    }
-
-    /**
-     * Returns the integer variables' values. Assumes the variables are
-     * instantiated.
-     *
-     * @param vars the variables
-     * @return the variables' values
-     */
-    public static int[][] getValues(SetVar[] vars) {
-        int[][] values = new int[vars.length][];
-        for (int i = 0; i < values.length; i++) {
-            assert vars[i].instantiated();
-            values[i] = vars[i].getValue();
-        }
-        return values;
     }
 
     /**
