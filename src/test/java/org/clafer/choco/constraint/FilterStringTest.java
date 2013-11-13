@@ -42,10 +42,11 @@ public class FilterStringTest extends ConstraintTest<Triple<SetVar, Integer, Pai
             @Override
             public Pair<Constraint, Triple<SetVar, Integer, Pair<IntVar[], IntVar[]>>> setup(Solver solver) {
                 SetVar set = toSetVar(randSet(), solver);
+                IntVar setCard = enforcedCardVar(set);
                 int offset = nextInt(5);
                 IntVar[] string = toIntVars(randInts(nextInt(3) + 1), solver);
                 IntVar[] result = toIntVars(randInts(nextInt(3) + 1), solver);
-                return pair(Constraints.filterString(set, offset, string, result),
+                return pair(Constraints.filterString(set, setCard, offset, string, result),
                         triple(set, offset, pair(string, result)));
             }
         });
@@ -73,11 +74,11 @@ public class FilterStringTest extends ConstraintTest<Triple<SetVar, Integer, Pai
             @Override
             public Pair<Constraint, Triple<SetVar, Integer, Pair<IntVar[], IntVar[]>>> setup(Solver solver) {
                 SetVar set = VF.set("set", 0, 2, solver);
+                IntVar setCard = enforcedCardVar(set);
                 int offset = 0;
                 IntVar[] string = VF.enumeratedArray("string", 3, 0, 2, solver);
                 IntVar[] result = VF.enumeratedArray("result", 3, -1, 2, solver);
-
-                return pair(Constraints.filterString(set, offset, string, result),
+                return pair(Constraints.filterString(set, setCard, offset, string, result),
                         triple(set, offset, pair(string, result)));
             }
         });

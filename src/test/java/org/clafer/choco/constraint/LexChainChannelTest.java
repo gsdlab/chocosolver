@@ -156,20 +156,20 @@ public class LexChainChannelTest extends ConstraintTest<Pair<IntVar[][], IntVar[
         solver.post(Constraints.intChannel(new SetVar[]{cheese0, cheese1, cheese2, unusedCheese}, cheeseParent));
         solver.post(ICF.arithm(cheeseParent[0], "<=", cheeseParent[1]));
         solver.post(ICF.arithm(cheeseParent[1], "<=", cheeseParent[2]));
-        solver.post(LCF.ifThen(SCF.member(VF.fixed(0, solver), food).reif().not(),
+        solver.post(LCF.ifThen(SCF.member(VF.fixed(0, solver), food).getOpposite(),
                 ICF.arithm(cheese0Card, "=", 0)));
-        solver.post(LCF.ifThen(SCF.member(VF.fixed(1, solver), food).reif().not(),
+        solver.post(LCF.ifThen(SCF.member(VF.fixed(1, solver), food).getOpposite(),
                 ICF.arithm(cheese1Card, "=", 0)));
-        solver.post(LCF.ifThen(SCF.member(VF.fixed(2, solver), food).reif().not(),
+        solver.post(LCF.ifThen(SCF.member(VF.fixed(2, solver), food).getOpposite(),
                 ICF.arithm(cheese2Card, "=", 0)));
 
         IntVar[] cheeseWeight = VF.enumeratedArray("cheeseweight", 3, 0, 0, solver);
         IntVar[] cheese0Index = VF.enumeratedArray("cheese0index", 3, -1, 2, solver);
         IntVar[] cheese1Index = VF.enumeratedArray("cheese1index", 3, -1, 2, solver);
         IntVar[] cheese2Index = VF.enumeratedArray("cheese2index", 3, -1, 2, solver);
-        solver.post(Constraints.filterString(cheese0, 0, cheeseWeight, cheese0Index));
-        solver.post(Constraints.filterString(cheese1, 0, cheeseWeight, cheese1Index));
-        solver.post(Constraints.filterString(cheese2, 0, cheeseWeight, cheese2Index));
+        solver.post(Constraints.filterString(cheese0, cheese0Card, 0, cheeseWeight, cheese0Index));
+        solver.post(Constraints.filterString(cheese1, cheese1Card, 0, cheeseWeight, cheese1Index));
+        solver.post(Constraints.filterString(cheese2, cheese2Card, 0, cheeseWeight, cheese2Index));
 
         IntVar[] foodWeight = VF.enumeratedArray("foodweight", 3, 0, 2, solver);
         solver.post(Constraints.lexChainChannel(new IntVar[][]{cheese0Index, cheese1Index, cheese2Index}, foodWeight));
@@ -183,8 +183,8 @@ public class LexChainChannelTest extends ConstraintTest<Pair<IntVar[][], IntVar[
 
         IntVar[] food0Index = VF.enumeratedArray("food0index", 3, -1, 2, solver);
         IntVar[] food1Index = VF.enumeratedArray("food2index", 3, -1, 2, solver);
-        solver.post(Constraints.filterString(food0, 0, foodWeight, food0Index));
-        solver.post(Constraints.filterString(food1, 0, foodWeight, food1Index));
+        solver.post(Constraints.filterString(food0, food0Card, 0, foodWeight, food0Index));
+        solver.post(Constraints.filterString(food1, food1Card, 0, foodWeight, food1Index));
 
         IntVar[] patronWeight = VF.enumeratedArray("patronWeight", 2, 0, 1, solver);
         solver.post(Constraints.lexChainChannel(new IntVar[][]{food0Index, food1Index}, patronWeight));

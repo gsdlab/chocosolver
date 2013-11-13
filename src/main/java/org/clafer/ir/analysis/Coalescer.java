@@ -51,6 +51,7 @@ import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrWithin;
+import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -361,7 +362,11 @@ public class Coalescer {
         public Void visit(IrSortStrings ir, Void a) {
             IrIntExpr[][] strings = ir.getStrings();
             for (int i = 0; i < strings.length - 1; i++) {
-                propagateLessThanEqualString(strings[i], strings[i + 1]);
+                if (ir.isStrict()) {
+                    propagateLessThanString(strings[i], strings[i + 1]);
+                } else {
+                    propagateLessThanEqualString(strings[i], strings[i + 1]);
+                }
             }
             return null;
         }
@@ -460,15 +465,25 @@ public class Coalescer {
         public Void visit(IrFilterString ir, Void a) {
             TIntIterator iter = ir.getSet().getEnv().iterator();
             int i = 0;
+            IrDomain values = Irs.EmptyDomain;
             while (iter.hasNext()) {
                 int env = iter.next();
                 if (!ir.getSet().getKer().contains(env)) {
-                    break;
+                    i = -1;
                 }
-                IrIntExpr string = ir.getString()[env - ir.getOffset()];
-                IrIntExpr result = ir.getResult()[i];
-                propagateEqual(string, result);
-                i++;
+                if (i >= 0) {
+                    IrIntExpr string = ir.getString()[env - ir.getOffset()];
+                    IrIntExpr result = ir.getResult()[i];
+                    propagateEqual(string, result);
+                    i++;
+                }
+                values = IrUtil.union(values, ir.getString()[env - ir.getOffset()].getDomain());
+            }
+            for (int j = 0; j < ir.getSet().getCard().getLowBound(); j++) {
+                propagateInt(values, ir.getResult()[j]);
+            }
+            for (int j = ir.getSet().getCard().getHighBound(); j < ir.getResult().length; j++) {
+                propagateInt(constantDomain(-1), ir.getResult()[j]);
             }
             return null;
         }

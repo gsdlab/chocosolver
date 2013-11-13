@@ -20,8 +20,6 @@ import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
-import org.clafer.choco.constraint.propagator.PropSetEqual;
-import org.clafer.choco.constraint.propagator.PropSetNotEqual;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
 import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
@@ -445,19 +443,22 @@ public class Constraints {
     /**
      * A constraint enforcing
      * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
-     * where {@code array} is the sorted array representation of the set.
+     * where {@code array} is the sorted array representation of the set. Does
+     * not enforce that {@code setCard = |setCard|} because of how the
+     * compilation works, it is already enforced elsewhere.
      *
      * @param set the set
+     * @param setCard the cardinality of {@code set}
      * @param offset the offset
      * @param string the string
      * @param result the result
      * @return constraint
      * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
      */
-    public static Constraint filterString(SetVar set, int offset, IntVar[] string, IntVar[] result) {
+    public static Constraint filterString(SetVar set, IntVar setCard, int offset, IntVar[] string, IntVar[] result) {
         Constraint<Variable, PropFilterString> constraint =
-                new Constraint<>(PropFilterString.buildArray(set, string, result), set.getSolver());
-        constraint.setPropagators(new PropFilterString(set, offset, string, result));
+                new Constraint<>(PropFilterString.buildArray(set, setCard, string, result), set.getSolver());
+        constraint.setPropagators(new PropFilterString(set, setCard, offset, string, result));
         return constraint;
     }
 

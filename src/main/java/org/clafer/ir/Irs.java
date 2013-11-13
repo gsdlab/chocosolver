@@ -1034,6 +1034,13 @@ public class Irs {
             filterResult[i] = Zero;
             i++;
         }
+        int cut = filterResult.length;
+        while (cut > 0 && Integer.valueOf(-1).equals(IrUtil.getConstant(filterResult[cut - 1]))) {
+            cut--;
+        }
+        if (cut != filterResult.length) {
+            filterResult = Arrays.copyOf(filterResult, cut);
+        }
         return new IrFilterString(set, offset, filterString, filterResult, BoolDomain);
     }
     /**

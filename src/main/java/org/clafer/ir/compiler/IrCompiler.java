@@ -958,7 +958,11 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrFilterString ir, BoolArg a) {
-            return _filter_string(compile(ir.getSet()).getSet(), ir.getOffset(), compile(ir.getString()), compile(ir.getResult()));
+            CSet set = compile(ir.getSet());
+            int offset = ir.getOffset();
+            IntVar[] string = compile(ir.getString());
+            IntVar[] result = compile(ir.getResult());
+            return Constraints.filterString(set.getSet(), set.getCard(), offset, string, result);
         }
     };
     private final IrIntExprVisitor<IntVar, Object> intExprCompiler = new IrIntExprVisitor<IntVar, Object>() {
@@ -1587,10 +1591,6 @@ public class IrCompiler {
 
     private static Constraint _lex_chain_channel(IntVar[][] strings, IntVar[] ints) {
         return Constraints.lexChainChannel(strings, ints);
-    }
-
-    private static Constraint _filter_string(SetVar set, int offset, IntVar[] string, IntVar[] result) {
-        return Constraints.filterString(set, offset, string, result);
     }
 
     private static Constraint _difference(CSet minuend, CSet subtrahend, CSet difference) {

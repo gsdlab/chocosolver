@@ -20,24 +20,27 @@ import util.ESat;
 public class PropFilterString extends Propagator<Variable> {
 
     private final SetVar set;
+    private final IntVar setCard;
     private final int offset;
     // Sorted in decreasing order. Non-negatives.
     private final IntVar[] string;
     private final IntVar[] result;
 
-    public PropFilterString(SetVar set, int offset, IntVar[] string, IntVar[] result) {
-        super(buildArray(set, string, result), PropagatorPriority.LINEAR, false);
+    public PropFilterString(SetVar set, IntVar setCard, int offset, IntVar[] string, IntVar[] result) {
+        super(buildArray(set, setCard, string, result), PropagatorPriority.LINEAR, false);
         this.set = set;
+        this.setCard = setCard;
         this.offset = offset;
         this.string = string;
         this.result = result;
     }
 
-    public static Variable[] buildArray(SetVar set, IntVar[] string, IntVar[] result) {
-        Variable[] array = new Variable[1 + string.length + result.length];
+    public static Variable[] buildArray(SetVar set, IntVar setCard, IntVar[] string, IntVar[] result) {
+        Variable[] array = new Variable[2 + string.length + result.length];
         array[0] = set;
-        System.arraycopy(string, 0, array, 1, string.length);
-        System.arraycopy(result, 0, array, 1 + string.length, result.length);
+        array[1] = setCard;
+        System.arraycopy(string, 0, array, 2, string.length);
+        System.arraycopy(result, 0, array, 2 + string.length, result.length);
         return array;
     }
 
@@ -45,28 +48,35 @@ public class PropFilterString extends Propagator<Variable> {
         return idx == 0;
     }
 
+    private boolean isSetCardVar(int idx) {
+        return idx == 1;
+    }
+
     private boolean isStringVar(int idx) {
-        return idx > 0 && idx <= string.length;
+        return idx >= 1 && idx < string.length + 2;
     }
 
     private int getStringVarIndex(int idx) {
         assert isStringVar(idx);
-        return idx - 1;
+        return idx - 2;
     }
 
     private boolean isResultVar(int idx) {
-        return idx > string.length;
+        return idx >= string.length + 2;
     }
 
     private int getResultVarIndex(int idx) {
         assert isResultVar(idx);
-        return idx - 1 - string.length;
+        return idx - 2 - string.length;
     }
 
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
             return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        }
+        if (isSetCardVar(vIdx)) {
+            return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
         }
         return EventType.INT_ALL_MASK();
     }
@@ -89,12 +99,12 @@ public class PropFilterString extends Propagator<Variable> {
         return changed;
     }
 
-    private boolean subset(IntVar sub, IntVar[] sups, int[] indices, int low, int high) throws ContradictionException {
+    private boolean subset(IntVar sub, IntVar[] sups, int[] indices, int low, int to) throws ContradictionException {
         boolean changed = false;
         int ub = sub.getUB();
         for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
             boolean found = false;
-            for (int i = low; i <= high; i++) {
+            for (int i = low; i < to; i++) {
                 if (sups[indices[i]].contains(val)) {
                     found = true;
                     break;
@@ -174,27 +184,24 @@ public class PropFilterString extends Propagator<Variable> {
             assert envIndex <= env.length;
             assert kerIndex == kerIndices.length;
 
+            int lb = setCard.getLB();
+            int ub = setCard.getUB();
+
+            for (; lb < result.length && !result[lb].contains(-1); lb++) {
+            }
+            changed |= setCard.updateLowerBound(lb, aCause);
             for (int i = 0; i < result.length; i++) {
                 if (i < kerIndices.length) {
-                    changed |= subset(result[i], string, env, i, kerIndices[i]);
+                    changed |= subset(result[i], string, env, i, kerIndices[i] + 1);
+                } else if (i < lb) {
+                    changed |= subset(result[i], string, env, i, envIndex);
+                } else if (i > ub) {
+                    changed |= result[i].instantiateTo(-1, aCause);
                 } else {
                     changed |= subsetOrNegativeOne(result[i], string, env, i, envIndex);
                 }
             }
         } while (changed);
-
-        if (set.instantiated()) {
-            for (int i = set.getKernelSize(); i < result.length; i++) {
-                result[i].instantiateTo(-1, aCause);
-            }
-        } else {
-            int i = set.getKernelSize();
-            for (; i < result.length && !result[i].contains(-1); i++) {
-            }
-            if (set.getEnvelopeSize() < i) {
-                contradiction(set, "Too few in envelope");
-            }
-        }
     }
 
     @Override
@@ -204,25 +211,28 @@ public class PropFilterString extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        if (!isCompletelyInstantiated()) {
-            return ESat.UNDEFINED;
-        }
         int index = 0;
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext(), index++) {
+        boolean continuous = true;
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext(), index++) {
             if (index >= result.length) {
                 return ESat.FALSE;
             }
             int x = i - offset;
-            if (x < 0 || x >= string.length || string[x].getValue() != result[index].getValue()) {
+            if (x < 0 || x >= string.length) {
+                return ESat.FALSE;
+            }
+            continuous = continuous && set.kernelContains(i);
+            if (continuous && string[x].instantiated() && result[index].instantiated()
+                    && string[x].getValue() != result[index].getValue()) {
                 return ESat.FALSE;
             }
         }
-        for (; index < result.length; index++) {
-            if (result[index].getValue() != -1) {
+        for (int i = set.getEnvelopeSize(); i < result.length; i++) {
+            if (!result[i].contains(-1)) {
                 return ESat.FALSE;
             }
         }
-        return ESat.TRUE;
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override
