@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.clafer.collection.FixedCapacityIntSet;
 import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
@@ -26,7 +25,7 @@ public class PropArrayToSet extends Propagator<Variable> {
     private final SetDeltaMonitor sD;
 
     public PropArrayToSet(IntVar[] as, SetVar s) {
-        super(buildArray(as, s), PropagatorPriority.BINARY, true);
+        super(buildArray(as, s), PropagatorPriority.TERNARY, true);
         if (as.length == 0) {
             throw new IllegalArgumentException();
         }
@@ -175,7 +174,6 @@ public class PropArrayToSet extends Propagator<Variable> {
             if (!PropUtil.isDomIntersectEnv(a, s)) {
                 return ESat.FALSE;
             }
-
         }
         for (int i = s.getKernelFirst(); i != SetVar.END; i = s.getKernelNext()) {
             if (!PropUtil.domsContain(as, i)) {

@@ -17,7 +17,7 @@ public class PropSortedSets extends Propagator<SetVar> {
     private final SetVar[] sets;
 
     public PropSortedSets(SetVar[] sets) {
-        super(sets, PropagatorPriority.QUADRATIC, false);
+        super(sets, PropagatorPriority.LINEAR, false);
         this.sets = sets;
     }
 
@@ -51,10 +51,8 @@ public class PropSortedSets extends Propagator<SetVar> {
 
     @Override
     public ESat isEntailed() {
-        boolean allInstantiated = true;
         for (int i = 0; i < sets.length; i++) {
             SetVar set = sets[i];
-            allInstantiated = allInstantiated && set.instantiated();
             int cur = set.getKernelFirst();
             if (cur != SetVar.END) {
                 for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
@@ -66,7 +64,7 @@ public class PropSortedSets extends Propagator<SetVar> {
                 }
             }
         }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

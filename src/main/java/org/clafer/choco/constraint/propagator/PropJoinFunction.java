@@ -3,6 +3,7 @@ package org.clafer.choco.constraint.propagator;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
+import memory.structure.IndexedBipartiteSet;
 import org.clafer.collection.MutableBoolean;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
@@ -35,6 +36,7 @@ public class PropJoinFunction extends Propagator<Variable> {
 
     private final SetVar take;
     private final SetDeltaMonitor takeD;
+    private final IndexedBipartiteSet dontCare;
     private final IntVar[] refs;
     private final IIntDeltaMonitor[] refsD;
     private final SetVar to;
@@ -44,6 +46,7 @@ public class PropJoinFunction extends Propagator<Variable> {
         super(buildArray(take, to, refs), PropagatorPriority.QUADRATIC, true);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
+        this.dontCare = new IndexedBipartiteSet(take.getSolver().getEnvironment(), PropUtil.iterateEnv(take));
         this.refs = refs;
         this.refsD = PropUtil.monitorDeltas(refs, aCause);
         this.to = to;
@@ -73,6 +76,14 @@ public class PropJoinFunction extends Propagator<Variable> {
     private int getRefVarIndex(int idx) {
         assert isRefVar(idx);
         return idx - 2;
+    }
+
+    @Override
+    public boolean advise(int idxVarInProp, int mask) {
+        if (isRefVar(idxVarInProp)) {
+            return dontCare.contains(getRefVarIndex(idxVarInProp));
+        }
+        return super.advise(idxVarInProp, mask);
     }
 
     @Override
@@ -126,6 +137,7 @@ public class PropJoinFunction extends Propagator<Variable> {
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i < 0 || i >= refs.length || !PropUtil.isDomIntersectEnv(refs[i], to)) {
                 take.removeFromEnvelope(i, aCause);
+                dontCare.remove(i);
             }
         }
 
@@ -159,6 +171,7 @@ public class PropJoinFunction extends Propagator<Variable> {
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
                     if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
                         take.removeFromEnvelope(i, aCause);
+                        dontCare.remove(i);
                         // Cannot call findMate here because we inside iterating take env.
                         // Queue up the even to do later.
                         if (removed == null) {
@@ -207,6 +220,7 @@ public class PropJoinFunction extends Propagator<Variable> {
             if (EventType.isRemove(mask)) {
                 if (!PropUtil.isDomIntersectEnv(ref, to)) {
                     take.removeFromEnvelope(id, aCause);
+                    dontCare.remove(id);
                 }
             }
             if (ref.instantiated()) {
@@ -221,6 +235,7 @@ public class PropJoinFunction extends Propagator<Variable> {
         public void execute(int takeEnv) throws ContradictionException {
             assert !take.envelopeContains(takeEnv);
 
+            dontCare.remove(takeEnv);
             IntVar ref = refs[takeEnv];
             int ub = ref.getUB();
             for (int i = ref.getLB(); i <= ub; i = ref.nextValue(i)) {
@@ -281,14 +296,17 @@ public class PropJoinFunction extends Propagator<Variable> {
                 }
             }
         }
+        boolean completelyInstantiated = take.instantiated() && to.instantiated();
         int count = 0;
         IntVar[] taken = new IntVar[take.getEnvelopeSize()];
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i >= 0 && i < refs.length) {
-                taken[count++] = refs[i];
+                IntVar ref = refs[i];
+                completelyInstantiated = completelyInstantiated && ref.instantiated();
+                taken[count++] = ref;
             }
         }
-        if(count < taken.length) {
+        if (count < taken.length) {
             taken = Arrays.copyOf(taken, count);
         }
         for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
@@ -296,7 +314,7 @@ public class PropJoinFunction extends Propagator<Variable> {
                 return ESat.FALSE;
             }
         }
-        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return completelyInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

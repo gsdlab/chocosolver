@@ -27,7 +27,7 @@ public class PropFilterString extends Propagator<Variable> {
     private final IntVar[] result;
 
     public PropFilterString(SetVar set, IntVar setCard, int offset, IntVar[] string, IntVar[] result) {
-        super(buildArray(set, setCard, string, result), PropagatorPriority.LINEAR, false);
+        super(buildArray(set, setCard, string, result), PropagatorPriority.QUADRATIC, false);
         this.set = set;
         this.setCard = setCard;
         this.offset = offset;
@@ -68,6 +68,14 @@ public class PropFilterString extends Propagator<Variable> {
     private int getResultVarIndex(int idx) {
         assert isResultVar(idx);
         return idx - 2 - string.length;
+    }
+
+    @Override
+    public boolean advise(int idxVarInProp, int mask) {
+        if (isStringVar(idxVarInProp)) {
+            return set.envelopeContains(getStringVarIndex(idxVarInProp) + offset);
+        }
+        return super.advise(idxVarInProp, mask);
     }
 
     @Override
@@ -212,8 +220,7 @@ public class PropFilterString extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         int index = 0;
-        boolean continuous = true;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext(), index++) {
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END && set.kernelContains(i); i = set.getEnvelopeNext(), index++) {
             if (index >= result.length) {
                 return ESat.FALSE;
             }
@@ -221,8 +228,7 @@ public class PropFilterString extends Propagator<Variable> {
             if (x < 0 || x >= string.length) {
                 return ESat.FALSE;
             }
-            continuous = continuous && set.kernelContains(i);
-            if (continuous && string[x].instantiated() && result[index].instantiated()
+            if (string[x].instantiated() && result[index].instantiated()
                     && string[x].getValue() != result[index].getValue()) {
                 return ESat.FALSE;
             }

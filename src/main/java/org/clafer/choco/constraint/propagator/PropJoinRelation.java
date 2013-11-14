@@ -3,6 +3,7 @@ package org.clafer.choco.constraint.propagator;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
+import memory.structure.IndexedBipartiteSet;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -30,6 +31,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
 
     private final SetVar take;
     private final SetDeltaMonitor takeD;
+    private final IndexedBipartiteSet dontCare;
     private final SetVar[] children;
     private final SetDeltaMonitor[] childrenD;
     private final SetVar to;
@@ -39,6 +41,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
         super(buildArray(take, to, children), PropagatorPriority.QUADRATIC, true);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
+        this.dontCare = new IndexedBipartiteSet(take.getSolver().getEnvironment(), PropUtil.iterateEnv(take));
         this.children = children;
         this.childrenD = PropUtil.monitorDeltas(children, aCause);
         this.to = to;
@@ -68,6 +71,14 @@ public class PropJoinRelation extends Propagator<SetVar> {
     private int getChildVarIndex(int idx) {
         assert isChildVar(idx);
         return idx - 2;
+    }
+
+    @Override
+    public boolean advise(int idxVarInProp, int mask) {
+        if (isChildVar(idxVarInProp)) {
+            return dontCare.contains(getChildVarIndex(idxVarInProp));
+        }
+        return super.advise(idxVarInProp, mask);
     }
 
     @Override
@@ -106,6 +117,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i < 0 || i >= children.length || !PropUtil.isKerSubsetEnv(children[i], to)) {
                 take.removeFromEnvelope(i, aCause);
+                dontCare.remove(i);
             }
         }
 
@@ -138,6 +150,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
                     if (!PropUtil.isKerSubsetEnv(children[i], to)) {
                         take.removeFromEnvelope(i, aCause);
+                        dontCare.remove(i);
                         // Cannot call findMate here because we inside iterating take env.
                         // Queue up the even to do later.
                         if (removed == null) {
@@ -176,6 +189,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
                     public void execute(int childKer) throws ContradictionException {
                         if (!to.envelopeContains(childKer)) {
                             take.removeFromEnvelope(id, aCause);
+                            dontCare.remove(id);
                             for (int i = children[id].getEnvelopeFirst(); i != SetVar.END; i = children[id].getEnvelopeNext()) {
                                 if (to.envelopeContains(i)) {
                                     findMate(i);
@@ -193,7 +207,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
         @Override
         public void execute(int takeEnv) throws ContradictionException {
             assert !take.envelopeContains(takeEnv);
-
+            dontCare.remove(takeEnv);
             for (int i = children[takeEnv].getEnvelopeFirst(); i != SetVar.END; i = children[takeEnv].getEnvelopeNext()) {
                 if (to.envelopeContains(i)) {
                     findMate(i);
@@ -263,11 +277,14 @@ public class PropJoinRelation extends Propagator<SetVar> {
                 }
             }
         }
+        boolean completelyInstantiated = take.instantiated() && to.instantiated();
         int count = 0;
         SetVar[] taken = new SetVar[take.getEnvelopeSize()];
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i >= 0 && i < children.length) {
-                taken[count++] = children[i];
+                SetVar child = children[i];
+                completelyInstantiated = completelyInstantiated && child.instantiated();
+                taken[count++] = child;
             }
         }
         if (count < taken.length) {
@@ -278,7 +295,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
                 return ESat.FALSE;
             }
         }
-        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return completelyInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

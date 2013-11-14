@@ -343,14 +343,22 @@ public class Coalescer {
 
         @Override
         public Void visit(IrSortSets ir, Void a) {
+            IrSetExpr[] sets = ir.getSets();
             int low = 0;
             int high = 0;
-            for (IrSetExpr set : ir.getSets()) {
+            for (int i = 0; i < sets.length; i++) {
+                IrSetExpr set = sets[i];
                 IrDomain card = set.getCard();
                 int newLow = low + card.getLowBound();
                 int newHigh = high + card.getHighBound();
                 IrDomain env = boundDomain(low, newHigh - 1);
-                IrDomain ker = high < newLow ? boundDomain(high, newLow - 1) : null;
+                IrDomain ker = set.getKer();
+                if (!ker.isEmpty() && !ker.isBounded()) {
+                    ker = Irs.boundDomain(ker.getLowBound(), ker.getHighBound());
+                }
+                if (high < newLow) {
+                    ker = IrUtil.union(ker, boundDomain(high, newLow - 1));
+                }
                 propagateSet(new PartialSet(env, ker, null), set);
                 low = newLow;
                 high = newHigh;

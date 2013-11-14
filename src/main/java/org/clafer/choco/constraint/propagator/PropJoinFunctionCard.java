@@ -73,6 +73,14 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
     }
 
     @Override
+    public boolean advise(int idxVarInProp, int mask) {
+        if (isRefVar(idxVarInProp)) {
+            return take.envelopeContains(getRefVarIndex(idxVarInProp));
+        }
+        return super.advise(idxVarInProp, mask);
+    }
+
+    @Override
     public int getPropagationConditions(int vIdx) {
         if (isTakeVar(vIdx)) {
             return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
@@ -253,14 +261,13 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             }
         }
 
+        boolean completelyInstantiated = take.instantiated() && takeCard.instantiated() && toCard.instantiated();
         int instCard = map.size();
-
-        int uninstantiated = 0;
-
         int minUninstantiated = Math.max(0, takeCard.getLB() - take.getKernelSize());
         int maxUninstantiated = Math.max(0, takeCard.getUB() - take.getKernelSize());
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i >= 0 && i < refs.length && !refs[i].instantiated()) {
+                completelyInstantiated = false;
                 if (take.kernelContains(i)) {
                     minUninstantiated++;
                 }
@@ -280,7 +287,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             return ESat.FALSE;
         }
 
-        return uninstantiated == 0 ? ESat.TRUE : ESat.UNDEFINED;
+        return completelyInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

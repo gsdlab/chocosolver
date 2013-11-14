@@ -60,6 +60,14 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
     }
 
     @Override
+    public boolean advise(int idxVarInProp, int mask) {
+        if (isChildCardVar(idxVarInProp)) {
+            return take.envelopeContains(getChildCardVarIndex(idxVarInProp));
+        }
+        return super.advise(idxVarInProp, mask);
+    }
+
+    @Override
     public int getPropagationConditions(int vIdx) {
         if (isTakeVar(vIdx)) {
             return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
@@ -109,7 +117,6 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             maxCard -= maxCardDec;
         } while (changed);
 
-        // TODO: update toCard?
         int lb = toCard.getLB();
         int ub = toCard.getUB();
         int[] envLbs = new int[take.getEnvelopeSize() - take.getKernelSize()];
@@ -134,7 +141,7 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             kerMinCard += envLbs[i];
         }
         takeCard.updateUpperBound(i + take.getKernelSize(), aCause);
-        for(i = envUbs.length - 1; i >= 0 && kerMaxCard < lb; i--) {
+        for (i = envUbs.length - 1; i >= 0 && kerMaxCard < lb; i--) {
             kerMaxCard += envUbs[i];
         }
         takeCard.updateLowerBound(envUbs.length - 1 - i + take.getKernelSize(), aCause);
@@ -147,25 +154,28 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        return ESat.TRUE;
-//        int minCard = 0;
-//        int maxCard = 0;
-//        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-//            IntVar childCard = childrenCards[i];
-//            if (take.kernelContains(i)) {
-//                minCard += childCard.getLB();
-//            }
-//            maxCard += childCard.getUB();
-//        }
-//
-//        if (toCard.getUB() < minCard) {
-//            return ESat.FALSE;
-//        }
-//        if (toCard.getLB() > maxCard) {
-//            return ESat.FALSE;
-//        }
-//
-//        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        boolean completelyInstantiated = take.instantiated() && takeCard.instantiated() && toCard.instantiated();
+        int minCard = 0;
+        int maxCard = 0;
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (i >= 0 && i < childrenCards.length) {
+                IntVar childCard = childrenCards[i];
+                completelyInstantiated = completelyInstantiated && childCard.instantiated();
+                if (take.kernelContains(i)) {
+                    minCard += childCard.getLB();
+                }
+                maxCard += childCard.getUB();
+            }
+        }
+
+        if (toCard.getUB() < minCard) {
+            return ESat.FALSE;
+        }
+        if (toCard.getLB() > maxCard) {
+            return ESat.FALSE;
+        }
+
+        return completelyInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override
