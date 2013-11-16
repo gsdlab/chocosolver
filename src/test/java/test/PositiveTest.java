@@ -30,6 +30,8 @@ public class PositiveTest {
             ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
 
             assertTrue(test + " failed", s.find());
+            for (int i = 0; i < 10 && s.find(); i++) {
+            }
         }
     }
 }
