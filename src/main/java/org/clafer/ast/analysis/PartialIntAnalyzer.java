@@ -1,6 +1,5 @@
 package org.clafer.ast.analysis;
 
-import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,18 +13,22 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstGlobal;
+import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
-import org.clafer.ast.AstSetTest.Op;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
 import org.clafer.collection.FList;
 import static org.clafer.collection.FList.*;
 import org.clafer.collection.Pair;
+import org.clafer.ir.IrDomain;
+import org.clafer.ir.IrUtil;
+import org.clafer.ir.Irs;
+import org.clafer.scope.Scope;
 
 /**
  *
@@ -35,7 +38,7 @@ public class PartialIntAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstRef, int[][]> partialInts = new HashMap<>();
+        Map<AstRef, IrDomain[]> partialInts = new HashMap<>();
 
         List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
@@ -58,7 +61,7 @@ public class PartialIntAnalyzer implements Analyzer {
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer.hasRef()) {
                 int scope = analysis.getScope(clafer);
-                int[][] ints = new int[scope][];
+                IrDomain[] ints = new IrDomain[scope];
                 for (int i = 0; i < scope; i++) {
                     ints[i] = partialInts(i, clafer.getRef(), automata, analysis);
                 }
@@ -68,21 +71,27 @@ public class PartialIntAnalyzer implements Analyzer {
         return analysis.setPartialIntsMap(partialInts);
     }
 
-    private static int[] partialInts(
+    private static IrDomain partialInts(
             final int id, final AstRef ref, final AssignmentAutomata automata,
             final Analysis analysis) {
-        TIntArrayList ints = new TIntArrayList();
-        AstClafer clafer = ref.getSourceType();
-        if (partialInts(new int[]{id}, clafer, automata, analysis, ints)) {
-            return ints.toArray();
+        TIntHashSet ints = new TIntHashSet();
+        AstClafer source = ref.getSourceType();
+        AstClafer target = ref.getTargetType();
+        if (!partialInts(new int[]{id}, source, automata, analysis, ints)) {
+            Scope scope = analysis.getScope();
+            IrDomain unbounded =
+                    target instanceof AstIntClafer
+                    ? Irs.boundDomain(scope.getIntLow(), scope.getIntHigh())
+                    : Irs.fromToDomain(0, scope.getScope(target));
+            return IrUtil.union(unbounded, Irs.enumDomain(ints));
         }
-        return null;
+        return Irs.enumDomain(ints);
     }
 
     private static boolean partialInts(
             final int[] ids, final AstClafer clafer, final AssignmentAutomata automata,
             final Analysis analysis,
-            final TIntArrayList ints) {
+            final TIntHashSet ints) {
         if (clafer instanceof AstConcreteClafer) {
             AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
             final Automata transition = automata.transition(concreteClafer);
@@ -113,20 +122,18 @@ public class PartialIntAnalyzer implements Analyzer {
             }
             parentIds.add(concreteId.getSnd());
         }
+        boolean covered = true;
         for (Entry<AstConcreteClafer, TIntHashSet> entry : parentIdsMap.entrySet()) {
-            if (!partialInts(entry.getValue().toArray(), entry.getKey(), automata,
-                    analysis, ints)) {
-                return false;
-            }
+            covered &= partialInts(entry.getValue().toArray(), entry.getKey(), automata, analysis, ints);
         }
-        return true;
+        return covered;
     }
 
     private static Pair< FList<AstConcreteClafer>, Integer> analyze(
             AstBoolExpr exp) throws NotAssignmentException {
         if (exp instanceof AstSetTest) {
             AstSetTest compare = (AstSetTest) exp;
-            if (Op.Equal.equals(compare.getOp())) {
+            if (AstSetTest.Op.Equal.equals(compare.getOp())) {
                 if (compare.getLeft() instanceof AstJoinRef && compare.getRight() instanceof AstConstant) {
                     return analyzeEqual((AstJoinRef) compare.getLeft(), (AstConstant) compare.getRight());
                 }

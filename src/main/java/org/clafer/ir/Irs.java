@@ -46,6 +46,13 @@ public class Irs {
         return boundDomain(value, value);
     }
 
+    public static IrDomain fromToDomain(int from, int to) {
+        if (from == to) {
+            return EmptyDomain;
+        }
+        return boundDomain(from, to - 1);
+    }
+
     public static IrDomain boundDomain(int low, int high) {
         if (low == 0 && high == 0) {
             return ZeroDomain;

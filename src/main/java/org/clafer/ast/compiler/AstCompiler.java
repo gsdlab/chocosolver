@@ -1314,23 +1314,13 @@ public class AstCompiler {
         AstClafer tar = ref.getTargetType();
 
         PartialSolution partialSolution = getPartialSolution(src);
-        int[][] partialInts = getPartialInts(ref);
+        IrDomain[] partialInts = getPartialInts(ref);
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
         for (int i = 0; i < ivs.length; i++) {
-            if (partialInts[i] == null) {
-                int tarLow = getScopeLow(tar);
-                int tarHigh = getScopeHigh(tar);
-                IrDomain domain = tarLow <= tarHigh ? boundDomain(tarLow, tarHigh) : ZeroDomain;
-                if (!partialSolution.hasClafer(i)) { // The ref may need to be zeroed out.
-                    domain = IrUtil.add(domain, getUninitalizedRef(tar));
-                }
-                ivs[i] = domainInt(src.getName() + "@Ref" + i, domain);
+            if (partialSolution.hasClafer(i)) {
+                ivs[i] = domainInt(src.getName() + "@Ref" + i, partialInts[i]);
             } else {
-                if (partialSolution.hasClafer(i)) {
-                    ivs[i] = enumInt(src.getName() + "@Ref" + i, partialInts[i]);
-                } else {
-                    ivs[i] = enumInt(src.getName() + "@Ref" + i, Util.cons(getUninitalizedRef(tar), partialInts[i]));
-                }
+                ivs[i] = domainInt(src.getName() + "@Ref" + i, IrUtil.add(partialInts[i], getUninitalizedRef(tar)));
             }
         }
 
@@ -1393,7 +1383,7 @@ public class AstCompiler {
         return getPartialSolution(clafer.getParent());
     }
 
-    private int[][] getPartialInts(AstRef ref) {
+    private IrDomain[] getPartialInts(AstRef ref) {
         return analysis.getPartialInts(ref);
     }
 
