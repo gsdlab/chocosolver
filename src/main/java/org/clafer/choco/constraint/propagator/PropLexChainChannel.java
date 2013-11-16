@@ -1,7 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import org.clafer.collection.FixedCapacityIntSet;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
@@ -129,21 +128,46 @@ public class PropLexChainChannel extends Propagator<IntVar> {
     }
 
     private boolean lessThanString(IntVar[] a, IntVar[] b) throws ContradictionException {
-        boolean changed = false;
-        for (int x = 0; x < a.length - 1; x++) {
-            switch (compare(a[x], b[x])) {
-                case LT:
-                case LE:
-                case UNKNOWN:
-                    return changed;
-                case GT:
-                case GE:
-                    changed |= equal(a[x], b[x]);
-                    break;
+        return lessThanString(a, b, 0);
+    }
+
+    private boolean lessThanString(IntVar[] a, IntVar[] b, int index) throws ContradictionException {
+        if (index == a.length) {
+            if(index == b.length) {
+                contradiction(a[0], "a = b");
             }
+            return false;
         }
-        // All equal except for the last character.
-        return lessThan(a[a.length - 1], b[a.length - 1]) || changed;
+        if (index == b.length) {
+            assert a.length != b.length;
+            contradiction(a[index], "a > b");
+        }
+        switch (compare(a[index], b[index])) {
+            case EQ:
+                return lessThanString(a, b, index + 1);
+            case LT:
+                return false;
+            case GT:
+                contradiction(a[index], "a > b");
+                return true;
+            case LE:
+            case GE:
+            case UNKNOWN:
+                switch (compareString(a, b, index + 1)) {
+                    case EQ:
+                    case GT:
+                    case GE:
+                        return lessThan(a[index], b[index]);
+                    case LT:
+                    case LE:
+                    case UNKNOWN:
+                        return lessThanEqual(a[index], b[index]);
+                    default:
+                        throw new IllegalStateException();
+                }
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     private boolean lessThan(IntVar a, IntVar b) throws ContradictionException {
@@ -153,14 +177,43 @@ public class PropLexChainChannel extends Propagator<IntVar> {
     }
 
     private boolean lessThanEqualString(IntVar[] a, IntVar[] b) throws ContradictionException {
-        for (int x = 0; x < a.length; x++) {
-            Ordering charOrd = compare(a[x], b[x]);
-            if (!Ordering.EQ.equals(charOrd)) {
-                return lessThanEqual(a[x], b[x]);
-            }
+        return lessThanEqualString(a, b, 0);
+    }
+
+    private boolean lessThanEqualString(IntVar[] a, IntVar[] b, int index) throws ContradictionException {
+        if (index == a.length) {
+            return false;
         }
-        // The two strings are equal.
-        return false;
+        if (index == b.length) {
+            assert a.length != b.length;
+            contradiction(a[index], "a > b");
+        }
+        switch (compare(a[index], b[index])) {
+            case EQ:
+                return lessThanEqualString(a, b, index + 1);
+            case LT:
+                return false;
+            case GT:
+                contradiction(a[index], "a > b");
+                return true;
+            case LE:
+            case GE:
+            case UNKNOWN:
+                switch (compareString(a, b, index + 1)) {
+                    case EQ:
+                    case LT:
+                    case LE:
+                    case GE:
+                    case UNKNOWN:
+                        return lessThanEqual(a[index], b[index]);
+                    case GT:
+                        return lessThan(a[index], b[index]);
+                    default:
+                        throw new IllegalStateException();
+                }
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     private boolean lessThanEqual(IntVar a, IntVar b) throws ContradictionException {
