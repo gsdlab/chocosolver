@@ -35,9 +35,9 @@ public class AbstractOffsetAnalyzer implements Analyzer {
                 public int compare(AstClafer o1, AstClafer o2) {
                     Card card1 = analysis.getGlobalCard(o1);
                     Card card2 = analysis.getGlobalCard(o2);
-                    double ratio1 = ((double) card1.getLow()) / ((double) card1.getHigh());
-                    double ratio2 = ((double) card2.getLow()) / ((double) card2.getHigh());
-                    return Double.compare(ratio1, ratio2);
+                    double ratio1 = ((double) card1.getLow() + 1) / ((double) card1.getHigh() + 1);
+                    double ratio2 = ((double) card2.getLow() + 1) / ((double) card2.getHigh() + 1);
+                    return -Double.compare(ratio1, ratio2);
                 }
             });
             for (AstClafer sub : subs) {
