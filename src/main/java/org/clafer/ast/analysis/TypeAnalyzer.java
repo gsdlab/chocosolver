@@ -1,8 +1,6 @@
 package org.clafer.ast.analysis;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -150,29 +148,12 @@ public class TypeAnalyzer implements Analyzer {
          * @return the same expression but with the target type
          */
         private AstSetExpr castTo(TypedExpr<AstSetExpr> expr, AstClafer target) {
-            int exprDepth = AstUtil.getSuperHierarchy(expr.getCommonSupertype()).size();
-            int targetDepth = AstUtil.getSuperHierarchy(target).size();
-
-            if (exprDepth < targetDepth) {
-                return downcastTo(expr, target);
-            } else if (exprDepth > targetDepth) {
+            if (AstUtil.isAssignable(expr.getCommonSupertype(), target)) {
                 return upcastTo(expr, target);
+            } else if (isAnyAssignable(expr.getUnionType(), target)) {
+                return downcastTo(expr, target);
             }
-            return expr.getExpr();
-        }
-
-        private Collection<AstClafer> downcastTrail(AstClafer type, AstClafer target) {
-            List<AstClafer> supers = new ArrayList<>();
-            AstClafer sup = target;
-            while (sup != null) {
-                if (sup.equals(type)) {
-                    Collections.reverse(supers);
-                    return supers;
-                }
-                supers.add(sup);
-                sup = sup.getSuperClafer();
-            }
-            throw new TypeException("Cannot downcast " + type + " to " + target);
+            throw new TypeException("Cannot cast " + expr.getType() + " to " + target);
         }
 
         /**
@@ -183,16 +164,15 @@ public class TypeAnalyzer implements Analyzer {
          * @return the same expression but with the target type
          */
         private AstSetExpr downcastTo(TypedExpr<AstSetExpr> expr, AstClafer target) {
-            Type exprType = expr.getType();
-            if (exprType.getCommonSuperType().equals(target)) {
+            if (expr.getType().getCommonSuperType().equals(target)) {
                 return expr.getExpr();
             }
-            AstSetExpr superExpr = expr.getExpr();
-            for (AstClafer superType : downcastTrail(exprType.getCommonSuperType(), target)) {
-                superExpr = downcast(superExpr, superType);
-                put(Type.basicType(superType), superExpr);
+            if (isAnyAssignable(expr.getUnionType(), target)) {
+                AstSetExpr subExpr = downcast(expr.getExpr(), target);
+                put(Type.basicType(target), subExpr);
+                return subExpr;
             }
-            return superExpr;
+            throw new TypeException("Cannot downcast " + expr.getType() + " to " + target);
         }
 
         /**
@@ -203,18 +183,13 @@ public class TypeAnalyzer implements Analyzer {
          * @return the same expression but with the target type
          */
         private AstSetExpr upcastTo(TypedExpr<AstSetExpr> expr, AstClafer target) {
-            Type exprType = expr.getType();
-            if (exprType.getCommonSuperType().equals(target)) {
+            if (expr.getType().getCommonSuperType().equals(target)) {
                 return expr.getExpr();
             }
-            AstSetExpr superExpr = expr.getExpr();
-            List<AstAbstractClafer> superTypes = AstUtil.getSupers(exprType.getCommonSuperType());
-            for (AstAbstractClafer superType : superTypes) {
-                superExpr = upcast(superExpr, superType);
-                put(Type.basicType(superType), superExpr);
-                if (superType.equals(target)) {
-                    return superExpr;
-                }
+            if (AstUtil.isAssignable(expr.getCommonSupertype(), target)) {
+                AstSetExpr superExpr = upcast(expr.getExpr(), (AstAbstractClafer) target);
+                put(Type.basicType(target), superExpr);
+                return superExpr;
             }
             throw new TypeException("Cannot upcast " + expr.getType() + " to " + target);
         }
@@ -534,7 +509,7 @@ public class TypeAnalyzer implements Analyzer {
         return types;
     }
 
-    private static <T extends AstBoolExpr> AstBoolExpr[] getBoolExprs(TypedExpr<T>... exprs) {
+    private static <T extends AstBoolExpr> AstBoolExpr[] getBoolExprs(TypedExpr<T>[] exprs) {
         AstBoolExpr[] boolExprs = new AstBoolExpr[exprs.length];
         for (int i = 0; i < boolExprs.length; i++) {
             boolExprs[i] = exprs[i].getExpr();
@@ -542,7 +517,7 @@ public class TypeAnalyzer implements Analyzer {
         return boolExprs;
     }
 
-    private static <T extends AstSetExpr> AstSetExpr[] getSetExprs(TypedExpr<T>... exprs) {
+    private static <T extends AstSetExpr> AstSetExpr[] getSetExprs(TypedExpr<T>[] exprs) {
         AstSetExpr[] setExprs = new AstSetExpr[exprs.length];
         for (int i = 0; i < setExprs.length; i++) {
             setExprs[i] = exprs[i].getExpr();

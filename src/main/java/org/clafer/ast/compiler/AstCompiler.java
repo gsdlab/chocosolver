@@ -1398,7 +1398,14 @@ public class AstCompiler {
     }
 
     private int getOffset(AstAbstractClafer sup, AstClafer sub) {
-        return analysis.getOffsets(sup).getOffset(sub);
+        int offset = 0;
+        for (AstClafer cur = sub; !sup.equals(cur); cur = cur.getSuperClafer()) {
+            if (!cur.hasSuperClafer()) {
+                throw new AstException(sub + " is not a sub clafer of " + sup);
+            }
+            offset += analysis.getOffsets(cur.getSuperClafer()).getOffset(cur);
+        }
+        return offset;
     }
 
     private Card getCard(AstConcreteClafer clafer) {

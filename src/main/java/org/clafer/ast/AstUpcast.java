@@ -30,6 +30,20 @@ public class AstUpcast implements AstSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AstUpcast) {
+            AstUpcast other = (AstUpcast) obj;
+            return base.equals(other.base) && target.equals(other.target);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 203 ^ base.hashCode() ^ target.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "(" + target + ") " + base;
     }
