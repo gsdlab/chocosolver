@@ -38,8 +38,8 @@ public class EitherTest {
         Either<Integer, Integer>[] eithers = new Either[]{
             left(1), left(2), right(3), left(4), right(5)};
         Integer[] lefts = new Integer[]{1, 2, 4};
-        assertArrayEquals(lefts, Either.filterLefts(eithers));
-        assertEquals(Arrays.asList(lefts), Either.filterLefts(Arrays.asList(eithers)));
+        assertArrayEquals(lefts, Either.filterLeft(eithers));
+        assertEquals(Arrays.asList(lefts), Either.filterLeft(Arrays.asList(eithers)));
     }
 
     @Test
@@ -48,8 +48,8 @@ public class EitherTest {
         Either<Integer, Integer>[] eithers = new Either[]{
             left(1), left(2), right(3), left(4), right(5)};
         Integer[] rights = new Integer[]{3, 5};
-        assertArrayEquals(rights, Either.filterRights(eithers));
-        assertEquals(Arrays.asList(rights), Either.filterRights(Arrays.asList(eithers)));
+        assertArrayEquals(rights, Either.filterRight(eithers));
+        assertEquals(Arrays.asList(rights), Either.filterRight(Arrays.asList(eithers)));
     }
 
     @Test
