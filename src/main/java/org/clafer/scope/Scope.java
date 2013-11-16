@@ -1,8 +1,10 @@
 package org.clafer.scope;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.clafer.ast.AstClafer;
 import org.clafer.common.Check;
 
@@ -105,6 +107,15 @@ public class Scope implements Scopable {
     }
 
     /**
+     * Returns the set of Clafers that have an explicit scope.
+     *
+     * @return the scoped Clafers
+     */
+    public Set<AstClafer> getScoped() {
+        return Collections.unmodifiableSet(scopes.keySet());
+    }
+
+    /**
      * Returns the scope of the Clafer. If the Clafer is not specified a
      * specific scope during the construction of this object, then the default
      * scope is returned.
@@ -114,10 +125,7 @@ public class Scope implements Scopable {
      */
     public int getScope(AstClafer clafer) {
         Integer scope = scopes.get(Check.notNull(clafer));
-        if (scope == null) {
-            return defaultScope;
-        }
-        return scope.intValue();
+        return scope == null ? defaultScope : scope.intValue();
     }
 
     /**
@@ -158,14 +166,14 @@ public class Scope implements Scopable {
     }
 
     /**
-     * Equivalent to {@code builder().set(clafer, scope)}.
+     * Equivalent to {@code builder().setScope(clafer, scope)}.
      *
      * @param clafer the Clafer
      * @param scope the scope of the clafer
      * @return a new builder
      */
-    public static ScopeBuilder set(AstClafer clafer, int scope) {
-        return builder().set(clafer, scope);
+    public static ScopeBuilder setScope(AstClafer clafer, int scope) {
+        return builder().setScope(clafer, scope);
     }
 
     /**
@@ -204,6 +212,10 @@ public class Scope implements Scopable {
     @Override
     public Scope toScope() {
         return this;
+    }
+
+    public ScopeBuilder toBuilder() {
+        return new ScopeBuilder(scopes, defaultScope, intLow, intHigh);
     }
 
     /**

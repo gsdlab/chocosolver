@@ -306,7 +306,7 @@ public class SymmetryBreakingTest {
         AstConcreteClafer c = model.addChild("C").refTo(a).withCard(Mandatory);
         AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Mandatory);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(b, 1).defaultScope(3));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(b, 1).defaultScope(3));
         assertEquals(7, solver.allInstances().length);
     }
 }

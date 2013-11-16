@@ -563,7 +563,7 @@ public class SimpleStructureTest {
         AstAbstractClafer b = model.addAbstract("B");
         AstConcreteClafer c = model.addChild("C").extending(b);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(c, 1));
         assertTrue(solver.find());
     }
 
@@ -580,7 +580,7 @@ public class SimpleStructureTest {
         AstConcreteClafer a = model.addChild("A").withCard(1, 2);
         AstConcreteClafer b = a.addChild("B").withCard(2);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(a, 2).set(b, 3));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(a, 2).setScope(b, 3));
         assertTrue(solver.find());
     }
 
@@ -601,7 +601,7 @@ public class SimpleStructureTest {
         AstConcreteClafer c = model.addChild("C").extending(b);
         AstConcreteClafer d = model.addChild("D").refTo(a).withCard(Optional);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.set(c, 1).set(d, 1));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(c, 1).setScope(d, 1));
         assertTrue(solver.find());
     }
 }

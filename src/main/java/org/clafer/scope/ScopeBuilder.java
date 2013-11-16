@@ -16,12 +16,20 @@ import org.clafer.ast.AstClafer;
  */
 public class ScopeBuilder implements Scopable {
 
-    private final Map<AstClafer, Integer> scope = new HashMap<>();
+    private final Map<AstClafer, Integer> scope;
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
 
+    ScopeBuilder(Map<AstClafer, Integer> scope, int defaultScope, int intLow, int intHigh) {
+        this.scope = new HashMap<>(scope);
+        this.defaultScope = defaultScope;
+        this.intLow = intLow;
+        this.intHigh = intHigh;
+    }
+
     ScopeBuilder() {
+        this.scope = new HashMap<>();
     }
 
     /**
@@ -32,8 +40,23 @@ public class ScopeBuilder implements Scopable {
      * @param scope the scope of the clafer
      * @return this builder
      */
-    public ScopeBuilder set(AstClafer clafer, int scope) {
+    public ScopeBuilder setScope(AstClafer clafer, int scope) {
         this.scope.put(clafer, scope);
+        return this;
+    }
+
+    /**
+     * Adjust the scope of the Clafer. If the Clafer already has a scope then
+     * {@code newScope = oldScope + adjust}. Otherwise
+     * {@code newScope = defaultScope + adjust}.
+     *
+     * @param clafer the Clafer
+     * @param adjust increment the scope by this amount
+     * @return this builder
+     */
+    public ScopeBuilder adjustScope(AstClafer clafer, int adjust) {
+        Integer oldScope = scope.get(clafer);
+        scope.put(clafer, adjust + (oldScope == null ? defaultScope : oldScope.intValue()));
         return this;
     }
 
@@ -46,6 +69,17 @@ public class ScopeBuilder implements Scopable {
      */
     public ScopeBuilder defaultScope(int defaultScope) {
         this.defaultScope = defaultScope;
+        return this;
+    }
+
+    /**
+     * Adjust the scope of unspecified Clafers.
+     *
+     * @param adjust increment the default scope by this amount
+     * @return this builder
+     */
+    public ScopeBuilder adjustDefaultScope(int adjust) {
+        defaultScope += adjust;
         return this;
     }
 
@@ -63,6 +97,17 @@ public class ScopeBuilder implements Scopable {
     }
 
     /**
+     * Adjust the lowest integer used for solving.
+     *
+     * @param adjust increment the lowest integer by this amount
+     * @return this builder
+     */
+    public ScopeBuilder adjustIntLow(int adjust) {
+        intLow += adjust;
+        return this;
+    }
+
+    /**
      * Set the highest (inclusive) integer used for solving. If the highest
      * integer is already set, then the new highest integer overrides the
      * previous one.
@@ -76,12 +121,24 @@ public class ScopeBuilder implements Scopable {
     }
 
     /**
+     * Adjust the highest integer used for solving.
+     *
+     * @param adjust increment the highest integer by this amount
+     * @return this builder
+     */
+    public ScopeBuilder adjustIntHigh(int adjust) {
+        intHigh += adjust;
+        return this;
+    }
+
+    /**
      * Finalizes all the decisions made in the builder. Further changes to this
      * builder is permitted for building more scopes, but the returned scope
      * will not be affected.
      *
      * @return the built scope
      */
+    @Override
     public Scope toScope() {
         return new Scope(scope, defaultScope, intLow, intHigh);
     }
