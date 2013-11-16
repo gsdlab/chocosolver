@@ -65,7 +65,7 @@ public class Javascript {
             cxt.evaluateString(engine, in, name, 1, null);
             return new Triple<>(
                     context.getModel(),
-                    context.getScope(),
+                    context.getScope(engine),
                     context.getObjectives());
         } finally {
             Context.exit();
@@ -88,7 +88,7 @@ public class Javascript {
             cxt.evaluateReader(engine, in, name, 1, null);
             return new Triple<>(
                     context.getModel(),
-                    context.getScope(),
+                    context.getScope(engine),
                     context.getObjectives());
         } finally {
             Context.exit();

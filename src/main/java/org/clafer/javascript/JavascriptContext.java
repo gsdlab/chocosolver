@@ -8,10 +8,11 @@ import java.util.Map.Entry;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstSetExpr;
-import org.clafer.ast.AstUtil;
 import org.clafer.ast.Asts;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
+import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.Scriptable;
 
 /**
  *
@@ -48,15 +49,22 @@ public class JavascriptContext {
         this.intHigh = intHigh;
     }
 
-    public Scope getScope() {
+    public Scope getScope(Scriptable engine) {
         Map<AstClafer, Integer> resolvedScope = new HashMap<>();
-        Map<String, AstClafer> resolvedClafers = getClafersMap(model);
         for (Entry<String, Integer> entry : scope.entrySet()) {
             String key = entry.getKey();
-            AstClafer clafer = resolvedClafers.get(key);
+            Object value = engine.get(key, engine);
+            if (!(value instanceof NativeJavaObject)) {
+                throw new IllegalStateException(key + " is not a Clafer, found " + value);
+            }
+            NativeJavaObject object = (NativeJavaObject) value;
+            if (!(object.unwrap() instanceof AstClafer)) {
+                throw new IllegalStateException(key + " is not a Clafer, found " + object.unwrap());
+            }
+            AstClafer clafer = (AstClafer) object.unwrap();
             if (clafer == null) {
                 throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\", "
-                        + "known Clafers " + resolvedClafers.keySet() + ".");
+                        + ".");
             }
             resolvedScope.put(clafer, entry.getValue());
         }
@@ -77,15 +85,5 @@ public class JavascriptContext {
 
     public AstModel getModel() {
         return model;
-    }
-
-    private static Map<String, AstClafer> getClafersMap(AstModel model) {
-        List<AstClafer> clafers = AstUtil.getClafers(model);
-        Map<String, AstClafer> map = new HashMap<>();
-        for (AstClafer clafer : clafers) {
-            map.put(clafer.getName(), clafer);
-        }
-        assert map.size() == clafers.size() : "Duplicate Clafer name";
-        return map;
     }
 }
