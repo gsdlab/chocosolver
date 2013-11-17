@@ -3,10 +3,8 @@ package org.clafer.ast.analysis;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
@@ -49,7 +47,6 @@ import org.clafer.ast.AstUtil;
 import static org.clafer.ast.Asts.*;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
-import org.clafer.objective.Objective;
 
 /**
  * <p>
@@ -97,12 +94,12 @@ public class TypeAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstExpr, Type> typeMap = new HashMap<>();
-        List<AstConstraint> typedConstraints = new ArrayList<>();
+        Map<AstConstraint, AstBoolExpr> typedConstraints = new HashMap<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
             TypeVisitor visitor = new TypeVisitor(Type.basicType(clafer), typeMap);
-            TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(constraint.getExpr());
-            typedConstraints.add(constraint.withExpr(typedConstraint.getExpr()));
+            TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(analysis.getExpr(constraint));
+            typedConstraints.put(constraint, typedConstraint.getExpr());
         }
         TIntObjectMap<AstSetExpr> objectives = analysis.getObjectiveExprs();
         TIntObjectMap<AstSetExpr> typedObjectives = new TIntObjectHashMap<>();
@@ -117,7 +114,7 @@ public class TypeAnalyzer implements Analyzer {
             typedObjectives.put(iter.key(), typedObjective.getExpr());
         }
         return analysis.setTypeMap(typeMap)
-                .setConstraints(typedConstraints)
+                .setConstraintExprs(typedConstraints)
                 .setObjectiveExprs(typedObjectives);
     }
 

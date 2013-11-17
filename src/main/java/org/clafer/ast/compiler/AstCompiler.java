@@ -211,28 +211,28 @@ public class AstCompiler {
             constrainGroupCardinality(clafer);
         }
 
-        TIntObjectMap<IrBoolVar> softVars = new TIntObjectHashMap<>();
+        Map<AstConstraint, IrBoolVar> softVars = new HashMap<>();
         for (AstConstraint constraint : getConstraints()) {
             AstClafer clafer = constraint.getContext();
             int scope = getScope(clafer);
-            if (constraint.isHard()) {
+            if (analysis.isHard(constraint)) {
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(analysis.getExpr(constraint));
                     module.addConstraint(implies(memberships.get(clafer)[j], thisConstraint));
                 }
             } else {
                 IrBoolVar softVar = bool(constraint.toString());
-                softVars.put(constraint.getId(), softVar);
+                softVars.put(constraint, softVar);
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    IrBoolExpr thisConstraint = expressionCompiler.compile(constraint.getExpr());
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(analysis.getExpr(constraint));
                     module.addConstraint(ifOnlyIf(softVar, implies(memberships.get(clafer)[j], thisConstraint)));
                 }
                 module.addVariable(softVar);
             }
         }
-        IrIntExpr softSum = add(softVars.valueCollection());
+        IrIntExpr softSum = add(softVars.values());
         IrIntVar sumSoftVars = domainInt("SumSoftVar", softSum.getDomain());
         module.addConstraint(equal(sumSoftVars, softSum));
 

@@ -3,13 +3,17 @@ package org.clafer.ast.analysis;
 import gnu.trove.TCollections;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstraint;
@@ -40,6 +44,8 @@ public class Analysis {
     private final List<AstConcreteClafer> concreteClafers;
     private final List<Set<AstClafer>> clafersInParentAndSubOrder;
     private List<AstConstraint> constraints;
+    private Set<AstConstraint> hardConstraints;
+    private Map<AstConstraint, AstBoolExpr> constraintExprs;
     private Map<AstConcreteClafer, Card> cardMap;
     private Map<AstClafer, Card> globalCardMap;
     private Map<AstClafer, Format> formatMap;
@@ -78,6 +84,14 @@ public class Analysis {
         this.concreteClafers = concreteClafers;
         this.clafersInParentAndSubOrder = clafersInParentAndSubOrder;
         this.constraints = AstUtil.getNestedConstraints(model);
+        this.hardConstraints = new HashSet<>(constraints.size());
+        this.constraintExprs = new HashMap<>(constraints.size());
+        for (AstConstraint constraint : constraints) {
+            if (constraint.isHard()) {
+                hardConstraints.add(constraint);
+            }
+            constraintExprs.put(constraint, constraint.getExpr());
+        }
         this.cardMap = buildCardMap(clafers);
     }
 
@@ -152,6 +166,10 @@ public class Analysis {
         return this;
     }
 
+    public AstSetExpr getExpr(Objective objective) {
+        return objectiveExprs.get(objective.getId());
+    }
+
     public TIntObjectMap<AstSetExpr> getObjectiveExprs() {
         return TCollections.unmodifiableMap(objectiveExprs);
     }
@@ -195,6 +213,36 @@ public class Analysis {
 
     public Analysis setConstraints(List<AstConstraint> constraints) {
         this.constraints = constraints;
+        return this;
+    }
+
+    public boolean isHard(AstConstraint constraint) {
+        return hardConstraints.contains(constraint);
+    }
+
+    public boolean isSoft(AstConstraint constraint) {
+        return !isHard(constraint);
+    }
+
+    public Set<AstConstraint> getHardConstraints() {
+        return hardConstraints;
+    }
+
+    public Analysis setHardConstraints(Set<AstConstraint> hardConstraints) {
+        this.hardConstraints = hardConstraints;
+        return this;
+    }
+
+    public AstBoolExpr getExpr(AstConstraint constraint) {
+        return constraintExprs.get(constraint);
+    }
+
+    public Map<AstConstraint, AstBoolExpr> getConstraintExprs() {
+        return constraintExprs;
+    }
+
+    public Analysis setConstraintExprs(Map<AstConstraint, AstBoolExpr> constraintExprs) {
+        this.constraintExprs = constraintExprs;
         return this;
     }
 

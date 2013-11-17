@@ -1,13 +1,12 @@
 package org.clafer.compiler;
 
-import gnu.trove.iterator.TIntObjectIterator;
-import gnu.trove.map.TIntObjectMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.clafer.ast.AstConstraint;
-import org.clafer.ast.AstUtil;
 import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
@@ -36,18 +35,16 @@ public class ClaferUnsat {
     ClaferUnsat(Solver solver, ClaferSolutionMap solutionMap) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);
-        TIntObjectMap<AstConstraint> constraintMap =
-                AstUtil.getConstraintMap(solutionMap.getAstSolution().getModel());
-        TIntObjectMap<IrBoolVar> softVarsMap = solutionMap.getAstSolution().getSoftVarsMap();
+        Map<AstConstraint, IrBoolVar> softVarsMap = solutionMap.getAstSolution().getSoftVarsMap();
         @SuppressWarnings("unchecked")
         Pair<AstConstraint, Either<Boolean, BoolVar>>[] soft = new Pair[softVarsMap.size()];
-        TIntObjectIterator<IrBoolVar> iter = softVarsMap.iterator();
-        for (int i = 0; i < soft.length; i++) {
-            iter.advance();
-            soft[i] = new Pair<>(
-                    constraintMap.get(iter.key()),
-                    solutionMap.getIrSolution().getBoolVar(iter.value()));
+        int i = 0;
+        for (Entry<AstConstraint, IrBoolVar> entry : softVarsMap.entrySet()) {
+            soft[i++] = new Pair<>(
+                    entry.getKey(),
+                    solutionMap.getIrSolution().getBoolVar(entry.getValue()));
         }
+        assert i == soft.length;
         this.softVars = soft;
         this.score = solutionMap.getIrSolution().getIntVar(solutionMap.getAstSolution().getSumSoftVar());
     }

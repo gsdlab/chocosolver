@@ -249,21 +249,6 @@ public class AstUtil {
     }
 
     /**
-     * Map the identifiers to the constraints in the model.
-     *
-     * @param model the model
-     * @return the mapping of identifiers to constraints
-     */
-    public static TIntObjectMap<AstConstraint> getConstraintMap(AstModel model) {
-        List<AstConstraint> constraints = getNestedConstraints(model);
-        TIntObjectMap<AstConstraint> map = new TIntObjectHashMap<>(constraints.size());
-        for (AstConstraint constraint : constraints) {
-            map.put(constraint.getId(), constraint);
-        }
-        return map;
-    }
-
-    /**
      * Finds all the supertypes of the Clafer in order of lowest to highest.
      *
      * @param clafer the Clafer

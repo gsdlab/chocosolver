@@ -43,11 +43,11 @@ public class PartialIntAnalyzer implements Analyzer {
         List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
-            if (constraint.isSoft()) {
+            if (analysis.isSoft(constraint)) {
                 continue;
             }
             try {
-                Pair<FList<AstConcreteClafer>, Integer> assignment = analyze(constraint.getExpr());
+                Pair<FList<AstConcreteClafer>, Integer> assignment = analyze(analysis.getExpr(constraint));
                 FList<AstConcreteClafer> path = assignment.getFst();
                 Integer value = assignment.getSnd();
                 for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {

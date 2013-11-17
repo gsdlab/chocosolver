@@ -1,7 +1,8 @@
 package org.clafer.ast.analysis;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
@@ -27,11 +28,11 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        List<AstConstraint> optimizedConstraint = new ArrayList<>();
+        Map<AstConstraint, AstBoolExpr> constraintExprs = new HashMap<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
-            optimizedConstraint.add(constraint.withExpr(rewrite(constraint.getExpr(), analysis)));
+            constraintExprs.put(constraint, rewrite(analysis.getExpr(constraint), analysis));
         }
-        return analysis.setConstraints(optimizedConstraint);
+        return analysis.setConstraintExprs(constraintExprs);
     }
 
     @Override

@@ -1,10 +1,13 @@
 package org.clafer.ast.analysis;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstraint;
@@ -66,7 +69,13 @@ public class CircularityAnalyzer implements Analyzer {
         if (constraints.isEmpty()) {
             return analysis;
         }
+        HashSet<AstConstraint> hardConstraints = new HashSet<AstConstraint>(analysis.getHardConstraints());
+        hardConstraints.addAll(constraints);
+        Map<AstConstraint, AstBoolExpr> constraintExprs = new HashMap<>(analysis.getConstraintExprs());
+        for (AstConstraint constraint : constraints) {
+            constraintExprs.put(constraint, constraint.getExpr());
+        }
         constraints.addAll(analysis.getConstraints());
-        return analysis.setConstraints(constraints);
+        return analysis.setConstraints(constraints).setHardConstraints(hardConstraints).setConstraintExprs(constraintExprs);
     }
 }

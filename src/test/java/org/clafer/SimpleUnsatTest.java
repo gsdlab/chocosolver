@@ -71,7 +71,7 @@ public class SimpleUnsatTest {
         AstConstraint c4 = model.addConstraint(some(witch));
         AstConstraint c5 = model.addConstraint(some(mob));
 
-        assertEquals(set(c1), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
+        assertEquals(set(c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
                 .minUnsat().getFst());
         assertEquals(set(c1, c2, c3, c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
                 .unsatCore());

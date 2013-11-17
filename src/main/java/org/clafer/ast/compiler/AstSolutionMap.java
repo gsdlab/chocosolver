@@ -1,7 +1,7 @@
 package org.clafer.ast.compiler;
 
-import gnu.trove.TCollections;
 import gnu.trove.map.TIntObjectMap;
+import java.util.Collections;
 import java.util.Map;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
@@ -24,7 +24,7 @@ public class AstSolutionMap {
     private final AstModel model;
     private final Map<AstClafer, IrSetVar[]> siblingVars;
     private final Map<AstRef, IrIntVar[]> refVars;
-    private final TIntObjectMap<IrBoolVar> softVars;
+    private final Map<AstConstraint, IrBoolVar> softVars;
     private final IrIntVar sumSoftVar;
     private final TIntObjectMap<IrIntVar> objectiveVars;
     private final Analysis analysis;
@@ -32,7 +32,7 @@ public class AstSolutionMap {
     AstSolutionMap(AstModel model,
             Map<AstClafer, IrSetVar[]> sibling,
             Map<AstRef, IrIntVar[]> refVars,
-            TIntObjectMap<IrBoolVar> softVars,
+            Map<AstConstraint, IrBoolVar> softVars,
             IrIntVar sumSoftVar,
             TIntObjectMap<IrIntVar> objectiveVars,
             Analysis analysis) {
@@ -80,15 +80,15 @@ public class AstSolutionMap {
      * @return the soft variable associated to the constraint
      */
     public IrBoolVar getSoftVar(AstConstraint constraint) {
-        return notNull(constraint + " not a compiled soft constraint", softVars.get(constraint.getId()));
+        return notNull(constraint + " not a compiled soft constraint", softVars.get(constraint));
     }
 
     public IrBoolVar[] getSoftVars() {
-        return softVars.values(new IrBoolVar[softVars.size()]);
+        return softVars.values().toArray(new IrBoolVar[softVars.size()]);
     }
 
-    public TIntObjectMap<IrBoolVar> getSoftVarsMap() {
-        return TCollections.unmodifiableMap(softVars);
+    public Map<AstConstraint, IrBoolVar> getSoftVarsMap() {
+        return Collections.unmodifiableMap(softVars);
     }
 
     /**
