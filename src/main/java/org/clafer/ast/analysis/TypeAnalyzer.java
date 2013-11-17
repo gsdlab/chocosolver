@@ -1,5 +1,8 @@
 package org.clafer.ast.analysis;
 
+import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -95,24 +98,27 @@ public class TypeAnalyzer implements Analyzer {
     public Analysis analyze(Analysis analysis) {
         Map<AstExpr, Type> typeMap = new HashMap<>();
         List<AstConstraint> typedConstraints = new ArrayList<>();
-        List<Objective> typedObjectives = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
             TypeVisitor visitor = new TypeVisitor(Type.basicType(clafer), typeMap);
             TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(constraint.getExpr());
             typedConstraints.add(constraint.withExpr(typedConstraint.getExpr()));
         }
-        for (Objective objective : analysis.getObjectives()) {
+        TIntObjectMap<AstSetExpr> objectives = analysis.getObjectiveExprs();
+        TIntObjectMap<AstSetExpr> typedObjectives = new TIntObjectHashMap<>();
+        TIntObjectIterator<AstSetExpr> iter = objectives.iterator();
+        for (int i = objectives.size(); i-- > 0;) {
+            iter.advance();
             TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
-            TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(objective.getExpr());
+            TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(iter.value());
             if (!(typedObjective.getCommonSupertype() instanceof AstIntClafer)) {
                 throw new TypeException("Cannot optimize on " + typedObjective.getType());
             }
-            typedObjectives.add(objective.withExpr(typedObjective.getExpr()));
+            typedObjectives.put(iter.key(), typedObjective.getExpr());
         }
         return analysis.setTypeMap(typeMap)
                 .setConstraints(typedConstraints)
-                .setObjectives(typedObjectives);
+                .setObjectiveExprs(typedObjectives);
     }
 
     private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {

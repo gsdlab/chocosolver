@@ -1,5 +1,6 @@
 package org.clafer.ast.compiler;
 
+import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -248,13 +249,16 @@ public class AstCompiler {
 
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
         TIntObjectMap<IrIntVar> objectiveVars = new TIntObjectHashMap<>();
-        for (Objective objective : getObjectives()) {
+        TIntObjectMap<AstSetExpr> objectives = getObjectivesExprs();
+        TIntObjectIterator<AstSetExpr> iter = objectives.iterator();
+        for (int i = objectives.size(); i-- > 0;) {
+            iter.advance();
             IrIntExpr objectiveExpr = expressionCompiler.asInt(
-                    expressionCompiler.compile(objective.getExpr()));
-            IrIntVar objectiveVar = domainInt("Objective" + objective.getId(),
+                    expressionCompiler.compile(iter.value()));
+            IrIntVar objectiveVar = domainInt("Objective" + iter.key(),
                     objectiveExpr.getDomain());
             module.addConstraint(equal(objectiveVar, objectiveExpr));
-            objectiveVars.put(objective.getId(), objectiveVar);
+            objectiveVars.put(iter.key(), objectiveVar);
         }
         return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
                 softVars, sumSoftVars,
@@ -1418,7 +1422,7 @@ public class AstCompiler {
         return analysis.getConstraints();
     }
 
-    private List<Objective> getObjectives() {
-        return analysis.getObjectives();
+    private TIntObjectMap<AstSetExpr> getObjectivesExprs() {
+        return analysis.getObjectiveExprs();
     }
 }

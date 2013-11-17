@@ -17,12 +17,8 @@ public class Objective {
     private final boolean maximize;
     private final AstSetExpr expr;
 
-    Objective(boolean maximize, AstSetExpr expression) {
-        this(idFactory++, maximize, expression);
-    }
-
-    Objective(int id, boolean maximize, AstSetExpr expr) {
-        this.id = id;
+    Objective(boolean maximize, AstSetExpr expr) {
+        this.id = idFactory++;
         this.maximize = maximize;
         this.expr = Check.notNull(expr);
     }
@@ -63,17 +59,6 @@ public class Objective {
      */
     public AstSetExpr getExpr() {
         return expr;
-    }
-
-    /**
-     * Create a new objective that is the same as this objective except with a
-     * different expression.
-     *
-     * @param expr the new expression
-     * @return a version of this objective with a new expression
-     */
-    public Objective withExpr(AstSetExpr expr) {
-        return new Objective(id, maximize, expr);
     }
 
     /**

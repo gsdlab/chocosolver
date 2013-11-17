@@ -1,5 +1,8 @@
 package org.clafer.ast.analysis;
 
+import gnu.trove.TCollections;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,6 +16,7 @@ import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
@@ -30,7 +34,7 @@ public class Analysis {
 
     private final AstModel model;
     private Scope scope;
-    private List<Objective> objectives;
+    private TIntObjectMap<AstSetExpr> objectiveExprs;
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
     private final List<AstConcreteClafer> concreteClafers;
@@ -65,7 +69,10 @@ public class Analysis {
             List<Set<AstClafer>> clafersInParentAndSubOrder) {
         this.model = model;
         this.scope = scope;
-        this.objectives = objectives;
+        this.objectiveExprs = new TIntObjectHashMap<>(objectives.size());
+        for (Objective objective : objectives) {
+            this.objectiveExprs.put(objective.getId(), objective.getExpr());
+        }
         this.clafers = append(abstractClafers, concreteClafers);
         this.abstractClafers = abstractClafers;
         this.concreteClafers = concreteClafers;
@@ -145,12 +152,12 @@ public class Analysis {
         return this;
     }
 
-    public List<Objective> getObjectives() {
-        return Collections.unmodifiableList(objectives);
+    public TIntObjectMap<AstSetExpr> getObjectiveExprs() {
+        return TCollections.unmodifiableMap(objectiveExprs);
     }
 
-    public Analysis setObjectives(List<Objective> objectives) {
-        this.objectives = objectives;
+    public Analysis setObjectiveExprs(TIntObjectMap<AstSetExpr> objectiveExprs) {
+        this.objectiveExprs = objectiveExprs;
         return this;
     }
 
