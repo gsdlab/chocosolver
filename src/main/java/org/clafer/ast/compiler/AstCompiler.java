@@ -1,6 +1,5 @@
 package org.clafer.ast.compiler;
 
-import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -10,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
@@ -248,17 +248,15 @@ public class AstCompiler {
         }
 
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
-        TIntObjectMap<IrIntVar> objectiveVars = new TIntObjectHashMap<>();
-        TIntObjectMap<AstSetExpr> objectives = getObjectivesExprs();
-        TIntObjectIterator<AstSetExpr> iter = objectives.iterator();
-        for (int i = objectives.size(); i-- > 0;) {
-            iter.advance();
+        Map<Objective, IrIntVar> objectiveVars = new HashMap<>();
+        Map<Objective, AstSetExpr> objectives = getObjectivesExprs();
+        for(Entry<Objective, AstSetExpr> objective: objectives.entrySet()) {
             IrIntExpr objectiveExpr = expressionCompiler.asInt(
-                    expressionCompiler.compile(iter.value()));
-            IrIntVar objectiveVar = domainInt("Objective" + iter.key(),
+                    expressionCompiler.compile(objective.getValue()));
+            IrIntVar objectiveVar = domainInt("Objective" + objective.getKey(),
                     objectiveExpr.getDomain());
             module.addConstraint(equal(objectiveVar, objectiveExpr));
-            objectiveVars.put(iter.key(), objectiveVar);
+            objectiveVars.put(objective.getKey(), objectiveVar);
         }
         return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
                 softVars, sumSoftVars,
@@ -1422,7 +1420,7 @@ public class AstCompiler {
         return analysis.getConstraints();
     }
 
-    private TIntObjectMap<AstSetExpr> getObjectivesExprs() {
+    private Map<Objective, AstSetExpr> getObjectivesExprs() {
         return analysis.getObjectiveExprs();
     }
 }

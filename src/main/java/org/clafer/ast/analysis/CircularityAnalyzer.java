@@ -69,7 +69,7 @@ public class CircularityAnalyzer implements Analyzer {
         if (constraints.isEmpty()) {
             return analysis;
         }
-        HashSet<AstConstraint> hardConstraints = new HashSet<AstConstraint>(analysis.getHardConstraints());
+        HashSet<AstConstraint> hardConstraints = new HashSet<>(analysis.getHardConstraints());
         hardConstraints.addAll(constraints);
         Map<AstConstraint, AstBoolExpr> constraintExprs = new HashMap<>(analysis.getConstraintExprs());
         for (AstConstraint constraint : constraints) {

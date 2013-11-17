@@ -1,6 +1,5 @@
 package org.clafer.ast.compiler;
 
-import gnu.trove.map.TIntObjectMap;
 import java.util.Collections;
 import java.util.Map;
 import org.clafer.ast.AstClafer;
@@ -26,7 +25,7 @@ public class AstSolutionMap {
     private final Map<AstRef, IrIntVar[]> refVars;
     private final Map<AstConstraint, IrBoolVar> softVars;
     private final IrIntVar sumSoftVar;
-    private final TIntObjectMap<IrIntVar> objectiveVars;
+    private final Map<Objective, IrIntVar> objectiveVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
@@ -34,7 +33,7 @@ public class AstSolutionMap {
             Map<AstRef, IrIntVar[]> refVars,
             Map<AstConstraint, IrBoolVar> softVars,
             IrIntVar sumSoftVar,
-            TIntObjectMap<IrIntVar> objectiveVars,
+            Map<Objective, IrIntVar> objectiveVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
         this.siblingVars = Check.notNull(sibling);
@@ -107,7 +106,7 @@ public class AstSolutionMap {
      * @return the variable associated to the objective
      */
     public IrIntVar getObjectiveVar(Objective objective) {
-        return notNull(objective + " not a compiled objective", objectiveVars.get(objective.getId()));
+        return notNull(objective + " not a compiled objective", objectiveVars.get(objective));
     }
 
     private static <T> T notNull(String message, T t) {

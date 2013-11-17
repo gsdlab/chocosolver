@@ -1,10 +1,5 @@
 package org.clafer.ast.analysis;
 
-import gnu.trove.TCollections;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +33,7 @@ public class Analysis {
 
     private final AstModel model;
     private Scope scope;
-    private TIntObjectMap<AstSetExpr> objectiveExprs;
+    private Map<Objective, AstSetExpr> objectiveExprs;
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
     private final List<AstConcreteClafer> concreteClafers;
@@ -75,9 +70,9 @@ public class Analysis {
             List<Set<AstClafer>> clafersInParentAndSubOrder) {
         this.model = model;
         this.scope = scope;
-        this.objectiveExprs = new TIntObjectHashMap<>(objectives.size());
+        this.objectiveExprs = new HashMap<>();
         for (Objective objective : objectives) {
-            this.objectiveExprs.put(objective.getId(), objective.getExpr());
+            this.objectiveExprs.put(objective, objective.getExpr());
         }
         this.clafers = append(abstractClafers, concreteClafers);
         this.abstractClafers = abstractClafers;
@@ -167,14 +162,14 @@ public class Analysis {
     }
 
     public AstSetExpr getExpr(Objective objective) {
-        return objectiveExprs.get(objective.getId());
+        return objectiveExprs.get(objective);
     }
 
-    public TIntObjectMap<AstSetExpr> getObjectiveExprs() {
-        return TCollections.unmodifiableMap(objectiveExprs);
+    public Map<Objective, AstSetExpr> getObjectiveExprs() {
+        return Collections.unmodifiableMap(objectiveExprs);
     }
 
-    public Analysis setObjectiveExprs(TIntObjectMap<AstSetExpr> objectiveExprs) {
+    public Analysis setObjectiveExprs(Map<Objective, AstSetExpr> objectiveExprs) {
         this.objectiveExprs = objectiveExprs;
         return this;
     }

@@ -1,11 +1,9 @@
 package org.clafer.ast.analysis;
 
-import gnu.trove.iterator.TIntObjectIterator;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
@@ -47,6 +45,7 @@ import org.clafer.ast.AstUtil;
 import static org.clafer.ast.Asts.*;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
+import org.clafer.objective.Objective;
 
 /**
  * <p>
@@ -101,17 +100,15 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(analysis.getExpr(constraint));
             typedConstraints.put(constraint, typedConstraint.getExpr());
         }
-        TIntObjectMap<AstSetExpr> objectives = analysis.getObjectiveExprs();
-        TIntObjectMap<AstSetExpr> typedObjectives = new TIntObjectHashMap<>();
-        TIntObjectIterator<AstSetExpr> iter = objectives.iterator();
-        for (int i = objectives.size(); i-- > 0;) {
-            iter.advance();
+        Map<Objective, AstSetExpr> objectives = analysis.getObjectiveExprs();
+        Map<Objective, AstSetExpr> typedObjectives = new HashMap<>(objectives.size());
+        for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
             TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
-            TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(iter.value());
+            TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(objective.getValue());
             if (!(typedObjective.getCommonSupertype() instanceof AstIntClafer)) {
                 throw new TypeException("Cannot optimize on " + typedObjective.getType());
             }
-            typedObjectives.put(iter.key(), typedObjective.getExpr());
+            typedObjectives.put(objective.getKey(), typedObjective.getExpr());
         }
         return analysis.setTypeMap(typeMap)
                 .setConstraintExprs(typedConstraints)

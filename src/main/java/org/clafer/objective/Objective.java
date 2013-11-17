@@ -11,25 +11,15 @@ import org.clafer.common.Check;
 public class Objective {
 
     private static int idFactory = 0;
-    private final int id;
+    private final int id = idFactory++;
     // true - maximize
     // false - minimize
     private final boolean maximize;
     private final AstSetExpr expr;
 
     Objective(boolean maximize, AstSetExpr expr) {
-        this.id = idFactory++;
         this.maximize = maximize;
         this.expr = Check.notNull(expr);
-    }
-
-    /**
-     * Returns a unique identifier.
-     *
-     * @return a unique identifier
-     */
-    public int getId() {
-        return id;
     }
 
     /**
@@ -79,6 +69,16 @@ public class Objective {
      */
     public static Objective minimize(AstSetExpr expression) {
         return new Objective(false, expression);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
     }
 
     @Override
