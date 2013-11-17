@@ -1254,26 +1254,35 @@ public class Irs {
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {
+        IrIntExpr[] $array = index.getDomain().getHighBound() + 1 < array.length
+                ? Arrays.copyOf(array, index.getDomain().getHighBound() + 1)
+                : array.clone();
+        for (int i = 0; i < $array.length; i++) {
+            if (!index.getDomain().contains(i)) {
+                $array[i] = Zero;
+            }
+        }
+
         Integer constant = IrUtil.getConstant(index);
         if (constant != null) {
-            return array[constant.intValue()];
+            return $array[constant.intValue()];
         }
         TIntIterator iter = index.getDomain().iterator();
         assert iter.hasNext();
 
-        IrDomain domain = array[iter.next()].getDomain();
+        IrDomain domain = $array[iter.next()].getDomain();
         int low = domain.getLowBound();
         int high = domain.getHighBound();
         while (iter.hasNext()) {
             int val = iter.next();
-            if (val < array.length) {
-                domain = array[val].getDomain();
+            if (val < $array.length) {
+                domain = $array[val].getDomain();
                 low = Math.min(low, domain.getLowBound());
                 high = Math.max(high, domain.getHighBound());
             }
         }
         domain = boundDomain(low, high);
-        return new IrElement(array, index, domain);
+        return new IrElement($array, index, domain);
     }
 
     public static IrIntExpr count(int value, IrIntExpr[] array) {
@@ -1469,9 +1478,13 @@ public class Irs {
         if (take.getEnv().isEmpty()) {
             return EmptySet;
         }
-        IrSetExpr[] $children = children;
-        if (take.getEnv().getHighBound() + 1 < $children.length) {
-            $children = Arrays.copyOf(children, take.getEnv().getHighBound() + 1);
+        IrSetExpr[] $children = take.getEnv().getHighBound() + 1 < children.length
+                ? Arrays.copyOf(children, take.getEnv().getHighBound() + 1)
+                : children.clone();
+        for (int i = 0; i < $children.length; i++) {
+            if (!take.getEnv().contains(i)) {
+                $children[i] = EmptySet;
+            }
         }
 
         IrIntExpr[] ints = IrUtil.asInts(children);
@@ -1564,11 +1577,23 @@ public class Irs {
     }
 
     public static IrSetExpr joinFunction(IrSetExpr take, IrIntExpr[] refs, Integer globalCardinality) {
+        if (take.getEnv().isEmpty()) {
+            return EmptySet;
+        }
+        IrIntExpr[] $refs = take.getEnv().getHighBound() + 1 < refs.length
+                ? Arrays.copyOf(refs, take.getEnv().getHighBound() + 1)
+                : refs.clone();
+        for (int i = 0; i < $refs.length; i++) {
+            if (!take.getEnv().contains(i)) {
+                $refs[i] = Zero;
+            }
+        }
+
         int[] constant = IrUtil.getConstant(take);
         if (constant != null) {
             IrIntExpr[] to = new IrIntExpr[constant.length];
             for (int i = 0; i < to.length; i++) {
-                to[i] = refs[constant[i]];
+                to[i] = $refs[constant[i]];
             }
             return arrayToSet(to, globalCardinality);
         }
@@ -1577,9 +1602,9 @@ public class Irs {
         TIntIterator iter = take.getEnv().iterator();
         IrDomain env;
         if (iter.hasNext()) {
-            IrDomain domain = refs[iter.next()].getDomain();
+            IrDomain domain = $refs[iter.next()].getDomain();
             while (iter.hasNext()) {
-                domain = IrUtil.union(domain, refs[iter.next()].getDomain());
+                domain = IrUtil.union(domain, $refs[iter.next()].getDomain());
             }
             env = domain;
         } else {
@@ -1590,7 +1615,7 @@ public class Irs {
         iter = take.getKer().iterator();
         TIntHashSet values = new TIntHashSet(0);
         while (iter.hasNext()) {
-            Integer constantRef = IrUtil.getConstant(refs[iter.next()]);
+            Integer constantRef = IrUtil.getConstant($refs[iter.next()]);
             if (constantRef != null) {
                 values.add(constantRef.intValue());
             }
@@ -1612,7 +1637,7 @@ public class Irs {
                     Math.min(highTakeCard, env.size()));
         }
 
-        return new IrJoinFunction(take, refs, env, ker, card, globalCardinality);
+        return new IrJoinFunction(take, $refs, env, ker, card, globalCardinality);
     }
 
     private static int divRoundUp(int a, int b) {
