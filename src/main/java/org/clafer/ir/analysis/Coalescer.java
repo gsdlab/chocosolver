@@ -404,7 +404,9 @@ public class Coalescer {
                     }
                 }
             }
+            IrDomain dom = boundDomain(0, ints.length - 1);
             for (int i = 0; i < ints.length; i++) {
+                propagateInt(dom, ints[i]);
                 for (int j = i + 1; j < ints.length; j++) {
                     switch (IrUtil.compare(ints[i], ints[j])) {
                         case EQ:
@@ -550,20 +552,43 @@ public class Coalescer {
         }
 
         private void propagateLessThanString(IrIntExpr[] a, IrIntExpr[] b) {
-            for (int x = 0; x < a.length - 1; x++) {
-                switch (IrUtil.compare(a[x], b[x])) {
-                    case LT:
-                    case LE:
-                    case UNKNOWN:
-                        return;
-                    case GT:
-                    case GE:
-                        equal(a[x], b[x]);
-                        break;
-                }
+            propagateLessThanString(a, b, 0);
+        }
+
+        private void propagateLessThanString(IrIntExpr[] a, IrIntExpr[] b, int index) {
+            assert a.length == b.length;
+            if (index == a.length) {
+                // Model is unsatisfiable. Compile anyways?
             }
-            // All equal except for the last character.
-            propagateLessThan(a[a.length - 1], b[a.length - 1]);
+            switch (IrUtil.compare(a[index], b[index])) {
+                case EQ:
+                    propagateLessThanString(a, b, index + 1);
+                    return;
+                case LT:
+                    return;
+                case GT:
+                    // Model is unsatisfiable. Compile anyways?
+                    return;
+                case LE:
+                case GE:
+                case UNKNOWN:
+                    switch (IrUtil.compareString(a, b, index + 1)) {
+                        case EQ:
+                        case GT:
+                        case GE:
+                            propagateLessThan(a[index], b[index]);
+                            return;
+                        case LT:
+                        case LE:
+                        case UNKNOWN:
+                            propagateLessThanEqual(a[index], b[index]);
+                            return;
+                        default:
+                            throw new IllegalStateException();
+                    }
+                default:
+                    throw new IllegalStateException();
+            }
         }
 
         private void propagateLessThanEqual(IrIntExpr left, IrIntExpr right) {
@@ -578,13 +603,43 @@ public class Coalescer {
         }
 
         private void propagateLessThanEqualString(IrIntExpr[] a, IrIntExpr[] b) {
-            for (int x = 0; x < a.length; x++) {
-                IrUtil.Ordering charOrd = IrUtil.compare(a[x], b[x]);
-                if (!IrUtil.Ordering.EQ.equals(charOrd)) {
-                    propagateLessThanEqual(a[x], b[x]);
-                }
+            propagateLessThanEqualString(a, b, 0);
+        }
+
+        private void propagateLessThanEqualString(IrIntExpr[] a, IrIntExpr[] b, int index) {
+            assert a.length == b.length;
+            if (index == a.length) {
+                return;
             }
-            // The two strings are equal.
+            switch (IrUtil.compare(a[index], b[index])) {
+                case EQ:
+                    propagateLessThanEqualString(a, b, index + 1);
+                    return;
+                case LT:
+                    return;
+                case GT:
+                    // Model is unsatisfiable. Compile anyways?
+                    return;
+                case LE:
+                case GE:
+                case UNKNOWN:
+                    switch (IrUtil.compareString(a, b, index + 1)) {
+                        case EQ:
+                        case LT:
+                        case LE:
+                        case GE:
+                        case UNKNOWN:
+                            propagateLessThanEqual(a[index], b[index]);
+                            return;
+                        case GT:
+                            propagateLessThan(a[index], b[index]);
+                            return;
+                        default:
+                            throw new IllegalStateException();
+                    }
+                default:
+                    throw new IllegalStateException();
+            }
         }
 
         private void propagateInt(IrDomain left, IrIntExpr right) {

@@ -22,7 +22,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
     private final IntVar[] ints;
 
     public PropLexChainChannel(IntVar[][] strings, IntVar[] ints) {
-        super(buildArray(strings, ints), PropagatorPriority.QUADRATIC, false);
+        super(buildArray(strings, ints), PropagatorPriority.CUBIC, false);
         this.strings = strings;
         this.ints = ints;
     }
@@ -44,7 +44,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.INT_ALL_MASK();
+        return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
     }
 
     private static Ordering compareString(IntVar[] a, IntVar[] b) {
@@ -133,7 +133,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     private boolean lessThanString(IntVar[] a, IntVar[] b, int index) throws ContradictionException {
         if (index == a.length) {
-            if(index == b.length) {
+            if (index == b.length) {
                 contradiction(a[0], "a = b");
             }
             return false;

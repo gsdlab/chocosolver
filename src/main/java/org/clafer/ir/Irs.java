@@ -898,15 +898,13 @@ public class Irs {
                 throw new IllegalArgumentException();
             }
         }
-        List<IrBoolExpr> ands = new ArrayList<>(0);
         List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
         List<IrIntExpr> filterInts = new ArrayList<>(ints.length);
-        for (int i = 0; i < strings.length; i++) {
+        for (int i = 0; i < ints.length; i++) {
             boolean equivalence = false;
-            for (int j = i + 1; j < strings.length; j++) {
-                if (Arrays.equals(strings[i], strings[j])) {
-                    ands.add(equal(ints[i], ints[j]));
-                    ands.add(equal(strings[i], strings[j]));
+            for (int j = i + 1; j < ints.length; j++) {
+                if (IrUtil.Ordering.EQ.equals(IrUtil.compare(ints[i], ints[j]))
+                        && IrUtil.Ordering.EQ.equals(IrUtil.compareString(strings[i], strings[j]))) {
                     equivalence = true;
                     break;
                 }
@@ -916,30 +914,28 @@ public class Irs {
                 filterInts.add(ints[i]);
             }
         }
+        assert !filterInts.isEmpty();
         if (filterInts.size() == 1) {
-            ands.add(equal(filterInts.get(0), 0));
-        } else if (filterInts.size() > 1) {
-            IrIntExpr[][] fstrings = filterStrings.toArray(new IrIntExpr[filterStrings.size()][]);
-            IrIntExpr[] fints = filterInts.toArray(new IrIntExpr[filterInts.size()]);
-            int[] constant = IrUtil.getConstant(fints);
-            if (constant != null) {
-                IrIntExpr[][] partialOrdering = new IrIntExpr[constant.length][];
-                for (int i = 0; i < constant.length; i++) {
-                    int val = constant[i];
-                    if (val < 0 || val >= constant.length) {
-                        return False;
-                    }
-                    if (partialOrdering[i] != null) {
-                        throw new IllegalStateException();
-                    }
-                    partialOrdering[i] = fstrings[constant[i]];
-                }
-                ands.add(sortStrict(partialOrdering));
-            } else {
-                ands.add(new IrSortStringsChannel(fstrings, fints, BoolDomain));
-            }
+            return equal(filterInts.get(0), 0);
         }
-        return and(ands);
+        IrIntExpr[][] fstrings = filterStrings.toArray(new IrIntExpr[filterStrings.size()][]);
+        IrIntExpr[] fints = filterInts.toArray(new IrIntExpr[filterInts.size()]);
+        int[] constant = IrUtil.getConstant(fints);
+        if (constant != null) {
+            IrIntExpr[][] partialOrdering = new IrIntExpr[constant.length][];
+            for (int i = 0; i < constant.length; i++) {
+                int val = constant[i];
+                if (val < 0 || val >= constant.length) {
+                    return False;
+                }
+                if (partialOrdering[constant[i]] != null) {
+                    throw new IllegalStateException();
+                }
+                partialOrdering[constant[i]] = fstrings[i];
+            }
+            return sortStrict(partialOrdering);
+        }
+        return new IrSortStringsChannel(fstrings, fints, BoolDomain);
     }
 
     public static IrBoolExpr allDifferent(IrIntExpr[] ints) {

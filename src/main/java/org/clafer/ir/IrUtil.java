@@ -499,7 +499,7 @@ public class IrUtil {
         }
         if (domain.isBounded()) {
             return Irs.boundDomain(
-                    Math.max(0, domain.getLowBound() - from), 
+                    Math.max(0, domain.getLowBound() - from),
                     Math.min(to - 1, domain.getHighBound()) - from);
         }
         TIntList mask = new TIntArrayList();
@@ -512,6 +512,9 @@ public class IrUtil {
     }
 
     public static Ordering compare(IrIntExpr a, IrIntExpr b) {
+        if (a.equals(b)) {
+            return Ordering.EQ;
+        }
         IrDomain da = a.getDomain();
         IrDomain db = b.getDomain();
         if (da.size() == 1 && db.size() == 1 && da.getLowBound() == db.getLowBound()) {
