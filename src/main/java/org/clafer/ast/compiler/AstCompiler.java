@@ -1,8 +1,6 @@
 package org.clafer.ast.compiler;
 
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -250,7 +248,7 @@ public class AstCompiler {
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
         Map<Objective, IrIntVar> objectiveVars = new HashMap<>();
         Map<Objective, AstSetExpr> objectives = getObjectivesExprs();
-        for(Entry<Objective, AstSetExpr> objective: objectives.entrySet()) {
+        for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
             IrIntExpr objectiveExpr = expressionCompiler.asInt(
                     expressionCompiler.compile(objective.getValue()));
             IrIntVar objectiveVar = domainInt("Objective" + objective.getKey(),
@@ -416,6 +414,8 @@ public class AstCompiler {
                         }
                         refPartitions.union(i, i + 1);
                     }
+                    // Refs are unique and part of the weight. It is impossible for
+                    // two weights to be the same. Enforce a strict order.
                     module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
                             sortStrict(childIndices[i + 1], childIndices[i])));
                 } else {
@@ -431,17 +431,12 @@ public class AstCompiler {
                     refOffset, refOffset + getScope(clafer));
             if (ref.isUnique()) {
                 if (getCard(clafer).getHigh() > 1) {
-                    if (getGlobalCard(clafer).isExact()) {
-                        assert getGlobalCard(clafer).getLow() == refs.length;
-                        module.addConstraint(allDifferent(refs));
-                    } else {
-                        for (int i = 0; i < refs.length - 1; i++) {
-                            for (int j = i + 1; j < refs.length; j++) {
-                                if (refPartitions == null || !refPartitions.connected(i, j)) {
-                                    module.addConstraint(
-                                            implies(and(members[i], equal(parents[i], parents[j])),
-                                            notEqual(refs[i], refs[j])));
-                                }
+                    for (int i = 0; i < refs.length - 1; i++) {
+                        for (int j = i + 1; j < refs.length; j++) {
+                            if (refPartitions == null || !refPartitions.connected(i, j)) {
+                                module.addConstraint(
+                                        implies(and(members[i], equal(parents[i], parents[j])),
+                                        notEqual(refs[i], refs[j])));
                             }
                         }
                     }
@@ -456,11 +451,14 @@ public class AstCompiler {
             }
             assert refs.length == members.length;
             for (int i = 0; i < members.length; i++) {
+                // The ref pointers must point to the special uninitialized value
+                // if the Clafer owning the ref pointers does not exists.
                 module.addConstraint(ifOnlyIf(not(members[i]), equal(refs[i], getUninitalizedRef(tar))));
             }
             if (!(ref.getTargetType() instanceof AstIntClafer)) {
                 IrSetVar targetSet = sets.get(ref.getTargetType());
                 for (int i = 0; i < refs.length; i++) {
+                    // The ref pointers must point to a target that exists.
                     module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
                 }
             }
@@ -484,11 +482,9 @@ public class AstCompiler {
         if (groupCard.isBounded()) {
             IrBoolExpr[] members = memberships.get(clafer);
             IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
-//            boolean featureGroup = true;
             for (int i = 0; i < childrenSets.length; i++) {
                 AstConcreteClafer child = children.get(i);
                 childrenSets[i] = siblingSets.get(child);
-//                featureGroup &= getCard(child).getHigh() == 1;
             }
             int scope = getScope(clafer);
             for (int i = 0; i < scope; i++) {
@@ -496,25 +492,6 @@ public class AstCompiler {
                 for (int j = 0; j < cards.length; j++) {
                     cards[j] = card(childrenSets[j][i]);
                 }
-//                if (featureGroup) {
-//                    TODO: Translate common cases more efficiently.
-//                    if (groupCard.getLow() == 0 && groupCard.getHigh() == 1) {
-//                        // "lone"
-//                        module.addConstraint(implies(members[i], lone(asBools(cards))));
-//                        continue;
-//                    }
-//                    if (groupCard.getLow() == 1 && !groupCard.hasHigh()) {
-//                        // "or"
-//                        module.addConstraint(implies(members[i], or(asBools(cards))));
-//                        continue;
-//                    }
-//                    if (groupCard.isExact() && groupCard.getLow() == 1) {
-//                        // "xor"
-//                        // TODO constrain as sum(cards) = card(this)
-//                        module.addConstraint(implies(members[i], one(asBools(cards))));
-//                        continue;
-//                    }
-//                }
                 module.addConstraint(implies(members[i], constrainCard(add(cards), groupCard)));
             }
         }

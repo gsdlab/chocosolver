@@ -208,11 +208,42 @@ public class SimpleStructureTest {
          */
         AstModel model = newModel();
 
-        AstConcreteClafer person = model.addChild("Person").withCard(1, 1);
+        AstConcreteClafer person = model.addChild("Person").withCard(Mandatory);
         person.addChild("Age").withCard(3, 3).refToUnique(IntType);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(10, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * Person 2
+     *     Age -> integer 2
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testGlobalFixedUniqueRefs() {
+        /*
+         * int solutions = 0;
+         * for (int i = -2; i <= 2; i++) {
+         *     for (int j = i + 1; j <= 2; j++) {
+         *         for (int k = i; k <= 2; k++) {
+         *             for (int l = k + 1; l <= 2; l++) {
+         *                 if (i != k || j != l) {
+         *                     solutions++;
+         *                 }
+         *             }
+         *         }
+         *     }
+         * }
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer person = model.addChild("Person").withCard(2, 2);
+        person.addChild("Age").withCard(2, 2).refToUnique(IntType);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-2).intHigh(2));
+        assertEquals(55, solver.allInstances().length);
     }
 
     /**
