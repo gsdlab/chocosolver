@@ -658,6 +658,17 @@ public class Coalescer {
                 IrIntExpr[] addends = add.getAddends();
                 if (addends.length == 1) {
                     propagateInt(IrUtil.offset(left, -add.getOffset()), addends[0]);
+                } else {
+                    for (IrIntExpr addend : addends) {
+                        IrDomain domain = addend.getDomain();
+                        IrDomain bound =
+                                IrUtil.intersection(
+                                boundDomain(
+                                left.getLowBound() - right.getDomain().getHighBound() + domain.getHighBound(),
+                                left.getHighBound() - right.getDomain().getLowBound() + domain.getLowBound()),
+                                domain);
+                        propagateInt(bound, addend);
+                    }
                 }
             } else if (right instanceof IrElement) {
                 IrElement element = (IrElement) right;
