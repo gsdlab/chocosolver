@@ -732,6 +732,25 @@ public class Coalescer {
                     propagateInt(env, child);
                 }
             }
+            if (left.isKerMask()) {
+                TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                while (iter.hasNext()) {
+                    int val = iter.next();
+                    IrIntExpr index = null;
+                    for (IrIntExpr operand : right.getArray()) {
+                        if (operand.getDomain().contains(val)) {
+                            if (index != null) {
+                                index = null;
+                                break;
+                            }
+                            index = operand;
+                        }
+                    }
+                    if (index != null) {
+                        propagateInt(constantDomain(val), index);
+                    }
+                }
+            }
         }
 
         private void propagateJoinRelation(PartialSet left, IrJoinRelation right) {
@@ -743,6 +762,28 @@ public class Coalescer {
                     PartialSet set = new PartialSet(env, null, card);
                     while (iter.hasNext()) {
                         propagateSet(set, right.getChildren()[iter.next()]);
+                    }
+                }
+                if (left.isKerMask()) {
+                    TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                    while (iter.hasNext()) {
+                        int val = iter.next();
+                        TIntIterator env = right.getTake().getEnv().iterator();
+                        int index = -1;
+                        while (env.hasNext()) {
+                            int j = env.next();
+                            if (right.getChildren()[j].getEnv().contains(val)) {
+                                if (index != -1) {
+                                    index = -1;
+                                    break;
+                                }
+                                index = j;
+                            }
+                        }
+                        if (index != -1) {
+                            propagateKer(constantDomain(index), right.getTake());
+                            propagateKer(constantDomain(val), right.getChildren()[index]);
+                        }
                     }
                 }
                 if (left.isCardMask()) {
@@ -793,6 +834,28 @@ public class Coalescer {
                     propagateInt(env, right.getRefs()[iter.next()]);
                 }
             }
+            if (left.isKerMask()) {
+                TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                while (iter.hasNext()) {
+                    int val = iter.next();
+                    TIntIterator env = right.getTake().getEnv().iterator();
+                    int index = -1;
+                    while (env.hasNext()) {
+                        int j = env.next();
+                        if (right.getRefs()[j].getDomain().contains(val)) {
+                            if (index != -1) {
+                                index = -1;
+                                break;
+                            }
+                            index = j;
+                        }
+                    }
+                    if (index != -1) {
+                        propagateKer(constantDomain(index), right.getTake());
+                        propagateInt(constantDomain(val), right.getRefs()[index]);
+                    }
+                }
+            }
             if (left.isCardMask()) {
                 IrDomain card = left.getCard();
                 IrSetExpr take = right.getTake();
@@ -830,6 +893,25 @@ public class Coalescer {
                     PartialSet set = new PartialSet(env, null, card);
                     for (IrSetExpr operand : operands) {
                         propagateSet(set, operand);
+                    }
+                }
+            }
+            if (left.isKerMask()) {
+                TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                while (iter.hasNext()) {
+                    int val = iter.next();
+                    IrSetExpr index = null;
+                    for (IrSetExpr operand : right.getOperands()) {
+                        if (operand.getEnv().contains(val)) {
+                            if (index != null) {
+                                index = null;
+                                break;
+                            }
+                            index = operand;
+                        }
+                    }
+                    if (index != null) {
+                        propagateKer(constantDomain(val), index);
                     }
                 }
             }
