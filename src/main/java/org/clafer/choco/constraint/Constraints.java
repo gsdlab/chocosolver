@@ -2,6 +2,7 @@ package org.clafer.choco.constraint;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
@@ -268,7 +269,9 @@ public class Constraints {
      * A constraint enforcing {@code set1 ≠ set2}.
      *
      * @param set1 the left set
+     * @param set1Card the cardinality of {@code set1}
      * @param set2 the right set
+     * @param set2Card the cardinality of {@code set2}
      * @return constraint {@code set1 ≠ set2}
      */
     public static Constraint notEqual(SetVar set1, IntVar set1Card, SetVar set2, IntVar set2Card) {
@@ -437,6 +440,20 @@ public class Constraints {
                 new Constraint<>(variables, n.getSolver());
         constraint.setPropagators(new PropSelectN(bools, n));
 
+        return constraint;
+    }
+
+    /**
+     * A constraint enforcing no cycles. {@code edges[i] = j} implies that there
+     * is a directed edge from node i to node j. {@code edges[i] = -1} implies
+     * that there are no direct edges from node i.
+     *
+     * @param edges the edges of the graph
+     * @return constraint enforcing no cycles
+     */
+    public static Constraint acyclic(IntVar... edges) {
+        Constraint<IntVar, PropAcyclic> constraint = new Constraint<>(edges, edges[0].getSolver());
+        constraint.setPropagators(new PropAcyclic(edges));
         return constraint;
     }
 
@@ -859,7 +876,6 @@ public class Constraints {
      * Does not enforce that {@code setCard = |set|} nor
      * {@code maskedCard = |masked|} because of how the compilation works, it is
      * already enforced elsewhere.
-     *
      *
      * @param set the set
      * @param setCard the cardinality of {@code set}

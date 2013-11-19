@@ -32,7 +32,7 @@ public abstract class ConstraintTest<T> extends ClaferTest {
         fail();
     }
 
-    protected void check(boolean positive, Constraint constraint, T s) {
+    private void check(boolean positive, Constraint constraint, T s) {
         try {
             if (positive) {
                 check(s);
@@ -47,15 +47,21 @@ public abstract class ConstraintTest<T> extends ClaferTest {
     protected void randomizedTest(TestCase<T> testCase) {
         try {
             Method method = testCase.getClass().getMethod("setup", Solver.class);
+            Sample sample = method.getAnnotation(Sample.class);
+            int repeat = sample == null ? 10 : sample.value();
             PositiveSolutions positive = method.getAnnotation(PositiveSolutions.class);
             if (positive == null) {
-                randomizedTest(testCase, true);
+                for (int i = 0; i < repeat; i++) {
+                    randomizedTest(testCase, true);
+                }
             } else {
                 randomizedTest(testCase, true, positive.value());
             }
             NegativeSolutions negative = method.getAnnotation(NegativeSolutions.class);
             if (negative == null) {
-                randomizedTest(testCase, false);
+                for (int i = 0; i < repeat; i++) {
+                    randomizedTest(testCase, false);
+                }
             } else {
                 randomizedTest(testCase, false, negative.value());
             }
@@ -65,53 +71,49 @@ public abstract class ConstraintTest<T> extends ClaferTest {
     }
 
     private void randomizedTest(TestCase<T> testCase, boolean positive) {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
+        Solver solver = new Solver();
 
-            Pair<Constraint, T> pair = testCase.setup(solver);
+        Pair<Constraint, T> pair = testCase.setup(solver);
 
-            Constraint constraint = positive ? pair.getFst() : pair.getFst().getOpposite();
-            T t = pair.getSnd();
-            solver.post(constraint);
+        Constraint constraint = positive ? pair.getFst() : pair.getFst().getOpposite();
+        T t = pair.getSnd();
+        solver.post(constraint);
 
-            randomizeStrategy(solver);
-            ESat entailed = isEntailed(constraint);
-            if (ESat.FALSE.equals(entailed)) {
-                if (solver.findSolution()) {
-                    fail("Did not expect a solution, found " + constraint);
-                }
-            } else if (solver.findSolution()) {
-                check(positive, constraint, t);
-                for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
-                    check(positive, constraint, t);
-                }
-            } else if (ESat.TRUE.equals(entailed)) {
-                fail("Expected at least one solution, " + constraint);
+        randomizeStrategy(solver);
+        ESat entailed = isEntailed(constraint);
+        if (ESat.FALSE.equals(entailed)) {
+            if (solver.findSolution()) {
+                fail("Did not expect a solution, found " + constraint);
             }
+        } else if (solver.findSolution()) {
+            check(positive, constraint, t);
+            for (int solutions = 1; solutions < 10 && solver.nextSolution(); solutions++) {
+                check(positive, constraint, t);
+            }
+        } else if (ESat.TRUE.equals(entailed)) {
+            fail("Expected at least one solution, " + constraint);
         }
     }
 
     private void randomizedTest(TestCase<T> testCase,
             boolean positive,
             int expectedNumberSolutions) {
-        for (int repeat = 0; repeat < 10; repeat++) {
-            Solver solver = new Solver();
+        Solver solver = new Solver();
 
-            Pair<Constraint, T> pair = testCase.setup(solver);
+        Pair<Constraint, T> pair = testCase.setup(solver);
 
-            Constraint constraint = positive ? pair.getFst() : pair.getFst().getOpposite();
-            T t = pair.getSnd();
-            solver.post(constraint);
+        Constraint constraint = positive ? pair.getFst() : pair.getFst().getOpposite();
+        T t = pair.getSnd();
+        solver.post(constraint);
 
-            int count = 0;
-            if (randomizeStrategy(solver).findSolution()) {
-                do {
-                    check(positive, constraint, t);
-                    count++;
-                } while (solver.nextSolution());
-            }
-            assertEquals(expectedNumberSolutions, count);
+        int count = 0;
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                check(positive, constraint, t);
+                count++;
+            } while (solver.nextSolution());
         }
+        assertEquals(expectedNumberSolutions, count);
     }
 
     protected static <A, B> Pair<A, B> pair(A a, B b) {
@@ -125,6 +127,17 @@ public abstract class ConstraintTest<T> extends ClaferTest {
     public static interface TestCase<T> {
 
         Pair<Constraint, T> setup(Solver solver);
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public static @interface Sample {
+
+        /**
+         * @return the number of times to repeat the experiment if the number of
+         * solutions is unknown
+         */
+        int value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
