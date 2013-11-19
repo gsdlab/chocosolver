@@ -11,6 +11,7 @@ import java.util.Set;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
+import org.clafer.ir.IrAcyclic;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
@@ -267,6 +268,16 @@ public class Coalescer {
         }
 
         @Override
+        public Void visit(IrSubsetEq ir, Void a) {
+            IrSetExpr sub = ir.getSubset();
+            IrSetExpr sup = ir.getSuperset();
+            propagateSet(new PartialSet(sup.getEnv(), null, sup.getCard()), sub);
+            propagateSet(new PartialSet(null, sub.getKer(),
+                    IrUtil.boundLow(sup.getCard(), sub.getCard().getLowBound())), sub);
+            return null;
+        }
+
+        @Override
         public Void visit(IrBoolChannel ir, Void a) {
             IrBoolExpr[] bools = ir.getBools();
             IrSetExpr set = ir.getSet();
@@ -342,6 +353,19 @@ public class Coalescer {
         }
 
         @Override
+        public Void visit(IrSortStrings ir, Void a) {
+            IrIntExpr[][] strings = ir.getStrings();
+            for (int i = 0; i < strings.length - 1; i++) {
+                if (ir.isStrict()) {
+                    propagateLessThanString(strings[i], strings[i + 1]);
+                } else {
+                    propagateLessThanEqualString(strings[i], strings[i + 1]);
+                }
+            }
+            return null;
+        }
+
+        @Override
         public Void visit(IrSortSets ir, Void a) {
             IrSetExpr[] sets = ir.getSets();
             int low = 0;
@@ -362,19 +386,6 @@ public class Coalescer {
                 propagateSet(new PartialSet(env, ker, null), set);
                 low = newLow;
                 high = newHigh;
-            }
-            return null;
-        }
-
-        @Override
-        public Void visit(IrSortStrings ir, Void a) {
-            IrIntExpr[][] strings = ir.getStrings();
-            for (int i = 0; i < strings.length - 1; i++) {
-                if (ir.isStrict()) {
-                    propagateLessThanString(strings[i], strings[i + 1]);
-                } else {
-                    propagateLessThanEqualString(strings[i], strings[i + 1]);
-                }
             }
             return null;
         }
@@ -462,12 +473,7 @@ public class Coalescer {
         }
 
         @Override
-        public Void visit(IrSubsetEq ir, Void a) {
-            IrSetExpr sub = ir.getSubset();
-            IrSetExpr sup = ir.getSuperset();
-            propagateSet(new PartialSet(sup.getEnv(), null, sup.getCard()), sub);
-            propagateSet(new PartialSet(null, sub.getKer(),
-                    IrUtil.boundLow(sup.getCard(), sub.getCard().getLowBound())), sub);
+        public Void visit(IrAcyclic ir, Void a) {
             return null;
         }
 

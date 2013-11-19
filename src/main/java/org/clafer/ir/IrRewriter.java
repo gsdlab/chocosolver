@@ -335,6 +335,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrAcyclic ir, T a) {
+        IrIntExpr[] edges = rewrite(ir.getEdges(), a);
+        return changed(ir.getEdges(), edges)
+                ? acyclic(edges)
+                : ir;
+    }
+
+    @Override
     public IrBoolExpr visit(IrFilterString ir, T a) {
         IrSetExpr set = rewrite(ir.getSet(), a);
         IrIntExpr[] string = rewrite(ir.getString(), a);

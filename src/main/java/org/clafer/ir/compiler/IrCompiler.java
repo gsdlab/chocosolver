@@ -946,14 +946,15 @@ public class IrCompiler {
 
         @Override
         public Constraint visit(IrSelectN ir, BoolArg a) {
-            IrBoolExpr[] bools = ir.getBools();
-            IrIntExpr n = ir.getN();
-            BoolVar[] $bools = new BoolVar[bools.length];
-            for (int i = 0; i < $bools.length; i++) {
-                $bools[i] = compileAsBoolVar(bools[i]);
-            }
-            IntVar $n = compile(n);
-            return Constraints.selectN($bools, $n);
+            BoolVar[] bools = compileAsBoolVars(ir.getBools());
+            IntVar n = compile(ir.getN());
+            return Constraints.selectN(bools, n);
+        }
+
+        @Override
+        public Object visit(IrAcyclic ir, BoolArg a) {
+            IntVar[] edges = compile(ir.getEdges());
+            return Constraints.acyclic(edges);
         }
 
         @Override
@@ -1279,6 +1280,11 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrSelectN ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrAcyclic ir, IntVar a) {
             return compileBool(ir, a);
         }
 

@@ -1000,6 +1000,10 @@ public class Irs {
         return new IrSelectN(bools, n, BoolDomain);
     }
 
+    public static IrBoolExpr acyclic(IrIntExpr[] edges) {
+        return new IrAcyclic(edges, BoolDomain);
+    }
+
     public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
         if (set.getEnv().isEmpty()) {
             return filterString(set, 0, new IrIntExpr[0], result);
