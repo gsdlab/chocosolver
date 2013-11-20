@@ -654,7 +654,11 @@ public class Coalescer {
             }
             if (right instanceof IrIntVar) {
                 IrDomain domain = IrUtil.intersection(left, right.getDomain());
-                intGraph.union((IrIntVar) right, domainInt("domain" + domain, domain));
+                if (domain.isEmpty()) {
+                    // Model is unsatisfiable. Compile anyways?
+                } else {
+                    intGraph.union((IrIntVar) right, domainInt("domain" + domain, domain));
+                }
             } else if (right instanceof IrMinus) {
                 propagateInt(IrUtil.minus(left), ((IrMinus) right).getExpr());
             } else if (right instanceof IrCard) {
