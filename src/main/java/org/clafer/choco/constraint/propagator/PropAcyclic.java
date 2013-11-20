@@ -20,10 +20,10 @@ public class PropAcyclic extends Propagator<IntVar> {
 
     /**
      * Enforce no cycles. {@code edges[i] = j} implies that there is a directed
-     * edge from node i to node j. {@code edges[i] = -1} implies that there are
-     * no direct edges from node i.
+     * edge from node i to node j. {@code edges[i] = edges.length} implies that
+     * there are no direct edges from node i.
      *
-     * @param edges
+     * @param edges the edges
      */
     public PropAcyclic(IntVar[] edges) {
         super(edges, PropagatorPriority.TERNARY, true);
@@ -56,8 +56,8 @@ public class PropAcyclic extends Propagator<IntVar> {
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
             vars[i].removeValue(i, aCause);
-            vars[i].updateLowerBound(-1, aCause);
-            vars[i].updateUpperBound(vars.length - 1, aCause);
+            vars[i].updateLowerBound(0, aCause);
+            vars[i].updateUpperBound(vars.length, aCause);
         }
         for (int i = 0; i < vars.length; i++) {
             if (vars[i].instantiated()) {
@@ -68,7 +68,7 @@ public class PropAcyclic extends Propagator<IntVar> {
 
     private void follow(int follower, int leader) throws ContradictionException {
         assert vars[follower].instantiated();
-        if (leader == -1) {
+        if (leader == vars.length) {
             return;
         }
         int realLeader = getLeader(leader);
@@ -114,10 +114,10 @@ public class PropAcyclic extends Propagator<IntVar> {
                     }
                     visited[cur] = localVisited[cur] = true;
                     cur = vars[cur].getValue();
-                    if (cur < -1 || cur >= vars.length) {
+                    if (cur < 0 || cur > vars.length) {
                         return ESat.FALSE;
                     }
-                } while (cur != -1 && vars[cur].instantiated());
+                } while (cur != vars.length && vars[cur].instantiated());
             } else {
                 allInstantiated = false;
             }

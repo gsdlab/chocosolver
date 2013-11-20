@@ -445,8 +445,8 @@ public class Constraints {
 
     /**
      * A constraint enforcing no cycles. {@code edges[i] = j} implies that there
-     * is a directed edge from node i to node j. {@code edges[i] = -1} implies
-     * that there are no direct edges from node i.
+     * is a directed edge from node i to node j. {@code edges[i] = edges.length}
+     * implies that there are no direct edges from node i.
      *
      * @param edges the edges of the graph
      * @return constraint enforcing no cycles

@@ -24,7 +24,7 @@ public class AcyclicTest extends ConstraintTest<IntVar[]> {
             int from = i;
             int to = s[from].getValue();
             assertNotEquals("Cycle of length 1", from, to);
-            assertTrue(to >= -1 && to < s.length);
+            assertTrue(to >= 0 && to <= s.length);
             graph.addEdge(from, to);
         }
         for (Set<Integer> component : GraphUtil.computeStronglyConnectedComponents(graph)) {
@@ -50,7 +50,7 @@ public class AcyclicTest extends ConstraintTest<IntVar[]> {
          * import Data.Graph
          *
          * positive = do
-         *     is <- replicateM 4 [-1..3]
+         *     is <- replicateM 4 [0..4]
          *     guard $ all isAcyclic $ stronglyConnComp [(from, from, [to]) | (from, to) <- zip [0..] is]
          *     return is
          *     where
@@ -64,7 +64,7 @@ public class AcyclicTest extends ConstraintTest<IntVar[]> {
             @NegativeSolutions(500)
             @Override
             public Pair<Constraint, IntVar[]> setup(Solver solver) {
-                IntVar[] edges = VF.enumeratedArray("is", 4, -1, 3, solver);
+                IntVar[] edges = VF.enumeratedArray("edges", 4, 0, 4, solver);
                 return pair(Constraints.acyclic(edges), edges);
             }
         });
