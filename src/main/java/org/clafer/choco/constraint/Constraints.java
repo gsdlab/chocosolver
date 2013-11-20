@@ -28,6 +28,7 @@ import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
+import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
@@ -454,6 +455,21 @@ public class Constraints {
     public static Constraint acyclic(IntVar... edges) {
         Constraint<IntVar, PropAcyclic> constraint = new Constraint<>(edges, edges[0].getSolver());
         constraint.setPropagators(new PropAcyclic(edges));
+        return constraint;
+    }
+
+    /**
+     * A constraint enforcing no path from one node to another.
+     * {@code edges[i] = j} implies that there is a directed edge from node i to
+     * node j. {@code edges[i] ≥ edges.length} implies that there are no direct
+     * edges from node i.
+     *
+     * @param edges the edges of the graph
+     * @return constraint enforcing no path from one node to another
+     */
+    public static Constraint unreachable(IntVar[] edges, int from, int to) {
+        Constraint<IntVar, PropUnreachable> constraint = new Constraint<>(edges, edges[0].getSolver());
+        constraint.setPropagators(new PropUnreachable(edges, from, to));
         return constraint;
     }
 
