@@ -222,10 +222,60 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 | b.updateLowerBound(a.getLB(), aCause);
     }
 
+    private boolean propagateSmallest(boolean[] notSmallest, boolean notSmaller[], boolean[] lessThanEqual, int smallest) throws ContradictionException {
+        boolean changed = false;
+        boolean stop = true;
+        boolean lessThanEqualStop = false;
+        boolean[] notNextSmallest = new boolean[strings.length];
+        for (int i = 0; i < notSmallest.length; i++) {
+            if (!notSmallest[i]) {
+                notSmaller[i] = false;
+                stop = false;
+                lessThanEqualStop |= lessThanEqual[i];
+                changed |= ints[i].instantiateTo(smallest, aCause);
+            }
+            notNextSmallest[i] = !notSmaller[i];
+        }
+        if (stop || lessThanEqualStop) {
+            return changed;
+        }
+        for (int i = 0; i < strings.length; i++) {
+            if (notSmaller[i]) {
+                for (int j = i + 1; j < strings.length; j++) {
+                    if (notSmaller[j]) {
+                        Ordering ord = compareString(strings[i], strings[j]);
+                        switch (ord) {
+                            case LE:
+                                lessThanEqual[i] = true;
+                            // fallthrough
+                            case LT:
+                                notNextSmallest[j] = true;
+                                break;
+                            case GE:
+                                lessThanEqual[j] = true;
+                            // fallthrough
+                            case GT:
+                                notNextSmallest[i] = true;
+                                break;
+                            case UNKNOWN:
+                                notNextSmallest[i] = true;
+                                notNextSmallest[j] = true;
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+        changed |= propagateSmallest(notNextSmallest, notSmaller, lessThanEqual, smallest + 1);
+        return changed;
+    }
+
     // Idempotent.
     private boolean propagateStrings() throws ContradictionException {
         Update operations = new Update(strings.length);
         int eqs = 0;
+        boolean[] notSmallest = new boolean[strings.length];
+        boolean[] lessThanEqual = new boolean[strings.length];
         for (int i = 0; i < strings.length; i++) {
             boolean equivalenceClass = false;
             for (int j = i + 1; j < strings.length; j++) {
@@ -233,12 +283,25 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 switch (ord) {
                     case EQ:
                         equivalenceClass = true;
+                        operations.add(i, j, ord);
+                        break;
+                    case LE:
+                        lessThanEqual[i] = true;
                     // fallthrough
                     case LT:
-                    case LE:
-                    case GT:
-                    case GE:
+                        notSmallest[j] = true;
                         operations.add(i, j, ord);
+                        break;
+                    case GE:
+                        lessThanEqual[j] = true;
+                    // fallthrough
+                    case GT:
+                        notSmallest[i] = true;
+                        operations.add(i, j, ord);
+                        break;
+                    case UNKNOWN:
+                        notSmallest[i] = true;
+                        notSmallest[j] = true;
                         break;
                 }
             }
@@ -246,7 +309,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 eqs++;
             }
         }
-        boolean changed = false;
+        boolean changed = propagateSmallest(notSmallest, notSmallest, lessThanEqual, 0);
         for (int i = 0; i < ints.length; i++) {
             changed |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
         }
