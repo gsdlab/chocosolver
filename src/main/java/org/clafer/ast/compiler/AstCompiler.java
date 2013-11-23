@@ -270,10 +270,15 @@ public class AstCompiler {
                         int parentOffset = getOffset(unionType, concreteChild.getParent());
                         for (int i = 0; i < members.length; i++) {
                             assert edges[i + offset] == uninitialized;
-                            edges[i + offset] = ternary(members[i],
+                            IrIntExpr value = ternary(members[i],
                                     // Add the offset to upcast the parent pointer
                                     add(parents[i], parentOffset),
                                     uninitialized);
+                            IrIntVar edge = domainInt(
+                                    "Edge@" + concreteChild + "->" + concreteChild.getParent() + "#" + i,
+                                    value.getDomain());
+                            module.addConstraint(equal(edge, value));
+                            edges[i + offset] = edge;
                         }
                     }
                 }
