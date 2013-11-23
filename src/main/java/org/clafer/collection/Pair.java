@@ -68,6 +68,7 @@ public class Pair<A, B> {
      * @param array the array to write to if the size is correct
      * @return the first element of the tuples
      */
+    @SafeVarargs
     public static <A, B> A[] mapFst(Pair<A, B>[] pairs, A... array) {
         @SuppressWarnings("unchecked")
         A[] to = array.length == pairs.length
@@ -106,6 +107,7 @@ public class Pair<A, B> {
      * @param array the array to write to if the size is correct
      * @return the second element of the tuples
      */
+    @SafeVarargs
     public static <A, B> B[] mapSnd(Pair<A, B>[] pairs, B... array) {
         @SuppressWarnings("unchecked")
         B[] to = array.length == pairs.length

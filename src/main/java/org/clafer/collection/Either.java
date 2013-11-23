@@ -59,6 +59,7 @@ public class Either<A, B> {
         return lefts;
     }
 
+    @SafeVarargs
     public static <A, B> A[] filterLeft(Either<A, B>[] eithers, A... array) {
         List<A> lefts = new ArrayList<>();
         for (Either<A, B> either : eithers) {
@@ -83,6 +84,7 @@ public class Either<A, B> {
         return rights;
     }
 
+    @SafeVarargs
     public static <A, B> B[] filterRight(Either<A, B>[] eithers, B... array) {
         List<B> rights = new ArrayList<>();
         for (Either<A, B> either : eithers) {

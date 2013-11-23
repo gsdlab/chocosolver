@@ -87,6 +87,7 @@ public class Triple<A, B, C> {
      * @param array the array to write to if the size is correct
      * @return the first element of the tuples
      */
+    @SafeVarargs
     public static <A, B, C> A[] mapFst(Triple<A, B, C>[] triples, A... array) {
         @SuppressWarnings("unchecked")
         A[] to = array.length == triples.length
@@ -127,6 +128,7 @@ public class Triple<A, B, C> {
      * @param array the array to write to if the size is correct
      * @return the second element of the tuples
      */
+    @SafeVarargs
     public static <A, B, C> B[] mapSnd(Triple<A, B, C>[] triples, B... array) {
         @SuppressWarnings("unchecked")
         B[] to = array.length == triples.length
@@ -167,6 +169,7 @@ public class Triple<A, B, C> {
      * @param array the array to write to if the size is correct
      * @return the third element of the tuples
      */
+    @SafeVarargs
     public static <A, B, C> C[] mapThd(Triple<A, B, C>[] triples, C... array) {
         @SuppressWarnings("unchecked")
         C[] to = array.length == triples.length
