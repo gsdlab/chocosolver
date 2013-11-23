@@ -4,7 +4,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 
 /**
  * A sum type. Does not allow nulls.
@@ -13,40 +12,22 @@ import org.clafer.common.Util;
  * @param <B> the type of right
  * @author jimmy
  */
-public class Either<A, B> {
+public abstract class Either<A, B> {
 
-    private final A left;
-    private final B right;
+    public abstract boolean isLeft();
 
-    private Either(A left, B right) {
-        this.left = left;
-        this.right = right;
-    }
+    public abstract A getLeft();
 
-    public boolean isLeft() {
-        return left != null;
-    }
+    public abstract boolean isRight();
 
-    public A getLeft() {
-        assert isLeft();
-        return left;
-    }
-
-    public boolean isRight() {
-        return right != null;
-    }
-
-    public B getRight() {
-        assert isRight();
-        return right;
-    }
+    public abstract B getRight();
 
     public static <A, B> Either<A, B> left(A left) {
-        return new Either<>(Check.notNull(left), null);
+        return new Left<>(Check.notNull(left));
     }
 
     public static <A, B> Either<A, B> right(B right) {
-        return new Either<>(null, Check.notNull(right));
+        return new Right<>(Check.notNull(right));
     }
 
     public static <A, B> List<A> filterLeft(List<Either<A, B>> eithers) {
@@ -97,24 +78,5 @@ public class Either<A, B> {
                 ? array
                 : (B[]) Array.newInstance(array.getClass().getComponentType(), rights.size());
         return rights.toArray(to);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Either<?, ?>) {
-            Either<?, ?> other = (Either<?, ?>) obj;
-            return Util.equals(left, other.left) && Util.equals(right, other.right);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return Util.hashCode(left) ^ Util.hashCode(right);
-    }
-
-    @Override
-    public String toString() {
-        return isLeft() ? "Left " + left : "Right " + right;
     }
 }
