@@ -635,4 +635,46 @@ public class SimpleStructureTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(c, 1).setScope(d, 1));
         assertTrue(solver.find());
     }
+
+    /**
+     * <pre>
+     * abstract Path
+     *     p : Path ?
+     *
+     * pth : Path
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testCircular() {
+        AstModel model = newModel();
+
+        AstAbstractClafer path = model.addAbstract("Path");
+        AstConcreteClafer p = path.addChild("p").extending(path).withCard(Optional);
+        AstConcreteClafer pth = model.addChild("pth").extending(path).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5));
+        assertEquals(6, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Path
+     *     p : Path ?
+     *         q : Path ?
+     *
+     * pth : Path
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void test2LevelCircular() {
+        AstModel model = newModel();
+
+        AstAbstractClafer path = model.addAbstract("Path");
+        AstConcreteClafer p = path.addChild("p").extending(path).withCard(Optional);
+        AstConcreteClafer q = p.addChild("q").extending(path).withCard(Optional);
+        AstConcreteClafer pth = model.addChild("pth").extending(path).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5));
+        assertEquals(243, solver.allInstances().length);
+    }
 }

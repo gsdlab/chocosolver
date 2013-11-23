@@ -53,7 +53,6 @@ import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.Analyzer;
 import org.clafer.ast.analysis.CardAnalyzer;
-import org.clafer.ast.analysis.CircularityAnalyzer;
 import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.FormatAnalyzer;
 import org.clafer.ast.analysis.GlobalCardAnalyzer;
@@ -95,7 +94,6 @@ import org.clafer.scope.Scope;
 public class AstCompiler {
 
     public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
-        new CircularityAnalyzer(),
         new TypeAnalyzer(),
         new GlobalCardAnalyzer(),
         new ScopeAnalyzer(),
@@ -210,7 +208,7 @@ public class AstCompiler {
         }
 
         Map<AstConstraint, IrBoolVar> softVars = new HashMap<>();
-        for (AstConstraint constraint : getConstraints()) {
+        for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
             int scope = getScope(clafer);
             if (analysis.isHard(constraint)) {
@@ -245,9 +243,62 @@ public class AstCompiler {
             }
         }
 
+        for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {
+            if (component.size() > 1) {
+                /*
+                 * Add additional constraints for to handle cases where a
+                 * descendent inherits an ancestor.
+                 *
+                 * Let A be an abstract Clafer and B be a descendant of A that
+                 * inherits A. Let F be a mapping every B to its ancestor A.
+                 * Enforce that F is an acyclic function.
+                 */
+                List<AstClafer> types = new ArrayList<>();
+                for (AstClafer clafer : component) {
+                    types.add(clafer);
+                }
+                AstAbstractClafer unionType = (AstAbstractClafer) AstUtil.getLowestCommonSupertype(types);
+                IrIntExpr[] edges = new IrIntExpr[getScope(unionType)];
+                IrIntExpr uninitialized = constant(edges.length);
+                Arrays.fill(edges, uninitialized);
+                for (AstClafer clafer : component) {
+                    if (clafer instanceof AstConcreteClafer) {
+                        AstConcreteClafer concreteChild = (AstConcreteClafer) clafer;
+                        IrBoolExpr[] members = memberships.get(concreteChild);
+                        IrIntExpr[] parents = parentPointers.get(concreteChild);
+                        int offset = getOffset(unionType, concreteChild);
+                        int parentOffset = getOffset(unionType, concreteChild.getParent());
+                        for (int i = 0; i < members.length; i++) {
+                            assert edges[i + offset] == uninitialized;
+                            edges[i + offset] = ternary(members[i],
+                                    // Add the offset to upcast the parent pointer
+                                    add(parents[i], parentOffset),
+                                    uninitialized);
+                        }
+                    }
+                }
+                for (AstClafer clafer : component) {
+                    if (clafer instanceof AstConcreteClafer) {
+                        IrBoolExpr[] members = memberships.get(clafer);
+                        int offset = getOffset(unionType, clafer);
+                        for (int i = 0; i < members.length; i++) {
+                            for (int j = i + 1; j < members.length; j++) {
+                                /*
+                                 * Symmetry breaking. The lower indexed element
+                                 * appears on top of the higher indexed element.
+                                 */
+                                module.addConstraint(unreachable(edges, i + offset, j + offset));
+                            }
+                        }
+                    }
+                }
+                module.addConstraint(acyclic(edges));
+            }
+        }
+
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
         Map<Objective, IrIntVar> objectiveVars = new HashMap<>();
-        Map<Objective, AstSetExpr> objectives = getObjectivesExprs();
+        Map<Objective, AstSetExpr> objectives = analysis.getObjectiveExprs();
         for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
             IrIntExpr objectiveExpr = expressionCompiler.asInt(
                     expressionCompiler.compile(objective.getValue()));
@@ -352,12 +403,14 @@ public class AstCompiler {
                 || analysis.isInheritedBreakableTarget(clafer))) {
 
             IrIntExpr[] weight = new IrIntExpr[scope];
+            weights.put(clafer, weight);
             IrIntExpr[][] index = indices.get(clafer);
 
             analysis.getHierarcyIds(clafer, refOffset);
             IrIntExpr[][] childIndices = new IrIntExpr[weight.length][];
 
             List<Pair<AstClafer, Integer>> offsets = analysis.getHierarcyOffsets(clafer);
+            Collections.reverse(offsets);
             boolean[] breakableRefIds = new boolean[childIndices.length];
             for (int i = 0; i < childIndices.length; i++) {
                 List<IrIntExpr> childIndex = new ArrayList<>();
@@ -672,6 +725,8 @@ public class AstCompiler {
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<>();
+    // The weight of an uninitialed Clafer is always zero.
+    private final Map<AstClafer, IrIntExpr[]> weights = new HashMap<>();
     private int countCount = 0;
     private int localCount = 0;
 
@@ -800,11 +855,6 @@ public class AstCompiler {
 
             IrExpr children = compile(ast.getChildren());
             if (children instanceof IrIntExpr) {
-                // Only one possible parent.
-                if (getScope(childrenType.getParent()) == 1) {
-                    return Zero;
-                }
-
                 IrIntExpr intChildren = (IrIntExpr) children;
                 switch (getFormat(childrenType)) {
                     case ParentGroup:
@@ -1391,13 +1441,5 @@ public class AstCompiler {
 
     private AstClafer getCommonSupertype(AstExpr expr) {
         return analysis.getCommonSupertype(expr);
-    }
-
-    private List<AstConstraint> getConstraints() {
-        return analysis.getConstraints();
-    }
-
-    private Map<Objective, AstSetExpr> getObjectivesExprs() {
-        return analysis.getObjectiveExprs();
     }
 }
