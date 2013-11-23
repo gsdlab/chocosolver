@@ -133,6 +133,16 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     }
 
     @Override
+    public B visit(IrAcyclic ir, A a) {
+        return null;
+    }
+
+    @Override
+    public B visit(IrUnreachable ir, A a) {
+        return null;
+    }
+
+    @Override
     public B visit(IrFilterString ir, A a) {
         return null;
     }

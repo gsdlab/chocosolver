@@ -1004,6 +1004,10 @@ public class Irs {
         return new IrAcyclic(edges, BoolDomain);
     }
 
+    public static IrBoolExpr unreachable(IrIntExpr[] edges, int from, int to) {
+        return new IrUnreachable(edges, from, to, BoolDomain);
+    }
+
     public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
         if (set.getEnv().isEmpty()) {
             return filterString(set, 0, new IrIntExpr[0], result);

@@ -11,7 +11,6 @@ import java.util.Set;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
-import org.clafer.ir.IrAcyclic;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
@@ -469,11 +468,6 @@ public class Coalescer {
             for (int i = n.getDomain().getHighBound(); i < bools.length; i++) {
                 propagateInt(FalseDomain, bools[i]);
             }
-            return null;
-        }
-
-        @Override
-        public Void visit(IrAcyclic ir, Void a) {
             return null;
         }
 

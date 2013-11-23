@@ -14,6 +14,7 @@ import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
+import org.clafer.ir.IrAcyclic;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrAnd;
@@ -70,6 +71,7 @@ import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
+import org.clafer.ir.IrUnreachable;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
@@ -958,6 +960,12 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrUnreachable ir, BoolArg a) {
+            IntVar[] edges = compile(ir.getEdges());
+            return Constraints.unreachable(edges, ir.getFrom(), ir.getTo());
+        }
+
+        @Override
         public Object visit(IrFilterString ir, BoolArg a) {
             CSet set = compile(ir.getSet());
             int offset = ir.getOffset();
@@ -1285,6 +1293,11 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrAcyclic ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrUnreachable ir, IntVar a) {
             return compileBool(ir, a);
         }
 

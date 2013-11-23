@@ -343,6 +343,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrUnreachable ir, T a) {
+        IrIntExpr[] edges = rewrite(ir.getEdges(), a);
+        return changed(ir.getEdges(), edges)
+                ? unreachable(edges, ir.getFrom(), ir.getTo())
+                : ir;
+    }
+
+    @Override
     public IrBoolExpr visit(IrFilterString ir, T a) {
         IrSetExpr set = rewrite(ir.getSet(), a);
         IrIntExpr[] string = rewrite(ir.getString(), a);

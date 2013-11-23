@@ -59,5 +59,9 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrSelectN ir, A a);
 
+    public B visit(IrAcyclic ir, A a);
+
+    public B visit(IrUnreachable ir, A a);
+
     public B visit(IrFilterString ir, A a);
 }
