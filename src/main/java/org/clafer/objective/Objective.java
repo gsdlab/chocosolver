@@ -83,6 +83,6 @@ public class Objective {
 
     @Override
     public String toString() {
-        return maximize ? "Maximize " + expr : "Minimize " + expr;
+        return "<<" + (maximize ? "max " : "min ") + expr + ">>";
     }
 }
