@@ -1,5 +1,6 @@
 package org.clafer.ir.compiler;
 
+import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -91,6 +92,7 @@ import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
+import solver.variables.view.SetConstantView;
 
 /**
  * Compile from IR to Choco.
@@ -202,6 +204,7 @@ public class IrCompiler {
         }
         return composed;
     }
+    private final Map<TIntHashSet, SetVar> cachedSetConstants = new HashMap<>();
     private final Map<SetVar, IntVar> cachedSetCardVars = new HashMap<>();
     private final Map<IntVar, IntVar> cachedMinus = new HashMap<>();
     private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<>();
@@ -251,7 +254,13 @@ public class IrCompiler {
         assert IrUtil.isSubsetOf(ker, env);
         if (env.size() == ker.size()) {
             int[] values = ker.getValues();
-            return VF.set(name, values, values, solver);
+            TIntHashSet valueSet = new TIntHashSet(values);
+            SetVar var = cachedSetConstants.get(valueSet);
+            if (var == null) {
+                var = new SetConstantView(Arrays.toString(values), valueSet, solver);
+                cachedSetConstants.put(valueSet, var);
+            }
+            return var;
         }
         return VF.set(name, env.getValues(), ker.getValues(), solver);
     }
