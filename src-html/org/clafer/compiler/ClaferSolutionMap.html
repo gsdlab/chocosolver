@@ -11,11 +11,11 @@
 <span class="sourceLineNo">003</span>import java.util.ArrayList;<a name="line.3"></a>
 <span class="sourceLineNo">004</span>import java.util.List;<a name="line.4"></a>
 <span class="sourceLineNo">005</span>import org.clafer.ast.AstAbstractClafer;<a name="line.5"></a>
-<span class="sourceLineNo">006</span>import org.clafer.common.Check;<a name="line.6"></a>
-<span class="sourceLineNo">007</span>import org.clafer.ast.AstClafer;<a name="line.7"></a>
-<span class="sourceLineNo">008</span>import org.clafer.ast.AstConcreteClafer;<a name="line.8"></a>
-<span class="sourceLineNo">009</span>import org.clafer.ast.compiler.AstSolutionMap;<a name="line.9"></a>
-<span class="sourceLineNo">010</span>import org.clafer.collection.Pair;<a name="line.10"></a>
+<span class="sourceLineNo">006</span>import org.clafer.ast.AstClafer;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import org.clafer.ast.AstConcreteClafer;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.clafer.ast.compiler.AstSolutionMap;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import org.clafer.collection.Pair;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.clafer.common.Check;<a name="line.10"></a>
 <span class="sourceLineNo">011</span>import org.clafer.instance.InstanceClafer;<a name="line.11"></a>
 <span class="sourceLineNo">012</span>import org.clafer.instance.InstanceModel;<a name="line.12"></a>
 <span class="sourceLineNo">013</span>import org.clafer.instance.InstanceRef;<a name="line.13"></a>
@@ -38,7 +38,7 @@
 <span class="sourceLineNo">030</span>    }<a name="line.30"></a>
 <span class="sourceLineNo">031</span><a name="line.31"></a>
 <span class="sourceLineNo">032</span>    public InstanceModel getInstance() {<a name="line.32"></a>
-<span class="sourceLineNo">033</span>        List&lt;InstanceClafer&gt; topInstances = new ArrayList&lt;InstanceClafer&gt;();<a name="line.33"></a>
+<span class="sourceLineNo">033</span>        List&lt;InstanceClafer&gt; topInstances = new ArrayList&lt;&gt;();<a name="line.33"></a>
 <span class="sourceLineNo">034</span>        for (AstConcreteClafer child : astSolution.getModel().getChildren()) {<a name="line.34"></a>
 <span class="sourceLineNo">035</span>            // [0] because top clafers only have exactly one children set<a name="line.35"></a>
 <span class="sourceLineNo">036</span>            IrSetVar topSetIrVar = astSolution.getSiblingVars(child)[0];<a name="line.36"></a>
@@ -51,7 +51,7 @@
 <span class="sourceLineNo">043</span>    }<a name="line.43"></a>
 <span class="sourceLineNo">044</span><a name="line.44"></a>
 <span class="sourceLineNo">045</span>    private InstanceClafer getInstanceClafer(AstConcreteClafer clafer, int id) {<a name="line.45"></a>
-<span class="sourceLineNo">046</span>        List&lt;InstanceClafer&gt; children = new ArrayList&lt;InstanceClafer&gt;();<a name="line.46"></a>
+<span class="sourceLineNo">046</span>        List&lt;InstanceClafer&gt; children = new ArrayList&lt;&gt;();<a name="line.46"></a>
 <span class="sourceLineNo">047</span>        InstanceRef ref = getInstanceClafer(clafer, id, children);<a name="line.47"></a>
 <span class="sourceLineNo">048</span>        return new InstanceClafer(clafer, id, ref, children.toArray(new InstanceClafer[children.size()]));<a name="line.48"></a>
 <span class="sourceLineNo">049</span>    }<a name="line.49"></a>

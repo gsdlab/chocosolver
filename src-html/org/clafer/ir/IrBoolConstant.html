@@ -12,7 +12,7 @@
 <span class="sourceLineNo">004</span> *<a name="line.4"></a>
 <span class="sourceLineNo">005</span> * @author jimmy<a name="line.5"></a>
 <span class="sourceLineNo">006</span> */<a name="line.6"></a>
-<span class="sourceLineNo">007</span>public class IrBoolConstant extends IrBoolVar {<a name="line.7"></a>
+<span class="sourceLineNo">007</span>public class IrBoolConstant extends IrBoolVar implements IrConstant {<a name="line.7"></a>
 <span class="sourceLineNo">008</span><a name="line.8"></a>
 <span class="sourceLineNo">009</span>    private final boolean value;<a name="line.9"></a>
 <span class="sourceLineNo">010</span><a name="line.10"></a>
@@ -32,7 +32,7 @@
 <span class="sourceLineNo">024</span>        }<a name="line.24"></a>
 <span class="sourceLineNo">025</span>        if (obj instanceof IrBoolConstant) {<a name="line.25"></a>
 <span class="sourceLineNo">026</span>            IrBoolConstant other = (IrBoolConstant) obj;<a name="line.26"></a>
-<span class="sourceLineNo">027</span>            // Don't need to call super.hashCode since the domain is the same as value.<a name="line.27"></a>
+<span class="sourceLineNo">027</span>            // Don't need to call super.equals since the domain is the same as value.<a name="line.27"></a>
 <span class="sourceLineNo">028</span>            return value == other.value;<a name="line.28"></a>
 <span class="sourceLineNo">029</span>        }<a name="line.29"></a>
 <span class="sourceLineNo">030</span>        return false;<a name="line.30"></a>
@@ -46,7 +46,7 @@
 <span class="sourceLineNo">038</span><a name="line.38"></a>
 <span class="sourceLineNo">039</span>    @Override<a name="line.39"></a>
 <span class="sourceLineNo">040</span>    public String toString() {<a name="line.40"></a>
-<span class="sourceLineNo">041</span>        return value ? "True" : "False";<a name="line.41"></a>
+<span class="sourceLineNo">041</span>        return getName();<a name="line.41"></a>
 <span class="sourceLineNo">042</span>    }<a name="line.42"></a>
 <span class="sourceLineNo">043</span>}<a name="line.43"></a>
 

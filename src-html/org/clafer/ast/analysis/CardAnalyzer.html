@@ -24,7 +24,7 @@
 <span class="sourceLineNo">016</span><a name="line.16"></a>
 <span class="sourceLineNo">017</span>    @Override<a name="line.17"></a>
 <span class="sourceLineNo">018</span>    public Analysis analyze(Analysis analysis) {<a name="line.18"></a>
-<span class="sourceLineNo">019</span>        Map&lt;AstConcreteClafer, Card&gt; cardMap = new HashMap&lt;AstConcreteClafer, Card&gt;();<a name="line.19"></a>
+<span class="sourceLineNo">019</span>        Map&lt;AstConcreteClafer, Card&gt; cardMap = new HashMap&lt;&gt;();<a name="line.19"></a>
 <span class="sourceLineNo">020</span>        cardMap.put(analysis.getModel(), new Card(1, 1));<a name="line.20"></a>
 <span class="sourceLineNo">021</span>        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {<a name="line.21"></a>
 <span class="sourceLineNo">022</span>            analyze(abstractClafer, cardMap, analysis);<a name="line.22"></a>

@@ -8,15 +8,15 @@
 <div class="sourceContainer">
 <pre><span class="sourceLineNo">001</span>package org.clafer.ir.analysis;<a name="line.1"></a>
 <span class="sourceLineNo">002</span><a name="line.2"></a>
-<span class="sourceLineNo">003</span>import org.clafer.ir.IrRewriter;<a name="line.3"></a>
-<span class="sourceLineNo">004</span>import java.util.ArrayList;<a name="line.4"></a>
-<span class="sourceLineNo">005</span>import java.util.List;<a name="line.5"></a>
-<span class="sourceLineNo">006</span>import org.clafer.ir.IrAnd;<a name="line.6"></a>
-<span class="sourceLineNo">007</span>import org.clafer.ir.IrBoolExpr;<a name="line.7"></a>
-<span class="sourceLineNo">008</span>import org.clafer.ir.IrIfThenElse;<a name="line.8"></a>
-<span class="sourceLineNo">009</span>import org.clafer.ir.IrImplies;<a name="line.9"></a>
-<span class="sourceLineNo">010</span>import org.clafer.ir.IrModule;<a name="line.10"></a>
-<span class="sourceLineNo">011</span>import org.clafer.ir.IrNotImplies;<a name="line.11"></a>
+<span class="sourceLineNo">003</span>import java.util.ArrayList;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import java.util.List;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import org.clafer.ir.IrAnd;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import org.clafer.ir.IrBoolExpr;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import org.clafer.ir.IrIfThenElse;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.clafer.ir.IrImplies;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import org.clafer.ir.IrModule;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.clafer.ir.IrNotImplies;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.clafer.ir.IrRewriter;<a name="line.11"></a>
 <span class="sourceLineNo">012</span>import static org.clafer.ir.Irs.*;<a name="line.12"></a>
 <span class="sourceLineNo">013</span><a name="line.13"></a>
 <span class="sourceLineNo">014</span>/**<a name="line.14"></a>
@@ -37,11 +37,11 @@
 <span class="sourceLineNo">029</span>     * @return the flattened module<a name="line.29"></a>
 <span class="sourceLineNo">030</span>     */<a name="line.30"></a>
 <span class="sourceLineNo">031</span>    public static IrModule flatten(IrModule module) {<a name="line.31"></a>
-<span class="sourceLineNo">032</span>        List&lt;IrBoolExpr&gt; constraints = new ArrayList&lt;IrBoolExpr&gt;();<a name="line.32"></a>
+<span class="sourceLineNo">032</span>        List&lt;IrBoolExpr&gt; constraints = new ArrayList&lt;&gt;();<a name="line.32"></a>
 <span class="sourceLineNo">033</span>        for (IrBoolExpr constraint : module.getConstraints()) {<a name="line.33"></a>
 <span class="sourceLineNo">034</span>            constraints.add(flattener.rewrite(constraint, null));<a name="line.34"></a>
 <span class="sourceLineNo">035</span>        }<a name="line.35"></a>
-<span class="sourceLineNo">036</span>        return new IrModule().addConstraints(constraints);<a name="line.36"></a>
+<span class="sourceLineNo">036</span>        return new IrModule().addVariables(module.getVariables()).addConstraints(constraints);<a name="line.36"></a>
 <span class="sourceLineNo">037</span>    }<a name="line.37"></a>
 <span class="sourceLineNo">038</span>    private static final IrRewriter&lt;Void&gt; flattener = new IrRewriter&lt;Void&gt;() {<a name="line.38"></a>
 <span class="sourceLineNo">039</span>        @Override<a name="line.39"></a>

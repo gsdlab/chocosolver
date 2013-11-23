@@ -19,10 +19,10 @@
 <span class="sourceLineNo">011</span> */<a name="line.11"></a>
 <span class="sourceLineNo">012</span>public class AstAbstractClafer extends AstClafer {<a name="line.12"></a>
 <span class="sourceLineNo">013</span><a name="line.13"></a>
-<span class="sourceLineNo">014</span>    private final List&lt;AstClafer&gt; subs = new ArrayList&lt;AstClafer&gt;();<a name="line.14"></a>
+<span class="sourceLineNo">014</span>    private final List&lt;AstClafer&gt; subs = new ArrayList&lt;&gt;();<a name="line.14"></a>
 <span class="sourceLineNo">015</span><a name="line.15"></a>
-<span class="sourceLineNo">016</span>    AstAbstractClafer(String name) {<a name="line.16"></a>
-<span class="sourceLineNo">017</span>        super(name);<a name="line.17"></a>
+<span class="sourceLineNo">016</span>    AstAbstractClafer(String name, AstAbstractClafer claferClafer) {<a name="line.16"></a>
+<span class="sourceLineNo">017</span>        super(name, claferClafer);<a name="line.17"></a>
 <span class="sourceLineNo">018</span>    }<a name="line.18"></a>
 <span class="sourceLineNo">019</span><a name="line.19"></a>
 <span class="sourceLineNo">020</span>    /**<a name="line.20"></a>

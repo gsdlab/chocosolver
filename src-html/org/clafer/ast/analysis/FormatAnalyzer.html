@@ -22,7 +22,7 @@
 <span class="sourceLineNo">014</span><a name="line.14"></a>
 <span class="sourceLineNo">015</span>    @Override<a name="line.15"></a>
 <span class="sourceLineNo">016</span>    public Analysis analyze(Analysis analysis) {<a name="line.16"></a>
-<span class="sourceLineNo">017</span>        Map&lt;AstClafer, Format&gt; formatMap = new HashMap&lt;AstClafer, Format&gt;();<a name="line.17"></a>
+<span class="sourceLineNo">017</span>        Map&lt;AstClafer, Format&gt; formatMap = new HashMap&lt;&gt;();<a name="line.17"></a>
 <span class="sourceLineNo">018</span>        formatMap.put(analysis.getModel(), Format.LowGroup);<a name="line.18"></a>
 <span class="sourceLineNo">019</span>        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {<a name="line.19"></a>
 <span class="sourceLineNo">020</span>            analyze(abstractClafer, analysis, formatMap);<a name="line.20"></a>

@@ -65,8 +65,8 @@
 <span class="sourceLineNo">057</span>            i.instantiateTo(val, aCause);<a name="line.57"></a>
 <span class="sourceLineNo">058</span>            s.instantiateTo(new int[]{val}, aCause);<a name="line.58"></a>
 <span class="sourceLineNo">059</span>        }<a name="line.59"></a>
-<span class="sourceLineNo">060</span>        PropUtil.intSubsetEnv(i, s, aCause);<a name="line.60"></a>
-<span class="sourceLineNo">061</span>        PropUtil.envSubsetInt(s, i, aCause);<a name="line.61"></a>
+<span class="sourceLineNo">060</span>        PropUtil.domSubsetEnv(i, s, aCause);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>        PropUtil.envSubsetDom(s, i, aCause);<a name="line.61"></a>
 <span class="sourceLineNo">062</span>        if (i.instantiated()) {<a name="line.62"></a>
 <span class="sourceLineNo">063</span>            s.instantiateTo(new int[]{i.getValue()}, aCause);<a name="line.63"></a>
 <span class="sourceLineNo">064</span>        } else if (s.getEnvelopeSize() == 1) {<a name="line.64"></a>
@@ -126,7 +126,7 @@
 <span class="sourceLineNo">118</span>        if (s.getEnvelopeSize() &lt; 1) {<a name="line.118"></a>
 <span class="sourceLineNo">119</span>            return ESat.FALSE;<a name="line.119"></a>
 <span class="sourceLineNo">120</span>        }<a name="line.120"></a>
-<span class="sourceLineNo">121</span>        if (PropUtil.domainIntersectEnv(i, s)) {<a name="line.121"></a>
+<span class="sourceLineNo">121</span>        if (PropUtil.isDomIntersectEnv(i, s)) {<a name="line.121"></a>
 <span class="sourceLineNo">122</span>            return i.instantiated() &amp;&amp; s.instantiated() ? ESat.TRUE : ESat.UNDEFINED;<a name="line.122"></a>
 <span class="sourceLineNo">123</span>        }<a name="line.123"></a>
 <span class="sourceLineNo">124</span>        return ESat.FALSE;<a name="line.124"></a>

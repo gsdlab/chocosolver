@@ -37,7 +37,7 @@
 <span class="sourceLineNo">029</span>    }<a name="line.29"></a>
 <span class="sourceLineNo">030</span><a name="line.30"></a>
 <span class="sourceLineNo">031</span>    private static Variable[] buildArray(Constraint... constraints) {<a name="line.31"></a>
-<span class="sourceLineNo">032</span>        List&lt;Variable&gt; vars = new ArrayList&lt;Variable&gt;();<a name="line.32"></a>
+<span class="sourceLineNo">032</span>        List&lt;Variable&gt; vars = new ArrayList&lt;&gt;();<a name="line.32"></a>
 <span class="sourceLineNo">033</span>        for (Constraint constraint : constraints) {<a name="line.33"></a>
 <span class="sourceLineNo">034</span>            vars.addAll(Arrays.asList(constraint.getVariables()));<a name="line.34"></a>
 <span class="sourceLineNo">035</span>            for(Propagator propagator : constraint.getPropagators()) {<a name="line.35"></a>

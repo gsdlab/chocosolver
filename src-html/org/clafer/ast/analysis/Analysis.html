@@ -11,117 +11,117 @@
 <span class="sourceLineNo">003</span>import java.util.ArrayList;<a name="line.3"></a>
 <span class="sourceLineNo">004</span>import java.util.Collections;<a name="line.4"></a>
 <span class="sourceLineNo">005</span>import java.util.HashMap;<a name="line.5"></a>
-<span class="sourceLineNo">006</span>import java.util.List;<a name="line.6"></a>
-<span class="sourceLineNo">007</span>import java.util.Map;<a name="line.7"></a>
-<span class="sourceLineNo">008</span>import org.clafer.ast.AstAbstractClafer;<a name="line.8"></a>
-<span class="sourceLineNo">009</span>import org.clafer.ast.AstClafer;<a name="line.9"></a>
-<span class="sourceLineNo">010</span>import org.clafer.ast.AstConcreteClafer;<a name="line.10"></a>
-<span class="sourceLineNo">011</span>import org.clafer.ast.AstConstraint;<a name="line.11"></a>
-<span class="sourceLineNo">012</span>import org.clafer.ast.AstExpr;<a name="line.12"></a>
-<span class="sourceLineNo">013</span>import org.clafer.ast.AstModel;<a name="line.13"></a>
-<span class="sourceLineNo">014</span>import org.clafer.ast.AstRef;<a name="line.14"></a>
-<span class="sourceLineNo">015</span>import org.clafer.ast.AstUtil;<a name="line.15"></a>
-<span class="sourceLineNo">016</span>import org.clafer.ast.Card;<a name="line.16"></a>
-<span class="sourceLineNo">017</span>import org.clafer.collection.Pair;<a name="line.17"></a>
-<span class="sourceLineNo">018</span>import org.clafer.common.Util;<a name="line.18"></a>
-<span class="sourceLineNo">019</span>import org.clafer.scope.Scope;<a name="line.19"></a>
-<span class="sourceLineNo">020</span><a name="line.20"></a>
-<span class="sourceLineNo">021</span>/**<a name="line.21"></a>
-<span class="sourceLineNo">022</span> *<a name="line.22"></a>
-<span class="sourceLineNo">023</span> * @author jimmy<a name="line.23"></a>
-<span class="sourceLineNo">024</span> */<a name="line.24"></a>
-<span class="sourceLineNo">025</span>public class Analysis {<a name="line.25"></a>
-<span class="sourceLineNo">026</span><a name="line.26"></a>
-<span class="sourceLineNo">027</span>    private final AstModel model;<a name="line.27"></a>
-<span class="sourceLineNo">028</span>    private Scope scope;<a name="line.28"></a>
-<span class="sourceLineNo">029</span>    private List&lt;AstClafer&gt; clafers;<a name="line.29"></a>
-<span class="sourceLineNo">030</span>    private List&lt;AstAbstractClafer&gt; abstractClafers;<a name="line.30"></a>
-<span class="sourceLineNo">031</span>    private List&lt;AstConcreteClafer&gt; concreteClafers;<a name="line.31"></a>
-<span class="sourceLineNo">032</span>    private List&lt;AstConstraint&gt; constraints;<a name="line.32"></a>
-<span class="sourceLineNo">033</span>    private Map&lt;AstConcreteClafer, Card&gt; cardMap;<a name="line.33"></a>
-<span class="sourceLineNo">034</span>    private Map&lt;AstClafer, Card&gt; globalCardMap;<a name="line.34"></a>
-<span class="sourceLineNo">035</span>    private Map&lt;AstAbstractClafer, Integer&gt; depthMap;<a name="line.35"></a>
-<span class="sourceLineNo">036</span>    private Map&lt;AstClafer, Format&gt; formatMap;<a name="line.36"></a>
-<span class="sourceLineNo">037</span>    private Map&lt;AstAbstractClafer, Offsets&gt; offsetMap;<a name="line.37"></a>
-<span class="sourceLineNo">038</span>    private Map&lt;AstClafer, PartialSolution&gt; partialSolutionMap;<a name="line.38"></a>
-<span class="sourceLineNo">039</span>    private Map&lt;AstRef, int[][]&gt; partialIntsMap;<a name="line.39"></a>
-<span class="sourceLineNo">040</span>    private Map&lt;AstClafer, AstConcreteClafer[]&gt; breakableChildrenMap;<a name="line.40"></a>
-<span class="sourceLineNo">041</span>    private Map&lt;AstRef, int[]&gt; breakableRefsMap;<a name="line.41"></a>
-<span class="sourceLineNo">042</span>    private Map&lt;AstClafer, AstRef[]&gt; breakableTargetsMap;<a name="line.42"></a>
-<span class="sourceLineNo">043</span>    private Map&lt;AstExpr, AstClafer&gt; typeMap;<a name="line.43"></a>
-<span class="sourceLineNo">044</span><a name="line.44"></a>
-<span class="sourceLineNo">045</span>    Analysis(AstModel model, Scope scope) {<a name="line.45"></a>
-<span class="sourceLineNo">046</span>        this(model, scope, model.getAbstracts(), AstUtil.getConcreteClafers(model));<a name="line.46"></a>
-<span class="sourceLineNo">047</span>    }<a name="line.47"></a>
-<span class="sourceLineNo">048</span><a name="line.48"></a>
-<span class="sourceLineNo">049</span>    Analysis(AstModel model, Scope scope,<a name="line.49"></a>
-<span class="sourceLineNo">050</span>            List&lt;AstAbstractClafer&gt; abstractClafers,<a name="line.50"></a>
-<span class="sourceLineNo">051</span>            List&lt;AstConcreteClafer&gt; concreteClafers) {<a name="line.51"></a>
-<span class="sourceLineNo">052</span>        this(model, scope, append(abstractClafers, concreteClafers), abstractClafers, concreteClafers);<a name="line.52"></a>
-<span class="sourceLineNo">053</span>    }<a name="line.53"></a>
+<span class="sourceLineNo">006</span>import java.util.HashSet;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import java.util.List;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import java.util.Map;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import java.util.Set;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.clafer.ast.AstAbstractClafer;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.clafer.ast.AstBoolExpr;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.clafer.ast.AstClafer;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import org.clafer.ast.AstConcreteClafer;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import org.clafer.ast.AstConstraint;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import org.clafer.ast.AstExpr;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import org.clafer.ast.AstModel;<a name="line.16"></a>
+<span class="sourceLineNo">017</span>import org.clafer.ast.AstRef;<a name="line.17"></a>
+<span class="sourceLineNo">018</span>import org.clafer.ast.AstSetExpr;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import org.clafer.ast.AstUtil;<a name="line.19"></a>
+<span class="sourceLineNo">020</span>import org.clafer.ast.Card;<a name="line.20"></a>
+<span class="sourceLineNo">021</span>import org.clafer.collection.Pair;<a name="line.21"></a>
+<span class="sourceLineNo">022</span>import org.clafer.common.Util;<a name="line.22"></a>
+<span class="sourceLineNo">023</span>import org.clafer.ir.IrDomain;<a name="line.23"></a>
+<span class="sourceLineNo">024</span>import org.clafer.objective.Objective;<a name="line.24"></a>
+<span class="sourceLineNo">025</span>import org.clafer.scope.Scopable;<a name="line.25"></a>
+<span class="sourceLineNo">026</span>import org.clafer.scope.Scope;<a name="line.26"></a>
+<span class="sourceLineNo">027</span><a name="line.27"></a>
+<span class="sourceLineNo">028</span>/**<a name="line.28"></a>
+<span class="sourceLineNo">029</span> *<a name="line.29"></a>
+<span class="sourceLineNo">030</span> * @author jimmy<a name="line.30"></a>
+<span class="sourceLineNo">031</span> */<a name="line.31"></a>
+<span class="sourceLineNo">032</span>public class Analysis {<a name="line.32"></a>
+<span class="sourceLineNo">033</span><a name="line.33"></a>
+<span class="sourceLineNo">034</span>    private final AstModel model;<a name="line.34"></a>
+<span class="sourceLineNo">035</span>    private Scope scope;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>    private Map&lt;Objective, AstSetExpr&gt; objectiveExprs;<a name="line.36"></a>
+<span class="sourceLineNo">037</span>    private final List&lt;AstClafer&gt; clafers;<a name="line.37"></a>
+<span class="sourceLineNo">038</span>    private final List&lt;AstAbstractClafer&gt; abstractClafers;<a name="line.38"></a>
+<span class="sourceLineNo">039</span>    private final List&lt;AstConcreteClafer&gt; concreteClafers;<a name="line.39"></a>
+<span class="sourceLineNo">040</span>    private final List&lt;Set&lt;AstClafer&gt;&gt; clafersInParentAndSubOrder;<a name="line.40"></a>
+<span class="sourceLineNo">041</span>    private List&lt;AstConstraint&gt; constraints;<a name="line.41"></a>
+<span class="sourceLineNo">042</span>    private Set&lt;AstConstraint&gt; hardConstraints;<a name="line.42"></a>
+<span class="sourceLineNo">043</span>    private Map&lt;AstConstraint, AstBoolExpr&gt; constraintExprs;<a name="line.43"></a>
+<span class="sourceLineNo">044</span>    private Map&lt;AstConcreteClafer, Card&gt; cardMap;<a name="line.44"></a>
+<span class="sourceLineNo">045</span>    private Map&lt;AstClafer, Card&gt; globalCardMap;<a name="line.45"></a>
+<span class="sourceLineNo">046</span>    private Map&lt;AstClafer, Format&gt; formatMap;<a name="line.46"></a>
+<span class="sourceLineNo">047</span>    private Map&lt;AstAbstractClafer, Offsets&gt; offsetMap;<a name="line.47"></a>
+<span class="sourceLineNo">048</span>    private Map&lt;AstClafer, PartialSolution&gt; partialSolutionMap;<a name="line.48"></a>
+<span class="sourceLineNo">049</span>    private Map&lt;AstRef, IrDomain[]&gt; partialIntsMap;<a name="line.49"></a>
+<span class="sourceLineNo">050</span>    private Map&lt;AstClafer, AstConcreteClafer[]&gt; breakableChildrenMap;<a name="line.50"></a>
+<span class="sourceLineNo">051</span>    private Map&lt;AstRef, int[]&gt; breakableRefsMap;<a name="line.51"></a>
+<span class="sourceLineNo">052</span>    private Map&lt;AstClafer, AstRef[]&gt; breakableTargetsMap;<a name="line.52"></a>
+<span class="sourceLineNo">053</span>    private Map&lt;AstExpr, Type&gt; typeMap;<a name="line.53"></a>
 <span class="sourceLineNo">054</span><a name="line.54"></a>
-<span class="sourceLineNo">055</span>    Analysis(AstModel model, Scope scope,<a name="line.55"></a>
-<span class="sourceLineNo">056</span>            List&lt;AstClafer&gt; clafers,<a name="line.56"></a>
-<span class="sourceLineNo">057</span>            List&lt;AstAbstractClafer&gt; abstractClafers,<a name="line.57"></a>
-<span class="sourceLineNo">058</span>            List&lt;AstConcreteClafer&gt; concreteClafers) {<a name="line.58"></a>
-<span class="sourceLineNo">059</span>        this(model, scope, AstUtil.getClafers(model), abstractClafers, concreteClafers, AstUtil.getNestedConstraints(model), buildCardMap(clafers), null, null, null, null, null, null, null, null, null, null);<a name="line.59"></a>
-<span class="sourceLineNo">060</span>    }<a name="line.60"></a>
-<span class="sourceLineNo">061</span><a name="line.61"></a>
-<span class="sourceLineNo">062</span>    Analysis(AstModel model, Scope scope,<a name="line.62"></a>
-<span class="sourceLineNo">063</span>            List&lt;AstClafer&gt; clafers,<a name="line.63"></a>
-<span class="sourceLineNo">064</span>            List&lt;AstAbstractClafer&gt; abstractClafers,<a name="line.64"></a>
-<span class="sourceLineNo">065</span>            List&lt;AstConcreteClafer&gt; concreteClafers,<a name="line.65"></a>
-<span class="sourceLineNo">066</span>            List&lt;AstConstraint&gt; constraints,<a name="line.66"></a>
-<span class="sourceLineNo">067</span>            Map&lt;AstConcreteClafer, Card&gt; cardMap,<a name="line.67"></a>
-<span class="sourceLineNo">068</span>            Map&lt;AstClafer, Card&gt; globalCardMap,<a name="line.68"></a>
-<span class="sourceLineNo">069</span>            Map&lt;AstAbstractClafer, Integer&gt; depthMap,<a name="line.69"></a>
-<span class="sourceLineNo">070</span>            Map&lt;AstClafer, Format&gt; formatMap,<a name="line.70"></a>
-<span class="sourceLineNo">071</span>            Map&lt;AstAbstractClafer, Offsets&gt; offsetMap,<a name="line.71"></a>
-<span class="sourceLineNo">072</span>            Map&lt;AstClafer, PartialSolution&gt; partialSolutionMap,<a name="line.72"></a>
-<span class="sourceLineNo">073</span>            Map&lt;AstRef, int[][]&gt; partialIntsMap,<a name="line.73"></a>
-<span class="sourceLineNo">074</span>            Map&lt;AstClafer, AstConcreteClafer[]&gt; breakableChildrenMap,<a name="line.74"></a>
-<span class="sourceLineNo">075</span>            Map&lt;AstRef, int[]&gt; breakableRefsMap,<a name="line.75"></a>
-<span class="sourceLineNo">076</span>            Map&lt;AstClafer, AstRef[]&gt; breakableTargetsMap,<a name="line.76"></a>
-<span class="sourceLineNo">077</span>            Map&lt;AstExpr, AstClafer&gt; typeMap) {<a name="line.77"></a>
-<span class="sourceLineNo">078</span>        this.model = model;<a name="line.78"></a>
-<span class="sourceLineNo">079</span>        this.scope = scope;<a name="line.79"></a>
-<span class="sourceLineNo">080</span>        this.clafers = clafers;<a name="line.80"></a>
-<span class="sourceLineNo">081</span>        this.abstractClafers = abstractClafers;<a name="line.81"></a>
-<span class="sourceLineNo">082</span>        this.concreteClafers = concreteClafers;<a name="line.82"></a>
-<span class="sourceLineNo">083</span>        this.constraints = constraints;<a name="line.83"></a>
-<span class="sourceLineNo">084</span>        this.cardMap = cardMap;<a name="line.84"></a>
-<span class="sourceLineNo">085</span>        this.globalCardMap = globalCardMap;<a name="line.85"></a>
-<span class="sourceLineNo">086</span>        this.depthMap = depthMap;<a name="line.86"></a>
-<span class="sourceLineNo">087</span>        this.formatMap = formatMap;<a name="line.87"></a>
-<span class="sourceLineNo">088</span>        this.offsetMap = offsetMap;<a name="line.88"></a>
-<span class="sourceLineNo">089</span>        this.partialSolutionMap = partialSolutionMap;<a name="line.89"></a>
-<span class="sourceLineNo">090</span>        this.partialIntsMap = partialIntsMap;<a name="line.90"></a>
-<span class="sourceLineNo">091</span>        this.breakableChildrenMap = breakableChildrenMap;<a name="line.91"></a>
-<span class="sourceLineNo">092</span>        this.breakableRefsMap = breakableRefsMap;<a name="line.92"></a>
-<span class="sourceLineNo">093</span>        this.breakableTargetsMap = breakableTargetsMap;<a name="line.93"></a>
-<span class="sourceLineNo">094</span>        this.typeMap = typeMap;<a name="line.94"></a>
-<span class="sourceLineNo">095</span>    }<a name="line.95"></a>
-<span class="sourceLineNo">096</span><a name="line.96"></a>
-<span class="sourceLineNo">097</span>    private static Map&lt;AstConcreteClafer, Card&gt; buildCardMap(List&lt;AstClafer&gt; clafers) {<a name="line.97"></a>
-<span class="sourceLineNo">098</span>        Map&lt;AstConcreteClafer, Card&gt; cardMap = new HashMap&lt;AstConcreteClafer, Card&gt;();<a name="line.98"></a>
-<span class="sourceLineNo">099</span>        for (AstClafer clafer : clafers) {<a name="line.99"></a>
-<span class="sourceLineNo">100</span>            if (clafer instanceof AstConcreteClafer) {<a name="line.100"></a>
-<span class="sourceLineNo">101</span>                AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;<a name="line.101"></a>
-<span class="sourceLineNo">102</span>                cardMap.put(concreteClafer, concreteClafer.getCard());<a name="line.102"></a>
-<span class="sourceLineNo">103</span>            }<a name="line.103"></a>
-<span class="sourceLineNo">104</span>        }<a name="line.104"></a>
-<span class="sourceLineNo">105</span>        return cardMap;<a name="line.105"></a>
-<span class="sourceLineNo">106</span>    }<a name="line.106"></a>
-<span class="sourceLineNo">107</span><a name="line.107"></a>
-<span class="sourceLineNo">108</span>    private static List&lt;AstClafer&gt; append(List&lt;? extends AstClafer&gt; abstractClafers, List&lt;? extends AstConcreteClafer&gt; concreteClafers) {<a name="line.108"></a>
-<span class="sourceLineNo">109</span>        List&lt;AstClafer&gt; clafers = new ArrayList&lt;AstClafer&gt;(abstractClafers.size() + concreteClafers.size());<a name="line.109"></a>
-<span class="sourceLineNo">110</span>        clafers.addAll(abstractClafers);<a name="line.110"></a>
-<span class="sourceLineNo">111</span>        clafers.addAll(concreteClafers);<a name="line.111"></a>
-<span class="sourceLineNo">112</span>        return clafers;<a name="line.112"></a>
+<span class="sourceLineNo">055</span>    Analysis(AstModel model, Scope scope) {<a name="line.55"></a>
+<span class="sourceLineNo">056</span>        this(model, scope, Collections.&lt;Objective&gt;emptyList());<a name="line.56"></a>
+<span class="sourceLineNo">057</span>    }<a name="line.57"></a>
+<span class="sourceLineNo">058</span><a name="line.58"></a>
+<span class="sourceLineNo">059</span>    Analysis(AstModel model, Scope scope, List&lt;Objective&gt; objectives) {<a name="line.59"></a>
+<span class="sourceLineNo">060</span>        this(model, scope, objectives,<a name="line.60"></a>
+<span class="sourceLineNo">061</span>                AstUtil.getAbstractClafersInSubOrder(model),<a name="line.61"></a>
+<span class="sourceLineNo">062</span>                AstUtil.getConcreteClafers(model),<a name="line.62"></a>
+<span class="sourceLineNo">063</span>                AstUtil.getClafersInParentAndSubOrder(model));<a name="line.63"></a>
+<span class="sourceLineNo">064</span>    }<a name="line.64"></a>
+<span class="sourceLineNo">065</span><a name="line.65"></a>
+<span class="sourceLineNo">066</span>    Analysis(AstModel model, Scope scope,<a name="line.66"></a>
+<span class="sourceLineNo">067</span>            List&lt;Objective&gt; objectives,<a name="line.67"></a>
+<span class="sourceLineNo">068</span>            List&lt;AstAbstractClafer&gt; abstractClafers,<a name="line.68"></a>
+<span class="sourceLineNo">069</span>            List&lt;AstConcreteClafer&gt; concreteClafers,<a name="line.69"></a>
+<span class="sourceLineNo">070</span>            List&lt;Set&lt;AstClafer&gt;&gt; clafersInParentAndSubOrder) {<a name="line.70"></a>
+<span class="sourceLineNo">071</span>        this.model = model;<a name="line.71"></a>
+<span class="sourceLineNo">072</span>        this.scope = scope;<a name="line.72"></a>
+<span class="sourceLineNo">073</span>        this.objectiveExprs = new HashMap&lt;&gt;();<a name="line.73"></a>
+<span class="sourceLineNo">074</span>        for (Objective objective : objectives) {<a name="line.74"></a>
+<span class="sourceLineNo">075</span>            this.objectiveExprs.put(objective, objective.getExpr());<a name="line.75"></a>
+<span class="sourceLineNo">076</span>        }<a name="line.76"></a>
+<span class="sourceLineNo">077</span>        this.clafers = append(abstractClafers, concreteClafers);<a name="line.77"></a>
+<span class="sourceLineNo">078</span>        this.abstractClafers = abstractClafers;<a name="line.78"></a>
+<span class="sourceLineNo">079</span>        this.concreteClafers = concreteClafers;<a name="line.79"></a>
+<span class="sourceLineNo">080</span>        this.clafersInParentAndSubOrder = clafersInParentAndSubOrder;<a name="line.80"></a>
+<span class="sourceLineNo">081</span>        this.constraints = AstUtil.getNestedConstraints(model);<a name="line.81"></a>
+<span class="sourceLineNo">082</span>        this.hardConstraints = new HashSet&lt;&gt;(constraints.size());<a name="line.82"></a>
+<span class="sourceLineNo">083</span>        this.constraintExprs = new HashMap&lt;&gt;(constraints.size());<a name="line.83"></a>
+<span class="sourceLineNo">084</span>        for (AstConstraint constraint : constraints) {<a name="line.84"></a>
+<span class="sourceLineNo">085</span>            if (constraint.isHard()) {<a name="line.85"></a>
+<span class="sourceLineNo">086</span>                hardConstraints.add(constraint);<a name="line.86"></a>
+<span class="sourceLineNo">087</span>            }<a name="line.87"></a>
+<span class="sourceLineNo">088</span>            constraintExprs.put(constraint, constraint.getExpr());<a name="line.88"></a>
+<span class="sourceLineNo">089</span>        }<a name="line.89"></a>
+<span class="sourceLineNo">090</span>        this.cardMap = buildCardMap(clafers);<a name="line.90"></a>
+<span class="sourceLineNo">091</span>    }<a name="line.91"></a>
+<span class="sourceLineNo">092</span><a name="line.92"></a>
+<span class="sourceLineNo">093</span>    private static Map&lt;AstConcreteClafer, Card&gt; buildCardMap(List&lt;AstClafer&gt; clafers) {<a name="line.93"></a>
+<span class="sourceLineNo">094</span>        Map&lt;AstConcreteClafer, Card&gt; cardMap = new HashMap&lt;&gt;();<a name="line.94"></a>
+<span class="sourceLineNo">095</span>        for (AstClafer clafer : clafers) {<a name="line.95"></a>
+<span class="sourceLineNo">096</span>            if (clafer instanceof AstConcreteClafer) {<a name="line.96"></a>
+<span class="sourceLineNo">097</span>                AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;<a name="line.97"></a>
+<span class="sourceLineNo">098</span>                cardMap.put(concreteClafer, concreteClafer.getCard());<a name="line.98"></a>
+<span class="sourceLineNo">099</span>            }<a name="line.99"></a>
+<span class="sourceLineNo">100</span>        }<a name="line.100"></a>
+<span class="sourceLineNo">101</span>        return cardMap;<a name="line.101"></a>
+<span class="sourceLineNo">102</span>    }<a name="line.102"></a>
+<span class="sourceLineNo">103</span><a name="line.103"></a>
+<span class="sourceLineNo">104</span>    private static List&lt;AstClafer&gt; append(List&lt;? extends AstClafer&gt; abstractClafers, List&lt;? extends AstConcreteClafer&gt; concreteClafers) {<a name="line.104"></a>
+<span class="sourceLineNo">105</span>        List&lt;AstClafer&gt; clafers = new ArrayList&lt;&gt;(abstractClafers.size() + concreteClafers.size());<a name="line.105"></a>
+<span class="sourceLineNo">106</span>        clafers.addAll(abstractClafers);<a name="line.106"></a>
+<span class="sourceLineNo">107</span>        clafers.addAll(concreteClafers);<a name="line.107"></a>
+<span class="sourceLineNo">108</span>        return clafers;<a name="line.108"></a>
+<span class="sourceLineNo">109</span>    }<a name="line.109"></a>
+<span class="sourceLineNo">110</span><a name="line.110"></a>
+<span class="sourceLineNo">111</span>    public static Analysis analyze(AstModel model, Scopable scope, Analyzer... analyzers) {<a name="line.111"></a>
+<span class="sourceLineNo">112</span>        return analyze(model, scope, Collections.&lt;Objective&gt;emptyList(), analyzers);<a name="line.112"></a>
 <span class="sourceLineNo">113</span>    }<a name="line.113"></a>
 <span class="sourceLineNo">114</span><a name="line.114"></a>
-<span class="sourceLineNo">115</span>    public static Analysis analyze(AstModel model, Scope scope, Analyzer... analyzers) {<a name="line.115"></a>
-<span class="sourceLineNo">116</span>        Analysis analysis = new Analysis(model, scope);<a name="line.116"></a>
+<span class="sourceLineNo">115</span>    public static Analysis analyze(AstModel model, Scopable scope, List&lt;Objective&gt; objectives, Analyzer... analyzers) {<a name="line.115"></a>
+<span class="sourceLineNo">116</span>        Analysis analysis = new Analysis(model, scope.toScope(), objectives);<a name="line.116"></a>
 <span class="sourceLineNo">117</span>        for (Analyzer analyzer : analyzers) {<a name="line.117"></a>
 <span class="sourceLineNo">118</span>            analysis = analyzer.analyze(analysis);<a name="line.118"></a>
 <span class="sourceLineNo">119</span>        }<a name="line.119"></a>
@@ -169,290 +169,328 @@
 <span class="sourceLineNo">161</span>        return this;<a name="line.161"></a>
 <span class="sourceLineNo">162</span>    }<a name="line.162"></a>
 <span class="sourceLineNo">163</span><a name="line.163"></a>
-<span class="sourceLineNo">164</span>    public List&lt;AstClafer&gt; getClafers() {<a name="line.164"></a>
-<span class="sourceLineNo">165</span>        return Collections.unmodifiableList(clafers);<a name="line.165"></a>
+<span class="sourceLineNo">164</span>    public AstSetExpr getExpr(Objective objective) {<a name="line.164"></a>
+<span class="sourceLineNo">165</span>        return objectiveExprs.get(objective);<a name="line.165"></a>
 <span class="sourceLineNo">166</span>    }<a name="line.166"></a>
 <span class="sourceLineNo">167</span><a name="line.167"></a>
-<span class="sourceLineNo">168</span>    public List&lt;AstAbstractClafer&gt; getAbstractClafers() {<a name="line.168"></a>
-<span class="sourceLineNo">169</span>        return Collections.unmodifiableList(abstractClafers);<a name="line.169"></a>
+<span class="sourceLineNo">168</span>    public Map&lt;Objective, AstSetExpr&gt; getObjectiveExprs() {<a name="line.168"></a>
+<span class="sourceLineNo">169</span>        return Collections.unmodifiableMap(objectiveExprs);<a name="line.169"></a>
 <span class="sourceLineNo">170</span>    }<a name="line.170"></a>
 <span class="sourceLineNo">171</span><a name="line.171"></a>
-<span class="sourceLineNo">172</span>    public Analysis setAbstractClafers(List&lt;AstAbstractClafer&gt; abstractClafers) {<a name="line.172"></a>
-<span class="sourceLineNo">173</span>        this.clafers = append(abstractClafers, concreteClafers);<a name="line.173"></a>
-<span class="sourceLineNo">174</span>        this.abstractClafers = abstractClafers;<a name="line.174"></a>
-<span class="sourceLineNo">175</span>        return this;<a name="line.175"></a>
-<span class="sourceLineNo">176</span>    }<a name="line.176"></a>
-<span class="sourceLineNo">177</span><a name="line.177"></a>
-<span class="sourceLineNo">178</span>    public List&lt;AstConcreteClafer&gt; getConcreteClafers() {<a name="line.178"></a>
-<span class="sourceLineNo">179</span>        return Collections.unmodifiableList(concreteClafers);<a name="line.179"></a>
-<span class="sourceLineNo">180</span>    }<a name="line.180"></a>
-<span class="sourceLineNo">181</span><a name="line.181"></a>
-<span class="sourceLineNo">182</span>    public Analysis setConcreteClafers(List&lt;AstConcreteClafer&gt; concreteClafers) {<a name="line.182"></a>
-<span class="sourceLineNo">183</span>        this.clafers = append(abstractClafers, concreteClafers);<a name="line.183"></a>
-<span class="sourceLineNo">184</span>        this.concreteClafers = concreteClafers;<a name="line.184"></a>
-<span class="sourceLineNo">185</span>        return this;<a name="line.185"></a>
-<span class="sourceLineNo">186</span>    }<a name="line.186"></a>
-<span class="sourceLineNo">187</span><a name="line.187"></a>
-<span class="sourceLineNo">188</span>    public List&lt;AstConstraint&gt; getConstraints() {<a name="line.188"></a>
-<span class="sourceLineNo">189</span>        return Collections.unmodifiableList(constraints);<a name="line.189"></a>
-<span class="sourceLineNo">190</span>    }<a name="line.190"></a>
-<span class="sourceLineNo">191</span><a name="line.191"></a>
-<span class="sourceLineNo">192</span>    public Analysis setConstraints(List&lt;AstConstraint&gt; constraints) {<a name="line.192"></a>
-<span class="sourceLineNo">193</span>        this.constraints = constraints;<a name="line.193"></a>
-<span class="sourceLineNo">194</span>        return this;<a name="line.194"></a>
-<span class="sourceLineNo">195</span>    }<a name="line.195"></a>
-<span class="sourceLineNo">196</span><a name="line.196"></a>
-<span class="sourceLineNo">197</span>    public Card getCard(AstConcreteClafer clafer) {<a name="line.197"></a>
-<span class="sourceLineNo">198</span>        return notNull(clafer, "Card", getCardMap().get(clafer));<a name="line.198"></a>
-<span class="sourceLineNo">199</span>    }<a name="line.199"></a>
-<span class="sourceLineNo">200</span><a name="line.200"></a>
-<span class="sourceLineNo">201</span>    public Map&lt;AstConcreteClafer, Card&gt; getCardMap() {<a name="line.201"></a>
-<span class="sourceLineNo">202</span>        return notNull("Card", cardMap);<a name="line.202"></a>
+<span class="sourceLineNo">172</span>    public Analysis setObjectiveExprs(Map&lt;Objective, AstSetExpr&gt; objectiveExprs) {<a name="line.172"></a>
+<span class="sourceLineNo">173</span>        this.objectiveExprs = objectiveExprs;<a name="line.173"></a>
+<span class="sourceLineNo">174</span>        return this;<a name="line.174"></a>
+<span class="sourceLineNo">175</span>    }<a name="line.175"></a>
+<span class="sourceLineNo">176</span><a name="line.176"></a>
+<span class="sourceLineNo">177</span>    /**<a name="line.177"></a>
+<span class="sourceLineNo">178</span>     * @return the Clafers in no specific order<a name="line.178"></a>
+<span class="sourceLineNo">179</span>     */<a name="line.179"></a>
+<span class="sourceLineNo">180</span>    public List&lt;AstClafer&gt; getClafers() {<a name="line.180"></a>
+<span class="sourceLineNo">181</span>        return Collections.unmodifiableList(clafers);<a name="line.181"></a>
+<span class="sourceLineNo">182</span>    }<a name="line.182"></a>
+<span class="sourceLineNo">183</span><a name="line.183"></a>
+<span class="sourceLineNo">184</span>    /**<a name="line.184"></a>
+<span class="sourceLineNo">185</span>     * @return the abstract Clafers in sub-order<a name="line.185"></a>
+<span class="sourceLineNo">186</span>     */<a name="line.186"></a>
+<span class="sourceLineNo">187</span>    public List&lt;AstAbstractClafer&gt; getAbstractClafers() {<a name="line.187"></a>
+<span class="sourceLineNo">188</span>        return Collections.unmodifiableList(abstractClafers);<a name="line.188"></a>
+<span class="sourceLineNo">189</span>    }<a name="line.189"></a>
+<span class="sourceLineNo">190</span><a name="line.190"></a>
+<span class="sourceLineNo">191</span>    /**<a name="line.191"></a>
+<span class="sourceLineNo">192</span>     * @return the concrete Clafers in parent-order<a name="line.192"></a>
+<span class="sourceLineNo">193</span>     */<a name="line.193"></a>
+<span class="sourceLineNo">194</span>    public List&lt;AstConcreteClafer&gt; getConcreteClafers() {<a name="line.194"></a>
+<span class="sourceLineNo">195</span>        return Collections.unmodifiableList(concreteClafers);<a name="line.195"></a>
+<span class="sourceLineNo">196</span>    }<a name="line.196"></a>
+<span class="sourceLineNo">197</span><a name="line.197"></a>
+<span class="sourceLineNo">198</span>    /**<a name="line.198"></a>
+<span class="sourceLineNo">199</span>     * @return the Clafers in parent-order and sub-order<a name="line.199"></a>
+<span class="sourceLineNo">200</span>     */<a name="line.200"></a>
+<span class="sourceLineNo">201</span>    public List&lt;Set&lt;AstClafer&gt;&gt; getClafersInParentAndSubOrder() {<a name="line.201"></a>
+<span class="sourceLineNo">202</span>        return clafersInParentAndSubOrder;<a name="line.202"></a>
 <span class="sourceLineNo">203</span>    }<a name="line.203"></a>
 <span class="sourceLineNo">204</span><a name="line.204"></a>
-<span class="sourceLineNo">205</span>    public Analysis setCardMap(Map&lt;AstConcreteClafer, Card&gt; cardMap) {<a name="line.205"></a>
-<span class="sourceLineNo">206</span>        this.cardMap = cardMap;<a name="line.206"></a>
-<span class="sourceLineNo">207</span>        return this;<a name="line.207"></a>
-<span class="sourceLineNo">208</span>    }<a name="line.208"></a>
-<span class="sourceLineNo">209</span><a name="line.209"></a>
-<span class="sourceLineNo">210</span>    public Card getGlobalCard(AstClafer clafer) {<a name="line.210"></a>
-<span class="sourceLineNo">211</span>        return notNull(clafer, "GlobalCard", getGlobalCardMap().get(clafer));<a name="line.211"></a>
+<span class="sourceLineNo">205</span>    public List&lt;AstConstraint&gt; getConstraints() {<a name="line.205"></a>
+<span class="sourceLineNo">206</span>        return Collections.unmodifiableList(constraints);<a name="line.206"></a>
+<span class="sourceLineNo">207</span>    }<a name="line.207"></a>
+<span class="sourceLineNo">208</span><a name="line.208"></a>
+<span class="sourceLineNo">209</span>    public Analysis setConstraints(List&lt;AstConstraint&gt; constraints) {<a name="line.209"></a>
+<span class="sourceLineNo">210</span>        this.constraints = constraints;<a name="line.210"></a>
+<span class="sourceLineNo">211</span>        return this;<a name="line.211"></a>
 <span class="sourceLineNo">212</span>    }<a name="line.212"></a>
 <span class="sourceLineNo">213</span><a name="line.213"></a>
-<span class="sourceLineNo">214</span>    public Map&lt;AstClafer, Card&gt; getGlobalCardMap() {<a name="line.214"></a>
-<span class="sourceLineNo">215</span>        return notNull("Global card", globalCardMap);<a name="line.215"></a>
+<span class="sourceLineNo">214</span>    public boolean isHard(AstConstraint constraint) {<a name="line.214"></a>
+<span class="sourceLineNo">215</span>        return hardConstraints.contains(constraint);<a name="line.215"></a>
 <span class="sourceLineNo">216</span>    }<a name="line.216"></a>
 <span class="sourceLineNo">217</span><a name="line.217"></a>
-<span class="sourceLineNo">218</span>    public Analysis setGlobalCardMap(Map&lt;AstClafer, Card&gt; globalCardMap) {<a name="line.218"></a>
-<span class="sourceLineNo">219</span>        this.globalCardMap = globalCardMap;<a name="line.219"></a>
-<span class="sourceLineNo">220</span>        return this;<a name="line.220"></a>
-<span class="sourceLineNo">221</span>    }<a name="line.221"></a>
-<span class="sourceLineNo">222</span><a name="line.222"></a>
-<span class="sourceLineNo">223</span>    public int getDepth(AstAbstractClafer clafer) {<a name="line.223"></a>
-<span class="sourceLineNo">224</span>        return notNull(clafer, "Depth", getDepthMap().get(clafer)).intValue();<a name="line.224"></a>
-<span class="sourceLineNo">225</span>    }<a name="line.225"></a>
-<span class="sourceLineNo">226</span><a name="line.226"></a>
-<span class="sourceLineNo">227</span>    public Map&lt;AstAbstractClafer, Integer&gt; getDepthMap() {<a name="line.227"></a>
-<span class="sourceLineNo">228</span>        return notNull("Depth", depthMap);<a name="line.228"></a>
+<span class="sourceLineNo">218</span>    public boolean isSoft(AstConstraint constraint) {<a name="line.218"></a>
+<span class="sourceLineNo">219</span>        return !isHard(constraint);<a name="line.219"></a>
+<span class="sourceLineNo">220</span>    }<a name="line.220"></a>
+<span class="sourceLineNo">221</span><a name="line.221"></a>
+<span class="sourceLineNo">222</span>    public Set&lt;AstConstraint&gt; getHardConstraints() {<a name="line.222"></a>
+<span class="sourceLineNo">223</span>        return hardConstraints;<a name="line.223"></a>
+<span class="sourceLineNo">224</span>    }<a name="line.224"></a>
+<span class="sourceLineNo">225</span><a name="line.225"></a>
+<span class="sourceLineNo">226</span>    public Analysis setHardConstraints(Set&lt;AstConstraint&gt; hardConstraints) {<a name="line.226"></a>
+<span class="sourceLineNo">227</span>        this.hardConstraints = hardConstraints;<a name="line.227"></a>
+<span class="sourceLineNo">228</span>        return this;<a name="line.228"></a>
 <span class="sourceLineNo">229</span>    }<a name="line.229"></a>
 <span class="sourceLineNo">230</span><a name="line.230"></a>
-<span class="sourceLineNo">231</span>    public Analysis setDepthMap(Map&lt;AstAbstractClafer, Integer&gt; depthMap) {<a name="line.231"></a>
-<span class="sourceLineNo">232</span>        this.depthMap = depthMap;<a name="line.232"></a>
-<span class="sourceLineNo">233</span>        return this;<a name="line.233"></a>
-<span class="sourceLineNo">234</span>    }<a name="line.234"></a>
-<span class="sourceLineNo">235</span><a name="line.235"></a>
-<span class="sourceLineNo">236</span>    public Format getFormat(AstClafer clafer) {<a name="line.236"></a>
-<span class="sourceLineNo">237</span>        return notNull(clafer, "Format", getFormatMap().get(clafer));<a name="line.237"></a>
-<span class="sourceLineNo">238</span>    }<a name="line.238"></a>
-<span class="sourceLineNo">239</span><a name="line.239"></a>
-<span class="sourceLineNo">240</span>    public Map&lt;AstClafer, Format&gt; getFormatMap() {<a name="line.240"></a>
-<span class="sourceLineNo">241</span>        return notNull("Format", formatMap);<a name="line.241"></a>
+<span class="sourceLineNo">231</span>    public AstBoolExpr getExpr(AstConstraint constraint) {<a name="line.231"></a>
+<span class="sourceLineNo">232</span>        return constraintExprs.get(constraint);<a name="line.232"></a>
+<span class="sourceLineNo">233</span>    }<a name="line.233"></a>
+<span class="sourceLineNo">234</span><a name="line.234"></a>
+<span class="sourceLineNo">235</span>    public Map&lt;AstConstraint, AstBoolExpr&gt; getConstraintExprs() {<a name="line.235"></a>
+<span class="sourceLineNo">236</span>        return constraintExprs;<a name="line.236"></a>
+<span class="sourceLineNo">237</span>    }<a name="line.237"></a>
+<span class="sourceLineNo">238</span><a name="line.238"></a>
+<span class="sourceLineNo">239</span>    public Analysis setConstraintExprs(Map&lt;AstConstraint, AstBoolExpr&gt; constraintExprs) {<a name="line.239"></a>
+<span class="sourceLineNo">240</span>        this.constraintExprs = constraintExprs;<a name="line.240"></a>
+<span class="sourceLineNo">241</span>        return this;<a name="line.241"></a>
 <span class="sourceLineNo">242</span>    }<a name="line.242"></a>
 <span class="sourceLineNo">243</span><a name="line.243"></a>
-<span class="sourceLineNo">244</span>    public Analysis setFormatMap(Map&lt;AstClafer, Format&gt; formatMap) {<a name="line.244"></a>
-<span class="sourceLineNo">245</span>        this.formatMap = formatMap;<a name="line.245"></a>
-<span class="sourceLineNo">246</span>        return this;<a name="line.246"></a>
-<span class="sourceLineNo">247</span>    }<a name="line.247"></a>
-<span class="sourceLineNo">248</span><a name="line.248"></a>
-<span class="sourceLineNo">249</span>    public Pair&lt;AstConcreteClafer, Integer&gt; getConcreteId(AstClafer clafer, int id) {<a name="line.249"></a>
-<span class="sourceLineNo">250</span>        AstClafer sub = clafer;<a name="line.250"></a>
-<span class="sourceLineNo">251</span>        int curId = id;<a name="line.251"></a>
-<span class="sourceLineNo">252</span>        while (sub instanceof AstAbstractClafer) {<a name="line.252"></a>
-<span class="sourceLineNo">253</span>            Offsets offset = getOffsets((AstAbstractClafer) sub);<a name="line.253"></a>
-<span class="sourceLineNo">254</span>            sub = offset.getClafer(curId);<a name="line.254"></a>
-<span class="sourceLineNo">255</span>            curId -= offset.getOffset(sub);<a name="line.255"></a>
-<span class="sourceLineNo">256</span>        }<a name="line.256"></a>
-<span class="sourceLineNo">257</span>        return new Pair&lt;AstConcreteClafer, Integer&gt;((AstConcreteClafer) sub, curId);<a name="line.257"></a>
-<span class="sourceLineNo">258</span>    }<a name="line.258"></a>
-<span class="sourceLineNo">259</span><a name="line.259"></a>
-<span class="sourceLineNo">260</span>    public Pair&lt;AstClafer, Integer&gt; getSubId(AstAbstractClafer clafer, int id) {<a name="line.260"></a>
-<span class="sourceLineNo">261</span>        Offsets offsets = getOffsets(clafer);<a name="line.261"></a>
-<span class="sourceLineNo">262</span>        AstClafer sub = offsets.getClafer(id);<a name="line.262"></a>
-<span class="sourceLineNo">263</span>        return new Pair&lt;AstClafer, Integer&gt;(sub, id - offsets.getOffset(sub));<a name="line.263"></a>
-<span class="sourceLineNo">264</span>    }<a name="line.264"></a>
-<span class="sourceLineNo">265</span><a name="line.265"></a>
-<span class="sourceLineNo">266</span>    public Pair&lt;AstAbstractClafer, Integer&gt; getSuperId(AstClafer clafer, int id) {<a name="line.266"></a>
-<span class="sourceLineNo">267</span>        assert clafer.hasSuperClafer();<a name="line.267"></a>
-<span class="sourceLineNo">268</span>        int offset = getOffsets(clafer.getSuperClafer()).getOffset(clafer);<a name="line.268"></a>
-<span class="sourceLineNo">269</span>        return new Pair&lt;AstAbstractClafer, Integer&gt;(clafer.getSuperClafer(), id + offset);<a name="line.269"></a>
-<span class="sourceLineNo">270</span>    }<a name="line.270"></a>
-<span class="sourceLineNo">271</span><a name="line.271"></a>
-<span class="sourceLineNo">272</span>    public List&lt;Pair&lt;AstAbstractClafer, Integer&gt;&gt; getSuperIds(AstClafer clafer, int id) {<a name="line.272"></a>
-<span class="sourceLineNo">273</span>        List&lt;Pair&lt;AstAbstractClafer, Integer&gt;&gt; superIds = new ArrayList&lt;Pair&lt;AstAbstractClafer, Integer&gt;&gt;();<a name="line.273"></a>
-<span class="sourceLineNo">274</span>        AstClafer sup = clafer;<a name="line.274"></a>
-<span class="sourceLineNo">275</span>        int curId = id;<a name="line.275"></a>
-<span class="sourceLineNo">276</span>        while (sup.hasSuperClafer()) {<a name="line.276"></a>
-<span class="sourceLineNo">277</span>            Pair&lt;AstAbstractClafer, Integer&gt; superId = getSuperId(sup, curId);<a name="line.277"></a>
-<span class="sourceLineNo">278</span>            superIds.add(superId);<a name="line.278"></a>
-<span class="sourceLineNo">279</span>            sup = superId.getFst();<a name="line.279"></a>
-<span class="sourceLineNo">280</span>            curId = superId.getSnd().intValue();<a name="line.280"></a>
-<span class="sourceLineNo">281</span>        }<a name="line.281"></a>
-<span class="sourceLineNo">282</span>        return superIds;<a name="line.282"></a>
-<span class="sourceLineNo">283</span>    }<a name="line.283"></a>
-<span class="sourceLineNo">284</span><a name="line.284"></a>
-<span class="sourceLineNo">285</span>    public List&lt;Pair&lt;AstClafer, Integer&gt;&gt; getHierarcyOffsets(AstClafer clafer) {<a name="line.285"></a>
-<span class="sourceLineNo">286</span>        return getHierarcyIds(clafer, 0);<a name="line.286"></a>
-<span class="sourceLineNo">287</span>    }<a name="line.287"></a>
-<span class="sourceLineNo">288</span><a name="line.288"></a>
-<span class="sourceLineNo">289</span>    public List&lt;Pair&lt;AstClafer, Integer&gt;&gt; getHierarcyIds(AstClafer clafer, int id) {<a name="line.289"></a>
-<span class="sourceLineNo">290</span>        List&lt;Pair&lt;AstClafer, Integer&gt;&gt; superIds = new ArrayList&lt;Pair&lt;AstClafer, Integer&gt;&gt;();<a name="line.290"></a>
-<span class="sourceLineNo">291</span>        superIds.add(new Pair&lt;AstClafer, Integer&gt;(clafer, id));<a name="line.291"></a>
-<span class="sourceLineNo">292</span>        AstClafer sup = clafer;<a name="line.292"></a>
-<span class="sourceLineNo">293</span>        int curId = id;<a name="line.293"></a>
-<span class="sourceLineNo">294</span>        while (sup.hasSuperClafer()) {<a name="line.294"></a>
-<span class="sourceLineNo">295</span>            Pair&lt;AstAbstractClafer, Integer&gt; superId = getSuperId(sup, curId);<a name="line.295"></a>
-<span class="sourceLineNo">296</span>            superIds.add(new Pair&lt;AstClafer, Integer&gt;(superId));<a name="line.296"></a>
-<span class="sourceLineNo">297</span>            sup = superId.getFst();<a name="line.297"></a>
-<span class="sourceLineNo">298</span>            curId = superId.getSnd().intValue();<a name="line.298"></a>
-<span class="sourceLineNo">299</span>        }<a name="line.299"></a>
-<span class="sourceLineNo">300</span>        return superIds;<a name="line.300"></a>
-<span class="sourceLineNo">301</span>    }<a name="line.301"></a>
-<span class="sourceLineNo">302</span><a name="line.302"></a>
-<span class="sourceLineNo">303</span>    public Pair&lt;AstRef, Integer&gt; getInheritedRefId(AstClafer clafer) {<a name="line.303"></a>
-<span class="sourceLineNo">304</span>        AstClafer sup = clafer;<a name="line.304"></a>
-<span class="sourceLineNo">305</span>        int curId = 0;<a name="line.305"></a>
-<span class="sourceLineNo">306</span>        do {<a name="line.306"></a>
-<span class="sourceLineNo">307</span>            if (sup.hasRef()) {<a name="line.307"></a>
-<span class="sourceLineNo">308</span>                return new Pair&lt;AstRef, Integer&gt;(sup.getRef(), curId);<a name="line.308"></a>
-<span class="sourceLineNo">309</span>            }<a name="line.309"></a>
-<span class="sourceLineNo">310</span>            if (sup.hasSuperClafer()) {<a name="line.310"></a>
-<span class="sourceLineNo">311</span>                curId += getOffsets(sup.getSuperClafer()).getOffset(sup);<a name="line.311"></a>
-<span class="sourceLineNo">312</span>            }<a name="line.312"></a>
-<span class="sourceLineNo">313</span>            sup = sup.getSuperClafer();<a name="line.313"></a>
-<span class="sourceLineNo">314</span>        } while (sup != null);<a name="line.314"></a>
-<span class="sourceLineNo">315</span>        return null;<a name="line.315"></a>
-<span class="sourceLineNo">316</span>    }<a name="line.316"></a>
-<span class="sourceLineNo">317</span><a name="line.317"></a>
-<span class="sourceLineNo">318</span>    public Offsets getOffsets(AstAbstractClafer clafer) {<a name="line.318"></a>
-<span class="sourceLineNo">319</span>        return notNull(clafer, "Offset", getOffsetMap().get(clafer));<a name="line.319"></a>
-<span class="sourceLineNo">320</span>    }<a name="line.320"></a>
-<span class="sourceLineNo">321</span><a name="line.321"></a>
-<span class="sourceLineNo">322</span>    public Map&lt;AstAbstractClafer, Offsets&gt; getOffsetMap() {<a name="line.322"></a>
-<span class="sourceLineNo">323</span>        return notNull("Offset", offsetMap);<a name="line.323"></a>
-<span class="sourceLineNo">324</span>    }<a name="line.324"></a>
-<span class="sourceLineNo">325</span><a name="line.325"></a>
-<span class="sourceLineNo">326</span>    public Analysis setOffsetMap(Map&lt;AstAbstractClafer, Offsets&gt; offsetMap) {<a name="line.326"></a>
-<span class="sourceLineNo">327</span>        this.offsetMap = offsetMap;<a name="line.327"></a>
-<span class="sourceLineNo">328</span>        return this;<a name="line.328"></a>
-<span class="sourceLineNo">329</span>    }<a name="line.329"></a>
-<span class="sourceLineNo">330</span><a name="line.330"></a>
-<span class="sourceLineNo">331</span>    public PartialSolution getPartialSolution(AstClafer clafer) {<a name="line.331"></a>
-<span class="sourceLineNo">332</span>        return notNull(clafer, "Partial solution", getPartialSolutionMap().get(clafer));<a name="line.332"></a>
-<span class="sourceLineNo">333</span>    }<a name="line.333"></a>
-<span class="sourceLineNo">334</span><a name="line.334"></a>
-<span class="sourceLineNo">335</span>    public Map&lt;AstClafer, PartialSolution&gt; getPartialSolutionMap() {<a name="line.335"></a>
-<span class="sourceLineNo">336</span>        return notNull("Partial solution", partialSolutionMap);<a name="line.336"></a>
-<span class="sourceLineNo">337</span>    }<a name="line.337"></a>
-<span class="sourceLineNo">338</span><a name="line.338"></a>
-<span class="sourceLineNo">339</span>    public Analysis setPartialSolutionMap(Map&lt;AstClafer, PartialSolution&gt; partialSolutionMap) {<a name="line.339"></a>
-<span class="sourceLineNo">340</span>        this.partialSolutionMap = partialSolutionMap;<a name="line.340"></a>
-<span class="sourceLineNo">341</span>        return this;<a name="line.341"></a>
-<span class="sourceLineNo">342</span>    }<a name="line.342"></a>
-<span class="sourceLineNo">343</span><a name="line.343"></a>
-<span class="sourceLineNo">344</span>    public int[][] getPartialInts(AstRef ref) {<a name="line.344"></a>
-<span class="sourceLineNo">345</span>        return notNull(ref.getSourceType(), "Partial integer", getPartialIntsMap().get(ref));<a name="line.345"></a>
-<span class="sourceLineNo">346</span>    }<a name="line.346"></a>
-<span class="sourceLineNo">347</span><a name="line.347"></a>
-<span class="sourceLineNo">348</span>    public Map&lt;AstRef, int[][]&gt; getPartialIntsMap() {<a name="line.348"></a>
-<span class="sourceLineNo">349</span>        return notNull("Partial integer", partialIntsMap);<a name="line.349"></a>
+<span class="sourceLineNo">244</span>    public Card getCard(AstConcreteClafer clafer) {<a name="line.244"></a>
+<span class="sourceLineNo">245</span>        return notNull(clafer, "Card", getCardMap().get(clafer));<a name="line.245"></a>
+<span class="sourceLineNo">246</span>    }<a name="line.246"></a>
+<span class="sourceLineNo">247</span><a name="line.247"></a>
+<span class="sourceLineNo">248</span>    public Map&lt;AstConcreteClafer, Card&gt; getCardMap() {<a name="line.248"></a>
+<span class="sourceLineNo">249</span>        return notNull("Card", cardMap);<a name="line.249"></a>
+<span class="sourceLineNo">250</span>    }<a name="line.250"></a>
+<span class="sourceLineNo">251</span><a name="line.251"></a>
+<span class="sourceLineNo">252</span>    public Analysis setCardMap(Map&lt;AstConcreteClafer, Card&gt; cardMap) {<a name="line.252"></a>
+<span class="sourceLineNo">253</span>        this.cardMap = cardMap;<a name="line.253"></a>
+<span class="sourceLineNo">254</span>        return this;<a name="line.254"></a>
+<span class="sourceLineNo">255</span>    }<a name="line.255"></a>
+<span class="sourceLineNo">256</span><a name="line.256"></a>
+<span class="sourceLineNo">257</span>    public Card getGlobalCard(AstClafer clafer) {<a name="line.257"></a>
+<span class="sourceLineNo">258</span>        return notNull(clafer, "GlobalCard", getGlobalCardMap().get(clafer));<a name="line.258"></a>
+<span class="sourceLineNo">259</span>    }<a name="line.259"></a>
+<span class="sourceLineNo">260</span><a name="line.260"></a>
+<span class="sourceLineNo">261</span>    public Map&lt;AstClafer, Card&gt; getGlobalCardMap() {<a name="line.261"></a>
+<span class="sourceLineNo">262</span>        return notNull("Global card", globalCardMap);<a name="line.262"></a>
+<span class="sourceLineNo">263</span>    }<a name="line.263"></a>
+<span class="sourceLineNo">264</span><a name="line.264"></a>
+<span class="sourceLineNo">265</span>    public Analysis setGlobalCardMap(Map&lt;AstClafer, Card&gt; globalCardMap) {<a name="line.265"></a>
+<span class="sourceLineNo">266</span>        this.globalCardMap = globalCardMap;<a name="line.266"></a>
+<span class="sourceLineNo">267</span>        return this;<a name="line.267"></a>
+<span class="sourceLineNo">268</span>    }<a name="line.268"></a>
+<span class="sourceLineNo">269</span><a name="line.269"></a>
+<span class="sourceLineNo">270</span>    public Format getFormat(AstClafer clafer) {<a name="line.270"></a>
+<span class="sourceLineNo">271</span>        return notNull(clafer, "Format", getFormatMap().get(clafer));<a name="line.271"></a>
+<span class="sourceLineNo">272</span>    }<a name="line.272"></a>
+<span class="sourceLineNo">273</span><a name="line.273"></a>
+<span class="sourceLineNo">274</span>    public Map&lt;AstClafer, Format&gt; getFormatMap() {<a name="line.274"></a>
+<span class="sourceLineNo">275</span>        return notNull("Format", formatMap);<a name="line.275"></a>
+<span class="sourceLineNo">276</span>    }<a name="line.276"></a>
+<span class="sourceLineNo">277</span><a name="line.277"></a>
+<span class="sourceLineNo">278</span>    public Analysis setFormatMap(Map&lt;AstClafer, Format&gt; formatMap) {<a name="line.278"></a>
+<span class="sourceLineNo">279</span>        this.formatMap = formatMap;<a name="line.279"></a>
+<span class="sourceLineNo">280</span>        return this;<a name="line.280"></a>
+<span class="sourceLineNo">281</span>    }<a name="line.281"></a>
+<span class="sourceLineNo">282</span><a name="line.282"></a>
+<span class="sourceLineNo">283</span>    public Pair&lt;AstConcreteClafer, Integer&gt; getConcreteId(AstClafer clafer, int id) {<a name="line.283"></a>
+<span class="sourceLineNo">284</span>        AstClafer sub = clafer;<a name="line.284"></a>
+<span class="sourceLineNo">285</span>        int curId = id;<a name="line.285"></a>
+<span class="sourceLineNo">286</span>        while (sub instanceof AstAbstractClafer) {<a name="line.286"></a>
+<span class="sourceLineNo">287</span>            Offsets offset = getOffsets((AstAbstractClafer) sub);<a name="line.287"></a>
+<span class="sourceLineNo">288</span>            sub = offset.getClafer(curId);<a name="line.288"></a>
+<span class="sourceLineNo">289</span>            curId -= offset.getOffset(sub);<a name="line.289"></a>
+<span class="sourceLineNo">290</span>        }<a name="line.290"></a>
+<span class="sourceLineNo">291</span>        return new Pair&lt;&gt;((AstConcreteClafer) sub, curId);<a name="line.291"></a>
+<span class="sourceLineNo">292</span>    }<a name="line.292"></a>
+<span class="sourceLineNo">293</span><a name="line.293"></a>
+<span class="sourceLineNo">294</span>    public Pair&lt;AstClafer, Integer&gt; getSubId(AstAbstractClafer clafer, int id) {<a name="line.294"></a>
+<span class="sourceLineNo">295</span>        Offsets offsets = getOffsets(clafer);<a name="line.295"></a>
+<span class="sourceLineNo">296</span>        AstClafer sub = offsets.getClafer(id);<a name="line.296"></a>
+<span class="sourceLineNo">297</span>        return new Pair&lt;&gt;(sub, id - offsets.getOffset(sub));<a name="line.297"></a>
+<span class="sourceLineNo">298</span>    }<a name="line.298"></a>
+<span class="sourceLineNo">299</span><a name="line.299"></a>
+<span class="sourceLineNo">300</span>    public Pair&lt;AstAbstractClafer, Integer&gt; getSuperId(AstClafer clafer, int id) {<a name="line.300"></a>
+<span class="sourceLineNo">301</span>        assert clafer.hasSuperClafer();<a name="line.301"></a>
+<span class="sourceLineNo">302</span>        int offset = getOffsets(clafer.getSuperClafer()).getOffset(clafer);<a name="line.302"></a>
+<span class="sourceLineNo">303</span>        return new Pair&lt;&gt;(clafer.getSuperClafer(), id + offset);<a name="line.303"></a>
+<span class="sourceLineNo">304</span>    }<a name="line.304"></a>
+<span class="sourceLineNo">305</span><a name="line.305"></a>
+<span class="sourceLineNo">306</span>    public List&lt;Pair&lt;AstAbstractClafer, Integer&gt;&gt; getSuperIds(AstClafer clafer, int id) {<a name="line.306"></a>
+<span class="sourceLineNo">307</span>        List&lt;Pair&lt;AstAbstractClafer, Integer&gt;&gt; superIds = new ArrayList&lt;&gt;();<a name="line.307"></a>
+<span class="sourceLineNo">308</span>        AstClafer sup = clafer;<a name="line.308"></a>
+<span class="sourceLineNo">309</span>        int curId = id;<a name="line.309"></a>
+<span class="sourceLineNo">310</span>        while (sup.hasSuperClafer()) {<a name="line.310"></a>
+<span class="sourceLineNo">311</span>            Pair&lt;AstAbstractClafer, Integer&gt; superId = getSuperId(sup, curId);<a name="line.311"></a>
+<span class="sourceLineNo">312</span>            superIds.add(superId);<a name="line.312"></a>
+<span class="sourceLineNo">313</span>            sup = superId.getFst();<a name="line.313"></a>
+<span class="sourceLineNo">314</span>            curId = superId.getSnd().intValue();<a name="line.314"></a>
+<span class="sourceLineNo">315</span>        }<a name="line.315"></a>
+<span class="sourceLineNo">316</span>        return superIds;<a name="line.316"></a>
+<span class="sourceLineNo">317</span>    }<a name="line.317"></a>
+<span class="sourceLineNo">318</span><a name="line.318"></a>
+<span class="sourceLineNo">319</span>    public List&lt;Pair&lt;AstClafer, Integer&gt;&gt; getHierarcyOffsets(AstClafer clafer) {<a name="line.319"></a>
+<span class="sourceLineNo">320</span>        return getHierarcyIds(clafer, 0);<a name="line.320"></a>
+<span class="sourceLineNo">321</span>    }<a name="line.321"></a>
+<span class="sourceLineNo">322</span><a name="line.322"></a>
+<span class="sourceLineNo">323</span>    public List&lt;Pair&lt;AstClafer, Integer&gt;&gt; getHierarcyIds(AstClafer clafer, int id) {<a name="line.323"></a>
+<span class="sourceLineNo">324</span>        List&lt;Pair&lt;AstClafer, Integer&gt;&gt; superIds = new ArrayList&lt;&gt;();<a name="line.324"></a>
+<span class="sourceLineNo">325</span>        superIds.add(new Pair&lt;&gt;(clafer, id));<a name="line.325"></a>
+<span class="sourceLineNo">326</span>        AstClafer sup = clafer;<a name="line.326"></a>
+<span class="sourceLineNo">327</span>        int curId = id;<a name="line.327"></a>
+<span class="sourceLineNo">328</span>        while (sup.hasSuperClafer()) {<a name="line.328"></a>
+<span class="sourceLineNo">329</span>            Pair&lt;AstAbstractClafer, Integer&gt; superId = getSuperId(sup, curId);<a name="line.329"></a>
+<span class="sourceLineNo">330</span>            superIds.add(new Pair&lt;AstClafer, Integer&gt;(superId));<a name="line.330"></a>
+<span class="sourceLineNo">331</span>            sup = superId.getFst();<a name="line.331"></a>
+<span class="sourceLineNo">332</span>            curId = superId.getSnd().intValue();<a name="line.332"></a>
+<span class="sourceLineNo">333</span>        }<a name="line.333"></a>
+<span class="sourceLineNo">334</span>        return superIds;<a name="line.334"></a>
+<span class="sourceLineNo">335</span>    }<a name="line.335"></a>
+<span class="sourceLineNo">336</span><a name="line.336"></a>
+<span class="sourceLineNo">337</span>    public Pair&lt;AstRef, Integer&gt; getInheritedRefId(AstClafer clafer) {<a name="line.337"></a>
+<span class="sourceLineNo">338</span>        AstClafer sup = clafer;<a name="line.338"></a>
+<span class="sourceLineNo">339</span>        int curId = 0;<a name="line.339"></a>
+<span class="sourceLineNo">340</span>        do {<a name="line.340"></a>
+<span class="sourceLineNo">341</span>            if (sup.hasRef()) {<a name="line.341"></a>
+<span class="sourceLineNo">342</span>                return new Pair&lt;&gt;(sup.getRef(), curId);<a name="line.342"></a>
+<span class="sourceLineNo">343</span>            }<a name="line.343"></a>
+<span class="sourceLineNo">344</span>            if (sup.hasSuperClafer()) {<a name="line.344"></a>
+<span class="sourceLineNo">345</span>                curId += getOffsets(sup.getSuperClafer()).getOffset(sup);<a name="line.345"></a>
+<span class="sourceLineNo">346</span>            }<a name="line.346"></a>
+<span class="sourceLineNo">347</span>            sup = sup.getSuperClafer();<a name="line.347"></a>
+<span class="sourceLineNo">348</span>        } while (sup != null);<a name="line.348"></a>
+<span class="sourceLineNo">349</span>        return null;<a name="line.349"></a>
 <span class="sourceLineNo">350</span>    }<a name="line.350"></a>
 <span class="sourceLineNo">351</span><a name="line.351"></a>
-<span class="sourceLineNo">352</span>    public Analysis setPartialIntsMap(Map&lt;AstRef, int[][]&gt; partialIntsMap) {<a name="line.352"></a>
-<span class="sourceLineNo">353</span>        this.partialIntsMap = partialIntsMap;<a name="line.353"></a>
-<span class="sourceLineNo">354</span>        return this;<a name="line.354"></a>
-<span class="sourceLineNo">355</span>    }<a name="line.355"></a>
-<span class="sourceLineNo">356</span><a name="line.356"></a>
-<span class="sourceLineNo">357</span>    public boolean hasInteritedBreakableChildren(AstClafer clafer) {<a name="line.357"></a>
-<span class="sourceLineNo">358</span>        AstClafer sup = clafer;<a name="line.358"></a>
-<span class="sourceLineNo">359</span>        do {<a name="line.359"></a>
-<span class="sourceLineNo">360</span>            if (hasBreakableChildren(sup)) {<a name="line.360"></a>
-<span class="sourceLineNo">361</span>                return true;<a name="line.361"></a>
-<span class="sourceLineNo">362</span>            }<a name="line.362"></a>
-<span class="sourceLineNo">363</span>            sup = sup.getSuperClafer();<a name="line.363"></a>
-<span class="sourceLineNo">364</span>        } while (sup != null);<a name="line.364"></a>
-<span class="sourceLineNo">365</span>        return false;<a name="line.365"></a>
-<span class="sourceLineNo">366</span>    }<a name="line.366"></a>
-<span class="sourceLineNo">367</span><a name="line.367"></a>
-<span class="sourceLineNo">368</span>    public boolean hasBreakableChildren(AstClafer clafer) {<a name="line.368"></a>
-<span class="sourceLineNo">369</span>        return getBreakableChildren(clafer).length &gt; 0;<a name="line.369"></a>
-<span class="sourceLineNo">370</span>    }<a name="line.370"></a>
-<span class="sourceLineNo">371</span><a name="line.371"></a>
-<span class="sourceLineNo">372</span>    public AstConcreteClafer[] getBreakableChildren(AstClafer clafer) {<a name="line.372"></a>
-<span class="sourceLineNo">373</span>        return notNull("Breakable children", getBreakableChildrenMap().get(clafer));<a name="line.373"></a>
-<span class="sourceLineNo">374</span>    }<a name="line.374"></a>
-<span class="sourceLineNo">375</span><a name="line.375"></a>
-<span class="sourceLineNo">376</span>    public Map&lt;AstClafer, AstConcreteClafer[]&gt; getBreakableChildrenMap() {<a name="line.376"></a>
-<span class="sourceLineNo">377</span>        return notNull("Breakable children", breakableChildrenMap);<a name="line.377"></a>
-<span class="sourceLineNo">378</span>    }<a name="line.378"></a>
-<span class="sourceLineNo">379</span><a name="line.379"></a>
-<span class="sourceLineNo">380</span>    public Analysis setBreakableChildrenMap(Map&lt;AstClafer, AstConcreteClafer[]&gt; breakableChildren) {<a name="line.380"></a>
-<span class="sourceLineNo">381</span>        this.breakableChildrenMap = breakableChildren;<a name="line.381"></a>
-<span class="sourceLineNo">382</span>        return this;<a name="line.382"></a>
-<span class="sourceLineNo">383</span>    }<a name="line.383"></a>
-<span class="sourceLineNo">384</span><a name="line.384"></a>
-<span class="sourceLineNo">385</span>    public boolean isBreakableRef(AstRef ref) {<a name="line.385"></a>
-<span class="sourceLineNo">386</span>        return getBreakableRefsMap().containsKey(ref);<a name="line.386"></a>
-<span class="sourceLineNo">387</span>    }<a name="line.387"></a>
-<span class="sourceLineNo">388</span><a name="line.388"></a>
-<span class="sourceLineNo">389</span>    public boolean isBreakableRefId(AstRef ref, int id) {<a name="line.389"></a>
-<span class="sourceLineNo">390</span>        int[] breakbleIDs = getBreakableRefsMap().get(ref);<a name="line.390"></a>
-<span class="sourceLineNo">391</span>        if (breakbleIDs == null) {<a name="line.391"></a>
-<span class="sourceLineNo">392</span>            return false;<a name="line.392"></a>
-<span class="sourceLineNo">393</span>        }<a name="line.393"></a>
-<span class="sourceLineNo">394</span>        return Util.in(id, breakbleIDs);<a name="line.394"></a>
-<span class="sourceLineNo">395</span>    }<a name="line.395"></a>
-<span class="sourceLineNo">396</span><a name="line.396"></a>
-<span class="sourceLineNo">397</span>    public Map&lt;AstRef, int[]&gt; getBreakableRefsMap() {<a name="line.397"></a>
-<span class="sourceLineNo">398</span>        return notNull("Breakable ref", breakableRefsMap);<a name="line.398"></a>
-<span class="sourceLineNo">399</span>    }<a name="line.399"></a>
-<span class="sourceLineNo">400</span><a name="line.400"></a>
-<span class="sourceLineNo">401</span>    public Analysis setBreakableRefsMap(Map&lt;AstRef, int[]&gt; breakableRefs) {<a name="line.401"></a>
-<span class="sourceLineNo">402</span>        this.breakableRefsMap = breakableRefs;<a name="line.402"></a>
-<span class="sourceLineNo">403</span>        return this;<a name="line.403"></a>
+<span class="sourceLineNo">352</span>    public Offsets getOffsets(AstAbstractClafer clafer) {<a name="line.352"></a>
+<span class="sourceLineNo">353</span>        return notNull(clafer, "Offset", getOffsetMap().get(clafer));<a name="line.353"></a>
+<span class="sourceLineNo">354</span>    }<a name="line.354"></a>
+<span class="sourceLineNo">355</span><a name="line.355"></a>
+<span class="sourceLineNo">356</span>    public Map&lt;AstAbstractClafer, Offsets&gt; getOffsetMap() {<a name="line.356"></a>
+<span class="sourceLineNo">357</span>        return notNull("Offset", offsetMap);<a name="line.357"></a>
+<span class="sourceLineNo">358</span>    }<a name="line.358"></a>
+<span class="sourceLineNo">359</span><a name="line.359"></a>
+<span class="sourceLineNo">360</span>    public Analysis setOffsetMap(Map&lt;AstAbstractClafer, Offsets&gt; offsetMap) {<a name="line.360"></a>
+<span class="sourceLineNo">361</span>        this.offsetMap = offsetMap;<a name="line.361"></a>
+<span class="sourceLineNo">362</span>        return this;<a name="line.362"></a>
+<span class="sourceLineNo">363</span>    }<a name="line.363"></a>
+<span class="sourceLineNo">364</span><a name="line.364"></a>
+<span class="sourceLineNo">365</span>    public PartialSolution getPartialSolution(AstClafer clafer) {<a name="line.365"></a>
+<span class="sourceLineNo">366</span>        return notNull(clafer, "Partial solution", getPartialSolutionMap().get(clafer));<a name="line.366"></a>
+<span class="sourceLineNo">367</span>    }<a name="line.367"></a>
+<span class="sourceLineNo">368</span><a name="line.368"></a>
+<span class="sourceLineNo">369</span>    public Map&lt;AstClafer, PartialSolution&gt; getPartialSolutionMap() {<a name="line.369"></a>
+<span class="sourceLineNo">370</span>        return notNull("Partial solution", partialSolutionMap);<a name="line.370"></a>
+<span class="sourceLineNo">371</span>    }<a name="line.371"></a>
+<span class="sourceLineNo">372</span><a name="line.372"></a>
+<span class="sourceLineNo">373</span>    public Analysis setPartialSolutionMap(Map&lt;AstClafer, PartialSolution&gt; partialSolutionMap) {<a name="line.373"></a>
+<span class="sourceLineNo">374</span>        this.partialSolutionMap = partialSolutionMap;<a name="line.374"></a>
+<span class="sourceLineNo">375</span>        return this;<a name="line.375"></a>
+<span class="sourceLineNo">376</span>    }<a name="line.376"></a>
+<span class="sourceLineNo">377</span><a name="line.377"></a>
+<span class="sourceLineNo">378</span>    public IrDomain[] getPartialInts(AstRef ref) {<a name="line.378"></a>
+<span class="sourceLineNo">379</span>        return notNull(ref.getSourceType(), "Partial integer", getPartialIntsMap().get(ref));<a name="line.379"></a>
+<span class="sourceLineNo">380</span>    }<a name="line.380"></a>
+<span class="sourceLineNo">381</span><a name="line.381"></a>
+<span class="sourceLineNo">382</span>    public Map&lt;AstRef, IrDomain[]&gt; getPartialIntsMap() {<a name="line.382"></a>
+<span class="sourceLineNo">383</span>        return notNull("Partial integer", partialIntsMap);<a name="line.383"></a>
+<span class="sourceLineNo">384</span>    }<a name="line.384"></a>
+<span class="sourceLineNo">385</span><a name="line.385"></a>
+<span class="sourceLineNo">386</span>    public Analysis setPartialIntsMap(Map&lt;AstRef, IrDomain[]&gt; partialIntsMap) {<a name="line.386"></a>
+<span class="sourceLineNo">387</span>        this.partialIntsMap = partialIntsMap;<a name="line.387"></a>
+<span class="sourceLineNo">388</span>        return this;<a name="line.388"></a>
+<span class="sourceLineNo">389</span>    }<a name="line.389"></a>
+<span class="sourceLineNo">390</span><a name="line.390"></a>
+<span class="sourceLineNo">391</span>    public boolean hasInteritedBreakableChildren(AstClafer clafer) {<a name="line.391"></a>
+<span class="sourceLineNo">392</span>        AstClafer sup = clafer;<a name="line.392"></a>
+<span class="sourceLineNo">393</span>        do {<a name="line.393"></a>
+<span class="sourceLineNo">394</span>            if (hasBreakableChildren(sup)) {<a name="line.394"></a>
+<span class="sourceLineNo">395</span>                return true;<a name="line.395"></a>
+<span class="sourceLineNo">396</span>            }<a name="line.396"></a>
+<span class="sourceLineNo">397</span>            sup = sup.getSuperClafer();<a name="line.397"></a>
+<span class="sourceLineNo">398</span>        } while (sup != null);<a name="line.398"></a>
+<span class="sourceLineNo">399</span>        return false;<a name="line.399"></a>
+<span class="sourceLineNo">400</span>    }<a name="line.400"></a>
+<span class="sourceLineNo">401</span><a name="line.401"></a>
+<span class="sourceLineNo">402</span>    public boolean hasBreakableChildren(AstClafer clafer) {<a name="line.402"></a>
+<span class="sourceLineNo">403</span>        return getBreakableChildren(clafer).length &gt; 0;<a name="line.403"></a>
 <span class="sourceLineNo">404</span>    }<a name="line.404"></a>
 <span class="sourceLineNo">405</span><a name="line.405"></a>
-<span class="sourceLineNo">406</span>    public boolean isInheritedBreakableTarget(AstClafer clafer) {<a name="line.406"></a>
-<span class="sourceLineNo">407</span>        AstClafer sup = clafer;<a name="line.407"></a>
-<span class="sourceLineNo">408</span>        do {<a name="line.408"></a>
-<span class="sourceLineNo">409</span>            if (isBreakableTarget(sup)) {<a name="line.409"></a>
-<span class="sourceLineNo">410</span>                return true;<a name="line.410"></a>
-<span class="sourceLineNo">411</span>            }<a name="line.411"></a>
-<span class="sourceLineNo">412</span>            sup = sup.getSuperClafer();<a name="line.412"></a>
-<span class="sourceLineNo">413</span>        } while (sup != null);<a name="line.413"></a>
-<span class="sourceLineNo">414</span>        return false;<a name="line.414"></a>
-<span class="sourceLineNo">415</span>    }<a name="line.415"></a>
-<span class="sourceLineNo">416</span><a name="line.416"></a>
-<span class="sourceLineNo">417</span>    public boolean isBreakableTarget(AstClafer clafer) {<a name="line.417"></a>
-<span class="sourceLineNo">418</span>        return getBreakableTargetsMap().containsKey(clafer);<a name="line.418"></a>
-<span class="sourceLineNo">419</span>    }<a name="line.419"></a>
-<span class="sourceLineNo">420</span><a name="line.420"></a>
-<span class="sourceLineNo">421</span>    public AstRef[] getBreakableTarget(AstClafer clafer) {<a name="line.421"></a>
-<span class="sourceLineNo">422</span>        AstRef[] ref = getBreakableTargetsMap().get(clafer);<a name="line.422"></a>
-<span class="sourceLineNo">423</span>        return ref == null ? new AstRef[0] : ref;<a name="line.423"></a>
-<span class="sourceLineNo">424</span>    }<a name="line.424"></a>
-<span class="sourceLineNo">425</span><a name="line.425"></a>
-<span class="sourceLineNo">426</span>    public Map&lt;AstClafer, AstRef[]&gt; getBreakableTargetsMap() {<a name="line.426"></a>
-<span class="sourceLineNo">427</span>        return notNull("Breakable target", breakableTargetsMap);<a name="line.427"></a>
-<span class="sourceLineNo">428</span>    }<a name="line.428"></a>
-<span class="sourceLineNo">429</span><a name="line.429"></a>
-<span class="sourceLineNo">430</span>    public Analysis setBreakableTargetsMap(Map&lt;AstClafer, AstRef[]&gt; breakableTargetsMap) {<a name="line.430"></a>
-<span class="sourceLineNo">431</span>        this.breakableTargetsMap = breakableTargetsMap;<a name="line.431"></a>
-<span class="sourceLineNo">432</span>        return this;<a name="line.432"></a>
+<span class="sourceLineNo">406</span>    public AstConcreteClafer[] getBreakableChildren(AstClafer clafer) {<a name="line.406"></a>
+<span class="sourceLineNo">407</span>        return notNull("Breakable children", getBreakableChildrenMap().get(clafer));<a name="line.407"></a>
+<span class="sourceLineNo">408</span>    }<a name="line.408"></a>
+<span class="sourceLineNo">409</span><a name="line.409"></a>
+<span class="sourceLineNo">410</span>    public Map&lt;AstClafer, AstConcreteClafer[]&gt; getBreakableChildrenMap() {<a name="line.410"></a>
+<span class="sourceLineNo">411</span>        return notNull("Breakable children", breakableChildrenMap);<a name="line.411"></a>
+<span class="sourceLineNo">412</span>    }<a name="line.412"></a>
+<span class="sourceLineNo">413</span><a name="line.413"></a>
+<span class="sourceLineNo">414</span>    public Analysis setBreakableChildrenMap(Map&lt;AstClafer, AstConcreteClafer[]&gt; breakableChildren) {<a name="line.414"></a>
+<span class="sourceLineNo">415</span>        this.breakableChildrenMap = breakableChildren;<a name="line.415"></a>
+<span class="sourceLineNo">416</span>        return this;<a name="line.416"></a>
+<span class="sourceLineNo">417</span>    }<a name="line.417"></a>
+<span class="sourceLineNo">418</span><a name="line.418"></a>
+<span class="sourceLineNo">419</span>    public boolean isBreakableRef(AstRef ref) {<a name="line.419"></a>
+<span class="sourceLineNo">420</span>        return getBreakableRefsMap().containsKey(ref);<a name="line.420"></a>
+<span class="sourceLineNo">421</span>    }<a name="line.421"></a>
+<span class="sourceLineNo">422</span><a name="line.422"></a>
+<span class="sourceLineNo">423</span>    public boolean isBreakableRefId(AstRef ref, int id) {<a name="line.423"></a>
+<span class="sourceLineNo">424</span>        int[] breakbleIDs = getBreakableRefsMap().get(ref);<a name="line.424"></a>
+<span class="sourceLineNo">425</span>        if (breakbleIDs == null) {<a name="line.425"></a>
+<span class="sourceLineNo">426</span>            return false;<a name="line.426"></a>
+<span class="sourceLineNo">427</span>        }<a name="line.427"></a>
+<span class="sourceLineNo">428</span>        return Util.in(id, breakbleIDs);<a name="line.428"></a>
+<span class="sourceLineNo">429</span>    }<a name="line.429"></a>
+<span class="sourceLineNo">430</span><a name="line.430"></a>
+<span class="sourceLineNo">431</span>    public Map&lt;AstRef, int[]&gt; getBreakableRefsMap() {<a name="line.431"></a>
+<span class="sourceLineNo">432</span>        return notNull("Breakable ref", breakableRefsMap);<a name="line.432"></a>
 <span class="sourceLineNo">433</span>    }<a name="line.433"></a>
 <span class="sourceLineNo">434</span><a name="line.434"></a>
-<span class="sourceLineNo">435</span>    public AstClafer getType(AstExpr expr) {<a name="line.435"></a>
-<span class="sourceLineNo">436</span>        return notNull(expr.toString(), "Type", getTypeMap().get(expr));<a name="line.436"></a>
-<span class="sourceLineNo">437</span>    }<a name="line.437"></a>
-<span class="sourceLineNo">438</span><a name="line.438"></a>
-<span class="sourceLineNo">439</span>    public Map&lt;AstExpr, AstClafer&gt; getTypeMap() {<a name="line.439"></a>
-<span class="sourceLineNo">440</span>        return notNull("Type", typeMap);<a name="line.440"></a>
-<span class="sourceLineNo">441</span>    }<a name="line.441"></a>
-<span class="sourceLineNo">442</span><a name="line.442"></a>
-<span class="sourceLineNo">443</span>    public Analysis setTypeMap(Map&lt;AstExpr, AstClafer&gt; typeMap) {<a name="line.443"></a>
-<span class="sourceLineNo">444</span>        this.typeMap = typeMap;<a name="line.444"></a>
-<span class="sourceLineNo">445</span>        return this;<a name="line.445"></a>
-<span class="sourceLineNo">446</span>    }<a name="line.446"></a>
-<span class="sourceLineNo">447</span>}<a name="line.447"></a>
+<span class="sourceLineNo">435</span>    public Analysis setBreakableRefsMap(Map&lt;AstRef, int[]&gt; breakableRefs) {<a name="line.435"></a>
+<span class="sourceLineNo">436</span>        this.breakableRefsMap = breakableRefs;<a name="line.436"></a>
+<span class="sourceLineNo">437</span>        return this;<a name="line.437"></a>
+<span class="sourceLineNo">438</span>    }<a name="line.438"></a>
+<span class="sourceLineNo">439</span><a name="line.439"></a>
+<span class="sourceLineNo">440</span>    public boolean isInheritedBreakableTarget(AstClafer clafer) {<a name="line.440"></a>
+<span class="sourceLineNo">441</span>        AstClafer sup = clafer;<a name="line.441"></a>
+<span class="sourceLineNo">442</span>        do {<a name="line.442"></a>
+<span class="sourceLineNo">443</span>            if (isBreakableTarget(sup)) {<a name="line.443"></a>
+<span class="sourceLineNo">444</span>                return true;<a name="line.444"></a>
+<span class="sourceLineNo">445</span>            }<a name="line.445"></a>
+<span class="sourceLineNo">446</span>            sup = sup.getSuperClafer();<a name="line.446"></a>
+<span class="sourceLineNo">447</span>        } while (sup != null);<a name="line.447"></a>
+<span class="sourceLineNo">448</span>        return false;<a name="line.448"></a>
+<span class="sourceLineNo">449</span>    }<a name="line.449"></a>
+<span class="sourceLineNo">450</span><a name="line.450"></a>
+<span class="sourceLineNo">451</span>    public boolean isBreakableTarget(AstClafer clafer) {<a name="line.451"></a>
+<span class="sourceLineNo">452</span>        return getBreakableTargetsMap().containsKey(clafer);<a name="line.452"></a>
+<span class="sourceLineNo">453</span>    }<a name="line.453"></a>
+<span class="sourceLineNo">454</span><a name="line.454"></a>
+<span class="sourceLineNo">455</span>    public AstRef[] getBreakableTarget(AstClafer clafer) {<a name="line.455"></a>
+<span class="sourceLineNo">456</span>        AstRef[] ref = getBreakableTargetsMap().get(clafer);<a name="line.456"></a>
+<span class="sourceLineNo">457</span>        return ref == null ? new AstRef[0] : ref;<a name="line.457"></a>
+<span class="sourceLineNo">458</span>    }<a name="line.458"></a>
+<span class="sourceLineNo">459</span><a name="line.459"></a>
+<span class="sourceLineNo">460</span>    public Map&lt;AstClafer, AstRef[]&gt; getBreakableTargetsMap() {<a name="line.460"></a>
+<span class="sourceLineNo">461</span>        return notNull("Breakable target", breakableTargetsMap);<a name="line.461"></a>
+<span class="sourceLineNo">462</span>    }<a name="line.462"></a>
+<span class="sourceLineNo">463</span><a name="line.463"></a>
+<span class="sourceLineNo">464</span>    public Analysis setBreakableTargetsMap(Map&lt;AstClafer, AstRef[]&gt; breakableTargetsMap) {<a name="line.464"></a>
+<span class="sourceLineNo">465</span>        this.breakableTargetsMap = breakableTargetsMap;<a name="line.465"></a>
+<span class="sourceLineNo">466</span>        return this;<a name="line.466"></a>
+<span class="sourceLineNo">467</span>    }<a name="line.467"></a>
+<span class="sourceLineNo">468</span><a name="line.468"></a>
+<span class="sourceLineNo">469</span>    public Type getType(AstExpr expr) {<a name="line.469"></a>
+<span class="sourceLineNo">470</span>        return notNull(expr.toString(), "Type", getTypeMap().get(expr));<a name="line.470"></a>
+<span class="sourceLineNo">471</span>    }<a name="line.471"></a>
+<span class="sourceLineNo">472</span><a name="line.472"></a>
+<span class="sourceLineNo">473</span>    public AstClafer getCommonSupertype(AstExpr expr) {<a name="line.473"></a>
+<span class="sourceLineNo">474</span>        return notNull(expr.toString(), "Type", getTypeMap().get(expr)).getCommonSuperType();<a name="line.474"></a>
+<span class="sourceLineNo">475</span>    }<a name="line.475"></a>
+<span class="sourceLineNo">476</span><a name="line.476"></a>
+<span class="sourceLineNo">477</span>    public Map&lt;AstExpr, Type&gt; getTypeMap() {<a name="line.477"></a>
+<span class="sourceLineNo">478</span>        return notNull("Type", typeMap);<a name="line.478"></a>
+<span class="sourceLineNo">479</span>    }<a name="line.479"></a>
+<span class="sourceLineNo">480</span><a name="line.480"></a>
+<span class="sourceLineNo">481</span>    public Analysis setTypeMap(Map&lt;AstExpr, Type&gt; typeMap) {<a name="line.481"></a>
+<span class="sourceLineNo">482</span>        this.typeMap = typeMap;<a name="line.482"></a>
+<span class="sourceLineNo">483</span>        return this;<a name="line.483"></a>
+<span class="sourceLineNo">484</span>    }<a name="line.484"></a>
+<span class="sourceLineNo">485</span>}<a name="line.485"></a>
 
 
 
