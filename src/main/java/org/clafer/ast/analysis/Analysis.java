@@ -33,6 +33,7 @@ public class Analysis {
 
     private final AstModel model;
     private Scope scope;
+    private List<Objective> objectives;
     private Map<Objective, AstSetExpr> objectiveExprs;
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
@@ -70,6 +71,7 @@ public class Analysis {
             List<Set<AstClafer>> clafersInParentAndSubOrder) {
         this.model = model;
         this.scope = scope;
+        this.objectives = objectives;
         this.objectiveExprs = new HashMap<>();
         for (Objective objective : objectives) {
             this.objectiveExprs.put(objective, objective.getExpr());
@@ -163,6 +165,10 @@ public class Analysis {
 
     public AstSetExpr getExpr(Objective objective) {
         return objectiveExprs.get(objective);
+    }
+
+    public List<Objective> getObjectives() {
+        return Collections.unmodifiableList(objectives);
     }
 
     public Map<Objective, AstSetExpr> getObjectiveExprs() {

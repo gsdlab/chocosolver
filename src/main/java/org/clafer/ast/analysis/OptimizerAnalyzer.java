@@ -17,6 +17,7 @@ import org.clafer.ast.AstThis;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.Card;
 import org.clafer.common.Util;
+import org.clafer.objective.Objective;
 
 /**
  * Optimizes the expressions inside the constraints. Assumes type checking has
@@ -28,11 +29,17 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstConstraint, AstBoolExpr> constraintExprs = new HashMap<>();
+        Map<AstConstraint, AstBoolExpr> constraintExprs = new HashMap<>(analysis.getConstraints().size());
         for (AstConstraint constraint : analysis.getConstraints()) {
             constraintExprs.put(constraint, rewrite(analysis.getExpr(constraint), analysis));
         }
-        return analysis.setConstraintExprs(constraintExprs);
+        Map<Objective, AstSetExpr> objectiveExprs = new HashMap<>(analysis.getObjectives().size());
+        for (Objective objective : analysis.getObjectives()) {
+            objectiveExprs.put(objective, rewrite(analysis.getExpr(objective), analysis));
+        }
+        return analysis
+                .setConstraintExprs(constraintExprs)
+                .setObjectiveExprs(objectiveExprs);
     }
 
     @Override
