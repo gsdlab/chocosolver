@@ -44,10 +44,9 @@ public class RandomSetSearchStrategy extends AbstractStrategy<SetVar> {
 
     @Override
     public Decision<SetVar> computeDecision(SetVar s) {
-        int m = s.getEnvelopeSize() - s.getKernelSize();
+        int m = rand.nextInt(s.getEnvelopeSize() - s.getKernelSize());
         for (int i = s.getEnvelopeFirst(); i != SetVar.END; i = s.getEnvelopeNext()) {
             if (!s.kernelContains(i)) {
-                m--;
                 if (m == 0) {
                     FastDecisionSet d = pool.getE();
                     if (d == null) {
@@ -56,6 +55,7 @@ public class RandomSetSearchStrategy extends AbstractStrategy<SetVar> {
                     d.set(s, i, DecisionOperator.set_force);
                     return d;
                 }
+                m--;
             }
         }
         throw new Error();
