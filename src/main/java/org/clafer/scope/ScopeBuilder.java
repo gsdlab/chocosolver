@@ -6,7 +6,7 @@ import org.clafer.ast.AstClafer;
 
 /**
  * Builder pattern for scopes. Use {@link Scope#builder()},
- * {@link Scope#set(org.clafer.ast.AstClafer, int)}, {@link Scope#defaultScope(int)},
+ * {@link Scope#setScope(org.clafer.ast.AstClafer, int)}, {@link Scope#defaultScope(int)},
  * {@link Scope#intLow}, or {@link Scope#intHigh} to construct the builder. The
  * default scope and lowest and highest integers will be given a default if not
  * set explicitly.
