@@ -81,9 +81,9 @@ import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrTraverser;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import static org.clafer.ir.Irs.*;
@@ -335,7 +335,7 @@ public class AstCompiler {
         Set<IrVar> variables = new HashSet<>(module.getVariables());
         VariableFinder finder = new VariableFinder();
         for (IrBoolExpr constraint : module.getConstraints()) {
-            constraint.accept(finder, variables);
+            finder.traverse(constraint, variables);
         }
         Set<Vertex<Either<IrExpr, IrBoolExpr>>> start = new HashSet<>();
         for (IrVar variable : variables) {
@@ -1553,24 +1553,24 @@ public class AstCompiler {
         }
     }
 
-    private static class VariableFinder extends IrRewriter<Set<IrVar>> {
+    private static class VariableFinder extends IrTraverser<Set<IrVar>> {
 
         @Override
         public IrBoolVar visit(IrBoolVar ir, Set<IrVar> a) {
             a.add(ir);
-            return super.visit(ir, a);
+            return ir;
         }
 
         @Override
         public IrIntVar visit(IrIntVar ir, Set<IrVar> a) {
             a.add(ir);
-            return super.visit(ir, a);
+            return ir;
         }
 
         @Override
         public IrSetVar visit(IrSetVar ir, Set<IrVar> a) {
             a.add(ir);
-            return super.visit(ir, a);
+            return ir;
         }
     }
 }
