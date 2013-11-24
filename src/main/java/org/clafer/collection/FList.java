@@ -1,11 +1,6 @@
 package org.clafer.collection;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
-import org.clafer.common.Check;
 
 /**
  * Persistent singly-linked list. Useful for recursive algorithms.
@@ -14,11 +9,6 @@ import org.clafer.common.Check;
  * @author jimmy
  */
 public abstract class FList<E> implements Iterable<E> {
-
-    private static Null<Object> Null = new Null<>();
-
-    private FList() {
-    }
 
     /**
      * Returns the first element of the list.
@@ -57,7 +47,7 @@ public abstract class FList<E> implements Iterable<E> {
      */
     public static <E> FList<E> empty() {
         @SuppressWarnings("unchecked")
-        Null<E> empty = (Null<E>) Null;
+        Null<E> empty = (Null<E>) Null.Singleton;
         return empty;
     }
 
@@ -97,144 +87,5 @@ public abstract class FList<E> implements Iterable<E> {
             return single(tail);
         }
         return cons(head.getHead(), snoc(head.getTail(), tail));
-    }
-
-    private static class Cons<E> extends FList<E> {
-
-        private final E head;
-        private final FList<E> tail;
-
-        private Cons(E head, FList<E> tail) {
-            this.head = Check.notNull(head);
-            this.tail = Check.notNull(tail);
-        }
-
-        @Override
-        public E getHead() {
-            return head;
-        }
-
-        @Override
-        public FList<E> getTail() {
-            return tail;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return false;
-        }
-
-        @Override
-        public List<E> toList() {
-            List<E> list = new ArrayList<>();
-            for (FList<E> current = this; !current.isEmpty(); current = current.getTail()) {
-                list.add(current.getHead());
-            }
-            return list;
-        }
-
-        @Override
-        public Iterator<E> iterator() {
-            return new FListIterator<>(this);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof Cons<?>) {
-                Cons<?> other = (Cons<?>) obj;
-                return head.equals(other.head) && tail.equals(other.tail);
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 1;
-            for (FList<E> current = this; !current.isEmpty(); current = current.getTail()) {
-                hash = 31 * hash + current.getHead().hashCode();
-            }
-            return hash;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder result = new StringBuilder();
-            result.append('[');
-            result.append(head);
-            for (FList<E> current = tail; !current.isEmpty(); current = current.getTail()) {
-                result.append(", ");
-                result.append(current.getHead());
-            }
-            return result.append(']').toString();
-        }
-    }
-
-    private static class Null<E> extends FList<E> {
-
-        @Override
-        public E getHead() {
-            throw new NoSuchElementException("No head of empty list.");
-        }
-
-        @Override
-        public FList<E> getTail() {
-            throw new NoSuchElementException("No tail of empty list.");
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return true;
-        }
-
-        @Override
-        public List<E> toList() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public Iterator<E> iterator() {
-            return Collections.emptyIterator();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return this == obj;
-        }
-
-        @Override
-        public int hashCode() {
-            return 71;
-        }
-
-        @Override
-        public String toString() {
-            return "[]";
-        }
-    }
-
-    private static class FListIterator<E> implements Iterator<E> {
-
-        private FList<E> current;
-
-        FListIterator(FList<E> current) {
-            this.current = current;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return !current.isEmpty();
-        }
-
-        @Override
-        public E next() {
-            E head = current.getHead();
-            current = current.getTail();
-            return head;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
     }
 }
