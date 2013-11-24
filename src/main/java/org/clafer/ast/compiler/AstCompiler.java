@@ -339,7 +339,11 @@ public class AstCompiler {
         }
         Set<Vertex<Either<IrExpr, IrBoolExpr>>> start = new HashSet<>();
         for (IrVar variable : variables) {
-            start.add(dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(variable)));
+            Vertex<Either<IrExpr, IrBoolExpr>> vertex =
+                    dependencies.getVertexIfPresent(Either.<IrExpr, IrBoolExpr>left(variable));
+            if (vertex != null) {
+                start.add(vertex);
+            }
         }
         Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
         for (Either<IrExpr, IrBoolExpr> reachable : reachables) {

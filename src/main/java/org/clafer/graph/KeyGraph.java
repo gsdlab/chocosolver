@@ -43,6 +43,10 @@ public class KeyGraph<V> implements Graph<V> {
         return vertex;
     }
 
+    public Vertex<V> getVertexIfPresent(V data) {
+        return vertices.get(data);
+    }
+
     public void addEdge(V from, V to) {
         getVertex(from).addNeighbour(getVertex(to));
     }
