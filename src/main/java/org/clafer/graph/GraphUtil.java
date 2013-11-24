@@ -18,11 +18,6 @@ public class GraphUtil {
     private GraphUtil() {
     }
 
-    public static <V> boolean hasPath(Vertex<V> start, Vertex<V> end, Graph<V> graph) {
-        Set<Vertex<V>> visited = new HashSet<>();
-        return findPath(start, end, graph, visited);
-    }
-
     private static <V> boolean findPath(Vertex<V> cur, Vertex<V> end, Graph<V> graph, Set<Vertex<V>> visited) {
         if (cur.equals(end)) {
             return true;
@@ -38,12 +33,57 @@ public class GraphUtil {
         return false;
     }
 
+    private static <V> void findPath(Vertex<V> cur, Graph<V> graph, Set<Vertex<V>> visited) {
+        if (!visited.add(cur)) {
+            return;
+        }
+        for (Vertex<V> neighbour : cur.getNeighbours()) {
+            findPath(neighbour, graph, visited);
+        }
+    }
+
+    /**
+     * Checks if there exists a path in the graph from the start node to the end
+     * node.
+     *
+     * @param <V> the type of the data
+     * @param start the start node
+     * @param end the end node
+     * @param graph the directed graph
+     * @return {@code true} if there is a path in the graph from the start node
+     * to the end node, {@code false} otherwise
+     */
+    public static <V> boolean hasPath(Vertex<V> start, Vertex<V> end, Graph<V> graph) {
+        Set<Vertex<V>> visited = new HashSet<>();
+        return findPath(start, end, graph, visited);
+    }
+
+    /**
+     * Compute all the reachable nodes from the set of start nodes.
+     *
+     * @param <V> the type of the data
+     * @param start the start nodes
+     * @param graph the directed graph
+     * @return all the reachable nodes from the set of start nodes
+     */
+    public static <V> Set<V> reachable(Set<Vertex<V>> start, Graph<V> graph) {
+        Set<Vertex<V>> visited = new HashSet<>();
+        for (Vertex<V> vertex : start) {
+            findPath(vertex, graph, visited);
+        }
+        Set<V> reachable = new HashSet<>(visited.size());
+        for (Vertex<V> visit : visited) {
+            reachable.add(visit.getData());
+        }
+        return reachable;
+    }
+
     /**
      * Compute the strongly connected components in the graph in topological
      * order. Implementation of Tarjan's algorithm.
      *
-     * @param <V>
-     * @param graph
+     * @param <V> the type of the data
+     * @param graph the directed graph
      * @return the strongly connected components in topological order.
      * @see <a
      * href="http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">Tarjan's
