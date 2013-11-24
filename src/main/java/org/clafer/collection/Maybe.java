@@ -12,8 +12,6 @@ import java.util.List;
  */
 public abstract class Maybe<T> {
 
-    private static final Nothing<?> Nothing = new Nothing<>();
-
     public abstract boolean isNothing();
 
     public abstract boolean isJust();
@@ -22,7 +20,7 @@ public abstract class Maybe<T> {
 
     public static <T> Nothing<T> nothing() {
         @SuppressWarnings("unchecked")
-        Nothing<T> maybe = (Nothing<T>) Nothing;
+        Nothing<T> maybe = (Nothing<T>) Nothing.Singleton;
         return maybe;
     }
 

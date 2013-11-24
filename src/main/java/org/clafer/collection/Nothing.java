@@ -6,8 +6,9 @@ package org.clafer.collection;
  * @author jimmy
  */
 public class Nothing<T> extends Maybe<T> {
+    public static final Nothing<?> Singleton = new Nothing();
 
-    Nothing() {
+    private Nothing() {
     }
 
     @Override
