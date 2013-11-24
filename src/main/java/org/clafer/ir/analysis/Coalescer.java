@@ -85,7 +85,7 @@ public class Coalescer {
                 } else {
                     IrIntVar coalesced = domainInt(name.toString(), domain);
                     for (IrIntVar coalesce : component) {
-                        if (!coalesced.equals(coalesce)) {
+                        if (!coalesced.equals(coalesce) && !(coalesce instanceof TempIntVar)) {
                             coalescedInts.put(coalesce, coalesced);
                         }
                     }
@@ -107,10 +107,10 @@ public class Coalescer {
                     ker = IrUtil.union(ker, var.getKer());
                     card = IrUtil.intersection(card, var.getCard());
                 }
-                IrSetVar coalesced = newSet(name.toString(), env, ker, card);
+                IrSetVar coalesced = newSet(name.toString(), env, ker, card, false);
                 if (coalesced != null) {
                     for (IrSetVar coalesce : component) {
-                        if (!coalesced.equals(coalesce)) {
+                        if (!coalesced.equals(coalesce) && !(coalesce instanceof TempSetVar)) {
                             coalescedSets.put(coalesce, coalesced);
                         }
                     }
@@ -123,7 +123,7 @@ public class Coalescer {
                 new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null));
     }
 
-    private static IrSetVar newSet(String name, IrDomain env, IrDomain ker, IrDomain card) {
+    private static IrSetVar newSet(String name, IrDomain env, IrDomain ker, IrDomain card, boolean temp) {
         if (!IrUtil.isSubsetOf(ker, env) || ker.size() > env.size()) {
             // Model is unsatisfiable. Compile anyways?
         } else {
@@ -131,7 +131,9 @@ public class Coalescer {
             if (boundCard.isEmpty()) {
                 // Model is unsatisfiable. Compile anyways?
             } else {
-                return set(name.toString(), env, ker, boundCard);
+                return temp
+                        ? new TempSetVar(name, env, ker, boundCard)
+                        : set(name, env, ker, boundCard);
             }
         }
         return null;
@@ -651,7 +653,7 @@ public class Coalescer {
                 if (domain.isEmpty()) {
                     // Model is unsatisfiable. Compile anyways?
                 } else {
-                    intGraph.union((IrIntVar) right, domainInt("domain" + domain, domain));
+                    intGraph.union((IrIntVar) right, new TempIntVar("temp", domain));
                 }
             } else if (right instanceof IrMinus) {
                 propagateInt(IrUtil.minus(left), ((IrMinus) right).getExpr());
@@ -722,7 +724,7 @@ public class Coalescer {
             if (left.isCardMask()) {
                 card = left.getCard();
             }
-            IrSetVar set = newSet(left.toString(), env, ker, card);
+            IrSetVar set = newSet("temp", env, ker, card, true);
             if (set != null) {
                 setGraph.union(right, set);
             }
@@ -1053,6 +1055,20 @@ public class Coalescer {
             return (env != null ? "env=" + env : "")
                     + (ker != null ? "ker=" + ker : "")
                     + (card != null ? "card=" + card : "");
+        }
+    }
+
+    private static class TempIntVar extends IrIntVar {
+
+        TempIntVar(String name, IrDomain domain) {
+            super(name, domain);
+        }
+    }
+
+    private static class TempSetVar extends IrSetVar {
+
+        TempSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
+            super(name, env, ker, card);
         }
     }
 }

@@ -10,7 +10,7 @@ public class IrSetVar extends IrAbstractSet implements IrVar {
 
     private final String name;
 
-    IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
+    protected IrSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
         super(env, ker, card);
         this.name = Check.notNull(name);
     }

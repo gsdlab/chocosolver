@@ -10,7 +10,7 @@ public class IrIntVar extends IrAbstractInt implements IrVar {
 
     private final String name;
 
-    IrIntVar(String name, IrDomain domain) {
+    protected IrIntVar(String name, IrDomain domain) {
         super(domain);
         this.name = Check.notNull(name);
     }
