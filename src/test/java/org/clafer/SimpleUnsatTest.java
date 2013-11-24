@@ -21,7 +21,7 @@ import org.junit.Test;
  */
 public class SimpleUnsatTest {
 
-    private static <T> Set<T> set(T... items) {
+    private static Set<AstConstraint> set(AstConstraint... items) {
         return new HashSet<>(Arrays.asList(items));
     }
 
@@ -51,9 +51,10 @@ public class SimpleUnsatTest {
      * Witch ?
      * Floats ?
      * [Floats => Duck]
-     * [Floats &lt;=&gt; Witch]
+     * [Duck &lt;=&gt; Witch]
      * [!Duck]
      * [Witch]
+     * [Floats]
      * [Mob]
      * </pre>
      */
@@ -66,14 +67,15 @@ public class SimpleUnsatTest {
         AstConcreteClafer witch = model.addChild("Witch").withCard(0, 1);
         AstConcreteClafer floats = model.addChild("Floats").withCard(0, 1);
         AstConstraint c1 = model.addConstraint(implies(some(floats), some(duck)));
-        AstConstraint c2 = model.addConstraint(ifOnlyIf(some(floats), some(witch)));
+        AstConstraint c2 = model.addConstraint(ifOnlyIf(some(duck), some(witch)));
         AstConstraint c3 = model.addConstraint(none(duck));
         AstConstraint c4 = model.addConstraint(some(witch));
-        AstConstraint c5 = model.addConstraint(some(mob));
+        AstConstraint c5 = model.addConstraint(some(floats));
+        AstConstraint c6 = model.addConstraint(some(mob));
 
-        assertEquals(set(c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
+        assertEquals(set(c3), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
                 .minUnsat().getFst());
-        assertEquals(set(c1, c2, c3, c4), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
+        assertEquals(set(c1, c2, c3, c4, c5), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1))
                 .unsatCore());
     }
 
