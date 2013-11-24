@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -65,6 +66,7 @@ import org.clafer.ast.analysis.SymmetryAnalyzer;
 import org.clafer.ast.analysis.Type;
 import org.clafer.ast.analysis.TypeAnalyzer;
 import org.clafer.collection.DisjointSets;
+import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
@@ -79,9 +81,11 @@ import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrUtil;
+import org.clafer.ir.IrVar;
 import static org.clafer.ir.Irs.*;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
@@ -109,6 +113,7 @@ public class AstCompiler {
     };
     private final Analysis analysis;
     private final IrModule module;
+    private final List<Symmetry> symmetries = new ArrayList<>();
     private final boolean fullSymmetryBreaking;
 
     private AstCompiler(AstModel model, Scope scope, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
@@ -312,6 +317,37 @@ public class AstCompiler {
             module.addConstraint(equal(objectiveVar, objectiveExpr));
             objectiveVars.put(objective.getKey(), objectiveVar);
         }
+
+        KeyGraph<Either<IrExpr, IrBoolExpr>> dependencies = new KeyGraph<>();
+        for (Symmetry symmetry : symmetries) {
+            IrBoolExpr constraint = symmetry.getConstraint();
+            Vertex<Either<IrExpr, IrBoolExpr>> constraintNode =
+                    dependencies.getVertex(Either.<IrExpr, IrBoolExpr>right(constraint));
+            for (IrExpr output : symmetry.getOutput()) {
+                dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(output))
+                        .addNeighbour(constraintNode);
+            }
+            for (IrExpr input : symmetry.getInput()) {
+                constraintNode.addNeighbour(
+                        dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(input)));
+            }
+        }
+        Set<IrVar> variables = new HashSet<>(module.getVariables());
+        VariableFinder finder = new VariableFinder();
+        for (IrBoolExpr constraint : module.getConstraints()) {
+            constraint.accept(finder, variables);
+        }
+        Set<Vertex<Either<IrExpr, IrBoolExpr>>> start = new HashSet<>();
+        for (IrVar variable : variables) {
+            start.add(dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(variable)));
+        }
+        Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
+        for (Either<IrExpr, IrBoolExpr> reachable : reachables) {
+            if (reachable.isRight()) {
+                module.addConstraint(reachable.getRight());
+            }
+        }
+
         return new AstSolutionMap(analysis.getModel(), siblingSets, refPointers,
                 softVars, sumSoftVars,
                 objectiveVars, analysis);
@@ -408,7 +444,6 @@ public class AstCompiler {
                 || analysis.isInheritedBreakableTarget(clafer))) {
 
             IrIntExpr[] weight = new IrIntExpr[scope];
-            weights.put(clafer, weight);
             IrIntExpr[][] index = indices.get(clafer);
 
             analysis.getHierarcyIds(clafer, refOffset);
@@ -458,27 +493,29 @@ public class AstCompiler {
                         : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             if (getScope(clafer.getParent()) > 1) {
-                module.addConstraint(sortChannel(childIndices, weight));
+                symmetries.add(new LexChainChannel(childIndices, weight));
                 for (int i = 0; i < siblingSet.length; i++) {
-                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
+                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
                 }
             }
-            for (int i = 0; i < parents.length - 1; i++) {
-                if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
-                    assert childIndices[i + 1].length == childIndices[i].length;
-                    if (childIndices[i].length == 1 && breakableRefIds[i]) {
-                        if (refPartitions == null) {
-                            refPartitions = new DisjointSets<>();
+            if (getCard(clafer).getHigh() > 1) {
+                for (int i = 0; i < parents.length - 1; i++) {
+                    if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
+                        assert childIndices[i + 1].length == childIndices[i].length;
+                        if (childIndices[i].length == 1 && breakableRefIds[i]) {
+                            if (refPartitions == null) {
+                                refPartitions = new DisjointSets<>();
+                            }
+                            refPartitions.union(i, i + 1);
                         }
-                        refPartitions.union(i, i + 1);
+                        // Refs are unique and part of the weight. It is impossible for
+                        // two weights to be the same. Enforce a strict order.
+                        module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
+                                sortStrict(childIndices[i + 1], childIndices[i])));
+                    } else {
+                        module.addConstraint(implies(equal(parents[i], parents[i + 1]),
+                                sort(childIndices[i + 1], childIndices[i])));
                     }
-                    // Refs are unique and part of the weight. It is impossible for
-                    // two weights to be the same. Enforce a strict order.
-                    module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
-                            sortStrict(childIndices[i + 1], childIndices[i])));
-                } else {
-                    module.addConstraint(implies(equal(parents[i], parents[i + 1]),
-                            sort(childIndices[i + 1], childIndices[i])));
                 }
             }
         }
@@ -730,8 +767,6 @@ public class AstCompiler {
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<>();
-    // The weight of an uninitialed Clafer is always zero.
-    private final Map<AstClafer, IrIntExpr[]> weights = new HashMap<>();
     private int countCount = 0;
     private int localCount = 0;
 
@@ -1446,5 +1481,92 @@ public class AstCompiler {
 
     private AstClafer getCommonSupertype(AstExpr expr) {
         return analysis.getCommonSupertype(expr);
+    }
+
+    private static interface Symmetry {
+
+        IrExpr[] getInput();
+
+        IrExpr[] getOutput();
+
+        IrBoolExpr getConstraint();
+    }
+
+    private static class FilterString implements Symmetry {
+
+        private final IrSetExpr set;
+        private final IrIntExpr[] string;
+        private final IrIntExpr[] result;
+
+        FilterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
+            this.set = set;
+            this.string = string;
+            this.result = result;
+        }
+
+        @Override
+        public IrExpr[] getInput() {
+            IrExpr[] input = new IrExpr[string.length + 1];
+            input[0] = set;
+            System.arraycopy(string, 0, input, 1, string.length);
+            return input;
+        }
+
+        @Override
+        public IrExpr[] getOutput() {
+            return result;
+        }
+
+        @Override
+        public IrBoolExpr getConstraint() {
+            return filterString(set, string, result);
+        }
+    }
+
+    private static class LexChainChannel implements Symmetry {
+
+        private final IrIntExpr[][] strings;
+        private final IrIntExpr[] ints;
+
+        LexChainChannel(IrIntExpr[][] strings, IrIntExpr[] ints) {
+            this.strings = strings;
+            this.ints = ints;
+        }
+
+        @Override
+        public IrExpr[] getInput() {
+            return Util.concat(strings);
+        }
+
+        @Override
+        public IrExpr[] getOutput() {
+            return ints;
+        }
+
+        @Override
+        public IrBoolExpr getConstraint() {
+            return sortChannel(strings, ints);
+        }
+    }
+
+    private static class VariableFinder extends IrRewriter<Set<IrVar>> {
+
+        @Override
+        public IrBoolVar visit(IrBoolVar ir, Set<IrVar> a) {
+            a.add(ir);
+            return super.visit(ir, a);
+        }
+
+        @Override
+        public IrIntVar visit(IrIntVar ir, Set<IrVar> a) {
+            a.add(ir);
+            return super.visit(ir, a);
+        }
+
+        @Override
+        public IrSetVar visit(IrSetVar ir, Set<IrVar> a) {
+            a.add(ir);
+            return super.visit(ir, a);
+        }
     }
 }

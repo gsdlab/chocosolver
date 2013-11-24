@@ -7,7 +7,7 @@ package org.clafer.ir;
  *
  * @author jimmy
  */
-public interface IrVar {
+public interface IrVar extends IrExpr {
 
     /**
      * @return the name of this variable
