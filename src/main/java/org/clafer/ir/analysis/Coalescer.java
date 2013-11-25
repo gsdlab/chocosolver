@@ -376,6 +376,10 @@ public class Coalescer {
                 IrDomain card = set.getCard();
                 int newLow = low + card.getLowBound();
                 int newHigh = high + card.getHighBound();
+                if (low >= newHigh) {
+                    // Model is unsatisfiable. Compile anyways?
+                    return null;
+                }
                 IrDomain env = boundDomain(low, newHigh - 1);
                 IrDomain ker = set.getKer();
                 if (!ker.isEmpty() && !ker.isBounded()) {
@@ -838,6 +842,14 @@ public class Coalescer {
                     int low = envUbs.length - 1 - i + take.getKer().size();
                     if (low > take.getCard().getLowBound() || high < take.getCard().getHighBound()) {
                         propagateCard(boundDomain(low, high), take);
+                    }
+                    iter = take.getKer().iterator();
+                    while (iter.hasNext()) {
+                        int ker = iter.next();
+                        propagateCard(boundDomain(
+                                lb - kerMaxCard + children[ker].getCard().getHighBound(),
+                                ub - kerMinCard + children[ker].getCard().getLowBound()),
+                                children[ker]);
                     }
                 }
             }

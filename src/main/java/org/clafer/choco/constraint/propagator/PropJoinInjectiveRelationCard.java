@@ -115,6 +115,20 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             }
             minCard += minCardInc;
             maxCard -= maxCardDec;
+
+            for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+                if (take.kernelContains(i)) {
+                    changed |= childrenCards[i].updateLowerBound(lb - maxCard + childrenCards[i].getUB(), aCause);
+                    changed |= childrenCards[i].updateUpperBound(ub - minCard + childrenCards[i].getLB(), aCause);
+                } else {
+                    if (maxCard - childrenCards[i].getLB() < lb) {
+                        take.addToKernel(i, aCause);
+                    }
+                    if (minCard - childrenCards[i].getUB() > ub) {
+                        take.removeFromEnvelope(i, aCause);
+                    }
+                }
+            }
         } while (changed);
 
         int lb = toCard.getLB();
