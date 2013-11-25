@@ -373,8 +373,6 @@ public class Irs {
                 && domain.getLowBound() >= range.getLowBound()
                 && domain.getHighBound() <= range.getHighBound()) {
             return True;
-        } else if (IrUtil.isSubsetOf(domain, range)) {
-            return True;
         }
         if (domain.getLowBound() > range.getHighBound()
                 || domain.getHighBound() < range.getLowBound()) {
@@ -383,15 +381,15 @@ public class Irs {
         if (range.size() == 1) {
             return equal(value, range.getLowBound());
         }
-        if (value.getDomain().getLowBound() == range.getLowBound()
-                && value.getDomain().getHighBound() - 1 == range.getHighBound()) {
-            return notEqual(value, value.getDomain().getHighBound());
+        IrDomain diff = IrUtil.difference(domain, range);
+        switch (diff.size()) {
+            case 0:
+                return True;
+            case 1:
+                return notEqual(value, diff.getLowBound());
+            default:
+                return new IrWithin(value, range, BoolDomain);
         }
-        if (value.getDomain().getLowBound() + 1 == range.getLowBound()
-                && value.getDomain().getHighBound() == range.getHighBound()) {
-            return notEqual(value, value.getDomain().getLowBound());
-        }
-        return new IrWithin(value, range, BoolDomain);
     }
 
     public static IrBoolExpr notWithin(IrIntExpr value, IrDomain range) {
