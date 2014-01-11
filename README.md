@@ -1,7 +1,23 @@
 chocosolver
 ===========
 
+v0.3.5.15-01-2014
+
 A backend for [Clafer](http://clafer.org) using the Choco 3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
+
+Contributors
+------------
+
+* [Jimmy Liang](http://gsd.uwaterloo.ca/jliang), MSc. Candidate. Main developer.
+
+Getting Clafer Tools
+--------------------
+
+Binary distributions of the release 0.3.5 of Clafer Tools for Windows, Mac, and Linux, 
+can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions). 
+Clafer Wiki requires Haskell Platform and MinGW to run on Windows. 
+
+In case these binaries do not work on your particular machine configuration, the tools can be built from source code, as described below.
 
 Prerequisites
 -------------
@@ -18,7 +34,7 @@ mvn install -DskipTests
 
 Optional
 --------
-* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below).
+* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below) v0.3.5.
 
 ```bash
 git clone https://github.com/gsdlab/clafer.git
@@ -44,6 +60,14 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 </dependency>
 ```
 The CLI is installed to target/chocosolver-version-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-version-jar-with-dependencies.jar mymodel.js".
+
+### Important: Branches must correspond
+
+All related projects are following the *simultaneous release model*. 
+The branch `master` contains releases, whereas the branch `develop` contains code under development. 
+When building the tools, the branches should match.
+Releases from branches 'master` are guaranteed to work well together.
+Development versions from branches `develop` should work well together but this might not always be the case.
 
 Getting Started with the API
 ----------------------------
@@ -211,3 +235,15 @@ Possible Future Work?
 ---------------------
 * API for choosing branching strategy. Two reasons. The advantage of constraint programming is the ability to tune the solver to the specific problem. Choosing the right branching strategy can make a world of difference. Secondly, it allows the user to control the order of instances generated. For example, the user would like to see instances where Feature A is present and Feature B is absent before any other instances. This can be done by choosing the branching strategy.
 * Strings, reals.
+
+Need help?
+==========
+* See [language's website](http://clafer.org) for news, technical reports and more
+  * Check out a [Clafer tutorial](http://t3-necsis.cs.uwaterloo.ca:8091/Tutorial/Intro)
+  * Try a live instance of [ClaferWiki](http://t3-necsis.cs.uwaterloo.ca:8091)
+  * Try a live instance of [ClaferIDE](http://t3-necsis.cs.uwaterloo.ca:8094)
+  * Try a live instance of [ClaferConfigurator](http://t3-necsis.cs.uwaterloo.ca:8093)
+  * Try a live instance of [ClaferMooVisualizer](http://t3-necsis.cs.uwaterloo.ca:8092)
+* Take a look at (incomplete) [Clafer wiki](https://github.com/gsdlab/clafer/wiki)
+* Browse example models in the [test suite](https://github.com/gsdlab/clafer/tree/master/test/positive) and [MOO examples](https://github.com/gsdlab/clafer/tree/master/spl_configurator/dataset)
+* Post questions, report bugs, suggest improvements [GSD Lab Bug Tracker](http://gsd.uwaterloo.ca:8888/questions/). Tag your entries with `chocosolver` (so that we know what they are related to) and with `jimmy-liang` or `michal` (so that Jimmy or Michał gets a notification).
