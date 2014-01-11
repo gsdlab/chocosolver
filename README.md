@@ -56,7 +56,7 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>your favourite version here</version>
+    <version>0.3.5</version>
 </dependency>
 ```
 The CLI is installed to target/chocosolver-version-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-version-jar-with-dependencies.jar mymodel.js".
