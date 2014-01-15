@@ -5,7 +5,7 @@
 
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.5-SNAPSHOT</version>
+    <version>0.3.5</version>
     <packaging>jar</packaging>
 
     <name>chocosolver</name>
@@ -27,7 +27,7 @@
         <dependency>
             <groupId>choco</groupId>
             <artifactId>choco-solver</artifactId>
-            <version>3.1.2-SNAPSHOT</version>
+            <version>3.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.mozilla</groupId>
@@ -42,13 +42,12 @@
         </dependency>
     </dependencies>
     
-    <!--    <repositories>
+    <repositories>
         <repository>
-            <id>choco</id>
-            <name>Choco Repository</name>
+            <id>choco.repos</id>
             <url>http://www.emn.fr/z-info/choco-repo/mvn/repository/</url>
         </repository>
-    </repositories>-->
+    </repositories>
     
     <build>
         <plugins>

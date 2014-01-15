@@ -21,14 +21,7 @@ In case these binaries do not work on your particular machine configuration, the
 
 Prerequisites
 -------------
-* [Choco 3](https://github.com/chocoteam/choco3) - The project is currently in the beta stage and changes are occurring very rapidly. The build in the Maven repository is too out-of-date so please build the library from source on the develop branch.
-
-```bash
-git clone https://github.com/chocoteam/choco3.git
-cd choco3
-git checkout develop
-mvn install -DskipTests
-```
+* [Choco 3](https://github.com/chocoteam/choco3) v3.1.1
 * [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - Mainly tested with OracleJDK 7 on Ubuntu.
 * [Maven 2+](http://maven.apache.org/) - Required for building the project.
 
@@ -50,7 +43,9 @@ git clone https://github.com/gsdlab/chocosolver.git
 cd chocosolver
 mvn install
 ```
+
 Include the following XML snippet in your POM to use the API in your Maven project.
+
 ```xml
 <dependency>
     <groupId>org.clafer</groupId>
