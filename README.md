@@ -29,7 +29,7 @@ cd choco3
 git checkout develop
 mvn install -DskipTests
 ```
-* [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - Mainly tested with OpenJDK 7 on Ubuntu.
+* [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - Mainly tested with OracleJDK 7 on Ubuntu.
 * [Maven 2+](http://maven.apache.org/) - Required for building the project.
 
 Optional
@@ -39,7 +39,6 @@ Optional
 ```bash
 git clone https://github.com/gsdlab/clafer.git
 cd clafer
-git checkout choco
 make
 ```
 
@@ -59,7 +58,7 @@ Include the following XML snippet in your POM to use the API in your Maven proje
     <version>0.3.5</version>
 </dependency>
 ```
-The CLI is installed to target/chocosolver-version-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-version-jar-with-dependencies.jar mymodel.js".
+The CLI is installed to target/chocosolver-0.3.5-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.5-jar-with-dependencies.jar mymodel.js".
 
 ### Important: Branches must correspond
 
