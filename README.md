@@ -1,7 +1,7 @@
 chocosolver
 ===========
 
-v0.3.5.15-01-2014
+v0.3.5.17-01-2014
 
 A backend for [Clafer](http://clafer.org) using the Choco 3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
 
