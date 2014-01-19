@@ -10,6 +10,7 @@ import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetExpr;
+import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrTraverser;
 
 /**
@@ -34,41 +35,34 @@ public class CommonSubexpression {
 
         @Override
         public IrIntExpr visit(IrElement ir, Void a) {
-            traverse(ir.getArray(), a);
-            traverse(ir.getIndex(), a);
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }
-            return ir;
+            return super.visit(ir, a);
         }
 
         @Override
         public IrSetExpr visit(IrArrayToSet ir, Void a) {
-            traverse(ir.getArray(), a);
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }
-            return ir;
+            return super.visit(ir, a);
         }
 
         @Override
         public IrSetExpr visit(IrJoinRelation ir, Void a) {
-            traverse(ir.getTake(), a);
-            traverse(ir.getChildren(), a);
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }
-            return ir;
+            return super.visit(ir, a);
         }
 
         @Override
         public IrSetExpr visit(IrJoinFunction ir, Void a) {
-            traverse(ir.getTake(), a);
-            traverse(ir.getRefs(), a);
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }
-            return ir;
+            return super.visit(ir, a);
         }
     }
 }
