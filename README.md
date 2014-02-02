@@ -107,7 +107,7 @@ import org.clafer.scope.*;
 public static void main(String[] args) {
     ...
     ClaferSolver solver = ClaferCompiler.compile(model, 
-        Scope.set(installation, 1).set(status, 1).set(ok, 1).set(bad, 1).set(time, 1)
+        Scope.setScope(installation, 1).setScope(status, 1).setScope(ok, 1).setScope(bad, 1).setScope(time, 1)
         // Set the scope of every Clafer to 1. The code above could be replaced with
         // "Scope.defaultScope(1)".
         .intLow(-16).intHigh(16));
@@ -125,10 +125,12 @@ Finding Optimal Instances
 -------------------------
 Optimizing on a single objective is supported. Suppose we wanted to optimize on the expression "sum time".
 ```java
+import org.clafer.objective.*;
+...
 ClaferOptimizer solver = ClaferCompiler.compile(model, 
     Scope.defaultScope(1).intLow(-16).intHigh(16), 
     Objective.maximize(sum(global(time))));
-while (solver.find)) {
+while (solver.find()) {
     // The instances where time is maximal.
     System.out.println(solver.instance());
 }
@@ -158,7 +160,7 @@ Floats ?
 The model is overconstraint and has no solutions. The solver can help here as well.
 ```java
 AstModel model = newModel();
-model.addChild("Mob").withCard(0, 1);
+AstConcreteClafer mob = model.addChild("Mob").withCard(0, 1);
 AstConcreteClafer duck = model.addChild("Duck").withCard(0, 1);
 AstConcreteClafer witch = model.addChild("Witch").withCard(0, 1);
 AstConcreteClafer floats = model.addChild("Floats").withCard(0, 1);
@@ -179,7 +181,7 @@ Finding Unsat-Core
 The above example found that removing one constraint will *fix* the model but you may be wondering why the model cannot have a witch. In this case, it is more useful to compute the Unsat-Core instead.
 ```java
 ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
-// Print the Unsat-Core and near-miss example.
+// Print the Unsat-Core.
 System.out.println(unsat.unsatCore());
 ```
 The above code will print the last 4 constraints which are the constraints that are mutually unsatisfiable. What this means is that if you removed all constraints but these 4, the model is still unsatisfiable. The set of constraints is not guaranteed to be minimal but will likely be small.
