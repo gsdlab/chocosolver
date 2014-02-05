@@ -5,7 +5,7 @@ import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -17,8 +17,8 @@ public class PropMask extends Propagator<SetVar> {
 
     private final SetVar set;
     private final SetVar masked;
-    private final SetDeltaMonitor setD;
-    private final SetDeltaMonitor maskedD;
+    private final ISetDeltaMonitor setD;
+    private final ISetDeltaMonitor maskedD;
     // Inclusive
     private final int from;
     // Exclusive
@@ -132,7 +132,7 @@ public class PropMask extends Propagator<SetVar> {
                 return ESat.FALSE;
             }
         }
-        return set.instantiated() && masked.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return set.isInstantiated() && masked.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

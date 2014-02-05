@@ -7,7 +7,7 @@ import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -20,7 +20,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
 
     private IntVar element;
     private SetVar set;
-    private SetDeltaMonitor setD;
+    private ISetDeltaMonitor setD;
 
     public PropIntNotMemberSet(IntVar element, SetVar set) {
         super(new Variable[]{element, set}, PropagatorPriority.BINARY, true);
@@ -51,10 +51,10 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
             element.removeValue(i, aCause);
         }
-        if (element.instantiated()) {
+        if (element.isInstantiated()) {
             set.removeFromEnvelope(element.getValue(), aCause);
             setPassive();
-        } else if (set.instantiated()) {
+        } else if (set.isInstantiated()) {
             setPassive();
         }
     }
@@ -62,7 +62,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isElementVar(idxVarInProp)) {
-            assert element.instantiated();
+            assert element.isInstantiated();
             set.removeFromEnvelope(element.getValue(), aCause);
             setPassive();
         } else {
@@ -70,10 +70,10 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
             setD.freeze();
             setD.forEach(pruneElementOnSetKer, EventType.ADD_TO_KER);
             setD.unfreeze();
-            if (element.instantiated()) {
+            if (element.isInstantiated()) {
                 set.removeFromEnvelope(element.getValue(), aCause);
                 setPassive();
-            } else if (set.instantiated()) {
+            } else if (set.isInstantiated()) {
                 setPassive();
             }
         }
@@ -88,11 +88,11 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        if (element.instantiated()) {
+        if (element.isInstantiated()) {
             if (!set.envelopeContains(element.getValue())) {
                 return ESat.TRUE;
             }
-            return set.instantiated() ? ESat.FALSE : ESat.UNDEFINED;
+            return set.isInstantiated() ? ESat.FALSE : ESat.UNDEFINED;
         }
         if (PropUtil.isDomSubsetKer(element, set)) {
             return ESat.FALSE;

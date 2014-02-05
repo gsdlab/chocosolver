@@ -1,8 +1,8 @@
 package org.clafer.choco.constraint;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
@@ -21,25 +21,24 @@ import static util.ESat.UNDEFINED;
  *
  * @author jimmy
  */
-public class OrConstraint extends Constraint<Variable, Propagator<Variable>> {
+public class OrConstraint extends Constraint {
 
     public OrConstraint(Constraint... constraints) {
-        super(buildArray(constraints), constraints[0].getSolver());
-        setPropagators(new PropOr(vars, constraints));
+        super("or", new PropOr(buildArray(constraints), constraints));
     }
 
     private static Variable[] buildArray(Constraint... constraints) {
-        List<Variable> vars = new ArrayList<>();
+        Set<Variable> vars = new HashSet<>();
         for (Constraint constraint : constraints) {
-            vars.addAll(Arrays.asList(constraint.getVariables()));
-            for(Propagator propagator : constraint.getPropagators()) {
+            for (Propagator propagator : constraint.getPropagators()) {
+                vars.addAll(Arrays.asList(propagator.getVars()));
                 propagator.setReifiedSilent();
             }
         }
         return vars.toArray(new Variable[vars.size()]);
     }
 
-    private class PropOr extends Propagator<Variable> {
+    private static class PropOr extends Propagator<Variable> {
 
         private final Constraint[] constraints;
 

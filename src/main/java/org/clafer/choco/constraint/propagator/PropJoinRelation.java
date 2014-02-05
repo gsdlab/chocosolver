@@ -9,7 +9,7 @@ import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -30,12 +30,12 @@ import util.procedure.IntProcedure;
 public class PropJoinRelation extends Propagator<SetVar> {
 
     private final SetVar take;
-    private final SetDeltaMonitor takeD;
+    private final ISetDeltaMonitor takeD;
     private final IndexedBipartiteSet dontCare;
     private final SetVar[] children;
-    private final SetDeltaMonitor[] childrenD;
+    private final ISetDeltaMonitor[] childrenD;
     private final SetVar to;
-    private final SetDeltaMonitor toD;
+    private final ISetDeltaMonitor toD;
 
     public PropJoinRelation(SetVar take, SetVar[] children, SetVar to) {
         super(buildArray(take, to, children), PropagatorPriority.QUADRATIC, true);
@@ -174,7 +174,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
         } else {
             assert isChildVar(idxVarInProp);
             final int id = getChildVarIndex(idxVarInProp);
-            final SetDeltaMonitor childD = childrenD[id];
+            final ISetDeltaMonitor childD = childrenD[id];
             childD.freeze();
             // Note that we MUST prune even if id is not in env(take) to ensure
             // idempotence. Otherwise if id is removed from take and val removed
@@ -277,13 +277,13 @@ public class PropJoinRelation extends Propagator<SetVar> {
                 }
             }
         }
-        boolean completelyInstantiated = take.instantiated() && to.instantiated();
+        boolean completelyInstantiated = take.isInstantiated() && to.isInstantiated();
         int count = 0;
         SetVar[] taken = new SetVar[take.getEnvelopeSize()];
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i >= 0 && i < children.length) {
                 SetVar child = children[i];
-                completelyInstantiated = completelyInstantiated && child.instantiated();
+                completelyInstantiated = completelyInstantiated && child.isInstantiated();
                 taken[count++] = child;
             }
         }

@@ -31,7 +31,7 @@ public class RandomSetSearchStrategy extends AbstractStrategy<SetVar> {
     public Decision<SetVar> getDecision() {
         List<SetVar> eligible = new ArrayList<>();
         for (SetVar var : vars) {
-            if (!var.instantiated()) {
+            if (!var.isInstantiated()) {
                 eligible.add(var);
             }
         }

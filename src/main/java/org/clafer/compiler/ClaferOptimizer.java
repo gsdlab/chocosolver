@@ -11,7 +11,7 @@ import solver.ResolutionPolicy;
 import solver.Solver;
 import solver.constraints.ICF;
 import solver.exception.ContradictionException;
-import solver.objective.IntObjectiveManager;
+import solver.objective.ObjectiveManager;
 import solver.propagation.NoPropagationEngine;
 import solver.propagation.hardcoded.SevenQueuesPropagatorEngine;
 import solver.search.loop.monitors.IMonitorSolution;
@@ -78,10 +78,10 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
             return solver.findSolution();
         }
         IntVar scoreVar = score.getRight();
-        solver.getSearchLoop().setObjectivemanager(new IntObjectiveManager(
+        solver.set(new ObjectiveManager(
                 scoreVar,
                 maximize ? ResolutionPolicy.MAXIMIZE : ResolutionPolicy.MINIMIZE,
-                solver));
+                true));
         solver.getSearchLoop().plugSearchMonitor(new IMonitorSolution() {
             private static final long serialVersionUID = 1L;
 

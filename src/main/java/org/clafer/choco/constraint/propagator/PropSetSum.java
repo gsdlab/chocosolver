@@ -187,7 +187,7 @@ public class PropSetSum extends Propagator<Variable> {
         if (sum.getLB() > high || sum.getUB() < low) {
             return ESat.FALSE;
         }
-        return low == high && sum.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return low == high && sum.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

@@ -57,7 +57,7 @@ public class PropUnreachable extends Propagator<IntVar> {
         }
         vars[from].removeValue(to, aCause);
         for (int i = 0; i < vars.length; i++) {
-            if (vars[i].instantiated() && !isPassive()) {
+            if (vars[i].isInstantiated() && !isPassive()) {
                 follow(i);
             }
         }
@@ -71,12 +71,12 @@ public class PropUnreachable extends Propagator<IntVar> {
     }
 
     private void follow(int follower) throws ContradictionException {
-        assert vars[follower].instantiated();
+        assert vars[follower].isInstantiated();
         int leader = vars[follower].getValue();
         if (position.get() == follower) {
             int cur = leader;
             int i = 0;
-            for (i = 0; i < vars.length && cur < vars.length && vars[cur].instantiated(); i++) {
+            for (i = 0; i < vars.length && cur < vars.length && vars[cur].isInstantiated(); i++) {
                 if (toComponent.contains(cur)) {
                     contradiction(vars[follower], "Reachable");
                 }
@@ -90,7 +90,7 @@ public class PropUnreachable extends Propagator<IntVar> {
             } else {
                 remove(vars[cur], toComponent);
                 position.set(cur);
-                if (vars[cur].instantiated()) {
+                if (vars[cur].isInstantiated()) {
                     follow(cur);
                 }
             }
@@ -98,7 +98,7 @@ public class PropUnreachable extends Propagator<IntVar> {
             toComponent.add(follower);
             vars[position.get()].removeValue(follower, aCause);
             for (int i = 0; i < vars.length; i++) {
-                if (vars[i].instantiatedTo(follower)) {
+                if (vars[i].isInstantiatedTo(follower)) {
                     follow(i);
                 }
             }
@@ -120,14 +120,14 @@ public class PropUnreachable extends Propagator<IntVar> {
         // Hopefully escape analysis will make these boolean arrays cheap.
         boolean[] visited = new boolean[vars.length];
         int cur = from;
-        while (cur < vars.length && vars[cur].instantiated() && !visited[cur]) {
+        while (cur < vars.length && vars[cur].isInstantiated() && !visited[cur]) {
             visited[cur] = true;
             if (cur == to) {
                 return ESat.FALSE;
             }
             cur = vars[cur].getValue();
         }
-        return cur >= vars.length || vars[cur].instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return cur >= vars.length || vars[cur].isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

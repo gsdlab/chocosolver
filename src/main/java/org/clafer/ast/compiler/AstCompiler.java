@@ -43,6 +43,7 @@ import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
+import org.clafer.ast.AstStringConstant;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
@@ -869,6 +870,11 @@ public class AstCompiler {
                 return constant(value[0]);
             }
             return constant(value);
+        }
+
+        @Override
+        public IrExpr visit(AstStringConstant ast, Void a) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

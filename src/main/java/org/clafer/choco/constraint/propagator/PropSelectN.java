@@ -53,7 +53,7 @@ public class PropSelectN extends Propagator<IntVar> {
     public void propagate(int evtmask) throws ContradictionException {
         // Prune n
         for (int i = n.getLB(); i < n.getUB(); i++) {
-            if (bools[i].instantiated()) {
+            if (bools[i].isInstantiated()) {
                 if (bools[i].getValue() == 0) {
                     n.updateUpperBound(i, aCause);
                     break;
@@ -61,7 +61,7 @@ public class PropSelectN extends Propagator<IntVar> {
             }
         }
         for (int i = n.getUB() - 1; i >= n.getLB(); i--) {
-            if (bools[i].instantiated()) {
+            if (bools[i].isInstantiated()) {
                 if (bools[i].getValue() == 1) {
                     n.updateLowerBound(i + 1, aCause);
                 }
@@ -79,7 +79,7 @@ public class PropSelectN extends Propagator<IntVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isBoolsVar(idxVarInProp)) {
-            assert bools[idxVarInProp].instantiated();
+            assert bools[idxVarInProp].isInstantiated();
             if (bools[idxVarInProp].getValue() == 0) {
                 for (int i = idxVarInProp + 1; i < bools.length; i++) {
                     bools[i].setToFalse(aCause);
@@ -118,7 +118,7 @@ public class PropSelectN extends Propagator<IntVar> {
     public ESat isEntailed() {
         boolean allInstantiated = true;
         for (int i = 0; i < bools.length; i++) {
-            if (bools[i].instantiated()) {
+            if (bools[i].isInstantiated()) {
                 if (bools[i].getValue() == 0 && i < n.getLB()) {
                     return ESat.FALSE;
                 }
@@ -129,7 +129,7 @@ public class PropSelectN extends Propagator<IntVar> {
                 allInstantiated = false;
             }
         }
-        return allInstantiated && n.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return allInstantiated && n.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

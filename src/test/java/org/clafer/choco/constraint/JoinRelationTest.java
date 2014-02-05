@@ -8,7 +8,8 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.Constraint;
-import solver.constraints.set.PropAllDisjoint;
+import solver.constraints.LCF;
+import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
@@ -66,8 +67,8 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
                 CSetVar to = toCSetVar(randSet(), solver);
                 Constraint constraint = Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
                         mapSet(children), mapCard(children), to.getSet(), to.getCard());
-                constraint.addPropagators(new PropAllDisjoint(mapSet(children)));
-                return pair(constraint, pair(triple(take.getSet(), mapSet(children), to.getSet()), true));
+                return pair(LCF.and(constraint, SCF.all_disjoint(mapSet(children))),
+                        pair(triple(take.getSet(), mapSet(children), to.getSet()), true));
             }
         });
     }
@@ -166,8 +167,8 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
                 IntVar toCard = enforcedCardVar(to);
                 Constraint constraint = Constraints.joinInjectiveRelation(take, takeCard,
                         children, childrenCards, to, toCard);
-                constraint.addPropagators(new PropAllDisjoint(children));
-                return pair(constraint, pair(triple(take, children, to), true));
+                return pair(LCF.and(constraint, SCF.all_disjoint(children)),
+                        pair(triple(take, children, to), true));
             }
         });
     }

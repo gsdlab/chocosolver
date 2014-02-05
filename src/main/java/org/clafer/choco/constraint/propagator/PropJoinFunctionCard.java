@@ -116,7 +116,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
         TIntIntHashMap map = new TIntIntHashMap(take.getKernelSize());
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
             IntVar ref = refs[i];
-            if (ref.instantiated()) {
+            if (ref.isInstantiated()) {
                 map.adjustOrPutValue(ref.getValue(), 1, 1);
             }
         }
@@ -139,7 +139,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
         assert explored < ker.length;
 
         IntVar a = refs[ker[index]];
-        if (a.instantiated()) {
+        if (a.isInstantiated()) {
             int value = a.getValue();
             int count = map.adjustOrPutValue(value, 1, 1);
             int gc = getGlobalCardinality();
@@ -147,7 +147,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             if (count == gc) {
                 for (int j = 0; j < explored; j++) {
                     IntVar b = refs[ker[j]];
-                    if (!b.instantiatedTo(value) && b.removeValue(value, aCause)) {
+                    if (!b.isInstantiatedTo(value) && b.removeValue(value, aCause)) {
                         constrainGlobalCardinality(ker, j, explored, map);
                     }
                 }
@@ -185,11 +185,9 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             boolean cardChanged;
             do {
                 cardChanged = false;
-//                minUninstantiated = Math.max(0, takeCard.getLB() - kerSize);
-//                maxUninstantiated = Math.max(0, takeCard.getUB() - kerSize);
                 int kerUninstantiated = 0;
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-                    if (!refs[i].instantiated()) {
+                    if (!refs[i].isInstantiated()) {
                         if (take.kernelContains(i)) {
                             kerUninstantiated++;
                         }
@@ -219,9 +217,9 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                     // The rest must be duplicates.
                     for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
                         IntVar ref = refs[i];
-                        assert !ref.instantiated() || map.contains(ref.getValue());
-                        if (!ref.instantiated()) {
-                            changed |= PropUtil.domSubsetSet(ref, map.keySet(), aCause) && ref.instantiated();
+                        assert !ref.isInstantiated() || map.contains(ref.getValue());
+                        if (!ref.isInstantiated()) {
+                            changed |= PropUtil.domSubsetSet(ref, map.keySet(), aCause) && ref.isInstantiated();
                         }
                     }
                 }
@@ -229,11 +227,11 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                     // No more duplicate values.
                     for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
                         IntVar ref = refs[i];
-                        if (!ref.instantiated()) {
+                        if (!ref.isInstantiated()) {
                             TIntIntIterator iter = map.iterator();
                             for (int j = map.size(); j-- > 0;) {
                                 iter.advance();
-                                changed |= ref.removeValue(iter.key(), aCause) && ref.instantiated();
+                                changed |= ref.removeValue(iter.key(), aCause) && ref.isInstantiated();
                             }
                             assert !iter.hasNext();
                         }
@@ -254,19 +252,19 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
         int gc = hasGlobalCardinality() ? getGlobalCardinality() : Integer.MAX_VALUE;
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
             IntVar ref = refs[i];
-            if (ref.instantiated()) {
+            if (ref.isInstantiated()) {
                 if (map.adjustOrPutValue(ref.getValue(), 1, 1) > gc) {
                     return ESat.FALSE;
                 }
             }
         }
 
-        boolean completelyInstantiated = take.instantiated() && takeCard.instantiated() && toCard.instantiated();
+        boolean completelyInstantiated = take.isInstantiated() && takeCard.isInstantiated() && toCard.isInstantiated();
         int instCard = map.size();
         int minUninstantiated = Math.max(0, takeCard.getLB() - take.getKernelSize());
         int maxUninstantiated = Math.max(0, takeCard.getUB() - take.getKernelSize());
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            if (i >= 0 && i < refs.length && !refs[i].instantiated()) {
+            if (i >= 0 && i < refs.length && !refs[i].isInstantiated()) {
                 completelyInstantiated = false;
                 if (take.kernelContains(i)) {
                     minUninstantiated++;

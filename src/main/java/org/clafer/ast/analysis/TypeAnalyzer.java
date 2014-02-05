@@ -36,6 +36,8 @@ import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
+import org.clafer.ast.AstStringClafer;
+import org.clafer.ast.AstStringConstant;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
@@ -216,6 +218,11 @@ public class TypeAnalyzer implements Analyzer {
         @Override
         public TypedExpr<AstConstant> visit(AstConstant ast, Void a) {
             return put(Type.basicType(ast.getType()), ast);
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstStringConstant ast, Void a) {
+            return put(Type.basicType(AstStringClafer.Singleton), ast);
         }
 
         @Override

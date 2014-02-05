@@ -7,7 +7,7 @@ import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -18,7 +18,7 @@ import util.procedure.IntProcedure;
 public class PropSetNotEqualC extends Propagator<SetVar> {
 
     private final SetVar s;
-    private SetDeltaMonitor sD;
+    private ISetDeltaMonitor sD;
     private final int[] c;
 
     public PropSetNotEqualC(SetVar s, int[] c) {
@@ -34,7 +34,7 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
     }
 
     private void checkNotSame() throws ContradictionException {
-        if (s.instantiated()) {
+        if (s.isInstantiated()) {
             if (s.getKernelSize() == c.length) {
                 int i = s.getKernelFirst();
                 int j = 0;
@@ -116,7 +116,7 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
         if (!isEnvSubsetOf(s, c) || !isSubsetEnv(c, s)) {
             return ESat.TRUE;
         }
-        return s.instantiated() ? ESat.FALSE : ESat.UNDEFINED;
+        return s.isInstantiated() ? ESat.FALSE : ESat.UNDEFINED;
     }
 
     @Override

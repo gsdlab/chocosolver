@@ -17,19 +17,19 @@ public class IfThenElseTest extends ConstraintTest<Triple<BoolVar, BoolVar, Bool
 
     @Override
     protected void check(Triple<BoolVar, BoolVar, BoolVar> s) {
-        if (s.getFst().instantiatedTo(1)) {
-            assertTrue(s.getSnd().instantiatedTo(1));
+        if (s.getFst().isInstantiatedTo(1)) {
+            assertTrue(s.getSnd().isInstantiatedTo(1));
         } else {
-            assertTrue(s.getThd().instantiatedTo(1));
+            assertTrue(s.getThd().isInstantiatedTo(1));
         }
     }
 
     @Override
     protected void checkNot(Triple<BoolVar, BoolVar, BoolVar> s) {
-        if (s.getFst().instantiatedTo(1)) {
-            assertFalse(s.getSnd().instantiatedTo(1));
+        if (s.getFst().isInstantiatedTo(1)) {
+            assertFalse(s.getSnd().isInstantiatedTo(1));
         } else {
-            assertFalse(s.getThd().instantiatedTo(1));
+            assertFalse(s.getThd().isInstantiatedTo(1));
         }
     }
 

@@ -290,7 +290,6 @@ public abstract class ClaferTest {
     }
 
     public Solver randomizeStrategy(Solver solver) {
-        solver.set(PropagationEngineFactory.PROPAGATORDRIVEN.make(solver));
         List<IntVar> intVars = new ArrayList<>();
         List<SetVar> setVars = new ArrayList<>();
         for (Variable var : solver.getVars()) {

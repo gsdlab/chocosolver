@@ -61,10 +61,10 @@ public class Constraints {
     }
 
     private static Propagator<IntVar> lessThanEq(IntVar l, IntVar g) {
-        if (l.instantiated()) {
+        if (l.isInstantiated()) {
             return new PropGreaterOrEqualXC(g, l.getValue());
         }
-        if (g.instantiated()) {
+        if (g.isInstantiated()) {
             return new PropLessOrEqualXC(l, g.getValue());
         }
         return new PropGreaterOrEqualX_Y(new IntVar[]{g, l});
@@ -78,7 +78,7 @@ public class Constraints {
         List<IntVar> filter = new ArrayList<>(ints.length);
         int constant = 0;
         for (IntVar var : ints) {
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 constant += var.getValue();
             } else {
                 filter.add(var);
@@ -92,14 +92,14 @@ public class Constraints {
             case 0:
                 return new PropEqualXC(sum, constant);
             case 1:
-                if (sum.instantiated()) {
+                if (sum.isInstantiated()) {
                     return new PropEqualXC(filtered[0], sum.getValue() - constant);
                 }
                 return constant == 0
                         ? new PropEqualX_Y(filtered[0], sum)
                         : new PropEqualX_YC(new IntVar[]{filtered[0], sum}, -constant);
             case 2:
-                if (sum.instantiated()) {
+                if (sum.isInstantiated()) {
                     return new PropEqualXY_C(filtered, sum.getValue() - constant);
                 }
             // fallthrough
@@ -125,9 +125,7 @@ public class Constraints {
      * @return constraint {@code operands[0] ∧ operands[1] ∧ ... ∧ operands[n]}
      */
     public static Constraint and(BoolVar... operands) {
-        Constraint<BoolVar, PropAnd> constraint = new Constraint<>(operands, operands[0].getSolver());
-        constraint.setPropagators(new PropAnd(operands));
-        return constraint;
+        return new Constraint("and", new PropAnd(operands));
     }
 
     /**
@@ -139,9 +137,7 @@ public class Constraints {
      * {@code operands[0] + operands[1] + ... + operands[n] ≤ 1}
      */
     public static Constraint lone(BoolVar... operands) {
-        Constraint<BoolVar, PropLone> constraint = new Constraint<>(operands, operands[0].getSolver());
-        constraint.setPropagators(new PropLone(operands));
-        return constraint;
+        return new Constraint("lone", new PropLone(operands));
     }
 
     /**
@@ -153,9 +149,7 @@ public class Constraints {
      * {@code operands[0] + operands[1] + ... + operands[n] = 1}
      */
     public static Constraint one(BoolVar... operands) {
-        Constraint<BoolVar, PropOne> constraint = new Constraint<>(operands, operands[0].getSolver());
-        constraint.setPropagators(new PropOne(operands));
-        return constraint;
+        return new Constraint("one", new PropOne(operands));
     }
 
     /**
@@ -166,9 +160,7 @@ public class Constraints {
      * @return constraint {@code operands[0] ∨ operands[1] ∨ ... ∨ operands[n]}
      */
     public static Constraint or(BoolVar... operands) {
-        Constraint<BoolVar, PropOr> constraint = new Constraint<>(operands, operands[0].getSolver());
-        constraint.setPropagators(new PropOr(operands));
-        return constraint;
+        return new Constraint("or", new PropOr(operands));
     }
 
     /**
@@ -197,10 +189,7 @@ public class Constraints {
      * {@code antecedent => consequent && !antecedent => alternative}
      */
     public static Constraint ifThenElse(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
-        Constraint<BoolVar, PropIfThenElse> constraint =
-                new Constraint<>(new BoolVar[]{antecedent, consequent, alternative}, antecedent.getSolver());
-        constraint.setPropagators(new PropIfThenElse(antecedent, consequent, alternative));
-        return constraint;
+        return new Constraint("ifThenElse", new PropIfThenElse(antecedent, consequent, alternative));
     }
 
     /**
@@ -287,10 +276,7 @@ public class Constraints {
      * @return constraint {@code set1 ≠ set2}
      */
     public static Constraint notEqual(SetVar set, int[] constant) {
-        Constraint<SetVar, PropSetNotEqualC> constraint =
-                new Constraint<>(new SetVar[]{set}, set.getSolver());
-        constraint.setPropagators(new PropSetNotEqualC(set, constant));
-        return constraint;
+        return new Constraint("notEqual", new PropSetNotEqualC(set, constant));
     }
 
     /**
@@ -301,10 +287,7 @@ public class Constraints {
      * @return constraint {@code element ∉ set}.
      */
     public static Constraint notMember(IntVar element, SetVar set) {
-        Constraint<Variable, PropIntNotMemberSet> constraint =
-                new Constraint<>(new Variable[]{element, set}, element.getSolver());
-        constraint.setPropagators(new PropIntNotMemberSet(element, set));
-        return constraint;
+        return new Constraint("notMember", new PropIntNotMemberSet(element, set));
     }
 
     /**
@@ -319,19 +302,10 @@ public class Constraints {
      * @return constraint {@code sub ⊆ sup}
      */
     public static Constraint subsetEq(SetVar sub, IntVar subCard, SetVar sup, IntVar supCard) {
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(new Variable[]{sub, subCard, sup, supCard}, sub.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropSubsetEq(sub, sup),
-            // Simple cardinality propagation.
-            lessThanEq(subCard, supCard)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("subsetEq",
+                new PropSubsetEq(sub, sup),
+                // Simple cardinality propagation.
+                lessThanEq(subCard, supCard));
     }
 
     /**
@@ -349,15 +323,7 @@ public class Constraints {
          * If card(sets[0]) >= 2 and only 2 ints contain 0 in their domain, then
          * set those ints to 0.
          */
-        Variable[] variables = new Variable[sets.length + ints.length];
-        System.arraycopy(sets, 0, variables, 0, sets.length);
-        System.arraycopy(ints, 0, variables, sets.length, ints.length);
-
-        Constraint<Variable, PropIntChannel> constraint =
-                new Constraint<>(variables, sets[0].getSolver());
-        constraint.setPropagators(new PropIntChannel(sets, ints));
-
-        return constraint;
+        return new Constraint("intChannel", new PropIntChannel(sets, ints));
     }
 
     /**
@@ -376,22 +342,9 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
 
-        Variable[] variables = new Variable[sets.length + setCards.length];
-        System.arraycopy(sets, 0, variables, 0, sets.length);
-        System.arraycopy(setCards, 0, variables, sets.length, setCards.length);
-
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(variables, sets[0].getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropSortedSets(sets),
-            new PropSortedSetsCard(sets, setCards)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("sortedSets",
+                new PropSortedSets(sets),
+                new PropSortedSetsCard(sets, setCards));
     }
 
     /**
@@ -409,20 +362,7 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
 
-        IntVar[] variables = new IntVar[strings.length * strings[0].length + ints.length];
-        System.arraycopy(ints, 0, variables, 0, ints.length);
-        int i = ints.length;
-        for (IntVar[] string : strings) {
-            System.arraycopy(string, 0, variables, i, string.length);
-            i += string.length;
-        }
-        assert i == variables.length;
-
-        Constraint<IntVar, PropLexChainChannel> constraint =
-                new Constraint<>(variables, variables[0].getSolver());
-        constraint.setPropagators(new PropLexChainChannel(strings, ints));
-
-        return constraint;
+        return new Constraint("lexChainChannel", new PropLexChainChannel(strings, ints));
     }
 
     /**
@@ -433,15 +373,7 @@ public class Constraints {
      * @return constraint {@code bools[i] <=> i < n}
      */
     public static Constraint selectN(BoolVar[] bools, IntVar n) {
-        IntVar[] variables = new IntVar[bools.length + 1];
-        System.arraycopy(bools, 0, variables, 0, bools.length);
-        variables[bools.length] = n;
-
-        Constraint<IntVar, PropSelectN> constraint =
-                new Constraint<>(variables, n.getSolver());
-        constraint.setPropagators(new PropSelectN(bools, n));
-
-        return constraint;
+        return new Constraint("selectN", new PropSelectN(bools, n));
     }
 
     /**
@@ -453,9 +385,7 @@ public class Constraints {
      * @return constraint enforcing no cycles
      */
     public static Constraint acyclic(IntVar... edges) {
-        Constraint<IntVar, PropAcyclic> constraint = new Constraint<>(edges, edges[0].getSolver());
-        constraint.setPropagators(new PropAcyclic(edges));
-        return constraint;
+        return new Constraint("acyclic", new PropAcyclic(edges));
     }
 
     /**
@@ -465,12 +395,12 @@ public class Constraints {
      * edges from node i.
      *
      * @param edges the edges of the graph
+     * @param from starting node
+     * @param to destination node
      * @return constraint enforcing no path from one node to another
      */
     public static Constraint unreachable(IntVar[] edges, int from, int to) {
-        Constraint<IntVar, PropUnreachable> constraint = new Constraint<>(edges, edges[0].getSolver());
-        constraint.setPropagators(new PropUnreachable(edges, from, to));
-        return constraint;
+        return new Constraint("unreachable", new PropUnreachable(edges, from, to));
     }
 
     /**
@@ -489,10 +419,7 @@ public class Constraints {
      * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
      */
     public static Constraint filterString(SetVar set, IntVar setCard, int offset, IntVar[] string, IntVar[] result) {
-        Constraint<Variable, PropFilterString> constraint =
-                new Constraint<>(PropFilterString.buildArray(set, setCard, string, result), set.getSolver());
-        constraint.setPropagators(new PropFilterString(set, setCard, offset, string, result));
-        return constraint;
+        return new Constraint("filterString", new PropFilterString(set, setCard, offset, string, result));
     }
 
     /**
@@ -538,10 +465,7 @@ public class Constraints {
      * @return constraint {@code Σ set= sum}
      */
     public static Constraint setSum(SetVar set, IntVar setCard, IntVar sum) {
-        Constraint<Variable, PropSetSum> constraint =
-                new Constraint<>(new Variable[]{set, setCard, sum}, set.getSolver());
-        constraint.setPropagators(new PropSetSum(set, setCard, sum));
-        return constraint;
+        return new Constraint("setSum", new PropSetSum(set, setCard, sum));
     }
 
     /**
@@ -561,10 +485,7 @@ public class Constraints {
      * @return constraint {@code {ivar} = svar}
      */
     public static Constraint singleton(IntVar ivar, SetVar svar) {
-        Constraint<Variable, PropSingleton> constraint =
-                new Constraint<>(new Variable[]{ivar, svar}, ivar.getSolver());
-        constraint.setPropagators(new PropSingleton(ivar, svar));
-        return constraint;
+        return new Constraint("singleton", new PropSingleton(ivar, svar));
     }
 
     /**
@@ -578,18 +499,9 @@ public class Constraints {
      * @return constraint {@code {ivar} = svar}
      */
     public static Constraint singleton(IntVar ivar, SetVar svar, IntVar svarCard) {
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(new Variable[]{ivar, svar, svarCard}, ivar.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropSingleton(ivar, svar),
-            new PropEqualXC(svarCard, 1)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("singleton",
+                new PropSingleton(ivar, svar),
+                new PropEqualXC(svarCard, 1));
     }
 
     /**
@@ -618,36 +530,14 @@ public class Constraints {
      * {@code for all constant k |{i | ivar[i] = k}| ≤ globalCardinality}
      */
     public static Constraint arrayToSet(IntVar[] ivars, SetVar svar, IntVar svarCard, Integer globalCardinality) {
-        Variable[] variables = new Variable[ivars.length + 2];
-        variables[0] = svar;
-        variables[1] = svarCard;
-        System.arraycopy(ivars, 0, variables, 2, ivars.length);
-
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(variables, svar.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropArrayToSet(ivars, svar),
-            new PropArrayToSetCard(ivars, svarCard, globalCardinality)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("arrayToSet",
+                new PropArrayToSet(ivars, svar),
+                new PropArrayToSetCard(ivars, svarCard, globalCardinality));
     }
 
     @Deprecated // Every join relation in Clafer is injective.
     public static Constraint joinRelation(SetVar take, SetVar[] children, SetVar to) {
-        SetVar[] variables = new SetVar[children.length + 2];
-        variables[0] = take;
-        variables[1] = to;
-        System.arraycopy(children, 0, variables, 2, children.length);
-
-        Constraint<SetVar, PropJoinRelation> constraint = new Constraint<>(variables, take.getSolver());
-        constraint.setPropagators(new PropJoinRelation(take, children, to));
-
-        return constraint;
+        return new Constraint("joinRelation", new PropJoinRelation(take, children, to));
     }
 
     /**
@@ -672,26 +562,9 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
 
-        Variable[] variables = new Variable[children.length * 2 + 4];
-        variables[0] = take;
-        variables[1] = takeCard;
-        variables[2] = to;
-        variables[3] = toCard;
-        System.arraycopy(children, 0, variables, 4, children.length);
-        System.arraycopy(childrenCards, 0, variables, 4 + children.length, childrenCards.length);
-
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(variables, take.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropJoinRelation(take, children, to),
-            new PropJoinInjectiveRelationCard(take, takeCard, childrenCards, toCard)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("joinInjectiveRelation",
+                new PropJoinRelation(take, children, to),
+                new PropJoinInjectiveRelationCard(take, takeCard, childrenCards, toCard));
     }
 
     /**
@@ -733,26 +606,9 @@ public class Constraints {
      * @see PropJoinFunction
      */
     public static Constraint joinFunction(SetVar take, IntVar takeCard, IntVar[] refs, SetVar to, IntVar toCard, Integer globalCardinality) {
-        Variable[] variables = new Variable[refs.length + 4];
-        variables[0] = take;
-        variables[1] = takeCard;
-        variables[2] = to;
-        variables[3] = toCard;
-        // Assumes take card is already constrained for maximum efficiency.
-        System.arraycopy(refs, 0, variables, 4, refs.length);
-
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(variables, take.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropJoinFunction(take, refs, to),
-            new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("joinFunction",
+                new PropJoinFunction(take, refs, to),
+                new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality));
     }
 
     /**
@@ -774,23 +630,10 @@ public class Constraints {
             SetVar minuend, IntVar minuendCard,
             SetVar subtrahend, IntVar subtrahendCard,
             SetVar difference, IntVar differenceCard) {
-        Variable[] variables = new Variable[]{
-            minuend, minuendCard, subtrahend, subtrahendCard, difference, differenceCard
-        };
-
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(variables, difference.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropSetDifference(minuend, subtrahend, difference),
-            // Simple cardinality propagation.
-            greaterThanEq(minuendCard, differenceCard)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("difference",
+                new PropSetDifference(minuend, subtrahend, difference),
+                // Simple cardinality propagation.
+                greaterThanEq(minuendCard, differenceCard));
     }
 
     /**
@@ -814,16 +657,6 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
 
-        Variable[] variables = new Variable[operands.length + operandCards.length + 2];
-        System.arraycopy(operands, 0, variables, 0, operands.length);
-        System.arraycopy(operandCards, 0, variables, operands.length, operandCards.length);
-        variables[operands.length + operandCards.length] = intersection;
-        variables[operands.length + operandCards.length + 1] = intersectionCard;
-
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(variables, intersection.getSolver());
-
         @SuppressWarnings("unchecked")
         Propagator<? extends Variable>[] propagators = new Propagator[operandCards.length + 2];
         // See SCF.intersection(operands, intersection);
@@ -836,9 +669,7 @@ public class Constraints {
             // Simple cardinality propagation.
             propagators[i + 2] = greaterThanEq(operandCards[i], intersectionCard);
         }
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("intersection", propagators);
     }
 
     /**
@@ -864,26 +695,11 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
 
-        Variable[] variables = new Variable[operands.length + operandCards.length + 2];
-        System.arraycopy(operands, 0, variables, 0, operands.length);
-        System.arraycopy(operandCards, 0, variables, operands.length, operandCards.length);
-        variables[operands.length + operandCards.length] = union;
-        variables[operands.length + operandCards.length + 1] = unionCard;
-
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(variables, union.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropSetUnion(operands, union),
-            disjoint
-            ? sumEq(operandCards, unionCard)
-            : new PropSetUnionCard(operandCards, unionCard)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("union",
+                new PropSetUnion(operands, union),
+                disjoint
+                ? sumEq(operandCards, unionCard)
+                : new PropSetUnionCard(operandCards, unionCard));
     }
 
     /**
@@ -906,18 +722,9 @@ public class Constraints {
             SetVar set, IntVar setCard,
             SetVar masked, IntVar maskedCard,
             int from, int to) {
-        @SuppressWarnings("unchecked")
-        Constraint<? extends Variable, Propagator<? extends Variable>> constraint =
-                new Constraint(new Variable[]{set, setCard, masked, maskedCard}, set.getSolver());
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[]{
-            new PropMask(set, masked, from, to),
-            // Simple cardinality propagation.
-            greaterThanEq(setCard, maskedCard)
-        };
-        constraint.setPropagators(propagators);
-
-        return constraint;
+        return new Constraint("mask",
+                new PropMask(set, masked, from, to),
+                // Simple cardinality propagation.
+                greaterThanEq(setCard, maskedCard));
     }
 }

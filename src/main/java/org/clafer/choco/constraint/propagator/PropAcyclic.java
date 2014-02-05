@@ -29,7 +29,7 @@ public class PropAcyclic extends Propagator<IntVar> {
         super(edges, PropagatorPriority.TERNARY, true);
         this.leaders = new IStateInt[edges.length];
         for (int i = 0; i < this.leaders.length; i++) {
-            this.leaders[i] = environment.makeInt(i);
+            this.leaders[i] = solver.getEnvironment().makeInt(i);
         }
     }
 
@@ -60,14 +60,14 @@ public class PropAcyclic extends Propagator<IntVar> {
             vars[i].updateUpperBound(vars.length, aCause);
         }
         for (int i = 0; i < vars.length; i++) {
-            if (vars[i].instantiated()) {
+            if (vars[i].isInstantiated()) {
                 follow(i, vars[i].getValue());
             }
         }
     }
 
     private void follow(int follower, int leader) throws ContradictionException {
-        assert vars[follower].instantiated();
+        assert vars[follower].isInstantiated();
         if (leader == vars.length) {
             return;
         }
@@ -78,13 +78,13 @@ public class PropAcyclic extends Propagator<IntVar> {
         boolean changed = false;
         for (int i = 0; i < vars.length; i++) {
             if (getLeader(i) == follower) {
-                assert vars[i].instantiated();
+                assert vars[i].isInstantiated();
                 leaders[i].set(realLeader);
                 changed |= vars[realLeader].removeValue(i, aCause);
             }
         }
         leaders[follower].set(realLeader);
-        if (changed && vars[realLeader].instantiated()) {
+        if (changed && vars[realLeader].isInstantiated()) {
             follow(realLeader, vars[realLeader].getValue());
         }
     }
@@ -104,7 +104,7 @@ public class PropAcyclic extends Propagator<IntVar> {
             if (visited[i]) {
                 continue;
             }
-            if (vars[i].instantiated()) {
+            if (vars[i].isInstantiated()) {
                 Arrays.fill(localVisited, false);
                 int cur = i;
                 do {
@@ -117,7 +117,7 @@ public class PropAcyclic extends Propagator<IntVar> {
                     if (cur < 0 || cur > vars.length) {
                         return ESat.FALSE;
                     }
-                } while (cur != vars.length && vars[cur].instantiated());
+                } while (cur != vars.length && vars[cur].isInstantiated());
             } else {
                 allInstantiated = false;
             }

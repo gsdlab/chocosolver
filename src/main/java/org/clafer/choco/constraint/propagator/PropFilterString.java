@@ -228,7 +228,7 @@ public class PropFilterString extends Propagator<Variable> {
             if (x < 0 || x >= string.length) {
                 return ESat.FALSE;
             }
-            if (string[x].instantiated() && result[index].instantiated()
+            if (string[x].isInstantiated() && result[index].isInstantiated()
                     && string[x].getValue() != result[index].getValue()) {
                 return ESat.FALSE;
             }

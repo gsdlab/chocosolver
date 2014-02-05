@@ -600,6 +600,10 @@ public class PropUtilTest {
         }
 
         @Override
+        public void delayedPropagation(Propagator propagator, EventType type) throws ContradictionException {
+        }
+
+        @Override
         public void flush() {
         }
 

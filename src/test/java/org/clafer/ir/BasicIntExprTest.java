@@ -13,7 +13,8 @@ import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.VF;
 import solver.variables.Variable;
-import solver.variables.view.ConstantView;
+import solver.variables.impl.FixedBoolVarImpl;
+import solver.variables.impl.FixedIntVarImpl;
 import solver.variables.view.IntView;
 
 /**
@@ -126,10 +127,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 2);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 
@@ -158,10 +159,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 2);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 
@@ -190,10 +191,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 2);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 
@@ -222,10 +223,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 2);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 
@@ -257,10 +258,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 3);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 
@@ -293,10 +294,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 3);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 
@@ -336,10 +337,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 3);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 
@@ -381,10 +382,10 @@ public class BasicIntExprTest extends ClaferTest {
                 } while (irSolver.nextSolution());
             }
             assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 3);
+            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
             for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized." + module,
-                        var instanceof ConstantView
+                assertFalse("Correct but not optimized.",
+                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
                         || var instanceof IntView);
             }
 

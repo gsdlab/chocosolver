@@ -6,6 +6,7 @@ import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.delta.IIntDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import solver.variables.delta.monitor.SetDeltaMonitor;
 
 /**
@@ -40,8 +41,8 @@ public class PropUtil {
      * @param propagator the propagator
      * @return the variables delta monitors
      */
-    public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propagator) {
-        SetDeltaMonitor[] deltas = new SetDeltaMonitor[vars.length];
+    public static ISetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propagator) {
+        ISetDeltaMonitor[] deltas = new ISetDeltaMonitor[vars.length];
         for (int i = 0; i < vars.length; i++) {
             deltas[i] = vars[i].monitorDelta(propagator);
         }

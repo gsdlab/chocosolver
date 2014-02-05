@@ -7,7 +7,7 @@ import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -19,9 +19,9 @@ import util.procedure.IntProcedure;
 public class PropSetUnion extends Propagator<SetVar> {
 
     private final SetVar[] sets;
-    private final SetDeltaMonitor[] setsD;
+    private final ISetDeltaMonitor[] setsD;
     private final SetVar union;
-    private final SetDeltaMonitor unionD;
+    private final ISetDeltaMonitor unionD;
 
     public PropSetUnion(SetVar[] sets, SetVar union) {
         super(Util.cons(union, sets), PropagatorPriority.LINEAR, true);
@@ -150,12 +150,12 @@ public class PropSetUnion extends Propagator<SetVar> {
             if (!PropUtil.isKerSubsetEnv(set, union)) {
                 return ESat.FALSE;
             }
-            allInstantiated = allInstantiated && set.instantiated();
+            allInstantiated = allInstantiated && set.isInstantiated();
         }
         if (!isKerSubsetEnvs(union, sets)) {
             return ESat.FALSE;
         }
-        allInstantiated = allInstantiated && union.instantiated();
+        allInstantiated = allInstantiated && union.isInstantiated();
         return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
 

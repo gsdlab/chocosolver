@@ -41,21 +41,21 @@ public class PropIfThenElse extends Propagator<BoolVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (antecedent.instantiated()) {
+        if (antecedent.isInstantiated()) {
             if (antecedent.getValue() == 1) {
                 consequent.setToTrue(aCause);
             } else {
                 alternative.setToTrue(aCause);
             }
             setPassive();
-        } else if (consequent.instantiatedTo(1) && alternative.instantiatedTo(1)) {
+        } else if (consequent.isInstantiatedTo(1) && alternative.isInstantiatedTo(1)) {
             setPassive();
         } else {
-            if (consequent.instantiatedTo(0)) {
+            if (consequent.isInstantiatedTo(0)) {
                 antecedent.setToFalse(aCause);
                 alternative.setToTrue(aCause);
             }
-            if (alternative.instantiatedTo(0)) {
+            if (alternative.isInstantiatedTo(0)) {
                 antecedent.setToTrue(aCause);
                 consequent.setToTrue(aCause);
             }
@@ -65,7 +65,7 @@ public class PropIfThenElse extends Propagator<BoolVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isAntecedent(idxVarInProp)) {
-            assert antecedent.instantiated();
+            assert antecedent.isInstantiated();
             if (antecedent.getValue() == 1) {
                 consequent.setToTrue(aCause);
             } else {
@@ -73,11 +73,11 @@ public class PropIfThenElse extends Propagator<BoolVar> {
             }
             setPassive();
         } else if (isConsequent(idxVarInProp)) {
-            assert consequent.instantiated();
+            assert consequent.isInstantiated();
             if (consequent.getValue() == 0) {
                 antecedent.setToFalse(aCause);
                 alternative.setToTrue(aCause);
-            } else if (alternative.instantiatedTo(1)) {
+            } else if (alternative.isInstantiatedTo(1)) {
                 setPassive();
             }
         } else {
@@ -85,7 +85,7 @@ public class PropIfThenElse extends Propagator<BoolVar> {
             if (alternative.getValue() == 0) {
                 antecedent.setToTrue(aCause);
                 consequent.setToTrue(aCause);
-            } else if (consequent.instantiatedTo(1)) {
+            } else if (consequent.isInstantiatedTo(1)) {
                 setPassive();
             }
         }
@@ -93,13 +93,13 @@ public class PropIfThenElse extends Propagator<BoolVar> {
 
     @Override
     public ESat isEntailed() {
-        if (antecedent.instantiated()) {
+        if (antecedent.isInstantiated()) {
             return antecedent.getValue() == 1 ? consequent.getBooleanValue() : alternative.getBooleanValue();
         }
-        if (consequent.instantiatedTo(1) && alternative.instantiatedTo(1)) {
+        if (consequent.isInstantiatedTo(1) && alternative.isInstantiatedTo(1)) {
             return ESat.TRUE;
         }
-        if (consequent.instantiatedTo(0) && alternative.instantiatedTo(0)) {
+        if (consequent.isInstantiatedTo(0) && alternative.isInstantiatedTo(0)) {
             return ESat.FALSE;
         }
         return ESat.UNDEFINED;

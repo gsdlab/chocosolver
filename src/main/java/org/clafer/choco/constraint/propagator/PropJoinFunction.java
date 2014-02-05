@@ -13,7 +13,7 @@ import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -35,12 +35,12 @@ import util.procedure.IntProcedure;
 public class PropJoinFunction extends Propagator<Variable> {
 
     private final SetVar take;
-    private final SetDeltaMonitor takeD;
+    private final ISetDeltaMonitor takeD;
     private final IndexedBipartiteSet dontCare;
     private final IntVar[] refs;
     private final IIntDeltaMonitor[] refsD;
     private final SetVar to;
-    private final SetDeltaMonitor toD;
+    private final ISetDeltaMonitor toD;
 
     public PropJoinFunction(SetVar take, IntVar[] refs, SetVar to) {
         super(buildArray(take, to, refs), PropagatorPriority.QUADRATIC, true);
@@ -144,7 +144,7 @@ public class PropJoinFunction extends Propagator<Variable> {
         // Pick to and prune refs
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
             PropUtil.domSubsetEnv(refs[i], to, aCause);
-            if (refs[i].instantiated()) {
+            if (refs[i].isInstantiated()) {
                 int value = refs[i].getValue();
                 to.addToKernel(value, aCause);
             }
@@ -223,7 +223,7 @@ public class PropJoinFunction extends Propagator<Variable> {
                     dontCare.remove(id);
                 }
             }
-            if (ref.instantiated()) {
+            if (ref.isInstantiated()) {
                 if (take.kernelContains(id)) {
                     to.addToKernel(ref.getValue(), aCause);
                 }
@@ -255,7 +255,7 @@ public class PropJoinFunction extends Propagator<Variable> {
 
             IntVar ref = refs[takeKer];
             PropUtil.domSubsetEnv(ref, to, aCause);
-            if (ref.instantiated()) {
+            if (ref.isInstantiated()) {
                 to.addToKernel(ref.getValue(), aCause);
             }
         }
@@ -267,7 +267,7 @@ public class PropJoinFunction extends Propagator<Variable> {
 
             for (int takeKer = take.getKernelFirst(); takeKer != SetVar.END; takeKer = take.getKernelNext()) {
                 IntVar ref = refs[takeKer];
-                if (ref.removeValue(toEnv, aCause) && ref.instantiated()) {
+                if (ref.removeValue(toEnv, aCause) && ref.isInstantiated()) {
                     to.addToKernel(ref.getValue(), aCause);
                 }
             }
@@ -289,20 +289,20 @@ public class PropJoinFunction extends Propagator<Variable> {
             if (i < 0 || i >= refs.length || !PropUtil.isDomIntersectEnv(refs[i], to)) {
                 return ESat.FALSE;
             }
-            if (refs[i].instantiated()) {
+            if (refs[i].isInstantiated()) {
                 int value = refs[i].getValue();
                 if (!to.envelopeContains(value)) {
                     return ESat.FALSE;
                 }
             }
         }
-        boolean completelyInstantiated = take.instantiated() && to.instantiated();
+        boolean completelyInstantiated = take.isInstantiated() && to.isInstantiated();
         int count = 0;
         IntVar[] taken = new IntVar[take.getEnvelopeSize()];
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i >= 0 && i < refs.length) {
                 IntVar ref = refs[i];
-                completelyInstantiated = completelyInstantiated && ref.instantiated();
+                completelyInstantiated = completelyInstantiated && ref.isInstantiated();
                 taken[count++] = ref;
             }
         }

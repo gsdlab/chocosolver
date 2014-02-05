@@ -374,7 +374,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                     return ESat.FALSE;
                 }
             }
-            if (ints[i].instantiated()) {
+            if (ints[i].isInstantiated()) {
                 int value = ints[i].getValue();
                 if (value < 0 || value >= values.length) {
                     return ESat.FALSE;

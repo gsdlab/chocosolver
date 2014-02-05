@@ -77,6 +77,7 @@ import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.IrXor;
+import org.clafer.ir.Irs;
 import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.Coalescer;
@@ -92,7 +93,6 @@ import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
-import solver.variables.view.SetConstantView;
 
 /**
  * Compile from IR to Choco.
@@ -213,9 +213,8 @@ public class IrCompiler {
     private final Map<IrSetExpr, CSet> cachedCommonSetSubexpressions = new HashMap<>();
 
     private void post(Constraint constraint) {
-        if (!solver.TRUE.equals(constraint)) {
-            solver.post(constraint);
-        }
+        assert (!solver.TRUE.equals(constraint));
+        solver.post(constraint);
     }
 
     private BoolVar boolVar(String name, IrBoolDomain domain) {
@@ -257,7 +256,7 @@ public class IrCompiler {
             TIntHashSet valueSet = new TIntHashSet(values);
             SetVar var = cachedSetConstants.get(valueSet);
             if (var == null) {
-                var = new SetConstantView(Arrays.toString(values), valueSet, solver);
+                var = VF.fixed(Arrays.toString(values), values, solver);
                 cachedSetConstants.put(valueSet, var);
             }
             return var;
@@ -274,7 +273,7 @@ public class IrCompiler {
         IntVar setCardVar = cachedSetCardVars.get(set);
         if (setCardVar == null) {
             setCardVar = intVar("|" + set.getName() + "|", card);
-            if (!(set.instantiated() && card.size() == 1 && card.getLowBound() == set.getKernelSize())) {
+            if (!(set.isInstantiated() && card.size() == 1 && card.getLowBound() == set.getKernelSize())) {
                 post(SCF.cardinality(set, setCardVar));
             }
             assert !cachedSetCardVars.containsKey(set);
@@ -444,6 +443,10 @@ public class IrCompiler {
         return (Constraint) result;
     }
 
+    private Constraint compileArithm(IrIntExpr a, Rel op, int b) {
+        return compileArithm(a, op, Irs.constant(b));
+    }
+
     private Constraint compileArithm(IrIntExpr a, Rel op, IrIntExpr b) {
         if (a instanceof IrMinus) {
             IrMinus minus = (IrMinus) a;
@@ -505,6 +508,16 @@ public class IrCompiler {
         if (c == 0) {
             return compileArithm(a, op1, b);
         }
+        if (a instanceof IrIntConstant) {
+            IrIntConstant constant = (IrIntConstant) a;
+            // a ◁ b + c <=> b ▷ a - c
+            // a ◁ b - c <=> b ▷ a + c
+            return compileArithm(b, op1.reverse(), op2.negate().compute(constant.getValue(), c));
+        }
+        if (b instanceof IrIntConstant) {
+            IrIntConstant constant = (IrIntConstant) b;
+            return compileArithm(a, op1, op2.compute(constant.getValue(), c));
+        }
         if (a instanceof IrMinus) {
             IrMinus minus = (IrMinus) a;
             // -a ◁ b + c <=> a + b ▷ -c
@@ -557,6 +570,20 @@ public class IrCompiler {
     }
 
     private Constraint compileArithm(IrIntExpr a, Arithm op1, IrIntExpr b, Rel op2, int c) {
+        if (a instanceof IrIntConstant) {
+            IrIntConstant constant = (IrIntConstant) a;
+            // a + b ◁ c <=> b ◁ c - a
+            // a - b ◁ c <=> b ▷ a - c
+            return Arithm.ADD.equals(op1)
+                    ? compileArithm(b, op2, c - constant.getValue())
+                    : compileArithm(b, op2.reverse(), constant.getValue() - c);
+        }
+        if (b instanceof IrIntConstant) {
+            // a + b ◁ c <=> a ◁ c - b
+            // a - b ◁ c <=> a ◁ c + b
+            IrIntConstant constant = (IrIntConstant) b;
+            return compileArithm(a, op2, op1.negate().compute(c, constant.getValue()));
+        }
         if (b instanceof IrMinus) {
             IrMinus minus = (IrMinus) b;
             // a + (-b) ◁ c <=> a - b ◁ c
@@ -579,7 +606,7 @@ public class IrCompiler {
                 // a + b + d ◁ c <=> a + b ◁ (c - d)
                 // a - (b + d) ◁ c <=> a - b ◁ (c + d)
                 return compileArithm(a, op1, addends[0], op2,
-                        Arithm.ADD.equals(op2) ? c - add.getOffset() : c + add.getOffset());
+                        Arithm.ADD.equals(op1) ? c - add.getOffset() : c + add.getOffset());
             }
         }
         switch (op1) {
@@ -1517,7 +1544,7 @@ public class IrCompiler {
     }
 
     private static Constraint _arithm(IntVar var1, String op, IntVar var2) {
-        if (var2.instantiated()) {
+        if (var2.isInstantiated()) {
             return ICF.arithm(var1, op, var2.getValue());
         }
         return ICF.arithm(var1, op, var2);
@@ -1528,12 +1555,12 @@ public class IrCompiler {
     }
 
     private Constraint _reify_equal(BoolVar reify, IntVar var1, IntVar var2) {
-        if (var1.instantiated()) {
-            if (var2.instantiated()) {
+        if (var1.isInstantiated()) {
+            if (var2.isInstantiated()) {
                 return _arithm(reify, "=", var1.getValue() == var2.getValue() ? 1 : 0);
             }
             return Constraints.reifyEqual(reify, var2, var1.getValue());
-        } else if (var2.instantiated()) {
+        } else if (var2.isInstantiated()) {
             return Constraints.reifyEqual(reify, var1, var2.getValue());
         } else {
             return Constraints.reifyEqual(reify, var1, var2);
@@ -1541,12 +1568,12 @@ public class IrCompiler {
     }
 
     private Constraint _reify_not_equal(BoolVar reify, IntVar var1, IntVar var2) {
-        if (var1.instantiated()) {
-            if (var2.instantiated()) {
+        if (var1.isInstantiated()) {
+            if (var2.isInstantiated()) {
                 return _arithm(reify, "=", var1.getValue() != var2.getValue() ? 1 : 0);
             }
             return Constraints.reifyNotEqual(reify, var2, var1.getValue());
-        } else if (var2.instantiated()) {
+        } else if (var2.isInstantiated()) {
             return Constraints.reifyNotEqual(reify, var1, var2.getValue());
         } else {
             return Constraints.reifyNotEqual(reify, var1, var2);
@@ -1566,10 +1593,10 @@ public class IrCompiler {
     }
 
     private static Constraint _not_equal(CSet var1, CSet var2) {
-        if (var1.getSet().instantiated()) {
+        if (var1.getSet().isInstantiated()) {
             return Constraints.notEqual(var2.getSet(), var1.getSet().getValue());
         }
-        if (var2.getSet().instantiated()) {
+        if (var2.getSet().isInstantiated()) {
             return Constraints.notEqual(var1.getSet(), var2.getSet().getValue());
         }
         return Constraints.notEqual(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
@@ -1722,6 +1749,17 @@ public class IrCompiler {
 
         private String getSyntax() {
             return syntax;
+        }
+
+        private int compute(int a, int b) {
+            switch (this) {
+                case ADD:
+                    return a + b;
+                case MINUS:
+                    return a - b;
+                default:
+                    throw new IllegalStateException();
+            }
         }
 
         private Arithm negate() {

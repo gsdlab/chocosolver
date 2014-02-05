@@ -68,7 +68,7 @@ public class ClaferUnsat {
                 Either<Boolean, BoolVar> var = softVar.getSnd();
                 if (var.isLeft()
                         ? !var.getLeft().booleanValue()
-                        : var.getRight().instantiatedTo(0)) {
+                        : var.getRight().isInstantiatedTo(0)) {
                     unsat.add(softVar.getFst());
                 }
             }
@@ -96,7 +96,7 @@ public class ClaferUnsat {
                         Either<Boolean, BoolVar> var = softVar.getSnd();
                         if (var.isLeft()
                                 ? !var.getLeft().booleanValue()
-                                : var.getRight().instantiatedTo(0)) {
+                                : var.getRight().isInstantiatedTo(0)) {
                             changed |= unsat.add(softVar.getFst());
                             if (var.isRight()) {
                                 minUnsat.add(var.getRight());
