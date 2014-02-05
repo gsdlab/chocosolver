@@ -545,4 +545,61 @@ public class SetArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * A *
+     *     B -> int 3
+     *     [ sum B = 2 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSumEmptySet() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(3, 3);
+        a.addConstraint(equal(sum(join($this(), b)), constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(a, 2).setScope(b, 0));
+        assertEquals(1, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A
+     *     B -> int
+     *     [ sum B = 2 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSumSingleton() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(Mandatory);
+        a.addConstraint(equal(sum(join($this(), b)), constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(1, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 1..2
+     *     B -> int 2
+     *     [ sum B = 2 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSumSet() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 2);
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(2, 2);
+        a.addConstraint(equal(sum(join($this(), b)), constant(2)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
+        assertEquals(5, solver.allInstances().length);
+    }
 }

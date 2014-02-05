@@ -45,10 +45,12 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
     @Override
     public AstExpr visit(AstJoin ast, Analysis a) {
         AstSetExpr left = rewrite(ast.getLeft(), a);
+        AstConcreteClafer right = ast.getRight();
         if (left instanceof AstThis) {
             if (a.getScope(a.getCommonSupertype(ast.getLeft())) == 1) {
                 Card childCard = a.getCard(ast.getRight());
-                if (childCard.isExact()) {
+                if (Format.ParentGroup.equals(a.getFormat(right))) {
+                    assert childCard.isExact();
                     return constant(ast.getRight(), Util.fromTo(0, childCard.getLow()));
                 }
                 return global(ast.getRight());

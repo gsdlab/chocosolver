@@ -1056,15 +1056,18 @@ public class AstCompiler {
             IrIntVar[] refs = refPointers.get(setType.getRef());
 
             IrBoolExpr[] members;
-            if (ast.getSet() instanceof AstGlobal) {
+            if (set instanceof AstGlobal) {
                 members = memberships.get(setType);
             } else {
-                IrExpr $set = compile(ast.getSet());
-                if (set instanceof IrIntExpr) {
-                    IrIntExpr intSet = (IrIntExpr) set;
+                IrExpr $set = compile(set);
+                if ($set instanceof IrIntExpr) {
+                    IrIntExpr intSet = (IrIntExpr) $set;
                     return element(refs, intSet);
                 }
                 IrSetExpr setSet = (IrSetExpr) $set;
+                if(setSet.getEnv().isEmpty()) {
+                    return Zero;
+                }
                 assert setSet.getEnv().getLowBound() >= 0;
                 members = new IrBoolExpr[setSet.getEnv().getHighBound() + 1];
                 for (int i = 0; i < members.length; i++) {
