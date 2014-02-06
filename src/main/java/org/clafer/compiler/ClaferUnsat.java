@@ -105,7 +105,7 @@ public class ClaferUnsat {
                     }
                     solver.getSearchLoop().reset();
                     for (BoolVar var : minUnsat) {
-                        solver.postCut(ICF.arithm(var, "=", 1));
+                        solver.post(ICF.arithm(var, "=", 1));
                     }
                 } while (changed && ESat.TRUE.equals(maximize()));
                 return unsat;

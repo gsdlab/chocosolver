@@ -1,19 +1,16 @@
 package org.clafer.compiler;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
-import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Either;
 import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
@@ -29,12 +26,7 @@ import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
-import org.clafer.scope.Scope;
-import org.clafer.scope.ScopeBuilder;
 import solver.Solver;
-import solver.constraints.Constraint;
-import solver.constraints.ICF;
-import solver.search.loop.monitors.IMonitorSolution;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.AbstractStrategy;
@@ -207,76 +199,76 @@ public class ClaferCompiler {
         return new ClaferUnsat(solver, solution);
     }
 
-    public static ClaferSolver compilePartial(AstModel in, ScopeBuilder scope, AstConcreteClafer... concretize) {
-        return compilePartial(in, scope.toScope(), concretize);
-    }
-
-    public static ClaferSolver compilePartial(AstModel in, Scope scope, AstConcreteClafer... concretize) {
-        final Set<AstConcreteClafer> transitiveConcretize = new HashSet<>();
-        for (AstConcreteClafer clafer : concretize) {
-            concretize(clafer, transitiveConcretize);
-        }
-        final ClaferSolver solver = compile(in, scope);
-        final List<IntVar> intVars = new ArrayList<>();
-        final List<SetVar> setVars = new ArrayList<>();
-        for (AstConcreteClafer clafer : transitiveConcretize) {
-            IrSetVar[] siblingVars = solver.getSolutionMap().getAstSolution().getSiblingVars(clafer);
-            for (IrSetVar siblingVar : siblingVars) {
-                Either<int[], SetVar> var = solver.getSolutionMap().getIrSolution().getSetVar(siblingVar);
-                if (var.isRight()) {
-                    setVars.add(var.getRight());
-                }
-            }
-            AstRef ref = AstUtil.getInheritedRef(clafer);
-            if (ref != null) {
-                IrIntVar[] refVars = solver.getSolutionMap().getAstSolution().getRefVars(ref);
-                for (IrIntVar refVar : refVars) {
-                    Either<Integer, IntVar> var = solver.getSolutionMap().getIrSolution().getIntVar(refVar);
-                    if (var.isRight()) {
-                        intVars.add(var.getRight());
-                    }
-                }
-            }
-        }
-        solver.getInternalSolver().getSearchLoop().plugSearchMonitor(new IMonitorSolution() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void onSolution() {
-                List<Constraint> constraints = new ArrayList<>();
-                for (IntVar var : intVars) {
-                    constraints.add(ICF.arithm(var, "!=", var.getValue()));
-                }
-                for (SetVar var : setVars) {
-                    constraints.add(Constraints.notEqual(var, var.getValue()));
-                }
-                solver.getInternalSolver().postCut(Constraints.or(
-                        constraints.toArray(new Constraint[constraints.size()])));
-            }
-        });
-        return solver;
-    }
-
-    private static void concretize(AstClafer clafer, Set<AstConcreteClafer> concretize) {
-        if (clafer instanceof AstAbstractClafer) {
-            concretize((AstAbstractClafer) clafer, concretize);
-        } else {
-            concretize((AstConcreteClafer) clafer, concretize);
-        }
-    }
-
-    private static void concretize(AstConcreteClafer clafer, Set<AstConcreteClafer> concretize) {
-        if (!AstUtil.isRoot(clafer) && concretize.add(clafer)) {
-            concretize(clafer.getParent(), concretize);
-            concretize(clafer.getSuperClafer(), concretize);
-        }
-    }
-
-    private static void concretize(AstAbstractClafer clafer, Set<AstConcreteClafer> concretize) {
-        if (!AstUtil.isTypeRoot(clafer)) {
-            for (AstClafer sub : clafer.getSubs()) {
-                concretize(sub, concretize);
-            }
-        }
-    }
+//    public static ClaferSolver compilePartial(AstModel in, ScopeBuilder scope, AstConcreteClafer... concretize) {
+//        return compilePartial(in, scope.toScope(), concretize);
+//    }
+//
+//    public static ClaferSolver compilePartial(AstModel in, Scope scope, AstConcreteClafer... concretize) {
+//        final Set<AstConcreteClafer> transitiveConcretize = new HashSet<>();
+//        for (AstConcreteClafer clafer : concretize) {
+//            concretize(clafer, transitiveConcretize);
+//        }
+//        final ClaferSolver solver = compile(in, scope);
+//        final List<IntVar> intVars = new ArrayList<>();
+//        final List<SetVar> setVars = new ArrayList<>();
+//        for (AstConcreteClafer clafer : transitiveConcretize) {
+//            IrSetVar[] siblingVars = solver.getSolutionMap().getAstSolution().getSiblingVars(clafer);
+//            for (IrSetVar siblingVar : siblingVars) {
+//                Either<int[], SetVar> var = solver.getSolutionMap().getIrSolution().getSetVar(siblingVar);
+//                if (var.isRight()) {
+//                    setVars.add(var.getRight());
+//                }
+//            }
+//            AstRef ref = AstUtil.getInheritedRef(clafer);
+//            if (ref != null) {
+//                IrIntVar[] refVars = solver.getSolutionMap().getAstSolution().getRefVars(ref);
+//                for (IrIntVar refVar : refVars) {
+//                    Either<Integer, IntVar> var = solver.getSolutionMap().getIrSolution().getIntVar(refVar);
+//                    if (var.isRight()) {
+//                        intVars.add(var.getRight());
+//                    }
+//                }
+//            }
+//        }
+//        solver.getInternalSolver().getSearchLoop().plugSearchMonitor(new IMonitorSolution() {
+//            private static final long serialVersionUID = 1L;
+//
+//            @Override
+//            public void onSolution() {
+//                List<Constraint> constraints = new ArrayList<>();
+//                for (IntVar var : intVars) {
+//                    constraints.add(ICF.arithm(var, "!=", var.getValue()));
+//                }
+//                for (SetVar var : setVars) {
+//                    constraints.add(Constraints.notEqual(var, var.getValue()));
+//                }
+//                solver.getInternalSolver().postCut(Constraints.or(
+//                        constraints.toArray(new Constraint[constraints.size()])));
+//            }
+//        });
+//        return solver;
+//    }
+//
+//    private static void concretize(AstClafer clafer, Set<AstConcreteClafer> concretize) {
+//        if (clafer instanceof AstAbstractClafer) {
+//            concretize((AstAbstractClafer) clafer, concretize);
+//        } else {
+//            concretize((AstConcreteClafer) clafer, concretize);
+//        }
+//    }
+//
+//    private static void concretize(AstConcreteClafer clafer, Set<AstConcreteClafer> concretize) {
+//        if (!AstUtil.isRoot(clafer) && concretize.add(clafer)) {
+//            concretize(clafer.getParent(), concretize);
+//            concretize(clafer.getSuperClafer(), concretize);
+//        }
+//    }
+//
+//    private static void concretize(AstAbstractClafer clafer, Set<AstConcreteClafer> concretize) {
+//        if (!AstUtil.isTypeRoot(clafer)) {
+//            for (AstClafer sub : clafer.getSubs()) {
+//                concretize(sub, concretize);
+//            }
+//        }
+//    }
 }

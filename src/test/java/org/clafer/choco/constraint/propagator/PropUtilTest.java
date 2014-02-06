@@ -636,5 +636,9 @@ public class PropUtilTest {
         @Override
         public void dynamicAddition(Constraint c, boolean cut) {
         }
+
+        @Override
+        public void dynamicDeletion(Constraint c) {
+        }
     }
 }
