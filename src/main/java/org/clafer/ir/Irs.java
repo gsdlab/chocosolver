@@ -1802,4 +1802,20 @@ public class Irs {
         IrDomain card = IrUtil.union(consequent.getCard(), alternative.getCard());
         return new IrSetTernary(antecedent, consequent, alternative, env, ker, card);
     }
+
+    /**
+     *******************
+     *
+     * String
+     *
+     *******************
+     */
+    public static IrString string(IrIntExpr length, IrIntExpr[] chars) {
+        return new IrString(length, chars);
+    }
+    
+    public static IrStringExpr concat(IrStringExpr left, IrStringExpr right) {
+        IrDomain length = add(left.getLength(), right.getLength()).getDomain();
+        return new IrConcat(left, right, Zero, chars);
+    }
 }

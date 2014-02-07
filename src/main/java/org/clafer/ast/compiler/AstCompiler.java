@@ -38,6 +38,7 @@ import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
+import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
@@ -555,7 +556,7 @@ public class AstCompiler {
                 // if the Clafer owning the ref pointers does not exists.
                 module.addConstraint(ifOnlyIf(not(members[i]), equal(refs[i], getUninitalizedRef(tar))));
             }
-            if (!(ref.getTargetType() instanceof AstIntClafer)) {
+            if (!ref.getTargetType().isPrimitive()) {
                 IrSetVar targetSet = sets.get(ref.getTargetType());
                 for (int i = 0; i < refs.length; i++) {
                     // The ref pointers must point to a target that exists.

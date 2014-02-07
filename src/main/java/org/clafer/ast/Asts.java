@@ -16,6 +16,7 @@ public class Asts {
     }
     public static final AstIntClafer IntType = AstIntClafer.Singleton;
     public static final AstBoolClafer BoolType = AstBoolClafer.Singleton;
+    public static final AstStringClafer StringType = AstStringClafer.Singleton;
     // Cardinality keywords
     public static final Card Any = new Card();
     public static final Card Optional = new Card(0, 1);
