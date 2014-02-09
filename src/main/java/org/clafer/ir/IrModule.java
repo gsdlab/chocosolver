@@ -29,6 +29,11 @@ public class IrModule {
 
     public IrModule addVariable(IrVar var) {
         if (!(var instanceof IrConstant)) {
+            if (var instanceof IrStringVar) {
+                IrStringVar string = (IrStringVar) var;
+                addVariable(string.getLength());
+                addVariables(string.getChars());
+            }
             variables.add(var);
         }
         return this;

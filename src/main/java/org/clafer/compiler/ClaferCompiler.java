@@ -7,6 +7,8 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstRef;
+import org.clafer.ast.AstStringClafer;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
@@ -22,6 +24,7 @@ import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.objective.Objective;
@@ -86,11 +89,28 @@ public class ClaferCompiler {
         List<IntVar> vars = new ArrayList<>();
         for (AstClafer clafer : AstUtil.getClafers(model)) {
             if (clafer.hasRef()) {
-                for (IrIntVar intVar : map.getAstSolution().getRefVars(clafer.getRef())) {
-                    if (!(intVar instanceof IrIntConstant)) {
-                        Either<Integer, IntVar> var = map.getIrSolution().getIntVar(intVar);
-                        if (var.isRight()) {
-                            vars.add(var.getRight());
+                AstRef ref = clafer.getRef();
+                if (ref.getTargetType() instanceof AstStringClafer) {
+                    for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref)) {
+                        Either<Integer, IntVar> lengthVar
+                                = map.getIrSolution().getIntVar(stringVar.getLength());
+                        if (lengthVar.isRight()) {
+                            vars.add(lengthVar.getRight());
+                        }
+                        for (IrIntVar charVar : stringVar.getChars()) {
+                            Either<Integer, IntVar> var = map.getIrSolution().getIntVar(charVar);
+                            if (var.isRight()) {
+                                vars.add(var.getRight());
+                            }
+                        }
+                    }
+                } else {
+                    for (IrIntVar intVar : map.getAstSolution().getRefVars(ref)) {
+                        if (!(intVar instanceof IrIntConstant)) {
+                            Either<Integer, IntVar> var = map.getIrSolution().getIntVar(intVar);
+                            if (var.isRight()) {
+                                vars.add(var.getRight());
+                            }
                         }
                     }
                 }
@@ -100,7 +120,8 @@ public class ClaferCompiler {
     }
 
     @SafeVarargs
-    private static void set(Solver solver, Maybe<? extends AbstractStrategy>... strategies) {
+    private static void set(Solver solver, Maybe<AbstractStrategy>... strategies
+    ) {
         AbstractStrategy<?>[] strats = Maybe.filterJust(strategies);
         if (strats.length == 0) {
             solver.set(IntStrategyFactory.random(new IntVar[0], 0));
@@ -109,28 +130,28 @@ public class ClaferCompiler {
         }
     }
 
-    private static Maybe<? extends AbstractStrategy<SetVar>> setStrategy(SetVar[] vars, ClaferOptions options) {
+    private static Maybe<AbstractStrategy> setStrategy(SetVar[] vars, ClaferOptions options) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
         if (options.isPreferSmallerInstances()) {
-            return Maybe.just(SetStrategyFactory.remove_first(vars));
+            return Maybe.<AbstractStrategy>just(SetStrategyFactory.remove_first(vars));
         }
-        return Maybe.just(SetStrategyFactory.force_first(vars));
+        return Maybe.<AbstractStrategy>just(SetStrategyFactory.force_first(vars));
     }
 
-    private static Maybe<AbstractStrategy<IntVar>> firstFailInDomainMax(IntVar[] vars) {
+    private static Maybe<AbstractStrategy> firstFailInDomainMax(IntVar[] vars) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
-        return Maybe.just(IntStrategyFactory.firstFail_InDomainMax(vars));
+        return Maybe.<AbstractStrategy>just(IntStrategyFactory.firstFail_InDomainMax(vars));
     }
 
-    private static Maybe<AbstractStrategy<IntVar>> firstFailInDomainMin(IntVar[] vars) {
+    private static Maybe<AbstractStrategy> firstFailInDomainMin(IntVar[] vars) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
-        return Maybe.just(IntStrategyFactory.firstFail_InDomainMin(vars));
+        return Maybe.<AbstractStrategy>just(IntStrategyFactory.firstFail_InDomainMin(vars));
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {

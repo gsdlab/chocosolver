@@ -9,7 +9,7 @@ package org.clafer.ir;
  */
 public interface IrStringExprVisitor<A, B> {
 
-    public B visit(IrString ir, A a);
+    public B visit(IrStringVar ir, A a);
 
     public B visit(IrConcat ir, A a);
 }

@@ -14,6 +14,7 @@ import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
 import org.clafer.choco.constraint.propagator.PropJoinRelation;
+import org.clafer.choco.constraint.propagator.PropLength;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropMask;
@@ -29,6 +30,7 @@ import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
+import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
@@ -60,6 +62,26 @@ public class Constraints {
     private Constraints() {
     }
 
+    private static Maybe<Propagator<IntVar>> eq(IntVar l, IntVar r) {
+        if (l.isInstantiated()) {
+            if (r.isInstantiatedTo(l.getValue())) {
+                return Maybe.nothing();
+            }
+            return Maybe.<Propagator<IntVar>>just(new PropEqualXC(r, l.getValue()));
+        }
+        if (r.isInstantiated()) {
+            return Maybe.<Propagator<IntVar>>just(new PropEqualXC(l, r.getValue()));
+        }
+        return Maybe.<Propagator<IntVar>>just(new PropEqualX_Y(l, r));
+    }
+
+    private static Maybe<Propagator<IntVar>> eq(IntVar l, int r) {
+        if (l.isInstantiatedTo(r)) {
+            return Maybe.nothing();
+        }
+        return Maybe.<Propagator<IntVar>>just(new PropEqualXC(l, r));
+    }
+
     private static Propagator<IntVar> lessThanEq(IntVar l, IntVar g) {
         if (l.isInstantiated()) {
             return new PropGreaterOrEqualXC(g, l.getValue());
@@ -84,8 +106,8 @@ public class Constraints {
                 filter.add(var);
             }
         }
-        IntVar[] filtered =
-                filter.size() == ints.length
+        IntVar[] filtered
+                = filter.size() == ints.length
                 ? ints
                 : filter.toArray(new IntVar[filter.size()]);
         switch (filtered.length) {
@@ -449,9 +471,10 @@ public class Constraints {
      *   [Animal.Age = 1000]
      * </pre>
      * </p>
-     * <p> {@code Animal.Age} is a set with a very large envelope. However, due
-     * to static analysis of the model, it is easy to see that the cardinality
-     * must be 2. In general, the cardinality is bounded by the scope of Age,
+     * <p>
+     * {@code Animal.Age} is a set with a very large envelope. However, due to
+     * static analysis of the model, it is easy to see that the cardinality must
+     * be 2. In general, the cardinality is bounded by the scope of Age,
      * although often times the analysis will find a tighter bound. Once the
      * first integer x is selected for the set, the second integer 1000 - x is
      * already determined due to cardinality = 2. Since the Choco library's
@@ -726,5 +749,46 @@ public class Constraints {
                 new PropMask(set, masked, from, to),
                 // Simple cardinality propagation.
                 greaterThanEq(setCard, maskedCard));
+    }
+
+    /**
+     * TODO STRING
+     */
+    public static Constraint length(IntVar length, IntVar[] chars) {
+        return new Constraint("length", new PropLength(length, chars));
+    }
+
+    /**
+     * TODO STRING
+     */
+    public static Constraint equal(
+            IntVar length1, IntVar[] chars1,
+            IntVar length2, IntVar[] chars2) {
+        List<Maybe<Propagator<IntVar>>> maybePropagators = new ArrayList<>();
+        maybePropagators.add(eq(length1, length2));
+        for (int i = 0; i < Math.min(chars1.length, chars2.length); i++) {
+            maybePropagators.add(eq(chars1[i], chars2[i]));
+        }
+        for (int i = Math.min(chars1.length, chars2.length); i < chars1.length; i++) {
+            maybePropagators.add(eq(chars1[i], 0));
+        }
+        for (int i = Math.min(chars1.length, chars2.length); i < chars2.length; i++) {
+            maybePropagators.add(eq(chars2[i], 0));
+        }
+        List<Propagator<IntVar>> propagators = Maybe.filterJust(maybePropagators);
+        if (propagators.isEmpty()) {
+            return length1.getSolver().TRUE;
+        }
+        return new Constraint("arrayEqual",
+                propagators.toArray(new Propagator[propagators.size()]));
+    }
+
+    /**
+     * TODO STRING
+     */
+    public static Constraint notEqual(
+            IntVar length1, IntVar[] chars1,
+            IntVar length2, IntVar[] chars2) {
+        return equal(length1, chars1, length2, chars2).getOpposite();
     }
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstStringClafer;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
@@ -13,6 +14,7 @@ import org.clafer.instance.InstanceModel;
 import org.clafer.instance.InstanceRef;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.compiler.IrSolutionMap;
 
 /**
@@ -63,16 +65,23 @@ public class ClaferSolutionMap {
                     children);
         }
         if (clafer.hasRef()) {
-            IrIntVar refIrVar = astSolution.getRefVars(clafer.getRef())[id];
             AstClafer targetType = clafer.getRef().getTargetType();
-            int value = irSolution.getIntValue(refIrVar);
-            if (targetType instanceof AstAbstractClafer) {
-                Pair<AstConcreteClafer, Integer> concreteRef = astSolution.getAnalysis().getConcreteId(
-                        targetType, value);
-                targetType = concreteRef.getFst();
-                value = concreteRef.getSnd().intValue();
+            if (targetType instanceof AstStringClafer) {
+                IrStringVar refIrVar = astSolution.getRefStrings(clafer.getRef())[id];
+                int length = irSolution.getIntValue(refIrVar.getLength());
+                int[] value = irSolution.getIntValues(refIrVar.getChars());
+                ref = new InstanceRef(targetType, new String(value, 0, length));
+            } else {
+                IrIntVar refIrVar = astSolution.getRefVars(clafer.getRef())[id];
+                int value = irSolution.getIntValue(refIrVar);
+                if (targetType instanceof AstAbstractClafer) {
+                    Pair<AstConcreteClafer, Integer> concreteRef = astSolution.getAnalysis().getConcreteId(
+                            targetType, value);
+                    targetType = concreteRef.getFst();
+                    value = concreteRef.getSnd().intValue();
+                }
+                ref = new InstanceRef(targetType, value);
             }
-            ref = new InstanceRef(targetType, value);
         }
         return ref;
     }

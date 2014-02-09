@@ -27,6 +27,7 @@ import org.clafer.ir.IrBoolExprVisitor;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
+import org.clafer.ir.IrConcat;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrDomain;
@@ -70,6 +71,10 @@ import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortSets;
 import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSortStringsChannel;
+import org.clafer.ir.IrStringCompare;
+import org.clafer.ir.IrStringExpr;
+import org.clafer.ir.IrStringExprVisitor;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUnreachable;
@@ -150,7 +155,7 @@ public class IrCompiler {
                     if (duplicate == null) {
                         cardIntVarMap.put(leftInt,
                                 new CSet(rightSet,
-                                IrUtil.intersection(leftInt.getDomain(), cardinality.getSnd().getCard())));
+                                        IrUtil.intersection(leftInt.getDomain(), cardinality.getSnd().getCard())));
                     } else {
                         /*
                          * Case where
@@ -171,13 +176,15 @@ public class IrCompiler {
         for (IrBoolExpr constraint : constraints) {
             post(compileAsConstraint(constraint));
         }
-        for (IrVar variable : optModule.getVariables()) {
-            if (variable instanceof IrBoolVar) {
-                compile((IrBoolVar) variable);
-            } else if (variable instanceof IrIntVar) {
-                compile((IrIntVar) variable);
+        for (IrVar var : optModule.getVariables()) {
+            if (var instanceof IrBoolVar) {
+                compile((IrBoolVar) var);
+            } else if (var instanceof IrIntVar) {
+                compile((IrIntVar) var);
+            } else if (var instanceof IrSetVar) {
+                compile((IrSetVar) var);
             } else {
-                compile((IrSetVar) variable);
+                compile((IrStringVar) var);
             }
         }
         return new IrSolutionMap(
@@ -211,6 +218,7 @@ public class IrCompiler {
     private final Set<IrExpr> commonSubexpressions = new HashSet<>();
     private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<>();
     private final Map<IrSetExpr, CSet> cachedCommonSetSubexpressions = new HashMap<>();
+    private final Map<IrStringExpr, CString> cachedCommonStringSubexpressions = new HashMap<>();
 
     private void post(Constraint constraint) {
         assert (!solver.TRUE.equals(constraint));
@@ -709,6 +717,25 @@ public class IrCompiler {
         }
         return vars;
     }
+
+    private CString compile(IrStringExpr expr) {
+        CString set = cachedCommonStringSubexpressions.get(expr);
+        if (set == null) {
+            set = (CString) expr.accept(stringExprCompiler, null);
+            if (commonSubexpressions.contains(expr)) {
+                cachedCommonStringSubexpressions.put(expr, set);
+            }
+        }
+        return set;
+    }
+
+    private CString[] compile(IrStringExpr[] exprs) {
+        CString[] vars = new CString[exprs.length];
+        for (int i = 0; i < vars.length; i++) {
+            vars[i] = compile(exprs[i]);
+        }
+        return vars;
+    }
     private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
         @Override
         public Object visit(IrBoolVar ir, BoolArg a) {
@@ -892,17 +919,6 @@ public class IrCompiler {
             return compileArithm(left, op, right);
         }
 
-        private Triple<String, IrIntExpr, Integer> getOffset(IrIntExpr expr) {
-            if (expr instanceof IrAdd) {
-                IrAdd add = (IrAdd) expr;
-                IrIntExpr[] addends = add.getAddends();
-                if (addends.length == 1) {
-                    return new Triple<>("-", addends[0], add.getOffset());
-                }
-            }
-            return null;
-        }
-
         @Override
         public Object visit(IrSetTest ir, BoolArg a) {
             switch (ir.getOp()) {
@@ -915,6 +931,24 @@ public class IrCompiler {
                     return _not_equal(compile(ir.getLeft()), compile(ir.getRight()));
                 default:
                     throw new IllegalArgumentException("Unexpected operator.");
+            }
+        }
+
+        @Override
+        public Object visit(IrStringCompare ir, BoolArg a) {
+            CString string1 = compile(ir.getLeft());
+            CString string2 = compile(ir.getRight());
+            switch (ir.getOp()) {
+                case Equal:
+                    return Constraints.equal(
+                            string1.getLength(), string1.getChars(),
+                            string2.getLength(), string2.getChars());
+                case NotEqual:
+                    return Constraints.notEqual(
+                            string1.getLength(), string1.getChars(),
+                            string2.getLength(), string2.getChars());
+                default:
+                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
         }
 
@@ -1278,6 +1312,11 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrStringCompare ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
         public Object visit(IrMember ir, IntVar a) {
             return compileBool(ir, a);
         }
@@ -1478,6 +1517,22 @@ public class IrCompiler {
         }
     };
 
+    private IrStringExprVisitor<CString, Object> stringExprCompiler = new IrStringExprVisitor<CString, Object>() {
+
+        @Override
+        public Object visit(IrStringVar ir, CString a) {
+            IntVar length = compile(ir.getLength());
+            IntVar[] chars = compile(ir.getChars());
+            post(Constraints.length(length, chars));
+            return new CString(length, chars);
+        }
+
+        @Override
+        public Object visit(IrConcat ir, CString a) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    };
+
     private static Constraint _implies(BoolVar antecedent, Constraint consequent) {
         return _implies(antecedent, consequent.reif());
     }
@@ -1630,14 +1685,16 @@ public class IrCompiler {
         return Constraints.notMember(element, set);
     }
 
-    private static Constraint _lex_chain_less(IntVar[]... vars) {
+    private static Constraint _lex_chain_less(IntVar[]  
+        ... vars) {
         if (vars.length == 2) {
             return ICF.lex_less(vars[0], vars[1]);
         }
         return ICF.lex_chain_less(vars);
     }
 
-    private static Constraint _lex_chain_less_eq(IntVar[]... vars) {
+    private static Constraint _lex_chain_less_eq(IntVar[]  
+        ... vars) {
         if (vars.length == 2) {
             return ICF.lex_less_eq(vars[0], vars[1]);
         }
@@ -1819,8 +1876,8 @@ public class IrCompiler {
         CSet(SetVar set, IrDomain cardDomain) {
             this.set = Check.notNull(set);
             this.cardDomain = Check.notNull(cardDomain);
-            this.card =
-                    cardDomain.getLowBound() > set.getKernelSize() || cardDomain.getHighBound() < set.getEnvelopeSize()
+            this.card
+                    = cardDomain.getLowBound() > set.getKernelSize() || cardDomain.getHighBound() < set.getEnvelopeSize()
                     ? setCardVar(set, cardDomain)
                     : null;
         }
@@ -1862,5 +1919,24 @@ public class IrCompiler {
             vars[i] = sets[i].getCard();
         }
         return vars;
+    }
+
+    private class CString {
+
+        private final IntVar length;
+        private final IntVar[] chars;
+
+        CString(IntVar length, IntVar[] chars) {
+            this.length = length;
+            this.chars = chars;
+        }
+
+        IntVar getLength() {
+            return length;
+        }
+
+        IntVar[] getChars() {
+            return chars;
+        }
     }
 }

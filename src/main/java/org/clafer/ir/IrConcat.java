@@ -10,8 +10,8 @@ public class IrConcat extends IrAbstractString {
 
     private final IrStringExpr left, right;
 
-    IrConcat(IrStringExpr left, IrStringExpr right, IrIntExpr length, IrIntExpr[] chars) {
-        super(length, chars);
+    IrConcat(IrStringExpr left, IrStringExpr right, IrDomain lengthDomain, IrDomain[] charDomains) {
+        super(lengthDomain, charDomains);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);
     }

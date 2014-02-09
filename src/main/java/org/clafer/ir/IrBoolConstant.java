@@ -24,7 +24,6 @@ public class IrBoolConstant extends IrBoolVar implements IrConstant {
         }
         if (obj instanceof IrBoolConstant) {
             IrBoolConstant other = (IrBoolConstant) obj;
-            // Don't need to call super.equals since the domain is the same as value.
             return value == other.value;
         }
         return false;

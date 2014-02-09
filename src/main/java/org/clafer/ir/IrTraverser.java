@@ -6,7 +6,9 @@ package org.clafer.ir;
  * @author jimmy
  */
 public abstract class IrTraverser<T>
-        implements IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
+        implements IrIntExprVisitor<T, IrIntExpr>,
+        IrSetExprVisitor<T, IrSetExpr>,
+        IrStringExprVisitor<T, IrStringExpr> {
 
     public void traverse(IrModule module, T a) {
         for (IrVar variable : module.getVariables()) {
@@ -14,8 +16,10 @@ public abstract class IrTraverser<T>
                 traverse((IrBoolVar) variable, a);
             } else if (variable instanceof IrIntVar) {
                 traverse((IrIntVar) variable, a);
-            } else {
+            } else if (variable instanceof IrSetVar) {
                 traverse((IrSetVar) variable, a);
+            } else {
+                traverse((IrStringVar) variable, a);
             }
         }
         for (IrBoolExpr constraint : module.getConstraints()) {
@@ -55,6 +59,16 @@ public abstract class IrTraverser<T>
 
     public void traverse(IrSetExpr[] exprs, T a) {
         for (IrSetExpr expr : exprs) {
+            traverse(expr, a);
+        }
+    }
+
+    public void traverse(IrStringExpr expr, T a) {
+        expr.accept(this, a);
+    }
+
+    public void traverse(IrStringExpr[] exprs, T a) {
+        for (IrStringExpr expr : exprs) {
             traverse(expr, a);
         }
     }
@@ -150,6 +164,13 @@ public abstract class IrTraverser<T>
 
     @Override
     public IrBoolExpr visit(IrSetTest ir, T a) {
+        traverse(ir.getLeft(), a);
+        traverse(ir.getRight(), a);
+        return ir;
+    }
+
+    @Override
+    public IrBoolExpr visit(IrStringCompare ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
         return ir;
@@ -374,5 +395,15 @@ public abstract class IrTraverser<T>
         traverse(ir.getConsequent(), a);
         traverse(ir.getAlternative(), a);
         return ir;
+    }
+
+    @Override
+    public IrStringExpr visit(IrStringVar ir, T a) {
+        return ir;
+    }
+
+    @Override
+    public IrStringExpr visit(IrConcat ir, T a) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

@@ -271,6 +271,24 @@ public class IrUtil {
         return Irs.enumDomain(values);
     }
 
+    public static IrDomain add(IrDomain addend1, IrDomain addend2) {
+        if (addend1.isEmpty()) {
+            return addend2;
+        }
+        if (addend2.isEmpty()) {
+            return addend1;
+        }
+        if (addend1.size() == 1) {
+            return add(addend2, addend1.getLowBound());
+        }
+        if (addend2.size() == 1) {
+            return add(addend1, addend2.getLowBound());
+        }
+        return Irs.boundDomain(
+                addend1.getLowBound() + addend2.getLowBound(),
+                addend1.getHighBound() + addend2.getHighBound());
+    }
+
     public static IrDomain remove(IrDomain domain, int value) {
         if (!domain.contains(value)) {
             return domain;

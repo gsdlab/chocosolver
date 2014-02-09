@@ -28,9 +28,9 @@ public abstract class Maybe<T> {
         return new Just<>(t);
     }
 
-    public static <T> List<T> filterJust(List<Maybe<? extends T>> maybes) {
+    public static <T> List<T> filterJust(List<Maybe<T>> maybes) {
         List<T> justs = new ArrayList<>();
-        for (Maybe<? extends T> maybe : maybes) {
+        for (Maybe<T> maybe : maybes) {
             T t = maybe.fromMaybe(null);
             if (t != null) {
                 justs.add(t);
@@ -40,9 +40,9 @@ public abstract class Maybe<T> {
     }
 
     @SafeVarargs
-    public static <T> T[] filterJust(Maybe<? extends T>[] maybes, T... array) {
+    public static <T> T[] filterJust(Maybe<T>[] maybes, T... array) {
         List<T> justs = new ArrayList<>();
-        for (Maybe<? extends T> maybe : maybes) {
+        for (Maybe<T> maybe : maybes) {
             T t = maybe.fromMaybe(null);
             if (t != null) {
                 justs.add(t);

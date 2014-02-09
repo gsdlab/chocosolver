@@ -39,6 +39,8 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrSetTest ir, A a);
 
+    public B visit(IrStringCompare ir, A a);
+
     public B visit(IrMember ir, A a);
 
     public B visit(IrNotMember ir, A a);

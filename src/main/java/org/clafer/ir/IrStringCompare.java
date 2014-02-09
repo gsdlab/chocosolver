@@ -3,24 +3,23 @@ package org.clafer.ir;
 import org.clafer.common.Check;
 
 /**
- * left `op` right + offset
  *
  * @author jimmy
  */
-public class IrCompare extends IrAbstractBool implements IrBoolExpr {
+public class IrStringCompare extends IrAbstractBool implements IrBoolExpr {
 
-    private final IrIntExpr left;
+    private final IrStringExpr left;
     private final Op op;
-    private final IrIntExpr right;
+    private final IrStringExpr right;
 
-    IrCompare(IrIntExpr left, Op op, IrIntExpr right, IrBoolDomain domain) {
+    IrStringCompare(IrStringExpr left, Op op, IrStringExpr right, IrBoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
         this.right = Check.notNull(right);
     }
 
-    public IrIntExpr getLeft() {
+    public IrStringExpr getLeft() {
         return left;
     }
 
@@ -28,7 +27,7 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
         return op;
     }
 
-    public IrIntExpr getRight() {
+    public IrStringExpr getRight() {
         return right;
     }
 
@@ -36,13 +35,13 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
     public IrBoolExpr negate() {
         switch (op) {
             case Equal:
-                return new IrCompare(left, Op.NotEqual, right, getDomain().invert());
+                return new IrStringCompare(left, Op.NotEqual, right, getDomain().invert());
             case NotEqual:
-                return new IrCompare(left, Op.Equal, right, getDomain().invert());
+                return new IrStringCompare(left, Op.Equal, right, getDomain().invert());
             case LessThan:
-                return new IrCompare(right, Op.LessThanEqual, left, getDomain().invert());
+                return new IrStringCompare(right, Op.LessThanEqual, left, getDomain().invert());
             case LessThanEqual:
-                return new IrCompare(right, Op.LessThan, left, getDomain().invert());
+                return new IrStringCompare(right, Op.LessThan, left, getDomain().invert());
             default:
                 throw new IllegalStateException();
         }
@@ -65,8 +64,8 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrCompare) {
-            IrCompare other = (IrCompare) obj;
+        if (obj instanceof IrStringCompare) {
+            IrStringCompare other = (IrStringCompare) obj;
             return left.equals(other.left) && op.equals(other.op)
                     && right.equals(other.right) && super.equals(other);
         }

@@ -1,7 +1,6 @@
 package org.clafer.instance;
 
 import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstIntClafer;
 import org.clafer.common.Check;
 
 /**
@@ -11,9 +10,9 @@ import org.clafer.common.Check;
 public class InstanceRef {
 
     private final AstClafer type;
-    private final int value;
+    private final Object value;
 
-    public InstanceRef(AstClafer type, int value) {
+    public InstanceRef(AstClafer type, Object value) {
         this.type = Check.notNull(type);
         this.value = value;
     }
@@ -22,14 +21,14 @@ public class InstanceRef {
         return type;
     }
 
-    public int getValue() {
+    public Object getValue() {
         return value;
     }
 
     @Override
     public String toString() {
-        return type instanceof AstIntClafer
-                ? Integer.toString(value)
-                : type.getName() + "#" + Integer.toString(value);
+        return type.isPrimitive()
+                ? value.toString()
+                : type.getName() + "#" + value;
     }
 }

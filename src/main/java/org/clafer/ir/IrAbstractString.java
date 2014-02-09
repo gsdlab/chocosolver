@@ -9,53 +9,53 @@ import org.clafer.common.Check;
  */
 public abstract class IrAbstractString implements IrStringExpr {
 
-    private final IrIntExpr length;
-    private final IrIntExpr[] chars;
+    private final IrDomain lengthDomain;
+    private final IrDomain[] charDomains;
 
-    IrAbstractString(IrIntExpr length, IrIntExpr[] chars) {
-        this.length = Check.notNull(length);
-        this.chars = Check.noNulls(chars);
+    IrAbstractString(IrDomain lengthDomain, IrDomain[] charDomains) {
+        this.lengthDomain = Check.notNull(lengthDomain);
+        this.charDomains = Check.noNulls(charDomains);
 
-        if (length.getDomain().isEmpty()) {
+        if (lengthDomain.isEmpty()) {
             throw new IllegalArgumentException();
         }
-        if (length.getDomain().getLowBound() < 0) {
+        if (lengthDomain.getLowBound() < 0) {
             throw new IllegalArgumentException();
         }
-        if (length.getDomain().getHighBound() > chars.length) {
+        if (lengthDomain.getHighBound() > charDomains.length) {
             throw new IllegalArgumentException();
         }
-        for (IrIntExpr c : chars) {
-            if (c.getDomain().getLowBound() < Character.MIN_VALUE) {
+        for (IrDomain c : charDomains) {
+            if (c.getLowBound() < Character.MIN_VALUE) {
                 throw new IllegalArgumentException();
             }
-            if (c.getDomain().getHighBound() > Character.MAX_VALUE) {
+            if (c.getHighBound() > Character.MAX_VALUE) {
                 throw new IllegalArgumentException();
             }
         }
     }
 
     @Override
-    public IrIntExpr getLength() {
-        return length;
+    public IrDomain getLengthDomain() {
+        return lengthDomain;
     }
 
     @Override
-    public IrIntExpr[] getChars() {
-        return chars;
+    public IrDomain[] getCharDomains() {
+        return charDomains;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof IrAbstractString) {
             IrAbstractString other = (IrAbstractString) obj;
-            return length.equals(other.length) && Arrays.equals(chars, other.chars);
+            return lengthDomain.equals(other.lengthDomain) && Arrays.equals(charDomains, other.charDomains);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return length.hashCode() ^ Arrays.hashCode(chars);
+        return lengthDomain.hashCode() ^ Arrays.hashCode(charDomains);
     }
 }

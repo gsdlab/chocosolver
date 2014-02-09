@@ -222,7 +222,7 @@ public class ArithmeticTest {
             for (InstanceClafer ai : solver.instance().getTopClafers(a)) {
                 int sum = 0;
                 for (InstanceClafer bi : ai.getChildren(b)) {
-                    sum += bi.getRef().getValue();
+                    sum += (int) bi.getRef().getValue();
                 }
                 for (InstanceClafer ti : ai.getChildren(total)) {
                     assertEquals(sum, ti.getRef().getValue());

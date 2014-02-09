@@ -83,6 +83,11 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     }
 
     @Override
+    public B visit(IrStringCompare ir, A a) {
+        return null;
+    }
+
+    @Override
     public B visit(IrMember ir, A a) {
         return null;
     }

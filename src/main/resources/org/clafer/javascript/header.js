@@ -3,6 +3,8 @@ importClass(Packages.org.clafer.ast.Asts);
 var scope = rc.setScope.bind(rc);
 var defaultScope = rc.setDefaultScope.bind(rc);
 var intRange = rc.setIntRange.bind(rc);
+var stringLength = rc.setStringLength.bind(rc);
+var charRange = rc.setCharRange.bind(rc);
 var Clafer = rc.getModel().addChild.bind(rc.getModel());
 var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript engine versions has "abstract" as a keyword.
 var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
