@@ -168,6 +168,14 @@ public class IrUtil {
         return ints;
     }
 
+    public static int maxLength(IrStringExpr... strings) {
+        int maxLength = 0;
+        for (IrStringExpr string : strings) {
+            maxLength = Math.max(maxLength, string.getCharDomains().length);
+        }
+        return maxLength;
+    }
+
     public static boolean containsAll(int[] values, IrDomain domain) {
         for (int value : values) {
             if (!domain.contains(value)) {

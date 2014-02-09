@@ -404,6 +404,15 @@ public abstract class IrTraverser<T>
 
     @Override
     public IrStringExpr visit(IrConcat ir, T a) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        traverse(ir.getLeft(), a);
+        traverse(ir.getRight(), a);
+        return ir;
+    }
+
+    @Override
+    public IrStringExpr visit(IrElementString ir, T a) {
+        traverse(ir.getArray(), a);
+        traverse(ir.getIndex(), a);
+        return ir;
     }
 }

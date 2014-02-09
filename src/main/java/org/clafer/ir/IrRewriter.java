@@ -578,6 +578,19 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrStringExpr visit(IrConcat ir, T a) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        IrStringExpr left = rewrite(ir.getLeft(), a);
+        IrStringExpr right = rewrite(ir.getRight(), a);
+        return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
+                ? concat(left, right)
+                : ir;
+    }
+
+    @Override
+    public IrStringExpr visit(IrElementString ir, T a) {
+        IrStringExpr[] array = rewrite(ir.getArray(), a);
+        IrIntExpr index = rewrite(ir.getIndex(), a);
+        return changed(ir.getArray(), array) || changed(ir.getIndex(), index)
+                ? element(array, index)
+                : ir;
     }
 }

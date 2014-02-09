@@ -8,18 +8,19 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrElement extends IrAbstractInt {
+public class IrElementString extends IrAbstractString {
 
-    private final IrIntExpr[] array;
+    private final IrStringExpr[] array;
     private final IrIntExpr index;
 
-    IrElement(IrIntExpr[] array, IrIntExpr index, IrDomain domain) {
-        super(domain);
+    IrElementString(IrStringExpr[] array, IrIntExpr index,
+            IrDomain lengthDomain, IrDomain[] charDomains) {
+        super(lengthDomain, charDomains);
         this.array = Check.noNullsNotEmpty(array);
         this.index = Check.notNull(index);
     }
 
-    public IrIntExpr[] getArray() {
+    public IrStringExpr[] getArray() {
         return array;
     }
 
@@ -28,14 +29,14 @@ public class IrElement extends IrAbstractInt {
     }
 
     @Override
-    public <A, B> B accept(IrIntExprVisitor<A, B> visitor, A a) {
+    public <A, B> B accept(IrStringExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrElement) {
-            IrElement other = (IrElement) obj;
+        if (obj instanceof IrElementString) {
+            IrElementString other = (IrElementString) obj;
             return Arrays.equals(array, other.array) && index.equals(other.index);
         }
         return false;

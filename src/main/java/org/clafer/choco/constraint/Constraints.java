@@ -32,12 +32,14 @@ import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
+import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.binary.PropEqualXY_C;
 import solver.constraints.binary.PropEqualX_Y;
 import solver.constraints.binary.PropEqualX_YC;
 import solver.constraints.binary.PropGreaterOrEqualX_Y;
+import solver.constraints.nary.element.PropElementV_fast;
 import solver.constraints.nary.sum.PropSumEq;
 import solver.constraints.set.PropIntersection;
 import solver.constraints.set.PropSubsetEq;
@@ -790,5 +792,39 @@ public class Constraints {
             IntVar length1, IntVar[] chars1,
             IntVar length2, IntVar[] chars2) {
         return equal(length1, chars1, length2, chars2).getOpposite();
+    }
+
+    private static IntVar[] charsAt(IntVar[][] strings, int index) {
+        Solver solver = strings[0][0].getSolver();
+        IntVar[] charsAt = new IntVar[strings.length];
+        for (int i = 0; i < charsAt.length; i++) {
+            charsAt[i] = index < strings[i].length
+                    ? strings[i][index] : solver.ZERO;
+        }
+        return charsAt;
+    }
+
+    /**
+     * TODO STRING
+     */
+    public static Constraint element(IntVar index,
+            IntVar[][] array, IntVar[] arrayLengths,
+            IntVar[] value, IntVar valueLength) {
+        if (array.length != arrayLengths.length) {
+            throw new IllegalArgumentException();
+        }
+        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        // See ICF.element(value, table, index, offset);
+        // TODO: Needs to add the same propagator twice because the implementation
+        // is not guaranteed to be idempotent. If it ever becomes idempotent, then
+        // follow their implementation.
+        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
+        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
+        for (int i = 0; i < value.length; i++) {
+            IntVar[] charsAt = charsAt(array, i);
+            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
+            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
+        }
+        return new Constraint("Element", propagators.toArray(new Propagator[propagators.size()]));
     }
 }

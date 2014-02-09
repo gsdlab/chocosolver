@@ -32,6 +32,7 @@ import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrElement;
+import org.clafer.ir.IrElementString;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIfOnlyIf;
@@ -277,6 +278,16 @@ public class IrCompiler {
         return new CSet(set, card);
     }
 
+    private CString cstring(String name, IrDomain length, IrDomain[] chars) {
+        IntVar $length = intVar(name + "@Length", length);
+        IntVar[] $chars = new IntVar[chars.length];
+        for (int i = 0; i < $chars.length; i++) {
+            $chars[i] = intVar(name + "[" + i + "]", chars[i]);
+        }
+        post(Constraints.length($length, $chars));
+        return new CString($length, $chars);
+    }
+
     private IntVar setCardVar(SetVar set, IrDomain card) {
         IntVar setCardVar = cachedSetCardVars.get(set);
         if (setCardVar == null) {
@@ -304,6 +315,10 @@ public class IrCompiler {
 
     private CSet numCset(String name, IrDomain env, IrDomain ker, IrDomain card) {
         return cset(name + "#" + varNum++, env, ker, card);
+    }
+
+    private CString numCstring(String name, IrDomain length, IrDomain[] chars) {
+        return cstring(name + "#" + varNum++, length, chars);
     }
 
     private BoolVar getBoolVar(IrBoolVar var) {
@@ -1520,7 +1535,7 @@ public class IrCompiler {
     private IrStringExprVisitor<CString, Object> stringExprCompiler = new IrStringExprVisitor<CString, Object>() {
 
         @Override
-        public Object visit(IrStringVar ir, CString a) {
+        public Object visit(IrStringVar ir, CString reify) {
             IntVar length = compile(ir.getLength());
             IntVar[] chars = compile(ir.getChars());
             post(Constraints.length(length, chars));
@@ -1528,8 +1543,26 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrConcat ir, CString a) {
+        public Object visit(IrConcat ir, CString reify) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Object visit(IrElementString ir, CString reify) {
+            if (reify == null) {
+                CString element = numCstring("ElementString", ir.getLengthDomain(), ir.getCharDomains());
+                IntVar index = compile(ir.getIndex());
+                CString[] array = compile(ir.getArray());
+                post(Constraints.element(index,
+                        mapChars(array), mapLength(array),
+                        element.getChars(), element.getLength()));
+                return element;
+            }
+            IntVar index = compile(ir.getIndex());
+            CString[] array = compile(ir.getArray());
+            return Constraints.element(index,
+                    mapChars(array), mapLength(array),
+                    reify.getChars(), reify.getLength());
         }
     };
 
@@ -1938,5 +1971,21 @@ public class IrCompiler {
         IntVar[] getChars() {
             return chars;
         }
+    }
+
+    private static IntVar[] mapLength(CString[] strings) {
+        IntVar[] vars = new IntVar[strings.length];
+        for (int i = 0; i < strings.length; i++) {
+            vars[i] = strings[i].getLength();
+        }
+        return vars;
+    }
+
+    private static IntVar[][] mapChars(CString[] strings) {
+        IntVar[][] vars = new IntVar[strings.length][];
+        for (int i = 0; i < strings.length; i++) {
+            vars[i] = strings[i].getChars();
+        }
+        return vars;
     }
 }

@@ -1293,6 +1293,7 @@ public class Irs {
             int val = iter.next();
             if (val < $array.length) {
                 domain = $array[val].getDomain();
+                // TODO Use IrUtil.union
                 low = Math.min(low, domain.getLowBound());
                 high = Math.max(high, domain.getHighBound());
             }
@@ -1835,6 +1836,44 @@ public class Irs {
 
     public static IrStringVar string(String name, IrIntVar length, IrIntVar[] chars) {
         return new IrStringVar(name, length, chars);
+    }
+
+    public static IrStringExpr element(IrStringExpr[] array, IrIntExpr index) {
+        IrStringExpr[] $array = index.getDomain().getHighBound() + 1 < array.length
+                ? Arrays.copyOf(array, index.getDomain().getHighBound() + 1)
+                : array.clone();
+        for (int i = 0; i < $array.length; i++) {
+            if (!index.getDomain().contains(i)) {
+                $array[i] = EmptyString;
+            }
+        }
+
+        Integer constant = IrUtil.getConstant(index);
+        if (constant != null) {
+            return $array[constant.intValue()];
+        }
+        TIntIterator iter = index.getDomain().iterator();
+        assert iter.hasNext();
+
+        IrDomain length = EmptyDomain;
+        IrDomain[] chars = new IrDomain[IrUtil.maxLength($array)];
+        Arrays.fill(chars, EmptyDomain);
+        while (iter.hasNext()) {
+            int val = iter.next();
+            if (val < $array.length) {
+                IrStringExpr string = $array[iter.next()];
+                length = IrUtil.union(length, string.getLengthDomain());
+                for (int i = 0; i < string.getCharDomains().length; i++) {
+                    chars[i] = IrUtil.union(chars[i], string.getCharDomains()[i]);
+                }
+            }
+        }
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i].isEmpty()) {
+                chars[i] = ZeroDomain;
+            }
+        }
+        return new IrElementString($array, index, length, chars);
     }
 
     public static IrStringExpr concat(IrStringExpr left, IrStringExpr right) {

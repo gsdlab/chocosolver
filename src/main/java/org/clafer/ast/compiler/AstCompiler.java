@@ -52,6 +52,7 @@ import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
+import org.clafer.ast.JoinSetWithStringException;
 import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.Analyzer;
@@ -85,6 +86,7 @@ import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringExpr;
 import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrTraverser;
 import org.clafer.ir.IrUtil;
@@ -902,7 +904,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstStringConstant ast, Void a) {
-            throw new UnsupportedOperationException();
+            return constant(ast.getValue());
         }
 
         @Override
@@ -975,14 +977,23 @@ public class AstCompiler {
                 $deref = compile(deref);
             }
 
+            AstRef ref = derefType.getRef();
             if ($deref instanceof IrIntExpr) {
                 IrIntExpr $intDeref = (IrIntExpr) $deref;
-                // Why zero? The "take" var can contain unused.
-                return element(Util.snoc(refPointers.get(derefType.getRef()), Zero), $intDeref);
+                if (ref.getTargetType() instanceof AstStringClafer) {
+                    // Why empty string? The "take" var can contain unused.
+                    return element(Util.snoc(refStrings.get(ref), EmptyString), $intDeref);
+                } else {
+                    // Why zero? The "take" var can contain unused.
+                    return element(Util.snoc(refPointers.get(ref), Zero), $intDeref);
+                }
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
+                if (ref.getTargetType() instanceof AstStringClafer) {
+                    throw new JoinSetWithStringException(ast, $setDeref.getCard());
+                }
                 // Why zero? The "take" var can contain unused.
-                return joinFunction($setDeref, Util.snoc(refPointers.get(derefType.getRef()), Zero), globalCardinality);
+                return joinFunction($setDeref, Util.snoc(refPointers.get(ref), Zero), globalCardinality);
             }
             throw new AstException();
         }
@@ -1012,14 +1023,24 @@ public class AstCompiler {
             IrExpr right = compile(ast.getRight());
 
             if (left instanceof IrIntExpr && right instanceof IrIntExpr) {
-                IrIntExpr $intLeft = (IrIntExpr) left;
-                IrIntExpr $intRight = (IrIntExpr) right;
-
+                IrIntExpr intLeft = (IrIntExpr) left;
+                IrIntExpr intRight = (IrIntExpr) right;
                 switch (ast.getOp()) {
                     case Equal:
-                        return equal($intLeft, $intRight);
+                        return equal(intLeft, intRight);
                     case NotEqual:
-                        return notEqual($intLeft, $intRight);
+                        return notEqual(intLeft, intRight);
+                }
+            }
+
+            if (left instanceof IrStringExpr && right instanceof IrStringExpr) {
+                IrStringExpr stringLeft = (IrStringExpr) left;
+                IrStringExpr stringRight = (IrStringExpr) right;
+                switch (ast.getOp()) {
+                    case Equal:
+                        return equal(stringLeft, stringRight);
+                    case NotEqual:
+                        return notEqual(stringLeft, stringRight);
                 }
             }
 
