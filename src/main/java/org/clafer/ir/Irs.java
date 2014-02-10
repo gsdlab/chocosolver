@@ -1838,6 +1838,15 @@ public class Irs {
         return new IrStringVar(name, length, chars);
     }
 
+    public static IrStringVar string(String name, int length, IrDomain charDomain) {
+        IrDomain domain = IrUtil.add(charDomain, 0);
+        IrIntVar[] chars = new IrIntVar[length];
+        for (int i = 0; i < length; i++) {
+            chars[i] = domainInt(name + "[" + i + "]", domain);
+        }
+        return new IrStringVar(name, boundInt("|" + name + "|", 0, length), chars);
+    }
+
     public static IrStringExpr element(IrStringExpr[] array, IrIntExpr index) {
         IrStringExpr[] $array = index.getDomain().getHighBound() + 1 < array.length
                 ? Arrays.copyOf(array, index.getDomain().getHighBound() + 1)
@@ -1898,8 +1907,9 @@ public class Irs {
         }
         for (; i < charDomains.length; i++) {
             int j = i - leftLength.getLowBound();
-            assert j < rightChars.length;
-            charDomains[i] = union(rightChars, 0, 1);
+            int k = i - leftLength.getHighBound();
+            assert k < rightChars.length;
+            charDomains[i] = union(rightChars, k, Math.min(j, rightChars.length));
         }
         return new IrConcat(left, right, leftLength, charDomains);
     }

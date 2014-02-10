@@ -1544,22 +1544,33 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrConcat ir, CString reify) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            CString left = compile(ir.getLeft());
+            CString right = compile(ir.getRight());
+            if (reify == null) {
+                CString concat = numCstring("Concat", ir.getLengthDomain(), ir.getCharDomains());
+                post(Constraints.concat(
+                        left.getChars(), left.getLength(),
+                        right.getChars(), right.getLength(),
+                        concat.getChars(), concat.getLength()));
+                return concat;
+            }
+            return Constraints.concat(
+                    left.getChars(), left.getLength(),
+                    right.getChars(), right.getLength(),
+                    reify.getChars(), reify.getLength());
         }
 
         @Override
         public Object visit(IrElementString ir, CString reify) {
+            IntVar index = compile(ir.getIndex());
+            CString[] array = compile(ir.getArray());
             if (reify == null) {
                 CString element = numCstring("ElementString", ir.getLengthDomain(), ir.getCharDomains());
-                IntVar index = compile(ir.getIndex());
-                CString[] array = compile(ir.getArray());
                 post(Constraints.element(index,
                         mapChars(array), mapLength(array),
                         element.getChars(), element.getLength()));
                 return element;
             }
-            IntVar index = compile(ir.getIndex());
-            CString[] array = compile(ir.getArray());
             return Constraints.element(index,
                     mapChars(array), mapLength(array),
                     reify.getChars(), reify.getLength());

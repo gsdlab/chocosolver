@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
+import java.util.Arrays;
 import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
@@ -117,5 +118,10 @@ public class PropLength extends Propagator<IntVar> {
             }
         }
         return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return "length(" + length + ", " + Arrays.toString(chars) + ")";
     }
 }

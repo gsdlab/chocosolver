@@ -58,4 +58,6 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstLocal ast, A a);
 
     public B visit(AstQuantify ast, A a);
+
+    public B visit(AstConcat ast, A a);
 }

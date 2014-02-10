@@ -338,4 +338,8 @@ public class Asts {
     public static AstBoolExpr some(AstDecl decl, AstBoolExpr body) {
         return quantify(Quantifier.Some, decl, body);
     }
+
+    public static AstSetExpr concat(AstSetExpr left, AstSetExpr right) {
+        return new AstConcat(left, right);
+    }
 }

@@ -3,21 +3,23 @@ package org.clafer;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import org.clafer.choco.constraint.Constraints;
 import org.clafer.choco.constraint.RandomSetSearchStrategy;
 import static org.clafer.ir.IrBoolDomain.*;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.set.SCF;
-import solver.propagation.PropagationEngineFactory;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.BoolVar;
@@ -158,6 +160,13 @@ public abstract class ClaferTest {
         return randSets(n, 0, 5);
     }
 
+    public IrStringVar randString() {
+        String name = "String" + varCount++;
+        return string(name,
+                boundInt("|" + name + "|", 0, 5),
+                randInts(5, 'a', 'c'));
+    }
+
     public IntVar cardVar(SetVar set, int low, int high) {
         return VF.enumerated("|" + set.getName() + "|", low, high, set.getSolver());
     }
@@ -276,6 +285,13 @@ public abstract class ClaferTest {
         return sets;
     }
 
+    public static CStringVar toCStringVar(IrStringVar var, Solver solver) {
+        IntVar length = toIntVar(var.getLength(), solver);
+        IntVar[] chars = toIntVars(var.getChars(), solver);
+        solver.post(Constraints.length(length, chars));
+        return new CStringVar(length, chars);
+    }
+
     public ESat isEntailed(Constraint constraint) {
         boolean undefined = false;
         for (Propagator propagator : constraint.getPropagators()) {
@@ -304,13 +320,13 @@ public abstract class ClaferTest {
         if (rand.nextBoolean()) {
             solver.set(
                     new StrategiesSequencer(solver.getEnvironment(),
-                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
-                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
+                            new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
+                            IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
         } else {
             solver.set(
                     new StrategiesSequencer(solver.getEnvironment(),
-                    IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime()),
-                    new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
+                            IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime()),
+                            new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
         }
         return solver;
     }
@@ -353,5 +369,45 @@ public abstract class ClaferTest {
             cards[i] = vars[i].getCard();
         }
         return cards;
+    }
+
+    public static class CStringVar {
+
+        private final IntVar length;
+        private final IntVar[] chars;
+
+        public CStringVar(IntVar length, IntVar[] chars) {
+            this.length = length;
+            this.chars = chars;
+        }
+
+        public IntVar getLength() {
+            return length;
+        }
+
+        public IntVar[] getChars() {
+            return chars;
+        }
+
+        @Override
+        public String toString() {
+            return "<" + length + ", " + Arrays.toString(chars) + ">";
+        }
+    }
+
+    public IntVar[] mapLength(CStringVar... vars) {
+        IntVar[] lengths = new IntVar[vars.length];
+        for (int i = 0; i < vars.length; i++) {
+            lengths[i] = vars[i].getLength();
+        }
+        return lengths;
+    }
+
+    public IntVar[][] mapChars(CStringVar... vars) {
+        IntVar[][] chars = new IntVar[vars.length][];
+        for (int i = 0; i < vars.length; i++) {
+            chars[i] = vars[i].getChars();
+        }
+        return chars;
     }
 }

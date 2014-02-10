@@ -1,6 +1,7 @@
 package org.clafer.choco.constraint;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
@@ -20,6 +21,7 @@ import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropMask;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
+import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
@@ -128,6 +130,9 @@ public class Constraints {
                 }
             // fallthrough
             default:
+                if (constant == 0) {
+                    return new PropSumEq(filtered, sum);
+                }
                 return new PropSumEq(Util.cons(VF.fixed(constant, sum.getSolver()), filtered), sum);
         }
     }
@@ -826,5 +831,47 @@ public class Constraints {
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
         }
         return new Constraint("Element", propagators.toArray(new Propagator[propagators.size()]));
+    }
+
+    /**
+     * TODO STRING
+     */
+    public static Constraint samePrefix(IntVar length, IntVar[] string1, IntVar[] string2) {
+        return new Constraint("SamePrefix", new PropSamePrefix(length, string1, string2));
+    }
+
+    private static IntVar[] pad(IntVar[] vars, int length) {
+        if (length == vars.length) {
+            return vars;
+        }
+        if (length < vars.length) {
+            return Arrays.copyOf(vars, length);
+        }
+        Solver solver = vars[0].getSolver();
+        IntVar[] pad = Arrays.copyOf(vars, length);
+        Arrays.fill(pad, vars.length, pad.length, solver.ZERO);
+        return pad;
+    }
+
+    /**
+     * TODO STRING
+     */
+    public static Constraint concat(
+            IntVar[] left, IntVar leftLength,
+            IntVar[] right, IntVar rightLength,
+            IntVar[] concat, IntVar concatLength) {
+        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        propagators.add(sumEq(new IntVar[]{leftLength, rightLength}, concatLength));
+        propagators.add(new PropSamePrefix(leftLength, left, concat));
+        for (int i = 0; i < right.length; i++) {
+            IntVar[] pad = pad(concat, left.length + i + 1);
+            // See ICF.element(value, table, index, offset);
+            // TODO: Needs to add the same propagator twice because the implementation
+            // is not guaranteed to be idempotent. If it ever becomes idempotent, then
+            // follow their implementation.
+            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i, true));
+            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i, true));
+        }
+        return new Constraint("Concat", propagators.toArray(new Propagator[propagators.size()]));
     }
 }

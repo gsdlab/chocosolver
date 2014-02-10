@@ -139,4 +139,28 @@ public class StringTest {
         ClaferCompiler.compile(model, Scope.setScope(a, 1)
                 .stringLength(5).charLow('a').charHigh('c'));
     }
+
+    /**
+     * <pre>
+     * A -> string
+     * B -> string
+     *     [ this.ref = "abc" ]
+     * C -> string
+     *     [ this.ref = A.ref ++ B.ref ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testConcat() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("C").refToUnique(StringType).withCard(Mandatory);
+        b.addConstraint(equal(joinRef($this()), constant("abc")));
+        c.addConstraint(equal(joinRef($this()), concat(joinRef(global(a)), joinRef(global(b)))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
+                .stringLength(5).charLow('a').charHigh('c'));
+        assertEquals(13, solver.allInstances().length);
+    }
 }

@@ -12,6 +12,7 @@ import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
+import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
@@ -54,7 +55,6 @@ import org.clafer.objective.Objective;
  * Type checks and creates explicit upcast nodes in the AST. When the
  * expressions are rewritten, the types need to be reanalyzed.
  * </p>
- * <p>
  * <pre>
  * abstract A
  *     a
@@ -65,7 +65,6 @@ import org.clafer.objective.Objective;
  * D : B
  *     d
  * </pre>
- * </p>
  * <p>
  * A lowest common supertype in this solver directly corresponds to how the
  * expression is stored as a set. For example, suppose there is an expression
@@ -333,7 +332,7 @@ public class TypeAnalyzer implements Analyzer {
                 if (!(operand.getCommonSupertype() instanceof AstIntClafer)) {
                     throw new TypeException("Cannot "
                             + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
-                            getTypes(operands)));
+                                    getTypes(operands)));
                 }
             }
             return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
@@ -377,7 +376,6 @@ public class TypeAnalyzer implements Analyzer {
             unionType.addAll(right.getUnionType());
 
             // TODO: check for primitives
-
             Type type = new Type(left.getUnionType(), AstUtil.getLowestCommonSupertype(unionType));
 
             return put(type, diff(
@@ -397,7 +395,6 @@ public class TypeAnalyzer implements Analyzer {
             Set<AstClafer> intersectionType = intersectionType(left.getType(), right.getType());
 
             // TODO: check for primitives
-
             Type type = new Type(intersectionType, AstUtil.getLowestCommonSupertype(unionType));
 
             return put(type, inter(
@@ -415,7 +412,6 @@ public class TypeAnalyzer implements Analyzer {
             unionType.addAll(right.getUnionType());
 
             // TODO: check for primitives
-
             Type type = new Type(unionType);
 
             if (type.getCommonSuperType() == null) {
@@ -505,6 +501,17 @@ public class TypeAnalyzer implements Analyzer {
             }
             TypedExpr<AstBoolExpr> body = typeCheck(ast.getBody());
             return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstConcat ast, Void a) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (left.getCommonSupertype() instanceof AstStringClafer
+                    && right.getCommonSupertype() instanceof AstStringClafer) {
+                return put(StringType, concat(left.getExpr(), right.getExpr()));
+            }
+            throw new TypeException("Cannot " + left.getType() + " ++ " + right.getType());
         }
     }
 

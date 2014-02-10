@@ -17,6 +17,7 @@ import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
+import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
@@ -876,6 +877,22 @@ public class AstCompiler {
             return sets;
         }
 
+        private IrStringExpr asString(IrExpr expr) {
+            if (expr instanceof IrStringExpr) {
+                return ((IrStringExpr) expr);
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
+
+        private IrStringExpr[] asString(IrExpr[] exprs) {
+            IrStringExpr[] strings = new IrStringExpr[exprs.length];
+            for (int i = 0; i < strings.length; i++) {
+                strings[i] = asString(exprs[i]);
+            }
+            return strings;
+        }
+
         @Override
         public IrExpr visit(AstThis ast, Void a) {
             return constant(thisId);
@@ -1357,6 +1374,12 @@ public class AstCompiler {
                     throw new AstException();
 
             }
+        }
+
+        @Override
+        public IrExpr visit(AstConcat ast, Void a) {
+            return concat(asString(compile(ast.getLeft())),
+                    asString(compile(ast.getRight())));
         }
     };
 

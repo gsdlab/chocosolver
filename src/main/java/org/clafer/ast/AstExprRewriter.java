@@ -166,4 +166,9 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
         }
         return quantify(ast.getQuantifier(), decls, rewrite(ast.getBody(), a));
     }
+
+    @Override
+    public AstExpr visit(AstConcat ast, T a) {
+        return concat(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+    }
 }
