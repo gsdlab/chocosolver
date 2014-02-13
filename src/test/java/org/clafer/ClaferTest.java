@@ -163,8 +163,8 @@ public abstract class ClaferTest {
     public IrStringVar randString() {
         String name = "String" + varCount++;
         return string(name,
-                boundInt("|" + name + "|", 0, 5),
-                randInts(5, 'a', 'c'));
+                randInts(5, 'a', 'c'),
+                boundInt("|" + name + "|", 0, 5));
     }
 
     public IntVar cardVar(SetVar set, int low, int high) {
@@ -286,10 +286,10 @@ public abstract class ClaferTest {
     }
 
     public static CStringVar toCStringVar(IrStringVar var, Solver solver) {
-        IntVar length = toIntVar(var.getLength(), solver);
         IntVar[] chars = toIntVars(var.getChars(), solver);
-        solver.post(Constraints.length(length, chars));
-        return new CStringVar(length, chars);
+        IntVar length = toIntVar(var.getLength(), solver);
+        solver.post(Constraints.length(chars, length));
+        return new CStringVar(chars, length);
     }
 
     public ESat isEntailed(Constraint constraint) {
@@ -373,25 +373,25 @@ public abstract class ClaferTest {
 
     public static class CStringVar {
 
-        private final IntVar length;
         private final IntVar[] chars;
+        private final IntVar length;
 
-        public CStringVar(IntVar length, IntVar[] chars) {
-            this.length = length;
+        public CStringVar(IntVar[] chars, IntVar length) {
             this.chars = chars;
-        }
-
-        public IntVar getLength() {
-            return length;
+            this.length = length;
         }
 
         public IntVar[] getChars() {
             return chars;
         }
 
+        public IntVar getLength() {
+            return length;
+        }
+
         @Override
         public String toString() {
-            return "<" + length + ", " + Arrays.toString(chars) + ">";
+            return "<" + Arrays.toString(chars) + ", " + length + ">";
         }
     }
 

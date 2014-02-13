@@ -62,11 +62,11 @@ public class ConcatTest extends ConstraintTest<Triple<IntVar[], IntVar[], IntVar
             @Override
             public Pair<Constraint, Triple<IntVar[], IntVar[], IntVar[]>> setup(Solver solver) {
                 CStringVar left = toCStringVar(Irs.string("left",
-                        3, Irs.boundDomain('a', 'b')), solver);
+                        Irs.boundDomain('a', 'b'), 3), solver);
                 CStringVar right = toCStringVar(Irs.string("right",
-                        3, Irs.boundDomain('a', 'b')), solver);
+                        Irs.boundDomain('a', 'b'), 3), solver);
                 CStringVar concat = toCStringVar(Irs.string("concat",
-                        3, Irs.boundDomain('a', 'b')), solver);
+                        Irs.boundDomain('a', 'b'),3), solver);
                 Constraint constraint = Constraints.concat(
                         left.getChars(), left.getLength(),
                         right.getChars(), right.getLength(),

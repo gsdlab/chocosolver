@@ -56,8 +56,8 @@ public class PrefixTest extends ConstraintTest<Pair<IntVar[], IntVar[]>> {
             @NegativeSolutions(1458)
             @Override
             public Pair<Constraint, Pair<IntVar[], IntVar[]>> setup(Solver solver) {
-                CStringVar prefix = toCStringVar(string("prefix", 3, boundDomain(0, 3)), solver);
-                CStringVar word = toCStringVar(string("prefix", 3, boundDomain(0, 3)), solver);
+                CStringVar prefix = toCStringVar(string("prefix", boundDomain(0, 3), 3), solver);
+                CStringVar word = toCStringVar(string("prefix", boundDomain(0, 3), 3), solver);
                 Constraint constraint = Constraints.prefix(
                         prefix.getChars(), prefix.getLength(),
                         word.getChars(), word.getLength());

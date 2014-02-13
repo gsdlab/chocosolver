@@ -15,13 +15,14 @@ import util.ESat;
  */
 public class PropLength extends Propagator<IntVar> {
 
-    private final IntVar length;
     private final IntVar[] chars;
 
-    public PropLength(IntVar length, IntVar[] chars) {
+    private final IntVar length;
+
+    public PropLength(IntVar[] chars, IntVar length) {
         super(Util.cons(length, chars), PropagatorPriority.LINEAR, true);
-        this.length = length;
         this.chars = chars;
+        this.length = length;
     }
 
     private boolean isLengthVar(int idx) {
@@ -122,6 +123,6 @@ public class PropLength extends Propagator<IntVar> {
 
     @Override
     public String toString() {
-        return "length(" + length + ", " + Arrays.toString(chars) + ")";
+        return "length(" + Arrays.toString(chars) + ", " + length + ")";
     }
 }

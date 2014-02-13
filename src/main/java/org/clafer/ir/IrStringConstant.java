@@ -9,7 +9,7 @@ public class IrStringConstant extends IrStringVar implements IrConstant {
     private final String value;
 
     IrStringConstant(String value) {
-        super(value, Irs.constant(value.length()), constants(value.toCharArray()));
+        super(value, constants(value.toCharArray()), Irs.constant(value.length()));
         this.value = value;
     }
 

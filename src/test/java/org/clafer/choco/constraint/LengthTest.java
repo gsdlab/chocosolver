@@ -32,9 +32,9 @@ public class LengthTest extends ConstraintTest<Pair<IntVar, IntVar[]>> {
         randomizedTest(new TestCase<Pair<IntVar, IntVar[]>>() {
             @Override
             public Pair<Constraint, Pair<IntVar, IntVar[]>> setup(Solver solver) {
-                IntVar length = toIntVar(randPositiveInt(), solver);
                 IntVar[] chars = toIntVars(randPositiveInts(3), solver);
-                Constraint constraint = Constraints.length(length, chars);
+                IntVar length = toIntVar(randPositiveInt(), solver);
+                Constraint constraint = Constraints.length(chars, length);
                 return pair(constraint, pair(length, chars));
             }
         });
@@ -53,9 +53,9 @@ public class LengthTest extends ConstraintTest<Pair<IntVar, IntVar[]>> {
             @NegativeSolutions(415)
             @Override
             public Pair<Constraint, Pair<IntVar, IntVar[]>> setup(Solver solver) {
-                IntVar length = VF.enumerated("length", 0, 3, solver);
                 IntVar[] chars = VF.enumeratedArray("char", 3, 0, 4, solver);
-                Constraint constraint = Constraints.length(length, chars);
+                IntVar length = VF.enumerated("length", 0, 3, solver);
+                Constraint constraint = Constraints.length(chars, length);
                 return pair(constraint, pair(length, chars));
             }
         });

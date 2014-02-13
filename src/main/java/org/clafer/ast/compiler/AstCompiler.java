@@ -1525,8 +1525,8 @@ public class AstCompiler {
             for (int j = 0; j < chars.length; j++) {
                 chars[j] = domainInt(src.getName() + "@String" + i + "[" + j + "]", charDomain);
             }
-            svs[i] = string(src.getName(),
-                    boundInt(src.getName() + "@Length" + i, 0, stringLength), chars);
+            svs[i] = string(src.getName(), chars,
+                    boundInt(src.getName() + "@Length" + i, 0, stringLength));
         }
 
         return svs;

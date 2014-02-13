@@ -14,8 +14,8 @@ public class IrElementString extends IrAbstractString {
     private final IrIntExpr index;
 
     IrElementString(IrStringExpr[] array, IrIntExpr index,
-            IrDomain lengthDomain, IrDomain[] charDomains) {
-        super(lengthDomain, charDomains);
+            IrDomain[] charDomains, IrDomain lengthDomain) {
+        super(charDomains, lengthDomain);
         this.array = Check.noNullsNotEmpty(array);
         this.index = Check.notNull(index);
     }

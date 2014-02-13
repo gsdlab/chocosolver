@@ -280,14 +280,14 @@ public class IrCompiler {
         return new CSet(set, card);
     }
 
-    private CString cstring(String name, IrDomain length, IrDomain[] chars) {
-        IntVar $length = intVar(name + "@Length", length);
+    private CString cstring(String name, IrDomain[] chars, IrDomain length) {
         IntVar[] $chars = new IntVar[chars.length];
         for (int i = 0; i < $chars.length; i++) {
             $chars[i] = intVar(name + "[" + i + "]", chars[i]);
         }
-        post(Constraints.length($length, $chars));
-        return new CString($length, $chars);
+        IntVar $length = intVar(name + "@Length", length);
+        post(Constraints.length($chars, $length));
+        return new CString($chars, $length);
     }
 
     private IntVar setCardVar(SetVar set, IrDomain card) {
@@ -319,8 +319,8 @@ public class IrCompiler {
         return cset(name + "#" + varNum++, env, ker, card);
     }
 
-    private CString numCstring(String name, IrDomain length, IrDomain[] chars) {
-        return cstring(name + "#" + varNum++, length, chars);
+    private CString numCstring(String name, IrDomain[] chars, IrDomain length) {
+        return cstring(name + "#" + varNum++, chars, length);
     }
 
     private BoolVar getBoolVar(IrBoolVar var) {
@@ -958,12 +958,12 @@ public class IrCompiler {
             switch (ir.getOp()) {
                 case Equal:
                     return Constraints.equal(
-                            string1.getLength(), string1.getChars(),
-                            string2.getLength(), string2.getChars());
+                            string1.getChars(), string1.getLength(),
+                            string2.getChars(), string2.getLength());
                 case NotEqual:
                     return Constraints.notEqual(
-                            string1.getLength(), string1.getChars(),
-                            string2.getLength(), string2.getChars());
+                            string1.getChars(), string1.getLength(),
+                            string2.getChars(), string2.getLength());
                 default:
                     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
@@ -1568,8 +1568,8 @@ public class IrCompiler {
         public Object visit(IrStringVar ir, CString reify) {
             IntVar length = compile(ir.getLength());
             IntVar[] chars = compile(ir.getChars());
-            post(Constraints.length(length, chars));
-            return new CString(length, chars);
+            post(Constraints.length(chars, length));
+            return new CString(chars, length);
         }
 
         @Override
@@ -1577,7 +1577,7 @@ public class IrCompiler {
             CString left = compile(ir.getLeft());
             CString right = compile(ir.getRight());
             if (reify == null) {
-                CString concat = numCstring("Concat", ir.getLengthDomain(), ir.getCharDomains());
+                CString concat = numCstring("Concat", ir.getCharDomains(), ir.getLengthDomain());
                 post(Constraints.concat(
                         left.getChars(), left.getLength(),
                         right.getChars(), right.getLength(),
@@ -1595,7 +1595,7 @@ public class IrCompiler {
             IntVar index = compile(ir.getIndex());
             CString[] array = compile(ir.getArray());
             if (reify == null) {
-                CString element = numCstring("ElementString", ir.getLengthDomain(), ir.getCharDomains());
+                CString element = numCstring("ElementString", ir.getCharDomains(), ir.getLengthDomain());
                 post(Constraints.element(index,
                         mapChars(array), mapLength(array),
                         element.getChars(), element.getLength()));
@@ -1997,35 +1997,35 @@ public class IrCompiler {
 
     private class CString {
 
-        private final IntVar length;
         private final IntVar[] chars;
+        private final IntVar length;
 
-        CString(IntVar length, IntVar[] chars) {
-            this.length = length;
+        CString(IntVar[] chars, IntVar length) {
             this.chars = chars;
-        }
-
-        IntVar getLength() {
-            return length;
+            this.length = length;
         }
 
         IntVar[] getChars() {
             return chars;
         }
-    }
 
-    private static IntVar[] mapLength(CString[] strings) {
-        IntVar[] vars = new IntVar[strings.length];
-        for (int i = 0; i < strings.length; i++) {
-            vars[i] = strings[i].getLength();
+        IntVar getLength() {
+            return length;
         }
-        return vars;
     }
 
     private static IntVar[][] mapChars(CString[] strings) {
         IntVar[][] vars = new IntVar[strings.length][];
         for (int i = 0; i < strings.length; i++) {
             vars[i] = strings[i].getChars();
+        }
+        return vars;
+    }
+
+    private static IntVar[] mapLength(CString[] strings) {
+        IntVar[] vars = new IntVar[strings.length];
+        for (int i = 0; i < strings.length; i++) {
+            vars[i] = strings[i].getLength();
         }
         return vars;
     }

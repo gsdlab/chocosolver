@@ -9,13 +9,21 @@ import org.clafer.common.Check;
  */
 public abstract class IrAbstractString implements IrStringExpr {
 
-    private final IrDomain lengthDomain;
     private final IrDomain[] charDomains;
+    private final IrDomain lengthDomain;
 
-    IrAbstractString(IrDomain lengthDomain, IrDomain[] charDomains) {
-        this.lengthDomain = Check.notNull(lengthDomain);
+    IrAbstractString(IrDomain[] charDomains, IrDomain lengthDomain) {
         this.charDomains = Check.noNulls(charDomains);
+        this.lengthDomain = Check.notNull(lengthDomain);
 
+        for (IrDomain c : charDomains) {
+            if (c.getLowBound() < Character.MIN_VALUE) {
+                throw new IllegalArgumentException();
+            }
+            if (c.getHighBound() > Character.MAX_VALUE) {
+                throw new IllegalArgumentException();
+            }
+        }
         if (lengthDomain.isEmpty()) {
             throw new IllegalArgumentException();
         }
@@ -25,19 +33,6 @@ public abstract class IrAbstractString implements IrStringExpr {
         if (lengthDomain.getHighBound() > charDomains.length) {
             throw new IllegalArgumentException();
         }
-        for (IrDomain c : charDomains) {
-            if (c.getLowBound() < Character.MIN_VALUE) {
-                throw new IllegalArgumentException();
-            }
-            if (c.getHighBound() > Character.MAX_VALUE) {
-                throw new IllegalArgumentException();
-            }
-        }
-    }
-
-    @Override
-    public IrDomain getLengthDomain() {
-        return lengthDomain;
     }
 
     @Override
@@ -46,16 +41,22 @@ public abstract class IrAbstractString implements IrStringExpr {
     }
 
     @Override
+    public IrDomain getLengthDomain() {
+        return lengthDomain;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof IrAbstractString) {
             IrAbstractString other = (IrAbstractString) obj;
-            return lengthDomain.equals(other.lengthDomain) && Arrays.equals(charDomains, other.charDomains);
+            return Arrays.equals(charDomains, other.charDomains)
+                    && lengthDomain.equals(other.lengthDomain);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return lengthDomain.hashCode() ^ Arrays.hashCode(charDomains);
+        return Arrays.hashCode(charDomains) ^ lengthDomain.hashCode();
     }
 }

@@ -56,8 +56,8 @@ public class SuffixTest extends ConstraintTest<Pair<IntVar[], IntVar[]>> {
             @NegativeSolutions(1458)
             @Override
             public Pair<Constraint, Pair<IntVar[], IntVar[]>> setup(Solver solver) {
-                CStringVar suffix = toCStringVar(string("suffix", 3, boundDomain(0, 3)), solver);
-                CStringVar word = toCStringVar(string("word", 3, boundDomain(0, 3)), solver);
+                CStringVar suffix = toCStringVar(string("suffix", boundDomain(0, 3), 3), solver);
+                CStringVar word = toCStringVar(string("word", boundDomain(0, 3), 3), solver);
                 Constraint constraint = Constraints.suffix(
                         suffix.getChars(), suffix.getLength(),
                         word.getChars(), word.getLength());

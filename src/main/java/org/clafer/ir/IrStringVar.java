@@ -10,14 +10,14 @@ import org.clafer.common.Check;
 public class IrStringVar extends IrAbstractString implements IrVar {
 
     private final String name;
-    private final IrIntVar length;
     private final IrIntVar[] chars;
+    private final IrIntVar length;
 
-    IrStringVar(String name, IrIntVar length, IrIntVar[] chars) {
-        super(Check.notNull(length).getDomain(), getCharDomains(Check.noNulls(chars)));
+    IrStringVar(String name, IrIntVar[] chars, IrIntVar length) {
+        super(getCharDomains(Check.noNulls(chars)), Check.notNull(length).getDomain());
         this.name = Check.notNull(name);
-        this.length = length;
         this.chars = chars;
+        this.length = length;
     }
 
     private static IrDomain[] getCharDomains(IrIntExpr[] chars) {
@@ -33,12 +33,12 @@ public class IrStringVar extends IrAbstractString implements IrVar {
         return name;
     }
 
-    public IrIntVar getLength() {
-        return length;
-    }
-
     public IrIntVar[] getChars() {
         return chars;
+    }
+
+    public IrIntVar getLength() {
+        return length;
     }
 
     @Override

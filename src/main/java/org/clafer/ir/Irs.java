@@ -1847,17 +1847,17 @@ public class Irs {
         return new IrStringConstant(value);
     }
 
-    public static IrStringVar string(String name, IrIntVar length, IrIntVar[] chars) {
-        return new IrStringVar(name, length, chars);
+    public static IrStringVar string(String name, IrIntVar[] chars, IrIntVar length) {
+        return new IrStringVar(name, chars, length);
     }
 
-    public static IrStringVar string(String name, int length, IrDomain charDomain) {
+    public static IrStringVar string(String name, IrDomain charDomain, int length) {
         IrDomain domain = IrUtil.add(charDomain, 0);
         IrIntVar[] chars = new IrIntVar[length];
         for (int i = 0; i < length; i++) {
             chars[i] = domainInt(name + "[" + i + "]", domain);
         }
-        return new IrStringVar(name, boundInt("|" + name + "|", 0, length), chars);
+        return new IrStringVar(name, chars, boundInt("|" + name + "|", 0, length));
     }
 
     public static IrStringExpr element(IrStringExpr[] array, IrIntExpr index) {
@@ -1895,7 +1895,7 @@ public class Irs {
                 chars[i] = ZeroDomain;
             }
         }
-        return new IrElementString($array, index, length, chars);
+        return new IrElementString($array, index, chars, length);
     }
 
     public static IrStringExpr concat(IrStringExpr left, IrStringExpr right) {
@@ -1924,7 +1924,7 @@ public class Irs {
             assert k < rightChars.length;
             charDomains[i] = union(rightChars, k, Math.min(j, rightChars.length));
         }
-        return new IrConcat(left, right, leftLength, charDomains);
+        return new IrConcat(left, right, charDomains, length);
     }
 
     private static IrDomain union(IrDomain[] domains, int start, int end) {

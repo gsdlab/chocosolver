@@ -11,8 +11,8 @@ public class IrConcat extends IrAbstractString {
     private final IrStringExpr left, right;
 
     IrConcat(IrStringExpr left, IrStringExpr right, 
-            IrDomain lengthDomain, IrDomain[] charDomains) {
-        super(lengthDomain, charDomains);
+            IrDomain[] charDomains, IrDomain lengthDomain) {
+        super(charDomains, lengthDomain);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);
     }

@@ -763,16 +763,16 @@ public class Constraints {
     /**
      * TODO STRING
      */
-    public static Constraint length(IntVar length, IntVar[] chars) {
-        return new Constraint("length", new PropLength(length, chars));
+    public static Constraint length(IntVar[] chars, IntVar length) {
+        return new Constraint("length", new PropLength(chars, length));
     }
 
     /**
      * TODO STRING
      */
     public static Constraint equal(
-            IntVar length1, IntVar[] chars1,
-            IntVar length2, IntVar[] chars2) {
+            IntVar[] chars1, IntVar length1,
+            IntVar[] chars2, IntVar length2) {
         List<Maybe<Propagator<IntVar>>> maybePropagators = new ArrayList<>();
         maybePropagators.add(eq(length1, length2));
         for (int i = 0; i < Math.min(chars1.length, chars2.length); i++) {
@@ -796,9 +796,9 @@ public class Constraints {
      * TODO STRING
      */
     public static Constraint notEqual(
-            IntVar length1, IntVar[] chars1,
-            IntVar length2, IntVar[] chars2) {
-        return equal(length1, chars1, length2, chars2).getOpposite();
+            IntVar[] chars1, IntVar length1,
+            IntVar[] chars2, IntVar length2) {
+        return equal(chars1,length1, chars2,length2).getOpposite();
     }
 
     private static IntVar[] charsAt(IntVar[][] strings, int index) {
