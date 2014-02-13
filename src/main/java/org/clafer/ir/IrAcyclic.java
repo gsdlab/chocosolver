@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrAcyclic extends IrAbstractBool implements IrBoolExpr {
+public class IrAcyclic extends IrAbstractBool {
 
     private final IrIntExpr[] edges;
 

@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrUnreachable extends IrAbstractBool implements IrBoolExpr {
+public class IrUnreachable extends IrAbstractBool {
 
     private final IrIntExpr[] edges;
     private final int from, to;

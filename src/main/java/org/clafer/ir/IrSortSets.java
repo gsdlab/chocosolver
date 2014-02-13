@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSortSets extends IrAbstractBool implements IrBoolExpr {
+public class IrSortSets extends IrAbstractBool {
 
     private final IrSetExpr[] sets;
 

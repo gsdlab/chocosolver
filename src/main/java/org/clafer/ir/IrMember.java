@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrMember extends IrAbstractBool implements IrBoolExpr {
+public class IrMember extends IrAbstractBool {
 
     private final IrIntExpr element;
     private final IrSetExpr set;
@@ -49,7 +49,7 @@ public class IrMember extends IrAbstractBool implements IrBoolExpr {
     public boolean equals(Object obj) {
         if (obj instanceof IrMember) {
             IrMember other = (IrMember) obj;
-            return element.equals(other.element) && set.equals(other.set) && super.equals(other);
+            return element.equals(other.element) && set.equals(other.set);
         }
         return false;
     }
@@ -61,6 +61,6 @@ public class IrMember extends IrAbstractBool implements IrBoolExpr {
 
     @Override
     public String toString() {
-        return element + " ∈ " + set;
+        return element + " in " + set;
     }
 }

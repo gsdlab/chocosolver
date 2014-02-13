@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrNotImplies extends IrAbstractBool implements IrBoolExpr {
+public class IrNotImplies extends IrAbstractBool {
 
     private final IrBoolExpr antecedent;
     private final IrBoolExpr consequent;

@@ -8,7 +8,7 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class IrOr extends IrAbstractBool implements IrBoolExpr {
+public class IrOr extends IrAbstractBool {
 
     private final IrBoolExpr[] operands;
 

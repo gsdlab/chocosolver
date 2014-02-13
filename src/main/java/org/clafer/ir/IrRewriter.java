@@ -396,6 +396,26 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrPrefix ir, T a) {
+        IrStringExpr prefix = rewrite(ir.getPrefix(), a);
+        IrStringExpr word = rewrite(ir.getWord(), a);
+        return changed(ir.getPrefix(), prefix)
+                || changed(ir.getWord(), word)
+                ? prefix(prefix, word)
+                : ir;
+    }
+
+    @Override
+    public IrIntExpr visit(IrSuffix ir, T a) {
+        IrStringExpr suffix = rewrite(ir.getSuffix(), a);
+        IrStringExpr word = rewrite(ir.getWord(), a);
+        return changed(ir.getSuffix(), suffix)
+                || changed(ir.getWord(), word)
+                ? suffix(suffix, word)
+                : ir;
+    }
+
+    @Override
     public IrIntVar visit(IrIntVar ir, T a) {
         return ir;
     }

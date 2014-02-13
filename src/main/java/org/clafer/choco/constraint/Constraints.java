@@ -63,6 +63,8 @@ import solver.variables.Variable;
  */
 public class Constraints {
 
+    private static int varNum = 0;
+
     private Constraints() {
     }
 
@@ -836,8 +838,35 @@ public class Constraints {
     /**
      * TODO STRING
      */
-    public static Constraint samePrefix(IntVar length, IntVar[] string1, IntVar[] string2) {
-        return new Constraint("SamePrefix", new PropSamePrefix(length, string1, string2));
+    public static Constraint prefix(
+            IntVar[] prefix, IntVar prefixLength,
+            IntVar[] word, IntVar wordLength) {
+        return new Constraint("Prefix",
+                lessThanEq(prefixLength, wordLength),
+                new PropSamePrefix(prefixLength, prefix, word));
+    }
+
+    public static Constraint suffix(
+            IntVar[] suffix, IntVar suffixLength,
+            IntVar[] word, IntVar wordLength) {
+        Solver solver = suffixLength.getSolver();
+        IntVar prefixLength = VF.enumerated("SuffixVar" + varNum++,
+                Math.min(wordLength.getLB() - suffixLength.getUB(), 0),
+                wordLength.getUB() - suffixLength.getLB(), solver);
+        solver.post(new Constraint("SuffixVarSum",
+                sumEq(new IntVar[]{prefixLength, suffixLength}, wordLength)));
+        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        propagators.add(lessThanEq(suffixLength, wordLength));
+        for (int i = 0; i < suffix.length; i++) {
+            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1);
+            // See ICF.element(value, table, index, offset);
+            // TODO: Needs to add the same propagator twice because the implementation
+            // is not guaranteed to be idempotent. If it ever becomes idempotent, then
+            // follow their implementation.
+            propagators.add(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
+            propagators.add(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
+        }
+        return new Constraint("Suffix", propagators.toArray(new Propagator[propagators.size()]));
     }
 
     private static IntVar[] pad(IntVar[] vars, int length) {

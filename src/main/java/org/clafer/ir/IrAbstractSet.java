@@ -68,7 +68,7 @@ public abstract class IrAbstractSet implements IrSetExpr {
 
     @Override
     public int hashCode() {
-        // Subclasses can choose not to callthis hashCode function since it can
+        // Subclasses can choose not to call this hashCode function since it can
         // be expensive.
         return env.hashCode() ^ ker.hashCode() ^ card.hashCode();
     }

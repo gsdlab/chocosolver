@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrIntChannel extends IrAbstractBool implements IrBoolExpr {
+public class IrIntChannel extends IrAbstractBool {
 
     private final IrIntExpr[] ints;
     private final IrSetExpr[] sets;

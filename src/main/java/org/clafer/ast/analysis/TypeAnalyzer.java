@@ -32,6 +32,7 @@ import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstNot;
+import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
@@ -39,6 +40,7 @@ import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstStringClafer;
 import org.clafer.ast.AstStringConstant;
+import org.clafer.ast.AstSuffix;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
@@ -512,6 +514,28 @@ public class TypeAnalyzer implements Analyzer {
                 return put(StringType, concat(left.getExpr(), right.getExpr()));
             }
             throw new TypeException("Cannot " + left.getType() + " ++ " + right.getType());
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstPrefix ast, Void a) {
+            TypedExpr<AstSetExpr> prefix = typeCheck(ast.getPrefix());
+            TypedExpr<AstSetExpr> word = typeCheck(ast.getWord());
+            if (prefix.getCommonSupertype() instanceof AstStringClafer
+                    && word.getCommonSupertype() instanceof AstStringClafer) {
+                return put(BoolType, prefix(prefix.getExpr(), word.getExpr()));
+            }
+            throw new TypeException("Cannot " + prefix.getType() + " prefix " + word.getType());
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstSuffix ast, Void a) {
+            TypedExpr<AstSetExpr> suffix = typeCheck(ast.getSuffix());
+            TypedExpr<AstSetExpr> word = typeCheck(ast.getWord());
+            if (suffix.getCommonSupertype() instanceof AstStringClafer
+                    && word.getCommonSupertype() instanceof AstStringClafer) {
+                return put(BoolType, suffix(suffix.getExpr(), word.getExpr()));
+            }
+            throw new TypeException("Cannot " + suffix.getType() + " suffix " + word.getType());
         }
     }
 

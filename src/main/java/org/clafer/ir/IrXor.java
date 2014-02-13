@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrXor extends IrAbstractBool implements IrBoolExpr {
+public class IrXor extends IrAbstractBool {
 
     private final IrBoolExpr left, right;
 

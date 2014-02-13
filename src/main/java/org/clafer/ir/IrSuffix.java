@@ -1,29 +1,28 @@
 package org.clafer.ir;
 
-import java.util.Arrays;
 import org.clafer.common.Check;
 
 /**
  *
  * @author jimmy
  */
-public class IrSortStrings extends IrAbstractBool {
+public class IrSuffix extends IrAbstractBool {
 
-    private final IrIntExpr[][] strings;
-    private final boolean strict;
+    private final IrStringExpr suffix;
+    private final IrStringExpr word;
 
-    IrSortStrings(IrIntExpr[][] strings, boolean strict, IrBoolDomain domain) {
+    IrSuffix(IrStringExpr suffix, IrStringExpr word, IrBoolDomain domain) {
         super(domain);
-        this.strings = Check.noNullsNotEmpty(strings);
-        this.strict = strict;
+        this.suffix = Check.notNull(suffix);
+        this.word = Check.notNull(word);
     }
 
-    public IrIntExpr[][] getStrings() {
-        return strings;
+    public IrStringExpr getSuffix() {
+        return suffix;
     }
 
-    public boolean isStrict() {
-        return strict;
+    public IrStringExpr getWord() {
+        return word;
     }
 
     @Override
@@ -48,15 +47,20 @@ public class IrSortStrings extends IrAbstractBool {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrSortStrings) {
-            IrSortStrings other = (IrSortStrings) obj;
-            return Arrays.deepEquals(strings, other.strings) && strict == other.strict;
+        if (obj instanceof IrSuffix) {
+            IrSuffix other = (IrSuffix) obj;
+            return suffix.equals(other.suffix) && word.equals(other.word);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(strings) ^ (strict ? 1 : 0);
+        return suffix.hashCode() ^ word.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return suffix + " suffix " + word;
     }
 }

@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrWithin extends IrAbstractBool implements IrBoolExpr {
+public class IrWithin extends IrAbstractBool {
 
     private final IrIntExpr value;
     private final IrDomain range;

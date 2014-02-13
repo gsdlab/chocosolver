@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrFilterString extends IrAbstractBool implements IrBoolExpr {
+public class IrFilterString extends IrAbstractBool {
 
     private final IrSetExpr set;
     private final int offset;

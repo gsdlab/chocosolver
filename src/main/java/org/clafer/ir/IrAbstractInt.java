@@ -37,7 +37,7 @@ public abstract class IrAbstractInt implements IrIntExpr {
 
     @Override
     public int hashCode() {
-        // Subclasses can choose not to callthis hashCode function since it can
+        // Subclasses can choose not to call this hashCode function since it can
         // be expensive.
         return domain.hashCode();
     }

@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSortStringsChannel extends IrAbstractBool implements IrBoolExpr {
+public class IrSortStringsChannel extends IrAbstractBool {
 
     private final IrIntExpr[][] strings;
     private final IrIntExpr[] ints;

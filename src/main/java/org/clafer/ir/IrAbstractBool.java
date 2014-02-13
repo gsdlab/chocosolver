@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public abstract class IrAbstractBool {
+public abstract class IrAbstractBool implements IrBoolExpr {
 
     private final IrBoolDomain domain;
 
@@ -14,6 +14,7 @@ public abstract class IrAbstractBool {
         this.domain = Check.notNull(domain);
     }
 
+    @Override
     public IrBoolDomain getDomain() {
         return domain;
     }
@@ -29,7 +30,7 @@ public abstract class IrAbstractBool {
 
     @Override
     public int hashCode() {
-        // Subclasses can choose not to callthis hashCode function since it can
+        // Subclasses can choose not to call this hashCode function since it can
         // be expensive.
         return domain.hashCode();
     }

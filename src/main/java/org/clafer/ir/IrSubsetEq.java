@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSubsetEq extends IrAbstractBool implements IrBoolExpr {
+public class IrSubsetEq extends IrAbstractBool {
 
     private final IrSetExpr subset, superset;
 

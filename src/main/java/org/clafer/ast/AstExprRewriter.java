@@ -171,4 +171,14 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     public AstExpr visit(AstConcat ast, T a) {
         return concat(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
     }
+
+    @Override
+    public AstExpr visit(AstPrefix ast, T a) {
+        return prefix(rewrite(ast.getPrefix(), a), rewrite(ast.getWord(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstSuffix ast, T a) {
+        return suffix(rewrite(ast.getSuffix(), a), rewrite(ast.getWord(), a));
+    }
 }

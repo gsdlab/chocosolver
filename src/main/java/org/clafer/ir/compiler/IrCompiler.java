@@ -58,6 +58,7 @@ import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
 import org.clafer.ir.IrOr;
+import org.clafer.ir.IrPrefix;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExpr;
@@ -77,6 +78,7 @@ import org.clafer.ir.IrStringExpr;
 import org.clafer.ir.IrStringExprVisitor;
 import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrSubsetEq;
+import org.clafer.ir.IrSuffix;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUnreachable;
 import org.clafer.ir.IrUtil;
@@ -1058,6 +1060,24 @@ public class IrCompiler {
             IntVar[] result = compile(ir.getResult());
             return Constraints.filterString(set.getSet(), set.getCard(), offset, string, result);
         }
+
+        @Override
+        public Object visit(IrPrefix ir, BoolArg a) {
+            CString prefix = compile(ir.getPrefix());
+            CString word = compile(ir.getWord());
+            return Constraints.prefix(
+                    prefix.getChars(), prefix.getLength(),
+                    word.getChars(), word.getLength());
+        }
+
+        @Override
+        public Object visit(IrSuffix ir, BoolArg a) {
+            CString suffix = compile(ir.getSuffix());
+            CString word = compile(ir.getWord());
+            return Constraints.suffix(
+                    suffix.getChars(), suffix.getLength(),
+                    word.getChars(), word.getLength());
+        }
     };
     private final IrIntExprVisitor<IntVar, Object> intExprCompiler = new IrIntExprVisitor<IntVar, Object>() {
         @Override
@@ -1393,6 +1413,16 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrFilterString ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrPrefix ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrSuffix ir, IntVar a) {
             return compileBool(ir, a);
         }
     };

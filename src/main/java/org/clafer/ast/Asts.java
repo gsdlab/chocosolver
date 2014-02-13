@@ -342,4 +342,12 @@ public class Asts {
     public static AstSetExpr concat(AstSetExpr left, AstSetExpr right) {
         return new AstConcat(left, right);
     }
+
+    public static AstBoolExpr prefix(AstSetExpr prefix, AstSetExpr word) {
+        return new AstPrefix(prefix, word);
+    }
+
+    public static AstBoolExpr suffix(AstSetExpr suffix, AstSetExpr word) {
+        return new AstSuffix(suffix, word);
+    }
 }

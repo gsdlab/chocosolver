@@ -6,7 +6,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrStringCompare extends IrAbstractBool implements IrBoolExpr {
+public class IrStringCompare extends IrAbstractBool {
 
     private final IrStringExpr left;
     private final Op op;

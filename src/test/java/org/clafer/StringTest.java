@@ -9,6 +9,7 @@ import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -151,6 +152,17 @@ public class StringTest {
      */
     @Test(timeout = 60000)
     public void testConcat() {
+        /*
+         * import Control.Monad
+         *
+         * strings = [0..5] >>= flip replicateM ['a', 'b', 'c']
+         * positive = do
+         *     a <- strings
+         *     let b = "abc"
+         *     c <- strings
+         *     guard $ a ++ b == c
+         *     return (a, b, c)
+         */
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
@@ -161,6 +173,103 @@ public class StringTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
                 .stringLength(5).charLow('a').charHigh('c'));
-        assertEquals(13, solver.allInstances().length);
+        int count = 0;
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer A : instance.getTopClafers(a)) {
+                for (InstanceClafer B : instance.getTopClafers(b)) {
+                    for (InstanceClafer C : instance.getTopClafers(c)) {
+                        assertEquals(C.getRef().getValue(),
+                                A.getRef().getValue().toString() + B.getRef().getValue());
+                    }
+                }
+            }
+            count++;
+        }
+        assertEquals(13, count);
+    }
+
+    /**
+     * <pre>
+     * A -> string
+     * B -> string
+     * [ A.ref prefix B.ref ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testPrefix() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * strings = [0..3] >>= flip replicateM ['a', 'b', 'c']
+         * positive = do
+         *     a <- strings
+         *     b <- strings
+         *     guard $ a `isPrefixOf` b
+         *     return (a, b)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
+        model.addConstraint(prefix(joinRef(global(a)), joinRef(global(b))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
+                .stringLength(3).charLow('a').charHigh('c'));
+        int count = 0;
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer A : instance.getTopClafers(a)) {
+                for (InstanceClafer B : instance.getTopClafers(b)) {
+                    assertThat((String) B.getRef().getValue(),
+                            startsWith((String) A.getRef().getValue()));
+                }
+            }
+            count++;
+        }
+        assertEquals(142, count);
+    }
+
+    /**
+     * <pre>
+     * A -> string
+     * B -> string
+     * [ A.ref suffix B.ref ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSuffix() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * strings = [0..3] >>= flip replicateM ['a', 'b', 'c']
+         * positive = do
+         *     a <- strings
+         *     b <- strings
+         *     guard $ a `isPrefixOf` (reverse b)
+         *     return (a, b)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
+        model.addConstraint(suffix(joinRef(global(a)), joinRef(global(b))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
+                .stringLength(3).charLow('a').charHigh('c'));
+        int count = 0;
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer A : instance.getTopClafers(a)) {
+                for (InstanceClafer B : instance.getTopClafers(b)) {
+                    assertThat((String) B.getRef().getValue(),
+                            endsWith((String) A.getRef().getValue()));
+                }
+            }
+            count++;
+        }
+        assertEquals(142, count);
     }
 }

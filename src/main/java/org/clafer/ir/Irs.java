@@ -1066,6 +1066,19 @@ public class Irs {
         }
         return new IrFilterString(set, offset, filterString, filterResult, BoolDomain);
     }
+/*
+     * TODO STRING
+     */
+    public static IrBoolExpr prefix(IrStringExpr prefix, IrStringExpr word) {
+        return new IrPrefix(prefix, word, BoolDomain);
+    }
+
+    /*
+     * TODO STRING
+     */
+    public static IrBoolExpr suffix(IrStringExpr suffix, IrStringExpr word) {
+        return new IrSuffix(suffix, word, BoolDomain);
+    }
     /**
      *******************
      *

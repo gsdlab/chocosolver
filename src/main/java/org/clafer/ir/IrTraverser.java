@@ -264,6 +264,20 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public IrIntExpr visit(IrPrefix ir, T a) {
+        traverse(ir.getPrefix(), a);
+        traverse(ir.getWord(), a);
+        return ir;
+    }
+
+    @Override
+    public IrIntExpr visit(IrSuffix ir, T a) {
+        traverse(ir.getSuffix(), a);
+        traverse(ir.getWord(), a);
+        return ir;
+    }
+
+    @Override
     public IrIntVar visit(IrIntVar ir, T a) {
         return ir;
     }
@@ -403,16 +417,16 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public IrStringExpr visit(IrConcat ir, T a) {
-        traverse(ir.getLeft(), a);
-        traverse(ir.getRight(), a);
+    public IrStringExpr visit(IrElementString ir, T a) {
+        traverse(ir.getArray(), a);
+        traverse(ir.getIndex(), a);
         return ir;
     }
 
     @Override
-    public IrStringExpr visit(IrElementString ir, T a) {
-        traverse(ir.getArray(), a);
-        traverse(ir.getIndex(), a);
+    public IrStringExpr visit(IrConcat ir, T a) {
+        traverse(ir.getLeft(), a);
+        traverse(ir.getRight(), a);
         return ir;
     }
 }

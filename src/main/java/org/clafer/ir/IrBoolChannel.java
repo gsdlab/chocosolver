@@ -7,7 +7,7 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrBoolChannel extends IrAbstractBool implements IrBoolExpr {
+public class IrBoolChannel extends IrAbstractBool {
 
     private final IrBoolExpr[] bools;
     private final IrSetExpr set;
