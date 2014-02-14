@@ -4,13 +4,12 @@ import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Util;
+import org.clafer.ir.IrSetVar;
+import org.clafer.ir.Irs;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.Constraint;
-import solver.constraints.LCF;
-import solver.constraints.set.SCF;
-import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.VF;
 
@@ -22,20 +21,26 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
 
     @Override
     protected void check(Pair<Triple<SetVar, SetVar[], SetVar>, Boolean> s) {
+        SetVar take = s.getFst().getFst();
+        SetVar[] children = s.getFst().getSnd();
+        SetVar to = s.getFst().getThd();
+        boolean injective = s.getSnd();
+
         TIntHashSet set = new TIntHashSet();
 
-        for (int t : s.getFst().getFst().getValue()) {
-            assertTrue(t >= 0 && t < s.getFst().getSnd().length);
-            for (int c : s.getFst().getSnd()[t].getValue()) {
-                assertTrue(Util.in(c, s.getFst().getThd().getValue()));
+        for (int t : take.getValue()) {
+            assertTrue(t >= 0 && t < children.length);
+            for (int c : children[t].getValue()) {
+                assertTrue(Util.in(c, to.getValue()));
                 set.add(c);
             }
         }
-        assertEquals(set.size(), s.getFst().getThd().getEnvelopeSize());
-        if (s.getSnd()) {
+        assertEquals(set.size(), to.getEnvelopeSize());
+        if (injective) {
             int sum = 0;
             TIntHashSet disjointSet = new TIntHashSet();
-            for (SetVar child : s.getFst().getSnd()) {
+            for (int t : take.getValue()) {
+                SetVar child = children[t];
                 sum += child.getEnvelopeSize();
                 disjointSet.addAll(child.getValue());
             }
@@ -67,7 +72,7 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
                 CSetVar to = toCSetVar(randSet(), solver);
                 Constraint constraint = Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
                         mapSet(children), mapCard(children), to.getSet(), to.getCard());
-                return pair(LCF.and(constraint, SCF.all_disjoint(mapSet(children))),
+                return pair(constraint,
                         pair(triple(take.getSet(), mapSet(children), to.getSet()), true));
             }
         });
@@ -129,46 +134,41 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
              *
              * powerset = filterM (const [True, False])
              *
-             * disjoint [] ys = True
-             * disjoint (x:xs) ys = x `notElem` ys && disjoint xs ys
-             *
              * positive = do
              *     take   <- powerset [0..2]
              *     child0 <- powerset [-1..1]
              *     child1 <- powerset [0..1]
              *     child2 <- powerset [-1..0]
-             *     guard $ child0 `disjoint` child1 && child0 `disjoint` child2 && child1 `disjoint` child2
+             *     let takeSet = concat [[child0, child1, child2] !! i | i <- take]
              *     to <- powerset [0..1]
-             *     guard $ to == sort (concat [[child0, child1, child2] !! i | i <- take])
+             *     guard $ to == sort takeSet
              *     return (take, child0, child1, child2)
-             *
-             * negative= do
+             *    
+             * negative = do
              *     take   <- powerset [0..2]
              *     child0 <- powerset [-1..1]
              *     child1 <- powerset [0..1]
              *     child2 <- powerset [-1..0]
+             *     let takeSet = concat [[child0, child1, child2] !! i | i <- take]
              *     to <- powerset [0..1]
-             *     guard $ to /= sort (concat [[child0, child1, child2] !! i | i <- take]) || not (child0 `disjoint` child1 && child0 `disjoint` child2 && child1 `disjoint` child2)
+             *     guard $ to /= sort takeSet
              *     return (take, child0, child1, child2)
              */
-            @PositiveSolutions(192)
-            @NegativeSolutions(3904)
+            @PositiveSolutions(504)
+            @NegativeSolutions(3592)
             @Override
             public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
-                SetVar take = VF.set("take", 0, 2, solver);
-                IntVar takeCard = enforcedCardVar(take);
-                SetVar[] children = new SetVar[]{
-                    VF.set("c1", -1, 1, solver),
-                    VF.set("c2", 0, 1, solver),
-                    VF.set("c3", -1, 0, solver)
-                };
-                IntVar[] childrenCards = enforcedCardVars(children);
-                SetVar to = VF.set("to", 0, 1, solver);
-                IntVar toCard = enforcedCardVar(to);
-                Constraint constraint = Constraints.joinInjectiveRelation(take, takeCard,
-                        children, childrenCards, to, toCard);
-                return pair(LCF.and(constraint, SCF.all_disjoint(children)),
-                        pair(triple(take, children, to), true));
+                CSetVar take = toCSetVar(Irs.set("take", 0, 2), solver);
+                CSetVar[] children = toCSetVars(new IrSetVar[]{
+                    Irs.set("c1", -1, 1),
+                    Irs.set("c2", 0, 1),
+                    Irs.set("c3", -1, 0)
+                }, solver);
+                CSetVar to = toCSetVar(Irs.set("to", 0, 1), solver);
+                Constraint constraint = Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
+                        mapSet(children), mapCard(children), to.getSet(), to.getCard());
+                return pair(constraint,
+                        pair(triple(take.getSet(), mapSet(children), to.getSet()), true));
             }
         });
     }

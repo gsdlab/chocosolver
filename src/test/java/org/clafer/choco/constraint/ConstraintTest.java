@@ -50,20 +50,20 @@ public abstract class ConstraintTest<T> extends ClaferTest {
             Sample sample = method.getAnnotation(Sample.class);
             int repeat = sample == null ? 10 : sample.value();
             PositiveSolutions positive = method.getAnnotation(PositiveSolutions.class);
-            if (positive == null) {
-                for (int i = 0; i < repeat; i++) {
+            for (int i = 0; i < repeat; i++) {
+                if (positive == null) {
                     randomizedTest(testCase, true);
+                } else {
+                    randomizedTest(testCase, true, positive.value());
                 }
-            } else {
-                randomizedTest(testCase, true, positive.value());
             }
             NegativeSolutions negative = method.getAnnotation(NegativeSolutions.class);
-            if (negative == null) {
-                for (int i = 0; i < repeat; i++) {
+            for (int i = 0; i < repeat; i++) {
+                if (negative == null) {
                     randomizedTest(testCase, false);
+                } else {
+                    randomizedTest(testCase, false, negative.value());
                 }
-            } else {
-                randomizedTest(testCase, false, negative.value());
             }
         } catch (NoSuchMethodException e) {
             throw new Error(e);
