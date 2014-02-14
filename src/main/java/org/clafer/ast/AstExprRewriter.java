@@ -168,6 +168,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstLength ast, T a) {
+        return length(rewrite(ast.getString(), a));
+    }
+
+    @Override
     public AstExpr visit(AstConcat ast, T a) {
         return concat(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
     }

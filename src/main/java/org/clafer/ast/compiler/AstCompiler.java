@@ -34,6 +34,7 @@ import org.clafer.ast.AstIntersection;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
@@ -1376,6 +1377,11 @@ public class AstCompiler {
                     throw new AstException();
 
             }
+        }
+
+        @Override
+        public IrExpr visit(AstLength ast, Void a) {
+            return length(asString(compile(ast.getString())));
         }
 
         @Override

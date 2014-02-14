@@ -28,6 +28,7 @@ import org.clafer.ast.AstIntersection;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
@@ -503,6 +504,15 @@ public class TypeAnalyzer implements Analyzer {
             }
             TypedExpr<AstBoolExpr> body = typeCheck(ast.getBody());
             return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstLength ast, Void a) {
+            TypedExpr<AstSetExpr> string = typeCheck(ast.getString());
+            if (string.getCommonSupertype() instanceof AstStringClafer) {
+                return put(IntType, length(ast.getString()));
+            }
+            throw new TypeException("Cannot length(" + string.getType() + ")");
         }
 
         @Override

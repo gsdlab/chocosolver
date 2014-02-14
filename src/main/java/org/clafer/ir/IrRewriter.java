@@ -500,6 +500,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrLength ir, T a) {
+        IrStringExpr string = rewrite(ir.getString(), a);
+        return changed(ir.getString(), string)
+                ? length(string)
+                : ir;
+    }
+
+    @Override
     public IrSetVar visit(IrSetVar ir, T a) {
         return ir;
     }

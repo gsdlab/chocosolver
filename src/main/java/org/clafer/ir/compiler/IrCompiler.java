@@ -45,6 +45,7 @@ import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
+import org.clafer.ir.IrLength;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrMask;
 import org.clafer.ir.IrMember;
@@ -1261,6 +1262,12 @@ public class IrCompiler {
             solver.post(_reify_equal(reifyConsequent, consequent, reify));
             solver.post(_reify_equal(reifyAlternative, alternative, reify));
             return _ifThenElse(antecedent, reifyConsequent, reifyAlternative);
+        }
+
+        @Override
+        public Object visit(IrLength ir, IntVar a) {
+            CString string = compile(ir.getString());
+            return string.getLength();
         }
 
         private Object compileBool(IrBoolExpr expr, IntVar a) {

@@ -145,6 +145,50 @@ public class StringTest {
      * <pre>
      * A -> string
      * B -> string
+     * [ length(A.ref) = length(B.ref) + 1
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testLength() {
+        /*
+         * import Control.Monad
+         *
+         * strings = [0..3] >>= flip replicateM ['a', 'b', 'c']
+         * positive = do
+         *     a <- strings
+         *     b <- strings
+         *     guard $ length a == length b + 1
+         *     return (a, b) 
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
+        model.addConstraint(equal(
+                length(joinRef(global(a))),
+                add(length(joinRef(global(b))), constant(1))
+        ));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
+                .stringLength(3).charLow('a').charHigh('c'));
+        int count = 0;
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer A : instance.getTopClafers(a)) {
+                for (InstanceClafer B : instance.getTopClafers(b)) {
+                    assertEquals(A.getRef().getValue().toString().length(),
+                            B.getRef().getValue().toString().length() + 1);
+                }
+            }
+            count++;
+        }
+        assertEquals(273, count);
+    }
+
+    /**
+     * <pre>
+     * A -> string
+     * B -> string
      *     [ this.ref = "abc" ]
      * C -> string
      *     [ this.ref = A.ref ++ B.ref ]

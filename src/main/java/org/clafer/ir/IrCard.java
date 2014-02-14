@@ -31,7 +31,7 @@ public class IrCard extends IrAbstractInt {
     public boolean equals(Object obj) {
         if (obj instanceof IrCard) {
             IrCard other = (IrCard) obj;
-            return set.equals(other.set) && super.equals(other);
+            return set.equals(other.set);
         }
         return false;
     }

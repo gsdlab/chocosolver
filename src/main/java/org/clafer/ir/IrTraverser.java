@@ -342,6 +342,12 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public IrIntExpr visit(IrLength ir, T a) {
+        traverse(ir.getString(), a);
+        return ir;
+    }
+
+    @Override
     public IrSetVar visit(IrSetVar ir, T a) {
         return ir;
     }

@@ -59,6 +59,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstQuantify ast, A a);
 
+    public B visit(AstLength ast, A a);
+
     public B visit(AstConcat ast, A a);
 
     public B visit(AstPrefix ast, A a);

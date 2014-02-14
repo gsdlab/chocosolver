@@ -24,6 +24,20 @@ public class AstCard implements AstSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AstCard) {
+            AstCard other = (AstCard) obj;
+            return set.equals(other.set);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 187 ^ set.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "#(" + set + ")";
     }

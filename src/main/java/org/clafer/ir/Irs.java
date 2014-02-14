@@ -1066,7 +1066,8 @@ public class Irs {
         }
         return new IrFilterString(set, offset, filterString, filterResult, BoolDomain);
     }
-/*
+
+    /*
      * TODO STRING
      */
     public static IrBoolExpr prefix(IrStringExpr prefix, IrStringExpr word) {
@@ -1394,6 +1395,10 @@ public class Irs {
         }
         IrDomain domain = IrUtil.union(consequent.getDomain(), alternative.getDomain());
         return new IrTernary(antecedent, consequent, alternative, domain);
+    }
+
+    public static IrIntExpr length(IrStringExpr string) {
+        return new IrLength(string, string.getLengthDomain());
     }
 
     /**

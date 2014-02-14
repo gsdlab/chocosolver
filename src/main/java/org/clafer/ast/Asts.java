@@ -339,6 +339,10 @@ public class Asts {
         return quantify(Quantifier.Some, decl, body);
     }
 
+    public static AstSetExpr length(AstSetExpr string) {
+        return new AstLength(string);
+    }
+
     public static AstSetExpr concat(AstSetExpr left, AstSetExpr right) {
         return new AstConcat(left, right);
     }
