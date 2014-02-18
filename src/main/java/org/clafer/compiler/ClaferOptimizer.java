@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.clafer.collection.Either;
-import org.clafer.collection.Pair;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import solver.ResolutionPolicy;
@@ -24,15 +23,15 @@ import solver.variables.Variable;
  *
  * @author jimmy
  */
-public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel>> {
+public class ClaferOptimizer implements ClaferSearch {
 
     public final Solver solver;
     private final ClaferSolutionMap solutionMap;
     private final boolean maximize;
     private final Either<Integer, IntVar> score;
-    private boolean first = true;
+    private int count = 0;
     private boolean more = true;
-    private boolean second = true;
+    private int optimalValue;
     private final Solution firstSolution = new Solution();
 
     ClaferOptimizer(Solver solver, ClaferSolutionMap solutionMap,
@@ -60,12 +59,15 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
         if (!more) {
             return false;
         }
-        if (first) {
-            more &= solveFirst();
-            first = false;
-            return more;
+        more &= count == 0 ? solveFirst() : solveNext();
+        if (more) {
+            if (count == 0) {
+                optimalValue = score.isLeft()
+                        ? score.getLeft()
+                        : score.getRight().getValue();
+            }
+            count++;
         }
-        more &= solveNext();
         return more;
     }
 
@@ -87,7 +89,7 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
 
             @Override
             public void onSolution() {
-                if (first) {
+                if (count == 0) {
                     firstSolution.record(solver);
                 }
             }
@@ -110,10 +112,9 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
     }
 
     private boolean solveNext() {
-        if (score.isLeft() || !second) {
+        if (score.isLeft() || count > 1) {
             return solver.nextSolution();
         }
-        second = false;
         IntVar scoreVar = score.getRight();
         int best = scoreVar.getValue();
         // TODO: forbid the current solution from happening again.                                                 
@@ -142,25 +143,38 @@ public class ClaferOptimizer implements ClaferSearch<Pair<Integer, InstanceModel
         return true;
     }
 
-    /**
-     * @return the optimal value and the optimal instance
-     */
     @Override
-    public Pair<Integer, InstanceModel> instance() {
-        return new Pair<>(
-                score.isLeft() ? score.getLeft() : score.getRight().getValue(),
-                solutionMap.getInstance());
+    public InstanceModel instance() {
+        if (count == 0 || !more) {
+            throw new IllegalStateException("No instances. Did you forget to call find?");
+        }
+        return solutionMap.getInstance();
+    }
+
+    /**
+     * Returns the optimal value.
+     *
+     * @return the optimal value
+     */
+    public int optimalValue() {
+        if (count == 0) {
+            throw new IllegalStateException("No instances. Did you forget to call find?");
+        }
+        return optimalValue;
     }
 
     @Override
-    public Pair<Integer, InstanceModel>[] allInstances() {
-        List<Pair<Integer, InstanceModel>> instances = new ArrayList<>();
+    public InstanceModel[] allInstances() {
+        List<InstanceModel> instances = new ArrayList<>();
         while (find()) {
             instances.add(instance());
         }
-        @SuppressWarnings("unchecked")
-        Pair<Integer, InstanceModel>[] pairs = new Pair[instances.size()];
-        return instances.toArray(pairs);
+        return instances.toArray(new InstanceModel[instances.size()]);
+    }
+
+    @Override
+    public int instanceCount() {
+        return count;
     }
 
     @Override

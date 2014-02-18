@@ -10,11 +10,11 @@ import solver.Solver;
  *
  * @author jimmy
  */
-public class ClaferSolver implements ClaferSearch<InstanceModel> {
+public class ClaferSolver implements ClaferSearch {
 
     private final Solver solver;
     private final ClaferSolutionMap solutionMap;
-    private boolean first = true;
+    private int count = 0;
     private boolean more = true;
 
     ClaferSolver(Solver solver, ClaferSolutionMap solutionMap) {
@@ -31,17 +31,18 @@ public class ClaferSolver implements ClaferSearch<InstanceModel> {
         if (!more) {
             return false;
         }
-        if (first) {
-            first = false;
-            more &= solver.findSolution();
-            return more;
+        more &= count == 0 ? solver.findSolution() : solver.nextSolution();
+        if (more) {
+            count++;
         }
-        more &= solver.nextSolution();
         return more;
     }
 
     @Override
     public InstanceModel instance() {
+        if (count == 0 || !more) {
+            throw new IllegalStateException("No instances. Did you forget to call find?");
+        }
         return solutionMap.getInstance();
     }
 
@@ -52,6 +53,11 @@ public class ClaferSolver implements ClaferSearch<InstanceModel> {
             instances.add(instance());
         }
         return instances.toArray(new InstanceModel[instances.size()]);
+    }
+
+    @Override
+    public int instanceCount() {
+        return count;
     }
 
     @Override
