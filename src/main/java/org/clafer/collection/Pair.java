@@ -2,7 +2,10 @@ package org.clafer.collection;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.clafer.common.Check;
 
 /**
@@ -117,6 +120,43 @@ public class Pair<A, B> {
             to[i] = pairs[i].getSnd();
         }
         return to;
+    }
+
+    /**
+     * Return a map from a list of key/value pairs. If a key appears multiple
+     * times in the list, the last pair overrides the others.
+     *
+     * @param <A> the type of key
+     * @param <B> the type of value
+     * @param pairs the list of key/value pairs
+     * @return a map from a list of key/value pairs
+     */
+    @SafeVarargs
+    public static <A, B> Map<A, B> fromPairs(Pair<A, B>... pairs) {
+        Map<A, B> map = new HashMap<>();
+        for (Pair<A, B> pair : pairs) {
+            map.put(pair.getFst(), pair.getSnd());
+        }
+        return map;
+    }
+
+    /**
+     * Return a list of key/value pairs from a map.
+     *
+     * @param <A> the type of key
+     * @param <B> the type of value
+     * @param map the map
+     * @return a list of key/value pairs from a map
+     */
+    public static <A, B> Pair<A, B>[] toPairs(Map<A, B> map) {
+        @SuppressWarnings("unchecked")
+        Pair<A, B>[] pairs = (Pair<A, B>[]) new Pair<?, ?>[map.size()];
+        int i = 0;
+        for (Entry<A, B> entry : map.entrySet()) {
+            pairs[i++] = new Pair<>(entry.getKey(), entry.getValue());
+        }
+        assert i == pairs.length;
+        return pairs;
     }
 
     @Override

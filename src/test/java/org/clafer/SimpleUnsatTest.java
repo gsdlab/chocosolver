@@ -120,25 +120,6 @@ public class SimpleUnsatTest {
     /**
      * <pre>
      * A
-     * B -> A 2
-     * [one B]
-     * </pre>
-     */
-    @Test(timeout = 60000)
-    public void testNoUnsat() {
-        AstModel model = newModel();
-
-        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
-        AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 2);
-        model.addConstraint(one(b));
-
-        assertEquals(null, ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).minUnsat());
-        assertEquals(null, ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).unsatCore());
-    }
-
-    /**
-     * <pre>
-     * A
      * B -> A 1..2
      * [one B]
      * </pre>
