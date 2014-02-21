@@ -690,7 +690,7 @@ public class Constraints {
         }
 
         @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[operandCards.length + 2];
+        Propagator<? extends Variable>[] propagators = new Propagator<?>[operandCards.length + 2];
         // See SCF.intersection(operands, intersection);
         // TODO: Needs to add the same propagator twice because the implementation
         // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -789,7 +789,7 @@ public class Constraints {
             return length1.getSolver().TRUE;
         }
         return new Constraint("arrayEqual",
-                propagators.toArray(new Propagator[propagators.size()]));
+                propagators.toArray(new Propagator<?>[propagators.size()]));
     }
 
     /**
@@ -798,7 +798,7 @@ public class Constraints {
     public static Constraint notEqual(
             IntVar[] chars1, IntVar length1,
             IntVar[] chars2, IntVar length2) {
-        return equal(chars1,length1, chars2,length2).getOpposite();
+        return equal(chars1, length1, chars2, length2).getOpposite();
     }
 
     private static IntVar[] charsAt(IntVar[][] strings, int index) {
@@ -832,7 +832,8 @@ public class Constraints {
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
         }
-        return new Constraint("Element", propagators.toArray(new Propagator[propagators.size()]));
+        return new Constraint("Element",
+                propagators.toArray(new Propagator<?>[propagators.size()]));
     }
 
     /**
@@ -866,20 +867,8 @@ public class Constraints {
             propagators.add(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
             propagators.add(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
         }
-        return new Constraint("Suffix", propagators.toArray(new Propagator[propagators.size()]));
-    }
-
-    private static IntVar[] pad(IntVar[] vars, int length) {
-        if (length == vars.length) {
-            return vars;
-        }
-        if (length < vars.length) {
-            return Arrays.copyOf(vars, length);
-        }
-        Solver solver = vars[0].getSolver();
-        IntVar[] pad = Arrays.copyOf(vars, length);
-        Arrays.fill(pad, vars.length, pad.length, solver.ZERO);
-        return pad;
+        return new Constraint("Suffix",
+                propagators.toArray(new Propagator<?>[propagators.size()]));
     }
 
     /**
@@ -901,6 +890,20 @@ public class Constraints {
             propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i, true));
             propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i, true));
         }
-        return new Constraint("Concat", propagators.toArray(new Propagator[propagators.size()]));
+        return new Constraint("Concat",
+                propagators.toArray(new Propagator<?>[propagators.size()]));
+    }
+
+    private static IntVar[] pad(IntVar[] chars, int length) {
+        if (length == chars.length) {
+            return chars;
+        }
+        if (length < chars.length) {
+            return Arrays.copyOf(chars, length);
+        }
+        Solver solver = chars[0].getSolver();
+        IntVar[] pad = Arrays.copyOf(chars, length);
+        Arrays.fill(pad, chars.length, pad.length, solver.ZERO);
+        return pad;
     }
 }
