@@ -4,6 +4,7 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.Arrays;
 
 /**
  *
@@ -604,6 +605,18 @@ public class IrUtil {
             default:
                 return ord;
         }
+    }
+
+    public static IrIntExpr[] pad(IrIntExpr[] chars, int length) {
+        if (length < chars.length) {
+            throw new IllegalArgumentException();
+        }
+        if (length == chars.length) {
+            return chars;
+        }
+        IrIntExpr[] pad = Arrays.copyOf(chars, length);
+        Arrays.fill(pad, chars.length, pad.length, Irs.Zero);
+        return pad;
     }
 
     public static enum Ordering {

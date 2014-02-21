@@ -1,7 +1,5 @@
 package org.clafer.ast;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
