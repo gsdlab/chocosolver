@@ -948,8 +948,8 @@ public class Coalescer {
 
         private void propagateOffset(PartialSet left, IrOffset right) {
             int offset = right.getOffset();
-            IrDomain env = left.isEnvMask() ? IrUtil.offset(left.getEnv(), offset) : null;
-            IrDomain ker = left.isKerMask() ? IrUtil.offset(left.getKer(), offset) : null;
+            IrDomain env = left.isEnvMask() ? IrUtil.offset(left.getEnv(), -offset) : null;
+            IrDomain ker = left.isKerMask() ? IrUtil.offset(left.getKer(), -offset) : null;
             IrDomain card = left.isCardMask() ? left.getCard() : null;
             propagateSet(new PartialSet(env, ker, card), right.getSet());
         }
