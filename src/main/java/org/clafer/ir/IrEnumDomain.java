@@ -139,12 +139,21 @@ public class IrEnumDomain implements IrDomain {
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
+        boolean elipse = false;
         result.append('{');
-        for (int i = 0; i < values.length; i++) {
+        result.append(values[0]);
+        for (int i = 1; i < values.length; i++) {
             if (i > 0) {
-                result.append(", ");
+                if (i < values.length - 1 && values[i - 1] + 1 == values[i] && values[i] + 1 == values[i + 1]) {
+                    if (!elipse) {
+                        result.append(", ...");
+                        elipse = true;
+                    }
+                } else {
+                    result.append(", ").append(values[i]);
+                    elipse = false;
+                }
             }
-            result.append(values[i]);
         }
         result.append('}');
         return result.toString();

@@ -143,6 +143,12 @@ public class IrBoundDomain implements IrDomain {
      */
     @Override
     public String toString() {
+        if (low == high) {
+            return "{" + low + "}";
+        }
+        if (low + 1 == high) {
+            return "{" + low + ", " + high + "}";
+        }
         return "{" + low + ", ..., " + high + "}";
     }
 }
