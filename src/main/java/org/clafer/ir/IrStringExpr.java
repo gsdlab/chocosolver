@@ -12,14 +12,14 @@ public interface IrStringExpr extends IrExpr {
      *
      * @return the length domain
      */
-    public IrDomain getLengthDomain();
+    public IrDomain getLength();
 
     /**
      * The characters of the string.
      *
      * @return the character domains
      */
-    public IrDomain[] getCharDomains();
+    public IrDomain[] getChars();
 
     /**
      * Dynamic dispatch on the visitor.

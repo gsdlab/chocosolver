@@ -170,16 +170,16 @@ public class IrUtil {
     }
 
     public static IrStringExpr asConstant(IrStringExpr s) {
-        if (s.getLengthDomain().size() != 1) {
+        if (s.getLength().size() != 1) {
             return s;
         }
-        int length = s.getLengthDomain().getLowBound();
+        int length = s.getLength().getLowBound();
         char[] string = new char[length];
         for (int i = 0; i < length; i++) {
-            if (s.getCharDomains()[i].size() != 1) {
+            if (s.getChars()[i].size() != 1) {
                 return s;
             }
-            int chari = s.getCharDomains()[i].getLowBound();
+            int chari = s.getChars()[i].getLowBound();
             if (chari < Character.MIN_VALUE
                     || chari > Character.MAX_VALUE
                     || chari == 0) {
@@ -187,9 +187,9 @@ public class IrUtil {
             }
             string[i] = (char) chari;
         }
-        for (int i = length; i < s.getCharDomains().length; i++) {
-            if (s.getCharDomains()[i].size() != 1
-                    || s.getCharDomains()[i].getLowBound() != 0) {
+        for (int i = length; i < s.getChars().length; i++) {
+            if (s.getChars()[i].size() != 1
+                    || s.getChars()[i].getLowBound() != 0) {
                 return s;
             }
         }
@@ -199,7 +199,7 @@ public class IrUtil {
     public static int maxLength(IrStringExpr... strings) {
         int maxLength = 0;
         for (IrStringExpr string : strings) {
-            maxLength = Math.max(maxLength, string.getCharDomains().length);
+            maxLength = Math.max(maxLength, string.getChars().length);
         }
         return maxLength;
     }

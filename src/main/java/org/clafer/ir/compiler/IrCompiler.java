@@ -1599,8 +1599,8 @@ public class IrCompiler {
         public Object visit(IrStringVar ir, CString reify) {
             CString string = cachedStringVar.get(ir);
             if (string == null) {
-                IntVar length = compile(ir.getLength());
-                IntVar[] chars = compile(ir.getChars());
+                IntVar length = compile(ir.getLengthVar());
+                IntVar[] chars = compile(ir.getCharVars());
                 if (!lengthEntailed(chars, length)) {
                     post(Constraints.length(chars, length));
                 }
@@ -1615,7 +1615,7 @@ public class IrCompiler {
             CString left = compile(ir.getLeft());
             CString right = compile(ir.getRight());
             if (reify == null) {
-                CString concat = numCstring("Concat", ir.getCharDomains(), ir.getLengthDomain());
+                CString concat = numCstring("Concat", ir.getChars(), ir.getLength());
                 post(Constraints.concat(
                         left.getChars(), left.getLength(),
                         right.getChars(), right.getLength(),
@@ -1633,7 +1633,7 @@ public class IrCompiler {
             IntVar index = compile(ir.getIndex());
             CString[] array = compile(ir.getArray());
             if (reify == null) {
-                CString element = numCstring("ElementString", ir.getCharDomains(), ir.getLengthDomain());
+                CString element = numCstring("ElementString", ir.getChars(), ir.getLength());
                 post(Constraints.element(index,
                         mapChars(array), mapLength(array),
                         element.getChars(), element.getLength()));

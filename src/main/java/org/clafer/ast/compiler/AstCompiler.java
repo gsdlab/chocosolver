@@ -474,7 +474,7 @@ public class AstCompiler {
                     breakableRefIds[i] = analysis.isBreakableRefId(ref, i + refOffset);
                     if (ref.getTargetType() instanceof AstStringClafer) {
                         childIndex.addAll(Arrays.asList(IrUtil.pad(
-                                refStrings.get(ref)[i + refOffset].getChars(),
+                                refStrings.get(ref)[i + refOffset].getCharVars(),
                                 analysis.getScope().getStringLength())));
                         if (ref.isUnique()) {
                             childIndex.add(members[i]);

@@ -13,7 +13,7 @@ public class IrLength extends IrAbstractInt {
     IrLength(IrStringExpr string, IrDomain domain) {
         super(domain);
         this.string = Check.notNull(string);
-        if (!IrUtil.isSubsetOf(domain, string.getLengthDomain())) {
+        if (!IrUtil.isSubsetOf(domain, string.getLength())) {
             throw new IllegalArgumentException();
         }
     }

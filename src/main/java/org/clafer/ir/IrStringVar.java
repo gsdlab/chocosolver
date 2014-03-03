@@ -33,11 +33,11 @@ public class IrStringVar extends IrAbstractString implements IrVar {
         return name;
     }
 
-    public IrIntVar[] getChars() {
+    public IrIntVar[] getCharVars() {
         return chars;
     }
 
-    public IrIntVar getLength() {
+    public IrIntVar getLengthVar() {
         return length;
     }
 

@@ -158,13 +158,13 @@ public class IrSolutionMap {
     }
 
     public String getStringValue(IrStringVar var) {
-        int[] charints = getIntValues(var.getChars());
+        int[] charints = getIntValues(var.getCharVars());
         char[] chars = new char[charints.length];
         for (int i = 0; i < chars.length; i++) {
             assert charints[i] >= Character.MIN_VALUE && charints[i] <= Character.MAX_VALUE;
             chars[i] = (char) charints[i];
         }
-        int length = getIntValue(var.getLength());
+        int length = getIntValue(var.getLengthVar());
         return new String(chars, 0, length);
     }
 

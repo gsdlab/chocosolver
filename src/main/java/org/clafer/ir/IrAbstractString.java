@@ -46,12 +46,12 @@ public abstract class IrAbstractString implements IrStringExpr {
     }
 
     @Override
-    public IrDomain[] getCharDomains() {
+    public IrDomain[] getChars() {
         return charDomains;
     }
 
     @Override
-    public IrDomain getLengthDomain() {
+    public IrDomain getLength() {
         return lengthDomain;
     }
 

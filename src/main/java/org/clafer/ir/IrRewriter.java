@@ -601,10 +601,10 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrStringVar visit(IrStringVar ir, T a) {
-        IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getChars(), a));
-        IrIntVar length = (IrIntVar) rewrite(ir.getLength(), a);
-        return changed(ir.getChars(), chars)
-                || changed(ir.getLength(), length)
+        IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getCharVars(), a));
+        IrIntVar length = (IrIntVar) rewrite(ir.getLengthVar(), a);
+        return changed(ir.getCharVars(), chars)
+                || changed(ir.getLengthVar(), length)
                 ? string(ir.getName(), chars, length)
                 : ir;
     }

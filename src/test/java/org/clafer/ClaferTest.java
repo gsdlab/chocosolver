@@ -292,8 +292,8 @@ public abstract class ClaferTest {
     }
 
     public static CStringVar toCStringVar(IrStringVar var, Solver solver) {
-        IntVar[] chars = toIntVars(var.getChars(), solver);
-        IntVar length = toIntVar(var.getLength(), solver);
+        IntVar[] chars = toIntVars(var.getCharVars(), solver);
+        IntVar length = toIntVar(var.getLengthVar(), solver);
         solver.post(Constraints.length(chars, length));
         return new CStringVar(chars, length);
     }

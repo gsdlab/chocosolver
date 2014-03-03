@@ -88,8 +88,8 @@ public class Coalescer {
         for (IrVar var : module.getVariables()) {
             if (var instanceof IrStringVar) {
                 IrStringVar string = (IrStringVar) var;
-                IrIntVar[] chars = string.getChars();
-                IrIntVar length = string.getLength();
+                IrIntVar[] chars = string.getCharVars();
+                IrIntVar length = string.getLengthVar();
                 for (int i = 0; i < length.getDomain().getLowBound(); i++) {
                     if (chars[i].getDomain().contains(0)) {
                         IrDomain domain = IrUtil.remove(chars[i].getDomain(), 0);
@@ -107,20 +107,20 @@ public class Coalescer {
             if (component.size() > 1) {
                 Iterator<IrStringVar> iter = component.iterator();
                 IrStringVar var = iter.next();
-                IrIntVar length = var.getLength();
-                IrIntVar[] chars = var.getChars();
-                int lengthLow = var.getLengthDomain().getLowBound();
-                int lengthHigh = var.getLengthDomain().getHighBound();
+                IrIntVar length = var.getLengthVar();
+                IrIntVar[] chars = var.getCharVars();
+                int lengthLow = var.getLength().getLowBound();
+                int lengthHigh = var.getLength().getHighBound();
                 while (iter.hasNext()) {
                     var = iter.next();
-                    intGraph.union(length, var.getLength());
-                    lengthLow = Math.max(lengthLow, var.getLengthDomain().getLowBound());
-                    lengthHigh = Math.min(lengthHigh, var.getLengthDomain().getHighBound());
-                    for (int i = 0; i < Math.min(chars.length, var.getChars().length); i++) {
-                        intGraph.union(chars[i], var.getChars()[i]);
+                    intGraph.union(length, var.getLengthVar());
+                    lengthLow = Math.max(lengthLow, var.getLength().getLowBound());
+                    lengthHigh = Math.min(lengthHigh, var.getLength().getHighBound());
+                    for (int i = 0; i < Math.min(chars.length, var.getCharVars().length); i++) {
+                        intGraph.union(chars[i], var.getCharVars()[i]);
                     }
-                    for (int i = chars.length; i < var.getChars().length; i++) {
-                        intGraph.union(var.getChars()[i], Zero);
+                    for (int i = chars.length; i < var.getCharVars().length; i++) {
+                        intGraph.union(var.getCharVars()[i], Zero);
                     }
                 }
             }
@@ -1058,71 +1058,71 @@ public class Coalescer {
             {
                 IrIntVar[] chars = chars(word).clone();
                 for (int i = 0; i < chars.length; i++) {
-                    if (i >= prefix.getLengthDomain().getLowBound()) {
+                    if (i >= prefix.getLength().getLowBound()) {
                         chars[i] = tint(chars[i]).add(0);
                     }
                 }
                 propagateString(
-                        tstring(chars).boundHighLength(word.getLengthDomain().getHighBound()),
+                        tstring(chars).boundHighLength(word.getLength().getHighBound()),
                         prefix);
             }
             {
                 IrIntVar[] chars = chars(word).clone();
                 IrIntVar[] prefixChars = chars(prefix);
                 System.arraycopy(prefixChars, 0, chars, 0,
-                        Math.min(prefix.getLengthDomain().getLowBound(),
+                        Math.min(prefix.getLength().getLowBound(),
                                 Math.min(prefixChars.length, chars.length)));
                 propagateString(
-                        tstring(chars).boundLowLength(prefix.getLengthDomain().getLowBound()),
+                        tstring(chars).boundLowLength(prefix.getLength().getLowBound()),
                         word);
             }
         }
 
         private void propagateSuffix(IrStringExpr suffix, IrStringExpr word) {
-            failIf(word.getLengthDomain().getHighBound() < suffix.getLengthDomain().getLowBound());
+            failIf(word.getLength().getHighBound() < suffix.getLength().getLowBound());
             {
-                IrIntVar[] chars = new IrIntVar[suffix.getCharDomains().length];
+                IrIntVar[] chars = new IrIntVar[suffix.getChars().length];
                 int low = Math.max(0,
-                        word.getLengthDomain().getLowBound()
-                        - suffix.getLengthDomain().getHighBound());
-                int high = word.getLengthDomain().getHighBound()
-                        - suffix.getLengthDomain().getLowBound();
+                        word.getLength().getLowBound()
+                        - suffix.getLength().getHighBound());
+                int high = word.getLength().getHighBound()
+                        - suffix.getLength().getLowBound();
                 for (int i = 0; i < chars.length; i++) {
                     int ilow = low + i;
-                    if (ilow >= word.getCharDomains().length) {
+                    if (ilow >= word.getChars().length) {
                         chars[i] = Zero;
                     } else {
-                        int ihigh = Math.min(word.getCharDomains().length - 1, high + i);
+                        int ihigh = Math.min(word.getChars().length - 1, high + i);
                         IrIntVar ichar = charAt(word, ilow);
                         for (int j = ilow + 1; j <= ihigh; j++) {
-                            ichar = tint(ichar).union(word.getCharDomains()[j]);
+                            ichar = tint(ichar).union(word.getChars()[j]);
                         }
-                        chars[i] = ilow < suffix.getLengthDomain().getLowBound()
+                        chars[i] = ilow < suffix.getLength().getLowBound()
                                 ? ichar : tint(ichar).add(0);
                     }
                 }
                 propagateString(
-                        tstring(chars).boundHighLength(word.getLengthDomain().getHighBound()),
+                        tstring(chars).boundHighLength(word.getLength().getHighBound()),
                         suffix);
             }
             {
                 IrIntVar[] chars = chars(word).clone();
-                IrIntVar charDomain = charAt(suffix, suffix.getLengthDomain().getHighBound() - 1);
-                for (int i = suffix.getLengthDomain().getHighBound() - 1;
-                        i > suffix.getLengthDomain().getLowBound();
+                IrIntVar charDomain = charAt(suffix, suffix.getLength().getHighBound() - 1);
+                for (int i = suffix.getLength().getHighBound() - 1;
+                        i > suffix.getLength().getLowBound();
                         i--) {
-                    charDomain = tint(charDomain).union(suffix.getCharDomains()[i - 1]);
+                    charDomain = tint(charDomain).union(suffix.getChars()[i - 1]);
                 }
-                for (int i = 0; i < suffix.getLengthDomain().getLowBound(); i++) {
-                    charDomain = tint(charDomain).copy().union(suffix.getCharDomains()[suffix.getLengthDomain().getLowBound() - i - 1]);
-                    int index = word.getLengthDomain().getHighBound() - i - 1;
-                    if (index >= word.getLengthDomain().getLowBound()) {
+                for (int i = 0; i < suffix.getLength().getLowBound(); i++) {
+                    charDomain = tint(charDomain).copy().union(suffix.getChars()[suffix.getLength().getLowBound() - i - 1]);
+                    int index = word.getLength().getHighBound() - i - 1;
+                    if (index >= word.getLength().getLowBound()) {
                         charDomain = tint(charDomain).add(0);
                     }
-                    chars[word.getLengthDomain().getHighBound() - i - 1] = charDomain;
+                    chars[word.getLength().getHighBound() - i - 1] = charDomain;
                 }
                 propagateString(
-                        tstring(chars).boundLowLength(suffix.getLengthDomain().getLowBound()),
+                        tstring(chars).boundLowLength(suffix.getLength().getLowBound()),
                         word);
             }
         }
@@ -1141,7 +1141,7 @@ public class Coalescer {
             }
             IrIntVar chars[] = chars(expr);
             IrIntVar length = tint(IrUtil.boundBetween(
-                    expr.getLengthDomain(), 0, chars.length));
+                    expr.getLength(), 0, chars.length));
             return tstring(chars, length);
         }
 
@@ -1156,7 +1156,7 @@ public class Coalescer {
         private void propagateConcat(IrStringVar left, IrConcat right) {
             propagatePrefix(asStringVar(right.getLeft()), left);
             propagateSuffix(asStringVar(right.getRight()), left);
-            propagateInt(left.getLengthDomain(),
+            propagateInt(left.getLength(),
                     add(length(right.getLeft()), length(right.getRight())));
         }
     }
@@ -1196,8 +1196,8 @@ public class Coalescer {
             if (ir instanceof IrConstant) {
                 return ir;
             }
-            IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getChars(), a));
-            IrIntVar length = (IrIntVar) rewrite(ir.getLength(), a);
+            IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getCharVars(), a));
+            IrIntVar length = (IrIntVar) rewrite(ir.getLengthVar(), a);
             List<IrIntVar> key = new ArrayList<>();
             key.addAll(Arrays.asList(chars));
             key.addAll(Arrays.asList(length));
@@ -1216,16 +1216,16 @@ public class Coalescer {
 
     private static IrIntVar charAt(IrStringExpr expr, int index) {
         if (expr instanceof IrStringVar) {
-            return ((IrStringVar) expr).getChars()[index];
+            return ((IrStringVar) expr).getCharVars()[index];
         }
-        return new TempIntVar(expr.getCharDomains()[index]);
+        return new TempIntVar(expr.getChars()[index]);
     }
 
     private static IrIntVar[] chars(IrStringExpr expr) {
         if (expr instanceof IrStringVar) {
-            return ((IrStringVar) expr).getChars();
+            return ((IrStringVar) expr).getCharVars();
         }
-        return mapTint(expr.getCharDomains());
+        return mapTint(expr.getChars());
     }
 
     /**
@@ -1413,26 +1413,26 @@ public class Coalescer {
         }
 
         boolean isRestrictive(IrStringVar var) {
-            for (int i = 0; i < Math.min(getCharDomains().length, var.getCharDomains().length); i++) {
-                if (!IrUtil.isSubsetOf(var.getCharDomains()[i], getCharDomains()[i])) {
+            for (int i = 0; i < Math.min(getChars().length, var.getChars().length); i++) {
+                if (!IrUtil.isSubsetOf(var.getChars()[i], getChars()[i])) {
                     return true;
                 }
             }
-            return !IrUtil.isSubsetOf(var.getLengthDomain(), getLengthDomain());
+            return !IrUtil.isSubsetOf(var.getLength(), getLength());
         }
 
         TempStringVar boundLowLength(int lb) {
-            if (lb <= getLengthDomain().getLowBound()) {
+            if (lb <= getLength().getLowBound()) {
                 return this;
             }
-            return new TempStringVar(getChars(), tint(getLength()).boundLow(lb));
+            return new TempStringVar(getCharVars(), tint(getLengthVar()).boundLow(lb));
         }
 
         TempStringVar boundHighLength(int hb) {
-            if (hb >= getLengthDomain().getHighBound()) {
+            if (hb >= getLength().getHighBound()) {
                 return this;
             }
-            return new TempStringVar(getChars(), tint(getLength()).boundHigh(hb));
+            return new TempStringVar(getCharVars(), tint(getLengthVar()).boundHigh(hb));
         }
     }
 }

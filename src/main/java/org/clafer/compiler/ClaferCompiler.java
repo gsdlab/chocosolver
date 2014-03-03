@@ -93,11 +93,11 @@ public class ClaferCompiler {
                 if (ref.getTargetType() instanceof AstStringClafer) {
                     for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref)) {
                         Either<Integer, IntVar> lengthVar
-                                = map.getIrSolution().getIntVar(stringVar.getLength());
+                                = map.getIrSolution().getIntVar(stringVar.getLengthVar());
                         if (lengthVar.isRight()) {
                             vars.add(lengthVar.getRight());
                         }
-                        for (IrIntVar charVar : stringVar.getChars()) {
+                        for (IrIntVar charVar : stringVar.getCharVars()) {
                             Either<Integer, IntVar> var = map.getIrSolution().getIntVar(charVar);
                             if (var.isRight()) {
                                 vars.add(var.getRight());

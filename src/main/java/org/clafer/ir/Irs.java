@@ -1083,10 +1083,10 @@ public class Irs {
      * TODO STRING
      */
     public static IrBoolExpr prefix(IrStringExpr prefix, IrStringExpr word) {
-        if (prefix.getLengthDomain().getHighBound() == 0) {
+        if (prefix.getLength().getHighBound() == 0) {
             return True;
         }
-        if (prefix.getLengthDomain().getLowBound() >= word.getLengthDomain().getHighBound()) {
+        if (prefix.getLength().getLowBound() >= word.getLength().getHighBound()) {
             return equal(prefix, word);
         }
         return new IrPrefix(prefix, word, BoolDomain);
@@ -1096,10 +1096,10 @@ public class Irs {
      * TODO STRING
      */
     public static IrBoolExpr suffix(IrStringExpr suffix, IrStringExpr word) {
-        if (suffix.getLengthDomain().getHighBound() == 0) {
+        if (suffix.getLength().getHighBound() == 0) {
             return True;
         }
-        if (suffix.getLengthDomain().getLowBound() >= word.getLengthDomain().getHighBound()) {
+        if (suffix.getLength().getLowBound() >= word.getLength().getHighBound()) {
             return equal(suffix, word);
         }
         return new IrSuffix(suffix, word, BoolDomain);
@@ -1423,9 +1423,9 @@ public class Irs {
 
     public static IrIntExpr length(IrStringExpr string) {
         if (string instanceof IrStringVar) {
-            return ((IrStringVar) string).getLength();
+            return ((IrStringVar) string).getLengthVar();
         }
-        return new IrLength(string, string.getLengthDomain());
+        return new IrLength(string, string.getLength());
     }
 
     /**
@@ -1940,9 +1940,9 @@ public class Irs {
             int val = iter.next();
             if (val < $array.length) {
                 IrStringExpr string = $array[iter.next()];
-                length = IrUtil.union(length, string.getLengthDomain());
-                for (int i = 0; i < string.getCharDomains().length; i++) {
-                    chars[i] = IrUtil.union(chars[i], string.getCharDomains()[i]);
+                length = IrUtil.union(length, string.getLength());
+                for (int i = 0; i < string.getChars().length; i++) {
+                    chars[i] = IrUtil.union(chars[i], string.getChars()[i]);
                 }
             }
         }
@@ -1955,10 +1955,10 @@ public class Irs {
     }
 
     public static IrStringExpr concat(IrStringExpr left, IrStringExpr right) {
-        IrDomain leftLength = left.getLengthDomain();
-        IrDomain[] leftChars = left.getCharDomains();
-        IrDomain rightLength = right.getLengthDomain();
-        IrDomain[] rightChars = right.getCharDomains();
+        IrDomain leftLength = left.getLength();
+        IrDomain[] leftChars = left.getChars();
+        IrDomain rightLength = right.getLength();
+        IrDomain[] rightChars = right.getChars();
 
         if (leftLength.getHighBound() == 0) {
             return right;
