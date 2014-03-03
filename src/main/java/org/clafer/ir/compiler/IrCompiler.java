@@ -60,6 +60,7 @@ import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
 import org.clafer.ir.IrOr;
 import org.clafer.ir.IrPrefix;
+import org.clafer.ir.IrRegister;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetDifference;
 import org.clafer.ir.IrSetExpr;
@@ -183,17 +184,11 @@ public class IrCompiler {
         commonSubexpressions.addAll(CommonSubexpression.findCommonSubexpressions(optModule));
 
         for (IrBoolExpr constraint : constraints) {
-            post(compileAsConstraint(constraint));
-        }
-        for (IrVar var : optModule.getVariables()) {
-            if (var instanceof IrBoolVar) {
-                compile((IrBoolVar) var);
-            } else if (var instanceof IrIntVar) {
-                compile((IrIntVar) var);
-            } else if (var instanceof IrSetVar) {
-                compile((IrSetVar) var);
+            Constraint c = compileAsConstraint(constraint);
+            if (c.equals(solver.TRUE)) {
+                assert constraint instanceof IrRegister;
             } else {
-                compile((IrStringVar) var);
+                post(c);
             }
         }
         return new IrSolutionMap(
@@ -761,6 +756,22 @@ public class IrCompiler {
         return vars;
     }
     private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
+
+        @Override
+        public Object visit(IrRegister ir, BoolArg a) {
+            IrVar variable = ir.getVariable();
+            if (variable instanceof IrBoolVar) {
+                compile((IrBoolVar) variable);
+            } else if (variable instanceof IrIntVar) {
+                compile((IrIntVar) variable);
+            } else if (variable instanceof IrSetVar) {
+                compile((IrSetVar) variable);
+            } else {
+                compile((IrStringVar) variable);
+            }
+            return solver.TRUE;
+        }
+
         @Override
         public Object visit(IrBoolVar ir, BoolArg a) {
             return getBoolVar(ir);
@@ -1282,6 +1293,11 @@ public class IrCompiler {
             }
             IntVar var = compileAsIntVar(expr);
             return a == null ? var : _arithm(var, "=", a);
+        }
+
+        @Override
+        public Object visit(IrRegister ir, IntVar a) {
+            return compileBool(ir, a);
         }
 
         @Override

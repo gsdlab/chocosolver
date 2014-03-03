@@ -15,26 +15,19 @@ import org.clafer.common.Check;
  */
 public class IrModule {
 
-    private final Set<IrVar> variables;
     private final List<IrBoolExpr> constraints;
 
     public IrModule() {
-        this(100, 100);
+        this(100);
     }
 
-    public IrModule(int initialVariableCapacity, int initialConstraintCapacity) {
-        this.variables = new HashSet<>(initialVariableCapacity);
+    public IrModule(int initialConstraintCapacity) {
         this.constraints = new ArrayList<>(initialConstraintCapacity);
     }
 
     public IrModule addVariable(IrVar var) {
         if (!(var instanceof IrConstant)) {
-            if (var instanceof IrStringVar) {
-                IrStringVar string = (IrStringVar) var;
-                addVariable(string.getLengthVar());
-                addVariables(string.getCharVars());
-            }
-            variables.add(var);
+            constraints.add(new IrRegister(var));
         }
         return this;
     }
@@ -54,7 +47,11 @@ public class IrModule {
     }
 
     public Set<IrVar> getVariables() {
-        return Collections.unmodifiableSet(variables);
+        Set<IrVar> variables = new HashSet<>();
+        for (IrBoolExpr constraint : constraints) {
+            constraint.accept(VariableFinder, variables);
+        }
+        return variables;
     }
 
     public IrModule addConstraint(IrBoolExpr expr) {
@@ -96,12 +93,37 @@ public class IrModule {
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append("IrModule").append('\n');
-        for (IrVar variable : variables) {
-            result.append("++").append(variable).append('\n');
-        }
         for (IrBoolExpr constraint : constraints) {
             result.append("--").append(constraint).append('\n');
         }
         return result.toString();
     }
+
+    private static final IrTraverser<Set<IrVar>> VariableFinder
+            = new IrTraverser<Set<IrVar>>() {
+
+                @Override
+                public Void visit(IrBoolVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+
+                @Override
+                public Void visit(IrIntVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+
+                @Override
+                public Void visit(IrSetVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+
+                @Override
+                public Void visit(IrStringVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+            };
 }

@@ -52,18 +52,7 @@ public abstract class IrRewriter<T>
     }
 
     public IrModule rewrite(IrModule module, T t) {
-        IrModule optModule = new IrModule(module.getVariables().size(), module.getConstraints().size());
-        for (IrVar variable : module.getVariables()) {
-            if (variable instanceof IrBoolVar) {
-                optModule.addVariable(visit((IrBoolVar) variable, t));
-            } else if (variable instanceof IrIntVar) {
-                optModule.addVariable(visit((IrIntVar) variable, t));
-            } else if (variable instanceof IrSetVar) {
-                optModule.addVariable(visit((IrSetVar) variable, t));
-            } else {
-                optModule.addVariable(visit((IrStringVar) variable, t));
-            }
-        }
+        IrModule optModule = new IrModule(module.getConstraints().size());
         for (IrBoolExpr constraint : module.getConstraints()) {
             optModule.addConstraint(rewrite(constraint, t));
         }
@@ -140,6 +129,23 @@ public abstract class IrRewriter<T>
             rewritten[i] = rewrite(exprs[i], t);
         }
         return rewritten;
+    }
+
+    @Override
+    public IrIntExpr visit(IrRegister ir, T a) {
+        IrVar variable = ir.getVariable();
+        if (variable instanceof IrBoolVar) {
+            variable = (IrVar) rewrite((IrBoolVar) variable, a);
+        } else if (variable instanceof IrIntVar) {
+            variable = (IrVar) rewrite((IrIntVar) variable, a);
+        } else if (variable instanceof IrSetVar) {
+            variable = (IrVar) rewrite((IrSetVar) variable, a);
+        } else {
+            variable = (IrVar) rewrite((IrStringVar) variable, a);
+        }
+        return changed(ir.getVariable(), variable)
+                ? new IrRegister(variable)
+                : ir;
     }
 
     @Override

@@ -5,12 +5,9 @@ import java.util.Set;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrExpr;
-import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrTraverser;
 
 /**
@@ -34,7 +31,7 @@ public class CommonSubexpression {
         private final Set<IrExpr> duplicates = new HashSet<>();
 
         @Override
-        public IrIntExpr visit(IrElement ir, Void a) {
+        public Void visit(IrElement ir, Void a) {
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }
@@ -42,7 +39,7 @@ public class CommonSubexpression {
         }
 
         @Override
-        public IrSetExpr visit(IrArrayToSet ir, Void a) {
+        public Void visit(IrArrayToSet ir, Void a) {
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }
@@ -50,7 +47,7 @@ public class CommonSubexpression {
         }
 
         @Override
-        public IrSetExpr visit(IrJoinRelation ir, Void a) {
+        public Void visit(IrJoinRelation ir, Void a) {
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }
@@ -58,7 +55,7 @@ public class CommonSubexpression {
         }
 
         @Override
-        public IrSetExpr visit(IrJoinFunction ir, Void a) {
+        public Void visit(IrJoinFunction ir, Void a) {
             if (!seen.add(ir)) {
                 duplicates.add(ir);
             }

@@ -47,6 +47,7 @@ import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrPrefix;
+import org.clafer.ir.IrRegister;
 import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
@@ -225,6 +226,11 @@ public class Coalescer {
 
         public DisjointSets<IrStringVar> getStringGraph() {
             return stringGraph;
+        }
+
+        @Override
+        public Void visit(IrRegister ir, Void a) {
+            return null;
         }
 
         @Override

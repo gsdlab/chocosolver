@@ -6,22 +6,11 @@ package org.clafer.ir;
  * @author jimmy
  */
 public abstract class IrTraverser<T>
-        implements IrIntExprVisitor<T, IrIntExpr>,
-        IrSetExprVisitor<T, IrSetExpr>,
-        IrStringExprVisitor<T, IrStringExpr> {
+        implements IrIntExprVisitor<T, Void>,
+        IrSetExprVisitor<T, Void>,
+        IrStringExprVisitor<T, Void> {
 
     public void traverse(IrModule module, T a) {
-        for (IrVar variable : module.getVariables()) {
-            if (variable instanceof IrBoolVar) {
-                traverse((IrBoolVar) variable, a);
-            } else if (variable instanceof IrIntVar) {
-                traverse((IrIntVar) variable, a);
-            } else if (variable instanceof IrSetVar) {
-                traverse((IrSetVar) variable, a);
-            } else {
-                traverse((IrStringVar) variable, a);
-            }
-        }
         for (IrBoolExpr constraint : module.getConstraints()) {
             traverse(constraint, a);
         }
@@ -74,365 +63,380 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public IrBoolVar visit(IrBoolVar ir, T a) {
-        return ir;
+    public Void visit(IrRegister ir, T a) {
+        IrVar variable = ir.getVariable();
+        if (variable instanceof IrBoolVar) {
+            traverse((IrBoolVar) variable, a);
+        } else if (variable instanceof IrIntVar) {
+            traverse((IrIntVar) variable, a);
+        } else if (variable instanceof IrSetVar) {
+            traverse((IrSetVar) variable, a);
+        } else {
+            traverse((IrStringVar) variable, a);
+        }
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrNot ir, T a) {
-        return ir;
+    public Void visit(IrBoolVar ir, T a) {
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrAnd ir, T a) {
+    public Void visit(IrNot ir, T a) {
+        return null;
+    }
+
+    @Override
+    public Void visit(IrAnd ir, T a) {
         traverse(ir.getOperands(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrLone ir, T a) {
+    public Void visit(IrLone ir, T a) {
         traverse(ir.getOperands(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrOne ir, T a) {
+    public Void visit(IrOne ir, T a) {
         traverse(ir.getOperands(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrOr ir, T a) {
+    public Void visit(IrOr ir, T a) {
         traverse(ir.getOperands(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrImplies ir, T a) {
+    public Void visit(IrImplies ir, T a) {
         traverse(ir.getAntecedent(), a);
         traverse(ir.getConsequent(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrNotImplies ir, T a) {
+    public Void visit(IrNotImplies ir, T a) {
         traverse(ir.getAntecedent(), a);
         traverse(ir.getConsequent(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrIfThenElse ir, T a) {
+    public Void visit(IrIfThenElse ir, T a) {
         traverse(ir.getAntecedent(), a);
         traverse(ir.getConsequent(), a);
         traverse(ir.getAlternative(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrIfOnlyIf ir, T a) {
+    public Void visit(IrIfOnlyIf ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrXor ir, T a) {
+    public Void visit(IrXor ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrWithin ir, T a) {
+    public Void visit(IrWithin ir, T a) {
         traverse(ir.getValue(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrNotWithin ir, T a) {
+    public Void visit(IrNotWithin ir, T a) {
         traverse(ir.getValue(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrCompare ir, T a) {
+    public Void visit(IrCompare ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrSetTest ir, T a) {
+    public Void visit(IrSetTest ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrStringCompare ir, T a) {
+    public Void visit(IrStringCompare ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrMember ir, T a) {
+    public Void visit(IrMember ir, T a) {
         traverse(ir.getElement(), a);
         traverse(ir.getSet(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrNotMember ir, T a) {
+    public Void visit(IrNotMember ir, T a) {
         traverse(ir.getElement(), a);
         traverse(ir.getSet(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrSubsetEq ir, T a) {
+    public Void visit(IrSubsetEq ir, T a) {
         traverse(ir.getSubset(), a);
         traverse(ir.getSuperset(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrBoolChannel ir, T a) {
+    public Void visit(IrBoolChannel ir, T a) {
         traverse(ir.getBools(), a);
         traverse(ir.getSet(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrIntChannel ir, T a) {
+    public Void visit(IrIntChannel ir, T a) {
         traverse(ir.getInts(), a);
         traverse(ir.getSets(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrSortStrings ir, T a) {
+    public Void visit(IrSortStrings ir, T a) {
         traverse(ir.getStrings(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrSortSets ir, T a) {
+    public Void visit(IrSortSets ir, T a) {
         traverse(ir.getSets(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrSortStringsChannel ir, T a) {
+    public Void visit(IrSortStringsChannel ir, T a) {
         traverse(ir.getStrings(), a);
         traverse(ir.getInts(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrAllDifferent ir, T a) {
+    public Void visit(IrAllDifferent ir, T a) {
         traverse(ir.getOperands(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrSelectN ir, T a) {
+    public Void visit(IrSelectN ir, T a) {
         traverse(ir.getBools(), a);
         traverse(ir.getN(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrAcyclic ir, T a) {
+    public Void visit(IrAcyclic ir, T a) {
         traverse(ir.getEdges(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrUnreachable ir, T a) {
+    public Void visit(IrUnreachable ir, T a) {
         traverse(ir.getEdges(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrBoolExpr visit(IrFilterString ir, T a) {
+    public Void visit(IrFilterString ir, T a) {
         traverse(ir.getSet(), a);
         traverse(ir.getString(), a);
         traverse(ir.getResult(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrPrefix ir, T a) {
+    public Void visit(IrPrefix ir, T a) {
         traverse(ir.getPrefix(), a);
         traverse(ir.getWord(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrSuffix ir, T a) {
+    public Void visit(IrSuffix ir, T a) {
         traverse(ir.getSuffix(), a);
         traverse(ir.getWord(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntVar visit(IrIntVar ir, T a) {
-        return ir;
+    public Void visit(IrIntVar ir, T a) {
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrMinus ir, T a) {
+    public Void visit(IrMinus ir, T a) {
         traverse(ir.getExpr(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrCard ir, T a) {
+    public Void visit(IrCard ir, T a) {
         traverse(ir.getSet(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrAdd ir, T a) {
+    public Void visit(IrAdd ir, T a) {
         traverse(ir.getAddends(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrMul ir, T a) {
+    public Void visit(IrMul ir, T a) {
         traverse(ir.getMultiplicand(), a);
         traverse(ir.getMultiplier(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrDiv ir, T a) {
+    public Void visit(IrDiv ir, T a) {
         traverse(ir.getDividend(), a);
         traverse(ir.getDivisor(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrElement ir, T a) {
+    public Void visit(IrElement ir, T a) {
         traverse(ir.getArray(), a);
         traverse(ir.getIndex(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrCount ir, T a) {
+    public Void visit(IrCount ir, T a) {
         traverse(ir.getArray(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrSetSum ir, T a) {
+    public Void visit(IrSetSum ir, T a) {
         traverse(ir.getSet(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrTernary ir, T a) {
+    public Void visit(IrTernary ir, T a) {
         traverse(ir.getAntecedent(), a);
         traverse(ir.getConsequent(), a);
         traverse(ir.getAlternative(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrIntExpr visit(IrLength ir, T a) {
+    public Void visit(IrLength ir, T a) {
         traverse(ir.getString(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetVar visit(IrSetVar ir, T a) {
-        return ir;
+    public Void visit(IrSetVar ir, T a) {
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrSingleton ir, T a) {
+    public Void visit(IrSingleton ir, T a) {
         traverse(ir.getValue(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrArrayToSet ir, T a) {
+    public Void visit(IrArrayToSet ir, T a) {
         traverse(ir.getArray(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrJoinRelation ir, T a) {
+    public Void visit(IrJoinRelation ir, T a) {
         traverse(ir.getTake(), a);
         traverse(ir.getChildren(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrJoinFunction ir, T a) {
+    public Void visit(IrJoinFunction ir, T a) {
         traverse(ir.getTake(), a);
         traverse(ir.getRefs(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrSetDifference ir, T a) {
+    public Void visit(IrSetDifference ir, T a) {
         traverse(ir.getMinuend(), a);
         traverse(ir.getSubtrahend(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrSetIntersection ir, T a) {
+    public Void visit(IrSetIntersection ir, T a) {
         traverse(ir.getOperands(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrSetUnion ir, T a) {
+    public Void visit(IrSetUnion ir, T a) {
         traverse(ir.getOperands(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrOffset ir, T a) {
+    public Void visit(IrOffset ir, T a) {
         traverse(ir.getSet(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrMask ir, T a) {
+    public Void visit(IrMask ir, T a) {
         traverse(ir.getSet(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrSetExpr visit(IrSetTernary ir, T a) {
+    public Void visit(IrSetTernary ir, T a) {
         traverse(ir.getAntecedent(), a);
         traverse(ir.getConsequent(), a);
         traverse(ir.getAlternative(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrStringExpr visit(IrStringVar ir, T a) {
-        return ir;
+    public Void visit(IrStringVar ir, T a) {
+        return null;
     }
 
     @Override
-    public IrStringExpr visit(IrElementString ir, T a) {
+    public Void visit(IrElementString ir, T a) {
         traverse(ir.getArray(), a);
         traverse(ir.getIndex(), a);
-        return ir;
+        return null;
     }
 
     @Override
-    public IrStringExpr visit(IrConcat ir, T a) {
+    public Void visit(IrConcat ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
-        return ir;
+        return null;
     }
 }

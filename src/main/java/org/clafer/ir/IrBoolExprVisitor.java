@@ -9,6 +9,8 @@ package org.clafer.ir;
  */
 public interface IrBoolExprVisitor<A, B> {
 
+    public B visit(IrRegister ir, A a);
+
     public B visit(IrBoolVar ir, A a);
 
     public B visit(IrNot ir, A a);
