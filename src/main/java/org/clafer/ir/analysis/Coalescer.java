@@ -3,14 +3,19 @@ package org.clafer.ir.analysis;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
+import org.clafer.common.Util;
+import org.clafer.ir.IllegalSetException;
+import org.clafer.ir.IllegalStringException;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
@@ -21,6 +26,8 @@ import org.clafer.ir.IrBoolExprVisitorAdapter;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
+import org.clafer.ir.IrConcat;
+import org.clafer.ir.IrConstant;
 import org.clafer.ir.IrDomain;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrFilterString;
@@ -30,6 +37,7 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
+import org.clafer.ir.IrLength;
 import org.clafer.ir.IrMember;
 import org.clafer.ir.IrMinus;
 import org.clafer.ir.IrModule;
@@ -38,6 +46,7 @@ import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrOffset;
+import org.clafer.ir.IrPrefix;
 import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
@@ -48,8 +57,13 @@ import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortSets;
 import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSortStringsChannel;
+import org.clafer.ir.IrStringCompare;
+import org.clafer.ir.IrStringExpr;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrSubsetEq;
+import org.clafer.ir.IrSuffix;
 import org.clafer.ir.IrUtil;
+import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.*;
@@ -63,31 +77,76 @@ public class Coalescer {
     }
 
     public static Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesce(IrModule module) {
-        Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> graphs = findEquivalences(module.getConstraints());
+        Triple<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>, DisjointSets<IrStringVar>> graphs
+                = findEquivalences(module.getConstraints());
         DisjointSets<IrIntVar> intGraph = graphs.getFst();
         DisjointSets<IrSetVar> setGraph = graphs.getSnd();
+        DisjointSets<IrStringVar> stringGraph = graphs.getThd();
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
         Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
 
+        for (IrVar var : module.getVariables()) {
+            if (var instanceof IrStringVar) {
+                IrStringVar string = (IrStringVar) var;
+                IrIntVar[] chars = string.getChars();
+                IrIntVar length = string.getLength();
+                for (int i = 0; i < length.getDomain().getLowBound(); i++) {
+                    if (chars[i].getDomain().contains(0)) {
+                        IrDomain domain = IrUtil.remove(chars[i].getDomain(), 0);
+                        failIf(domain.isEmpty());
+                        intGraph.union(chars[i], tint(domain));
+                    }
+                }
+                for (int i = length.getDomain().getHighBound(); i < chars.length; i++) {
+                    intGraph.union(chars[i], Zero);
+                }
+            }
+        }
+
+        for (Set<IrStringVar> component : stringGraph.connectedComponents()) {
+            if (component.size() > 1) {
+                Iterator<IrStringVar> iter = component.iterator();
+                IrStringVar var = iter.next();
+                IrIntVar length = var.getLength();
+                IrIntVar[] chars = var.getChars();
+                int lengthLow = var.getLengthDomain().getLowBound();
+                int lengthHigh = var.getLengthDomain().getHighBound();
+                while (iter.hasNext()) {
+                    var = iter.next();
+                    intGraph.union(length, var.getLength());
+                    lengthLow = Math.max(lengthLow, var.getLengthDomain().getLowBound());
+                    lengthHigh = Math.min(lengthHigh, var.getLengthDomain().getHighBound());
+                    for (int i = 0; i < Math.min(chars.length, var.getChars().length); i++) {
+                        intGraph.union(chars[i], var.getChars()[i]);
+                    }
+                    for (int i = chars.length; i < var.getChars().length; i++) {
+                        intGraph.union(var.getChars()[i], Zero);
+                    }
+                }
+            }
+        }
         for (Set<IrIntVar> component : intGraph.connectedComponents()) {
             if (component.size() > 1) {
                 Iterator<IrIntVar> iter = component.iterator();
                 IrIntVar var = iter.next();
-                StringBuilder name = new StringBuilder().append(var.getName());
+                List<String> names = new ArrayList<>(component.size());
+                if (!(var instanceof TempIntVar)) {
+                    names.add(var.getName());
+                }
                 IrDomain domain = var.getDomain();
                 while (iter.hasNext()) {
                     var = iter.next();
-                    name.append(';').append(var.getName());
+                    if (!(var instanceof TempIntVar)) {
+                        names.add(var.getName());
+                    }
                     domain = IrUtil.intersection(domain, var.getDomain());
                 }
-                if (domain.isEmpty()) {
-                    // Model is unsatisfiable. Compile anyways?
-                } else {
-                    IrIntVar coalesced = domainInt(name.toString(), domain);
-                    for (IrIntVar coalesce : component) {
-                        if (!coalesced.equals(coalesce) && !(coalesce instanceof TempIntVar)) {
-                            coalescedInts.put(coalesce, coalesced);
-                        }
+                failIf(domain.isEmpty());
+                IrIntVar coalesced = domainInt(Util.intercalate(";", names), domain);
+                for (IrIntVar coalesce : component) {
+                    if (!coalesced.equals(coalesce) && !(coalesce instanceof TempIntVar)
+                            && (names.size() > 1 || !coalesce.getDomain().equals(coalesced.getDomain()))) {
+                        coalescedInts.put(coalesce, coalesced);
                     }
                 }
             }
@@ -96,18 +155,23 @@ public class Coalescer {
             if (component.size() > 1) {
                 Iterator<IrSetVar> iter = component.iterator();
                 IrSetVar var = iter.next();
-                StringBuilder name = new StringBuilder().append(var.getName());
+                List<String> names = new ArrayList<>(component.size());
+                if (!(var instanceof TempSetVar)) {
+                    names.add(var.getName());
+                }
                 IrDomain env = var.getEnv();
                 IrDomain ker = var.getKer();
                 IrDomain card = var.getCard();
                 while (iter.hasNext()) {
                     var = iter.next();
-                    name.append(';').append(var.getName());
+                    if (!(var instanceof TempSetVar)) {
+                        names.add(var.getName());
+                    }
                     env = IrUtil.intersection(env, var.getEnv());
                     ker = IrUtil.union(ker, var.getKer());
                     card = IrUtil.intersection(card, var.getCard());
                 }
-                IrSetVar coalesced = newSet(name.toString(), env, ker, card, false);
+                IrSetVar coalesced = newSet(Util.intercalate(";", names), env, ker, card, false);
                 if (coalesced != null) {
                     for (IrSetVar coalesce : component) {
                         if (!coalesced.equals(coalesce) && !(coalesce instanceof TempSetVar)) {
@@ -124,40 +188,43 @@ public class Coalescer {
     }
 
     private static IrSetVar newSet(String name, IrDomain env, IrDomain ker, IrDomain card, boolean temp) {
-        if (!IrUtil.isSubsetOf(ker, env) || ker.size() > env.size()) {
-            // Model is unsatisfiable. Compile anyways?
-        } else {
-            IrDomain boundCard = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
-            if (boundCard.isEmpty()) {
-                // Model is unsatisfiable. Compile anyways?
-            } else {
-                return temp
-                        ? new TempSetVar(name, env, ker, boundCard)
-                        : set(name, env, ker, boundCard);
-            }
+        failIf(ker.size() > env.size());
+        IrDomain boundCard = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
+        try {
+            return temp
+                    ? new TempSetVar(env, ker, boundCard)
+                    : set(name, env, ker, boundCard);
+        } catch (IllegalSetException e) {
+            throw new CoalesceException(e);
         }
-        return null;
     }
 
-    private static Pair<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>> findEquivalences(Iterable<IrBoolExpr> constraints) {
-        DisjointSets<IrIntVar> intGraph = new DisjointSets<>();
-        DisjointSets<IrSetVar> setGraph = new DisjointSets<>();
-        EquivalenceFinder finder = new EquivalenceFinder(intGraph, setGraph);
+    private static Triple<DisjointSets<IrIntVar>, DisjointSets<IrSetVar>, DisjointSets<IrStringVar>>
+            findEquivalences(Iterable<IrBoolExpr> constraints) {
+        EquivalenceFinder finder = new EquivalenceFinder();
         for (IrBoolExpr constraint : constraints) {
             constraint.accept(finder, null);
         }
-        return new Pair<>(intGraph, setGraph);
+        return new Triple<>(finder.getIntGraph(), finder.getSetGraph(), finder.getStringGraph());
     }
 
     private static class EquivalenceFinder extends IrBoolExprVisitorAdapter<Void, Void> {
 
-        private final DisjointSets<IrIntVar> intGraph;
-        private final DisjointSets<IrSetVar> setGraph;
+        private final DisjointSets<IrIntVar> intGraph = new DisjointSets<>();
+        private final DisjointSets<IrSetVar> setGraph = new DisjointSets<>();
+        private final DisjointSets<IrStringVar> stringGraph = new DisjointSets<>();
         private final Map<IrSetVar, IrIntVar> duplicates = new HashMap<>();
 
-        private EquivalenceFinder(DisjointSets<IrIntVar> intGraph, DisjointSets<IrSetVar> setGraph) {
-            this.intGraph = intGraph;
-            this.setGraph = setGraph;
+        public DisjointSets<IrIntVar> getIntGraph() {
+            return intGraph;
+        }
+
+        public DisjointSets<IrSetVar> getSetGraph() {
+            return setGraph;
+        }
+
+        public DisjointSets<IrStringVar> getStringGraph() {
+            return stringGraph;
         }
 
         @Override
@@ -230,6 +297,21 @@ public class Coalescer {
                 } else {
                     propagateSet(new PartialSet(left.getEnv(), left.getKer(), left.getCard()), right);
                     propagateSet(new PartialSet(right.getEnv(), right.getKer(), right.getCard()), left);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Void visit(IrStringCompare ir, Void a) {
+            IrStringExpr left = ir.getLeft();
+            IrStringExpr right = ir.getRight();
+            if (IrStringCompare.Op.Equal.equals(ir.getOp())) {
+                if (left instanceof IrStringVar && right instanceof IrStringVar) {
+                    stringGraph.union((IrStringVar) left, (IrStringVar) right);
+                } else {
+                    propagateString(asStringVar(left), right);
+                    propagateString(asStringVar(right), left);
                 }
             }
             return null;
@@ -371,15 +453,11 @@ public class Coalescer {
             IrSetExpr[] sets = ir.getSets();
             int low = 0;
             int high = 0;
-            for (int i = 0; i < sets.length; i++) {
-                IrSetExpr set = sets[i];
+            for (IrSetExpr set : sets) {
                 IrDomain card = set.getCard();
                 int newLow = low + card.getLowBound();
                 int newHigh = high + card.getHighBound();
-                if (low >= newHigh) {
-                    // Model is unsatisfiable. Compile anyways?
-                    return null;
-                }
+                failIf(low >= newHigh);
                 IrDomain env = boundDomain(low, newHigh - 1);
                 IrDomain ker = set.getKer();
                 if (!ker.isEmpty() && !ker.isBounded()) {
@@ -504,6 +582,18 @@ public class Coalescer {
             return null;
         }
 
+        @Override
+        public Void visit(IrPrefix ir, Void a) {
+            propagatePrefix(ir.getPrefix(), ir.getWord());
+            return null;
+        }
+
+        @Override
+        public Void visit(IrSuffix ir, Void a) {
+            propagateSuffix(ir.getSuffix(), ir.getWord());
+            return null;
+        }
+
         private void propagateEqual(IrIntExpr left, IrIntExpr right) {
             Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(left, right);
             if (cardinality != null) {
@@ -563,9 +653,7 @@ public class Coalescer {
 
         private void propagateLessThanString(IrIntExpr[] a, IrIntExpr[] b, int index) {
             assert a.length == b.length;
-            if (index == a.length) {
-                // Model is unsatisfiable. Compile anyways?
-            }
+            failIf(index == a.length);
             switch (IrUtil.compare(a[index], b[index])) {
                 case EQ:
                     propagateLessThanString(a, b, index + 1);
@@ -573,7 +661,7 @@ public class Coalescer {
                 case LT:
                     return;
                 case GT:
-                    // Model is unsatisfiable. Compile anyways?
+                    fail();
                     return;
                 case LE:
                 case GE:
@@ -624,7 +712,7 @@ public class Coalescer {
                 case LT:
                     return;
                 case GT:
-                    // Model is unsatisfiable. Compile anyways?
+                    fail();
                     return;
                 case LE:
                 case GE:
@@ -654,11 +742,8 @@ public class Coalescer {
             }
             if (right instanceof IrIntVar) {
                 IrDomain domain = IrUtil.intersection(left, right.getDomain());
-                if (domain.isEmpty()) {
-                    // Model is unsatisfiable. Compile anyways?
-                } else {
-                    intGraph.union((IrIntVar) right, new TempIntVar("temp", domain));
-                }
+                failIf(domain.isEmpty());
+                intGraph.union((IrIntVar) right, new TempIntVar(domain));
             } else if (right instanceof IrMinus) {
                 propagateInt(IrUtil.minus(left), ((IrMinus) right).getExpr());
             } else if (right instanceof IrCard) {
@@ -671,12 +756,12 @@ public class Coalescer {
                 } else {
                     for (IrIntExpr addend : addends) {
                         IrDomain domain = addend.getDomain();
-                        IrDomain bound =
-                                IrUtil.intersection(
-                                boundDomain(
-                                left.getLowBound() - right.getDomain().getHighBound() + domain.getHighBound(),
-                                left.getHighBound() - right.getDomain().getLowBound() + domain.getLowBound()),
-                                domain);
+                        IrDomain bound
+                                = IrUtil.intersection(
+                                        boundDomain(
+                                                left.getLowBound() - right.getDomain().getHighBound() + domain.getHighBound(),
+                                                left.getHighBound() - right.getDomain().getLowBound() + domain.getLowBound()),
+                                        domain);
                         propagateInt(bound, addend);
                     }
                 }
@@ -691,6 +776,9 @@ public class Coalescer {
                     }
                 }
                 propagateInt(enumDomain(domain), element.getIndex());
+            } else if (right instanceof IrLength) {
+                IrLength length = (IrLength) right;
+                propagateString(tstring(chars(length.getString()), tint(left)), length.getString());
             }
         }
 
@@ -965,6 +1053,112 @@ public class Coalescer {
         private void propagateCard(IrDomain left, IrSetExpr right) {
             propagateSet(card(left), right);
         }
+
+        private void propagatePrefix(IrStringExpr prefix, IrStringExpr word) {
+            {
+                IrIntVar[] chars = chars(word).clone();
+                for (int i = 0; i < chars.length; i++) {
+                    if (i >= prefix.getLengthDomain().getLowBound()) {
+                        chars[i] = tint(chars[i]).add(0);
+                    }
+                }
+                propagateString(
+                        tstring(chars).boundHighLength(word.getLengthDomain().getHighBound()),
+                        prefix);
+            }
+            {
+                IrIntVar[] chars = chars(word).clone();
+                IrIntVar[] prefixChars = chars(prefix);
+                System.arraycopy(prefixChars, 0, chars, 0,
+                        Math.min(prefix.getLengthDomain().getLowBound(),
+                                Math.min(prefixChars.length, chars.length)));
+                propagateString(
+                        tstring(chars).boundLowLength(prefix.getLengthDomain().getLowBound()),
+                        word);
+            }
+        }
+
+        private void propagateSuffix(IrStringExpr suffix, IrStringExpr word) {
+            failIf(word.getLengthDomain().getHighBound() < suffix.getLengthDomain().getLowBound());
+            {
+                IrIntVar[] chars = new IrIntVar[suffix.getCharDomains().length];
+                int low = Math.max(0,
+                        word.getLengthDomain().getLowBound()
+                        - suffix.getLengthDomain().getHighBound());
+                int high = word.getLengthDomain().getHighBound()
+                        - suffix.getLengthDomain().getLowBound();
+                for (int i = 0; i < chars.length; i++) {
+                    int ilow = low + i;
+                    if (ilow >= word.getCharDomains().length) {
+                        chars[i] = Zero;
+                    } else {
+                        int ihigh = Math.min(word.getCharDomains().length - 1, high + i);
+                        IrIntVar ichar = charAt(word, ilow);
+                        for (int j = ilow + 1; j <= ihigh; j++) {
+                            ichar = tint(ichar).union(word.getCharDomains()[j]);
+                        }
+                        chars[i] = ilow < suffix.getLengthDomain().getLowBound()
+                                ? ichar : tint(ichar).add(0);
+                    }
+                }
+                propagateString(
+                        tstring(chars).boundHighLength(word.getLengthDomain().getHighBound()),
+                        suffix);
+            }
+            {
+                IrIntVar[] chars = chars(word).clone();
+                IrIntVar charDomain = charAt(suffix, suffix.getLengthDomain().getHighBound() - 1);
+                for (int i = suffix.getLengthDomain().getHighBound() - 1;
+                        i > suffix.getLengthDomain().getLowBound();
+                        i--) {
+                    charDomain = tint(charDomain).union(suffix.getCharDomains()[i - 1]);
+                }
+                for (int i = 0; i < suffix.getLengthDomain().getLowBound(); i++) {
+                    charDomain = tint(charDomain).copy().union(suffix.getCharDomains()[suffix.getLengthDomain().getLowBound() - i - 1]);
+                    int index = word.getLengthDomain().getHighBound() - i - 1;
+                    if (index >= word.getLengthDomain().getLowBound()) {
+                        charDomain = tint(charDomain).add(0);
+                    }
+                    chars[word.getLengthDomain().getHighBound() - i - 1] = charDomain;
+                }
+                propagateString(
+                        tstring(chars).boundLowLength(suffix.getLengthDomain().getLowBound()),
+                        word);
+            }
+        }
+
+        private void propagateString(IrStringVar left, IrStringExpr right) {
+            if (right instanceof IrStringVar) {
+                propagateStringVar(left, (IrStringVar) right);
+            } else if (right instanceof IrConcat) {
+                propagateConcat(left, (IrConcat) right);
+            }
+        }
+
+        private IrStringVar asStringVar(IrStringExpr expr) {
+            if (expr instanceof IrStringVar) {
+                return (IrStringVar) expr;
+            }
+            IrIntVar chars[] = chars(expr);
+            IrIntVar length = tint(IrUtil.boundBetween(
+                    expr.getLengthDomain(), 0, chars.length));
+            return tstring(chars, length);
+        }
+
+        private void propagateStringVar(IrStringVar left, IrStringVar right) {
+            assert !(right instanceof TempStringVar);
+            if (!(left instanceof TempStringVar)
+                    || ((TempStringVar) left).isRestrictive(right)) {
+                stringGraph.union(right, left);
+            }
+        }
+
+        private void propagateConcat(IrStringVar left, IrConcat right) {
+            propagatePrefix(asStringVar(right.getLeft()), left);
+            propagateSuffix(asStringVar(right.getRight()), left);
+            propagateInt(left.getLengthDomain(),
+                    add(length(right.getLeft()), length(right.getRight())));
+        }
     }
 
     private static class CoalesceRewriter extends IrRewriter<Void> {
@@ -994,6 +1188,80 @@ public class Coalescer {
             IrSetVar var = coalescedSets.get(ir);
             return var == null ? ir : var;
         }
+
+        private final Map<List<IrIntVar>, IrStringVar> stringVarCache = new HashMap<>();
+
+        @Override
+        public IrStringVar visit(IrStringVar ir, Void a) {
+            if (ir instanceof IrConstant) {
+                return ir;
+            }
+            IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getChars(), a));
+            IrIntVar length = (IrIntVar) rewrite(ir.getLength(), a);
+            List<IrIntVar> key = new ArrayList<>();
+            key.addAll(Arrays.asList(chars));
+            key.addAll(Arrays.asList(length));
+            IrStringVar string = stringVarCache.get(key);
+            if (string == null) {
+                try {
+                    string = string(ir.getName(), chars, length);
+                    stringVarCache.put(key, string);
+                } catch (IllegalStringException e) {
+                    throw new CoalesceException(e);
+                }
+            }
+            return string;
+        }
+    }
+
+    private static IrIntVar charAt(IrStringExpr expr, int index) {
+        if (expr instanceof IrStringVar) {
+            return ((IrStringVar) expr).getChars()[index];
+        }
+        return new TempIntVar(expr.getCharDomains()[index]);
+    }
+
+    private static IrIntVar[] chars(IrStringExpr expr) {
+        if (expr instanceof IrStringVar) {
+            return ((IrStringVar) expr).getChars();
+        }
+        return mapTint(expr.getCharDomains());
+    }
+
+    /**
+     * The model is unsatisfiable.
+     */
+    private static void fail() {
+        throw new CoalesceException();
+    }
+
+    private static void failIf(boolean fail) {
+        if (fail) {
+            fail();
+        }
+    }
+
+    private static TempIntVar tint(IrIntVar var) {
+        if (var instanceof TempIntVar) {
+            return (TempIntVar) var;
+        }
+        return new TempIntVar(var.getDomain());
+    }
+
+    private static TempIntVar tint(IrDomain domain) {
+        return new TempIntVar(domain);
+    }
+
+    private static TempIntVar tint(int low, int high) {
+        return new TempIntVar(boundDomain(low, high));
+    }
+
+    private static IrIntVar[] mapTint(IrDomain[] domains) {
+        IrIntVar[] vars = new IrIntVar[domains.length];
+        for (int i = 0; i < vars.length; i++) {
+            vars[i] = new TempIntVar(domains[i]);
+        }
+        return vars;
     }
 
     private static PartialSet env(IrDomain env) {
@@ -1070,17 +1338,101 @@ public class Coalescer {
         }
     }
 
+    private static TempStringVar tstring(IrIntVar[] chars) {
+        return tstring(chars, tint(0, chars.length));
+    }
+
+    private static TempStringVar tstring(IrIntVar[] chars, IrIntVar length) {
+        return new TempStringVar(chars, length);
+    }
+
     private static class TempIntVar extends IrIntVar {
 
-        TempIntVar(String name, IrDomain domain) {
-            super(name, domain);
+        TempIntVar(IrDomain domain) {
+            super("temp", domain);
+        }
+
+        TempIntVar add(int value) {
+            if (getDomain().contains(value)) {
+                return this;
+            }
+            return new TempIntVar(IrUtil.add(getDomain(), value));
+        }
+
+        TempIntVar boundLow(int lb) {
+            if (lb <= getDomain().getLowBound()) {
+                return this;
+            }
+            IrDomain domain = IrUtil.boundLow(getDomain(), lb);
+            failIf(domain.isEmpty());
+            return new TempIntVar(domain);
+        }
+
+        TempIntVar boundHigh(int hb) {
+            if (hb >= getDomain().getHighBound()) {
+                return this;
+            }
+            IrDomain domain = IrUtil.boundHigh(getDomain(), hb);
+            failIf(domain.isEmpty());
+            return new TempIntVar(domain);
+        }
+
+        TempIntVar boundBetween(int lb, int hb) {
+            if (lb <= getDomain().getLowBound() && hb >= getDomain().getHighBound()) {
+                return this;
+            }
+            IrDomain domain = IrUtil.boundBetween(getDomain(), lb, hb);
+            failIf(domain.isEmpty());
+            return new TempIntVar(domain);
+        }
+
+        TempIntVar union(IrDomain union) {
+            IrDomain domain = IrUtil.union(getDomain(), union);
+            if (domain.equals(getDomain())) {
+                return this;
+            }
+            return new TempIntVar(domain);
+        }
+
+        TempIntVar copy() {
+            return new TempIntVar(getDomain());
         }
     }
 
     private static class TempSetVar extends IrSetVar {
 
-        TempSetVar(String name, IrDomain env, IrDomain ker, IrDomain card) {
-            super(name, env, ker, card);
+        TempSetVar(IrDomain env, IrDomain ker, IrDomain card) {
+            super("temp", env, ker, card);
+        }
+    }
+
+    private static class TempStringVar extends IrStringVar {
+
+        TempStringVar(IrIntVar[] chars, IrIntVar length) {
+            super("temp", chars, length);
+        }
+
+        boolean isRestrictive(IrStringVar var) {
+            for (int i = 0; i < Math.min(getCharDomains().length, var.getCharDomains().length); i++) {
+                if (!IrUtil.isSubsetOf(var.getCharDomains()[i], getCharDomains()[i])) {
+                    return true;
+                }
+            }
+            return !IrUtil.isSubsetOf(var.getLengthDomain(), getLengthDomain());
+        }
+
+        TempStringVar boundLowLength(int lb) {
+            if (lb <= getLengthDomain().getLowBound()) {
+                return this;
+            }
+            return new TempStringVar(getChars(), tint(getLength()).boundLow(lb));
+        }
+
+        TempStringVar boundHighLength(int hb) {
+            if (hb >= getLengthDomain().getHighBound()) {
+                return this;
+            }
+            return new TempStringVar(getChars(), tint(getLength()).boundHigh(hb));
         }
     }
 }

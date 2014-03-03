@@ -13,7 +13,7 @@ public class IrStringVar extends IrAbstractString implements IrVar {
     private final IrIntVar[] chars;
     private final IrIntVar length;
 
-    IrStringVar(String name, IrIntVar[] chars, IrIntVar length) {
+    protected IrStringVar(String name, IrIntVar[] chars, IrIntVar length) {
         super(getCharDomains(Check.noNulls(chars)), Check.notNull(length).getDomain());
         this.name = Check.notNull(name);
         this.chars = chars;

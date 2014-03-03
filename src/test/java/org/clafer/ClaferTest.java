@@ -162,9 +162,15 @@ public abstract class ClaferTest {
 
     public IrStringVar randString() {
         String name = "String" + varCount++;
-        return string(name,
-                randInts(5, 'a', 'c'),
-                boundInt("|" + name + "|", 0, 5));
+        IrIntVar length = randInt(0, 5);
+        IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
+        for (int i = 0; i < chars.length; i++) {
+            IrDomain domain = randDomain('a', 'c');
+            chars[i] = domainInt(name + "[" + i + "]",
+                    i < length.getDomain().getLowBound()
+                    ? domain : IrUtil.add(domain, 0));
+        }
+        return string(name, chars, length);
     }
 
     public IntVar cardVar(SetVar set, int low, int high) {

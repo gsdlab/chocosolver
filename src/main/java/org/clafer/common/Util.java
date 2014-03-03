@@ -743,4 +743,14 @@ public class Util {
         }
         return result.toString();
     }
+
+    @SafeVarargs
+    public static <T> T[] cast(Object[] array, T... dest) {
+        @SuppressWarnings("unchecked")
+        T[] to = dest.length == array.length
+                ? dest
+                : (T[]) Array.newInstance(dest.getClass().getComponentType(), array.length);
+        System.arraycopy(array, 0, to, 0, to.length);
+        return to;
+    }
 }

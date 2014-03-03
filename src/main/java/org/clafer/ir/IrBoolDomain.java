@@ -140,7 +140,7 @@ public enum IrBoolDomain implements IrDomain {
             case FalseDomain:
                 return "{0}";
             case BoolDomain:
-                return "{0,1}";
+                return "{0, 1}";
             default:
                 throw new IllegalStateException();
         }

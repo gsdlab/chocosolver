@@ -18,20 +18,30 @@ public abstract class IrAbstractString implements IrStringExpr {
 
         for (IrDomain c : charDomains) {
             if (c.getLowBound() < Character.MIN_VALUE) {
-                throw new IllegalArgumentException();
+                throw new IllegalStringException();
             }
             if (c.getHighBound() > Character.MAX_VALUE) {
-                throw new IllegalArgumentException();
+                throw new IllegalStringException();
+            }
+        }
+        for (int i = 0; i < charDomains.length && i < lengthDomain.getLowBound(); i++) {
+            if (charDomains[i].size() == 1 && charDomains[i].getLowBound() == 0) {
+                throw new IllegalStringException();
+            }
+        }
+        for (int i = lengthDomain.getHighBound(); i < charDomains.length; i++) {
+            if (!charDomains[i].contains(0)) {
+                throw new IllegalStringException();
             }
         }
         if (lengthDomain.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalStringException();
         }
         if (lengthDomain.getLowBound() < 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalStringException();
         }
         if (lengthDomain.getHighBound() > charDomains.length) {
-            throw new IllegalArgumentException();
+            throw new IllegalStringException();
         }
     }
 

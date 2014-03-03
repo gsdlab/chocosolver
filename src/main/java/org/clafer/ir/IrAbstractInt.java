@@ -14,7 +14,7 @@ public abstract class IrAbstractInt implements IrIntExpr {
         this.domain = Check.notNull(domain);
 
         if (domain.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalIntException();
         }
     }
 

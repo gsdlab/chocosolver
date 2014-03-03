@@ -89,6 +89,7 @@ import org.clafer.ir.IrXor;
 import org.clafer.ir.Irs;
 import org.clafer.ir.analysis.AnalysisUtil;
 import org.clafer.ir.analysis.Canonicalizer;
+import org.clafer.ir.analysis.CoalesceException;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
@@ -135,16 +136,20 @@ public class IrCompiler {
         Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
         Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
         if (coalesceVariables) {
-            Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
-            coalescedIntVars = coalesceTriple.getFst();
-            coalescedSetVars = coalesceTriple.getSnd();
-            optModule = coalesceTriple.getThd();
-            while (!coalesceTriple.getFst().isEmpty()
-                    || !coalesceTriple.getSnd().isEmpty()) {
-                coalesceTriple = Coalescer.coalesce(optModule);
-                coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
-                coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
+            try {
+                Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
+                coalescedIntVars = coalesceTriple.getFst();
+                coalescedSetVars = coalesceTriple.getSnd();
                 optModule = coalesceTriple.getThd();
+                while (!coalesceTriple.getFst().isEmpty()
+                        || !coalesceTriple.getSnd().isEmpty()) {
+                    coalesceTriple = Coalescer.coalesce(optModule);
+                    coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
+                    coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
+                    optModule = coalesceTriple.getThd();
+                }
+            } catch (CoalesceException e) {
+                // Compile anyways?
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
 
@@ -220,6 +225,7 @@ public class IrCompiler {
     private final Map<IntVar, IntVar> cachedMinus = new HashMap<>();
     private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<>();
     private final Set<IrExpr> commonSubexpressions = new HashSet<>();
+    private final Map<IrStringVar, CString> cachedStringVar = new HashMap<>();
     private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<>();
     private final Map<IrSetExpr, CSet> cachedCommonSetSubexpressions = new HashMap<>();
     private final Map<IrStringExpr, CString> cachedCommonStringSubexpressions = new HashMap<>();
@@ -1252,15 +1258,15 @@ public class IrCompiler {
                 IntVar ternary = numIntVar("Ternary", ir.getDomain());
                 BoolVar reifyConsequent = numBoolVar("ReifyEqual");
                 BoolVar reifyAlternative = numBoolVar("ReifyEqual");
-                solver.post(_reify_equal(reifyConsequent, consequent, ternary));
-                solver.post(_reify_equal(reifyAlternative, alternative, ternary));
+                post(_reify_equal(reifyConsequent, consequent, ternary));
+                post(_reify_equal(reifyAlternative, alternative, ternary));
                 post(_ifThenElse(antecedent, reifyConsequent, reifyAlternative));
                 return ternary;
             }
             BoolVar reifyConsequent = numBoolVar("ReifyEqual");
             BoolVar reifyAlternative = numBoolVar("ReifyEqual");
-            solver.post(_reify_equal(reifyConsequent, consequent, reify));
-            solver.post(_reify_equal(reifyAlternative, alternative, reify));
+            post(_reify_equal(reifyConsequent, consequent, reify));
+            post(_reify_equal(reifyAlternative, alternative, reify));
             return _ifThenElse(antecedent, reifyConsequent, reifyAlternative);
         }
 
@@ -1571,12 +1577,37 @@ public class IrCompiler {
 
     private IrStringExprVisitor<CString, Object> stringExprCompiler = new IrStringExprVisitor<CString, Object>() {
 
+        private boolean lengthEntailed(IntVar[] chars, IntVar length) {
+            if (!length.isInstantiated()) {
+                return false;
+            }
+            int l = length.getValue();
+            for (int i = 0; i < l; i++) {
+                if (chars[i].contains(0)) {
+                    return false;
+                }
+            }
+            for (int i = l; i < chars.length; i++) {
+                if (!chars[i].isInstantiatedTo(0)) {
+                    return false;
+                }
+            }
+            return l <= chars.length;
+        }
+
         @Override
         public Object visit(IrStringVar ir, CString reify) {
-            IntVar length = compile(ir.getLength());
-            IntVar[] chars = compile(ir.getChars());
-            post(Constraints.length(chars, length));
-            return new CString(chars, length);
+            CString string = cachedStringVar.get(ir);
+            if (string == null) {
+                IntVar length = compile(ir.getLength());
+                IntVar[] chars = compile(ir.getChars());
+                if (!lengthEntailed(chars, length)) {
+                    post(Constraints.length(chars, length));
+                }
+                string = new CString(chars, length);
+                cachedStringVar.put(ir, string);
+            }
+            return string;
         }
 
         @Override

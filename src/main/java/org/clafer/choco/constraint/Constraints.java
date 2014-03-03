@@ -34,6 +34,7 @@ import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
+import org.clafer.ir.IrIntVar;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
@@ -842,6 +843,9 @@ public class Constraints {
     public static Constraint prefix(
             IntVar[] prefix, IntVar prefixLength,
             IntVar[] word, IntVar wordLength) {
+        if (prefixLength.getLB() > wordLength.getUB()) {
+            return prefixLength.getSolver().FALSE;
+        }
         return new Constraint("Prefix",
                 lessThanEq(prefixLength, wordLength),
                 new PropSamePrefix(prefixLength, prefix, word));
@@ -851,6 +855,9 @@ public class Constraints {
             IntVar[] suffix, IntVar suffixLength,
             IntVar[] word, IntVar wordLength) {
         Solver solver = suffixLength.getSolver();
+        if (suffixLength.getLB() > wordLength.getUB()) {
+            return solver.FALSE;
+        }
         IntVar prefixLength = VF.enumerated("SuffixVar" + varNum++,
                 Math.min(wordLength.getLB() - suffixLength.getUB(), 0),
                 wordLength.getUB() - suffixLength.getLB(), solver);
@@ -859,7 +866,7 @@ public class Constraints {
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(lessThanEq(suffixLength, wordLength));
         for (int i = 0; i < suffix.length; i++) {
-            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1);
+            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, suffixLength.getSolver().ZERO);
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -878,11 +885,14 @@ public class Constraints {
             IntVar[] left, IntVar leftLength,
             IntVar[] right, IntVar rightLength,
             IntVar[] concat, IntVar concatLength) {
+        if (leftLength.getLB() + rightLength.getLB() > concatLength.getUB()) {
+            return leftLength.getSolver().FALSE;
+        }
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(sumEq(new IntVar[]{leftLength, rightLength}, concatLength));
         propagators.add(new PropSamePrefix(leftLength, left, concat));
         for (int i = 0; i < right.length; i++) {
-            IntVar[] pad = pad(concat, left.length + i + 1);
+            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getSolver().ZERO);
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -894,16 +904,15 @@ public class Constraints {
                 propagators.toArray(new Propagator<?>[propagators.size()]));
     }
 
-    private static IntVar[] pad(IntVar[] chars, int length) {
+    private static IntVar[] pad(IntVar[] chars, int length, IntVar zero) {
         if (length == chars.length) {
             return chars;
         }
         if (length < chars.length) {
             return Arrays.copyOf(chars, length);
         }
-        Solver solver = chars[0].getSolver();
         IntVar[] pad = Arrays.copyOf(chars, length);
-        Arrays.fill(pad, chars.length, pad.length, solver.ZERO);
+        Arrays.fill(pad, chars.length, pad.length, zero);
         return pad;
     }
 }

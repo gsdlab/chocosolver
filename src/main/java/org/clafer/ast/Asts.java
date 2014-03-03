@@ -71,6 +71,10 @@ public class Asts {
         return new AstJoinParent(children);
     }
 
+    public static AstSetExpr joinRef(AstClafer clafer) {
+        return joinRef(global(clafer));
+    }
+
     public static AstSetExpr joinRef(AstSetExpr deref) {
         return new AstJoinRef(deref);
     }

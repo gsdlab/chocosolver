@@ -15,21 +15,23 @@ public abstract class IrAbstractSet implements IrSetExpr {
         this.ker = Check.notNull(ker);
         this.card = Check.notNull(card);
 
-        assert IrUtil.isSubsetOf(ker, env);
+        if (!IrUtil.isSubsetOf(ker, env)) {
+            throw new IllegalSetException();
+        }
         if (card.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalSetException();
         }
         if (card.getLowBound() > env.size()) {
-            throw new IllegalArgumentException(card.getLowBound() + " > " + env.size());
+            throw new IllegalSetException(card.getLowBound() + " > " + env.size());
         }
         if (card.getHighBound() > env.size()) {
-            throw new IllegalArgumentException(card.getHighBound() + " > " + env.size());
+            throw new IllegalSetException(card.getHighBound() + " > " + env.size());
         }
         if (card.getLowBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getLowBound() + " < " + ker.size());
+            throw new IllegalSetException(card.getLowBound() + " < " + ker.size());
         }
         if (card.getHighBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getHighBound() + " < " + ker.size());
+            throw new IllegalSetException(card.getHighBound() + " < " + ker.size());
         }
     }
 

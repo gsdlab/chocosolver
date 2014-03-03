@@ -487,6 +487,18 @@ public class Irs {
     }
 
     public static IrBoolExpr compare(IrStringExpr left, IrStringCompare.Op op, IrStringExpr right) {
+        if (left.equals(right)) {
+            switch (op) {
+                case Equal:
+                case LessThan:
+                    return True;
+                case NotEqual:
+                case LessThanEqual:
+                    return False;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
         return new IrStringCompare(left, op, right, BoolDomain);
     }
 
@@ -1071,6 +1083,12 @@ public class Irs {
      * TODO STRING
      */
     public static IrBoolExpr prefix(IrStringExpr prefix, IrStringExpr word) {
+        if (prefix.getLengthDomain().getHighBound() == 0) {
+            return True;
+        }
+        if (prefix.getLengthDomain().getLowBound() >= word.getLengthDomain().getHighBound()) {
+            return equal(prefix, word);
+        }
         return new IrPrefix(prefix, word, BoolDomain);
     }
 
@@ -1078,6 +1096,12 @@ public class Irs {
      * TODO STRING
      */
     public static IrBoolExpr suffix(IrStringExpr suffix, IrStringExpr word) {
+        if (suffix.getLengthDomain().getHighBound() == 0) {
+            return True;
+        }
+        if (suffix.getLengthDomain().getLowBound() >= word.getLengthDomain().getHighBound()) {
+            return equal(suffix, word);
+        }
         return new IrSuffix(suffix, word, BoolDomain);
     }
     /**
@@ -1115,7 +1139,7 @@ public class Irs {
         return domainInt(name, boundDomain(low, high));
     }
 
-    public static IrIntVar enumInt(String name, int[] values) {
+    public static IrIntVar enumInt(String name, int... values) {
         return domainInt(name, enumDomain(values));
     }
 
@@ -1398,6 +1422,9 @@ public class Irs {
     }
 
     public static IrIntExpr length(IrStringExpr string) {
+        if (string instanceof IrStringVar) {
+            return ((IrStringVar) string).getLength();
+        }
         return new IrLength(string, string.getLengthDomain());
     }
 
@@ -1853,6 +1880,30 @@ public class Irs {
     }
 
     public static IrStringVar string(String name, IrIntVar[] chars, IrIntVar length) {
+        if (length instanceof IrConstant) {
+            char[] string = new char[chars.length];
+            for (int i = 0; string != null && i < string.length; i++) {
+                if (chars[i] instanceof IrConstant) {
+                    string[i] = (char) IrUtil.getConstant(chars[i]).intValue();
+                } else {
+                    string = null;
+                }
+            }
+            if (string != null) {
+                return constant(new String(string, 0, IrUtil.getConstant(length)));
+            }
+        }
+        int lengthHigh = length.getDomain().getHighBound();
+        if (lengthHigh < 0) {
+            throw new IllegalArgumentException();
+        }
+        int maxLength = chars.length - 1;
+        while (maxLength >= lengthHigh && Zero.equals(chars[maxLength])) {
+            maxLength--;
+        }
+        if (maxLength + 1 < chars.length) {
+            chars = Arrays.copyOf(chars, maxLength + 1);
+        }
         return new IrStringVar(name, chars, length);
     }
 
@@ -1862,7 +1913,7 @@ public class Irs {
         for (int i = 0; i < length; i++) {
             chars[i] = domainInt(name + "[" + i + "]", domain);
         }
-        return new IrStringVar(name, chars, boundInt("|" + name + "|", 0, length));
+        return string(name, chars, boundInt("|" + name + "|", 0, length));
     }
 
     public static IrStringExpr element(IrStringExpr[] array, IrIntExpr index) {
@@ -1909,6 +1960,13 @@ public class Irs {
         IrDomain rightLength = right.getLengthDomain();
         IrDomain[] rightChars = right.getCharDomains();
 
+        if (leftLength.getHighBound() == 0) {
+            return right;
+        }
+        if (rightLength.getHighBound() == 0) {
+            return left;
+        }
+
         IrDomain length = IrUtil.add(leftLength, rightLength);
         IrDomain[] charDomains = new IrDomain[length.getHighBound()];
         int i;
@@ -1927,9 +1985,12 @@ public class Irs {
             int j = i - leftLength.getLowBound();
             int k = i - leftLength.getHighBound();
             assert k < rightChars.length;
-            charDomains[i] = union(rightChars, k, Math.min(j, rightChars.length));
+            charDomains[i] = union(rightChars, k, Math.min(j + 1, rightChars.length));
         }
-        return new IrConcat(left, right, charDomains, length);
+        for (i = length.getLowBound(); i < charDomains.length; i++) {
+            charDomains[i] = IrUtil.add(charDomains[i], 0);
+        }
+        return IrUtil.asConstant(new IrConcat(left, right, charDomains, length));
     }
 
     private static IrDomain union(IrDomain[] domains, int start, int end) {

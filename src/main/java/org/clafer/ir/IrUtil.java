@@ -169,6 +169,33 @@ public class IrUtil {
         return ints;
     }
 
+    public static IrStringExpr asConstant(IrStringExpr s) {
+        if (s.getLengthDomain().size() != 1) {
+            return s;
+        }
+        int length = s.getLengthDomain().getLowBound();
+        char[] string = new char[length];
+        for (int i = 0; i < length; i++) {
+            if (s.getCharDomains()[i].size() != 1) {
+                return s;
+            }
+            int chari = s.getCharDomains()[i].getLowBound();
+            if (chari < Character.MIN_VALUE
+                    || chari > Character.MAX_VALUE
+                    || chari == 0) {
+                return s;
+            }
+            string[i] = (char) chari;
+        }
+        for (int i = length; i < s.getCharDomains().length; i++) {
+            if (s.getCharDomains()[i].size() != 1
+                    || s.getCharDomains()[i].getLowBound() != 0) {
+                return s;
+            }
+        }
+        return Irs.constant(new String(string));
+    }
+
     public static int maxLength(IrStringExpr... strings) {
         int maxLength = 0;
         for (IrStringExpr string : strings) {
@@ -288,10 +315,10 @@ public class IrUtil {
             return addend1;
         }
         if (addend1.size() == 1) {
-            return add(addend2, addend1.getLowBound());
+            return offset(addend2, addend1.getLowBound());
         }
         if (addend2.size() == 1) {
-            return add(addend1, addend2.getLowBound());
+            return offset(addend1, addend2.getLowBound());
         }
         return Irs.boundDomain(
                 addend1.getLowBound() + addend2.getLowBound(),
@@ -372,6 +399,13 @@ public class IrUtil {
             }
         }
         return Irs.enumDomain(values);
+    }
+
+    public static IrDomain boundBetween(IrDomain domain, int lb, int hb) {
+        if (lb > hb) {
+            throw new IllegalArgumentException();
+        }
+        return boundHigh(boundLow(domain, lb), hb);
     }
 
     public static IrDomain difference(IrDomain minuend, IrDomain subtrahend) {

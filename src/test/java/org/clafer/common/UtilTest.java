@@ -103,4 +103,14 @@ public class UtilTest {
         assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(2, 4, 2)));
         assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(1, 1, 2, 3, 4, 2)));
     }
+
+    @Test
+    public void testDowncast() {
+        Number[] numbers = new Number[]{1, 2};
+        Integer[] integers = Util.<Integer>cast(numbers);
+        assertEquals(2, integers.length);
+        assertEquals(1, integers[0].intValue());
+        assertEquals(2, integers[1].intValue());
+        assertEquals(Integer.class, integers.getClass().getComponentType());
+    }
 }

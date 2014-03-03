@@ -8,6 +8,7 @@ import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -152,6 +153,25 @@ public class IrSolutionMap {
         int[][] svalues = new int[vars.length][];
         for (int i = 0; i < svalues.length; i++) {
             svalues[i] = getSetValue(vars[i]);
+        }
+        return svalues;
+    }
+
+    public String getStringValue(IrStringVar var) {
+        int[] charints = getIntValues(var.getChars());
+        char[] chars = new char[charints.length];
+        for (int i = 0; i < chars.length; i++) {
+            assert charints[i] >= Character.MIN_VALUE && charints[i] <= Character.MAX_VALUE;
+            chars[i] = (char) charints[i];
+        }
+        int length = getIntValue(var.getLength());
+        return new String(chars, 0, length);
+    }
+
+    public String[] getStringValues(IrStringVar... vars) {
+        String[] svalues = new String[vars.length];
+        for (int i = 0; i < svalues.length; i++) {
+            svalues[i] = getStringValue(vars[i]);
         }
         return svalues;
     }
