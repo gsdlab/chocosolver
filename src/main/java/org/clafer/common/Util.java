@@ -130,6 +130,7 @@ public class Util {
     /**
      * Randomly shuffle an array in place.
      *
+     * @param <T> the type of the elements
      * @param array the array to shuffle
      * @param rand the random number generator
      */
@@ -427,7 +428,7 @@ public class Util {
 
         int[] indices = new int[choose];
         indices[indices.length - 1]--;
-        for (int i = 0; i < permutations.length; i++) {
+        for (T[] permutation : permutations) {
             do {
                 int j = indices.length - 1;
                 indices[j]++;
@@ -438,7 +439,7 @@ public class Util {
                 }
             } while (!isUnique(indices));
             for (int k = 0; k < indices.length; k++) {
-                permutations[i][k] = array[indices[k]];
+                permutation[k] = array[indices[k]];
             }
         }
         return permutations;
@@ -489,7 +490,7 @@ public class Util {
 
         int[] indices = new int[arrays.length];
         indices[indices.length - 1]--;
-        for (int i = 0; i < sequence.length; i++) {
+        for (T[] array : sequence) {
             int j = indices.length - 1;
             indices[j]++;
             while (indices[j] >= arrays[j].length) {
@@ -498,7 +499,7 @@ public class Util {
                 indices[j]++;
             }
             for (int k = 0; k < indices.length; k++) {
-                sequence[i][k] = arrays[k][indices[k]];
+                array[k] = arrays[k][indices[k]];
             }
         }
         return sequence;
@@ -552,8 +553,8 @@ public class Util {
      * @param <T> the element type
      * @param string the list
      * @param prefix the starting elements of the list
-     * @return {@code true} if and only if {@code string} starts with {@code prefix},
-     *         {@code false} otherwise
+     * @return {@code true} if and only if {@code string} starts with
+     * {@code prefix}, {@code false} otherwise
      */
     public static <T> boolean startsWith(List<T> string, List<T> prefix) {
         final int stringSize = string.size();
@@ -570,8 +571,8 @@ public class Util {
      * @param <T> the element type
      * @param string the list
      * @param suffix the ending elements of the list
-     * @return {@code true} if and only if {@code string} ends with {@code suffix},
-     *         {@code false} otherwise
+     * @return {@code true} if and only if {@code string} ends with
+     * {@code suffix}, {@code false} otherwise
      */
     public static <T> boolean endsWith(List<T> string, List<T> suffix) {
         final int stringSize = string.size();
