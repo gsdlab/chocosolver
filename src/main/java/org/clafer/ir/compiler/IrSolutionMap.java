@@ -103,7 +103,7 @@ public class IrSolutionMap {
         return intVars.values().toArray(new IntVar[intVars.size()]);
     }
 
-    public int getIntValue(IrIntVar var) {
+    public int getValue(IrIntVar var) {
         Either<Integer, IntVar> intVar = getIntVar(var);
         return intVar.isLeft()
                 ? intVar.getLeft()
@@ -113,7 +113,7 @@ public class IrSolutionMap {
     public int[] getIntValues(IrIntVar... vars) {
         int[] ivalues = new int[vars.length];
         for (int i = 0; i < ivalues.length; i++) {
-            ivalues[i] = getIntValue(vars[i]);
+            ivalues[i] = getValue(vars[i]);
         }
         return ivalues;
     }
@@ -157,21 +157,21 @@ public class IrSolutionMap {
         return svalues;
     }
 
-    public String getStringValue(IrStringVar var) {
+    public String getValue(IrStringVar var) {
         int[] charints = getIntValues(var.getCharVars());
         char[] chars = new char[charints.length];
         for (int i = 0; i < chars.length; i++) {
             assert charints[i] >= Character.MIN_VALUE && charints[i] <= Character.MAX_VALUE;
             chars[i] = (char) charints[i];
         }
-        int length = getIntValue(var.getLengthVar());
+        int length = getValue(var.getLengthVar());
         return new String(chars, 0, length);
     }
 
     public String[] getStringValues(IrStringVar... vars) {
         String[] svalues = new String[vars.length];
         for (int i = 0; i < svalues.length; i++) {
-            svalues[i] = getStringValue(vars[i]);
+            svalues[i] = getValue(vars[i]);
         }
         return svalues;
     }

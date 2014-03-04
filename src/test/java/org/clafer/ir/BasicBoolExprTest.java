@@ -39,7 +39,7 @@ public class BasicBoolExprTest extends ClaferTest {
                 do {
                     int sum = 0;
                     for (IrIntVar i : is) {
-                        sum += map.getIntValue(i);
+                        sum += map.getValue(i);
                     }
                     assertTrue(sum <= 1);
                     count++;
@@ -73,7 +73,7 @@ public class BasicBoolExprTest extends ClaferTest {
                 do {
                     int sum = 0;
                     for (IrIntVar i : is) {
-                        sum += map.getIntValue(i);
+                        sum += map.getValue(i);
                     }
                     assertEquals(1, sum);
                     count++;
@@ -139,7 +139,7 @@ public class BasicBoolExprTest extends ClaferTest {
             int count = 0;
             if (randomizeStrategy(irSolver).findSolution()) {
                 do {
-                    assertEquals(map.getIntValue(i1), map.getIntValue(i2));
+                    assertEquals(map.getValue(i1), map.getValue(i2));
                     count++;
                 } while (irSolver.nextSolution());
             }
@@ -167,7 +167,7 @@ public class BasicBoolExprTest extends ClaferTest {
             int count = 0;
             if (randomizeStrategy(irSolver).findSolution()) {
                 do {
-                    assertNotEquals(map.getIntValue(i1), map.getIntValue(i2));
+                    assertNotEquals(map.getValue(i1), map.getValue(i2));
                     count++;
                 } while (irSolver.nextSolution());
             }
@@ -195,7 +195,7 @@ public class BasicBoolExprTest extends ClaferTest {
             int count = 0;
             if (randomizeStrategy(irSolver).findSolution()) {
                 do {
-                    assertTrue(map.getIntValue(i1) < map.getIntValue(i2));
+                    assertTrue(map.getValue(i1) < map.getValue(i2));
                     count++;
                 } while (irSolver.nextSolution());
             }
@@ -223,7 +223,7 @@ public class BasicBoolExprTest extends ClaferTest {
             int count = 0;
             if (randomizeStrategy(irSolver).findSolution()) {
                 do {
-                    assertTrue(map.getIntValue(i1) <= map.getIntValue(i2));
+                    assertTrue(map.getValue(i1) <= map.getValue(i2));
                     count++;
                 } while (irSolver.nextSolution());
             }
@@ -251,7 +251,7 @@ public class BasicBoolExprTest extends ClaferTest {
             int count = 0;
             if (randomizeStrategy(irSolver).findSolution()) {
                 do {
-                    assertTrue(map.getIntValue(i1) > map.getIntValue(i2));
+                    assertTrue(map.getValue(i1) > map.getValue(i2));
                     count++;
                 } while (irSolver.nextSolution());
             }
@@ -279,7 +279,7 @@ public class BasicBoolExprTest extends ClaferTest {
             int count = 0;
             if (randomizeStrategy(irSolver).findSolution()) {
                 do {
-                    assertTrue(map.getIntValue(i1) >= map.getIntValue(i2));
+                    assertTrue(map.getValue(i1) >= map.getValue(i2));
                     count++;
                 } while (irSolver.nextSolution());
             }
@@ -401,7 +401,7 @@ public class BasicBoolExprTest extends ClaferTest {
                 do {
                     for (int i = 0; i < is.length; i++) {
                         for (int j = i + 1; j < is.length; j++) {
-                            assertNotEquals(map.getIntValue(is[i]), map.getIntValue(is[j]));
+                            assertNotEquals(map.getValue(is[i]), map.getValue(is[j]));
                         }
                     }
                     count++;

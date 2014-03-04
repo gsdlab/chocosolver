@@ -1,14 +1,17 @@
 package org.clafer.ir;
 
-import org.clafer.ClaferTest;
+import static org.clafer.ClaferTest.toCStringVar;
+import static org.clafer.ClaferTest.toIntVar;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import static org.clafer.ir.Irs.*;
-import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.constraints.ICF;
 import solver.variables.IntVar;
 
@@ -16,123 +19,152 @@ import solver.variables.IntVar;
  *
  * @author jimmy
  */
-public class BasicStringExprTest extends ClaferTest {
+public class BasicStringExprTest extends IrTest {
+
+    @Test(timeout = 60000)
+    public void testEqual() {
+        randomizedTest(new TestCase<Pair<IrStringVar, IrStringVar>>() {
+
+            @Override
+            void check(IrSolutionMap solution, Pair<IrStringVar, IrStringVar> s) {
+                assertEquals(
+                        solution.getValue(s.getFst()),
+                        solution.getValue(s.getSnd()));
+            }
+
+            @Override
+            Pair<IrBoolExpr, Pair<IrStringVar, IrStringVar>> setup(IrModule module) {
+                IrStringVar left = randString();
+                IrStringVar right = randString();
+                return pair(equal(left, right), pair(left, right));
+            }
+
+            @Override
+            Constraint setup(Pair<IrStringVar, IrStringVar> s, Solver solver) {
+                CStringVar left = toCStringVar(s.getFst(), solver);
+                CStringVar right = toCStringVar(s.getSnd(), solver);
+                return Constraints.equal(
+                        left.getChars(), left.getLength(),
+                        right.getChars(), right.getLength());
+            }
+        });
+    }
 
     @Test(timeout = 60000)
     public void testLength() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar length = randInt();
-            IrStringVar word = randString();
-            module.addConstraint(equal(length, length(word)));
-            module.addVariables(length, word);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrStringVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertEquals(map.getIntValue(length), map.getStringValue(word).length());
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrStringVar> s) {
+                assertEquals(
+                        solution.getValue(s.getFst()),
+                        solution.getValue(s.getSnd()).length());
             }
 
-            Solver solver = new Solver();
-            IntVar clength = toIntVar(length, solver);
-            CStringVar cword = toCStringVar(word, solver);
-            solver.post(ICF.arithm(clength, "=", cword.getLength()));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrStringVar>> setup(IrModule module) {
+                IrIntVar length = randInt();
+                IrStringVar word = randString();
+                return pair(equal(length, length(word)), pair(length, word));
+            }
+
+            @Override
+            Constraint setup(Pair<IrIntVar, IrStringVar> s, Solver solver) {
+                IntVar length = toIntVar(s.getFst(), solver);
+                CStringVar word = toCStringVar(s.getSnd(), solver);
+                return ICF.arithm(length, "=", word.getLength());
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testPrefix() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrStringVar prefix = randString();
-            IrStringVar word = randString();
-            module.addConstraint(prefix(prefix, word));
-            module.addVariables(prefix, word);
+        randomizedTest(new TestCase<Pair<IrStringVar, IrStringVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertThat(map.getStringValue(word), startsWith(map.getStringValue(prefix)));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrStringVar, IrStringVar> s) {
+                assertThat(
+                        solution.getValue(s.getSnd()),
+                        startsWith(solution.getValue(s.getFst())));
             }
 
-            Solver solver = new Solver();
-            CStringVar cprefix = toCStringVar(prefix, solver);
-            CStringVar cword = toCStringVar(word, solver);
-            solver.post(Constraints.prefix(
-                    cprefix.getChars(), cprefix.getLength(),
-                    cword.getChars(), cword.getLength()));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Pair<IrBoolExpr, Pair<IrStringVar, IrStringVar>> setup(IrModule module) {
+                IrStringVar prefix = randString();
+                IrStringVar word = randString();
+                return pair(prefix(prefix, word), pair(prefix, word));
+            }
+
+            @Override
+            Constraint setup(Pair<IrStringVar, IrStringVar> s, Solver solver) {
+                CStringVar prefix = toCStringVar(s.getFst(), solver);
+                CStringVar word = toCStringVar(s.getSnd(), solver);
+                return Constraints.prefix(
+                        prefix.getChars(), prefix.getLength(),
+                        word.getChars(), word.getLength());
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSuffix() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrStringVar suffix = randString();
-            IrStringVar word = randString();
-            module.addConstraint(suffix(suffix, word));
-            module.addVariables(suffix, word);
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertThat(map.getStringValue(word), endsWith(map.getStringValue(suffix)));
-                    count++;
-                } while (irSolver.nextSolution());
+        randomizedTest(new TestCase<Pair<IrStringVar, IrStringVar>>() {
+
+            @Override
+            void check(IrSolutionMap solution, Pair<IrStringVar, IrStringVar> s) {
+                assertThat(
+                        solution.getValue(s.getSnd()),
+                        endsWith(solution.getValue(s.getFst())));
             }
 
-            Solver solver = new Solver();
-            CStringVar csuffix = toCStringVar(suffix, solver);
-            CStringVar cword = toCStringVar(word, solver);
-            solver.post(Constraints.suffix(
-                    csuffix.getChars(), csuffix.getLength(),
-                    cword.getChars(), cword.getLength()));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Pair<IrBoolExpr, Pair<IrStringVar, IrStringVar>> setup(IrModule module) {
+                IrStringVar suffix = randString();
+                IrStringVar word = randString();
+                return pair(suffix(suffix, word), pair(suffix, word));
+            }
+
+            @Override
+            Constraint setup(Pair<IrStringVar, IrStringVar> s, Solver solver) {
+                CStringVar suffix = toCStringVar(s.getFst(), solver);
+                CStringVar word = toCStringVar(s.getSnd(), solver);
+                return Constraints.suffix(
+                        suffix.getChars(), suffix.getLength(),
+                        word.getChars(), word.getLength());
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testConcat() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrStringVar concat = randString();
-            IrStringVar left = randString();
-            IrStringVar right = randString();
-            module.addConstraint(equal(concat, concat(left, right)));
-            module.addVariables(concat, left, right);
+        randomizedTest(new TestCase<Triple<IrStringVar, IrStringVar, IrStringVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertEquals(map.getStringValue(concat),
-                            map.getStringValue(left) + map.getStringValue(right));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Triple<IrStringVar, IrStringVar, IrStringVar> s) {
+                assertEquals(solution.getValue(s.getFst()),
+                        solution.getValue(s.getSnd()) + solution.getValue(s.getThd()));
             }
 
-            Solver solver = new Solver();
-            CStringVar cconcat = toCStringVar(concat, solver);
-            CStringVar cleft = toCStringVar(left, solver);
-            CStringVar cright = toCStringVar(right, solver);
-            solver.post(Constraints.concat(
-                    cleft.getChars(), cleft.getLength(),
-                    cright.getChars(), cright.getLength(),
-                    cconcat.getChars(), cconcat.getLength()));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Pair<IrBoolExpr, Triple<IrStringVar, IrStringVar, IrStringVar>> setup(IrModule module) {
+                IrStringVar concat = randString();
+                IrStringVar left = randString();
+                IrStringVar right = randString();
+                return pair(equal(concat, concat(left, right)),
+                        triple(concat, left, right));
+            }
+
+            @Override
+            Constraint setup(Triple<IrStringVar, IrStringVar, IrStringVar> s, Solver solver) {
+                CStringVar concat = toCStringVar(s.getFst(), solver);
+                CStringVar left = toCStringVar(s.getSnd(), solver);
+                CStringVar right = toCStringVar(s.getThd(), solver);
+                return Constraints.concat(
+                        left.getChars(), left.getLength(),
+                        right.getChars(), right.getLength(),
+                        concat.getChars(), concat.getLength());
+            }
+        });
     }
 }

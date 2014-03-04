@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Random;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.choco.constraint.RandomSetSearchStrategy;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import static org.clafer.ir.IrBoolDomain.*;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrDomain;
@@ -300,7 +302,7 @@ public abstract class ClaferTest {
 
     public ESat isEntailed(Constraint constraint) {
         boolean undefined = false;
-        for (Propagator propagator : constraint.getPropagators()) {
+        for (Propagator<?> propagator : constraint.getPropagators()) {
             switch (propagator.isEntailed()) {
                 case FALSE:
                     return ESat.FALSE;
@@ -415,5 +417,13 @@ public abstract class ClaferTest {
             chars[i] = vars[i].getChars();
         }
         return chars;
+    }
+
+    protected static <A, B> Pair<A, B> pair(A a, B b) {
+        return new Pair<>(a, b);
+    }
+
+    protected static <A, B, C> Triple<A, B, C> triple(A a, B b, C c) {
+        return new Triple<>(a, b, c);
     }
 }

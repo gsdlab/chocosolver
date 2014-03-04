@@ -5,6 +5,8 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -653,6 +655,12 @@ public class IrUtil {
         return pad;
     }
 
+    public static Set<IrVar> getVariables(IrBoolExpr constraint) {
+        Set<IrVar> variables = new HashSet<>();
+        constraint.accept(VariableFinder, variables);
+        return variables;
+    }
+
     public static enum Ordering {
 
         LT,
@@ -662,4 +670,32 @@ public class IrUtil {
         EQ,
         UNKNOWN;
     }
+
+    private static final IrTraverser<Set<IrVar>> VariableFinder
+            = new IrTraverser<Set<IrVar>>() {
+
+                @Override
+                public Void visit(IrBoolVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+
+                @Override
+                public Void visit(IrIntVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+
+                @Override
+                public Void visit(IrSetVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+
+                @Override
+                public Void visit(IrStringVar ir, Set<IrVar> a) {
+                    a.add(ir);
+                    return super.visit(ir, a);
+                }
+            };
 }

@@ -5,9 +5,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.clafer.ClaferTest;
+import org.clafer.Sample;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
+import org.clafer.ir.IrVar;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import solver.Solver;
@@ -48,7 +53,7 @@ public abstract class ConstraintTest<T> extends ClaferTest {
         try {
             Method method = testCase.getClass().getMethod("setup", Solver.class);
             Sample sample = method.getAnnotation(Sample.class);
-            int repeat = sample == null ? 10 : sample.value();
+            int repeat = sample == null ? Sample.Default : sample.value();
             PositiveSolutions positive = method.getAnnotation(PositiveSolutions.class);
             for (int i = 0; i < repeat; i++) {
                 if (positive == null) {
@@ -116,28 +121,9 @@ public abstract class ConstraintTest<T> extends ClaferTest {
         assertEquals(expectedNumberSolutions, count);
     }
 
-    protected static <A, B> Pair<A, B> pair(A a, B b) {
-        return new Pair<>(a, b);
-    }
-
-    protected static <A, B, C> Triple<A, B, C> triple(A a, B b, C c) {
-        return new Triple<>(a, b, c);
-    }
-
-    public static interface TestCase<T> {
+    protected static interface TestCase<T> {
 
         Pair<Constraint, T> setup(Solver solver);
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.METHOD)
-    public static @interface Sample {
-
-        /**
-         * @return the number of times to repeat the experiment if the number of
-         * solutions is unknown
-         */
-        int value();
     }
 
     @Retention(RetentionPolicy.RUNTIME)

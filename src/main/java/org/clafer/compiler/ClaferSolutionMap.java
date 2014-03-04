@@ -68,11 +68,11 @@ public class ClaferSolutionMap {
             AstClafer targetType = clafer.getRef().getTargetType();
             if (targetType instanceof AstStringClafer) {
                 IrStringVar refIrVar = astSolution.getRefStrings(clafer.getRef())[id];
-                String value = irSolution.getStringValue(refIrVar);
+                String value = irSolution.getValue(refIrVar);
                 ref = new InstanceRef(targetType, value);
             } else {
                 IrIntVar refIrVar = astSolution.getRefVars(clafer.getRef())[id];
-                int value = irSolution.getIntValue(refIrVar);
+                int value = irSolution.getValue(refIrVar);
                 if (targetType instanceof AstAbstractClafer) {
                     Pair<AstConcreteClafer, Integer> concreteRef = astSolution.getAnalysis().getConcreteId(
                             targetType, value);

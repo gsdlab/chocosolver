@@ -41,9 +41,9 @@ public class BasicIntExprTest extends ClaferTest {
                 do {
                     int sum = 0;
                     for (IrIntVar i : is) {
-                        sum += map.getIntValue(i);
+                        sum += map.getValue(i);
                     }
-                    assertEquals(sum, map.getIntValue(sumVar));
+                    assertEquals(sum, map.getValue(sumVar));
                     count++;
                 } while (irSolver.nextSolution());
             }
@@ -79,13 +79,13 @@ public class BasicIntExprTest extends ClaferTest {
             if (randomizeStrategy(irSolver).findSolution()) {
                 do {
                     if (is.length == 0) {
-                        assertEquals(0, map.getIntValue(diffVar));
+                        assertEquals(0, map.getValue(diffVar));
                     } else {
-                        int diff = map.getIntValue(is[0]);
+                        int diff = map.getValue(is[0]);
                         for (int i = 1; i < is.length; i++) {
-                            diff -= map.getIntValue(is[i]);
+                            diff -= map.getValue(is[i]);
                         }
-                        assertEquals(diff, map.getIntValue(diffVar));
+                        assertEquals(diff, map.getValue(diffVar));
                     }
                     count++;
                 } while (irSolver.nextSolution());
@@ -483,7 +483,7 @@ public class BasicIntExprTest extends ClaferTest {
 
         @Override
         public int getValue(IrSolutionMap map) {
-            return map.getIntValue(var);
+            return map.getValue(var);
         }
     }
 
@@ -512,7 +512,7 @@ public class BasicIntExprTest extends ClaferTest {
 
         @Override
         public int getValue(IrSolutionMap map) {
-            return map.getIntValue(var);
+            return map.getValue(var);
         }
     }
 

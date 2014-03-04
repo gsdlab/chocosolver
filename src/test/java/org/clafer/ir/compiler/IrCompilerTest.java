@@ -54,8 +54,8 @@ public class IrCompilerTest {
         int count = 0;
         if (solver.findSolution()) {
             do {
-                assertEquals(map.getSetValue(var).length, map.getIntValue(card1));
-                assertEquals(map.getSetValue(var).length, map.getIntValue(card2));
+                assertEquals(map.getSetValue(var).length, map.getValue(card1));
+                assertEquals(map.getSetValue(var).length, map.getValue(card2));
                 count++;
             } while (solver.nextSolution());
         }

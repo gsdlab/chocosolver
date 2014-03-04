@@ -49,7 +49,7 @@ public class IrModule {
     public Set<IrVar> getVariables() {
         Set<IrVar> variables = new HashSet<>();
         for (IrBoolExpr constraint : constraints) {
-            constraint.accept(VariableFinder, variables);
+            variables.addAll(IrUtil.getVariables(constraint));
         }
         return variables;
     }
@@ -98,32 +98,4 @@ public class IrModule {
         }
         return result.toString();
     }
-
-    private static final IrTraverser<Set<IrVar>> VariableFinder
-            = new IrTraverser<Set<IrVar>>() {
-
-                @Override
-                public Void visit(IrBoolVar ir, Set<IrVar> a) {
-                    a.add(ir);
-                    return super.visit(ir, a);
-                }
-
-                @Override
-                public Void visit(IrIntVar ir, Set<IrVar> a) {
-                    a.add(ir);
-                    return super.visit(ir, a);
-                }
-
-                @Override
-                public Void visit(IrSetVar ir, Set<IrVar> a) {
-                    a.add(ir);
-                    return super.visit(ir, a);
-                }
-
-                @Override
-                public Void visit(IrStringVar ir, Set<IrVar> a) {
-                    a.add(ir);
-                    return super.visit(ir, a);
-                }
-            };
 }
