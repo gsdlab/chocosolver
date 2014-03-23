@@ -1,5 +1,10 @@
 package org.clafer.ir;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +41,8 @@ public class IrTest extends ClaferTest {
         }
     }
 
-    private <T> void randomizedTest(TestCase<T> testCase,
+    private <T> void randomizedTest(
+            TestCase<T> testCase,
             boolean positive) {
         IrModule module = new IrModule();
         Solver irSolver = new Solver();
@@ -48,6 +54,7 @@ public class IrTest extends ClaferTest {
         module.addVariables(getVariables(s));
 
         IrSolutionMap solution = IrCompiler.compile(module, irSolver);
+        testCase.validateTranslation(irSolver);
 
         int count = 0;
         if (randomizeStrategy(irSolver).findSolution()) {
@@ -84,8 +91,25 @@ public class IrTest extends ClaferTest {
             getVariables(triple.getFst(), variables);
             getVariables(triple.getSnd(), variables);
             getVariables(triple.getThd(), variables);
+        } else if (o instanceof Object[]) {
+            for (Object p : ((Object[]) o)) {
+                getVariables(p, variables);
+            }
+        } else if (o instanceof Iterable<?>) {
+            for (Object p : ((Iterable<?>) o)) {
+                getVariables(p, variables);
+            }
         } else {
-            throw new IllegalArgumentException();
+            for (Field field : o.getClass().getDeclaredFields()) {
+                if (field.isAnnotationPresent(IrVarField.class)) {
+                    field.setAccessible(true);
+                    try {
+                        getVariables(field.get(o), variables);
+                    } catch (IllegalAccessException e) {
+                        throw new Error(e);
+                    }
+                }
+            }
         }
     }
 
@@ -116,8 +140,16 @@ public class IrTest extends ClaferTest {
             }
         }
 
+        void validateTranslation(Solver solver) {
+        }
+
         abstract Pair<IrBoolExpr, T> setup(IrModule module);
 
         abstract Constraint setup(T s, Solver solver);
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.FIELD})
+    protected @interface IrVarField {
     }
 }

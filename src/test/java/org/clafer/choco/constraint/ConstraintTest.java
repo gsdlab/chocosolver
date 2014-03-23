@@ -128,7 +128,7 @@ public abstract class ConstraintTest<T> extends ClaferTest {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public static @interface PositiveSolutions {
+    protected static @interface PositiveSolutions {
 
         /**
          * @return the expected number of solutions that satisfy the constraint
@@ -138,7 +138,7 @@ public abstract class ConstraintTest<T> extends ClaferTest {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public static @interface NegativeSolutions {
+    protected static @interface NegativeSolutions {
 
         /**
          * @return the expected number of solutions that violate the constraint

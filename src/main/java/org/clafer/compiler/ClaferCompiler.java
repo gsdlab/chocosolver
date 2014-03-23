@@ -73,7 +73,7 @@ public class ClaferCompiler {
                 if (clafer instanceof AstConcreteClafer) {
                     for (IrSetVar setVar : map.getAstSolution().getSiblingVars(clafer)) {
                         if (!(setVar instanceof IrSetConstant)) {
-                            Either<int[], SetVar> var = map.getIrSolution().getSetVar(setVar);
+                            Either<int[], SetVar> var = map.getIrSolution().getVar(setVar);
                             if (var.isRight()) {
                                 vars.add(var.getRight());
                             }
@@ -93,12 +93,12 @@ public class ClaferCompiler {
                 if (ref.getTargetType() instanceof AstStringClafer) {
                     for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref)) {
                         Either<Integer, IntVar> lengthVar
-                                = map.getIrSolution().getIntVar(stringVar.getLengthVar());
+                                = map.getIrSolution().getVar(stringVar.getLengthVar());
                         if (lengthVar.isRight()) {
                             vars.add(lengthVar.getRight());
                         }
                         for (IrIntVar charVar : stringVar.getCharVars()) {
-                            Either<Integer, IntVar> var = map.getIrSolution().getIntVar(charVar);
+                            Either<Integer, IntVar> var = map.getIrSolution().getVar(charVar);
                             if (var.isRight()) {
                                 vars.add(var.getRight());
                             }
@@ -107,7 +107,7 @@ public class ClaferCompiler {
                 } else {
                     for (IrIntVar intVar : map.getAstSolution().getRefVars(ref)) {
                         if (!(intVar instanceof IrIntConstant)) {
-                            Either<Integer, IntVar> var = map.getIrSolution().getIntVar(intVar);
+                            Either<Integer, IntVar> var = map.getIrSolution().getVar(intVar);
                             if (var.isRight()) {
                                 vars.add(var.getRight());
                             }
@@ -187,7 +187,7 @@ public class ClaferCompiler {
         IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        Either<Integer, IntVar> objectiveVar = irSolution.getIntVar(astSolution.getObjectiveVar(objective));
+        Either<Integer, IntVar> objectiveVar = irSolution.getVar(astSolution.getObjectiveVar(objective));
         IntVar[] objectiveVars = objectiveVar.isLeft() ? new IntVar[0] : new IntVar[]{objectiveVar.getRight()};
 
         set(solver,
@@ -214,7 +214,7 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         set(solver,
-                firstFailInDomainMax(Either.filterRight(irSolution.getBoolVars(astSolution.getSoftVars()))),
+                firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
                 setStrategy(getSetVars(in, solution), options),
                 firstFailInDomainMin(getIntVars(in, solution)));
         return new ClaferUnsat(solver, solution);

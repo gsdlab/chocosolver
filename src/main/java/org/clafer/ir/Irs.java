@@ -788,6 +788,9 @@ public class Irs {
         for (int i = 0; i < ints.length; i++) {
             Integer constant = IrUtil.getConstant(ints[i]);
             if (constant != null) {
+                if (constant.intValue() < 0 || constant.intValue() >= sets.length) {
+                    return False;
+                }
                 IrSetExpr set = sets[constant.intValue()];
                 if (!set.getEnv().contains(i)) {
                     return False;

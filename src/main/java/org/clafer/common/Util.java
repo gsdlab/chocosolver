@@ -584,6 +584,18 @@ public class Util {
     }
 
     /**
+     * @param array an array of booleans
+     * @return the sum of the booleans in the array
+     */
+    public static int sum(boolean... array) {
+        int sum = 0;
+        for (boolean a : array) {
+            sum += a ? 1 : 0;
+        }
+        return sum;
+    }
+
+    /**
      * @param array an array of integers
      * @return the sum of the integers in the array
      */

@@ -108,7 +108,6 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSuffix() {
-
         randomizedTest(new TestCase<Pair<IrStringVar, IrStringVar>>() {
 
             @Override

@@ -1,13 +1,16 @@
 package org.clafer.ir;
 
-import org.clafer.ClaferTest;
+import java.util.Arrays;
+import static org.clafer.ClaferTest.toIntVars;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
-import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.constraints.ICF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
@@ -21,385 +24,434 @@ import solver.variables.view.IntView;
  *
  * @author jimmy
  */
-public class BasicIntExprTest extends ClaferTest {
+public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testAdd() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar[] is = randInts(nextInt(5));
-            IrIntExpr add = add(is);
-            IrIntVar sumVar = domainInt("sum", add.getDomain());
-            module.addConstraint(equal(sumVar, add));
-            module.addVariables(is);
-            module.addVariables(sumVar);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar[]>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    int sum = 0;
-                    for (IrIntVar i : is) {
-                        sum += map.getValue(i);
-                    }
-                    assertEquals(sum, map.getValue(sumVar));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar[]> s) {
+                assertEquals(
+                        solution.getValue(s.getFst()),
+                        Util.sum(solution.getValues(s.getSnd())));
             }
 
-            if (is.length == 0) {
-                assertEquals(1, count);
-            } else {
-                Solver solver = new Solver();
-                IntVar[] vs = toIntVars(is, solver);
-                IntVar sum = VF.enumerated("sum", -100, 100, solver);
-                solver.post(ICF.sum(vs, sum));
-                assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar[]>> setup(IrModule module) {
+                IrIntVar sum = boundInt("sum", -10, 10);
+                IrIntVar[] is = randInts(nextInt(5));
+                return pair(equal(sum, add(is)), pair(sum, is));
             }
-        }
+
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar[]> s, Solver solver) {
+                IntVar sum = toIntVar(s.getFst(), solver);
+                IntVar[] is = toIntVars(s.getSnd(), solver);
+                return ICF.sum(is, sum);
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSub() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar[] is = randInts(nextInt(5));
-            IrIntExpr sub = sub(is);
-            IrIntVar diffVar = domainInt("diff", sub.getDomain());
-            IrIntVar diffVar2 = domainInt("diff2", sub.getDomain());
-            module.addConstraint(equal(diffVar, sub));
-            module.addConstraint(equal(diffVar, diffVar2));
-            module.addVariables(is);
-            module.addVariables(diffVar, diffVar2);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar[]>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    if (is.length == 0) {
-                        assertEquals(0, map.getValue(diffVar));
-                    } else {
-                        int diff = map.getValue(is[0]);
-                        for (int i = 1; i < is.length; i++) {
-                            diff -= map.getValue(is[i]);
-                        }
-                        assertEquals(diff, map.getValue(diffVar));
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar[]> s) {
+                int[] is = solution.getValues(s.getSnd());
+                if (is.length == 0) {
+                    assertEquals(solution.getValue(s.getFst()), 0);
+                } else {
+                    int diff = is[0];
+                    for (int i = 1; i < is.length; i++) {
+                        diff -= is[i];
                     }
-                    count++;
-                } while (irSolver.nextSolution());
+                    assertEquals(solution.getValue(s.getFst()), diff);
+                }
             }
 
-            if (is.length == 0) {
-                assertEquals(1, count);
-            } else {
-                Solver solver = new Solver();
-                IntVar[] vs = toIntVars(is, solver);
-                IntVar diff = VF.enumerated("diff", -100, 100, solver);
-                int[] coefficients = new int[vs.length];
-                coefficients[0] = 1;
-                for (int i = 1; i < coefficients.length; i++) {
-                    coefficients[i] = -1;
-                }
-                solver.post(ICF.scalar(vs, coefficients, diff));
-                assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar[]>> setup(IrModule module) {
+                IrIntVar diff = boundInt("diff", -10, 10);
+                IrIntVar[] is = randInts(nextInt(5));
+                return pair(equal(diff, sub(is)), pair(diff, is));
             }
+
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar[]> s, Solver solver) {
+                IntVar diff = toIntVar(s.getFst(), solver);
+                IntVar[] is = toIntVars(s.getSnd(), solver);
+                int[] coefficients = new int[is.length];
+                Arrays.fill(coefficients, -1);
+                if (coefficients.length > 0) {
+                    coefficients[0] = 1;
+                }
+                return ICF.scalar(is, coefficients, diff);
+            }
+        });
+    }
+
+    private void assertOptimizedArithm(Solver solver) {
+        assertTrue("Correct but not optimized.", solver.getNbCstrs() <= 1);
+        assertTrue("Correct but not optimized.", solver.getNbVars() <= 4);
+        for (Variable var : solver.getVars()) {
+            assertFalse("Correct but not optimized.",
+                    var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl));
+            assertFalse("Correct but not optimized.", var instanceof IntView);
         }
     }
 
     @Test(timeout = 60000)
     public void testEqualXY() {
-        for (int i = 0; i < 20; i++) {
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar());
-            module.addConstraint(equal(vars[0].toIrExpr(), vars[1].toIrExpr()));
+        randomizedTest(new TestCase<Pair<Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertEquals(vars[0].getValue(map), vars[1].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+                assertEquals(
+                        s.getFst().getValue(solution),
+                        s.getSnd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            solver.post(ICF.arithm(vars[0].toChocoVar(solver), "=", vars[1].toChocoVar(solver)));
-            assertEquals(module.toString(), randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
+                Term var1 = randTerm();
+                Term var2 = randTerm();
+                return pair(
+                        equal(var1.toIrExpr(), var2.toIrExpr()),
+                        pair(var1, var2));
+            }
+
+            @Override
+            Constraint setup(Pair<Term, Term> s, Solver solver) {
+                return ICF.arithm(s.getFst().toChocoVar(solver),
+                        "=", s.getSnd().toChocoVar(solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testNotEqualXY() {
-        for (int i = 0; i < 20; i++) {
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar());
-            module.addConstraint(notEqual(vars[0].toIrExpr(), vars[1].toIrExpr()));
+        randomizedTest(new TestCase<Pair<Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertNotEquals(vars[0].getValue(map), vars[1].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+                assertNotEquals(
+                        s.getFst().getValue(solution),
+                        s.getSnd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            solver.post(ICF.arithm(vars[0].toChocoVar(solver), "!=", vars[1].toChocoVar(solver)));
-            assertEquals(module.toString(), randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
+                Term var1 = randTerm();
+                Term var2 = randTerm();
+                return pair(
+                        notEqual(var1.toIrExpr(), var2.toIrExpr()),
+                        pair(var1, var2));
+            }
+
+            @Override
+            Constraint setup(Pair<Term, Term> s, Solver solver) {
+                return ICF.arithm(s.getFst().toChocoVar(solver),
+                        "!=", s.getSnd().toChocoVar(solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testLessThanXY() {
-        for (int i = 0; i < 20; i++) {
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar());
-            module.addConstraint(lessThan(vars[0].toIrExpr(), vars[1].toIrExpr()));
+        randomizedTest(new TestCase<Pair<Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(vars[0].getValue(map) < vars[1].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+                assertTrue(
+                        s.getFst().getValue(solution)
+                        < s.getSnd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            solver.post(ICF.arithm(vars[0].toChocoVar(solver), "<", vars[1].toChocoVar(solver)));
-            assertEquals(module.toString(), randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
+                Term var1 = randTerm();
+                Term var2 = randTerm();
+                return pair(
+                        lessThan(var1.toIrExpr(), var2.toIrExpr()),
+                        pair(var1, var2));
+            }
+
+            @Override
+            Constraint setup(Pair<Term, Term> s, Solver solver) {
+                return ICF.arithm(s.getFst().toChocoVar(solver),
+                        "<", s.getSnd().toChocoVar(solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testLessThanEqualXY() {
-        for (int i = 0; i < 20; i++) {
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar());
-            module.addConstraint(lessThanEqual(vars[0].toIrExpr(), vars[1].toIrExpr()));
+        randomizedTest(new TestCase<Pair<Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(vars[0].getValue(map) <= vars[1].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+                assertTrue(
+                        s.getFst().getValue(solution)
+                        <= s.getSnd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            solver.post(ICF.arithm(vars[0].toChocoVar(solver), "<=", vars[1].toChocoVar(solver)));
-            assertEquals(module.toString(), randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
+                Term var1 = randTerm();
+                Term var2 = randTerm();
+                return pair(
+                        lessThanEqual(var1.toIrExpr(), var2.toIrExpr()),
+                        pair(var1, var2));
+            }
+
+            @Override
+            Constraint setup(Pair<Term, Term> s, Solver solver) {
+                return ICF.arithm(s.getFst().toChocoVar(solver),
+                        "<=", s.getSnd().toChocoVar(solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testEqualXYC() {
-        for (int i = 0; i < 20; i++) {
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            IrIntExpr add = Irs.add(vars[0].toIrExpr(), vars[1].toIrExpr());
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar(), vars[2].getIrVar());
-            module.addConstraint(nextBool()
-                    ? Irs.equal(add, vars[2].toIrExpr())
-                    : Irs.equal(vars[2].toIrExpr(), add));
+        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertEquals(vars[0].getValue(map) + vars[1].getValue(map), vars[2].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+                assertEquals(
+                        s.getFst().getValue(solution) + s.getSnd().getValue(solution),
+                        s.getThd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            solver.post(ICF.sum(new IntVar[]{vars[0].toChocoVar(solver), vars[1].toChocoVar(solver)},
-                    vars[2].toChocoVar(solver)));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
+                Util.shuffle(vars, rand);
+                Term var1 = vars[0];
+                Term var2 = vars[1];
+                Term var3 = vars[2];
+                IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
+                return pair(
+                        nextBool()
+                        ? equal(add, var3.toIrExpr())
+                        : equal(var3.toIrExpr(), add),
+                        triple(var1, var2, var3));
+            }
+
+            @Override
+            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+                return ICF.sum(new IntVar[]{
+                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
+                        s.getThd().toChocoVar(solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testNotEqualXYC() {
-        for (int i = 0; i < 20; i++) {
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            IrIntExpr add = Irs.add(vars[0].toIrExpr(), vars[1].toIrExpr());
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar(), vars[2].getIrVar());
-            module.addConstraint(nextBool()
-                    ? Irs.notEqual(add, vars[2].toIrExpr())
-                    : Irs.notEqual(vars[2].toIrExpr(), add));
+        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertNotEquals(vars[0].getValue(map) + vars[1].getValue(map), vars[2].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+                assertNotEquals(
+                        s.getFst().getValue(solution) + s.getSnd().getValue(solution),
+                        s.getThd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            IntVar v0 = vars[0].toChocoVar(solver);
-            IntVar v1 = vars[1].toChocoVar(solver);
-            IntVar v2 = vars[2].toChocoVar(solver);
-            IntVar sum = VF.enumerated("sum", v0.getLB() + v1.getLB(), v0.getUB() + v1.getUB(), solver);
-            solver.post(ICF.sum(new IntVar[]{v0, v1}, sum));
-            solver.post(ICF.arithm(sum, "!=", v2));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
+                Util.shuffle(vars, rand);
+                Term var1 = vars[0];
+                Term var2 = vars[1];
+                Term var3 = vars[2];
+                IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
+                return pair(
+                        nextBool()
+                        ? notEqual(add, var3.toIrExpr())
+                        : notEqual(var3.toIrExpr(), add),
+                        triple(var1, var2, var3));
+            }
+
+            @Override
+            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+                return ICF.sum(new IntVar[]{
+                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
+                        s.getThd().toChocoVar(solver)).getOpposite();
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testLessThanXYC() {
-        for (int i = 0; i < 20; i++) {
-            boolean left = nextBool();
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            IrIntExpr add = Irs.add(vars[0].toIrExpr(), vars[1].toIrExpr());
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar(), vars[2].getIrVar());
-            module.addConstraint(left
-                    ? Irs.lessThan(add, vars[2].toIrExpr())
-                    : Irs.lessThan(vars[2].toIrExpr(), add));
+        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(left
-                            ? vars[0].getValue(map) + vars[1].getValue(map) < vars[2].getValue(map)
-                            : vars[2].getValue(map) < vars[0].getValue(map) + vars[1].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+                assertTrue(
+                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
+                        < s.getThd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            IntVar v0 = vars[0].toChocoVar(solver);
-            IntVar v1 = vars[1].toChocoVar(solver);
-            IntVar v2 = vars[2].toChocoVar(solver);
-            IntVar sum = VF.enumerated("sum", v0.getLB() + v1.getLB(), v0.getUB() + v1.getUB(), solver);
-            solver.post(ICF.sum(new IntVar[]{v0, v1}, sum));
-            solver.post(left
-                    ? ICF.arithm(sum, "<", v2)
-                    : ICF.arithm(v2, "<", sum));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
+                Util.shuffle(vars, rand);
+                Term var1 = vars[0];
+                Term var2 = vars[1];
+                Term var3 = vars[2];
+                return pair(
+                        lessThan(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr()),
+                        triple(var1, var2, var3));
+            }
+
+            @Override
+            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+                return ICF.sum(new IntVar[]{
+                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
+                        "<", s.getThd().toChocoVar(solver));
+            }
+        });
+        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+
+            @Override
+            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+                assertTrue(
+                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
+                        > s.getThd().getValue(solution));
+            }
+
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
+                Util.shuffle(vars, rand);
+                Term var1 = vars[0];
+                Term var2 = vars[1];
+                Term var3 = vars[2];
+                return pair(
+                        lessThan(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr())),
+                        triple(var1, var2, var3));
+            }
+
+            @Override
+            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+                return ICF.sum(new IntVar[]{
+                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
+                        ">", s.getThd().toChocoVar(solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testLessThanEqualXYC() {
-        for (int i = 0; i < 20; i++) {
-            boolean left = nextBool();
-            IrModule module = new IrModule();
-            Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-            Util.shuffle(vars, rand);
-            IrIntExpr add = Irs.add(vars[0].toIrExpr(), vars[1].toIrExpr());
-            module.addVariables(vars[0].getIrVar(), vars[1].getIrVar(), vars[2].getIrVar());
-            module.addConstraint(left
-                    ? Irs.lessThanEqual(add, vars[2].toIrExpr())
-                    : Irs.lessThanEqual(vars[2].toIrExpr(), add));
+        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(left
-                            ? vars[0].getValue(map) + vars[1].getValue(map) <= vars[2].getValue(map)
-                            : vars[2].getValue(map) <= vars[0].getValue(map) + vars[1].getValue(map));
-                    count++;
-                } while (irSolver.nextSolution());
-            }
-            assertTrue("Correct but not optimized.", irSolver.getNbCstrs() <= 1);
-            assertTrue("Correct but not optimized.", irSolver.getNbVars() <= 4);
-            for (Variable var : irSolver.getVars()) {
-                assertFalse("Correct but not optimized.",
-                        (var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl))
-                        || var instanceof IntView);
+            @Override
+            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+                assertTrue(
+                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
+                        <= s.getThd().getValue(solution));
             }
 
-            Solver solver = new Solver();
-            IntVar v0 = vars[0].toChocoVar(solver);
-            IntVar v1 = vars[1].toChocoVar(solver);
-            IntVar v2 = vars[2].toChocoVar(solver);
-            IntVar sum = VF.enumerated("sum", v0.getLB() + v1.getLB(), v0.getUB() + v1.getUB(), solver);
-            solver.post(ICF.sum(new IntVar[]{v0, v1}, sum));
-            solver.post(left
-                    ? ICF.arithm(sum, "<=", v2)
-                    : ICF.arithm(v2, "<=", sum));
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
+                Util.shuffle(vars, rand);
+                Term var1 = vars[0];
+                Term var2 = vars[1];
+                Term var3 = vars[2];
+                return pair(
+                        lessThanEqual(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr()),
+                        triple(var1, var2, var3));
+            }
+
+            @Override
+            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+                return ICF.sum(new IntVar[]{
+                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
+                        "<=", s.getThd().toChocoVar(solver));
+            }
+        });
+        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+
+            @Override
+            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+                assertTrue(
+                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
+                        >= s.getThd().getValue(solution));
+            }
+
+            @Override
+            void validateTranslation(Solver solver) {
+                assertOptimizedArithm(solver);
+            }
+
+            @Override
+            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
+                Util.shuffle(vars, rand);
+                Term var1 = vars[0];
+                Term var2 = vars[1];
+                Term var3 = vars[2];
+                return pair(
+                        lessThanEqual(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr())),
+                        triple(var1, var2, var3));
+            }
+
+            @Override
+            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+                return ICF.sum(new IntVar[]{
+                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
+                        ">=", s.getThd().toChocoVar(solver));
+            }
+        });
     }
 
     private Term randTerm() {
@@ -460,6 +512,7 @@ public class BasicIntExprTest extends ClaferTest {
 
     private static class IntTerm implements Term {
 
+        @IrVarField
         private final IrIntVar var;
 
         IntTerm(IrIntVar var) {
@@ -489,6 +542,7 @@ public class BasicIntExprTest extends ClaferTest {
 
     private static class BoolTerm implements Term {
 
+        @IrVarField
         private final IrBoolVar var;
 
         BoolTerm(IrBoolVar var) {
@@ -512,7 +566,7 @@ public class BasicIntExprTest extends ClaferTest {
 
         @Override
         public int getValue(IrSolutionMap map) {
-            return map.getValue(var);
+            return map.getValue((IrIntVar) var);
         }
     }
 
@@ -526,12 +580,12 @@ public class BasicIntExprTest extends ClaferTest {
 
         @Override
         public IrIntExpr toIrExpr() {
-            return Irs.constant(c);
+            return constant(c);
         }
 
         @Override
         public IrIntVar getIrVar() {
-            return Irs.constant(c);
+            return constant(c);
         }
 
         @Override
@@ -547,6 +601,7 @@ public class BasicIntExprTest extends ClaferTest {
 
     private static class MinusTerm implements Term {
 
+        @IrVarField
         private final Term view;
 
         MinusTerm(Term view) {
@@ -555,7 +610,7 @@ public class BasicIntExprTest extends ClaferTest {
 
         @Override
         public IrIntExpr toIrExpr() {
-            return Irs.minus(view.toIrExpr());
+            return minus(view.toIrExpr());
         }
 
         @Override
@@ -576,6 +631,7 @@ public class BasicIntExprTest extends ClaferTest {
 
     private static class OffsetTerm implements Term {
 
+        @IrVarField
         private final Term view;
         private final int offset;
 
@@ -586,7 +642,7 @@ public class BasicIntExprTest extends ClaferTest {
 
         @Override
         public IrIntExpr toIrExpr() {
-            return Irs.add(view.toIrExpr(), offset);
+            return add(view.toIrExpr(), offset);
         }
 
         @Override
@@ -607,6 +663,7 @@ public class BasicIntExprTest extends ClaferTest {
 
     private static class NotTerm implements Term {
 
+        @IrVarField
         private final Term view;
 
         NotTerm(Term view) {
@@ -615,7 +672,7 @@ public class BasicIntExprTest extends ClaferTest {
 
         @Override
         public IrIntExpr toIrExpr() {
-            return Irs.not((IrBoolExpr) view.toIrExpr());
+            return not((IrBoolExpr) view.toIrExpr());
         }
 
         @Override

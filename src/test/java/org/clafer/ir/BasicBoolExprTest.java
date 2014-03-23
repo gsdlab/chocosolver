@@ -1,417 +1,435 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
-import org.clafer.ClaferTest;
+import static org.clafer.ClaferTest.toBoolVars;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.collection.Pair;
+import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
-import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
+import solver.constraints.Constraint;
 import solver.constraints.ICF;
-import solver.constraints.LCF;
 import solver.constraints.set.SCF;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import solver.variables.VF;
 
 /**
  *
  * @author jimmy
  */
-public class BasicBoolExprTest extends ClaferTest {
+public class BasicBoolExprTest extends IrTest {
+
+    @Test(timeout = 60000)
+    public void testAnd() {
+        randomizedTest(new TestCase<IrBoolVar[]>() {
+
+            @Override
+            void check(IrSolutionMap solution, IrBoolVar[] s) {
+                for (IrBoolVar var : s) {
+                    assertTrue(solution.getValue(var));
+                }
+            }
+
+            @Override
+            Pair<IrBoolExpr, IrBoolVar[]> setup(IrModule module) {
+                IrBoolVar[] vars = randBools(nextInt(5));
+                return pair(and(vars), vars);
+            }
+
+            @Override
+            Constraint setup(IrBoolVar[] s, Solver solver) {
+                return s.length == 0
+                        ? solver.TRUE
+                        : Constraints.and(toBoolVars(s, solver));
+            }
+        });
+    }
 
     @Test(timeout = 60000)
     public void testLone() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrBoolVar[] is = randBools(nextInt(5));
-            module.addConstraint(lone(is));
-            module.addVariables(is);
+        randomizedTest(new TestCase<IrBoolVar[]>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    int sum = 0;
-                    for (IrIntVar i : is) {
-                        sum += map.getValue(i);
-                    }
-                    assertTrue(sum <= 1);
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, IrBoolVar[] s) {
+                assertTrue(Util.sum(solution.getValues(s)) <= 1);
             }
 
-            if (is.length == 0) {
-                assertEquals(1, count);
-            } else {
-                Solver solver = new Solver();
-                BoolVar[] vs = toBoolVars(is, solver);
-                IntVar sum = VF.enumerated("sum", 0, 1, solver);
-                solver.post(ICF.sum(vs, sum));
-                assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
+            @Override
+            Pair<IrBoolExpr, IrBoolVar[]> setup(IrModule module) {
+                IrBoolVar[] vars = randBools(nextInt(5));
+                return pair(lone(vars), vars);
             }
-        }
+
+            @Override
+            Constraint setup(IrBoolVar[] s, Solver solver) {
+                return s.length == 0
+                        ? solver.TRUE
+                        : Constraints.lone(toBoolVars(s, solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testOne() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrBoolVar[] is = randBools(nextInt(5));
-            module.addConstraint(one(is));
-            module.addVariables(is);
+        randomizedTest(new TestCase<IrBoolVar[]>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    int sum = 0;
-                    for (IrIntVar i : is) {
-                        sum += map.getValue(i);
-                    }
-                    assertEquals(1, sum);
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, IrBoolVar[] s) {
+                assertEquals(1, Util.sum(solution.getValues(s)));
             }
 
-            if (is.length == 0) {
-                assertEquals(0, count);
-            } else {
-                Solver solver = new Solver();
-                BoolVar[] vs = toBoolVars(is, solver);
-                solver.post(ICF.sum(vs, VF.one(solver)));
-                assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
+            @Override
+            Pair<IrBoolExpr, IrBoolVar[]> setup(IrModule module) {
+                IrBoolVar[] vars = randBools(nextInt(5));
+                return pair(one(vars), vars);
             }
-        }
+
+            @Override
+            Constraint setup(IrBoolVar[] s, Solver solver) {
+                return s.length == 0
+                        ? solver.FALSE
+                        : Constraints.one(toBoolVars(s, solver));
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testOr() {
+        randomizedTest(new TestCase<IrBoolVar[]>() {
+
+            @Override
+            void check(IrSolutionMap solution, IrBoolVar[] s) {
+                assertTrue(Util.sum(solution.getValues(s)) >= 1);
+            }
+
+            @Override
+            Pair<IrBoolExpr, IrBoolVar[]> setup(IrModule module) {
+                IrBoolVar[] vars = randBools(nextInt(5));
+                return pair(or(vars), vars);
+            }
+
+            @Override
+            Constraint setup(IrBoolVar[] s, Solver solver) {
+                return s.length == 0
+                        ? solver.FALSE
+                        : Constraints.or(toBoolVars(s, solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testIfThenElse() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrBoolVar b1 = randBool();
-            IrBoolVar b2 = randBool();
-            IrBoolVar b3 = randBool();
-            module.addConstraint(ifThenElse(b1, b2, b3));
-            module.addVariables(b1, b2, b3);
+        randomizedTest(new TestCase<Triple<IrBoolVar, IrBoolVar, IrBoolVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(map.getBoolValue(b1)
-                            ? map.getBoolValue(b2)
-                            : map.getBoolValue(b3));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Triple<IrBoolVar, IrBoolVar, IrBoolVar> s) {
+                assertTrue(solution.getValue(s.getFst())
+                        ? solution.getValue(s.getSnd())
+                        : solution.getValue(s.getThd()));
             }
 
-            Solver solver = new Solver();
-            BoolVar v1 = toBoolVar(b1, solver);
-            BoolVar v2 = toBoolVar(b2, solver);
-            BoolVar v3 = toBoolVar(b3, solver);
-            solver.post(LCF.ifThenElse(v1,
-                    ICF.arithm(v2, "=", 1),
-                    ICF.arithm(v3, "=", 1)));
+            @Override
+            Pair<IrBoolExpr, Triple<IrBoolVar, IrBoolVar, IrBoolVar>> setup(IrModule module) {
+                IrBoolVar b1 = randBool();
+                IrBoolVar b2 = randBool();
+                IrBoolVar b3 = randBool();
+                return pair(ifThenElse(b1, b2, b3), triple(b1, b2, b3));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Triple<IrBoolVar, IrBoolVar, IrBoolVar> s, Solver solver) {
+                return Constraints.ifThenElse(
+                        toBoolVar(s.getFst(), solver),
+                        toBoolVar(s.getSnd(), solver),
+                        toBoolVar(s.getThd(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testEqual() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar i1 = randInt();
-            IrIntVar i2 = randInt();
-            module.addConstraint(equal(i1, i2));
-            module.addVariables(i1, i2);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertEquals(map.getValue(i1), map.getValue(i2));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar> s) {
+                assertEquals(solution.getValue(s.getFst()), solution.getValue(s.getSnd()));
             }
 
-            Solver solver = new Solver();
-            IntVar v1 = toIntVar(i1, solver);
-            IntVar v2 = toIntVar(i2, solver);
-            solver.post(ICF.arithm(v1, "=", v2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar>> setup(IrModule module) {
+                IrIntVar i1 = randInt();
+                IrIntVar i2 = randInt();
+                return pair(equal(i1, i2), pair(i1, i2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar> s, Solver solver) {
+                return ICF.arithm(toIntVar(s.getFst(), solver), "=", toIntVar(s.getSnd(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testNotEqual() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar i1 = randInt();
-            IrIntVar i2 = randInt();
-            module.addConstraint(notEqual(i1, i2));
-            module.addVariables(i1, i2);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertNotEquals(map.getValue(i1), map.getValue(i2));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar> s) {
+                assertNotEquals(solution.getValue(s.getFst()), solution.getValue(s.getSnd()));
             }
 
-            Solver solver = new Solver();
-            IntVar v1 = toIntVar(i1, solver);
-            IntVar v2 = toIntVar(i2, solver);
-            solver.post(ICF.arithm(v1, "!=", v2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar>> setup(IrModule module) {
+                IrIntVar i1 = randInt();
+                IrIntVar i2 = randInt();
+                return pair(notEqual(i1, i2), pair(i1, i2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar> s, Solver solver) {
+                return ICF.arithm(toIntVar(s.getFst(), solver), "!=", toIntVar(s.getSnd(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testLessThan() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar i1 = randInt();
-            IrIntVar i2 = randInt();
-            module.addConstraint(lessThan(i1, i2));
-            module.addVariables(i1, i2);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(map.getValue(i1) < map.getValue(i2));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar> s) {
+                assertTrue(solution.getValue(s.getFst()) < solution.getValue(s.getSnd()));
             }
 
-            Solver solver = new Solver();
-            IntVar v1 = toIntVar(i1, solver);
-            IntVar v2 = toIntVar(i2, solver);
-            solver.post(ICF.arithm(v1, "<", v2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar>> setup(IrModule module) {
+                IrIntVar i1 = randInt();
+                IrIntVar i2 = randInt();
+                return pair(lessThan(i1, i2), pair(i1, i2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar> s, Solver solver) {
+                return ICF.arithm(toIntVar(s.getFst(), solver), "<", toIntVar(s.getSnd(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testLessThanEqual() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar i1 = randInt();
-            IrIntVar i2 = randInt();
-            module.addConstraint(lessThanEqual(i1, i2));
-            module.addVariables(i1, i2);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(map.getValue(i1) <= map.getValue(i2));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar> s) {
+                assertTrue(solution.getValue(s.getFst()) <= solution.getValue(s.getSnd()));
             }
 
-            Solver solver = new Solver();
-            IntVar v1 = toIntVar(i1, solver);
-            IntVar v2 = toIntVar(i2, solver);
-            solver.post(ICF.arithm(v1, "<=", v2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar>> setup(IrModule module) {
+                IrIntVar i1 = randInt();
+                IrIntVar i2 = randInt();
+                return pair(lessThanEqual(i1, i2), pair(i1, i2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar> s, Solver solver) {
+                return ICF.arithm(toIntVar(s.getFst(), solver), "<=", toIntVar(s.getSnd(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testGreaterThan() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar i1 = randInt();
-            IrIntVar i2 = randInt();
-            module.addConstraint(greaterThan(i1, i2));
-            module.addVariables(i1, i2);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(map.getValue(i1) > map.getValue(i2));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar> s) {
+                assertTrue(solution.getValue(s.getFst()) > solution.getValue(s.getSnd()));
             }
 
-            Solver solver = new Solver();
-            IntVar v1 = toIntVar(i1, solver);
-            IntVar v2 = toIntVar(i2, solver);
-            solver.post(ICF.arithm(v1, ">", v2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar>> setup(IrModule module) {
+                IrIntVar i1 = randInt();
+                IrIntVar i2 = randInt();
+                return pair(greaterThan(i1, i2), pair(i1, i2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar> s, Solver solver) {
+                return ICF.arithm(toIntVar(s.getFst(), solver), ">", toIntVar(s.getSnd(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testGreaterThanEqual() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar i1 = randInt();
-            IrIntVar i2 = randInt();
-            module.addConstraint(greaterThanEqual(i1, i2));
-            module.addVariables(i1, i2);
+        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertTrue(map.getValue(i1) >= map.getValue(i2));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar> s) {
+                assertTrue(solution.getValue(s.getFst()) >= solution.getValue(s.getSnd()));
             }
 
-            Solver solver = new Solver();
-            IntVar v1 = toIntVar(i1, solver);
-            IntVar v2 = toIntVar(i2, solver);
-            solver.post(ICF.arithm(v1, ">=", v2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar>> setup(IrModule module) {
+                IrIntVar i1 = randInt();
+                IrIntVar i2 = randInt();
+                return pair(greaterThanEqual(i1, i2), pair(i1, i2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrIntVar, IrIntVar> s, Solver solver) {
+                return ICF.arithm(toIntVar(s.getFst(), solver), ">=", toIntVar(s.getSnd(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSetEqual() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrSetVar s1 = randSet();
-            IrSetVar s2 = randSet();
+        randomizedTest(new TestCase<Pair<IrSetVar, IrSetVar>>() {
 
-            module.addConstraint(equal(s1, s2));
-            module.addVariables(s1, s2);
-
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertArrayEquals(map.getSetValue(s1), map.getSetValue(s2));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrSetVar, IrSetVar> s) {
+                assertArrayEquals(solution.getValue(s.getFst()), solution.getValue(s.getSnd()));
             }
 
-            Solver solver = new Solver();
-            SetVar v1 = toSetVar(s1, solver);
-            IntVar c1 = enforcedCardVar(v1);
-            SetVar v2 = toSetVar(s2, solver);
-            IntVar c2 = enforcedCardVar(v2);
-            solver.post(Constraints.equal(v1, c1, v2, c2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrSetVar, IrSetVar>> setup(IrModule module) {
+                IrSetVar s1 = randSet();
+                IrSetVar s2 = randSet();
+                return pair(equal(s1, s2), pair(s1, s2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrSetVar, IrSetVar> s, Solver solver) {
+                CSetVar s1 = toCSetVar(s.getFst(), solver);
+                CSetVar s2 = toCSetVar(s.getSnd(), solver);
+                return Constraints.equal(s1.getSet(), s1.getCard(), s2.getSet(), s2.getCard());
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testSetNotEqual() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrSetVar s1 = randSet();
-            IrSetVar s2 = randSet();
-            module.addConstraint(notEqual(s1, s2));
-            module.addVariables(s1, s2);
+        randomizedTest(new TestCase<Pair<IrSetVar, IrSetVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    assertFalse(Arrays.equals(map.getSetValue(s1), map.getSetValue(s2)));
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrSetVar, IrSetVar> s) {
+                assertFalse(Arrays.equals(solution.getValue(s.getFst()), solution.getValue(s.getSnd())));
             }
 
-            Solver solver = new Solver();
-            SetVar v1 = toSetVar(s1, solver);
-            IntVar c1 = enforcedCardVar(v1);
-            SetVar v2 = toSetVar(s2, solver);
-            IntVar c2 = enforcedCardVar(v2);
-            solver.post(Constraints.notEqual(v1, c1, v2, c2));
+            @Override
+            Pair<IrBoolExpr, Pair<IrSetVar, IrSetVar>> setup(IrModule module) {
+                IrSetVar s1 = randSet();
+                IrSetVar s2 = randSet();
+                return pair(notEqual(s1, s2), pair(s1, s2));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrSetVar, IrSetVar> s, Solver solver) {
+                CSetVar s1 = toCSetVar(s.getFst(), solver);
+                CSetVar s2 = toCSetVar(s.getSnd(), solver);
+                return Constraints.notEqual(s1.getSet(), s1.getCard(), s2.getSet(), s2.getCard());
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testBoolChannel() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrBoolVar[] bs = randBools(nextInt(5));
-            IrSetVar s = randPositiveSet();
-            module.addConstraint(boolChannel(bs, s));
-            module.addVariables(bs);
-            module.addVariable(s);
+        randomizedTest(new TestCase<Pair<IrBoolVar[], IrSetVar>>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    for (int i = 0; i < bs.length; i++) {
-                        assertEquals(map.getBoolValue(bs[i]), Util.in(i, map.getSetValue(s)));
-                    }
-                    count++;
-                } while (irSolver.nextSolution());
+            @Override
+            void check(IrSolutionMap solution, Pair<IrBoolVar[], IrSetVar> s) {
+                boolean[] bools = solution.getValues(s.getFst());
+                int[] set = solution.getValue(s.getSnd());
+                for (int i = 0; i < bools.length; i++) {
+                    assertEquals(bools[i], Util.in(i, set));
+                }
+                for (int i : set) {
+                    assertTrue(i >= 0 && i < bools.length);
+                }
             }
 
-            Solver solver = new Solver();
-            solver.post(SCF.bool_channel(
-                    toBoolVars(bs, solver),
-                    toSetVar(s, solver),
-                    0));
+            @Override
+            Pair<IrBoolExpr, Pair<IrBoolVar[], IrSetVar>> setup(IrModule module) {
+                IrBoolVar[] bools = randBools(nextInt(5));
+                IrSetVar set = randPositiveSet();
+                return pair(boolChannel(bools, set), pair(bools, set));
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(Pair<IrBoolVar[], IrSetVar> s, Solver solver) {
+                return SCF.bool_channel(
+                        toBoolVars(s.getFst(), solver),
+                        toSetVar(s.getSnd(), solver),
+                        0);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testIntChannel() {
+        randomizedTest(new TestCase<Pair<IrIntVar[], IrSetVar[]>>() {
+
+            @Override
+            void check(IrSolutionMap solution, Pair<IrIntVar[], IrSetVar[]> s) {
+                int[][] sets = solution.getValues(s.getSnd());
+                int[] ints = solution.getValues(s.getFst());
+                for (int i = 0; i < sets.length; i++) {
+                    for (int j : sets[i]) {
+                        assertTrue(j >= 0 && j < ints.length);
+                        assertEquals(i, ints[j]);
+                    }
+                }
+                for (int i = 0; i < ints.length; i++) {
+                    int value = ints[i];
+                    assertTrue(value >= 0 && value < sets.length);
+                    assertTrue(Util.in(i, sets[ints[i]]));
+                }
+            }
+
+            @Override
+            Pair<IrBoolExpr, Pair<IrIntVar[], IrSetVar[]>> setup(IrModule module) {
+                IrIntVar[] ints = randPositiveInts(nextInt(5) + 1);
+                IrSetVar[] sets = randPositiveSets(nextInt(5) + 1);
+                return pair(intChannel(ints, sets), pair(ints, sets));
+            }
+
+            @Override
+            Constraint setup(Pair<IrIntVar[], IrSetVar[]> s, Solver solver) {
+                return Constraints.intChannel(
+                        toSetVars(s.getSnd(), solver),
+                        toIntVars(s.getFst(), solver));
+            }
+        });
     }
 
     @Test(timeout = 60000)
     public void testAllDifferent() {
-        for (int repeat = 0; repeat < 20; repeat++) {
-            IrModule module = new IrModule();
-            IrIntVar[] is = randInts(1 + nextInt(5));
-            module.addConstraint(allDifferent(is));
-            module.addVariables(is);
+        randomizedTest(new TestCase<IrIntVar[]>() {
 
-            Solver irSolver = new Solver();
-            IrSolutionMap map = IrCompiler.compile(module, irSolver);
-            int count = 0;
-            if (randomizeStrategy(irSolver).findSolution()) {
-                do {
-                    for (int i = 0; i < is.length; i++) {
-                        for (int j = i + 1; j < is.length; j++) {
-                            assertNotEquals(map.getValue(is[i]), map.getValue(is[j]));
-                        }
+            @Override
+            void check(IrSolutionMap solution, IrIntVar[] s) {
+                int[] is = solution.getValues(s);
+                for (int i = 0; i < is.length; i++) {
+                    for (int j = i + 1; j < is.length; j++) {
+                        assertNotEquals(is[i], is[j]);
                     }
-                    count++;
-                } while (irSolver.nextSolution());
+                }
             }
 
-            Solver solver = new Solver();
-            solver.post(ICF.alldifferent(toIntVars(is, solver), "AC"));
+            @Override
+            Pair<IrBoolExpr, IrIntVar[]> setup(IrModule module) {
+                IrIntVar[] is = randInts(1 + nextInt(5));
+                return pair(allDifferent(is), is);
+            }
 
-            assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
-        }
+            @Override
+            Constraint setup(IrIntVar[] s, Solver solver) {
+                return ICF.alldifferent(toIntVars(s, solver));
+            }
+        });
     }
 }

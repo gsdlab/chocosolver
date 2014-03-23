@@ -42,11 +42,11 @@ public class ClaferUnsat {
         for (Entry<AstConstraint, IrBoolVar> entry : softVarsMap.entrySet()) {
             soft[i++] = new Pair<>(
                     entry.getKey(),
-                    solutionMap.getIrSolution().getBoolVar(entry.getValue()));
+                    solutionMap.getIrSolution().getVar(entry.getValue()));
         }
         assert i == soft.length;
         this.softVars = soft;
-        this.score = solutionMap.getIrSolution().getIntVar(solutionMap.getAstSolution().getSumSoftVar());
+        this.score = solutionMap.getIrSolution().getVar(solutionMap.getAstSolution().getSumSoftVar());
     }
 
     public Solver getInternalSolver() {
