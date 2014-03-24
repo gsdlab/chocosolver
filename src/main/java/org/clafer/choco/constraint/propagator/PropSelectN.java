@@ -51,6 +51,8 @@ public class PropSelectN extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        n.updateLowerBound(0, aCause);
+        n.updateUpperBound(bools.length, aCause);
         // Prune n
         for (int i = n.getLB(); i < n.getUB(); i++) {
             if (bools[i].isInstantiated()) {
@@ -128,6 +130,9 @@ public class PropSelectN extends Propagator<IntVar> {
             } else {
                 allInstantiated = false;
             }
+        }
+        if (n.getLB() > bools.length || n.getUB() < 0) {
+            return ESat.FALSE;
         }
         return allInstantiated && n.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }

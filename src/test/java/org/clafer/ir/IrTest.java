@@ -4,6 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -70,7 +71,8 @@ public class IrTest extends ClaferTest {
                 : testCase.setup(solver).getOpposite();
         solver.post(constraint);
 
-        assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
+        assertEquals("Wrong number of solutions.",
+                randomizeStrategy(solver).findAllSolutions(), count);
     }
 
     private static List<IrVar> getVariables(Object o) {
@@ -123,36 +125,40 @@ public class IrTest extends ClaferTest {
                     checkNot(solution);
                 }
             } catch (AssertionError e) {
-                throw new AssertionError("Incorrect solution: " + constraint + " : " + positive, e);
+                throw new AssertionError("Incorrect solution: " + constraint, e);
             }
         }
 
         void validateTranslation(Solver solver) {
         }
 
+        private Object initalize(boolean positive, boolean nonEmpty, Class<?> type) {
+            if (IrBoolVar.class.equals(type)) {
+                return randBool();
+            } else if (IrIntVar.class.equals(type)) {
+                return positive ? randPositiveInt() : randInt();
+            } else if (IrSetVar.class.equals(type)) {
+                return positive ? randPositiveSet() : randSet();
+            } else if (IrStringVar.class.equals(type)) {
+                return randString();
+            } else if (type.isArray()) {
+                int length = nonEmpty ? 1 + nextInt(5) : nextInt(5);
+                Object array = Array.newInstance(type.getComponentType(), length);
+                for (int i = 0; i < length; i++) {
+                    Array.set(array, i, initalize(positive, nonEmpty, type.getComponentType()));
+                }
+                return array;
+            }
+            throw new IllegalStateException("Unexpected type " + type);
+        }
+
         void initialize() {
             for (Field field : getClass().getDeclaredFields()) {
                 if (field.isAnnotationPresent(IrVarField.class)) {
                     boolean positive = field.isAnnotationPresent(Positive.class);
+                    boolean nonEmpty = field.isAnnotationPresent(NonEmpty.class);
                     Class<?> type = field.getType();
-                    Object value;
-                    if (IrBoolVar.class.equals(type)) {
-                        value = randBool();
-                    } else if (IrBoolVar[].class.equals(type)) {
-                        value = randBools(nextInt(5));
-                    } else if (IrIntVar.class.equals(type)) {
-                        value = positive ? randPositiveInt() : randInt();
-                    } else if (IrIntVar[].class.equals(type)) {
-                        value = positive ? randPositiveInts(nextInt(5)) : randInts(nextInt(5));
-                    } else if (IrSetVar.class.equals(type)) {
-                        value = positive ? randPositiveSet() : randSet();
-                    } else if (IrSetVar[].class.equals(type)) {
-                        value = positive ? randPositiveSets(nextInt(5)) : randSets(nextInt(5));
-                    } else if (IrStringVar.class.equals(type)) {
-                        value = randString();
-                    } else {
-                        throw new IllegalStateException("Unexpected type " + type);
-                    }
+                    Object value = initalize(positive, nonEmpty, type);
                     field.setAccessible(true);
                     try {
                         field.set(this, value);
@@ -176,5 +182,10 @@ public class IrTest extends ClaferTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.FIELD})
     protected @interface Positive {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.FIELD})
+    protected @interface NonEmpty {
     }
 }

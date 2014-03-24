@@ -59,4 +59,16 @@ public class IrSortStrings extends IrAbstractBool {
     public int hashCode() {
         return Arrays.deepHashCode(strings) ^ (strict ? 1 : 0);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < strings.length; i++) {
+            if (i > 0) {
+                result.append(strict ? " > " : " >= ");
+            }
+            result.append(Arrays.toString(strings[i]));
+        }
+        return result.toString();
+    }
 }

@@ -10,7 +10,9 @@ import org.junit.Test;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.ICF;
+import solver.constraints.LCF;
 import solver.constraints.set.SCF;
+import solver.variables.IntVar;
 
 /**
  *
@@ -432,6 +434,184 @@ public class BasicBoolExprTest extends IrTest {
         });
     }
 
+    private static int lexicoCompare(int[] i, int[] j) {
+        return lexicoCompare(i, j, 0);
+    }
+
+    private static int lexicoCompare(int[] i, int[] j, int index) {
+        if (index == i.length) {
+            return index == j.length ? 0 : -1;
+        }
+        if (index == j.length) {
+            return 1;
+        }
+        if (i[index] == j[index]) {
+            return lexicoCompare(i, j, index + 1);
+        }
+        return i[index] < j[index] ? -1 : 1;
+    }
+
+    @Test(timeout = 60000)
+    public void testSort() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            IrIntVar[] ints;
+
+            @Override
+            void check(IrSolutionMap solution) {
+                int[] INTS = solution.getValues(ints);
+                for (int i = 0; i < INTS.length - 1; i++) {
+                    assertTrue(INTS[i] <= INTS[i + 1]);
+                }
+            }
+
+            @Override
+            IrBoolExpr setup(IrModule module) {
+                return sort(ints);
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                if (ints.length == 0) {
+                    return solver.TRUE;
+                }
+                IntVar[] INTS = toVars(ints, solver);
+                Constraint[] sorted = new Constraint[ints.length - 1];
+                for (int i = 0; i < sorted.length; i++) {
+                    sorted[i] = ICF.arithm(INTS[i], "<=", INTS[i + 1]);
+                }
+                return sorted.length == 0 ? solver.TRUE : LCF.and(sorted);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testSortStrict() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            IrIntVar[] ints;
+
+            @Override
+            void check(IrSolutionMap solution) {
+                int[] INTS = solution.getValues(ints);
+                for (int i = 0; i < INTS.length - 1; i++) {
+                    assertTrue(INTS[i] < INTS[i + 1]);
+                }
+            }
+
+            @Override
+            IrBoolExpr setup(IrModule module) {
+                return sortStrict(ints);
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                if (ints.length == 0) {
+                    return solver.TRUE;
+                }
+                IntVar[] INTS = toVars(ints, solver);
+                Constraint[] sorted = new Constraint[ints.length - 1];
+                for (int i = 0; i < sorted.length; i++) {
+                    sorted[i] = ICF.arithm(INTS[i], "<", INTS[i + 1]);
+                }
+                return sorted.length == 0 ? solver.TRUE : LCF.and(sorted);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testSortStrings() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            @NonEmpty
+            IrIntVar[][] strings;
+
+            @Override
+            void check(IrSolutionMap solution) {
+                int[][] STRINGS = new int[strings.length][];
+                for (int i = 0; i < STRINGS.length; i++) {
+                    STRINGS[i] = solution.getValues(strings[i]);
+                }
+                for (int i = 0; i < STRINGS.length - 1; i++) {
+                    assertNotEquals(1, lexicoCompare(STRINGS[i], STRINGS[i + 1]));
+                }
+            }
+
+            @Override
+            void initialize() {
+                int length = 1 + nextInt(3);
+                strings = new IrIntVar[nextInt(3)][];
+                for (int i = 0; i < strings.length; i++) {
+                    strings[i] = randInts(length);
+                }
+            }
+
+            @Override
+            IrBoolExpr setup(IrModule module) {
+                return sort(strings);
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                if (strings.length == 0) {
+                    return solver.TRUE;
+                }
+                IntVar[][] STRINGS = new IntVar[strings.length][];
+                for (int i = 0; i < STRINGS.length; i++) {
+                    STRINGS[i] = toVars(strings[i], solver);
+                }
+                return ICF.lex_chain_less_eq(STRINGS);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testSortStringsStrict() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            @NonEmpty
+            IrIntVar[][] strings;
+
+            @Override
+            void check(IrSolutionMap solution) {
+                int[][] STRINGS = new int[strings.length][];
+                for (int i = 0; i < STRINGS.length; i++) {
+                    STRINGS[i] = solution.getValues(strings[i]);
+                }
+                for (int i = 0; i < STRINGS.length - 1; i++) {
+                    assertEquals(-1, lexicoCompare(STRINGS[i], STRINGS[i + 1]));
+                }
+            }
+
+            @Override
+            void initialize() {
+                int length = 1 + nextInt(3);
+                strings = new IrIntVar[nextInt(3)][];
+                for (int i = 0; i < strings.length; i++) {
+                    strings[i] = randInts(length);
+                }
+            }
+
+            @Override
+            IrBoolExpr setup(IrModule module) {
+                return sortStrict(strings);
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                if (strings.length == 0) {
+                    return solver.TRUE;
+                }
+                IntVar[][] STRINGS = new IntVar[strings.length][];
+                for (int i = 0; i < STRINGS.length; i++) {
+                    STRINGS[i] = toVars(strings[i], solver);
+                }
+                return ICF.lex_chain_less(STRINGS);
+            }
+        });
+    }
+
+    // TODO: sortChannel
     @Test(timeout = 60000)
     public void testAllDifferent() {
         randomizedTest(new TestCase() {
@@ -461,4 +641,35 @@ public class BasicBoolExprTest extends IrTest {
             }
         });
     }
+
+    @Test(timeout = 60000)
+    public void testSelectN() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            IrBoolVar[] bools;
+            @IrVarField
+            IrIntVar n;
+
+            @Override
+            void check(IrSolutionMap solution) {
+                int N = solution.getValue(n);
+                assertTrue(N >= 0);
+                assertTrue(N <= bools.length);
+                for (int i = 0; i < bools.length; i++) {
+                    assertEquals(i < N, solution.getValue(bools[i]));
+                }
+            }
+
+            @Override
+            IrBoolExpr setup(IrModule module) {
+                return selectN(bools, n);
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                return Constraints.selectN(toVars(bools, solver), toVar(n, solver));
+            }
+        });
+    }
+
 }

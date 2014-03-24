@@ -901,6 +901,9 @@ public class Irs {
     }
 
     private static IrBoolExpr sortStrings(IrIntExpr[][] strings, boolean strict) {
+        if (strings.length < 2) {
+            return True;
+        }
         List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
         for (int i = 0; i < strings.length - 1; i++) {
             switch (IrUtil.compareString(strings[i], strings[i + 1])) {
@@ -1018,6 +1021,10 @@ public class Irs {
                 return True;
             }
         }
+        if (n.getDomain().getLowBound() > bools.length
+                || n.getDomain().getHighBound() < 0) {
+            return False;
+        }
         boolean entailed = true;
         IrDomain nDomain = n.getDomain();
         for (int i = 0; i < bools.length; i++) {
@@ -1040,7 +1047,9 @@ public class Irs {
                 entailed = false;
             }
         }
-        if (entailed) {
+        if (entailed
+                && n.getDomain().getLowBound() >= 0
+                && n.getDomain().getHighBound() <= bools.length) {
             return True;
         }
         Integer constant = IrUtil.getConstant(n);

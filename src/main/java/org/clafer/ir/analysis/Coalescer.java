@@ -552,10 +552,10 @@ public class Coalescer {
                     propagateInt(boundDomain(0, i), n);
                 }
             }
-            for (int i = 0; i < n.getDomain().getLowBound(); i++) {
+            for (int i = 0; i < n.getDomain().getLowBound() && i < bools.length; i++) {
                 propagateInt(TrueDomain, bools[i]);
             }
-            for (int i = n.getDomain().getHighBound(); i < bools.length; i++) {
+            for (int i = n.getDomain().getHighBound(); i >= 0 && i < bools.length; i++) {
                 propagateInt(FalseDomain, bools[i]);
             }
             return null;
@@ -707,8 +707,7 @@ public class Coalescer {
         }
 
         private void propagateLessThanEqualString(IrIntExpr[] a, IrIntExpr[] b, int index) {
-            assert a.length == b.length;
-            if (index == a.length) {
+            if (index == a.length || index == b.length) {
                 return;
             }
             switch (IrUtil.compare(a[index], b[index])) {
