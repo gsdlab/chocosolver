@@ -784,6 +784,16 @@ public class Irs {
     }
 
     public static IrBoolExpr intChannel(IrIntExpr[] ints, IrSetExpr[] sets) {
+        if (ints.length == 0) {
+            IrBoolExpr[] empty = new IrBoolExpr[sets.length];
+            for (int i = 0; i < empty.length; i++) {
+                empty[i] = equal(sets[i], EmptySet);
+            }
+            return and(empty);
+        }
+        if (sets.length == 0) {
+            return ints.length == 0 ? True : False;
+        }
         boolean entailed = true;
         for (int i = 0; i < ints.length; i++) {
             Integer constant = IrUtil.getConstant(ints[i]);
@@ -796,6 +806,24 @@ public class Irs {
                     return False;
                 } else if (!set.getKer().contains(i)) {
                     entailed = false;
+                }
+            } else {
+                entailed = false;
+            }
+        }
+        for (int i = 0; i < sets.length; i++) {
+            int[] constant = IrUtil.getConstant(sets[i]);
+            if (constant != null) {
+                for (int j : constant) {
+                    if (j < 0 || j >= ints.length) {
+                        return False;
+                    }
+                    IrIntExpr iexpr = ints[j];
+                    if (!iexpr.getDomain().contains(i)) {
+                        return False;
+                    } else if (iexpr.getDomain().size() != 1) {
+                        entailed = false;
+                    }
                 }
             } else {
                 entailed = false;
