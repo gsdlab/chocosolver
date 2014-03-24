@@ -26,7 +26,7 @@ public class SingletonTest extends ConstraintTest<Pair<IntVar, SetVar>> {
         randomizedTest(new TestCase<Pair<IntVar, SetVar>>() {
             @Override
             public Pair<Constraint, Pair<IntVar, SetVar>> setup(Solver solver) {
-                IntVar i = toIntVar(randInt(), solver);
+                IntVar i = toVar(randInt(), solver);
                 SetVar s = toSetVar(randSet(), solver);
                 return pair(Constraints.singleton(i, s), pair(i, s));
             }

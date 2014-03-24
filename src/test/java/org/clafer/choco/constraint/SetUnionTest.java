@@ -38,8 +38,8 @@ public class SetUnionTest extends ConstraintTest<Triple<SetVar[], SetVar, Boolea
         randomizedTest(new TestCase<Triple<SetVar[], SetVar, Boolean>>() {
             @Override
             public Pair<Constraint, Triple<SetVar[], SetVar, Boolean>> setup(Solver solver) {
-                CSetVar[] sets = toCSetVars(randSets(nextInt(3) + 1), solver);
-                CSetVar union = toCSetVar(randSet(), solver);
+                CSetVar[] sets = toVars(randSets(nextInt(3) + 1), solver);
+                CSetVar union = toVar(randSet(), solver);
                 return pair(
                         Constraints.union(mapSet(sets), mapCard(sets), union.getSet(), union.getCard(), false),
                         triple(mapSet(sets), union.getSet(), false));
@@ -52,8 +52,8 @@ public class SetUnionTest extends ConstraintTest<Triple<SetVar[], SetVar, Boolea
         randomizedTest(new TestCase<Triple<SetVar[], SetVar, Boolean>>() {
             @Override
             public Pair<Constraint, Triple<SetVar[], SetVar, Boolean>> setup(Solver solver) {
-                CSetVar[] sets = toCSetVars(randSets(nextInt(3) + 1), solver);
-                CSetVar union = toCSetVar(randSet(), solver);
+                CSetVar[] sets = toVars(randSets(nextInt(3) + 1), solver);
+                CSetVar union = toVar(randSet(), solver);
                 return pair(
                         Constraints.union(mapSet(sets), mapCard(sets), union.getSet(), union.getCard(), true),
                         triple(mapSet(sets), union.getSet(), true));

@@ -30,7 +30,7 @@ public class SortedSetTest extends ConstraintTest<SetVar[]> {
         randomizedTest(new TestCase<SetVar[]>() {
             @Override
             public Pair<Constraint, SetVar[]> setup(Solver solver) {
-                CSetVar[] sets = toCSetVars(randPositiveSets(nextInt(2) + 1), solver);
+                CSetVar[] sets = toVars(randPositiveSets(nextInt(2) + 1), solver);
                 return pair(Constraints.sortedSets(mapSet(sets), mapCard(sets)),
                         mapSet(sets));
             }

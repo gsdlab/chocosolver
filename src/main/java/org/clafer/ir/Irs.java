@@ -116,7 +116,7 @@ public class Irs {
         Boolean constant = IrUtil.getConstant(proposition);
         if (constant != null) {
             // Reverse the boolean
-            return constant.booleanValue() ? False : True;
+            return constant ? False : True;
         }
         return proposition.negate();
     }
@@ -798,10 +798,10 @@ public class Irs {
         for (int i = 0; i < ints.length; i++) {
             Integer constant = IrUtil.getConstant(ints[i]);
             if (constant != null) {
-                if (constant.intValue() < 0 || constant.intValue() >= sets.length) {
+                if (constant < 0 || constant >= sets.length) {
                     return False;
                 }
-                IrSetExpr set = sets[constant.intValue()];
+                IrSetExpr set = sets[constant];
                 if (!set.getEnv().contains(i)) {
                     return False;
                 } else if (!set.getKer().contains(i)) {
@@ -1046,8 +1046,8 @@ public class Irs {
         Integer constant = IrUtil.getConstant(n);
         if (constant != null) {
             IrBoolExpr[] ands = new IrBoolExpr[bools.length];
-            System.arraycopy(bools, 0, ands, 0, constant.intValue());
-            for (int i = constant.intValue(); i < bools.length; i++) {
+            System.arraycopy(bools, 0, ands, 0, constant);
+            for (int i = constant; i < bools.length; i++) {
                 ands[i] = not(bools[i]);
             }
             return and(ands);
@@ -1177,7 +1177,7 @@ public class Irs {
     public static IrIntExpr minus(IrIntExpr expr) {
         Integer constant = IrUtil.getConstant(expr);
         if (constant != null) {
-            return constant(-constant.intValue());
+            return constant(-constant);
         }
         if (expr instanceof IrMinus) {
             IrMinus minus = (IrMinus) expr;
@@ -1219,7 +1219,7 @@ public class Irs {
             } else {
                 Integer constant = IrUtil.getConstant(addend);
                 if (constant != null) {
-                    constants += constant.intValue();
+                    constants += constant;
                 } else {
                     filter.add(addend);
                 }
@@ -1282,7 +1282,7 @@ public class Irs {
         Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
         Integer multiplierConstant = IrUtil.getConstant(multiplier);
         if (multiplicandConstant != null) {
-            switch (multiplicandConstant.intValue()) {
+            switch (multiplicandConstant) {
                 case 0:
                     return multiplicand;
                 case 1:
@@ -1290,7 +1290,7 @@ public class Irs {
             }
         }
         if (multiplierConstant != null) {
-            switch (multiplierConstant.intValue()) {
+            switch (multiplierConstant) {
                 case 0:
                     return multiplier;
                 case 1:
@@ -1298,7 +1298,7 @@ public class Irs {
             }
         }
         if (multiplicandConstant != null && multiplierConstant != null) {
-            return constant(multiplicandConstant.intValue() * multiplierConstant.intValue());
+            return constant(multiplicandConstant * multiplierConstant);
         }
         int low1 = multiplicand.getDomain().getLowBound();
         int high1 = multiplicand.getDomain().getHighBound();
@@ -1320,14 +1320,14 @@ public class Irs {
     public static IrIntExpr div(IrIntExpr dividend, IrIntExpr divisor) {
         Integer dividendConstant = IrUtil.getConstant(dividend);
         Integer divisorConstant = IrUtil.getConstant(divisor);
-        if (dividendConstant != null && dividendConstant.intValue() == 0) {
+        if (dividendConstant != null && dividendConstant == 0) {
             return dividend;
         }
-        if (divisorConstant != null && divisorConstant.intValue() == 1) {
+        if (divisorConstant != null && divisorConstant == 1) {
             return dividend;
         }
         if (dividendConstant != null && divisorConstant != null) {
-            return constant(dividendConstant.intValue() / divisorConstant.intValue());
+            return constant(dividendConstant / divisorConstant);
         }
         int low1 = dividend.getDomain().getLowBound();
         int high1 = dividend.getDomain().getHighBound();
@@ -1350,7 +1350,7 @@ public class Irs {
 
         Integer constant = IrUtil.getConstant(index);
         if (constant != null) {
-            return $array[constant.intValue()];
+            return $array[constant];
         }
         TIntIterator iter = index.getDomain().iterator();
         assert iter.hasNext();
@@ -1377,7 +1377,7 @@ public class Irs {
         for (IrIntExpr i : array) {
             Integer constant = IrUtil.getConstant(i);
             if (constant != null) {
-                if (constant.intValue() == value) {
+                if (constant == value) {
                     count++;
                 }
             } else if (i.getDomain().contains(value)) {
@@ -1524,7 +1524,7 @@ public class Irs {
     public static IrSetExpr singleton(IrIntExpr value) {
         Integer constant = IrUtil.getConstant(value);
         if (constant != null) {
-            return constant(new int[]{constant.intValue()});
+            return constant(new int[]{constant});
         }
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
@@ -1544,7 +1544,7 @@ public class Irs {
                 for (IrIntExpr i : array) {
                     Integer constant = IrUtil.getConstant(i);
                     if (constant != null) {
-                        values.add(constant.intValue());
+                        values.add(constant);
                     }
                 }
                 IrDomain ker = enumDomain(values);
@@ -1710,7 +1710,7 @@ public class Irs {
         while (iter.hasNext()) {
             Integer constantRef = IrUtil.getConstant($refs[iter.next()]);
             if (constantRef != null) {
-                values.add(constantRef.intValue());
+                values.add(constantRef);
             }
         }
         IrDomain ker = values.isEmpty() ? EmptyDomain : new IrEnumDomain(values.toArray());
@@ -1959,7 +1959,7 @@ public class Irs {
 
         Integer constant = IrUtil.getConstant(index);
         if (constant != null) {
-            return $array[constant.intValue()];
+            return $array[constant];
         }
         TIntIterator iter = index.getDomain().iterator();
         assert iter.hasNext();

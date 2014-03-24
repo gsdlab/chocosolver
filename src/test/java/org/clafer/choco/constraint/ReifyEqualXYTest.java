@@ -30,9 +30,9 @@ public class ReifyEqualXYTest extends ConstraintTest<Triple<BoolVar, IntVar, Int
         randomizedTest(new TestCase<Triple<BoolVar, IntVar, IntVar>>() {
             @Override
             public Pair<Constraint, Triple<BoolVar, IntVar, IntVar>> setup(Solver solver) {
-                BoolVar reify = toBoolVar(randBool(), solver);
-                IntVar i = toIntVar(randInt(), solver);
-                IntVar j = toIntVar(randInt(), solver);
+                BoolVar reify = toVar(randBool(), solver);
+                IntVar i = toVar(randInt(), solver);
+                IntVar j = toVar(randInt(), solver);
                 return pair(Constraints.reifyEqual(reify, i, j), triple(reify, i, j));
             }
         });

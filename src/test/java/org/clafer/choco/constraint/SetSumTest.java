@@ -30,8 +30,8 @@ public class SetSumTest extends ConstraintTest<Triple<SetVar, IntVar, IntVar>> {
         randomizedTest(new TestCase<Triple<SetVar, IntVar, IntVar>>() {
             @Override
             public Pair<Constraint, Triple<SetVar, IntVar, IntVar>> setup(Solver solver) {
-                CSetVar set = toCSetVar(randSet(), solver);
-                IntVar sum = toIntVar(randInt(), solver);
+                CSetVar set = toVar(randSet(), solver);
+                IntVar sum = toVar(randInt(), solver);
                 return pair(Constraints.setSum(set.getSet(), set.getCard(), sum),
                         triple(set.getSet(), set.getCard(), sum));
             }

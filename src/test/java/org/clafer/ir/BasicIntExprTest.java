@@ -1,9 +1,6 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
-import static org.clafer.ClaferTest.toIntVars;
-import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
 import org.clafer.ir.compiler.IrSolutionMap;
@@ -28,66 +25,68 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testAdd() {
-        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar[]>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            IrIntVar sum;
+            @IrVarField
+            IrIntVar[] is;
 
             @Override
-            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar[]> s) {
+            void check(IrSolutionMap solution) {
                 assertEquals(
-                        solution.getValue(s.getFst()),
-                        Util.sum(solution.getValues(s.getSnd())));
+                        solution.getValue(sum),
+                        Util.sum(solution.getValues(is)));
             }
 
             @Override
-            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar[]>> setup(IrModule module) {
-                IrIntVar sum = boundInt("sum", -10, 10);
-                IrIntVar[] is = randInts(nextInt(5));
-                return pair(equal(sum, add(is)), pair(sum, is));
+            IrBoolExpr setup(IrModule module) {
+                return equal(sum, add(is));
             }
 
             @Override
-            Constraint setup(Pair<IrIntVar, IrIntVar[]> s, Solver solver) {
-                IntVar sum = toIntVar(s.getFst(), solver);
-                IntVar[] is = toIntVars(s.getSnd(), solver);
-                return ICF.sum(is, sum);
+            Constraint setup(Solver solver) {
+                return ICF.sum(toVars(is, solver), toVar(sum, solver));
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testSub() {
-        randomizedTest(new TestCase<Pair<IrIntVar, IrIntVar[]>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            IrIntVar diff;
+            @IrVarField
+            IrIntVar[] is;
 
             @Override
-            void check(IrSolutionMap solution, Pair<IrIntVar, IrIntVar[]> s) {
-                int[] is = solution.getValues(s.getSnd());
-                if (is.length == 0) {
-                    assertEquals(solution.getValue(s.getFst()), 0);
+            void check(IrSolutionMap solution) {
+                int[] IS = solution.getValues(is);
+                if (IS.length == 0) {
+                    assertEquals(solution.getValue(diff), 0);
                 } else {
-                    int diff = is[0];
-                    for (int i = 1; i < is.length; i++) {
-                        diff -= is[i];
+                    int DIFF = IS[0];
+                    for (int i = 1; i < IS.length; i++) {
+                        DIFF -= IS[i];
                     }
-                    assertEquals(solution.getValue(s.getFst()), diff);
+                    assertEquals(solution.getValue(diff), DIFF);
                 }
             }
 
             @Override
-            Pair<IrBoolExpr, Pair<IrIntVar, IrIntVar[]>> setup(IrModule module) {
-                IrIntVar diff = boundInt("diff", -10, 10);
-                IrIntVar[] is = randInts(nextInt(5));
-                return pair(equal(diff, sub(is)), pair(diff, is));
+            IrBoolExpr setup(IrModule module) {
+                return equal(diff, sub(is));
             }
 
             @Override
-            Constraint setup(Pair<IrIntVar, IrIntVar[]> s, Solver solver) {
-                IntVar diff = toIntVar(s.getFst(), solver);
-                IntVar[] is = toIntVars(s.getSnd(), solver);
-                int[] coefficients = new int[is.length];
+            Constraint setup(Solver solver) {
+                IntVar DIFF = toVar(diff, solver);
+                IntVar[] IS = toVars(is, solver);
+                int[] coefficients = new int[IS.length];
                 Arrays.fill(coefficients, -1);
                 if (coefficients.length > 0) {
                     coefficients[0] = 1;
                 }
-                return ICF.scalar(is, coefficients, diff);
+                return ICF.scalar(IS, coefficients, DIFF);
             }
         });
     }
@@ -104,13 +103,23 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testEqualXY() {
-        randomizedTest(new TestCase<Pair<Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
 
             @Override
-            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertEquals(
-                        s.getFst().getValue(solution),
-                        s.getSnd().getValue(solution));
+                        var1.getValue(solution),
+                        var2.getValue(solution));
+            }
+
+            @Override
+            void initialize() {
+                var1 = randTerm();
+                var2 = randTerm();
             }
 
             @Override
@@ -119,31 +128,31 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
-                Term var1 = randTerm();
-                Term var2 = randTerm();
-                return pair(
-                        equal(var1.toIrExpr(), var2.toIrExpr()),
-                        pair(var1, var2));
+            IrBoolExpr setup(IrModule module) {
+                return equal(var1.toIrExpr(), var2.toIrExpr());
             }
 
             @Override
-            Constraint setup(Pair<Term, Term> s, Solver solver) {
-                return ICF.arithm(s.getFst().toChocoVar(solver),
-                        "=", s.getSnd().toChocoVar(solver));
+            Constraint setup(Solver solver) {
+                return ICF.arithm(var1.toChocoVar(solver),
+                        "=", var2.toChocoVar(solver));
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testNotEqualXY() {
-        randomizedTest(new TestCase<Pair<Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
 
             @Override
-            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertNotEquals(
-                        s.getFst().getValue(solution),
-                        s.getSnd().getValue(solution));
+                        var1.getValue(solution),
+                        var2.getValue(solution));
             }
 
             @Override
@@ -152,31 +161,37 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
-                Term var1 = randTerm();
-                Term var2 = randTerm();
-                return pair(
-                        notEqual(var1.toIrExpr(), var2.toIrExpr()),
-                        pair(var1, var2));
+            void initialize() {
+                var1 = randTerm();
+                var2 = randTerm();
             }
 
             @Override
-            Constraint setup(Pair<Term, Term> s, Solver solver) {
-                return ICF.arithm(s.getFst().toChocoVar(solver),
-                        "!=", s.getSnd().toChocoVar(solver));
+            IrBoolExpr setup(IrModule module) {
+                return notEqual(var1.toIrExpr(), var2.toIrExpr());
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                return ICF.arithm(var1.toChocoVar(solver),
+                        "!=", var2.toChocoVar(solver));
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanXY() {
-        randomizedTest(new TestCase<Pair<Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
 
             @Override
-            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertTrue(
-                        s.getFst().getValue(solution)
-                        < s.getSnd().getValue(solution));
+                        var1.getValue(solution)
+                        < var2.getValue(solution));
             }
 
             @Override
@@ -185,31 +200,37 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
-                Term var1 = randTerm();
-                Term var2 = randTerm();
-                return pair(
-                        lessThan(var1.toIrExpr(), var2.toIrExpr()),
-                        pair(var1, var2));
+            void initialize() {
+                var1 = randTerm();
+                var2 = randTerm();
             }
 
             @Override
-            Constraint setup(Pair<Term, Term> s, Solver solver) {
-                return ICF.arithm(s.getFst().toChocoVar(solver),
-                        "<", s.getSnd().toChocoVar(solver));
+            IrBoolExpr setup(IrModule module) {
+                return lessThan(var1.toIrExpr(), var2.toIrExpr());
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                return ICF.arithm(var1.toChocoVar(solver),
+                        "<", var2.toChocoVar(solver));
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanEqualXY() {
-        randomizedTest(new TestCase<Pair<Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
 
             @Override
-            void check(IrSolutionMap solution, Pair<Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertTrue(
-                        s.getFst().getValue(solution)
-                        <= s.getSnd().getValue(solution));
+                        var1.getValue(solution)
+                        <= var2.getValue(solution));
             }
 
             @Override
@@ -218,31 +239,39 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Pair<Term, Term>> setup(IrModule module) {
-                Term var1 = randTerm();
-                Term var2 = randTerm();
-                return pair(
-                        lessThanEqual(var1.toIrExpr(), var2.toIrExpr()),
-                        pair(var1, var2));
+            void initialize() {
+                var1 = randTerm();
+                var2 = randTerm();
             }
 
             @Override
-            Constraint setup(Pair<Term, Term> s, Solver solver) {
-                return ICF.arithm(s.getFst().toChocoVar(solver),
-                        "<=", s.getSnd().toChocoVar(solver));
+            IrBoolExpr setup(IrModule module) {
+                return lessThanEqual(var1.toIrExpr(), var2.toIrExpr());
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
+                return ICF.arithm(var1.toChocoVar(solver),
+                        "<=", var2.toChocoVar(solver));
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testEqualXYC() {
-        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
+            @IrVarField
+            Term var3;
 
             @Override
-            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertEquals(
-                        s.getFst().getValue(solution) + s.getSnd().getValue(solution),
-                        s.getThd().getValue(solution));
+                        var1.getValue(solution) + var2.getValue(solution),
+                        var3.getValue(solution));
             }
 
             @Override
@@ -251,38 +280,46 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+            void initialize() {
                 Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
                 Util.shuffle(vars, rand);
-                Term var1 = vars[0];
-                Term var2 = vars[1];
-                Term var3 = vars[2];
-                IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
-                return pair(
-                        nextBool()
-                        ? equal(add, var3.toIrExpr())
-                        : equal(var3.toIrExpr(), add),
-                        triple(var1, var2, var3));
+                var1 = vars[0];
+                var2 = vars[1];
+                var3 = vars[2];
             }
 
             @Override
-            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+            IrBoolExpr setup(IrModule module) {
+                IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
+                return nextBool()
+                        ? equal(add, var3.toIrExpr())
+                        : equal(var3.toIrExpr(), add);
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
                 return ICF.sum(new IntVar[]{
-                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
-                        s.getThd().toChocoVar(solver));
+                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
+                        var3.toChocoVar(solver));
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testNotEqualXYC() {
-        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
+            @IrVarField
+            Term var3;
 
             @Override
-            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertNotEquals(
-                        s.getFst().getValue(solution) + s.getSnd().getValue(solution),
-                        s.getThd().getValue(solution));
+                        var1.getValue(solution) + var2.getValue(solution),
+                        var3.getValue(solution));
             }
 
             @Override
@@ -291,38 +328,46 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+            void initialize() {
                 Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
                 Util.shuffle(vars, rand);
-                Term var1 = vars[0];
-                Term var2 = vars[1];
-                Term var3 = vars[2];
-                IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
-                return pair(
-                        nextBool()
-                        ? notEqual(add, var3.toIrExpr())
-                        : notEqual(var3.toIrExpr(), add),
-                        triple(var1, var2, var3));
+                var1 = vars[0];
+                var2 = vars[1];
+                var3 = vars[2];
             }
 
             @Override
-            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+            IrBoolExpr setup(IrModule module) {
+                IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
+                return nextBool()
+                        ? notEqual(add, var3.toIrExpr())
+                        : notEqual(var3.toIrExpr(), add);
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
                 return ICF.sum(new IntVar[]{
-                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
-                        s.getThd().toChocoVar(solver)).getOpposite();
+                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
+                        var3.toChocoVar(solver)).getOpposite();
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanXYC() {
-        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
+            @IrVarField
+            Term var3;
 
             @Override
-            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertTrue(
-                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
-                        < s.getThd().getValue(solution));
+                        var1.getValue(solution) + var2.getValue(solution)
+                        < var3.getValue(solution));
             }
 
             @Override
@@ -331,31 +376,39 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+            void initialize() {
                 Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
                 Util.shuffle(vars, rand);
-                Term var1 = vars[0];
-                Term var2 = vars[1];
-                Term var3 = vars[2];
-                return pair(
-                        lessThan(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr()),
-                        triple(var1, var2, var3));
+                var1 = vars[0];
+                var2 = vars[1];
+                var3 = vars[2];
             }
 
             @Override
-            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+            IrBoolExpr setup(IrModule module) {
+                return lessThan(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
                 return ICF.sum(new IntVar[]{
-                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
-                        "<", s.getThd().toChocoVar(solver));
+                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
+                        "<", var3.toChocoVar(solver));
             }
         });
-        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
+            @IrVarField
+            Term var3;
 
             @Override
-            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertTrue(
-                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
-                        > s.getThd().getValue(solution));
+                        var1.getValue(solution) + var2.getValue(solution)
+                        > var3.getValue(solution));
             }
 
             @Override
@@ -364,35 +417,43 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+            void initialize() {
                 Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
                 Util.shuffle(vars, rand);
-                Term var1 = vars[0];
-                Term var2 = vars[1];
-                Term var3 = vars[2];
-                return pair(
-                        lessThan(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr())),
-                        triple(var1, var2, var3));
+                var1 = vars[0];
+                var2 = vars[1];
+                var3 = vars[2];
             }
 
             @Override
-            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+            IrBoolExpr setup(IrModule module) {
+                return lessThan(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr()));
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
                 return ICF.sum(new IntVar[]{
-                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
-                        ">", s.getThd().toChocoVar(solver));
+                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
+                        ">", var3.toChocoVar(solver));
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanEqualXYC() {
-        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
+            @IrVarField
+            Term var3;
 
             @Override
-            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertTrue(
-                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
-                        <= s.getThd().getValue(solution));
+                        var1.getValue(solution) + var2.getValue(solution)
+                        <= var3.getValue(solution));
             }
 
             @Override
@@ -401,31 +462,39 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+            void initialize() {
                 Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
                 Util.shuffle(vars, rand);
-                Term var1 = vars[0];
-                Term var2 = vars[1];
-                Term var3 = vars[2];
-                return pair(
-                        lessThanEqual(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr()),
-                        triple(var1, var2, var3));
+                var1 = vars[0];
+                var2 = vars[1];
+                var3 = vars[2];
             }
 
             @Override
-            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+            IrBoolExpr setup(IrModule module) {
+                return lessThanEqual(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
                 return ICF.sum(new IntVar[]{
-                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
-                        "<=", s.getThd().toChocoVar(solver));
+                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
+                        "<=", var3.toChocoVar(solver));
             }
         });
-        randomizedTest(new TestCase<Triple<Term, Term, Term>>() {
+        randomizedTest(new TestCase() {
+            @IrVarField
+            Term var1;
+            @IrVarField
+            Term var2;
+            @IrVarField
+            Term var3;
 
             @Override
-            void check(IrSolutionMap solution, Triple<Term, Term, Term> s) {
+            void check(IrSolutionMap solution) {
                 assertTrue(
-                        s.getFst().getValue(solution) + s.getSnd().getValue(solution)
-                        >= s.getThd().getValue(solution));
+                        var1.getValue(solution) + var2.getValue(solution)
+                        >= var3.getValue(solution));
             }
 
             @Override
@@ -434,22 +503,24 @@ public class BasicIntExprTest extends IrTest {
             }
 
             @Override
-            Pair<IrBoolExpr, Triple<Term, Term, Term>> setup(IrModule module) {
+            void initialize() {
                 Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
                 Util.shuffle(vars, rand);
-                Term var1 = vars[0];
-                Term var2 = vars[1];
-                Term var3 = vars[2];
-                return pair(
-                        lessThanEqual(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr())),
-                        triple(var1, var2, var3));
+                var1 = vars[0];
+                var2 = vars[1];
+                var3 = vars[2];
             }
 
             @Override
-            Constraint setup(Triple<Term, Term, Term> s, Solver solver) {
+            IrBoolExpr setup(IrModule module) {
+                return lessThanEqual(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr()));
+            }
+
+            @Override
+            Constraint setup(Solver solver) {
                 return ICF.sum(new IntVar[]{
-                    s.getFst().toChocoVar(solver), s.getSnd().toChocoVar(solver)},
-                        ">=", s.getThd().toChocoVar(solver));
+                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
+                        ">=", var3.toChocoVar(solver));
             }
         });
     }
@@ -531,7 +602,7 @@ public class BasicIntExprTest extends IrTest {
 
         @Override
         public IntVar toChocoVar(Solver solver) {
-            return toIntVar(var, solver);
+            return toVar(var, solver);
         }
 
         @Override
@@ -561,7 +632,7 @@ public class BasicIntExprTest extends IrTest {
 
         @Override
         public BoolVar toChocoVar(Solver solver) {
-            return toBoolVar(var, solver);
+            return toVar(var, solver);
         }
 
         @Override

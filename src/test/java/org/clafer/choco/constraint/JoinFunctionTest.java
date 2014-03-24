@@ -42,9 +42,9 @@ public class JoinFunctionTest extends ConstraintTest<Pair<Triple<SetVar, IntVar[
         randomizedTest(new TestCase<Pair<Triple<SetVar, IntVar[], SetVar>, Integer>>() {
             @Override
             public Pair<Constraint, Pair<Triple<SetVar, IntVar[], SetVar>, Integer>> setup(Solver solver) {
-                CSetVar take = toCSetVar(randPositiveSet(), solver);
-                IntVar[] refs = toIntVars(randInts(nextInt(3) + 1), solver);
-                CSetVar to = toCSetVar(randSet(), solver);
+                CSetVar take = toVar(randPositiveSet(), solver);
+                IntVar[] refs = toVars(randInts(nextInt(3) + 1), solver);
+                CSetVar to = toVar(randSet(), solver);
                 return pair(Constraints.joinFunction(take.getSet(), take.getCard(), refs, to.getSet(), to.getCard()),
                         pair(triple(take.getSet(), refs, to.getSet()), -1));
             }
@@ -56,9 +56,9 @@ public class JoinFunctionTest extends ConstraintTest<Pair<Triple<SetVar, IntVar[
         randomizedTest(new TestCase<Pair<Triple<SetVar, IntVar[], SetVar>, Integer>>() {
             @Override
             public Pair<Constraint, Pair<Triple<SetVar, IntVar[], SetVar>, Integer>> setup(Solver solver) {
-                CSetVar take = toCSetVar(randPositiveSet(), solver);
-                IntVar[] refs = toIntVars(randInts(nextInt(3) + 1), solver);
-                CSetVar to = toCSetVar(randSet(), solver);
+                CSetVar take = toVar(randPositiveSet(), solver);
+                IntVar[] refs = toVars(randInts(nextInt(3) + 1), solver);
+                CSetVar to = toVar(randSet(), solver);
                 int globalCardinality = nextIntBetween(1, 5);
                 return pair(Constraints.joinFunction(take.getSet(), take.getCard(), refs, to.getSet(), to.getCard(), globalCardinality),
                         pair(triple(take.getSet(), refs, to.getSet()), globalCardinality));

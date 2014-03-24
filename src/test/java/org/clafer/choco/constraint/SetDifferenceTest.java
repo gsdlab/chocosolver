@@ -29,9 +29,9 @@ public class SetDifferenceTest extends ConstraintTest<Triple<SetVar, SetVar, Set
         randomizedTest(new TestCase<Triple<SetVar, SetVar, SetVar>>() {
             @Override
             public Pair<Constraint, Triple<SetVar, SetVar, SetVar>> setup(Solver solver) {
-                CSetVar minuend = toCSetVar(randSet(), solver);
-                CSetVar subtrahend = toCSetVar(randSet(), solver);
-                CSetVar difference = toCSetVar(randSet(), solver);
+                CSetVar minuend = toVar(randSet(), solver);
+                CSetVar subtrahend = toVar(randSet(), solver);
+                CSetVar difference = toVar(randSet(), solver);
 
                 return (pair(Constraints.difference(minuend.getSet(), minuend.getCard(),
                         subtrahend.getSet(), subtrahend.getCard(), difference.getSet(), difference.getCard()),

@@ -53,9 +53,9 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
         randomizedTest(new TestCase<Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>>() {
             @Override
             public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
-                CSetVar take = toCSetVar(randPositiveSet(), solver);
-                CSetVar[] children = toCSetVars(randSets(nextInt(3) + 1), solver);
-                CSetVar to = toCSetVar(randSet(), solver);
+                CSetVar take = toVar(randPositiveSet(), solver);
+                CSetVar[] children = toVars(randSets(nextInt(3) + 1), solver);
+                CSetVar to = toVar(randSet(), solver);
                 Constraint constraint = Constraints.joinRelation(take.getSet(), mapSet(children), to.getSet());
                 return pair(constraint, pair(triple(take.getSet(), mapSet(children), to.getSet()), false));
             }
@@ -67,9 +67,9 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
         randomizedTest(new TestCase<Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>>() {
             @Override
             public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
-                CSetVar take = toCSetVar(randPositiveSet(), solver);
-                CSetVar[] children = toCSetVars(randSets(nextInt(3) + 1), solver);
-                CSetVar to = toCSetVar(randSet(), solver);
+                CSetVar take = toVar(randPositiveSet(), solver);
+                CSetVar[] children = toVars(randSets(nextInt(3) + 1), solver);
+                CSetVar to = toVar(randSet(), solver);
                 Constraint constraint = Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
                         mapSet(children), mapCard(children), to.getSet(), to.getCard());
                 return pair(constraint,
@@ -158,13 +158,13 @@ public class JoinRelationTest extends ConstraintTest<Pair<Triple<SetVar, SetVar[
             @NegativeSolutions(3592)
             @Override
             public Pair<Constraint, Pair<Triple<SetVar, SetVar[], SetVar>, Boolean>> setup(Solver solver) {
-                CSetVar take = toCSetVar(Irs.set("take", 0, 2), solver);
-                CSetVar[] children = toCSetVars(new IrSetVar[]{
+                CSetVar take = toVar(Irs.set("take", 0, 2), solver);
+                CSetVar[] children = toVars(new IrSetVar[]{
                     Irs.set("c1", -1, 1),
                     Irs.set("c2", 0, 1),
                     Irs.set("c3", -1, 0)
                 }, solver);
-                CSetVar to = toCSetVar(Irs.set("to", 0, 1), solver);
+                CSetVar to = toVar(Irs.set("to", 0, 1), solver);
                 Constraint constraint = Constraints.joinInjectiveRelation(take.getSet(), take.getCard(),
                         mapSet(children), mapCard(children), to.getSet(), to.getCard());
                 return pair(constraint,

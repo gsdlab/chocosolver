@@ -28,8 +28,8 @@ public class PrefixTest extends ConstraintTest<Pair<IntVar[], IntVar[]>> {
         randomizedTest(new TestCase<Pair<IntVar[], IntVar[]>>() {
             @Override
             public Pair<Constraint, Pair<IntVar[], IntVar[]>> setup(Solver solver) {
-                CStringVar prefix = toCStringVar(randString(), solver);
-                CStringVar word = toCStringVar(randString(), solver);
+                CStringVar prefix = toVar(randString(), solver);
+                CStringVar word = toVar(randString(), solver);
                 Constraint constraint = Constraints.prefix(
                         prefix.getChars(), prefix.getLength(),
                         word.getChars(), word.getLength());
@@ -56,8 +56,8 @@ public class PrefixTest extends ConstraintTest<Pair<IntVar[], IntVar[]>> {
             @NegativeSolutions(1458)
             @Override
             public Pair<Constraint, Pair<IntVar[], IntVar[]>> setup(Solver solver) {
-                CStringVar prefix = toCStringVar(string("prefix", boundDomain(0, 3), 3), solver);
-                CStringVar word = toCStringVar(string("prefix", boundDomain(0, 3), 3), solver);
+                CStringVar prefix = toVar(string("prefix", boundDomain(0, 3), 3), solver);
+                CStringVar word = toVar(string("prefix", boundDomain(0, 3), 3), solver);
                 Constraint constraint = Constraints.prefix(
                         prefix.getChars(), prefix.getLength(),
                         word.getChars(), word.getLength());

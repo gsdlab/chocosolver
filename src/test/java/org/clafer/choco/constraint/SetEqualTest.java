@@ -32,8 +32,8 @@ public class SetEqualTest extends ConstraintTest<Pair<SetVar, SetVar>> {
         randomizedTest(new TestCase<Pair<SetVar, SetVar>>() {
             @Override
             public Pair<Constraint, Pair<SetVar, SetVar>> setup(Solver solver) {
-                CSetVar s1 = toCSetVar(randSet(), solver);
-                CSetVar s2 = toCSetVar(randSet(), solver);
+                CSetVar s1 = toVar(randSet(), solver);
+                CSetVar s2 = toVar(randSet(), solver);
                 return pair(Constraints.equal(s1.getSet(), s1.getCard(), s2.getSet(), s2.getCard()),
                         pair(s1.getSet(), s2.getSet()));
             }

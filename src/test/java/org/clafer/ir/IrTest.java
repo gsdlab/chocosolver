@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.clafer.ClaferTest;
 import org.clafer.Sample;
-import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.junit.Assert.assertEquals;
@@ -25,7 +23,7 @@ import solver.constraints.Constraint;
  */
 public class IrTest extends ClaferTest {
 
-    protected <T> void randomizedTest(TestCase<T> testCase) {
+    protected void randomizedTest(TestCase testCase) {
         try {
             Method method = TestCase.class.getDeclaredMethod("setup", IrModule.class);
             Sample sample = method.getAnnotation(Sample.class);
@@ -41,17 +39,19 @@ public class IrTest extends ClaferTest {
         }
     }
 
-    private <T> void randomizedTest(
-            TestCase<T> testCase,
+    private void randomizedTest(
+            TestCase testCase,
             boolean positive) {
         IrModule module = new IrModule();
         Solver irSolver = new Solver();
 
-        Pair<IrBoolExpr, T> pair = testCase.setup(module);
-        IrBoolExpr irConstraint = positive ? pair.getFst() : pair.getFst().negate();
-        T s = pair.getSnd();
+        testCase.initialize();
+
+        IrBoolExpr irConstraint = positive
+                ? testCase.setup(module)
+                : testCase.setup(module).negate();
         module.addConstraint(irConstraint);
-        module.addVariables(getVariables(s));
+        module.addVariables(getVariables(testCase));
 
         IrSolutionMap solution = IrCompiler.compile(module, irSolver);
         testCase.validateTranslation(irSolver);
@@ -59,15 +59,15 @@ public class IrTest extends ClaferTest {
         int count = 0;
         if (randomizeStrategy(irSolver).findSolution()) {
             do {
-                testCase.check(positive, irConstraint, solution, s);
+                testCase.check(positive, irConstraint, solution);
                 count++;
             } while (irSolver.nextSolution());
         }
 
         Solver solver = new Solver();
         Constraint constraint = positive
-                ? testCase.setup(s, solver)
-                : testCase.setup(s, solver).getOpposite();
+                ? testCase.setup(solver)
+                : testCase.setup(solver).getOpposite();
         solver.post(constraint);
 
         assertEquals(randomizeStrategy(solver).findAllSolutions(), count);
@@ -82,21 +82,8 @@ public class IrTest extends ClaferTest {
     private static void getVariables(Object o, List<IrVar> variables) {
         if (o instanceof IrVar) {
             variables.add((IrVar) o);
-        } else if (o instanceof Pair) {
-            Pair<?, ?> pair = (Pair<?, ?>) o;
-            getVariables(pair.getFst(), variables);
-            getVariables(pair.getSnd(), variables);
-        } else if (o instanceof Triple) {
-            Triple<?, ?, ?> triple = (Triple<?, ?, ?>) o;
-            getVariables(triple.getFst(), variables);
-            getVariables(triple.getSnd(), variables);
-            getVariables(triple.getThd(), variables);
         } else if (o instanceof Object[]) {
             for (Object p : ((Object[]) o)) {
-                getVariables(p, variables);
-            }
-        } else if (o instanceof Iterable<?>) {
-            for (Object p : ((Iterable<?>) o)) {
                 getVariables(p, variables);
             }
         } else {
@@ -113,13 +100,13 @@ public class IrTest extends ClaferTest {
         }
     }
 
-    protected static abstract class TestCase<T> {
+    protected abstract class TestCase {
 
-        abstract void check(IrSolutionMap solution, T s);
+        abstract void check(IrSolutionMap solution);
 
-        protected void checkNot(IrSolutionMap solution, T s) {
+        protected void checkNot(IrSolutionMap solution) {
             try {
-                check(solution, s);
+                check(solution);
             } catch (AssertionError e) {
                 return;
             }
@@ -128,28 +115,66 @@ public class IrTest extends ClaferTest {
 
         private void check(
                 boolean positive, IrBoolExpr constraint,
-                IrSolutionMap solution, T s) {
+                IrSolutionMap solution) {
             try {
                 if (positive) {
-                    check(solution, s);
+                    check(solution);
                 } else {
-                    checkNot(solution, s);
+                    checkNot(solution);
                 }
             } catch (AssertionError e) {
-                throw new AssertionError("Incorrect solution: " + constraint, e);
+                throw new AssertionError("Incorrect solution: " + constraint + " : " + positive, e);
             }
         }
 
         void validateTranslation(Solver solver) {
         }
 
-        abstract Pair<IrBoolExpr, T> setup(IrModule module);
+        void initialize() {
+            for (Field field : getClass().getDeclaredFields()) {
+                if (field.isAnnotationPresent(IrVarField.class)) {
+                    boolean positive = field.isAnnotationPresent(Positive.class);
+                    Class<?> type = field.getType();
+                    Object value;
+                    if (IrBoolVar.class.equals(type)) {
+                        value = randBool();
+                    } else if (IrBoolVar[].class.equals(type)) {
+                        value = randBools(nextInt(5));
+                    } else if (IrIntVar.class.equals(type)) {
+                        value = positive ? randPositiveInt() : randInt();
+                    } else if (IrIntVar[].class.equals(type)) {
+                        value = positive ? randPositiveInts(nextInt(5)) : randInts(nextInt(5));
+                    } else if (IrSetVar.class.equals(type)) {
+                        value = positive ? randPositiveSet() : randSet();
+                    } else if (IrSetVar[].class.equals(type)) {
+                        value = positive ? randPositiveSets(nextInt(5)) : randSets(nextInt(5));
+                    } else if (IrStringVar.class.equals(type)) {
+                        value = randString();
+                    } else {
+                        throw new IllegalStateException("Unexpected type " + type);
+                    }
+                    field.setAccessible(true);
+                    try {
+                        field.set(this, value);
+                    } catch (IllegalAccessException e) {
+                        throw new Error(e);
+                    }
+                }
+            }
+        }
 
-        abstract Constraint setup(T s, Solver solver);
+        abstract IrBoolExpr setup(IrModule module);
+
+        abstract Constraint setup(Solver solver);
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.FIELD})
     protected @interface IrVarField {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.FIELD})
+    protected @interface Positive {
     }
 }

@@ -41,7 +41,7 @@ public class LoneTest extends ConstraintTest<BoolVar[]> {
         randomizedTest(new TestCase<BoolVar[]>() {
             @Override
             public Pair<Constraint, BoolVar[]> setup(Solver solver) {
-                BoolVar[] vars = toBoolVars(randBools(nextInt(3) + 1), solver);
+                BoolVar[] vars = toVars(randBools(nextInt(3) + 1), solver);
                 return pair(Constraints.lone(vars), vars);
             }
         });

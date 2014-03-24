@@ -44,8 +44,8 @@ public class FilterStringTest extends ConstraintTest<Triple<SetVar, Integer, Pai
                 SetVar set = toSetVar(randSet(), solver);
                 IntVar setCard = enforcedCardVar(set);
                 int offset = nextInt(5);
-                IntVar[] string = toIntVars(randInts(nextInt(3) + 1), solver);
-                IntVar[] result = toIntVars(randInts(nextInt(3) + 1), solver);
+                IntVar[] string = toVars(randInts(nextInt(3) + 1), solver);
+                IntVar[] result = toVars(randInts(nextInt(3) + 1), solver);
                 return pair(Constraints.filterString(set, setCard, offset, string, result),
                         triple(set, offset, pair(string, result)));
             }

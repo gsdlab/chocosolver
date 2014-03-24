@@ -39,7 +39,7 @@ public class IntChannelTest extends ConstraintTest<Pair<SetVar[], IntVar[]>> {
             @Override
             public Pair<Constraint, Pair<SetVar[], IntVar[]>> setup(Solver solver) {
                 SetVar[] sets = toSetVars(randPositiveSets(nextInt(3) + 1), solver);
-                IntVar[] ints = toIntVars(randPositiveInts(nextInt(3) + 1), solver);
+                IntVar[] ints = toVars(randPositiveInts(nextInt(3) + 1), solver);
                 return pair(Constraints.intChannel(sets, ints), pair(sets, ints));
             }
         });

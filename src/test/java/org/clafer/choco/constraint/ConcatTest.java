@@ -29,9 +29,9 @@ public class ConcatTest extends ConstraintTest<Triple<IntVar[], IntVar[], IntVar
         randomizedTest(new TestCase<Triple<IntVar[], IntVar[], IntVar[]>>() {
             @Override
             public Pair<Constraint, Triple<IntVar[], IntVar[], IntVar[]>> setup(Solver solver) {
-                CStringVar left = toCStringVar(randString(), solver);
-                CStringVar right = toCStringVar(randString(), solver);
-                CStringVar concat = toCStringVar(randString(), solver);
+                CStringVar left = toVar(randString(), solver);
+                CStringVar right = toVar(randString(), solver);
+                CStringVar concat = toVar(randString(), solver);
                 Constraint constraint = Constraints.concat(
                         left.getChars(), left.getLength(),
                         right.getChars(), right.getLength(),
@@ -61,11 +61,11 @@ public class ConcatTest extends ConstraintTest<Triple<IntVar[], IntVar[], IntVar
             @NegativeSolutions(3326)
             @Override
             public Pair<Constraint, Triple<IntVar[], IntVar[], IntVar[]>> setup(Solver solver) {
-                CStringVar left = toCStringVar(Irs.string("left",
+                CStringVar left = toVar(Irs.string("left",
                         Irs.boundDomain('a', 'b'), 3), solver);
-                CStringVar right = toCStringVar(Irs.string("right",
+                CStringVar right = toVar(Irs.string("right",
                         Irs.boundDomain('a', 'b'), 3), solver);
-                CStringVar concat = toCStringVar(Irs.string("concat",
+                CStringVar concat = toVar(Irs.string("concat",
                         Irs.boundDomain('a', 'b'),3), solver);
                 Constraint constraint = Constraints.concat(
                         left.getChars(), left.getLength(),

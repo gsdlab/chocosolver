@@ -35,8 +35,8 @@ public class MaskTest extends ConstraintTest<Triple<SetVar, SetVar, Pair<Integer
         randomizedTest(new TestCase<Triple<SetVar, SetVar, Pair<Integer, Integer>>>() {
             @Override
             public Pair<Constraint, Triple<SetVar, SetVar, Pair<Integer, Integer>>> setup(Solver solver) {
-                CSetVar set = toCSetVar(randSet(), solver);
-                CSetVar masked = toCSetVar(randPositiveSet(), solver);
+                CSetVar set = toVar(randSet(), solver);
+                CSetVar masked = toVar(randPositiveSet(), solver);
                 int a = nextIntBetween(-5, 5);
                 int b = nextIntBetween(-5, 5);
                 int from = Math.min(a, b);

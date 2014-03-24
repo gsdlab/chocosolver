@@ -31,7 +31,7 @@ public class NotMemberTest extends ConstraintTest<Pair<IntVar, SetVar>> {
         randomizedTest(new TestCase<Pair<IntVar, SetVar>>() {
             @Override
             public Pair<Constraint, Pair<IntVar, SetVar>> setup(Solver solver) {
-                IntVar element = toIntVar(randInt(), solver);
+                IntVar element = toVar(randInt(), solver);
                 SetVar set = toSetVar(randSet(), solver);
                 return pair(Constraints.notMember(element, set), pair(element, set));
             }

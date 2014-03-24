@@ -40,8 +40,8 @@ public class ArrayToSetTest extends ConstraintTest<Triple<IntVar[], SetVar, Inte
         randomizedTest(new TestCase<Triple<IntVar[], SetVar, Integer>>() {
             @Override
             public Pair<Constraint, Triple<IntVar[], SetVar, Integer>> setup(Solver solver) {
-                IntVar[] array = toIntVars(randInts(nextInt(3) + 1), solver);
-                CSetVar set = toCSetVar(randSet(), solver);
+                IntVar[] array = toVars(randInts(nextInt(3) + 1), solver);
+                CSetVar set = toVar(randSet(), solver);
                 return pair(Constraints.arrayToSet(array, set.getSet(), set.getCard()),
                         triple(array, set.getSet(), -1));
             }
@@ -53,8 +53,8 @@ public class ArrayToSetTest extends ConstraintTest<Triple<IntVar[], SetVar, Inte
         randomizedTest(new TestCase<Triple<IntVar[], SetVar, Integer>>() {
             @Override
             public Pair<Constraint, Triple<IntVar[], SetVar, Integer>> setup(Solver solver) {
-                IntVar[] array = toIntVars(randInts(nextInt(3) + 1), solver);
-                CSetVar set = toCSetVar(randSet(), solver);
+                IntVar[] array = toVars(randInts(nextInt(3) + 1), solver);
+                CSetVar set = toVar(randSet(), solver);
                 int globalCardinality = nextIntBetween(1, 5);
                 return pair(Constraints.arrayToSet(array, set.getSet(), set.getCard(), globalCardinality),
                         triple(array, set.getSet(), globalCardinality));

@@ -38,7 +38,7 @@ import util.ESat;
 public abstract class ClaferTest {
 
     protected final Random rand = new Random();
-    private int varCount = 0;
+    protected int varCount = 0;
 
     public boolean nextBool() {
         return rand.nextBoolean();
@@ -233,7 +233,7 @@ public abstract class ClaferTest {
         return values;
     }
 
-    public static BoolVar toBoolVar(IrBoolVar var, Solver solver) {
+    public static BoolVar toVar(IrBoolVar var, Solver solver) {
         switch (var.getDomain()) {
             case FalseDomain:
                 return VF.zero(solver);
@@ -246,28 +246,28 @@ public abstract class ClaferTest {
         }
     }
 
-    public static BoolVar[] toBoolVars(IrBoolVar[] vars, Solver solver) {
+    public static BoolVar[] toVars(IrBoolVar[] vars, Solver solver) {
         BoolVar[] bools = new BoolVar[vars.length];
         for (int i = 0; i < bools.length; i++) {
-            bools[i] = toBoolVar(vars[i], solver);
+            bools[i] = ClaferTest.toVar(vars[i], solver);
         }
         return bools;
     }
 
-    public static IntVar toIntVar(IrIntVar var, Solver solver) {
+    public static IntVar toVar(IrIntVar var, Solver solver) {
         return VF.enumerated(var.getName(), var.getDomain().getValues(), solver);
     }
 
-    public static IntVar[] toIntVars(IrIntVar[] vars, Solver solver) {
+    public static IntVar[] toVars(IrIntVar[] vars, Solver solver) {
         IntVar[] ints = new IntVar[vars.length];
         for (int i = 0; i < ints.length; i++) {
-            ints[i] = toIntVar(vars[i], solver);
+            ints[i] = ClaferTest.toVar(vars[i], solver);
         }
         return ints;
     }
 
     public static SetVar toSetVar(IrSetVar var, Solver solver) {
-        return toCSetVar(var, solver).getSet();
+        return ClaferTest.toVar(var, solver).getSet();
     }
 
     public static SetVar[] toSetVars(IrSetVar[] vars, Solver solver) {
@@ -278,24 +278,24 @@ public abstract class ClaferTest {
         return sets;
     }
 
-    public static CSetVar toCSetVar(IrSetVar var, Solver solver) {
+    public static CSetVar toVar(IrSetVar var, Solver solver) {
         SetVar setVar = VF.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
         IntVar cardVar = VF.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
         solver.post(SCF.cardinality(setVar, cardVar));
         return new CSetVar(setVar, cardVar);
     }
 
-    public static CSetVar[] toCSetVars(IrSetVar[] vars, Solver solver) {
+    public static CSetVar[] toVars(IrSetVar[] vars, Solver solver) {
         CSetVar[] sets = new CSetVar[vars.length];
         for (int i = 0; i < sets.length; i++) {
-            sets[i] = toCSetVar(vars[i], solver);
+            sets[i] = ClaferTest.toVar(vars[i], solver);
         }
         return sets;
     }
 
-    public static CStringVar toCStringVar(IrStringVar var, Solver solver) {
-        IntVar[] chars = toIntVars(var.getCharVars(), solver);
-        IntVar length = toIntVar(var.getLengthVar(), solver);
+    public static CStringVar toVar(IrStringVar var, Solver solver) {
+        IntVar[] chars = ClaferTest.toVars(var.getCharVars(), solver);
+        IntVar length = ClaferTest.toVar(var.getLengthVar(), solver);
         solver.post(Constraints.length(chars, length));
         return new CStringVar(chars, length);
     }

@@ -37,7 +37,7 @@ public class AcyclicTest extends ConstraintTest<IntVar[]> {
         randomizedTest(new TestCase<IntVar[]>() {
             @Override
             public Pair<Constraint, IntVar[]> setup(Solver solver) {
-                IntVar[] edges = toIntVars(randInts(nextInt(5) + 1), solver);
+                IntVar[] edges = toVars(randInts(nextInt(5) + 1), solver);
                 return pair(Constraints.acyclic(edges), edges);
             }
         });

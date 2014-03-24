@@ -38,9 +38,9 @@ public class IfThenElseTest extends ConstraintTest<Triple<BoolVar, BoolVar, Bool
         randomizedTest(new TestCase<Triple<BoolVar, BoolVar, BoolVar>>() {
             @Override
             public Pair<Constraint, Triple<BoolVar, BoolVar, BoolVar>> setup(Solver solver) {
-                BoolVar antecedent = toBoolVar(randBool(), solver);
-                BoolVar consequent = toBoolVar(randBool(), solver);
-                BoolVar alternative = toBoolVar(randBool(), solver);
+                BoolVar antecedent = toVar(randBool(), solver);
+                BoolVar consequent = toVar(randBool(), solver);
+                BoolVar alternative = toVar(randBool(), solver);
                 return pair(Constraints.ifThenElse(antecedent, consequent, alternative),
                         triple(antecedent, consequent, alternative));
             }

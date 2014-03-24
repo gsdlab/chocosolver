@@ -65,9 +65,9 @@ public class LexChainChannelTest extends ConstraintTest<Pair<IntVar[][], IntVar[
                 int n = nextInt(3) + 1;
                 IntVar[][] strings = new IntVar[m][];
                 for (int i = 0; i < strings.length; i++) {
-                    strings[i] = toIntVars(randInts(n), solver);
+                    strings[i] = toVars(randInts(n), solver);
                 }
-                IntVar[] ints = toIntVars(randPositiveInts(m), solver);
+                IntVar[] ints = toVars(randPositiveInts(m), solver);
                 return pair(Constraints.lexChainChannel(strings, ints), pair(strings, ints));
             }
         });

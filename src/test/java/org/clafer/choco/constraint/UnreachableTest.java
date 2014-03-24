@@ -36,7 +36,7 @@ public class UnreachableTest extends ConstraintTest<Triple<IntVar[], Integer, In
         randomizedTest(new TestCase<Triple<IntVar[], Integer, Integer>>() {
             @Override
             public Pair<Constraint, Triple<IntVar[], Integer, Integer>> setup(Solver solver) {
-                IntVar[] edges = toIntVars(randInts(nextInt(5) + 1), solver);
+                IntVar[] edges = toVars(randInts(nextInt(5) + 1), solver);
                 int from = nextInt(edges.length);
                 int to = nextInt(edges.length);
                 return pair(Constraints.unreachable(edges, from, to),

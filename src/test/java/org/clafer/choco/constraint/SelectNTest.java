@@ -30,8 +30,8 @@ public class SelectNTest extends ConstraintTest<Pair<BoolVar[], IntVar>> {
         randomizedTest(new TestCase<Pair<BoolVar[], IntVar>>() {
             @Override
             public Pair<Constraint, Pair<BoolVar[], IntVar>> setup(Solver solver) {
-                BoolVar[] bools = toBoolVars(randBools(nextInt(5) + 1), solver);
-                IntVar n = toIntVar(randInt(0, bools.length), solver);
+                BoolVar[] bools = toVars(randBools(nextInt(5) + 1), solver);
+                IntVar n = toVar(randInt(0, bools.length), solver);
                 return pair(Constraints.selectN(bools, n),
                         pair(bools, n));
             }
