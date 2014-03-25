@@ -33,7 +33,7 @@ public class Analysis {
 
     private final AstModel model;
     private Scope scope;
-    private List<Objective> objectives;
+    private Objective[] objectives;
     private Map<Objective, AstSetExpr> objectiveExprs;
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
@@ -54,10 +54,10 @@ public class Analysis {
     private Map<AstExpr, Type> typeMap;
 
     Analysis(AstModel model, Scope scope) {
-        this(model, scope, Collections.<Objective>emptyList());
+        this(model, scope, new Objective[0]);
     }
 
-    Analysis(AstModel model, Scope scope, List<Objective> objectives) {
+    Analysis(AstModel model, Scope scope, Objective[] objectives) {
         this(model, scope, objectives,
                 AstUtil.getAbstractClafersInSubOrder(model),
                 AstUtil.getConcreteClafers(model),
@@ -65,7 +65,7 @@ public class Analysis {
     }
 
     Analysis(AstModel model, Scope scope,
-            List<Objective> objectives,
+            Objective[] objectives,
             List<AstAbstractClafer> abstractClafers,
             List<AstConcreteClafer> concreteClafers,
             List<Set<AstClafer>> clafersInParentAndSubOrder) {
@@ -111,10 +111,10 @@ public class Analysis {
     }
 
     public static Analysis analyze(AstModel model, Scopable scope, Analyzer... analyzers) {
-        return analyze(model, scope, Collections.<Objective>emptyList(), analyzers);
+        return analyze(model, scope, new Objective[0], analyzers);
     }
 
-    public static Analysis analyze(AstModel model, Scopable scope, List<Objective> objectives, Analyzer... analyzers) {
+    public static Analysis analyze(AstModel model, Scopable scope, Objective[] objectives, Analyzer... analyzers) {
         Analysis analysis = new Analysis(model, scope.toScope(), objectives);
         for (Analyzer analyzer : analyzers) {
             analysis = analyzer.analyze(analysis);
@@ -167,8 +167,8 @@ public class Analysis {
         return objectiveExprs.get(objective);
     }
 
-    public List<Objective> getObjectives() {
-        return Collections.unmodifiableList(objectives);
+    public Objective[] getObjectives() {
+        return objectives;
     }
 
     public Map<Objective, AstSetExpr> getObjectiveExprs() {

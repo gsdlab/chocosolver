@@ -35,7 +35,7 @@ public class SimpleOptimizationTest {
                 Objective.maximize(joinRef(global(a))));
         int count = 0;
         while (solver.find()) {
-            assertEquals(2, solver.optimalValue());
+            assertArrayEquals(new int[]{2}, solver.optimalValues());
             count++;
         }
         assertEquals(1, count);
@@ -60,7 +60,7 @@ public class SimpleOptimizationTest {
                 Objective.minimize(joinRef(global(a))));
         int count = 0;
         while (solver.find()) {
-            assertEquals(2, solver.optimalValue());
+            assertArrayEquals(new int[]{2}, solver.optimalValues());
             count++;
         }
         assertEquals(1, count);
@@ -85,7 +85,7 @@ public class SimpleOptimizationTest {
                 Objective.maximize(joinRef(global(a))));
         int count = 0;
         while (solver.find()) {
-            assertEquals(4, solver.optimalValue());
+            assertArrayEquals(new int[]{4}, solver.optimalValues());
             count++;
         }
         assertEquals(2, count);
@@ -110,7 +110,7 @@ public class SimpleOptimizationTest {
                 Objective.minimize(joinRef(global(a))));
         int count = 0;
         while (solver.find()) {
-            assertEquals(-4, solver.optimalValue());
+            assertArrayEquals(new int[]{-4}, solver.optimalValues());
             count++;
         }
         assertEquals(2, count);

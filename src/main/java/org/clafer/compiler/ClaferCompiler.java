@@ -120,8 +120,7 @@ public class ClaferCompiler {
     }
 
     @SafeVarargs
-    private static void set(Solver solver, Maybe<AbstractStrategy>... strategies
-    ) {
+    private static void set(Solver solver, Maybe<AbstractStrategy<?>>... strategies) {
         AbstractStrategy<?>[] strats = Maybe.filterJust(strategies);
         if (strats.length == 0) {
             solver.set(IntStrategyFactory.random(new IntVar[0], 0));
@@ -130,28 +129,28 @@ public class ClaferCompiler {
         }
     }
 
-    private static Maybe<AbstractStrategy> setStrategy(SetVar[] vars, ClaferOptions options) {
+    private static Maybe<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOptions options) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
         if (options.isPreferSmallerInstances()) {
-            return Maybe.<AbstractStrategy>just(SetStrategyFactory.remove_first(vars));
+            return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.remove_first(vars));
         }
-        return Maybe.<AbstractStrategy>just(SetStrategyFactory.force_first(vars));
+        return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.force_first(vars));
     }
 
-    private static Maybe<AbstractStrategy> firstFailInDomainMax(IntVar[] vars) {
+    private static Maybe<AbstractStrategy<?>> firstFailInDomainMax(IntVar[] vars) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
-        return Maybe.<AbstractStrategy>just(IntStrategyFactory.firstFail_InDomainMax(vars));
+        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.firstFail_InDomainMax(vars));
     }
 
-    private static Maybe<AbstractStrategy> firstFailInDomainMin(IntVar[] vars) {
+    private static Maybe<AbstractStrategy<?>> firstFailInDomainMin(IntVar[] vars) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
-        return Maybe.<AbstractStrategy>just(IntStrategyFactory.firstFail_InDomainMin(vars));
+        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.firstFail_InDomainMin(vars));
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
@@ -173,30 +172,38 @@ public class ClaferCompiler {
         return new ClaferSolver(solver, solution);
     }
 
-    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective objective) {
-        return compile(in, scope, objective, ClaferOptions.Default);
+    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective... objectives) {
+        return compile(in, scope, objectives, ClaferOptions.Default);
     }
 
-    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective objective, ClaferOptions options) {
+    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOptions options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
         AstSolutionMap astSolution = AstCompiler.compile(
-                in, scope.toScope(), objective, module,
+                in, scope.toScope(), objectives, module,
                 options.isFullSymmetryBreaking());
         IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        Either<Integer, IntVar> objectiveVar = irSolution.getVar(astSolution.getObjectiveVar(objective));
-        IntVar[] objectiveVars = objectiveVar.isLeft() ? new IntVar[0] : new IntVar[]{objectiveVar.getRight()};
+        IrIntVar[] objectiveIrVars = new IrIntVar[objectives.length];
+        for (int i = 0; i < objectiveIrVars.length; i++) {
+            objectiveIrVars[i] = astSolution.getObjectiveVar(objectives[i]);
+        }
+        Either<Integer, IntVar>[] objectiveVars = irSolution.getVars(objectiveIrVars);
+
+        boolean[] maximizes = new boolean[objectives.length];
+        for (int i = 0; i < maximizes.length; i++) {
+            maximizes[i] = objectives[i].isMaximize();
+        }
 
         set(solver,
                 setStrategy(getSetVars(in, solution), options),
-                objective.isMaximize()
-                ? firstFailInDomainMax(objectiveVars)
-                : firstFailInDomainMin(objectiveVars),
+                //                firstFailInDomainMax(objectiveVars),
                 firstFailInDomainMin(getIntVars(in, solution)));
-        return new ClaferOptimizer(solver, solution, objective.isMaximize(), objectiveVar);
+        return maximizes.length == 1
+                ? new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0])
+                : new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars);
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope) {

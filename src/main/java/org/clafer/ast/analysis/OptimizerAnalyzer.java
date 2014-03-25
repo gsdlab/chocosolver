@@ -33,7 +33,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         for (AstConstraint constraint : analysis.getConstraints()) {
             constraintExprs.put(constraint, rewrite(analysis.getExpr(constraint), analysis));
         }
-        Map<Objective, AstSetExpr> objectiveExprs = new HashMap<>(analysis.getObjectives().size());
+        Map<Objective, AstSetExpr> objectiveExprs = new HashMap<>(analysis.getObjectives().length);
         for (Objective objective : analysis.getObjectives()) {
             objectiveExprs.put(objective, rewrite(analysis.getExpr(objective), analysis));
         }

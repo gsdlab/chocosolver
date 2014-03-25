@@ -125,10 +125,10 @@ public class AstCompiler {
     private final boolean fullSymmetryBreaking;
 
     private AstCompiler(AstModel model, Scope scope, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
-        this(model, scope, Collections.<Objective>emptyList(), module, analyzers, fullSymmetryBreaking);
+        this(model, scope, new Objective[0], module, analyzers, fullSymmetryBreaking);
     }
 
-    private AstCompiler(AstModel model, Scope scope, List<Objective> objectives, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+    private AstCompiler(AstModel model, Scope scope, Objective[] objectives, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, objectives, analyzers);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
@@ -143,12 +143,12 @@ public class AstCompiler {
         return compiler.compile();
     }
 
-    public static AstSolutionMap compile(AstModel in, Scope scope, Objective objective, IrModule out, boolean fullSymmetryBreaking) {
-        return compile(in, scope, objective, out, DefaultAnalyzers, fullSymmetryBreaking);
+    public static AstSolutionMap compile(AstModel in, Scope scope, Objective[] objectives, IrModule out, boolean fullSymmetryBreaking) {
+        return compile(in, scope, objectives, out, DefaultAnalyzers, fullSymmetryBreaking);
     }
 
-    public static AstSolutionMap compile(AstModel in, Scope scope, Objective objective, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
-        AstCompiler compiler = new AstCompiler(in, scope, Collections.singletonList(objective),
+    public static AstSolutionMap compile(AstModel in, Scope scope, Objective[] objectives, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        AstCompiler compiler = new AstCompiler(in, scope, objectives,
                 out, analyzers, fullSymmetryBreaking);
         return compiler.compile();
     }

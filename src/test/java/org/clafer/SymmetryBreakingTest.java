@@ -234,7 +234,7 @@ public class SymmetryBreakingTest {
                 Objective.maximize(joinRef(join(global(c0_MyTask), c0_total_free))));
         int count = 0;
         while (solver.find()) {
-            assertEquals(1, solver.optimalValue());
+            assertArrayEquals(new int[]{1}, solver.optimalValues());
             count++;
         }
         assertEquals(7, count);
