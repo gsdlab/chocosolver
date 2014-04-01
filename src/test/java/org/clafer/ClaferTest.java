@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import org.clafer.choco.constraint.Constraints;
-import org.clafer.choco.constraint.RandomSetSearchStrategy;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import static org.clafer.ir.IrBoolDomain.*;
@@ -22,8 +21,11 @@ import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.set.SCF;
-import solver.search.strategy.IntStrategyFactory;
-import solver.search.strategy.strategy.StrategiesSequencer;
+import solver.search.strategy.ISF;
+import solver.search.strategy.SetStrategyFactory;
+import solver.search.strategy.selectors.SetValueSelector;
+import solver.search.strategy.strategy.AbstractStrategy;
+import solver.search.strategy.strategy.SetSearchStrategy;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -327,14 +329,12 @@ public abstract class ClaferTest {
         }
         if (rand.nextBoolean()) {
             solver.set(
-                    new StrategiesSequencer(solver.getEnvironment(),
-                            new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()])),
-                            IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime())));
+                    randomSearch(setVars.toArray(new SetVar[setVars.size()])),
+                    randomSearch(intVars.toArray(new IntVar[intVars.size()])));
         } else {
             solver.set(
-                    new StrategiesSequencer(solver.getEnvironment(),
-                            IntStrategyFactory.random(intVars.toArray(new IntVar[intVars.size()]), System.nanoTime()),
-                            new RandomSetSearchStrategy(setVars.toArray(new SetVar[setVars.size()]))));
+                    randomSearch(intVars.toArray(new IntVar[intVars.size()])),
+                    randomSearch(setVars.toArray(new SetVar[setVars.size()])));
         }
         return solver;
     }
@@ -425,5 +425,32 @@ public abstract class ClaferTest {
 
     protected static <A, B, C> Triple<A, B, C> triple(A a, B b, C c) {
         return new Triple<>(a, b, c);
+    }
+
+    private AbstractStrategy<IntVar> randomSearch(IntVar[] vars) {
+        return ISF.random(vars, rand.nextLong());
+    }
+
+    private SetSearchStrategy randomSearch(SetVar[] vars) {
+        return SetStrategyFactory.generic(vars,
+                new solver.search.strategy.selectors.variables.Random<SetVar>(rand.nextLong()),
+                new RandomSetValueSelector(), rand.nextBoolean());
+    }
+
+    private class RandomSetValueSelector implements SetValueSelector {
+
+        @Override
+        public int selectValue(SetVar s) {
+            int m = rand.nextInt(s.getEnvelopeSize() - s.getKernelSize());
+            for (int i = s.getEnvelopeFirst(); i != SetVar.END; i = s.getEnvelopeNext()) {
+                if (!s.kernelContains(i)) {
+                    if (m == 0) {
+                        return i;
+                    }
+                    m--;
+                }
+            }
+            throw new IllegalStateException();
+        }
     }
 }
