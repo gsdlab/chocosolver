@@ -33,7 +33,6 @@ import solver.Solver;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.AbstractStrategy;
-import solver.search.strategy.strategy.StrategiesSequencer;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 
@@ -122,10 +121,8 @@ public class ClaferCompiler {
     @SafeVarargs
     private static void set(Solver solver, Maybe<AbstractStrategy<?>>... strategies) {
         AbstractStrategy<?>[] strats = Maybe.filterJust(strategies);
-        if (strats.length == 0) {
-            solver.set(IntStrategyFactory.random(new IntVar[0], 0));
-        } else {
-            solver.set(new StrategiesSequencer(solver.getEnvironment(), strats));
+        if (strats.length > 0) {
+            solver.set(strats);
         }
     }
 
