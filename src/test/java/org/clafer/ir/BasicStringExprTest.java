@@ -2,11 +2,7 @@ package org.clafer.ir;
 
 import org.clafer.choco.constraint.Constraints;
 import static org.clafer.ir.Irs.*;
-import org.clafer.ir.compiler.IrSolutionMap;
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.ICF;
 import solver.variables.IntVar;
@@ -19,156 +15,95 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testEqual() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            IrStringVar left;
-            @IrVarField
-            IrStringVar right;
+        randomizedTest2(new TestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertEquals(
-                        solution.getValue(left),
-                        solution.getValue(right));
+            IrBoolExpr setup(IrStringVar var1, IrStringVar var2) {
+                return equal(var1, var2);
             }
 
-            @Override
-            IrBoolExpr setup(IrModule module) {
-                return equal(left, right);
-            }
-
-            @Override
-            Constraint setup(Solver solver) {
-                CStringVar LEFT = toVar(left, solver);
-                CStringVar RIGHT = toVar(right, solver);
+            Constraint setup(CStringVar var1, CStringVar var2) {
                 return Constraints.equal(
-                        LEFT.getChars(), LEFT.getLength(),
-                        RIGHT.getChars(), RIGHT.getLength());
+                        var1.getChars(), var1.getLength(),
+                        var2.getChars(), var2.getLength());
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testNotEqual() {
+        randomizedTest2(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrStringVar var1, IrStringVar var2) {
+                return notEqual(var1, var2);
+            }
+
+            Constraint setup(CStringVar var1, CStringVar var2) {
+                return Constraints.notEqual(
+                        var1.getChars(), var1.getLength(),
+                        var2.getChars(), var2.getLength());
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLength() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            IrIntVar length;
-            @IrVarField
-            IrStringVar word;
+        randomizedTest2(new TestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertEquals(
-                        solution.getValue(length),
-                        solution.getValue(word).length());
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(IrIntVar length, IrStringVar word) {
                 return equal(length, length(word));
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                IntVar LENGTH = toVar(length, solver);
-                CStringVar WORD = toVar(word, solver);
-                return ICF.arithm(LENGTH, "=", WORD.getLength());
+            Constraint setup(IntVar length, CStringVar word) {
+                return ICF.arithm(length, "=", word.getLength());
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testPrefix() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            IrStringVar prefix;
-            @IrVarField
-            IrStringVar word;
+        randomizedTest2(new TestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertThat(
-                        solution.getValue(word),
-                        startsWith(solution.getValue(prefix)));
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(IrStringVar prefix, IrStringVar word) {
                 return prefix(prefix, word);
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                CStringVar PREFIX = toVar(prefix, solver);
-                CStringVar WORD = toVar(word, solver);
+            Constraint setup(CStringVar prefix, CStringVar word) {
                 return Constraints.prefix(
-                        PREFIX.getChars(), PREFIX.getLength(),
-                        WORD.getChars(), WORD.getLength());
+                        prefix.getChars(), prefix.getLength(),
+                        word.getChars(), word.getLength());
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testSuffix() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            IrStringVar suffix;
-            @IrVarField
-            IrStringVar word;
+        randomizedTest2(new TestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertThat(
-                        solution.getValue(word),
-                        endsWith(solution.getValue(suffix)));
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(IrStringVar suffix, IrStringVar word) {
                 return suffix(suffix, word);
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                CStringVar SUFFIX = toVar(suffix, solver);
-                CStringVar WORD = toVar(word, solver);
+            Constraint setup(CStringVar suffix, CStringVar word) {
                 return Constraints.suffix(
-                        SUFFIX.getChars(), SUFFIX.getLength(),
-                        WORD.getChars(), WORD.getLength());
+                        suffix.getChars(), suffix.getLength(),
+                        word.getChars(), word.getLength());
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testConcat() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            IrStringVar concat;
-            @IrVarField
-            IrStringVar left;
-            @IrVarField
-            IrStringVar right;
+        randomizedTest2(new TestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertEquals(solution.getValue(concat),
-                        solution.getValue(left) + solution.getValue(right));
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(IrStringVar left, IrStringVar right, IrStringVar concat) {
                 return equal(concat, concat(left, right));
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                CStringVar CONCAT = toVar(concat, solver);
-                CStringVar LEFT = toVar(left, solver);
-                CStringVar RIGHT = toVar(right, solver);
+            Constraint setup(CStringVar left, CStringVar right, CStringVar concat) {
                 return Constraints.concat(
-                        LEFT.getChars(), LEFT.getLength(),
-                        RIGHT.getChars(), RIGHT.getLength(),
-                        CONCAT.getChars(), CONCAT.getLength());
+                        left.getChars(), left.getLength(),
+                        right.getChars(), right.getLength(),
+                        concat.getChars(), concat.getLength());
             }
         });
     }

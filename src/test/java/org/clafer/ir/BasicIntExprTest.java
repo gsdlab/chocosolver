@@ -1,7 +1,13 @@
 package org.clafer.ir;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Arrays;
-import org.clafer.common.Util;
+import org.clafer.ir.IrTest.IrVarField;
+import org.clafer.ir.IrTest.TestCaseByConvention;
 import static org.clafer.ir.Irs.*;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.junit.Assert.*;
@@ -25,502 +31,246 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testAdd() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            IrIntVar sum;
-            @IrVarField
-            IrIntVar[] is;
-
-            @Override
-            void check(IrSolutionMap solution) {
-                assertEquals(
-                        solution.getValue(sum),
-                        Util.sum(solution.getValues(is)));
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+        randomizedTest2(new TestCaseByConvention() {
+            IrBoolExpr setup(IrIntVar sum, IrIntVar[] is) {
                 return equal(sum, add(is));
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.sum(toVars(is, solver), toVar(sum, solver));
+            Constraint setup(IntVar sum, IntVar[] is) {
+                return ICF.sum(is, sum);
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testSub() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            IrIntVar diff;
-            @IrVarField
-            IrIntVar[] is;
+        randomizedTest2(new TestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                int[] IS = solution.getValues(is);
-                if (IS.length == 0) {
-                    assertEquals(solution.getValue(diff), 0);
-                } else {
-                    int DIFF = IS[0];
-                    for (int i = 1; i < IS.length; i++) {
-                        DIFF -= IS[i];
-                    }
-                    assertEquals(solution.getValue(diff), DIFF);
-                }
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(IrIntVar diff, IrIntVar[] is) {
                 return equal(diff, sub(is));
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                IntVar DIFF = toVar(diff, solver);
-                IntVar[] IS = toVars(is, solver);
-                int[] coefficients = new int[IS.length];
+            Constraint setup(IntVar diff, IntVar[] is) {
+                int[] coefficients = new int[is.length];
                 Arrays.fill(coefficients, -1);
                 if (coefficients.length > 0) {
                     coefficients[0] = 1;
                 }
-                return ICF.scalar(IS, coefficients, DIFF);
+                return ICF.scalar(is, coefficients, diff);
             }
         });
     }
 
-    private void assertOptimizedArithm(Solver solver) {
-        assertTrue("Correct but not optimized.", solver.getNbCstrs() <= 1);
-        assertTrue("Correct but not optimized.", solver.getNbVars() <= 4);
-        for (Variable var : solver.getVars()) {
-            assertFalse("Correct but not optimized.",
-                    var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl));
-            assertFalse("Correct but not optimized.", var instanceof IntView);
-        }
-    }
-
     @Test(timeout = 60000)
     public void testEqualXY() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
+        randomizedTest2(new ArithmXYTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertEquals(
-                        var1.getValue(solution),
-                        var2.getValue(solution));
-            }
-
-            @Override
-            void initialize() {
-                var1 = randTerm();
-                var2 = randTerm();
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2) {
                 return equal(var1.toIrExpr(), var2.toIrExpr());
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.arithm(var1.toChocoVar(solver),
-                        "=", var2.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2) {
+                return ICF.arithm(var1, "=", var2);
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testNotEqualXY() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
+        randomizedTest2(new ArithmXYTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertNotEquals(
-                        var1.getValue(solution),
-                        var2.getValue(solution));
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                var1 = randTerm();
-                var2 = randTerm();
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2) {
                 return notEqual(var1.toIrExpr(), var2.toIrExpr());
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.arithm(var1.toChocoVar(solver),
-                        "!=", var2.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2) {
+                return ICF.arithm(var1, "!=", var2);
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanXY() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
+        randomizedTest2(new ArithmXYTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertTrue(
-                        var1.getValue(solution)
-                        < var2.getValue(solution));
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                var1 = randTerm();
-                var2 = randTerm();
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2) {
                 return lessThan(var1.toIrExpr(), var2.toIrExpr());
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.arithm(var1.toChocoVar(solver),
-                        "<", var2.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2) {
+                return ICF.arithm(var1, "<", var2);
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanEqualXY() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
+        randomizedTest2(new ArithmXYTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertTrue(
-                        var1.getValue(solution)
-                        <= var2.getValue(solution));
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                var1 = randTerm();
-                var2 = randTerm();
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2) {
                 return lessThanEqual(var1.toIrExpr(), var2.toIrExpr());
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.arithm(var1.toChocoVar(solver),
-                        "<=", var2.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2) {
+                return ICF.arithm(var1, "<=", var2);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testGreaterThanXY() {
+        randomizedTest2(new ArithmXYTestCaseByConvention() {
+
+            IrBoolExpr setup(Term var1, Term var2) {
+                return greaterThan(var1.toIrExpr(), var2.toIrExpr());
+            }
+
+            Constraint setup(IntVar var1, IntVar var2) {
+                return ICF.arithm(var1, ">", var2);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testGreaterThanEqualXY() {
+        randomizedTest2(new ArithmXYTestCaseByConvention() {
+
+            IrBoolExpr setup(Term var1, Term var2) {
+                return greaterThanEqual(var1.toIrExpr(), var2.toIrExpr());
+            }
+
+            Constraint setup(IntVar var1, IntVar var2) {
+                return ICF.arithm(var1, ">=", var2);
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testEqualXYC() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
-            @IrVarField
-            Term var3;
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertEquals(
-                        var1.getValue(solution) + var2.getValue(solution),
-                        var3.getValue(solution));
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-                Util.shuffle(vars, rand);
-                var1 = vars[0];
-                var2 = vars[1];
-                var3 = vars[2];
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
                 return nextBool()
                         ? equal(add, var3.toIrExpr())
                         : equal(var3.toIrExpr(), add);
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.sum(new IntVar[]{
-                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
-                        var3.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var1, var2}, var3);
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testNotEqualXYC() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
-            @IrVarField
-            Term var3;
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertNotEquals(
-                        var1.getValue(solution) + var2.getValue(solution),
-                        var3.getValue(solution));
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-                Util.shuffle(vars, rand);
-                var1 = vars[0];
-                var2 = vars[1];
-                var3 = vars[2];
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
                 return nextBool()
                         ? notEqual(add, var3.toIrExpr())
                         : notEqual(var3.toIrExpr(), add);
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.sum(new IntVar[]{
-                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
-                        var3.toChocoVar(solver)).getOpposite();
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var1, var2}, var3).getOpposite();
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanXYC() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
-            @IrVarField
-            Term var3;
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertTrue(
-                        var1.getValue(solution) + var2.getValue(solution)
-                        < var3.getValue(solution));
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-                Util.shuffle(vars, rand);
-                var1 = vars[0];
-                var2 = vars[1];
-                var3 = vars[2];
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return lessThan(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.sum(new IntVar[]{
-                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
-                        "<", var3.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var1, var2}, "<", var3);
             }
         });
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
-            @IrVarField
-            Term var3;
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertTrue(
-                        var1.getValue(solution) + var2.getValue(solution)
-                        > var3.getValue(solution));
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
+                return lessThan(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
             }
 
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-                Util.shuffle(vars, rand);
-                var1 = vars[0];
-                var2 = vars[1];
-                var3 = vars[2];
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
-                return lessThan(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr()));
-            }
-
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.sum(new IntVar[]{
-                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
-                        ">", var3.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var2, var3}, ">", var1);
             }
         });
     }
 
     @Test(timeout = 60000)
     public void testLessThanEqualXYC() {
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
-            @IrVarField
-            Term var3;
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertTrue(
-                        var1.getValue(solution) + var2.getValue(solution)
-                        <= var3.getValue(solution));
-            }
-
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
-            }
-
-            @Override
-            void initialize() {
-                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-                Util.shuffle(vars, rand);
-                var1 = vars[0];
-                var2 = vars[1];
-                var3 = vars[2];
-            }
-
-            @Override
-            IrBoolExpr setup(IrModule module) {
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return lessThanEqual(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.sum(new IntVar[]{
-                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
-                        "<=", var3.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var1, var2}, "<=", var3);
             }
         });
-        randomizedTest(new TestCase() {
-            @IrVarField
-            Term var1;
-            @IrVarField
-            Term var2;
-            @IrVarField
-            Term var3;
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
 
-            @Override
-            void check(IrSolutionMap solution) {
-                assertTrue(
-                        var1.getValue(solution) + var2.getValue(solution)
-                        >= var3.getValue(solution));
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
+                return lessThanEqual(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
             }
 
-            @Override
-            void validateTranslation(Solver solver) {
-                assertOptimizedArithm(solver);
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var2, var3}, ">=", var1);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testGreaterThanXYC() {
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
+                return greaterThan(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
             }
 
-            @Override
-            void initialize() {
-                Term[] vars = new Term[]{randFixedTerm(), randTerm(), randTerm()};
-                Util.shuffle(vars, rand);
-                var1 = vars[0];
-                var2 = vars[1];
-                var3 = vars[2];
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var1, var2}, ">", var3);
+            }
+        });
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
+                return greaterThan(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
             }
 
-            @Override
-            IrBoolExpr setup(IrModule module) {
-                return lessThanEqual(var3.toIrExpr(), add(var1.toIrExpr(), var2.toIrExpr()));
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var2, var3}, "<", var1);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testGreaterThanEqualXYC() {
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
+                return greaterThanEqual(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
             }
 
-            @Override
-            Constraint setup(Solver solver) {
-                return ICF.sum(new IntVar[]{
-                    var1.toChocoVar(solver), var2.toChocoVar(solver)},
-                        ">=", var3.toChocoVar(solver));
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var1, var2}, ">=", var3);
+            }
+        });
+        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+
+            IrBoolExpr setup(Term var1, Term var2, Term var3) {
+                return greaterThanEqual(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
+            }
+
+            Constraint setup(IntVar var1, IntVar var2, IntVar var3) {
+                return ICF.sum(new IntVar[]{var2, var3}, "<=", var1);
             }
         });
     }
@@ -756,9 +506,71 @@ public class BasicIntExprTest extends IrTest {
             return VF.not((BoolVar) view.toChocoVar(solver));
         }
 
-        @Override
         public int getValue(IrSolutionMap map) {
             return 1 - view.getValue(map);
         }
     }
+
+    private class ArithmXYTestCaseByConvention extends TestCaseByConvention {
+
+        @Override
+        void validateTranslation(Solver solver) {
+            assertTrue("Correct but not optimized.", solver.getNbCstrs() <= 1);
+            assertTrue("Correct but not optimized.", solver.getNbVars() <= 4);
+            for (Variable var : solver.getVars()) {
+                assertFalse("Correct but not optimized.",
+                        var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl));
+                assertFalse("Correct but not optimized.", var instanceof IntView);
+            }
+        }
+
+        @Override
+        Object create(IrModule module, Annotations annotations, Class<?> type) {
+            if (Term.class.equals(type)) {
+                Term term = annotations.hasAnnotation(Fixed.class) ? randFixedTerm() : randTerm();
+                module.addVariable(term.getIrVar());
+                return term;
+            }
+            return super.create(module, annotations, type);
+        }
+
+        @Override
+        Object create(Solver solver, Class<?> type, Object value) {
+            if (value instanceof Term) {
+                return ((Term) value).toChocoVar(solver);
+            }
+            return super.create(solver, type, value);
+        }
+
+        @Override
+        Object value(IrSolutionMap solution, Object var) {
+            if (var instanceof Term) {
+                return ((Term) var).getValue(solution);
+            }
+            return super.value(solution, var);
+        }
+    }
+
+    private class ArithmXYCTestCaseByConvention extends ArithmXYTestCaseByConvention {
+
+        @Override
+        protected Annotations[] annotations() {
+            Annotations[] annotations = super.annotations();
+            annotations[nextInt(annotations.length)].addAnnotation(fixed);
+            return annotations;
+        }
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.FIELD})
+    private @interface Fixed {
+    }
+
+    private static final Fixed fixed = new Fixed() {
+
+        @Override
+        public Class<? extends Annotation> annotationType() {
+            return Fixed.class;
+        }
+    };
 }
