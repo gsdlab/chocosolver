@@ -1,12 +1,10 @@
 package org.clafer.ir.compiler;
 
 import gnu.trove.set.hash.TIntHashSet;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -88,8 +86,6 @@ import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.Irs;
-import org.clafer.ir.analysis.AnalysisUtil;
-import org.clafer.ir.analysis.Canonicalizer;
 import org.clafer.ir.analysis.CoalesceException;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
@@ -131,9 +127,8 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        IrModule optModule = Optimizer.optimize(Canonicalizer.canonical(module));
+        IrModule optModule = Optimizer.optimize(module);
 
-        List<IrBoolExpr> constraints = optModule.getConstraints();
         Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
         Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
         if (coalesceVariables) {
@@ -153,37 +148,11 @@ public class IrCompiler {
                 // Compile anyways?
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
-
-            constraints = new ArrayList<>(optModule.getConstraints().size());
-            for (IrBoolExpr constraint : optModule.getConstraints()) {
-                Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(constraint);
-                if (cardinality != null && cardinality.getFst() instanceof IrIntVar) {
-                    IrIntVar leftInt = (IrIntVar) cardinality.getFst();
-                    SetVar rightSet = getSetVar(cardinality.getSnd());
-
-                    CSet duplicate = cardIntVarMap.get(leftInt);
-                    if (duplicate == null) {
-                        cardIntVarMap.put(leftInt,
-                                new CSet(rightSet,
-                                        IrUtil.intersection(leftInt.getDomain(), cardinality.getSnd().getCard())));
-                    } else {
-                        /*
-                         * Case where
-                         *     c = |A|
-                         *     c = |B|
-                         */
-                        cardIntVarMap.put(leftInt, new CSet(rightSet, duplicate.getCard()));
-                        post(SCF.cardinality(rightSet, duplicate.getCard()));
-                    }
-                } else {
-                    constraints.add(constraint);
-                }
-            }
         }
 
         commonSubexpressions.addAll(CommonSubexpression.findCommonSubexpressions(optModule));
 
-        for (IrBoolExpr constraint : constraints) {
+        for (IrBoolExpr constraint : optModule.getConstraints()) {
             Constraint c = compileAsConstraint(constraint);
             if (c.equals(solver.TRUE)) {
                 assert constraint instanceof IrRegister;
@@ -191,9 +160,10 @@ public class IrCompiler {
                 post(c);
             }
         }
+
         return new IrSolutionMap(
                 coalescedIntVars, intVarMap,
-                coalescedSetVars, setVarMap);
+                coalescedSetVars, mapSet(setVarMap));
     }
 
     private static <T> Map<T, T> compose(Map<T, T> f1, Map<T, T> f2) {
@@ -215,12 +185,13 @@ public class IrCompiler {
         }
         return composed;
     }
+    private final Map<IrIntVar, IntVar> intVarMap = new HashMap<>();
+    private final Map<IrSetVar, CSet> setVarMap = new HashMap<>();
+    private final Map<IrStringVar, CString> stringVarMap = new HashMap<>();
     private final Map<TIntHashSet, SetVar> cachedSetConstants = new HashMap<>();
-    private final Map<SetVar, IntVar> cachedSetCardVars = new HashMap<>();
     private final Map<IntVar, IntVar> cachedMinus = new HashMap<>();
     private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<>();
     private final Set<IrExpr> commonSubexpressions = new HashSet<>();
-    private final Map<IrStringVar, CString> cachedStringVar = new HashMap<>();
     private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<>();
     private final Map<IrSetExpr, CSet> cachedCommonSetSubexpressions = new HashMap<>();
     private final Map<IrStringExpr, CString> cachedCommonStringSubexpressions = new HashMap<>();
@@ -279,7 +250,7 @@ public class IrCompiler {
 
     private CSet cset(String name, IrDomain env, IrDomain ker, IrDomain card) {
         SetVar set = setVar(name, env, ker);
-        return new CSet(set, card);
+        return new CSet(set, intVar("|" + name + "|", card));
     }
 
     private CString cstring(String name, IrDomain[] chars, IrDomain length) {
@@ -290,19 +261,6 @@ public class IrCompiler {
         IntVar $length = intVar(name + "@Length", length);
         post(Constraints.length($chars, $length));
         return new CString($chars, $length);
-    }
-
-    private IntVar setCardVar(SetVar set, IrDomain card) {
-        IntVar setCardVar = cachedSetCardVars.get(set);
-        if (setCardVar == null) {
-            setCardVar = intVar("|" + set.getName() + "|", card);
-            if (!(set.isInstantiated() && card.size() == 1 && card.getLowBound() == set.getKernelSize())) {
-                post(SCF.cardinality(set, setCardVar));
-            }
-            assert !cachedSetCardVars.containsKey(set);
-            cachedSetCardVars.put(set, setCardVar);
-        }
-        return setCardVar;
     }
 
     private BoolVar numBoolVar(String name) {
@@ -326,36 +284,33 @@ public class IrCompiler {
     }
 
     private BoolVar getBoolVar(IrBoolVar var) {
-        BoolVar bool = (BoolVar) intVarMap.get(var);
-        if (bool == null) {
-            CSet set = cardIntVarMap.get(var);
-            bool = set == null ? boolVar(var.getName(), var.getDomain()) : (BoolVar) set.getCard();
-            intVarMap.put(var, bool);
+        BoolVar boolVar = (BoolVar) intVarMap.get(var);
+        if (boolVar == null) {
+            boolVar = boolVar(var.getName(), var.getDomain());
+            intVarMap.put(var, boolVar);
         }
-        return bool;
+        return boolVar;
     }
 
     private IntVar getIntVar(IrIntVar var) {
-        IntVar iint = intVarMap.get(var);
-        if (iint == null) {
-            CSet set = cardIntVarMap.get(var);
-            iint = set == null ? intVar(var.getName(), var.getDomain()) : set.getCard();
-            intVarMap.put(var, iint);
+        IntVar intVar = intVarMap.get(var);
+        if (intVar == null) {
+            intVar = intVar(var.getName(), var.getDomain());
+            intVarMap.put(var, intVar);
         }
-        return iint;
+        return intVar;
     }
-    private final Map<IrIntVar, IntVar> intVarMap = new HashMap<>();
-    private final Map<IrIntVar, CSet> cardIntVarMap = new HashMap<>();
 
-    private SetVar getSetVar(IrSetVar var) {
-        SetVar set = setVarMap.get(var);
-        if (set == null) {
-            set = setVar(var.getName(), var.getEnv(), var.getKer());
-            setVarMap.put(var, set);
+    private CSet getSetVar(IrSetVar var) {
+        CSet setVar = setVarMap.get(var);
+        if (setVar == null) {
+            setVar = new CSet(
+                    setVar(var.getName(), var.getEnv(), var.getKer()),
+                    getIntVar(var.getCardVar()));
+            setVarMap.put(var, setVar);
         }
-        return set;
+        return setVar;
     }
-    private final Map<IrSetVar, SetVar> setVarMap = new HashMap<>();
 
     private BoolVar asBoolVar(Object obj) {
         if (obj instanceof Constraint) {
@@ -1458,7 +1413,7 @@ public class IrCompiler {
     private final IrSetExprVisitor<CSet, Object> setExprCompiler = new IrSetExprVisitor<CSet, Object>() {
         @Override
         public Object visit(IrSetVar ir, CSet reify) {
-            return new CSet(getSetVar(ir), ir.getCard());
+            return getSetVar(ir);
         }
 
         @Override
@@ -1613,7 +1568,7 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrStringVar ir, CString reify) {
-            CString string = cachedStringVar.get(ir);
+            CString string = stringVarMap.get(ir);
             if (string == null) {
                 IntVar length = compile(ir.getLengthVar());
                 IntVar[] chars = compile(ir.getCharVars());
@@ -1621,7 +1576,7 @@ public class IrCompiler {
                     post(Constraints.length(chars, length));
                 }
                 string = new CString(chars, length);
-                cachedStringVar.put(ir, string);
+                stringVarMap.put(ir, string);
             }
             return string;
         }
@@ -1998,37 +1953,22 @@ public class IrCompiler {
     private class CSet {
 
         private final SetVar set;
-        private final IrDomain cardDomain;
         private IntVar card;
 
-        CSet(SetVar set, IrDomain cardDomain) {
-            this.set = Check.notNull(set);
-            this.cardDomain = Check.notNull(cardDomain);
-            this.card
-                    = cardDomain.getLowBound() > set.getKernelSize() || cardDomain.getHighBound() < set.getEnvelopeSize()
-                    ? setCardVar(set, cardDomain)
-                    : null;
-        }
-
         CSet(SetVar set, IntVar card) {
-            this.set = Check.notNull(set);
-            this.cardDomain = null;
-            this.card = Check.notNull(card);
+            this.set = set;
+            this.card = card;
+
+            if (!(set.isInstantiated() && card.isInstantiatedTo(set.getKernelSize()))) {
+                post(SCF.cardinality(set, card));
+            }
         }
 
         SetVar getSet() {
             return set;
         }
 
-        boolean hasCardCached() {
-            return card != null;
-        }
-
         IntVar getCard() {
-            if (card == null) {
-                assert cardDomain != null;
-                card = setCardVar(set, cardDomain);
-            }
             return card;
         }
     }
@@ -2039,6 +1979,14 @@ public class IrCompiler {
             vars[i] = sets[i].getSet();
         }
         return vars;
+    }
+
+    private static <T> Map<T, SetVar> mapSet(Map<T, CSet> sets) {
+        Map<T, SetVar> map = new HashMap<>(sets.size());
+        for (Entry<T, CSet> set : sets.entrySet()) {
+            map.put(set.getKey(), set.getValue().getSet());
+        }
+        return map;
     }
 
     private static IntVar[] mapCard(CSet[] sets) {

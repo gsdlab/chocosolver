@@ -6,12 +6,12 @@ import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.collection.DisjointSets;
-import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import org.clafer.ir.IllegalSetException;
@@ -48,7 +48,6 @@ import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrPrefix;
 import org.clafer.ir.IrRegister;
-import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetTest;
@@ -84,10 +83,26 @@ public class Coalescer {
         DisjointSets<IrSetVar> setGraph = graphs.getSnd();
         DisjointSets<IrStringVar> stringGraph = graphs.getThd();
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
+        Map<IrSetVar, Triple<String, IrDomain, IrDomain>> coalescedSetNameEnvKers = new HashMap<>();
         Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
+        Map<IrStringVar, IrStringVar> coalescedStrings = new HashMap<>();
+
+        List<IrSetVar> setVars = new ArrayList<>();
+        List<IrStringVar> stringVars = new ArrayList<>();
 
         for (IrVar var : module.getVariables()) {
-            if (var instanceof IrStringVar) {
+            if (var instanceof IrConstant) {
+                // Do nothing
+            } else if (var instanceof IrSetVar) {
+                IrSetVar set = (IrSetVar) var;
+                IrDomain ker = set.getKer();
+                IrDomain env = set.getEnv();
+                IrIntVar card = set.getCardVar();
+                if (card.getLowBound() < ker.size() || card.getHighBound() > env.size()) {
+                    intGraph.union(card, tint(ker.size(), env.size()));
+                }
+                setVars.add(set);
+            } else if (var instanceof IrStringVar) {
                 IrStringVar string = (IrStringVar) var;
                 IrIntVar[] chars = string.getCharVars();
                 IrIntVar length = string.getLengthVar();
@@ -101,6 +116,7 @@ public class Coalescer {
                 for (int i = length.getDomain().getHighBound(); i < chars.length; i++) {
                     intGraph.union(chars[i], Zero);
                 }
+                stringVars.add(string);
             }
         }
 
@@ -122,6 +138,36 @@ public class Coalescer {
                     }
                     for (int i = chars.length; i < var.getCharVars().length; i++) {
                         intGraph.union(var.getCharVars()[i], Zero);
+                    }
+                }
+            }
+        }
+        for (Set<IrSetVar> component : setGraph.connectedComponents()) {
+            if (component.size() > 1) {
+                Iterator<IrSetVar> iter = component.iterator();
+                IrSetVar var = iter.next();
+                IrIntVar card = var.getCardVar();
+                List<String> names = new ArrayList<>(component.size());
+                if (!(var instanceof TempSetVar)) {
+                    names.add(var.getName());
+                }
+                IrDomain env = var.getEnv();
+                IrDomain ker = var.getKer();
+                while (iter.hasNext()) {
+                    var = iter.next();
+                    if (!(var instanceof TempSetVar)) {
+                        names.add(var.getName());
+                    }
+                    env = IrUtil.intersection(env, var.getEnv());
+                    ker = IrUtil.union(ker, var.getKer());
+                    intGraph.union(card, var.getCardVar());
+                }
+                intGraph.union(card, tint(ker.size(), env.size()));
+                Triple<String, IrDomain, IrDomain> key
+                        = new Triple<>(Util.intercalate(";", names), env, ker);
+                for (IrSetVar coalesce : component) {
+                    if (!(coalesce instanceof TempSetVar)) {
+                        coalescedSetNameEnvKers.put(coalesce, key);
                     }
                 }
             }
@@ -152,49 +198,76 @@ public class Coalescer {
                 }
             }
         }
-        for (Set<IrSetVar> component : setGraph.connectedComponents()) {
-            if (component.size() > 1) {
-                Iterator<IrSetVar> iter = component.iterator();
-                IrSetVar var = iter.next();
-                List<String> names = new ArrayList<>(component.size());
-                if (!(var instanceof TempSetVar)) {
-                    names.add(var.getName());
-                }
-                IrDomain env = var.getEnv();
-                IrDomain ker = var.getKer();
-                IrDomain card = var.getCard();
-                while (iter.hasNext()) {
-                    var = iter.next();
-                    if (!(var instanceof TempSetVar)) {
-                        names.add(var.getName());
-                    }
-                    env = IrUtil.intersection(env, var.getEnv());
-                    ker = IrUtil.union(ker, var.getKer());
-                    card = IrUtil.intersection(card, var.getCard());
-                }
-                IrSetVar coalesced = newSet(Util.intercalate(";", names), env, ker, card, false);
-                if (coalesced != null) {
-                    for (IrSetVar coalesce : component) {
-                        if (!coalesced.equals(coalesce) && !(coalesce instanceof TempSetVar)) {
-                            coalescedSets.put(coalesce, coalesced);
-                        }
+
+        Map<Triple<String, IrDomain, IrDomain>, IrSetVar> setVarCache = new IdentityHashMap<>();
+        for (IrSetVar setVar : setVars) {
+            Triple<String, IrDomain, IrDomain> key = coalescedSetNameEnvKers.get(setVar);
+            IrSetVar set = setVarCache.get(key);
+            IrIntVar card = coalescedInts.get(setVar.getCardVar());
+            if (set == null || card != null) {
+                if (key != null || card != null) {
+                    try {
+                        set = set(
+                                key == null ? setVar.getName() : key.getFst(),
+                                key == null ? setVar.getEnv() : key.getSnd(),
+                                key == null ? setVar.getKer() : key.getThd(),
+                                card == null ? setVar.getCardVar() : card
+                        );
+                    } catch (IllegalSetException e) {
+                        throw new CoalesceException(e);
                     }
                 }
             }
+            if (set != null) {
+                if (key != null) {
+                    setVarCache.put(key, set);
+                }
+                if (!setVar.equals(set)) {
+                    coalescedSets.put(setVar, set);
+                }
+            }
         }
+        Map<List<IrIntVar>, IrStringVar> stringVarCache = new HashMap<>();
+        for (IrStringVar stringVar : stringVars) {
+            boolean changed = false;
+            IrIntVar[] chars = new IrIntVar[stringVar.getCharVars().length];
+            for (int i = 0; i < chars.length; i++) {
+                chars[i] = coalescedInts.get(stringVar.getCharVars()[i]);
+                if (chars[i] == null) {
+                    chars[i] = stringVar.getCharVars()[i];
+                } else {
+                    changed = true;
+                }
+            }
+            IrIntVar length = coalescedInts.get(stringVar.getLengthVar());
+            changed |= length != null;
+            length = length == null ? stringVar.getLengthVar() : length;
+            if (changed) {
+                List<IrIntVar> key = new ArrayList<>();
+                key.addAll(Arrays.asList(chars));
+                key.addAll(Arrays.asList(length));
+                IrStringVar string = stringVarCache.get(key);
+                if (string == null) {
+                    try {
+                        string = string(stringVar.getName(), chars, length);
+                        stringVarCache.put(key, string);
+                    } catch (IllegalStringException e) {
+                        throw new CoalesceException(e);
+                    }
+                }
+                coalescedStrings.put(stringVar, string);
+            }
+        }
+
         return new Triple<>(
                 coalescedInts,
                 coalescedSets,
-                new CoalesceRewriter(coalescedInts, coalescedSets).rewrite(module, null));
+                IrUtil.renameVariables(module, coalescedInts, coalescedSets, coalescedStrings));
     }
 
-    private static IrSetVar newSet(String name, IrDomain env, IrDomain ker, IrDomain card, boolean temp) {
-        failIf(ker.size() > env.size());
-        IrDomain boundCard = IrUtil.intersection(boundDomain(ker.size(), env.size()), card);
+    private static IrSetVar tset(IrDomain env, IrDomain ker, IrDomain card) {
         try {
-            return temp
-                    ? new TempSetVar(env, ker, boundCard)
-                    : set(name, env, ker, boundCard);
+            return new TempSetVar(env, ker, tint(card));
         } catch (IllegalSetException e) {
             throw new CoalesceException(e);
         }
@@ -214,7 +287,6 @@ public class Coalescer {
         private final DisjointSets<IrIntVar> intGraph = new DisjointSets<>();
         private final DisjointSets<IrSetVar> setGraph = new DisjointSets<>();
         private final DisjointSets<IrStringVar> stringGraph = new DisjointSets<>();
-        private final Map<IrSetVar, IrIntVar> duplicates = new HashMap<>();
 
         public DisjointSets<IrIntVar> getIntGraph() {
             return intGraph;
@@ -384,7 +456,7 @@ public class Coalescer {
                         intGraph.union((IrBoolVar) bools[i], True);
                     }
                 }
-                if (IrUtil.isTrue(ir)) {
+                if (IrUtil.isTrue(bools[i])) {
                     changed |= trues.add(i);
                 }
                 if (IrUtil.isFalse(bools[i])) {
@@ -601,20 +673,6 @@ public class Coalescer {
         }
 
         private void propagateEqual(IrIntExpr left, IrIntExpr right) {
-            Pair<IrIntExpr, IrSetVar> cardinality = AnalysisUtil.getAssignCardinality(left, right);
-            if (cardinality != null) {
-                IrIntExpr cardExpr = cardinality.getFst();
-                IrSetVar setVar = cardinality.getSnd();
-
-                if (cardExpr instanceof IrIntVar) {
-                    IrIntVar cardVar = (IrIntVar) cardExpr;
-                    IrIntVar duplicate = duplicates.put(setVar, cardVar);
-                    if (duplicate != null) {
-                        intGraph.union(cardVar, duplicate);
-                        return;
-                    }
-                }
-            }
             if (left instanceof IrIntVar && right instanceof IrIntVar) {
                 intGraph.union((IrIntVar) left, (IrIntVar) right);
             } else {
@@ -821,7 +879,7 @@ public class Coalescer {
             if (left.isCardMask()) {
                 card = left.getCard();
             }
-            IrSetVar set = newSet("temp", env, ker, card, true);
+            IrSetVar set = tset(env, ker, card);
             if (set != null) {
                 setGraph.union(right, set);
             }
@@ -1166,59 +1224,6 @@ public class Coalescer {
         }
     }
 
-    private static class CoalesceRewriter extends IrRewriter<Void> {
-
-        private final Map<IrIntVar, IrIntVar> coalescedInts;
-        private final Map<IrSetVar, IrSetVar> coalescedSets;
-
-        CoalesceRewriter(Map<IrIntVar, IrIntVar> coalescedInts, Map<IrSetVar, IrSetVar> coalescedSets) {
-            this.coalescedInts = coalescedInts;
-            this.coalescedSets = coalescedSets;
-        }
-
-        @Override
-        public IrBoolVar visit(IrBoolVar ir, Void a) {
-            IrBoolVar var = (IrBoolVar) coalescedInts.get(ir);
-            return var == null ? ir : var;
-        }
-
-        @Override
-        public IrIntVar visit(IrIntVar ir, Void a) {
-            IrIntVar var = coalescedInts.get(ir);
-            return var == null ? ir : var;
-        }
-
-        @Override
-        public IrSetVar visit(IrSetVar ir, Void a) {
-            IrSetVar var = coalescedSets.get(ir);
-            return var == null ? ir : var;
-        }
-
-        private final Map<List<IrIntVar>, IrStringVar> stringVarCache = new HashMap<>();
-
-        @Override
-        public IrStringVar visit(IrStringVar ir, Void a) {
-            if (ir instanceof IrConstant) {
-                return ir;
-            }
-            IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getCharVars(), a));
-            IrIntVar length = (IrIntVar) rewrite(ir.getLengthVar(), a);
-            List<IrIntVar> key = new ArrayList<>();
-            key.addAll(Arrays.asList(chars));
-            key.addAll(Arrays.asList(length));
-            IrStringVar string = stringVarCache.get(key);
-            if (string == null) {
-                try {
-                    string = string(ir.getName(), chars, length);
-                    stringVarCache.put(key, string);
-                } catch (IllegalStringException e) {
-                    throw new CoalesceException(e);
-                }
-            }
-            return string;
-        }
-    }
-
     private static IrIntVar charAt(IrStringExpr expr, int index) {
         if (expr instanceof IrStringVar) {
             return ((IrStringVar) expr).getCharVars()[index];
@@ -1406,7 +1411,7 @@ public class Coalescer {
 
     private static class TempSetVar extends IrSetVar {
 
-        TempSetVar(IrDomain env, IrDomain ker, IrDomain card) {
+        TempSetVar(IrDomain env, IrDomain ker, IrIntVar card) {
             super("temp", env, ker, card);
         }
     }

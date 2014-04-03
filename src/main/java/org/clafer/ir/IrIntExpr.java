@@ -15,6 +15,16 @@ public interface IrIntExpr extends IrExpr {
     public IrDomain getDomain();
 
     /**
+     * @return {@code getDomain().getLowBound()}
+     */
+    public int getLowBound();
+
+    /**
+     * @return {@code getDomain().getHighBound()}
+     */
+    public int getHighBound();
+
+    /**
      * Dynamic dispatch on the visitor.
      *
      * @param <A> the parameter type

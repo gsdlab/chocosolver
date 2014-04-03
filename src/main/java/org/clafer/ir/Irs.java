@@ -36,7 +36,6 @@ public class Irs {
     public static final IrDomain ZeroDomain = FalseDomain;
     public static final IrDomain OneDomain = TrueDomain;
     public static final IrDomain ZeroOneDomain = BoolDomain;
-    public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
 
     public static IrBoolDomain domain(boolean value) {
         return value ? TrueDomain : FalseDomain;
@@ -1197,6 +1196,10 @@ public class Irs {
     }
 
     public static IrIntExpr card(IrSetExpr set) {
+        if (set instanceof IrSetVar) {
+            IrSetVar var = (IrSetVar) set;
+            return var.getCardVar();
+        }
         IrDomain domain = set.getCard();
         if (domain.size() == 1) {
             return constant(domain.getLowBound());
@@ -1475,6 +1478,8 @@ public class Irs {
      *
      *******************
      */
+    public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
+
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
         return set(name, boundDomain(lowEnv, highEnv));
     }
@@ -1508,6 +1513,10 @@ public class Irs {
     }
 
     public static IrSetVar set(String name, IrDomain env, IrDomain ker, IrDomain card) {
+        return set(name, env, ker, domainInt("|" + name + "|", card));
+    }
+
+    public static IrSetVar set(String name, IrDomain env, IrDomain ker, IrIntVar card) {
         return IrUtil.asConstant(new IrSetVar(name, env, ker, card));
     }
 

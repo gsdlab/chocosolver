@@ -11,7 +11,7 @@ public class IrSetConstant extends IrSetVar implements IrConstant {
     private final int[] value;
 
     IrSetConstant(IrDomain value) {
-        super(value.toString(), value, value, new IrBoundDomain(value.size(), value.size()));
+        super(value.toString(), value, value, Irs.constant(value.size()));
         this.value = value.getValues();
     }
 

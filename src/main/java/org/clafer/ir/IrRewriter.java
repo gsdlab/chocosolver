@@ -515,7 +515,10 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrSetVar visit(IrSetVar ir, T a) {
-        return ir;
+        IrIntVar card = (IrIntVar) rewrite(ir.getCardVar(), a);
+        return changed(ir.getCardVar(), card)
+                ? set(ir.getName(), ir.getEnv(), ir.getKer(), card)
+                : ir;
     }
 
     @Override

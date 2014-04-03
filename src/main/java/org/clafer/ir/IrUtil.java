@@ -6,6 +6,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -661,6 +662,14 @@ public class IrUtil {
         return variables;
     }
 
+    public static IrModule renameVariables(
+            IrModule module,
+            Map<IrIntVar, IrIntVar> intRename,
+            Map<IrSetVar, IrSetVar> setRename,
+            Map<IrStringVar, IrStringVar> stringRename) {
+        return new VariableRenamer(intRename, setRename, stringRename).rewrite(module, null);
+    }
+
     public static enum Ordering {
 
         LT,
@@ -698,4 +707,44 @@ public class IrUtil {
                     return super.visit(ir, a);
                 }
             };
+
+    private static class VariableRenamer extends IrRewriter<Void> {
+
+        private final Map<IrIntVar, IrIntVar> intRename;
+        private final Map<IrSetVar, IrSetVar> setRename;
+        private final Map<IrStringVar, IrStringVar> stringRename;
+
+        VariableRenamer(
+                Map<IrIntVar, IrIntVar> intRename,
+                Map<IrSetVar, IrSetVar> setRename,
+                Map<IrStringVar, IrStringVar> stringRename) {
+            this.intRename = intRename;
+            this.setRename = setRename;
+            this.stringRename = stringRename;
+        }
+
+        @Override
+        public IrBoolVar visit(IrBoolVar ir, Void a) {
+            IrBoolVar var = (IrBoolVar) intRename.get(ir);
+            return var == null ? ir : var;
+        }
+
+        @Override
+        public IrIntVar visit(IrIntVar ir, Void a) {
+            IrIntVar var = intRename.get(ir);
+            return var == null ? ir : var;
+        }
+
+        @Override
+        public IrSetVar visit(IrSetVar ir, Void a) {
+            IrSetVar var = setRename.get(ir);
+            return var == null ? ir : var;
+        }
+
+        @Override
+        public IrStringVar visit(IrStringVar ir, Void a) {
+            IrStringVar var = stringRename.get(ir);
+            return var == null ? ir : var;
+        }
+    };
 }

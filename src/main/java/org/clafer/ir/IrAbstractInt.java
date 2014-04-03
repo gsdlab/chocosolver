@@ -18,12 +18,19 @@ public abstract class IrAbstractInt implements IrIntExpr {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IrDomain getDomain() {
         return domain;
+    }
+
+    @Override
+    public int getLowBound() {
+        return domain.getLowBound();
+    }
+
+    @Override
+    public int getHighBound() {
+        return domain.getHighBound();
     }
 
     @Override

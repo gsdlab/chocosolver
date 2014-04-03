@@ -20,6 +20,16 @@ public abstract class IrAbstractBool implements IrBoolExpr {
     }
 
     @Override
+    public int getLowBound() {
+        return domain.getLowBound();
+    }
+
+    @Override
+    public int getHighBound() {
+        return domain.getHighBound();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof IrAbstractBool) {
             IrAbstractBool other = (IrAbstractBool) obj;

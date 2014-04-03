@@ -24,36 +24,21 @@ public abstract class IrAbstractSet implements IrSetExpr {
         if (card.getLowBound() > env.size()) {
             throw new IllegalSetException(card.getLowBound() + " > " + env.size());
         }
-        if (card.getHighBound() > env.size()) {
-            throw new IllegalSetException(card.getHighBound() + " > " + env.size());
-        }
-        if (card.getLowBound() < ker.size()) {
-            throw new IllegalSetException(card.getLowBound() + " < " + ker.size());
-        }
         if (card.getHighBound() < ker.size()) {
             throw new IllegalSetException(card.getHighBound() + " < " + ker.size());
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IrDomain getEnv() {
         return env;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IrDomain getKer() {
         return ker;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IrDomain getCard() {
         return card;
