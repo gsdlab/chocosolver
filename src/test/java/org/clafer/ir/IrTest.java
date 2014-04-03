@@ -1,6 +1,5 @@
 package org.clafer.ir;
 
-import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -13,7 +12,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.clafer.ClaferTest;
 import org.clafer.Sample;
 import org.clafer.common.Util;
@@ -114,14 +117,13 @@ public class IrTest extends ClaferTest {
         module.addConstraint(irConstraint);
         module.addVariables(getVariables(testCase));
 
-        IrSolutionMap solution = IrCompiler.compile(module, irSolver);
+        Set<Object> solutions = new HashSet<>();
+        IrSolutionMap irSolutionMap = IrCompiler.compile(module, irSolver);
         testCase.validateTranslation(irSolver);
 
-        int count = 0;
         if (randomizeStrategy(irSolver).findSolution()) {
             do {
-                testCase.check(positive, irConstraint, solution);
-                count++;
+                solutions.add(testCase.solution(irSolutionMap));
             } while (irSolver.nextSolution());
         }
 
@@ -131,17 +133,29 @@ public class IrTest extends ClaferTest {
                 : testCase.setup(solver).getOpposite();
         solver.post(constraint);
 
-        assertEquals("Wrong number of solutions.",
-                randomizeStrategy(solver).findAllSolutions(), count);
+        if (randomizeStrategy(solver).findSolution()) {
+            do {
+                Object solution = testCase.solution(solver);
+                if (!solutions.remove(testCase.solution(solver))) {
+                    fail("Missing solution " + solution);
+                }
+            } while (solver.nextSolution());
+        }
+
+        if (!solutions.isEmpty()) {
+            fail("Wrong solutions " + solutions);
+        }
     }
 
-    private static void addVariables(IrModule module, Object[] os) {
-        for (Object o : os) {
-            if (o instanceof IrVar) {
-                module.addVariable((IrVar) o);
-            } else {
-                addVariables(module, (Object[]) o);
+    private static void addVariables(IrModule module, Object o) {
+        if (o instanceof IrVar) {
+            module.addVariable((IrVar) o);
+        } else if (o instanceof Object[]) {
+            for (Object os : (Object[]) o) {
+                addVariables(module, os);
             }
+        } else {
+            throw new IllegalArgumentException();
         }
     }
 
@@ -244,78 +258,6 @@ public class IrTest extends ClaferTest {
         abstract Constraint setup(Solver solver);
     }
 
-    private Object create(IrModule module, boolean positive, boolean nonEmpty, Class<?> type) {
-        if (IrBoolVar.class.equals(type)) {
-            IrVar var = randBool();
-            module.addVariable(var);
-            return var;
-        } else if (IrIntVar.class.equals(type)) {
-            IrVar var = positive ? randPositiveInt() : randInt();
-            module.addVariable(var);
-            return var;
-        } else if (IrSetVar.class.equals(type)) {
-            IrVar var = positive ? randPositiveSet() : randSet();
-            module.addVariable(var);
-            return var;
-        } else if (IrStringVar.class.equals(type)) {
-            IrVar var = randString();
-            module.addVariable(var);
-            return var;
-        } else if (type.isArray()) {
-            int length = nonEmpty ? 1 + nextInt(5) : nextInt(5);
-            Object array = Array.newInstance(type.getComponentType(), length);
-            for (int i = 0; i < length; i++) {
-                Array.set(array, i, create(module, positive, nonEmpty, type.getComponentType()));
-            }
-            return array;
-        }
-        throw new IllegalStateException("Unexpected type " + type);
-    }
-
-    private Object create(Solver solver, Class<?> type, Object value) {
-        if (BoolVar.class.equals(type)) {
-            return toVar((IrBoolVar) value, solver);
-        } else if (IntVar.class.equals(type)) {
-            return toVar((IrIntVar) value, solver);
-        } else if (SetVar.class.equals(type)) {
-            return toVar((IrSetVar) value, solver).getSet();
-        } else if (CSetVar.class.equals(type)) {
-            return toVar((IrSetVar) value, solver);
-        } else if (CStringVar.class.equals(type)) {
-            return toVar((IrStringVar) value, solver);
-        } else if (type.isArray()) {
-            Object[] values = (Object[]) value;
-            Object creates = Array.newInstance(type.getComponentType(), values.length);
-            for (int i = 0; i < values.length; i++) {
-                Object create = create(solver, type.getComponentType(), values[i]);
-                Array.set(creates, i, create);
-            }
-            return creates;
-        }
-        throw new IllegalStateException("Unexpected type " + value.getClass());
-    }
-
-    private Object create(IrSolutionMap solution, Class<?> type, Object value) {
-        if (boolean.class.equals(type)) {
-            return solution.getValue((IrBoolVar) value);
-        } else if (int.class.equals(type)) {
-            return solution.getValue((IrIntVar) value);
-        } else if (TIntSet.class.equals(type)) {
-            return new TIntHashSet(solution.getValue((IrSetVar) value));
-        } else if (String.class.equals(type)) {
-            return solution.getValue((IrStringVar) value);
-        } else if (type.isArray()) {
-            Object[] values = (Object[]) value;
-            Object creates = Array.newInstance(type.getComponentType(), values.length);
-            for (int i = 0; i < values.length; i++) {
-                Object create = create(solution, type.getComponentType(), values[i]);
-                Array.set(creates, i, create);
-            }
-            return creates;
-        }
-        throw new IllegalStateException("Unexpected type " + value.getClass());
-    }
-
     private static boolean hasAnnotation(Annotation[] annotations, Class<? extends Annotation> type) {
         return getAnnotation(annotations, type) != null;
     }
@@ -341,169 +283,283 @@ public class IrTest extends ClaferTest {
 
         abstract Constraint setup(Solver solver);
 
-        abstract void check(IrSolutionMap solution);
+        abstract Object solution(IrSolutionMap solution);
 
-        protected void checkNot(IrSolutionMap solution) {
-            try {
-                check(solution);
-            } catch (AssertionError e) {
-                return;
-            }
-            fail();
-        }
+        abstract Object solution(Solver solver);
 
-        private void check(
-                boolean positive, IrBoolExpr constraint,
-                IrSolutionMap solution) {
-            try {
-                if (positive) {
-                    check(solution);
-                } else {
-                    checkNot(solution);
-                }
-            } catch (AssertionError e) {
-                throw new AssertionError("Incorrect solution: " + constraint, e);
-            }
-        }
+//        protected void checkNot(IrSolutionMap solution) {
+//            try {
+//                check(solution);
+//            } catch (AssertionError e) {
+//                return;
+//            }
+//            fail();
+//        }
+//
+//        private void check(
+//                boolean positive, IrBoolExpr constraint,
+//                IrSolutionMap solution) {
+//            try {
+//                if (positive) {
+//                    check(solution);
+//                } else {
+//                    checkNot(solution);
+//                }
+//            } catch (AssertionError e) {
+//                throw new AssertionError("Incorrect solution: " + constraint, e);
+//            }
+//        }
     }
 
     protected abstract class TestCaseByConvention extends TestCase2 {
 
+        protected Method irSetup;
+        protected Method setup;
+        Object[] irVariables;
         Object[] variables;
 
-        Object[] initializeVariables() {
+        TestCaseByConvention() {
+            for (Method method : getClass().getDeclaredMethods()) {
+                if ("setup".equals(method.getName())) {
+                    if (IrBoolExpr.class.equals(method.getReturnType())) {
+                        assert irSetup == null;
+                        irSetup = method;
+                    } else if (Constraint.class.equals(method.getReturnType())) {
+                        assert setup == null;
+                        setup = method;
+                    }
+                }
+            }
+            assert irSetup != null;
+            assert setup != null;
+        }
+
+        protected Object[] initializeVariables() {
             return null;
         }
 
-        @Override
-        IrBoolExpr setup(IrModule module) {
-            for (Method method : getClass().getDeclaredMethods()) {
-                if ("setup".equals(method.getName())
-                        && IrBoolExpr.class.equals(method.getReturnType())) {
-                    Class<?>[] parameters = method.getParameterTypes();
-                    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-                    boolean env = parameters.length > 0 && IrModule.class.equals(parameters[0]);
-                    variables = initializeVariables();
-                    if (variables == null) {
-                        variables = new Object[parameters.length];
-                        for (int i = 0; i < variables.length; i++) {
-                            variables[i] = create(module,
-                                    hasAnnotation(parameterAnnotations[env ? i + 1 : i], Positive.class),
-                                    hasAnnotation(parameterAnnotations[env ? i + 1 : i], NonEmpty.class),
-                                    parameters[env ? i + 1 : i]);
-                        }
-                    } else {
-                        addVariables(module, variables);
-                    }
-                    Object[] args = env ? Util.cons(module, variables) : variables;
-
-                    method.setAccessible(true);
-                    try {
-                        return (IrBoolExpr) method.invoke(this, args);
-                    } catch (IllegalArgumentException e) {
-                        StringBuilder argsToString = new StringBuilder();
-                        for (int i = 0; i < args.length; i++) {
-                            if (i > 0) {
-                                argsToString.append(", ");
-                            }
-                            argsToString.append(args[i].getClass());
-                        }
-                        throw new Error(method + " cannot be invoked with (" + argsToString + ")", e);
-                    } catch (IllegalAccessException e) {
-                        throw new Error(e);
-                    } catch (InvocationTargetException e) {
-                        try {
-                            throw e.getCause();
-                        } catch (RuntimeException | Error ex) {
-                            throw ex;
-                        } catch (Throwable ex) {
-                            throw new Error(ex);
-                        }
-                    }
-                }
+        protected Annotations[] annotations() {
+            Annotation[][] parameterAnnotations = irSetup.getParameterAnnotations();
+            Annotations[] annotations = new Annotations[parameterAnnotations.length];
+            for (int i = 0; i < annotations.length; i++) {
+                annotations[i] = new Annotations();
+                annotations[i].addAnnotations(parameterAnnotations[i]);
             }
-            throw new Error();
+            return annotations;
         }
 
         @Override
-        Constraint setup(Solver solver) {
-            for (Method method : getClass().getDeclaredMethods()) {
-                if ("setup".equals(method.getName())
-                        && Constraint.class.equals(method.getReturnType())) {
-                    Class<?>[] parameters = method.getParameterTypes();
-                    boolean env = parameters.length > 0 && Solver.class.equals(parameters[0]);
-                    Object[] value = new Object[variables.length];
-                    for (int i = 0; i < value.length; i++) {
-                        value[i] = create(solver, env ? parameters[i + 1] : parameters[i], variables[i]);
-                    }
-                    Object[] args = env ? Util.cons(solver, value) : value;
-                    method.setAccessible(true);
-                    try {
-                        return (Constraint) method.invoke(this, args);
-                    } catch (IllegalArgumentException e) {
-                        StringBuilder argsToString = new StringBuilder();
-                        for (int i = 0; i < args.length; i++) {
-                            if (i > 0) {
-                                argsToString.append(", ");
-                            }
-                            argsToString.append(args[i].getClass());
-                        }
-                        throw new Error(method + " cannot be invoked with (" + argsToString + ")", e);
-                    } catch (IllegalAccessException e) {
-                        throw new Error(e);
-                    } catch (InvocationTargetException e) {
-                        try {
-                            throw e.getCause();
-                        } catch (RuntimeException | Error ex) {
-                            throw ex;
-                        } catch (Throwable ex) {
-                            throw new Error(ex);
-                        }
-                    }
+        protected IrBoolExpr setup(IrModule module) {
+            Class<?>[] parameters = irSetup.getParameterTypes();
+            Annotations[] annotations = annotations();
+            boolean env = parameters.length > 0 && IrModule.class.equals(parameters[0]);
+            irVariables = initializeVariables();
+            if (irVariables == null) {
+                irVariables = new Object[env ? parameters.length - 1 : parameters.length];
+            }
+            for (int i = 0; i < irVariables.length; i++) {
+                if (irVariables[i] == null) {
+                    irVariables[i] = create(module,
+                            annotations[env ? i + 1 : i],
+                            parameters[env ? i + 1 : i]);
+                } else {
+                    addVariables(module, irVariables[i]);
                 }
             }
-            throw new Error();
+            Object[] args = env ? Util.cons(module, irVariables) : irVariables;
+            irSetup.setAccessible(true);
+            try {
+                return (IrBoolExpr) irSetup.invoke(this, args);
+            } catch (IllegalArgumentException e) {
+                StringBuilder argsToString = new StringBuilder();
+                for (int i = 0; i < args.length; i++) {
+                    if (i > 0) {
+                        argsToString.append(", ");
+                    }
+                    argsToString.append(args[i].getClass());
+                }
+                throw new Error(irSetup + " cannot be invoked with (" + argsToString + ")", e);
+            } catch (IllegalAccessException e) {
+                throw new Error(e);
+            } catch (InvocationTargetException e) {
+                try {
+                    throw e.getCause();
+                } catch (RuntimeException | Error ex) {
+                    throw ex;
+                } catch (Throwable ex) {
+                    throw new Error(ex);
+                }
+            }
         }
 
         @Override
-        void check(IrSolutionMap solution) {
-            for (Method method : getClass().getDeclaredMethods()) {
-                if ("check".equals(method.getName())
-                        && Void.TYPE.equals(method.getReturnType())) {
-                    Class<?>[] parameters = method.getParameterTypes();
-                    boolean env = parameters.length > 0 && IrSolutionMap.class.equals(parameters[0]);
-                    Object[] value = new Object[variables.length];
-                    for (int i = 0; i < value.length; i++) {
-                        value[i] = create(solution, env ? parameters[i + 1] : parameters[i], variables[i]);
+        protected Constraint setup(Solver solver) {
+            Class<?>[] parameters = setup.getParameterTypes();
+            boolean env = parameters.length > 0 && Solver.class.equals(parameters[0]);
+            variables = new Object[irVariables.length];
+            for (int i = 0; i < variables.length; i++) {
+                variables[i] = create(solver, env ? parameters[i + 1] : parameters[i], irVariables[i]);
+            }
+            Object[] args = env ? Util.cons(solver, variables) : variables;
+            setup.setAccessible(true);
+            try {
+                return (Constraint) setup.invoke(this, args);
+            } catch (IllegalArgumentException e) {
+                StringBuilder argsToString = new StringBuilder();
+                for (int i = 0; i < args.length; i++) {
+                    if (i > 0) {
+                        argsToString.append(", ");
                     }
-                    Object[] args = env ? Util.cons(solution, value) : value;
-                    method.setAccessible(true);
-                    try {
-                        method.invoke(this, args);
-                        return;
-                    } catch (IllegalArgumentException e) {
-                        StringBuilder argsToString = new StringBuilder();
-                        for (int i = 0; i < args.length; i++) {
-                            if (i > 0) {
-                                argsToString.append(", ");
-                            }
-                            argsToString.append(args[i].getClass());
-                        }
-                        throw new Error(method + " cannot be invoked with (" + argsToString + ")", e);
-                    } catch (IllegalAccessException e) {
-                        throw new Error(e);
-                    } catch (InvocationTargetException e) {
-                        try {
-                            throw e.getCause();
-                        } catch (RuntimeException | Error ex) {
-                            throw ex;
-                        } catch (Throwable ex) {
-                            throw new Error(ex);
-                        }
-                    }
+                    argsToString.append(args[i].getClass());
+                }
+                throw new Error(setup + " cannot be invoked with (" + argsToString + ")", e);
+            } catch (IllegalAccessException e) {
+                throw new Error(e);
+            } catch (InvocationTargetException e) {
+                try {
+                    throw e.getCause();
+                } catch (RuntimeException | Error ex) {
+                    throw ex;
+                } catch (Throwable ex) {
+                    throw new Error(ex);
                 }
             }
-            throw new Error();
+        }
+
+        @Override
+        protected Object solution(IrSolutionMap solution) {
+            return value(solution, irVariables);
+        }
+
+        protected @Override
+        Object solution(Solver solver) {
+            return value(solver, variables);
+        }
+
+        Object create(IrModule module, Annotations annotations, Class<?> type) {
+            if (IrBoolVar.class.equals(type)) {
+                IrVar var = randBool();
+                module.addVariable(var);
+                return var;
+            } else if (IrIntVar.class.equals(type)) {
+                IrVar var = annotations.hasAnnotation(Positive.class) ? randPositiveInt() : randInt();
+                module.addVariable(var);
+                return var;
+            } else if (IrSetVar.class.equals(type)) {
+                IrVar var = annotations.hasAnnotation(Positive.class) ? randPositiveSet() : randSet();
+                module.addVariable(var);
+                return var;
+            } else if (IrStringVar.class.equals(type)) {
+                IrVar var = randString();
+                module.addVariable(var);
+                return var;
+            } else if (type.isArray()) {
+                int length = annotations.hasAnnotation(NonEmpty.class) ? 1 + nextInt(5) : nextInt(5);
+                Object array = Array.newInstance(type.getComponentType(), length);
+                for (int i = 0; i < length; i++) {
+                    Array.set(array, i, create(module, annotations, type.getComponentType()));
+                }
+                return array;
+            }
+            throw new IllegalStateException("Unexpected type " + type);
+        }
+
+        Object create(Solver solver, Class<?> type, Object value) {
+            if (BoolVar.class.equals(type)) {
+                return toVar((IrBoolVar) value, solver);
+            } else if (IntVar.class.equals(type)) {
+                return toVar((IrIntVar) value, solver);
+            } else if (SetVar.class.equals(type)) {
+                return toVar((IrSetVar) value, solver).getSet();
+            } else if (CSetVar.class.equals(type)) {
+                return toVar((IrSetVar) value, solver);
+            } else if (CStringVar.class.equals(type)) {
+                return toVar((IrStringVar) value, solver);
+            } else if (type.isArray()) {
+                Object[] values = (Object[]) value;
+                Object creates = Array.newInstance(type.getComponentType(), values.length);
+                for (int i = 0; i < values.length; i++) {
+                    Object create = create(solver, type.getComponentType(), values[i]);
+                    Array.set(creates, i, create);
+                }
+                return creates;
+            }
+            throw new IllegalStateException("Unexpected type " + value.getClass());
+        }
+
+        Object value(IrSolutionMap solution, Object var) {
+            if (var instanceof IrIntVar) {
+                return solution.getValue((IrIntVar) var);
+            } else if (var instanceof IrSetVar) {
+                return new TIntHashSet(solution.getValue((IrSetVar) var));
+            } else if (var instanceof IrStringVar) {
+                return solution.getValue((IrStringVar) var);
+            } else if (var instanceof Object[]) {
+                Object[] vars = (Object[]) var;
+                Object[] values = new Object[vars.length];
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = value(solution, vars[i]);
+                }
+                return Arrays.asList(values);
+            }
+            throw new IllegalStateException("Unexpected type " + var.getClass());
+        }
+
+        Object value(Solver solver, Object var) {
+            if (var instanceof IntVar) {
+                return ((IntVar) var).getValue();
+            } else if (var instanceof SetVar) {
+                return new TIntHashSet(((SetVar) var).getValue());
+            } else if (var instanceof CSetVar) {
+                return new TIntHashSet(((CSetVar) var).getSet().getValue());
+            } else if (var instanceof CStringVar) {
+                CStringVar string = (CStringVar) var;
+                char[] chars = new char[string.getLength().getValue()];
+                for (int i = 0; i < chars.length; i++) {
+                    chars[i] = (char) string.getChars()[i].getValue();
+                }
+                return new String(chars);
+            } else if (var instanceof Object[]) {
+                Object[] vars = (Object[]) var;
+                Object[] values = new Object[vars.length];
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = value(solver, vars[i]);
+                }
+                return Arrays.asList(values);
+            }
+            throw new IllegalStateException("Unexpected type " + var.getClass());
+        }
+    }
+
+    protected static class Annotations {
+
+        private Map<Class<? extends Annotation>, Annotation> map;
+
+        boolean hasAnnotation(Class<? extends Annotation> annotation) {
+            return map != null && map.containsKey(annotation);
+        }
+
+        <T extends Annotation> T getAnnotation(Class<T> annotation) {
+            if (map == null) {
+                return null;
+            }
+            @SuppressWarnings("unchecked")
+            T instance = (T) map.get(annotation);
+            return instance;
+        }
+
+        <T extends Annotation> void addAnnotation(T annotation) {
+            if (map == null) {
+                map = new HashMap<>(1);
+            }
+            map.put(annotation.annotationType(), annotation);
+        }
+
+        @SafeVarargs
+        final <T extends Annotation> void addAnnotations(T... annotations) {
+            for (T annotation : annotations) {
+                addAnnotation(annotation);
+            }
         }
     }
 

@@ -1,12 +1,7 @@
 package org.clafer.ir;
 
-import gnu.trove.set.TIntSet;
-import java.util.Arrays;
 import org.clafer.choco.constraint.Constraints;
-import org.clafer.common.Util;
 import static org.clafer.ir.Irs.*;
-import org.clafer.ir.compiler.IrSolutionMap;
-import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.Constraint;
@@ -31,12 +26,8 @@ public class BasicBoolExprTest extends IrTest {
                 return not(var);
             }
 
-            Constraint setup(BoolVar var) {
+            Constraint setup(Solver solver, BoolVar var) {
                 return ICF.arithm(var, "=", 0);
-            }
-
-            void check(boolean var) {
-                assertFalse(var);
             }
         });
     }
@@ -54,12 +45,6 @@ public class BasicBoolExprTest extends IrTest {
                         ? solver.TRUE
                         : Constraints.and(vars);
             }
-
-            void check(boolean[] vars) {
-                for (boolean var : vars) {
-                    assertTrue(var);
-                }
-            }
         });
     }
 
@@ -75,10 +60,6 @@ public class BasicBoolExprTest extends IrTest {
                 return vars.length == 0
                         ? solver.TRUE
                         : Constraints.lone(vars);
-            }
-
-            void check(int[] vars) {
-                assertTrue(Util.sum(vars) <= 1);
             }
         });
     }
@@ -96,10 +77,6 @@ public class BasicBoolExprTest extends IrTest {
                         ? solver.FALSE
                         : Constraints.one(vars);
             }
-
-            void check(int[] vars) {
-                assertEquals(1, Util.sum(vars));
-            }
         });
     }
 
@@ -116,10 +93,6 @@ public class BasicBoolExprTest extends IrTest {
                         ? solver.FALSE
                         : Constraints.or(vars);
             }
-
-            void check(int[] vars) {
-                assertTrue(Util.sum(vars) >= 1);
-            }
         });
     }
 
@@ -133,10 +106,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
                 return Constraints.ifThenElse(antecedent, consequent, alternative);
-            }
-
-            void check(boolean antecedent, boolean consequent, boolean alternative) {
-                assertTrue(antecedent ? consequent : alternative);
             }
         });
     }
@@ -152,10 +121,6 @@ public class BasicBoolExprTest extends IrTest {
             Constraint setup(BoolVar antecedent, BoolVar consequent) {
                 return ICF.arithm(antecedent, "<=", consequent);
             }
-
-            void check(boolean antecedent, boolean consequent) {
-                assertTrue(!antecedent || consequent);
-            }
         });
     }
 
@@ -169,10 +134,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(BoolVar antecedent, BoolVar consequent) {
                 return ICF.arithm(antecedent, ">", consequent);
-            }
-
-            void check(boolean antecedent, boolean consequent) {
-                assertTrue(antecedent && !consequent);
             }
         });
     }
@@ -188,10 +149,6 @@ public class BasicBoolExprTest extends IrTest {
             Constraint setup(BoolVar var1, BoolVar var2) {
                 return ICF.arithm(var1, "=", var2);
             }
-
-            void check(boolean var1, boolean var2) {
-                assertEquals(var1, var2);
-            }
         });
     }
 
@@ -205,10 +162,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(BoolVar var1, BoolVar var2) {
                 return ICF.arithm(var1, "!=", var2);
-            }
-
-            void check(boolean var1, boolean var2) {
-                assertNotEquals(var1, var2);
             }
         });
     }
@@ -224,10 +177,6 @@ public class BasicBoolExprTest extends IrTest {
             Constraint setup(IntVar var1, IntVar var2) {
                 return ICF.arithm(var1, "=", var2);
             }
-
-            void check(int var1, int var2) {
-                assertEquals(var1, var2);
-            }
         });
     }
 
@@ -241,10 +190,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(IntVar var1, IntVar var2) {
                 return ICF.arithm(var1, "!=", var2);
-            }
-
-            void check(int var1, int var2) {
-                assertNotEquals(var1, var2);
             }
         });
     }
@@ -260,10 +205,6 @@ public class BasicBoolExprTest extends IrTest {
             Constraint setup(IntVar var1, IntVar var2) {
                 return ICF.arithm(var1, "<", var2);
             }
-
-            void check(int var1, int var2) {
-                assertTrue(var1 < var2);
-            }
         });
     }
 
@@ -277,10 +218,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(IntVar var1, IntVar var2) {
                 return ICF.arithm(var1, "<=", var2);
-            }
-
-            void check(int var1, int var2) {
-                assertTrue(var1 <= var2);
             }
         });
     }
@@ -296,10 +233,6 @@ public class BasicBoolExprTest extends IrTest {
             Constraint setup(IntVar var1, IntVar var2) {
                 return ICF.arithm(var1, ">", var2);
             }
-
-            void check(int var1, int var2) {
-                assertTrue(var1 > var2);
-            }
         });
     }
 
@@ -313,10 +246,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(IntVar var1, IntVar var2) {
                 return ICF.arithm(var1, ">=", var2);
-            }
-
-            void check(int var1, int var2) {
-                assertTrue(var1 >= var2);
             }
         });
     }
@@ -332,10 +261,6 @@ public class BasicBoolExprTest extends IrTest {
             Constraint setup(CSetVar var1, CSetVar var2) {
                 return Constraints.equal(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
             }
-
-            void check(TIntSet var1, TIntSet var2) {
-                assertEquals(var1, var2);
-            }
         });
     }
 
@@ -350,10 +275,6 @@ public class BasicBoolExprTest extends IrTest {
             Constraint setup(CSetVar var1, CSetVar var2) {
                 return Constraints.notEqual(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
             }
-
-            void check(TIntSet var1, TIntSet var2) {
-                assertNotEquals(var1, var2);
-            }
         });
     }
 
@@ -367,15 +288,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(BoolVar[] bools, SetVar set) {
                 return SCF.bool_channel(bools, set, 0);
-            }
-
-            void check(boolean[] bools, TIntSet set) {
-                for (int i = 0; i < bools.length; i++) {
-                    assertEquals(bools[i], set.contains(i));
-                }
-                for (int i : set.toArray()) {
-                    assertTrue(i >= 0 && i < bools.length);
-                }
             }
         });
     }
@@ -393,38 +305,7 @@ public class BasicBoolExprTest extends IrTest {
                         ? solver.TRUE
                         : Constraints.intChannel(sets, ints);
             }
-
-            void check(int[] ints, TIntSet[] sets) {
-                for (int i = 0; i < sets.length; i++) {
-                    for (int j : sets[i].toArray()) {
-                        assertTrue(j >= 0 && j < ints.length);
-                        assertEquals(i, ints[j]);
-                    }
-                }
-                for (int i = 0; i < ints.length; i++) {
-                    int value = ints[i];
-                    assertTrue(value >= 0 && value < sets.length);
-                    assertTrue(sets[ints[i]].contains(i));
-                }
-            }
         });
-    }
-
-    private static int lexicoCompare(int[] i, int[] j) {
-        return lexicoCompare(i, j, 0);
-    }
-
-    private static int lexicoCompare(int[] i, int[] j, int index) {
-        if (index == i.length) {
-            return index == j.length ? 0 : -1;
-        }
-        if (index == j.length) {
-            return 1;
-        }
-        if (i[index] == j[index]) {
-            return lexicoCompare(i, j, index + 1);
-        }
-        return i[index] < j[index] ? -1 : 1;
     }
 
     @Test(timeout = 60000)
@@ -444,12 +325,6 @@ public class BasicBoolExprTest extends IrTest {
                     sorted[i] = ICF.arithm(ints[i], "<=", ints[i + 1]);
                 }
                 return sorted.length == 0 ? solver.TRUE : LCF.and(sorted);
-            }
-
-            void check(int[] ints) {
-                for (int i = 0; i < ints.length - 1; i++) {
-                    assertTrue(ints[i] <= ints[i + 1]);
-                }
             }
         });
     }
@@ -472,12 +347,6 @@ public class BasicBoolExprTest extends IrTest {
                 }
                 return sorted.length == 0 ? solver.TRUE : LCF.and(sorted);
             }
-
-            void check(int[] ints) {
-                for (int i = 0; i < ints.length - 1; i++) {
-                    assertTrue(ints[i] < ints[i + 1]);
-                }
-            }
         });
     }
 
@@ -486,7 +355,7 @@ public class BasicBoolExprTest extends IrTest {
         randomizedTest2(new TestCaseByConvention() {
 
             @Override
-            Object[] initializeVariables() {
+            protected Object[] initializeVariables() {
                 int length = 1 + nextInt(3);
                 IrIntVar[][] strings = new IrIntVar[nextInt(3)][];
                 for (int i = 0; i < strings.length; i++) {
@@ -504,12 +373,6 @@ public class BasicBoolExprTest extends IrTest {
                         ? solver.TRUE
                         : ICF.lex_chain_less_eq(strings);
             }
-
-            void check(int[][] strings) {
-                for (int i = 0; i < strings.length - 1; i++) {
-                    assertNotEquals(1, lexicoCompare(strings[i], strings[i + 1]));
-                }
-            }
         });
     }
 
@@ -518,7 +381,7 @@ public class BasicBoolExprTest extends IrTest {
         randomizedTest2(new TestCaseByConvention() {
 
             @Override
-            Object[] initializeVariables() {
+            protected Object[] initializeVariables() {
                 int length = 1 + nextInt(3);
                 IrIntVar[][] strings = new IrIntVar[nextInt(3)][];
                 for (int i = 0; i < strings.length; i++) {
@@ -535,12 +398,6 @@ public class BasicBoolExprTest extends IrTest {
                 return strings.length == 0
                         ? solver.TRUE
                         : ICF.lex_chain_less(strings);
-            }
-
-            void check(int[][] strings) {
-                for (int i = 0; i < strings.length - 1; i++) {
-                    assertEquals(-1, lexicoCompare(strings[i], strings[i + 1]));
-                }
             }
         });
     }
@@ -559,14 +416,6 @@ public class BasicBoolExprTest extends IrTest {
                         ? solver.TRUE
                         : ICF.alldifferent(ints);
             }
-
-            void check(int[] ints) {
-                for (int i = 0; i < ints.length; i++) {
-                    for (int j = i + 1; j < ints.length; j++) {
-                        assertNotEquals(ints[i], ints[j]);
-                    }
-                }
-            }
         });
     }
 
@@ -580,14 +429,6 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(BoolVar[] bools, IntVar n) {
                 return Constraints.selectN(bools, n);
-            }
-
-            void check(boolean[] bools, int n) {
-                assertTrue(n >= 0);
-                assertTrue(n <= bools.length);
-                for (int i = 0; i < bools.length; i++) {
-                    assertEquals(i < n, bools[i]);
-                }
             }
         });
     }

@@ -2,8 +2,6 @@ package org.clafer.ir;
 
 import org.clafer.choco.constraint.Constraints;
 import static org.clafer.ir.Irs.*;
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.constraints.Constraint;
 import solver.constraints.ICF;
@@ -28,10 +26,6 @@ public class BasicStringExprTest extends IrTest {
                         var1.getChars(), var1.getLength(),
                         var2.getChars(), var2.getLength());
             }
-
-            void check(String var1, String var2) {
-                assertEquals(var1, var2);
-            }
         });
     }
 
@@ -48,10 +42,6 @@ public class BasicStringExprTest extends IrTest {
                         var1.getChars(), var1.getLength(),
                         var2.getChars(), var2.getLength());
             }
-
-            void check(String var1, String var2) {
-                assertNotEquals(var1, var2);
-            }
         });
     }
 
@@ -65,10 +55,6 @@ public class BasicStringExprTest extends IrTest {
 
             Constraint setup(IntVar length, CStringVar word) {
                 return ICF.arithm(length, "=", word.getLength());
-            }
-
-            void check(int length, String word) {
-                assertEquals(length, word.length());
             }
         });
     }
@@ -86,10 +72,6 @@ public class BasicStringExprTest extends IrTest {
                         prefix.getChars(), prefix.getLength(),
                         word.getChars(), word.getLength());
             }
-
-            void check(String prefix, String word) {
-                assertThat(word, startsWith(prefix));
-            }
         });
     }
 
@@ -105,10 +87,6 @@ public class BasicStringExprTest extends IrTest {
                 return Constraints.suffix(
                         suffix.getChars(), suffix.getLength(),
                         word.getChars(), word.getLength());
-            }
-
-            void check(String suffix, String word) {
-                assertThat(word, endsWith(suffix));
             }
         });
     }
@@ -126,10 +104,6 @@ public class BasicStringExprTest extends IrTest {
                         left.getChars(), left.getLength(),
                         right.getChars(), right.getLength(),
                         concat.getChars(), concat.getLength());
-            }
-
-            void check(String left, String right, String concat) {
-                assertEquals(concat, left + right);
             }
         });
     }
