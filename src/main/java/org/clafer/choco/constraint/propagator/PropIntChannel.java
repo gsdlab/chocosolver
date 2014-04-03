@@ -82,15 +82,17 @@ public class PropIntChannel extends Propagator<Variable> {
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            for (int j = sets[i].getEnvelopeFirst(); j != SetVar.END; j = sets[i].getEnvelopeNext()) {
-                if (j < 0 || j >= ints.length || !ints[j].contains(i)) {
-                    sets[i].removeFromEnvelope(j, aCause);
+            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
+                if (j >= 0 && j < ints.length) {
+                    ints[j].instantiateTo(i, aCause);
                 }
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
-                ints[j].instantiateTo(i, aCause);
+            for (int j = sets[i].getEnvelopeFirst(); j != SetVar.END; j = sets[i].getEnvelopeNext()) {
+                if (j < 0 || j >= ints.length || !ints[j].contains(i)) {
+                    sets[i].removeFromEnvelope(j, aCause);
+                }
             }
         }
     }
