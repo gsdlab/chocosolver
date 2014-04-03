@@ -803,6 +803,7 @@ public class AstCompiler {
     private final Map<AstRef, IrStringVar[]> refStrings = new HashMap<>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<>();
     private int countCount = 0;
+    private int sumCount = 0;
     private int localCount = 0;
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
@@ -1120,6 +1121,8 @@ public class AstCompiler {
             assert setType.hasRef();
             IrIntVar[] refs = refPointers.get(setType.getRef());
 
+            int count = sumCount++;
+
             IrBoolExpr[] members;
             if (set instanceof AstGlobal) {
                 members = memberships.get(setType);
@@ -1136,7 +1139,7 @@ public class AstCompiler {
                 assert setSet.getEnv().getLowBound() >= 0;
                 members = new IrBoolExpr[setSet.getEnv().getHighBound() + 1];
                 for (int i = 0; i < members.length; i++) {
-                    members[i] = bool("SumMember@" + i);
+                    members[i] = bool("SumMember" + count + "@" + i);
                 }
                 module.addConstraint(boolChannel(members, setSet));
             }
@@ -1148,7 +1151,7 @@ public class AstCompiler {
                 int uninitializedRef = getUninitalizedRef(setType.getRef().getTargetType());
                 // Score's use 0 as the uninitialized value.
                 domain = IrUtil.add(IrUtil.remove(domain, uninitializedRef), 0);
-                score[i] = domainInt("Score@" + i, domain);
+                score[i] = domainInt("Score" + count + "@" + i, domain);
                 module.addConstraint(ifThenElse(members[i],
                         equal(score[i], refs[i]), equal(score[i], 0)));
             }
