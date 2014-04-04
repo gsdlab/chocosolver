@@ -98,9 +98,7 @@ public class Coalescer {
                 IrDomain ker = set.getKer();
                 IrDomain env = set.getEnv();
                 IrIntVar card = set.getCardVar();
-                if (card.getLowBound() < ker.size() || card.getHighBound() > env.size()) {
-                    intGraph.union(card, tint(ker.size(), env.size()));
-                }
+                assert card.getLowBound() >= ker.size() && card.getHighBound() <= env.size();
                 setVars.add(set);
             } else if (var instanceof IrStringVar) {
                 IrStringVar string = (IrStringVar) var;
