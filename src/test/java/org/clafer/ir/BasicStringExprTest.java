@@ -15,7 +15,7 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrStringVar var1, IrStringVar var2) {
                 return equal(var1, var2);
@@ -31,7 +31,7 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testNotEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrStringVar var1, IrStringVar var2) {
                 return notEqual(var1, var2);
@@ -47,7 +47,7 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLength() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar length, IrStringVar word) {
                 return equal(length, length(word));
@@ -61,7 +61,7 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testPrefix() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrStringVar prefix, IrStringVar word) {
                 return prefix(prefix, word);
@@ -77,7 +77,7 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSuffix() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrStringVar suffix, IrStringVar word) {
                 return suffix(suffix, word);
@@ -93,7 +93,7 @@ public class BasicStringExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testConcat() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrStringVar left, IrStringVar right, IrStringVar concat) {
                 return equal(concat, concat(left, right));

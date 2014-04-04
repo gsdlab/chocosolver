@@ -22,8 +22,7 @@ import org.clafer.Sample;
 import org.clafer.common.Util;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
@@ -54,57 +53,6 @@ public class IrTest extends ClaferTest {
 
     private void randomizedTest(
             TestCase testCase,
-            boolean positive) {
-        IrModule module = new IrModule();
-        Solver irSolver = new Solver();
-
-        testCase.initialize();
-
-        IrBoolExpr irConstraint = positive
-                ? testCase.setup(module)
-                : testCase.setup(module).negate();
-        module.addConstraint(irConstraint);
-        module.addVariables(getVariables(testCase));
-
-        IrSolutionMap solution = IrCompiler.compile(module, irSolver);
-        testCase.validateTranslation(irSolver);
-
-        int count = 0;
-        if (randomizeStrategy(irSolver).findSolution()) {
-            do {
-                testCase.check(positive, irConstraint, solution);
-                count++;
-            } while (irSolver.nextSolution());
-        }
-
-        Solver solver = new Solver();
-        Constraint constraint = positive
-                ? testCase.setup(solver)
-                : testCase.setup(solver).getOpposite();
-        solver.post(constraint);
-
-        assertEquals("Wrong number of solutions.",
-                randomizeStrategy(solver).findAllSolutions(), count);
-    }
-
-    protected void randomizedTest2(TestCase2 testCase) {
-        try {
-            Method method = TestCase2.class.getDeclaredMethod("setup", IrModule.class);
-            Sample sample = method.getAnnotation(Sample.class);
-            int repeat = sample == null ? Sample.Default : sample.value();
-            for (int i = 0; i < repeat; i++) {
-                randomizedTest2(testCase, true);
-            }
-            for (int i = 0; i < repeat; i++) {
-                randomizedTest2(testCase, false);
-            }
-        } catch (NoSuchMethodException e) {
-            throw new Error(e);
-        }
-    }
-
-    private void randomizedTest2(
-            TestCase2 testCase,
             boolean positive) {
         IrModule module = new IrModule();
         Solver irSolver = new Solver();
@@ -188,91 +136,6 @@ public class IrTest extends ClaferTest {
 
     protected abstract class TestCase {
 
-        abstract void check(IrSolutionMap solution);
-
-        protected void checkNot(IrSolutionMap solution) {
-            try {
-                check(solution);
-            } catch (AssertionError e) {
-                return;
-            }
-            fail();
-        }
-
-        private void check(
-                boolean positive, IrBoolExpr constraint,
-                IrSolutionMap solution) {
-            try {
-                if (positive) {
-                    check(solution);
-                } else {
-                    checkNot(solution);
-                }
-            } catch (AssertionError e) {
-                throw new AssertionError("Incorrect solution: " + constraint, e);
-            }
-        }
-
-        void validateTranslation(Solver solver) {
-        }
-
-        private Object initalize(boolean positive, boolean nonEmpty, Class<?> type) {
-            if (IrBoolVar.class.equals(type)) {
-                return randBool();
-            } else if (IrIntVar.class.equals(type)) {
-                return positive ? randPositiveInt() : randInt();
-            } else if (IrSetVar.class.equals(type)) {
-                return positive ? randPositiveSet() : randSet();
-            } else if (IrStringVar.class.equals(type)) {
-                return randString();
-            } else if (type.isArray()) {
-                int length = nonEmpty ? 1 + nextInt(3) : nextInt(3);
-                Object array = Array.newInstance(type.getComponentType(), length);
-                for (int i = 0; i < length; i++) {
-                    Array.set(array, i, initalize(positive, nonEmpty, type.getComponentType()));
-                }
-                return array;
-            }
-            throw new IllegalStateException("Unexpected type " + type);
-        }
-
-        void initialize() {
-            for (Field field : getClass().getDeclaredFields()) {
-                if (field.isAnnotationPresent(IrVarField.class)) {
-                    boolean positive = field.isAnnotationPresent(Positive.class);
-                    boolean nonEmpty = field.isAnnotationPresent(NonEmpty.class);
-                    Class<?> type = field.getType();
-                    Object value = initalize(positive, nonEmpty, type);
-                    field.setAccessible(true);
-                    try {
-                        field.set(this, value);
-                    } catch (IllegalAccessException e) {
-                        throw new Error(e);
-                    }
-                }
-            }
-        }
-
-        abstract IrBoolExpr setup(IrModule module);
-
-        abstract Constraint setup(Solver solver);
-    }
-
-    private static boolean hasAnnotation(Annotation[] annotations, Class<? extends Annotation> type) {
-        return getAnnotation(annotations, type) != null;
-    }
-
-    private static <T> T getAnnotation(Annotation[] annotations, Class<T> type) {
-        for (Annotation annotation : annotations) {
-            if (type.equals(annotation.getClass())) {
-                return (T) annotation;
-            }
-        }
-        return null;
-    }
-
-    protected abstract class TestCase2 {
-
         void initialize() {
         }
 
@@ -286,32 +149,9 @@ public class IrTest extends ClaferTest {
         abstract Object solution(IrSolutionMap solution);
 
         abstract Object solution(Solver solver);
-
-//        protected void checkNot(IrSolutionMap solution) {
-//            try {
-//                check(solution);
-//            } catch (AssertionError e) {
-//                return;
-//            }
-//            fail();
-//        }
-//
-//        private void check(
-//                boolean positive, IrBoolExpr constraint,
-//                IrSolutionMap solution) {
-//            try {
-//                if (positive) {
-//                    check(solution);
-//                } else {
-//                    checkNot(solution);
-//                }
-//            } catch (AssertionError e) {
-//                throw new AssertionError("Incorrect solution: " + constraint, e);
-//            }
-//        }
     }
 
-    protected abstract class TestCaseByConvention extends TestCase2 {
+    protected abstract class TestCaseByConvention extends TestCase {
 
         protected Method irSetup;
         protected Method setup;

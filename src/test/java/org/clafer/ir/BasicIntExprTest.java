@@ -31,7 +31,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testAdd() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
             IrBoolExpr setup(IrIntVar sum, IrIntVar[] is) {
                 return equal(sum, add(is));
             }
@@ -44,7 +44,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSub() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar diff, IrIntVar[] is) {
                 return equal(diff, sub(is));
@@ -63,7 +63,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testEqualXY() {
-        randomizedTest2(new ArithmXYTestCaseByConvention() {
+        randomizedTest(new ArithmXYTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2) {
                 return equal(var1.toIrExpr(), var2.toIrExpr());
@@ -77,7 +77,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testNotEqualXY() {
-        randomizedTest2(new ArithmXYTestCaseByConvention() {
+        randomizedTest(new ArithmXYTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2) {
                 return notEqual(var1.toIrExpr(), var2.toIrExpr());
@@ -91,7 +91,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLessThanXY() {
-        randomizedTest2(new ArithmXYTestCaseByConvention() {
+        randomizedTest(new ArithmXYTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2) {
                 return lessThan(var1.toIrExpr(), var2.toIrExpr());
@@ -105,7 +105,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLessThanEqualXY() {
-        randomizedTest2(new ArithmXYTestCaseByConvention() {
+        randomizedTest(new ArithmXYTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2) {
                 return lessThanEqual(var1.toIrExpr(), var2.toIrExpr());
@@ -119,7 +119,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testGreaterThanXY() {
-        randomizedTest2(new ArithmXYTestCaseByConvention() {
+        randomizedTest(new ArithmXYTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2) {
                 return greaterThan(var1.toIrExpr(), var2.toIrExpr());
@@ -133,7 +133,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testGreaterThanEqualXY() {
-        randomizedTest2(new ArithmXYTestCaseByConvention() {
+        randomizedTest(new ArithmXYTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2) {
                 return greaterThanEqual(var1.toIrExpr(), var2.toIrExpr());
@@ -147,7 +147,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testEqualXYC() {
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
@@ -164,7 +164,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testNotEqualXYC() {
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
@@ -181,7 +181,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLessThanXYC() {
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return lessThan(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
@@ -191,7 +191,7 @@ public class BasicIntExprTest extends IrTest {
                 return ICF.sum(new IntVar[]{var1, var2}, "<", var3);
             }
         });
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return lessThan(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
@@ -205,7 +205,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLessThanEqualXYC() {
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return lessThanEqual(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
@@ -215,7 +215,7 @@ public class BasicIntExprTest extends IrTest {
                 return ICF.sum(new IntVar[]{var1, var2}, "<=", var3);
             }
         });
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return lessThanEqual(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
@@ -229,7 +229,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testGreaterThanXYC() {
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return greaterThan(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
@@ -239,7 +239,7 @@ public class BasicIntExprTest extends IrTest {
                 return ICF.sum(new IntVar[]{var1, var2}, ">", var3);
             }
         });
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return greaterThan(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
@@ -253,7 +253,7 @@ public class BasicIntExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testGreaterThanEqualXYC() {
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return greaterThanEqual(add(var1.toIrExpr(), var2.toIrExpr()), var3.toIrExpr());
@@ -263,7 +263,7 @@ public class BasicIntExprTest extends IrTest {
                 return ICF.sum(new IntVar[]{var1, var2}, ">=", var3);
             }
         });
-        randomizedTest2(new ArithmXYCTestCaseByConvention() {
+        randomizedTest(new ArithmXYCTestCaseByConvention() {
 
             IrBoolExpr setup(Term var1, Term var2, Term var3) {
                 return greaterThanEqual(var1.toIrExpr(), add(var2.toIrExpr(), var3.toIrExpr()));
@@ -506,6 +506,7 @@ public class BasicIntExprTest extends IrTest {
             return VF.not((BoolVar) view.toChocoVar(solver));
         }
 
+        @Override
         public int getValue(IrSolutionMap map) {
             return 1 - view.getValue(map);
         }

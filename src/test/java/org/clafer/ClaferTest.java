@@ -319,12 +319,16 @@ public abstract class ClaferTest {
         List<IntVar> intVars = new ArrayList<>();
         List<SetVar> setVars = new ArrayList<>();
         for (Variable var : solver.getVars()) {
-            if (var instanceof IntVar) {
-                intVars.add((IntVar) var);
-            } else if (var instanceof SetVar) {
-                setVars.add((SetVar) var);
-            } else {
-                throw new IllegalStateException();
+            if (!var.isInstantiated()
+                    && (var.getTypeAndKind() & Variable.VIEW) == 0
+                    && !(var.getName().startsWith("TMP_"))) {
+                if (var instanceof IntVar) {
+                    intVars.add((IntVar) var);
+                } else if (var instanceof SetVar) {
+                    setVars.add((SetVar) var);
+                } else {
+                    throw new IllegalStateException();
+                }
             }
         }
         if (rand.nextBoolean()) {

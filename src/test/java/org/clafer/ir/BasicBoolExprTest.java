@@ -20,7 +20,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testNot() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar var) {
                 return not(var);
@@ -34,7 +34,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testAnd() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar[] vars) {
                 return and(vars);
@@ -50,7 +50,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLone() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar[] vars) {
                 return lone(vars);
@@ -66,7 +66,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testOne() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar[] vars) {
                 return one(vars);
@@ -82,7 +82,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testOr() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar[] vars) {
                 return or(vars);
@@ -98,7 +98,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testIfThenElse() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar antecedent, IrBoolVar consequent, IrBoolVar alternative) {
                 return ifThenElse(antecedent, consequent, alternative);
@@ -112,7 +112,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testImplies() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar antecedent, IrBoolVar consequent) {
                 return implies(antecedent, consequent);
@@ -126,7 +126,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testNotImplies() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar antecedent, IrBoolVar consequent) {
                 return notImplies(antecedent, consequent);
@@ -140,7 +140,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testIfOnlyIf() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar var1, IrBoolVar var2) {
                 return ifOnlyIf(var1, var2);
@@ -154,7 +154,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testXor() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar var1, IrBoolVar var2) {
                 return xor(var1, var2);
@@ -168,7 +168,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar var1, IrIntVar var2) {
                 return equal(var1, var2);
@@ -182,7 +182,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testNotEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar var1, IrIntVar var2) {
                 return notEqual(var1, var2);
@@ -196,7 +196,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLessThan() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar var1, IrIntVar var2) {
                 return lessThan(var1, var2);
@@ -210,7 +210,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testLessThanEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar var1, IrIntVar var2) {
                 return lessThanEqual(var1, var2);
@@ -224,7 +224,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testGreaterThan() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar var1, IrIntVar var2) {
                 return greaterThan(var1, var2);
@@ -238,7 +238,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testGreaterThanEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar var1, IrIntVar var2) {
                 return greaterThanEqual(var1, var2);
@@ -252,7 +252,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSetEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrSetVar var1, IrSetVar var2) {
                 return equal(var1, var2);
@@ -266,7 +266,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSetNotEqual() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrSetVar var1, IrSetVar var2) {
                 return notEqual(var1, var2);
@@ -280,7 +280,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testBoolChannel() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar[] bools, IrSetVar set) {
                 return boolChannel(bools, set);
@@ -294,7 +294,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testIntChannel() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar[] ints, IrSetVar[] sets) {
                 return intChannel(ints, sets);
@@ -310,7 +310,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSort() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar[] ints) {
                 return sort(ints);
@@ -331,7 +331,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSortStrict() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar[] ints) {
                 return sortStrict(ints);
@@ -352,7 +352,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSortStrings() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             @Override
             protected Object[] initializeVariables() {
@@ -378,7 +378,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSortStringsStrict() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             @Override
             protected Object[] initializeVariables() {
@@ -405,7 +405,7 @@ public class BasicBoolExprTest extends IrTest {
     // TODO: sortChannel
     @Test(timeout = 60000)
     public void testAllDifferent() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrIntVar[] ints) {
                 return allDifferent(ints);
@@ -421,7 +421,7 @@ public class BasicBoolExprTest extends IrTest {
 
     @Test(timeout = 60000)
     public void testSelectN() {
-        randomizedTest2(new TestCaseByConvention() {
+        randomizedTest(new TestCaseByConvention() {
 
             IrBoolExpr setup(IrBoolVar[] bools, IrIntVar n) {
                 return selectN(bools, n);
