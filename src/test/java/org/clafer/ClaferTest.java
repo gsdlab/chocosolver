@@ -436,9 +436,9 @@ public abstract class ClaferTest {
     }
 
     private SetSearchStrategy randomSearch(SetVar[] vars) {
-        return SetStrategyFactory.generic(vars,
+        return SetStrategyFactory.generic(
                 new solver.search.strategy.selectors.variables.Random<SetVar>(rand.nextLong()),
-                new RandomSetValueSelector(), rand.nextBoolean());
+                new RandomSetValueSelector(), rand.nextBoolean(), vars);
     }
 
     private class RandomSetValueSelector implements SetValueSelector {
