@@ -140,14 +140,14 @@ public class ClaferCompiler {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
-        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.firstFail_InDomainMax(vars));
+        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.minDom_UB(vars));
     }
 
     private static Maybe<AbstractStrategy<?>> firstFailInDomainMin(IntVar[] vars) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
-        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.firstFail_InDomainMin(vars));
+        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.minDom_LB(vars));
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {

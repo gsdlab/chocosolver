@@ -428,7 +428,7 @@ public abstract class ClaferTest {
     }
 
     private AbstractStrategy<IntVar> randomSearch(IntVar[] vars) {
-        return ISF.random(vars, rand.nextLong());
+        return ISF.random_value(vars, rand.nextLong());
     }
 
     private SetSearchStrategy randomSearch(SetVar[] vars) {

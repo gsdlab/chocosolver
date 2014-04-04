@@ -56,7 +56,7 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
                 solver.post(ICF.arithm(this.bounds[i], maximizes[i] ? "<=" : ">=", scores[i].getRight()));
             }
         }
-        solver.set(ISF.sequencer(solver.getStrategy(), ISF.firstFail_InDomainMin(bounds)));
+        solver.set(ISF.sequencer(solver.getStrategy(), ISF.minDom_LB(bounds)));
     }
 
     private void push(Constraint constraint) {
