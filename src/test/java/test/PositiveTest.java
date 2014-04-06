@@ -27,6 +27,7 @@ public class PositiveTest {
 
         for (File test : dir.listFiles()) {
             Triple<AstModel, Scope, Objective[]> p = Javascript.readModel(test);
+            assert p.getThd().length == 0 : "Did not expect an optimization problem.";
             ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
 
             assertTrue(test + " failed", s.find());

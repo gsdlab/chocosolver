@@ -734,7 +734,11 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrNot ir, BoolArg a) {
-            BoolVar var = compileAsBoolVar(ir.getExpr());
+            Object expr = compile(ir.getExpr());
+            if (expr instanceof Constraint) {
+                return ((Constraint) expr).getOpposite();
+            }
+            BoolVar var = (BoolVar) expr;
             if (a.hasReify()) {
                 return _arithm(a.useReify(), "!=", var);
             }
@@ -1953,7 +1957,7 @@ public class IrCompiler {
     private class CSet {
 
         private final SetVar set;
-        private IntVar card;
+        private final IntVar card;
 
         CSet(SetVar set, IntVar card) {
             this.set = set;

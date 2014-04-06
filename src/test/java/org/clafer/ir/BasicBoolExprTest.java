@@ -97,20 +97,6 @@ public class BasicBoolExprTest extends IrTest {
     }
 
     @Test(timeout = 60000)
-    public void testIfThenElse() {
-        randomizedTest(new TestCaseByConvention() {
-
-            IrBoolExpr setup(IrBoolVar antecedent, IrBoolVar consequent, IrBoolVar alternative) {
-                return ifThenElse(antecedent, consequent, alternative);
-            }
-
-            Constraint setup(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
-                return Constraints.ifThenElse(antecedent, consequent, alternative);
-            }
-        });
-    }
-
-    @Test(timeout = 60000)
     public void testImplies() {
         randomizedTest(new TestCaseByConvention() {
 
@@ -139,6 +125,20 @@ public class BasicBoolExprTest extends IrTest {
     }
 
     @Test(timeout = 60000)
+    public void testIfThenElse() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrBoolVar antecedent, IrBoolVar consequent, IrBoolVar alternative) {
+                return ifThenElse(antecedent, consequent, alternative);
+            }
+
+            Constraint setup(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
+                return Constraints.ifThenElse(antecedent, consequent, alternative);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
     public void testIfOnlyIf() {
         randomizedTest(new TestCaseByConvention() {
 
@@ -162,6 +162,34 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(BoolVar var1, BoolVar var2) {
                 return ICF.arithm(var1, "!=", var2);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testWithin() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrIntVar value, IrDomain range) {
+                return within(value, range);
+            }
+
+            Constraint setup(IntVar value, int[] range) {
+                return ICF.member(value, range);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testNotWithin() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrIntVar value, IrDomain range) {
+                return notWithin(value, range);
+            }
+
+            Constraint setup(IntVar value, int[] range) {
+                return ICF.not_member(value, range);
             }
         });
     }
@@ -274,6 +302,48 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(CSetVar var1, CSetVar var2) {
                 return Constraints.notEqual(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testMember() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrIntVar element, IrSetVar set) {
+                return member(element, set);
+            }
+
+            Constraint setup(IntVar element, SetVar set) {
+                return SCF.member(element, set);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testNotMember() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrIntVar element, IrSetVar set) {
+                return notMember(element, set);
+            }
+
+            Constraint setup(IntVar element, SetVar set) {
+                return SCF.member(element, set).getOpposite();
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testSubsetEq() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrSetVar subset, IrSetVar superSet) {
+                return subsetEq(subset, superSet);
+            }
+
+            Constraint setup(SetVar subset, SetVar superSet) {
+                return SCF.subsetEq(new SetVar[]{subset, superSet});
             }
         });
     }
@@ -429,6 +499,40 @@ public class BasicBoolExprTest extends IrTest {
 
             Constraint setup(BoolVar[] bools, IntVar n) {
                 return Constraints.selectN(bools, n);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testAcyclic() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(IrIntVar[] edges) {
+                return acyclic(edges);
+            }
+
+            Constraint setup(Solver solver, IntVar[] edges) {
+                return edges.length == 0
+                        ? solver.TRUE
+                        : Constraints.acyclic(edges);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testUnreachable() {
+        randomizedTest(new TestCaseByConvention() {
+
+            IrBoolExpr setup(@NonEmpty IrIntVar[] edges, @Positive int from, @Positive int to) {
+                return from >= edges.length || to >= edges.length
+                        ? False
+                        : unreachable(edges, from, to);
+            }
+
+            Constraint setup(Solver solver, IntVar[] edges, int from, int to) {
+                return from >= edges.length || to >= edges.length
+                        ? solver.FALSE
+                        : Constraints.unreachable(edges, from, to);
             }
         });
     }

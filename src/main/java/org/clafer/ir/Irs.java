@@ -1064,6 +1064,9 @@ public class Irs {
     }
 
     public static IrBoolExpr acyclic(IrIntExpr[] edges) {
+        if (edges.length == 0) {
+            return True;
+        }
         return new IrAcyclic(edges, BoolDomain);
     }
 

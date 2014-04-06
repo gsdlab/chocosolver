@@ -15,8 +15,10 @@ import org.junit.Test;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.ICF;
+import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
+import solver.variables.SetVar;
 import solver.variables.VF;
 import solver.variables.Variable;
 import solver.variables.impl.FixedBoolVarImpl;
@@ -28,6 +30,19 @@ import solver.variables.view.IntView;
  * @author jimmy
  */
 public class BasicIntExprTest extends IrTest {
+
+    @Test(timeout = 60000)
+    public void testCard() {
+        randomizedTest(new TestCaseByConvention() {
+            IrBoolExpr setup(IrIntVar card, IrSetVar set) {
+                return equal(card, card(set));
+            }
+
+            Constraint setup(IntVar card, SetVar set) {
+                return SCF.cardinality(set, card);
+            }
+        });
+    }
 
     @Test(timeout = 60000)
     public void testAdd() {

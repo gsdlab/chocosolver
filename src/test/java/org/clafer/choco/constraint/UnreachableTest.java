@@ -26,9 +26,6 @@ public class UnreachableTest extends ConstraintTest<Triple<IntVar[], Integer, In
             assertNotEquals(cur, to);
             cur = edges[cur].getValue();
         }
-        for (IntVar edge : edges) {
-            assertTrue(edge.getValue() >= 0);
-        }
     }
 
     @Test(timeout = 60000)

@@ -80,6 +80,14 @@ public abstract class ClaferTest {
         }
     }
 
+    public IrDomain randPositiveDomain() {
+        return randDomain(0, 5);
+    }
+
+    public IrDomain randDomain() {
+        return randDomain(-5, 5);
+    }
+
     public IrBoolVar randBool() {
         switch (rand.nextInt(5)) {
             case 0:

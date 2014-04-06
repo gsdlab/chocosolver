@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -81,7 +82,7 @@ public class IrTest extends ClaferTest {
                 : testCase.setup(solver).getOpposite();
         solver.post(constraint);
 
-        if (randomizeStrategy(solver).findSolution()) {
+        if (solver.findSolution()) {
             do {
                 Object solution = testCase.solution(solver);
                 if (!solutions.remove(testCase.solution(solver))) {
@@ -293,8 +294,12 @@ public class IrTest extends ClaferTest {
                 IrVar var = randString();
                 module.addVariable(var);
                 return var;
+            } else if (int.class.equals(type)) {
+                return annotations.hasAnnotation(Positive.class) ? nextIntBetween(0, 5) : nextIntBetween(-5, 5);
+            } else if (IrDomain.class.equals(type)) {
+                return annotations.hasAnnotation(Positive.class) ? randPositiveDomain() : randDomain();
             } else if (type.isArray()) {
-                int length = annotations.hasAnnotation(NonEmpty.class) ? 1 + nextInt(5) : nextInt(5);
+                int length = annotations.hasAnnotation(NonEmpty.class) ? 1 + nextInt(4) : nextInt(4);
                 Object array = Array.newInstance(type.getComponentType(), length);
                 for (int i = 0; i < length; i++) {
                     Array.set(array, i, create(module, annotations, type.getComponentType()));
@@ -315,6 +320,10 @@ public class IrTest extends ClaferTest {
                 return toVar((IrSetVar) value, solver);
             } else if (CStringVar.class.equals(type)) {
                 return toVar((IrStringVar) value, solver);
+            } else if (int.class.equals(type)) {
+                return value;
+            } else if (int[].class.equals(type)) {
+                return ((IrDomain) value).getValues();
             } else if (type.isArray()) {
                 Object[] values = (Object[]) value;
                 Object creates = Array.newInstance(type.getComponentType(), values.length);
@@ -334,6 +343,10 @@ public class IrTest extends ClaferTest {
                 return new TIntHashSet(solution.getValue((IrSetVar) var));
             } else if (var instanceof IrStringVar) {
                 return solution.getValue((IrStringVar) var);
+            } else if (var instanceof Integer) {
+                return var;
+            } else if (var instanceof IrDomain) {
+                return new TIntArrayList(((IrDomain) var).getValues());
             } else if (var instanceof Object[]) {
                 Object[] vars = (Object[]) var;
                 Object[] values = new Object[vars.length];
@@ -359,6 +372,10 @@ public class IrTest extends ClaferTest {
                     chars[i] = (char) string.getChars()[i].getValue();
                 }
                 return new String(chars);
+            } else if (var instanceof Integer) {
+                return var;
+            } else if (var instanceof int[]) {
+                return new TIntArrayList((int[]) var);
             } else if (var instanceof Object[]) {
                 Object[] vars = (Object[]) var;
                 Object[] values = new Object[vars.length];
@@ -409,7 +426,7 @@ public class IrTest extends ClaferTest {
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.FIELD})
+    @Target({ElementType.PARAMETER})
     protected @interface Positive {
     }
 
