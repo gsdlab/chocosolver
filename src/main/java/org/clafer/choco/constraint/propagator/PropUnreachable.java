@@ -36,6 +36,12 @@ public class PropUnreachable extends Propagator<IntVar> {
      */
     public PropUnreachable(IntVar[] edges, int from, int to) {
         super(edges, PropagatorPriority.TERNARY, true);
+        if (from < 0 || from >= vars.length) {
+            throw new IllegalArgumentException();
+        }
+        if (to < 0 || to >= vars.length) {
+            throw new IllegalArgumentException();
+        }
         this.from = from;
         this.to = to;
         this.position = solver.getEnvironment().makeInt(from);
@@ -112,11 +118,6 @@ public class PropUnreachable extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        for (IntVar var : vars) {
-            if (var.getUB() < 0) {
-                return ESat.FALSE;
-            }
-        }
         // Hopefully escape analysis will make these boolean arrays cheap.
         boolean[] visited = new boolean[vars.length];
         int cur = from;
@@ -126,6 +127,9 @@ public class PropUnreachable extends Propagator<IntVar> {
                 return ESat.FALSE;
             }
             cur = vars[cur].getValue();
+            if(cur < 0) {
+                return ESat.FALSE;
+            }
         }
         return cur >= vars.length || vars[cur].isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
