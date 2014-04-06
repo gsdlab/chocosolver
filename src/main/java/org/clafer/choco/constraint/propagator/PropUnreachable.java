@@ -58,9 +58,6 @@ public class PropUnreachable extends Propagator<IntVar> {
         if (from == to) {
             contradiction(vars[from], "trivial path");
         }
-        for (int i = 0; i < vars.length; i++) {
-            vars[i].updateLowerBound(0, aCause);
-        }
         vars[from].removeValue(to, aCause);
         for (int i = 0; i < vars.length; i++) {
             if (vars[i].isInstantiated() && !isPassive()) {
@@ -79,14 +76,20 @@ public class PropUnreachable extends Propagator<IntVar> {
     private void follow(int follower) throws ContradictionException {
         assert vars[follower].isInstantiated();
         int leader = vars[follower].getValue();
+        if (leader < 0) {
+            contradiction(vars[follower], "Reachable");
+        }
         if (position.get() == follower) {
             int cur = leader;
-            int i = 0;
+            int i;
             for (i = 0; i < vars.length && cur < vars.length && vars[cur].isInstantiated(); i++) {
                 if (toComponent.contains(cur)) {
                     contradiction(vars[follower], "Reachable");
                 }
                 cur = vars[cur].getValue();
+                if (cur < 0) {
+                    contradiction(vars[cur], "Reachable");
+                }
             }
             if (toComponent.contains(cur)) {
                 contradiction(vars[follower], "Reachable");
@@ -127,7 +130,7 @@ public class PropUnreachable extends Propagator<IntVar> {
                 return ESat.FALSE;
             }
             cur = vars[cur].getValue();
-            if(cur < 0) {
+            if (cur < 0) {
                 return ESat.FALSE;
             }
         }
