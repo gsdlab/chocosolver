@@ -14,6 +14,7 @@ import java.util.Set;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Triple;
 import org.clafer.common.Util;
+import org.clafer.ir.IllegalIntException;
 import org.clafer.ir.IllegalSetException;
 import org.clafer.ir.IllegalStringException;
 import org.clafer.ir.IrAdd;
@@ -430,9 +431,10 @@ public class Coalescer {
         public Void visit(IrSubsetEq ir, Void a) {
             IrSetExpr sub = ir.getSubset();
             IrSetExpr sup = ir.getSuperset();
-            propagateSet(new PartialSet(sup.getEnv(), null, sup.getCard()), sub);
+            propagateSet(new PartialSet(sup.getEnv(), null,
+                    IrUtil.boundHigh(sub.getCard(), sup.getCard().getHighBound())), sub);
             propagateSet(new PartialSet(null, sub.getKer(),
-                    IrUtil.boundLow(sup.getCard(), sub.getCard().getLowBound())), sub);
+                    IrUtil.boundLow(sup.getCard(), sub.getCard().getLowBound())), sup);
             return null;
         }
 
@@ -804,7 +806,7 @@ public class Coalescer {
             if (right instanceof IrIntVar) {
                 IrDomain domain = IrUtil.intersection(left, right.getDomain());
                 failIf(domain.isEmpty());
-                intGraph.union((IrIntVar) right, new TempIntVar(domain));
+                intGraph.union((IrIntVar) right, tint(domain));
             } else if (right instanceof IrMinus) {
                 propagateInt(IrUtil.minus(left), ((IrMinus) right).getExpr());
             } else if (right instanceof IrCard) {
@@ -1226,7 +1228,7 @@ public class Coalescer {
         if (expr instanceof IrStringVar) {
             return ((IrStringVar) expr).getCharVars()[index];
         }
-        return new TempIntVar(expr.getChars()[index]);
+        return tint(expr.getChars()[index]);
     }
 
     private static IrIntVar[] chars(IrStringExpr expr) {
@@ -1253,21 +1255,33 @@ public class Coalescer {
         if (var instanceof TempIntVar) {
             return (TempIntVar) var;
         }
-        return new TempIntVar(var.getDomain());
+        try {
+            return new TempIntVar(var.getDomain());
+        } catch (IllegalIntException e) {
+            throw new CoalesceException(e);
+        }
     }
 
     private static TempIntVar tint(IrDomain domain) {
-        return new TempIntVar(domain);
+        try {
+            return new TempIntVar(domain);
+        } catch (IllegalIntException e) {
+            throw new CoalesceException(e);
+        }
     }
 
     private static TempIntVar tint(int low, int high) {
-        return new TempIntVar(boundDomain(low, high));
+        try {
+            return new TempIntVar(boundDomain(low, high));
+        } catch (IllegalIntException e) {
+            throw new CoalesceException(e);
+        }
     }
 
     private static IrIntVar[] mapTint(IrDomain[] domains) {
         IrIntVar[] vars = new IrIntVar[domains.length];
         for (int i = 0; i < vars.length; i++) {
-            vars[i] = new TempIntVar(domains[i]);
+            vars[i] = tint(domains[i]);
         }
         return vars;
     }
