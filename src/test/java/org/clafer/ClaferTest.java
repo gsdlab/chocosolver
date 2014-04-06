@@ -81,11 +81,11 @@ public abstract class ClaferTest {
     }
 
     public IrDomain randPositiveDomain() {
-        return randDomain(0, 5);
+        return randDomain(0, 4);
     }
 
     public IrDomain randDomain() {
-        return randDomain(-5, 5);
+        return randDomain(-4, 4);
     }
 
     public IrBoolVar randBool() {
@@ -116,11 +116,11 @@ public abstract class ClaferTest {
     }
 
     public IrIntVar randInt() {
-        return randInt(-5, 5);
+        return randInt(-4, 4);
     }
 
     public IrIntVar randPositiveInt() {
-        return randInt(0, 5);
+        return randInt(0, 4);
     }
 
     public IrIntVar[] randInts(int n, int low, int high) {
@@ -132,11 +132,11 @@ public abstract class ClaferTest {
     }
 
     public IrIntVar[] randInts(int n) {
-        return randInts(n, -5, 5);
+        return randInts(n, -4, 4);
     }
 
     public IrIntVar[] randPositiveInts(int n) {
-        return randInts(n, 0, 5);
+        return randInts(n, 0, 4);
     }
 
     public IrSetVar randSet(int low, int high) {
@@ -149,11 +149,11 @@ public abstract class ClaferTest {
     }
 
     public IrSetVar randSet() {
-        return randSet(-5, 5);
+        return randSet(-4, 4);
     }
 
     public IrSetVar randPositiveSet() {
-        return randSet(0, 5);
+        return randSet(0, 4);
     }
 
     public IrSetVar[] randSets(int n, int low, int high) {
@@ -165,16 +165,16 @@ public abstract class ClaferTest {
     }
 
     public IrSetVar[] randSets(int n) {
-        return randSets(n, -5, 5);
+        return randSets(n, -4, 4);
     }
 
     public IrSetVar[] randPositiveSets(int n) {
-        return randSets(n, 0, 5);
+        return randSets(n, 0, 4);
     }
 
     public IrStringVar randString() {
         String name = "String" + varCount++;
-        IrIntVar length = randInt(0, 5);
+        IrIntVar length = randInt(0, 4);
         IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
         for (int i = 0; i < chars.length; i++) {
             IrDomain domain = randDomain('a', 'c');

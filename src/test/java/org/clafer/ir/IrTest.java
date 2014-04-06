@@ -295,11 +295,11 @@ public class IrTest extends ClaferTest {
                 module.addVariable(var);
                 return var;
             } else if (int.class.equals(type)) {
-                return annotations.hasAnnotation(Positive.class) ? nextIntBetween(0, 5) : nextIntBetween(-5, 5);
+                return annotations.hasAnnotation(Positive.class) ? nextIntBetween(0, 4) : nextIntBetween(-4, 4);
             } else if (IrDomain.class.equals(type)) {
                 return annotations.hasAnnotation(Positive.class) ? randPositiveDomain() : randDomain();
             } else if (type.isArray()) {
-                int length = annotations.hasAnnotation(NonEmpty.class) ? 1 + nextInt(4) : nextInt(4);
+                int length = annotations.hasAnnotation(NonEmpty.class) ? 1 + nextInt(3) : nextInt(4);
                 Object array = Array.newInstance(type.getComponentType(), length);
                 for (int i = 0; i < length; i++) {
                     Array.set(array, i, create(module, annotations, type.getComponentType()));
