@@ -50,6 +50,7 @@ public class Check {
      * @throws NullPointerException if the array is null or contains a null
      * element
      */
+    @SafeVarargs
     public static <T> T[] noNulls(T... array) throws NullPointerException {
         Check.notNull(array);
         for (T t : array) {
@@ -81,6 +82,7 @@ public class Check {
      * @throws NullPointerException if the array is null or contains a null
      * element
      */
+    @SafeVarargs
     public static <T> T[] noNullsNotEmpty(T... array)
             throws IllegalArgumentException, NullPointerException {
         Check.notNull(array);

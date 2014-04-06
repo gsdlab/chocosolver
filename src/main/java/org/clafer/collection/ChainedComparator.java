@@ -12,6 +12,7 @@ public class ChainedComparator<T> implements Comparator<T> {
 
     private final Comparator<T>[] comparators;
 
+    @SafeVarargs
     public ChainedComparator(Comparator<T>... comparators) {
         this.comparators = Check.noNulls(comparators);
     }
