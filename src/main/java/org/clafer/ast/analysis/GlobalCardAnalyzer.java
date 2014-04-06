@@ -101,11 +101,12 @@ public class GlobalCardAnalyzer implements Analyzer {
         int scope = analysis.getScope(clafer);
         if (scope < globalCard.getLow()) {
             insufficientScopes.add(new Pair<AstClafer, Integer>(clafer, globalCard.getLow()));
+            globalCard = new Card(0, scope);
         } else {
             globalCard = new Card(
                     globalCard.getLow(),
-                    Math.min(globalCard.getHigh(), analysis.getScope(clafer)));
-            globalCardMap.put(clafer, globalCard);
+                    Math.min(globalCard.getHigh(), scope));
         }
+        globalCardMap.put(clafer, globalCard);
     }
 }
