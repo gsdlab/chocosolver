@@ -1312,6 +1312,9 @@ public class AstCompiler {
                             : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
                 }
                 module.addConstraint(boolChannel(Pair.mapSnd(members), setBody));
+                if (decl.isDisjoint() && members.length < decl.getLocals().length) {
+                    return null;
+                }
                 Pair<IrIntExpr, IrBoolExpr>[][] sequence = decl.isDisjoint() ? Util.permutations(members,
                         decl.getLocals().length) : Util.sequence(members, decl.getLocals().length);
 
@@ -1340,6 +1343,10 @@ public class AstCompiler {
             Triple<AstLocal, IrIntExpr, IrBoolExpr>[][][] compiledDecls = new Triple[decls.length][][];
             for (int i = 0; i < compiledDecls.length; i++) {
                 compiledDecls[i] = compileDecl(decls[i]);
+                if (compiledDecls[i] == null) {
+                    // UNSAT
+                    return False;
+                }
             }
             compiledDecls = Util.sequence(compiledDecls);
 
