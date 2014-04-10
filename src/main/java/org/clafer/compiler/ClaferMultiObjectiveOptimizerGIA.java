@@ -40,23 +40,34 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
         this.optimalValues = new int[scores.length];
         this.bounds = new IntVar[scores.length];
 
+        List<IntVar> boundVars = new ArrayList<>(this.bounds.length);
         List<Constraint> strictlyBetter = new ArrayList<>(this.bounds.length);
         for (int i = 0; i < this.bounds.length; i++) {
             if (scores[i].isRight()) {
                 IntVar score = scores[i].getRight();
                 IntVar bound = score.duplicate();
                 this.bounds[i] = bound;
+                boundVars.add(bound);
                 strictlyBetter.add(ICF.arithm(bound, maximizes[i] ? "<" : ">", score));
             }
         }
-        this.dominate = LCF.or(
-                strictlyBetter.toArray(new Constraint[strictlyBetter.size()]));
+        this.dominate = or(strictlyBetter, solver);
         for (int i = 0; i < this.bounds.length; i++) {
-            if (this.bounds != null) {
+            if (this.bounds[i] != null) {
                 solver.post(ICF.arithm(this.bounds[i], maximizes[i] ? "<=" : ">=", scores[i].getRight()));
             }
         }
-        solver.set(ISF.sequencer(solver.getStrategy(), ISF.minDom_LB(bounds)));
+        if (!boundVars.isEmpty()) {
+            solver.set(ISF.sequencer(solver.getStrategy(), ISF.minDom_LB(
+                    boundVars.toArray(new IntVar[boundVars.size()])
+            )));
+        }
+    }
+
+    private static Constraint or(List<Constraint> constraints, Solver solver) {
+        return constraints.isEmpty()
+                ? solver.FALSE
+                : LCF.or(constraints.toArray(new Constraint[constraints.size()]));
     }
 
     private void push(Constraint constraint) {
@@ -158,8 +169,7 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
                 strictlyBetter.add(ICF.arithm(bounds[i], maximizes[i] ? ">" : "<", optimalValues[i]));
             }
         }
-        solver.post(LCF.or(
-                strictlyBetter.toArray(new Constraint[strictlyBetter.size()])));
+        solver.post(or(strictlyBetter, solver));
 
         return solveFirst();
     }

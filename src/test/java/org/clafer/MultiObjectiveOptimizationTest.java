@@ -18,6 +18,45 @@ import org.junit.Test;
 public class MultiObjectiveOptimizationTest {
 
     @Test
+    public void testMinimizeMinimizeSolutionKnown() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refTo(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refTo(IntType).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("C").refTo(IntType).withCard(Mandatory);
+        model.addConstraint(equal(joinRef(a), constant(2)));
+        model.addConstraint(equal(joinRef(b), constant(1)));
+
+        ClaferOptimizer search = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2),
+                Objective.minimize(joinRef(a)), Objective.minimize(joinRef(b)));
+        while (search.find()) {
+            int[] o = search.optimalValues();
+            assertTrue(Arrays.toString(o) + " is not optimal",
+                    (o[0] == 2 && o[1] == 1));
+        }
+        assertEquals(5, search.instanceCount());
+    }
+
+    @Test
+    public void testMinimizeMinimizePartiallySolutionKnown() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refTo(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refTo(IntType).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("C").refTo(IntType).withCard(Mandatory);
+        model.addConstraint(equal(joinRef(a), constant(2)));
+
+        ClaferOptimizer search = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2),
+                Objective.minimize(joinRef(a)), Objective.minimize(joinRef(b)));
+        while (search.find()) {
+            int[] o = search.optimalValues();
+            assertTrue(Arrays.toString(o) + " is not optimal",
+                    (o[0] == 2 && o[1] == -2));
+        }
+        assertEquals(5, search.instanceCount());
+    }
+
+    @Test
     public void testMaximizeMaximize() {
         AstModel model = newModel();
 
