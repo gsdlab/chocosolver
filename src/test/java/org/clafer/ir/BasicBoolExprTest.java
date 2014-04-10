@@ -1,7 +1,10 @@
 package org.clafer.ir;
 
+import static org.clafer.test.TestUtil.*;
 import org.clafer.choco.constraint.Constraints;
 import static org.clafer.ir.Irs.*;
+import org.clafer.test.NonEmpty;
+import org.clafer.test.Positive;
 import org.junit.Test;
 import solver.Solver;
 import solver.constraints.Constraint;
@@ -170,7 +173,7 @@ public class BasicBoolExprTest extends IrTest {
     public void testWithin() {
         randomizedTest(new TestCaseByConvention() {
 
-            IrBoolExpr setup(IrIntVar value, IrDomain range) {
+            IrBoolExpr setup(IrIntVar value, @NonEmpty IrDomain range) {
                 return within(value, range);
             }
 
@@ -184,7 +187,7 @@ public class BasicBoolExprTest extends IrTest {
     public void testNotWithin() {
         randomizedTest(new TestCaseByConvention() {
 
-            IrBoolExpr setup(IrIntVar value, IrDomain range) {
+            IrBoolExpr setup(IrIntVar value, @NonEmpty IrDomain range) {
                 return notWithin(value, range);
             }
 
@@ -426,10 +429,12 @@ public class BasicBoolExprTest extends IrTest {
 
             @Override
             protected Object[] initializeVariables() {
-                int length = 1 + nextInt(3);
-                IrIntVar[][] strings = new IrIntVar[nextInt(3)][];
-                for (int i = 0; i < strings.length; i++) {
-                    strings[i] = randInts(length);
+                int length = randInt(1, 3);
+                IrIntVar[][] strings = new IrIntVar[randInt(0, 2)][length];
+                for (IrIntVar[] string : strings) {
+                    for (int j = 0; j < string.length; j++) {
+                        string[j] = randIrIntVar();
+                    }
                 }
                 return new Object[]{strings};
             }
@@ -452,10 +457,12 @@ public class BasicBoolExprTest extends IrTest {
 
             @Override
             protected Object[] initializeVariables() {
-                int length = 1 + nextInt(3);
-                IrIntVar[][] strings = new IrIntVar[nextInt(3)][];
-                for (int i = 0; i < strings.length; i++) {
-                    strings[i] = randInts(length);
+                int length = randInt(1, 3);
+                IrIntVar[][] strings = new IrIntVar[randInt(0, 2)][length];
+                for (IrIntVar[] string : strings) {
+                    for (int j = 0; j < string.length; j++) {
+                        string[j] = randIrIntVar();
+                    }
                 }
                 return new Object[]{strings};
             }

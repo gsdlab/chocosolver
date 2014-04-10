@@ -58,6 +58,7 @@ public class PropUnreachable extends Propagator<IntVar> {
         if (from == to) {
             contradiction(vars[from], "trivial path");
         }
+        vars[from].updateLowerBound(0, aCause);
         vars[from].removeValue(to, aCause);
         for (int i = 0; i < vars.length; i++) {
             if (vars[i].isInstantiated() && !isPassive()) {
@@ -76,11 +77,11 @@ public class PropUnreachable extends Propagator<IntVar> {
     private void follow(int follower) throws ContradictionException {
         assert vars[follower].isInstantiated();
         int leader = vars[follower].getValue();
-        if (leader < 0) {
-            contradiction(vars[follower], "Reachable");
-        }
         if (position.get() == follower) {
             int cur = leader;
+            if (cur < 0) {
+                contradiction(vars[follower], "Reachable");
+            }
             int i;
             for (i = 0; i < vars.length && cur < vars.length && vars[cur].isInstantiated(); i++) {
                 if (toComponent.contains(cur)) {
@@ -88,7 +89,7 @@ public class PropUnreachable extends Propagator<IntVar> {
                 }
                 cur = vars[cur].getValue();
                 if (cur < 0) {
-                    contradiction(vars[cur], "Reachable");
+                    contradiction(vars[follower], "Reachable");
                 }
             }
             if (toComponent.contains(cur)) {
@@ -97,6 +98,7 @@ public class PropUnreachable extends Propagator<IntVar> {
             if (cur >= vars.length || i == vars.length) {
                 setPassive();
             } else {
+                vars[cur].updateLowerBound(0, aCause);
                 remove(vars[cur], toComponent);
                 position.set(cur);
                 if (vars[cur].isInstantiated()) {
