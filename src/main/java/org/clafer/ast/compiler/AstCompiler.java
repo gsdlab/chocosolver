@@ -959,10 +959,18 @@ public class AstCompiler {
                         int lowCard = getCard(childrenType).getLow();
                         return div(intChildren, constant(lowCard));
                     case LowGroup:
-                        return element(parentPointers.get(childrenType), intChildren);
+                        IrIntVar[] parents = parentPointers.get(childrenType);
+                        if (intChildren.getHighBound() >= parents.length) {
+                            parents = Util.snoc(parents, constant(parents.length));
+                        }
+                        return element(parents, intChildren);
                 }
             } else if (children instanceof IrSetExpr) {
                 IrSetExpr setChildren = (IrSetExpr) children;
+                IrIntVar[] parents = parentPointers.get(childrenType);
+                if (setChildren.getEnv().getHighBound() >= parents.length) {
+                    parents = Util.snoc(parents, constant(parents.length));
+                }
                 return joinFunction(setChildren, parentPointers.get(childrenType), null);
             }
             throw new AstException();
