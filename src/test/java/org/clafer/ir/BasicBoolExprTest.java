@@ -12,6 +12,7 @@ import solver.constraints.ICF;
 import solver.constraints.LCF;
 import solver.constraints.set.SCF;
 import solver.variables.BoolVar;
+import solver.variables.CSetVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 

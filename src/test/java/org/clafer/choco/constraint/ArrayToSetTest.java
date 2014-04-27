@@ -5,7 +5,7 @@ import gnu.trove.set.TIntSet;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.common.Util;
 import org.clafer.test.NonEmpty;
-import org.clafer.test.TestUtil.CSetVar;
+import solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;

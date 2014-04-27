@@ -1,7 +1,7 @@
 package org.clafer.choco.constraint;
 
 import org.clafer.test.TestUtil;
-import org.clafer.test.TestUtil.CSetVar;
+import solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import solver.Solver;

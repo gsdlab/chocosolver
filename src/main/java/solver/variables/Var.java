@@ -2,10 +2,7 @@ package solver.variables;
 
 import java.util.Arrays;
 import org.clafer.choco.constraint.Constraints;
-import org.clafer.test.TestUtil.CSetVar;
-import org.clafer.test.TestUtil.CStringVar;
 import solver.Solver;
-import solver.constraints.set.SCF;
 
 /**
  *
@@ -49,21 +46,18 @@ public class Var extends solver.variables.VariableFactory {
     public static CSetVar cset(String name, int[] env, Solver solver) {
         SetVar setVar = set(name, env, solver);
         IntVar cardVar = enumerated("|" + name + "|", 0, setVar.getEnvelopeSize(), solver);
-        solver.post(SCF.cardinality(setVar, cardVar));
         return new CSetVar(setVar, cardVar);
     }
 
     public static CSetVar cset(String name, int minEnv, int maxEnv, Solver solver) {
         SetVar setVar = set(name, minEnv, maxEnv, solver);
         IntVar cardVar = enumerated("|" + name + "|", 0, setVar.getEnvelopeSize(), solver);
-        solver.post(SCF.cardinality(setVar, cardVar));
         return new CSetVar(setVar, cardVar);
     }
 
     public static CSetVar cset(String name, int[] env, int[] ker, int[] card, Solver solver) {
         SetVar setVar = set(name, env, ker, solver);
         IntVar cardVar = enumerated("|" + name + "|", card, solver);
-        solver.post(SCF.cardinality(setVar, cardVar));
         return new CSetVar(setVar, cardVar);
     }
 

@@ -1,11 +1,11 @@
 package org.clafer.ir;
 
-import static org.clafer.test.TestUtil.*;
 import org.clafer.choco.constraint.Constraints;
 import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import solver.constraints.Constraint;
 import solver.constraints.ICF;
+import solver.variables.CStringVar;
 import solver.variables.IntVar;
 
 /**

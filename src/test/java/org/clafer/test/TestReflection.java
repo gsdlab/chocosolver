@@ -1,5 +1,7 @@
 package org.clafer.test;
 
+import solver.variables.CSetVar;
+import solver.variables.CStringVar;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.lang.annotation.Annotation;

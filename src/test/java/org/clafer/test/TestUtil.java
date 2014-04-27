@@ -1,5 +1,7 @@
 package org.clafer.test;
 
+import solver.variables.CSetVar;
+import solver.variables.CStringVar;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
@@ -266,7 +268,6 @@ public class TestUtil {
     public static CSetVar toVar(IrSetVar var, Solver solver) {
         SetVar setVar = Var.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
         IntVar cardVar = Var.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
-        solver.post(SCF.cardinality(setVar, cardVar));
         return new CSetVar(setVar, cardVar);
     }
 
@@ -361,85 +362,5 @@ public class TestUtil {
             return addRandTerm(new NotTerm(bool));
         }
         return addRandTerm((Term) bool);
-    }
-
-    public static class CSetVar {
-
-        private final SetVar set;
-        private final IntVar card;
-
-        public CSetVar(SetVar set, IntVar card) {
-            this.set = set;
-            this.card = card;
-        }
-
-        public SetVar getSet() {
-            return set;
-        }
-
-        public IntVar getCard() {
-            return card;
-        }
-
-        @Override
-        public String toString() {
-            return "<" + set + ", " + card + ">";
-        }
-    }
-
-    public SetVar[] mapSet(CSetVar... vars) {
-        SetVar[] sets = new SetVar[vars.length];
-        for (int i = 0; i < vars.length; i++) {
-            sets[i] = vars[i].getSet();
-        }
-        return sets;
-    }
-
-    public IntVar[] mapCard(CSetVar... vars) {
-        IntVar[] cards = new IntVar[vars.length];
-        for (int i = 0; i < vars.length; i++) {
-            cards[i] = vars[i].getCard();
-        }
-        return cards;
-    }
-
-    public static class CStringVar {
-
-        private final IntVar[] chars;
-        private final IntVar length;
-
-        public CStringVar(IntVar[] chars, IntVar length) {
-            this.chars = chars;
-            this.length = length;
-        }
-
-        public IntVar[] getChars() {
-            return chars;
-        }
-
-        public IntVar getLength() {
-            return length;
-        }
-
-        @Override
-        public String toString() {
-            return "<" + Arrays.toString(chars) + ", " + length + ">";
-        }
-    }
-
-    public IntVar[] mapLength(CStringVar... vars) {
-        IntVar[] lengths = new IntVar[vars.length];
-        for (int i = 0; i < vars.length; i++) {
-            lengths[i] = vars[i].getLength();
-        }
-        return lengths;
-    }
-
-    public IntVar[][] mapChars(CStringVar... vars) {
-        IntVar[][] chars = new IntVar[vars.length][];
-        for (int i = 0; i < vars.length; i++) {
-            chars[i] = vars[i].getChars();
-        }
-        return chars;
     }
 }

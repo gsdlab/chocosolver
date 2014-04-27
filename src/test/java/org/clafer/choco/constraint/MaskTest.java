@@ -2,7 +2,7 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.clafer.test.TestUtil.CSetVar;
+import solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;

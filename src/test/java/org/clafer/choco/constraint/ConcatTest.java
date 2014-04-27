@@ -1,7 +1,7 @@
 package org.clafer.choco.constraint;
 
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.clafer.test.TestUtil.CStringVar;
+import solver.variables.CStringVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
