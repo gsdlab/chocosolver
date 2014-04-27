@@ -6,7 +6,7 @@ import static org.clafer.ir.Irs.add;
 import org.clafer.ir.compiler.IrSolutionMap;
 import solver.Solver;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import solver.variables.Var;
 
 /**
  *
@@ -34,7 +34,7 @@ public class OffsetTerm implements Term {
 
     @Override
     public IntVar toChocoVar(Solver solver) {
-        return VF.offset(view.toChocoVar(solver), offset);
+        return Var.offset(view.toChocoVar(solver), offset);
     }
 
     @Override

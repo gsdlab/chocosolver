@@ -37,8 +37,6 @@ public class IrTest {
         IrModule module = new IrModule();
         Solver irSolver = new Solver();
 
-        testCase.initialize();
-
         IrBoolExpr irConstraint = positive
                 ? testCase.setup(module)
                 : testCase.setup(module).negate();
@@ -74,10 +72,7 @@ public class IrTest {
         }
     }
 
-    protected abstract class TestCase {
-
-        void initialize() {
-        }
+    protected static abstract class TestCase {
 
         void validateTranslation(Solver solver) {
         }
@@ -91,10 +86,10 @@ public class IrTest {
         abstract Object solution(Solver solver);
     }
 
-    protected abstract class TestCaseByConvention extends TestCase {
+    protected static abstract class TestCaseByConvention extends TestCase {
 
-        protected Procedure<IrBoolExpr> irSetup;
-        protected Procedure<Constraint> setup;
+        final Procedure<IrBoolExpr> irSetup;
+        final Procedure<Constraint> setup;
         Object[] irVariables;
         Object[] variables;
 
@@ -122,9 +117,10 @@ public class IrTest {
             }
             for (int i = 0; i < irVariables.length; i++) {
                 if (irVariables[i] == null) {
-                    irVariables[i] = create(module,
+                    irVariables[i] = TestReflection.randIrVar(
                             annotations[env ? i + 1 : i],
-                            parameters[env ? i + 1 : i]);
+                            parameters[env ? i + 1 : i],
+                            module);
                 } else {
                     TestReflection.addVariables(module, irVariables[i]);
                 }
@@ -139,7 +135,10 @@ public class IrTest {
             boolean env = parameters.length > 0 && Solver.class.equals(parameters[0]);
             variables = new Object[irVariables.length];
             for (int i = 0; i < variables.length; i++) {
-                variables[i] = create(solver, env ? parameters[i + 1] : parameters[i], irVariables[i]);
+                variables[i] = TestReflection.toVar(
+                        irVariables[i],
+                        env ? parameters[i + 1] : parameters[i],
+                        solver);
             }
             Object[] args = env ? Util.cons(solver, variables) : variables;
             return setup.invoke(this, args);
@@ -147,28 +146,12 @@ public class IrTest {
 
         @Override
         protected Object solution(IrSolutionMap solution) {
-            return value(solution, irVariables);
+            return TestReflection.value(solution, irVariables);
         }
 
         protected @Override
         Object solution(Solver solver) {
-            return value(solver, variables);
-        }
-
-        Object create(IrModule module, Annotations annotations, Class<?> type) {
-            return TestReflection.randIrVar(annotations, type, module);
-        }
-
-        Object create(Solver solver, Class<?> type, Object value) {
-            return TestReflection.toVar(value, type, solver);
-        }
-
-        Object value(IrSolutionMap solution, Object var) {
-            return TestReflection.value(solution, var);
-        }
-
-        Object value(Solver solver, Object var) {
-            return TestReflection.value(var);
+            return TestReflection.value(variables);
         }
     }
 }

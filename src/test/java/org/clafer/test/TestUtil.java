@@ -15,6 +15,8 @@ import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 import solver.Solver;
+import solver.constraints.Constraint;
+import solver.constraints.Propagator;
 import solver.constraints.set.SCF;
 import solver.search.strategy.ISF;
 import solver.search.strategy.SetStrategyFactory;
@@ -24,8 +26,9 @@ import solver.search.strategy.strategy.SetSearchStrategy;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VF;
+import solver.variables.Var;
 import solver.variables.Variable;
+import util.ESat;
 
 /**
  *
@@ -35,6 +38,19 @@ public class TestUtil {
 
     private static final Random rand = new Random();
     private static int varCount = 0;
+
+    public static ESat isEntailed(Constraint constraint) {
+        boolean undefined = false;
+        for (Propagator<?> propagator : constraint.getPropagators()) {
+            switch (propagator.isEntailed()) {
+                case FALSE:
+                    return ESat.FALSE;
+                case UNDEFINED:
+                    undefined = true;
+            }
+        }
+        return undefined ? ESat.UNDEFINED : ESat.TRUE;
+    }
 
     public static Solver randomizeStrategy(Solver solver) {
         List<IntVar> intVars = new ArrayList<>();
@@ -230,11 +246,11 @@ public class TestUtil {
     public static BoolVar toVar(IrBoolVar var, Solver solver) {
         switch (var.getDomain()) {
             case FalseDomain:
-                return VF.zero(solver);
+                return Var.zero(solver);
             case TrueDomain:
-                return VF.one(solver);
+                return Var.one(solver);
             case BoolDomain:
-                return VF.bool(var.getName(), solver);
+                return Var.bool(var.getName(), solver);
             default:
                 throw new IllegalStateException();
         }
@@ -243,13 +259,13 @@ public class TestUtil {
     public static IntVar toVar(IrIntVar var, Solver solver) {
         IrDomain domain = var.getDomain();
         return domain.isBounded()
-                ? VF.enumerated(var.getName(), domain.getLowBound(), domain.getHighBound(), solver)
-                : VF.enumerated(var.getName(), domain.getValues(), solver);
+                ? Var.enumerated(var.getName(), domain.getLowBound(), domain.getHighBound(), solver)
+                : Var.enumerated(var.getName(), domain.getValues(), solver);
     }
 
     public static CSetVar toVar(IrSetVar var, Solver solver) {
-        SetVar setVar = VF.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
-        IntVar cardVar = VF.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
+        SetVar setVar = Var.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
+        IntVar cardVar = Var.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
         solver.post(SCF.cardinality(setVar, cardVar));
         return new CSetVar(setVar, cardVar);
     }

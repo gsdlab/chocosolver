@@ -1,58 +1,50 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.collection.Pair;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import org.clafer.common.Util;
+import org.clafer.test.NonEmpty;
 import static org.junit.Assert.*;
-import static org.junit.Assert.fail;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class AndTest extends ConstraintTest<BoolVar[]> {
+@RunWith(ConstraintQuickTest.class)
+public class AndTest {
 
-    @Override
-    protected void check(BoolVar[] vars) {
-        for (BoolVar var : vars) {
-            assertNotEquals(0, var.getValue());
-        }
+    @Input(solutions = 1)
+    public Object testAnd(Solver solver) {
+        return $(boolArray("bool", 5, solver));
     }
 
-    @Override
-    protected void checkNot(BoolVar[] vars) {
-        for (BoolVar var : vars) {
-            if (var.getValue() == 0) {
-                return;
-            }
-        }
-        fail("All true.");
+    @Input(solutions = 1)
+    public Object testOneVar(Solver solver) {
+        return $(boolArray("bool", 1, solver));
+    }
+
+    @Input(solutions = 1)
+    public Object testTautology(Solver solver) {
+        return $(new BoolVar[]{solver.ONE, solver.ONE});
+    }
+
+    @Input(solutions = 0)
+    public Object testFalseTautology(Solver solver) {
+        return $(new BoolVar[]{solver.ZERO, bool("bool", solver)});
+    }
+
+    @Check
+    public void check(int[] bools) {
+        assertTrue(Util.sum(bools) == bools.length);
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<BoolVar[]>() {
-            @Override
-            public Pair<Constraint, BoolVar[]> setup(Solver solver) {
-                BoolVar[] vars = toVars(randBools(nextInt(3) + 1), solver);
-                return pair(Constraints.and(vars), vars);
-            }
-        });
-    }
-
-    @Test(timeout = 60000)
-    public void testAnd() {
-        randomizedTest(new TestCase<BoolVar[]>() {
-            @PositiveSolutions(1)
-            @NegativeSolutions(31)
-            @Override
-            public Pair<Constraint, BoolVar[]> setup(Solver solver) {
-                BoolVar[] vars = VF.boolArray("var", 5, solver);
-                return pair(Constraints.and(vars), vars);
-            }
-        });
+    public Constraint setup(@NonEmpty BoolVar[] bools) {
+        return Constraints.and(bools);
     }
 }

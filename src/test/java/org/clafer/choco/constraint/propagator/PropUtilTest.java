@@ -16,7 +16,7 @@ import solver.propagation.IPropagationEngine;
 import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VF;
+import solver.variables.Var;
 import solver.variables.Variable;
 
 /**
@@ -567,7 +567,7 @@ public class PropUtilTest {
         }
         int[] domainArray = domain.toArray();
         Arrays.sort(domainArray);
-        return VF.enumerated(name, domainArray, solver);
+        return Var.enumerated(name, domainArray, solver);
     }
 
     private SetVar randSetVar(String name, Solver solver) {
@@ -585,7 +585,7 @@ public class PropUtilTest {
         Arrays.sort(envArray);
         int[] kerArray = ker.toArray();
         Arrays.sort(kerArray);
-        return VF.set(name, envArray, kerArray, solver);
+        return Var.set(name, envArray, kerArray, solver);
     }
 
     private static class DummyEngine implements IPropagationEngine {

@@ -639,6 +639,9 @@ public class Constraints {
      * @see PropJoinFunction
      */
     public static Constraint joinFunction(SetVar take, IntVar takeCard, IntVar[] refs, SetVar to, IntVar toCard, Integer globalCardinality) {
+        if (globalCardinality != null && globalCardinality <= 0) {
+            throw new IllegalArgumentException();
+        }
         return new Constraint("joinFunction",
                 new PropJoinFunction(take, refs, to),
                 new PropJoinFunctionCard(take, takeCard, refs, toCard, globalCardinality));

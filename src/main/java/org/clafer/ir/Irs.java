@@ -1959,13 +1959,13 @@ public class Irs {
         return new IrStringVar(name, chars, length);
     }
 
-    public static IrStringVar string(String name, IrDomain charDomain, int length) {
+    public static IrStringVar string(String name, IrDomain charDomain, int maxLength) {
         IrDomain domain = IrUtil.add(charDomain, 0);
-        IrIntVar[] chars = new IrIntVar[length];
-        for (int i = 0; i < length; i++) {
+        IrIntVar[] chars = new IrIntVar[maxLength];
+        for (int i = 0; i < maxLength; i++) {
             chars[i] = domainInt(name + "[" + i + "]", domain);
         }
-        return string(name, chars, boundInt("|" + name + "|", 0, length));
+        return string(name, chars, boundInt("|" + name + "|", 0, maxLength));
     }
 
     public static IrStringExpr element(IrStringExpr[] array, IrIntExpr index) {

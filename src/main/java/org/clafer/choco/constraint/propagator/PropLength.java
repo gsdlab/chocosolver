@@ -48,6 +48,7 @@ public class PropLength extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        length.updateLowerBound(0, aCause);
         length.updateUpperBound(chars.length, aCause);
         for (int i = chars.length - 1; i >= 0; i--) {
             onCharRemove(i);
@@ -105,7 +106,7 @@ public class PropLength extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        if (length.getLB() > chars.length) {
+        if (length.getLB() > chars.length || length.getUB() < 0) {
             return ESat.FALSE;
         }
         for (int i = 0; i < length.getLB(); i++) {

@@ -97,7 +97,6 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         if (solver.getEngine() == NoPropagationEngine.SINGLETON) {
             solver.set(new SevenQueuesPropagatorEngine(solver));
         }
-        solver.getSearchLoop().getMeasures().setReadingTimeCount(System.nanoTime());
         solver.getSearchLoop().launch(false);
         if (!firstSolution.hasBeenFound()) {
             return false;

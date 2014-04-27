@@ -1,56 +1,36 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class ReifyEqualXCTest extends ConstraintTest<Triple<BoolVar, IntVar, Integer>> {
+@RunWith(ConstraintQuickTest.class)
+public class ReifyEqualXCTest {
 
-    @Override
-    protected void check(Triple<BoolVar, IntVar, Integer> s) {
-        assertEquals(s.getFst().getValue() == 1, s.getSnd().getValue() == s.getThd().intValue());
+    @Input(solutions = 21)
+    public Object testReifyEqualXC(Solver solver) {
+        return $(bool("reify", solver),
+                enumerated("i", -10, 10, solver),
+                4);
     }
 
-    @Override
-    protected void checkNot(Triple<BoolVar, IntVar, Integer> s) {
-        assertEquals(s.getFst().getValue() == 1, s.getSnd().getValue() != s.getThd().intValue());
-    }
-
-    @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<Triple<BoolVar, IntVar, Integer>>() {
-            @Override
-            public Pair<Constraint, Triple<BoolVar, IntVar, Integer>> setup(Solver solver) {
-                BoolVar reify = toVar(randBool(), solver);
-                IntVar i = toVar(randInt(), solver);
-                int j = nextIntBetween(-5, 5);
-                return pair(Constraints.reifyEqual(reify, i, j), triple(reify, i, j));
-            }
-        });
+    @Check
+    public void check(boolean reify, int v, int c) {
+        assertEquals(reify, v == c);
     }
 
     @Test(timeout = 60000)
-    public void testReifyEqualXC() {
-        randomizedTest(new TestCase<Triple<BoolVar, IntVar, Integer>>() {
-            @PositiveSolutions(21)
-            @NegativeSolutions(21)
-            @Override
-            public Pair<Constraint, Triple<BoolVar, IntVar, Integer>> setup(Solver solver) {
-                BoolVar reify = VF.bool("reify", solver);
-                IntVar i = VF.enumerated("i", -10, 10, solver);
-                int c = 4;
-                return pair(Constraints.reifyEqual(reify, i, c), triple(reify, i, c));
-            }
-        });
+    public Constraint setup(BoolVar reify, IntVar v, int c) {
+        return Constraints.reifyEqual(reify, v, c);
     }
 }

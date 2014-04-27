@@ -1,23 +1,35 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.collection.Pair;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class LengthTest extends ConstraintTest<Pair<IntVar, IntVar[]>> {
+@RunWith(ConstraintQuickTest.class)
+public class LengthTest {
 
-    @Override
-    protected void check(Pair<IntVar, IntVar[]> s) {
-        int length = s.getFst().getValue();
-        int[] chars = getValues(s.getSnd());
+    @Input(solutions = 85)
+    public Object testLength(Solver solver) {
+        /*
+         * import Control.Monad
+         *
+         * solutions = [0..3] >>= flip replicateM [1..4]
+         */
+        return $(enumeratedArray("char", 3, 0, 4, solver),
+                enumerated("length", 0, 3, solver));
+    }
+
+    @Check
+    public void check(int[] chars, int length) {
+        assertTrue(length >= 0);
         assertTrue(length <= chars.length);
         for (int i = 0; i < length; i++) {
             assertNotEquals(0, chars[i]);
@@ -28,36 +40,7 @@ public class LengthTest extends ConstraintTest<Pair<IntVar, IntVar[]>> {
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<Pair<IntVar, IntVar[]>>() {
-            @Override
-            public Pair<Constraint, Pair<IntVar, IntVar[]>> setup(Solver solver) {
-                IntVar[] chars = toVars(randPositiveInts(3), solver);
-                IntVar length = toVar(randPositiveInt(), solver);
-                Constraint constraint = Constraints.length(chars, length);
-                return pair(constraint, pair(length, chars));
-            }
-        });
-    }
-
-    @Test(timeout = 60000)
-    public void testLength() {
-        randomizedTest(new TestCase<Pair<IntVar, IntVar[]>>() {
-            /*
-             * import Control.Monad
-             *
-             * positive = [0..3] >>= flip replicateM [1..4]
-             * negative = length (liftM2 (,) [0..3] $ replicateM 3 [0..4]) - length positive 
-             */
-            @PositiveSolutions(85)
-            @NegativeSolutions(415)
-            @Override
-            public Pair<Constraint, Pair<IntVar, IntVar[]>> setup(Solver solver) {
-                IntVar[] chars = VF.enumeratedArray("char", 3, 0, 4, solver);
-                IntVar length = VF.enumerated("length", 0, 3, solver);
-                Constraint constraint = Constraints.length(chars, length);
-                return pair(constraint, pair(length, chars));
-            }
-        });
+    public Constraint setup(IntVar[] chars, IntVar length) {
+        return Constraints.length(chars, length);
     }
 }

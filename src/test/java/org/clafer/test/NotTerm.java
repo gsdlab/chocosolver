@@ -8,7 +8,7 @@ import org.clafer.ir.compiler.IrSolutionMap;
 import solver.Solver;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import solver.variables.Var;
 
 /**
  *
@@ -34,7 +34,7 @@ public class NotTerm implements Term {
 
     @Override
     public IntVar toChocoVar(Solver solver) {
-        return VF.not((BoolVar) view.toChocoVar(solver));
+        return Var.not((BoolVar) view.toChocoVar(solver));
     }
 
     @Override

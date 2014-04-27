@@ -6,7 +6,7 @@ import static org.clafer.ir.Irs.constant;
 import org.clafer.ir.compiler.IrSolutionMap;
 import solver.Solver;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import solver.variables.Var;
 
 /**
  *
@@ -32,7 +32,7 @@ public class FixedTerm implements Term {
 
     @Override
     public IntVar toChocoVar(Solver solver) {
-        return VF.fixed(c, solver);
+        return Var.fixed(c, solver);
     }
 
     @Override

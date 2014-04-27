@@ -8,8 +8,10 @@ import org.clafer.common.Check;
 /**
  *
  * @author jimmy
+ * @param <T> return type
  */
 public class Procedure<T> {
+
     private final Method method;
 
     public Procedure(Method method) {
@@ -56,5 +58,10 @@ public class Procedure<T> {
             annotations[i].addAnnotations(parameterAnnotations[i]);
         }
         return annotations;
+    }
+
+    @Override
+    public String toString() {
+        return method.toString();
     }
 }
