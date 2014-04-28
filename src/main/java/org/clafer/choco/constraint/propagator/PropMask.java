@@ -68,7 +68,7 @@ public class PropMask extends Propagator<SetVar> {
             set.addToKernel(i + from, aCause);
         }
         for (int i = masked.getEnvelopeFirst(); i != SetVar.END; i = masked.getEnvelopeNext()) {
-            if (i >= to - from || !set.envelopeContains(i + from)) {
+            if (i < 0 || i >= to - from || !set.envelopeContains(i + from)) {
                 masked.removeFromEnvelope(i, aCause);
             }
         }
