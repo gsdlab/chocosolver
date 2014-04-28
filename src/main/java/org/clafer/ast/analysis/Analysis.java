@@ -20,7 +20,7 @@ import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
 import org.clafer.scope.Scope;
@@ -47,7 +47,7 @@ public class Analysis {
     private Map<AstClafer, Format> formatMap;
     private Map<AstAbstractClafer, Offsets> offsetMap;
     private Map<AstClafer, PartialSolution> partialSolutionMap;
-    private Map<AstRef, IrDomain[]> partialIntsMap;
+    private Map<AstRef, Domain[]> partialIntsMap;
     private Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap;
     private Map<AstRef, int[]> breakableRefsMap;
     private Map<AstClafer, AstRef[]> breakableTargetsMap;
@@ -381,15 +381,15 @@ public class Analysis {
         return this;
     }
 
-    public IrDomain[] getPartialInts(AstRef ref) {
+    public Domain[] getPartialInts(AstRef ref) {
         return notNull(ref.getSourceType(), "Partial integer", getPartialIntsMap().get(ref));
     }
 
-    public Map<AstRef, IrDomain[]> getPartialIntsMap() {
+    public Map<AstRef, Domain[]> getPartialIntsMap() {
         return notNull("Partial integer", partialIntsMap);
     }
 
-    public Analysis setPartialIntsMap(Map<AstRef, IrDomain[]> partialIntsMap) {
+    public Analysis setPartialIntsMap(Map<AstRef, Domain[]> partialIntsMap) {
         this.partialIntsMap = partialIntsMap;
         return this;
     }

@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -10,7 +11,7 @@ public class IrXor extends IrAbstractBool {
 
     private final IrBoolExpr left, right;
 
-    public IrXor(IrBoolExpr left, IrBoolExpr right, IrBoolDomain domain) {
+    public IrXor(IrBoolExpr left, IrBoolExpr right, BoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);

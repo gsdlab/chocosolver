@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -11,7 +12,7 @@ public class IrOffset extends IrAbstractSet {
     private final IrSetExpr set;
     private final int offset;
 
-    IrOffset(IrSetExpr set, int offset, IrDomain env, IrDomain ker, IrDomain card) {
+    IrOffset(IrSetExpr set, int offset, Domain env, Domain ker, Domain card) {
         super(env, ker, card);
         this.set = Check.notNull(set);
 

@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -8,14 +9,14 @@ import org.clafer.common.Check;
  */
 public abstract class IrAbstractBool implements IrBoolExpr {
 
-    private final IrBoolDomain domain;
+    private final BoolDomain domain;
 
-    public IrAbstractBool(IrBoolDomain domain) {
+    public IrAbstractBool(BoolDomain domain) {
         this.domain = Check.notNull(domain);
     }
 
     @Override
-    public IrBoolDomain getDomain() {
+    public BoolDomain getDomain() {
         return domain;
     }
 

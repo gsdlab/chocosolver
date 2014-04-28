@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -11,7 +12,7 @@ public class IrSetVar extends IrAbstractSet implements IrVar {
     private final String name;
     private final IrIntVar card;
 
-    protected IrSetVar(String name, IrDomain env, IrDomain ker, IrIntVar card) {
+    protected IrSetVar(String name, Domain env, Domain ker, IrIntVar card) {
         super(env, ker, card.getDomain());
         this.name = Check.notNull(name);
         this.card = card;

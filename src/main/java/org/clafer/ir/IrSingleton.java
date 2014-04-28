@@ -1,6 +1,8 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
+import org.clafer.domain.Domains;
 
 /**
  *
@@ -10,8 +12,8 @@ public class IrSingleton extends IrAbstractSet {
 
     private final IrIntExpr value;
 
-    IrSingleton(IrIntExpr value, IrDomain env, IrDomain ker) {
-        super(env, ker, Irs.OneDomain);
+    IrSingleton(IrIntExpr value, Domain env, Domain ker) {
+        super(env, ker, Domains.OneDomain);
         this.value = Check.notNull(value);
         if (ker.size() > 1) {
             throw new IllegalArgumentException();

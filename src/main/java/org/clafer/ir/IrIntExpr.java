@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
+
 /**
  * An immutable expression that evaluates to an integer.
  *
@@ -12,7 +14,7 @@ public interface IrIntExpr extends IrExpr {
      *
      * @return the domain of values this expression can take
      */
-    public IrDomain getDomain();
+    public Domain getDomain();
 
     /**
      * @return {@code getDomain().getLowBound()}

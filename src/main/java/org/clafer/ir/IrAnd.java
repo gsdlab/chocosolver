@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
@@ -12,7 +13,7 @@ public class IrAnd extends IrAbstractBool {
 
     private final IrBoolExpr[] operands;
 
-    IrAnd(IrBoolExpr[] operands, IrBoolDomain domain) {
+    IrAnd(IrBoolExpr[] operands, BoolDomain domain) {
         super(domain);
         this.operands = Check.noNullsNotEmpty(operands);
     }

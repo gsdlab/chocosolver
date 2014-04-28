@@ -6,8 +6,8 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
-import org.clafer.ir.IrDomain;
-import org.clafer.ir.Irs;
+import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 import org.clafer.scope.Scopable;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
@@ -63,12 +63,12 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(3));
 
-        IrDomain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
         assertNotNull(partialInts);
         assertEquals(3, partialInts.length);
-        assertEquals(Irs.constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
-        assertEquals(Irs.constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
-        assertEquals(Irs.constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
+        assertEquals(Domains.constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
+        assertEquals(Domains.constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
+        assertEquals(Domains.constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
     }
 
     /**
@@ -102,13 +102,13 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
 
-        IrDomain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
         assertNotNull(partialInts);
         assertEquals(4, partialInts.length);
-        assertEquals(Irs.constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
-        assertEquals(Irs.constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
-        assertEquals(Irs.constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
-        assertEquals(Irs.boundDomain(-3, 3), partialInts[analysis.getOffsets(feature).getOffset(e)]);
+        assertEquals(Domains.constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
+        assertEquals(Domains.constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
+        assertEquals(Domains.constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
+        assertEquals(Domains.boundDomain(-3, 3), partialInts[analysis.getOffsets(feature).getOffset(e)]);
     }
 
     /**
@@ -133,12 +133,12 @@ public class PartialIntAnalyzerTest {
         Analysis analysis = analyze(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
 
         assertTrue(analysis.getOffsets(feature).getOffset(a) < analysis.getOffsets(feature).getOffset(b));
-        IrDomain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
         assertNotNull(partialInts);
         assertEquals(4, partialInts.length);
-        assertEquals(Irs.constantDomain(4), partialInts[0]);
-        assertEquals(Irs.boundDomain(-3, 4), partialInts[1]);
-        assertEquals(Irs.boundDomain(-3, 3), partialInts[2]);
-        assertEquals(Irs.boundDomain(-3, 3), partialInts[3]);
+        assertEquals(Domains.constantDomain(4), partialInts[0]);
+        assertEquals(Domains.boundDomain(-3, 4), partialInts[1]);
+        assertEquals(Domains.boundDomain(-3, 3), partialInts[2]);
+        assertEquals(Domains.boundDomain(-3, 3), partialInts[3]);
     }
 }

@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 
 /**
@@ -10,7 +11,7 @@ public class IrSetConstant extends IrSetVar implements IrConstant {
 
     private final int[] value;
 
-    IrSetConstant(IrDomain value) {
+    IrSetConstant(Domain value) {
         super(value.toString(), value, value, Irs.constant(value.size()));
         this.value = value.getValues();
     }

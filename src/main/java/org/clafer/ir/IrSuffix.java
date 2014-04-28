@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -11,7 +12,7 @@ public class IrSuffix extends IrAbstractBool {
     private final IrStringExpr suffix;
     private final IrStringExpr word;
 
-    IrSuffix(IrStringExpr suffix, IrStringExpr word, IrBoolDomain domain) {
+    IrSuffix(IrStringExpr suffix, IrStringExpr word, BoolDomain domain) {
         super(domain);
         this.suffix = Check.notNull(suffix);
         this.word = Check.notNull(word);

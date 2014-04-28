@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -9,14 +10,14 @@ import org.clafer.common.Check;
  */
 public abstract class IrAbstractString implements IrStringExpr {
 
-    private final IrDomain[] charDomains;
-    private final IrDomain lengthDomain;
+    private final Domain[] charDomains;
+    private final Domain lengthDomain;
 
-    IrAbstractString(IrDomain[] charDomains, IrDomain lengthDomain) {
+    IrAbstractString(Domain[] charDomains, Domain lengthDomain) {
         this.charDomains = Check.noNulls(charDomains);
         this.lengthDomain = Check.notNull(lengthDomain);
 
-        for (IrDomain c : charDomains) {
+        for (Domain c : charDomains) {
             if (c.getLowBound() < Character.MIN_VALUE) {
                 throw new IllegalStringException();
             }
@@ -46,12 +47,12 @@ public abstract class IrAbstractString implements IrStringExpr {
     }
 
     @Override
-    public IrDomain[] getChars() {
+    public Domain[] getChars() {
         return charDomains;
     }
 
     @Override
-    public IrDomain getLength() {
+    public Domain getLength() {
         return lengthDomain;
     }
 

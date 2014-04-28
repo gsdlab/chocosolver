@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -12,7 +13,7 @@ public class IrCount extends IrAbstractInt {
     private final int value;
     private final IrIntExpr[] array;
 
-    public IrCount(int value, IrIntExpr[] array, IrDomain domain) {
+    public IrCount(int value, IrIntExpr[] array, Domain domain) {
         super(domain);
         this.array = Check.noNullsNotEmpty(array);
         this.value = Check.notNull(value);

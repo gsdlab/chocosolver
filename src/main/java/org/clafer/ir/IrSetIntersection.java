@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
@@ -12,7 +13,7 @@ public class IrSetIntersection extends IrAbstractSet {
 
     private final IrSetExpr[] operands;
 
-    IrSetIntersection(IrSetExpr[] operands, IrDomain env, IrDomain ker, IrDomain card) {
+    IrSetIntersection(IrSetExpr[] operands, Domain env, Domain ker, Domain card) {
         super(env, ker, card);
         this.operands = Check.noNullsNotEmpty(operands);
     }

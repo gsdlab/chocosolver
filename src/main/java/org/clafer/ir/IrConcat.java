@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -11,7 +12,7 @@ public class IrConcat extends IrAbstractString {
     private final IrStringExpr left, right;
 
     IrConcat(IrStringExpr left, IrStringExpr right, 
-            IrDomain[] charDomains, IrDomain lengthDomain) {
+            Domain[] charDomains, Domain lengthDomain) {
         super(charDomains, lengthDomain);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);

@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -8,9 +9,9 @@ import org.clafer.common.Check;
  */
 public abstract class IrAbstractInt implements IrIntExpr {
 
-    private final IrDomain domain;
+    private final Domain domain;
 
-    public IrAbstractInt(IrDomain domain) {
+    public IrAbstractInt(Domain domain) {
         this.domain = Check.notNull(domain);
 
         if (domain.isEmpty()) {
@@ -19,7 +20,7 @@ public abstract class IrAbstractInt implements IrIntExpr {
     }
 
     @Override
-    public IrDomain getDomain() {
+    public Domain getDomain() {
         return domain;
     }
 

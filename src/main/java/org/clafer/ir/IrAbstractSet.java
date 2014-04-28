@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -8,14 +9,14 @@ import org.clafer.common.Check;
  */
 public abstract class IrAbstractSet implements IrSetExpr {
 
-    private final IrDomain env, ker, card;
+    private final Domain env, ker, card;
 
-    public IrAbstractSet(IrDomain env, IrDomain ker, IrDomain card) {
+    public IrAbstractSet(Domain env, Domain ker, Domain card) {
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
         this.card = Check.notNull(card);
 
-        if (!IrUtil.isSubsetOf(ker, env)) {
+        if (!ker.isSubsetOf(env)) {
             throw new IllegalSetException();
         }
         if (card.isEmpty()) {
@@ -30,17 +31,17 @@ public abstract class IrAbstractSet implements IrSetExpr {
     }
 
     @Override
-    public IrDomain getEnv() {
+    public Domain getEnv() {
         return env;
     }
 
     @Override
-    public IrDomain getKer() {
+    public Domain getKer() {
         return ker;
     }
 
     @Override
-    public IrDomain getCard() {
+    public Domain getCard() {
         return card;
     }
 

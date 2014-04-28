@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -10,12 +11,9 @@ public class IrLength extends IrAbstractInt {
 
     private final IrStringExpr string;
 
-    IrLength(IrStringExpr string, IrDomain domain) {
+    IrLength(IrStringExpr string, Domain domain) {
         super(domain);
         this.string = Check.notNull(string);
-        if (!IrUtil.isSubsetOf(domain, string.getLength())) {
-            throw new IllegalArgumentException();
-        }
     }
 
     public IrStringExpr getString() {

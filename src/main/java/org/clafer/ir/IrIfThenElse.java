@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -12,7 +13,7 @@ public class IrIfThenElse extends IrAbstractBool {
     private final IrBoolExpr consequent;
     private final IrBoolExpr alternative;
 
-    public IrIfThenElse(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolExpr alternative, IrBoolDomain domain) {
+    public IrIfThenElse(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolExpr alternative, BoolDomain domain) {
         super(domain);
         this.antecedent = Check.notNull(antecedent);
         this.consequent = Check.notNull(consequent);

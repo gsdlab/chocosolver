@@ -21,7 +21,9 @@ import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
-import org.clafer.ir.IrBoolDomain;
+import org.clafer.domain.BoolDomain;
+import static org.clafer.domain.BoolDomain.FalseDomain;
+import static org.clafer.domain.BoolDomain.TrueDomain;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitorAdapter;
 import org.clafer.ir.IrBoolVar;
@@ -29,7 +31,8 @@ import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrConcat;
 import org.clafer.ir.IrConstant;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
+import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIfOnlyIf;
@@ -66,7 +69,6 @@ import org.clafer.ir.IrSuffix;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
-import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -84,7 +86,7 @@ public class Coalescer {
         DisjointSets<IrSetVar> setGraph = graphs.getSnd();
         DisjointSets<IrStringVar> stringGraph = graphs.getThd();
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
-        Map<IrSetVar, Triple<String, IrDomain, IrDomain>> coalescedSetNameEnvKers = new HashMap<>();
+        Map<IrSetVar, Triple<String, Domain, Domain>> coalescedSetNameEnvKers = new HashMap<>();
         Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
         Map<IrStringVar, IrStringVar> coalescedStrings = new HashMap<>();
 
@@ -96,8 +98,8 @@ public class Coalescer {
                 // Do nothing
             } else if (var instanceof IrSetVar) {
                 IrSetVar set = (IrSetVar) var;
-                IrDomain ker = set.getKer();
-                IrDomain env = set.getEnv();
+                Domain ker = set.getKer();
+                Domain env = set.getEnv();
                 IrIntVar card = set.getCardVar();
                 assert card.getLowBound() >= ker.size() && card.getHighBound() <= env.size();
                 setVars.add(set);
@@ -107,7 +109,7 @@ public class Coalescer {
                 IrIntVar length = string.getLengthVar();
                 for (int i = 0; i < length.getDomain().getLowBound(); i++) {
                     if (chars[i].getDomain().contains(0)) {
-                        IrDomain domain = IrUtil.remove(chars[i].getDomain(), 0);
+                        Domain domain = chars[i].getDomain().remove(0);
                         failIf(domain.isEmpty());
                         intGraph.union(chars[i], tint(domain));
                     }
@@ -150,19 +152,19 @@ public class Coalescer {
                 if (!(var instanceof TempSetVar)) {
                     names.add(var.getName());
                 }
-                IrDomain env = var.getEnv();
-                IrDomain ker = var.getKer();
+                Domain env = var.getEnv();
+                Domain ker = var.getKer();
                 while (iter.hasNext()) {
                     var = iter.next();
                     if (!(var instanceof TempSetVar)) {
                         names.add(var.getName());
                     }
-                    env = IrUtil.intersection(env, var.getEnv());
-                    ker = IrUtil.union(ker, var.getKer());
+                    env = env.intersection(var.getEnv());
+                    ker = ker.union(var.getKer());
                     intGraph.union(card, var.getCardVar());
                 }
                 intGraph.union(card, tint(ker.size(), env.size()));
-                Triple<String, IrDomain, IrDomain> key
+                Triple<String, Domain, Domain> key
                         = new Triple<>(Util.intercalate(";", names), env, ker);
                 for (IrSetVar coalesce : component) {
                     if (!(coalesce instanceof TempSetVar)) {
@@ -179,13 +181,13 @@ public class Coalescer {
                 if (!(var instanceof TempIntVar)) {
                     names.add(var.getName());
                 }
-                IrDomain domain = var.getDomain();
+                Domain domain = var.getDomain();
                 while (iter.hasNext()) {
                     var = iter.next();
                     if (!(var instanceof TempIntVar)) {
                         names.add(var.getName());
                     }
-                    domain = IrUtil.intersection(domain, var.getDomain());
+                    domain = domain.intersection(var.getDomain());
                 }
                 failIf(domain.isEmpty());
                 IrIntVar coalesced = domainInt(Util.intercalate(";", names), domain);
@@ -198,9 +200,9 @@ public class Coalescer {
             }
         }
 
-        Map<Triple<String, IrDomain, IrDomain>, IrSetVar> setVarCache = new IdentityHashMap<>();
+        Map<Triple<String, Domain, Domain>, IrSetVar> setVarCache = new IdentityHashMap<>();
         for (IrSetVar setVar : setVars) {
-            Triple<String, IrDomain, IrDomain> key = coalescedSetNameEnvKers.get(setVar);
+            Triple<String, Domain, Domain> key = coalescedSetNameEnvKers.get(setVar);
             IrSetVar set = setVarCache.get(key);
             IrIntVar card = coalescedInts.get(setVar.getCardVar());
             if (set == null || card != null) {
@@ -264,7 +266,7 @@ public class Coalescer {
                 IrUtil.renameVariables(module, coalescedInts, coalescedSets, coalescedStrings));
     }
 
-    private static IrSetVar tset(IrDomain env, IrDomain ker, IrDomain card) {
+    private static IrSetVar tset(Domain env, Domain ker, Domain card) {
         try {
             return new TempSetVar(env, ker, tint(card));
         } catch (IllegalSetException e) {
@@ -306,7 +308,7 @@ public class Coalescer {
 
         @Override
         public Void visit(IrBoolVar ir, Void a) {
-            if (IrBoolDomain.BoolDomain.equals(ir.getDomain())) {
+            if (BoolDomain.TrueFalseDomain.equals(ir.getDomain())) {
                 intGraph.union(ir, True);
             }
             return null;
@@ -339,7 +341,7 @@ public class Coalescer {
 
         @Override
         public Void visit(IrNotWithin ir, Void a) {
-            propagateInt(IrUtil.difference(ir.getValue().getDomain(), ir.getRange()), ir.getValue());
+            propagateInt(ir.getValue().getDomain().difference(ir.getRange()), ir.getValue());
             return null;
         }
 
@@ -399,14 +401,14 @@ public class Coalescer {
             IrIntExpr element = ir.getElement();
             IrSetExpr set = ir.getSet();
             propagateInt(set.getEnv(), element);
-            IrDomain ker = null;
+            Domain ker = null;
+            Domain card = null;
             Integer constant = IrUtil.getConstant(element);
-            if (constant != null && !set.getKer().contains(constant)) {
-                ker = IrUtil.add(set.getKer(), constant);
-            }
-            IrDomain card = null;
-            if (set.getCard().getLowBound() == 0) {
-                card = IrUtil.remove(set.getCard(), 0);
+            if (constant != null) {
+                ker = set.getKer().insert(constant);
+                card = set.getCard().boundLow(ker.size());
+            } else {
+                card = set.getCard().boundLow(1);
             }
             if (ker != null || card != null) {
                 propagateSet(new PartialSet(null, ker, card), set);
@@ -418,11 +420,11 @@ public class Coalescer {
         public Void visit(IrNotMember ir, Void a) {
             IrIntExpr element = ir.getElement();
             IrSetExpr set = ir.getSet();
-            IrDomain domain = IrUtil.difference(element.getDomain(), set.getKer());
+            Domain domain = element.getDomain().difference(set.getKer());
             propagateInt(domain, element);
             Integer constant = IrUtil.getConstant(element);
             if (constant != null && set.getEnv().contains(constant)) {
-                propagateEnv(IrUtil.remove(set.getEnv(), constant), set);
+                propagateEnv(set.getEnv().remove(constant), set);
             }
             return null;
         }
@@ -432,9 +434,9 @@ public class Coalescer {
             IrSetExpr sub = ir.getSubset();
             IrSetExpr sup = ir.getSuperset();
             propagateSet(new PartialSet(sup.getEnv(), null,
-                    IrUtil.boundHigh(sub.getCard(), sup.getCard().getHighBound())), sub);
+                    sub.getCard().boundHigh(sup.getCard().getHighBound())), sub);
             propagateSet(new PartialSet(null, sub.getKer(),
-                    IrUtil.boundLow(sup.getCard(), sub.getCard().getLowBound())), sup);
+                    sup.getCard().boundLow(sub.getCard().getLowBound())), sup);
             return null;
         }
 
@@ -442,8 +444,8 @@ public class Coalescer {
         public Void visit(IrBoolChannel ir, Void a) {
             IrBoolExpr[] bools = ir.getBools();
             IrSetExpr set = ir.getSet();
-            IrDomain env = set.getEnv();
-            IrDomain ker = set.getKer();
+            Domain env = set.getEnv();
+            Domain ker = set.getKer();
             TIntHashSet trues = new TIntHashSet(ker.size());
             TIntHashSet notFalses = new TIntHashSet(env.size());
             env.transferTo(notFalses);
@@ -505,7 +507,7 @@ public class Coalescer {
                 }
                 env.removeAll(kers);
                 sets[i].getKer().transferTo(env);
-                IrDomain card = boundDomain(
+                Domain card = boundDomain(
                         ints.length - highCards + sets[i].getCard().getHighBound(),
                         ints.length - lowCards + sets[i].getCard().getLowBound());
                 propagateSet(new PartialSet(enumDomain(env), enumDomain(ker), card), sets[i]);
@@ -532,17 +534,17 @@ public class Coalescer {
             int low = 0;
             int high = 0;
             for (IrSetExpr set : sets) {
-                IrDomain card = set.getCard();
+                Domain card = set.getCard();
                 int newLow = low + card.getLowBound();
                 int newHigh = high + card.getHighBound();
                 failIf(low >= newHigh);
-                IrDomain env = boundDomain(low, newHigh - 1);
-                IrDomain ker = set.getKer();
+                Domain env = boundDomain(low, newHigh - 1);
+                Domain ker = set.getKer();
                 if (!ker.isEmpty() && !ker.isBounded()) {
-                    ker = Irs.boundDomain(ker.getLowBound(), ker.getHighBound());
+                    ker = boundDomain(ker.getLowBound(), ker.getHighBound());
                 }
                 if (high < newLow) {
-                    ker = IrUtil.union(ker, boundDomain(high, newLow - 1));
+                    ker = ker.union(boundDomain(high, newLow - 1));
                 }
                 propagateSet(new PartialSet(env, ker, null), set);
                 low = newLow;
@@ -576,7 +578,7 @@ public class Coalescer {
                     }
                 }
             }
-            IrDomain dom = boundDomain(0, ints.length - 1);
+            Domain dom = boundDomain(0, ints.length - 1);
             for (int i = 0; i < ints.length; i++) {
                 propagateInt(dom, ints[i]);
                 for (int j = i + 1; j < ints.length; j++) {
@@ -637,7 +639,7 @@ public class Coalescer {
         public Void visit(IrFilterString ir, Void a) {
             TIntIterator iter = ir.getSet().getEnv().iterator();
             int i = 0;
-            IrDomain values = Irs.EmptyDomain;
+            Domain values = EmptyDomain;
             while (iter.hasNext()) {
                 int env = iter.next();
                 if (!ir.getSet().getKer().contains(env)) {
@@ -649,7 +651,7 @@ public class Coalescer {
                     propagateEqual(string, result);
                     i++;
                 }
-                values = IrUtil.union(values, ir.getString()[env - ir.getOffset()].getDomain());
+                values = values.union(ir.getString()[env - ir.getOffset()].getDomain());
             }
             for (int j = 0; j < ir.getSet().getCard().getLowBound(); j++) {
                 propagateInt(values, ir.getResult()[j]);
@@ -690,24 +692,24 @@ public class Coalescer {
         private void propagateNotEqual(IrIntExpr left, IrIntExpr right) {
             Integer constant = IrUtil.getConstant(left);
             if (constant != null) {
-                IrDomain minus = IrUtil.remove(right.getDomain(), constant);
-                propagateInt(minus, right);
+                Domain remove = right.getDomain().remove(constant);
+                propagateInt(remove, right);
             }
             constant = IrUtil.getConstant(right);
             if (constant != null) {
-                IrDomain minus = IrUtil.remove(left.getDomain(), constant);
-                propagateInt(minus, left);
+                Domain remove = left.getDomain().remove(constant);
+                propagateInt(remove, left);
             }
         }
 
         private void propagateLessThan(IrIntExpr left, IrIntExpr right) {
-            IrDomain leftDomain = left.getDomain();
-            IrDomain rightDomain = right.getDomain();
+            Domain leftDomain = left.getDomain();
+            Domain rightDomain = right.getDomain();
             if (leftDomain.getHighBound() >= rightDomain.getHighBound()) {
-                propagateInt(IrUtil.boundHigh(leftDomain, rightDomain.getHighBound() - 1), left);
+                propagateInt(leftDomain.boundHigh(rightDomain.getHighBound() - 1), left);
             }
             if (rightDomain.getLowBound() <= leftDomain.getLowBound()) {
-                propagateInt(IrUtil.boundLow(rightDomain, leftDomain.getLowBound() + 1), right);
+                propagateInt(rightDomain.boundLow(leftDomain.getLowBound() + 1), right);
             }
         }
 
@@ -750,13 +752,13 @@ public class Coalescer {
         }
 
         private void propagateLessThanEqual(IrIntExpr left, IrIntExpr right) {
-            IrDomain leftDomain = left.getDomain();
-            IrDomain rightDomain = right.getDomain();
+            Domain leftDomain = left.getDomain();
+            Domain rightDomain = right.getDomain();
             if (leftDomain.getHighBound() > rightDomain.getHighBound()) {
-                propagateInt(IrUtil.boundHigh(left.getDomain(), right.getDomain().getHighBound()), left);
+                propagateInt(left.getDomain().boundHigh(right.getDomain().getHighBound()), left);
             }
             if (rightDomain.getLowBound() < leftDomain.getLowBound()) {
-                propagateInt(IrUtil.boundLow(right.getDomain(), left.getDomain().getLowBound()), right);
+                propagateInt(right.getDomain().boundLow(left.getDomain().getLowBound()), right);
             }
         }
 
@@ -799,32 +801,29 @@ public class Coalescer {
             }
         }
 
-        private void propagateInt(IrDomain left, IrIntExpr right) {
-            if (IrUtil.isSubsetOf(right.getDomain(), left)) {
+        private void propagateInt(Domain left, IrIntExpr right) {
+            if (right.getDomain().isSubsetOf(left)) {
                 return;
             }
             if (right instanceof IrIntVar) {
-                IrDomain domain = IrUtil.intersection(left, right.getDomain());
+                Domain domain = left.intersection(right.getDomain());
                 failIf(domain.isEmpty());
                 intGraph.union((IrIntVar) right, tint(domain));
             } else if (right instanceof IrMinus) {
-                propagateInt(IrUtil.minus(left), ((IrMinus) right).getExpr());
+                propagateInt(left.minus(), ((IrMinus) right).getExpr());
             } else if (right instanceof IrCard) {
                 propagateCard(left, ((IrCard) right).getSet());
             } else if (right instanceof IrAdd) {
                 IrAdd add = (IrAdd) right;
                 IrIntExpr[] addends = add.getAddends();
                 if (addends.length == 1) {
-                    propagateInt(IrUtil.offset(left, -add.getOffset()), addends[0]);
+                    propagateInt(left.offset(-add.getOffset()), addends[0]);
                 } else {
                     for (IrIntExpr addend : addends) {
-                        IrDomain domain = addend.getDomain();
-                        IrDomain bound
-                                = IrUtil.intersection(
-                                        boundDomain(
-                                                left.getLowBound() - right.getDomain().getHighBound() + domain.getHighBound(),
-                                                left.getHighBound() - right.getDomain().getLowBound() + domain.getLowBound()),
-                                        domain);
+                        Domain domain = addend.getDomain();
+                        Domain bound = domain.boundBetween(
+                                left.getLowBound() - right.getDomain().getHighBound() + domain.getHighBound(),
+                                left.getHighBound() - right.getDomain().getLowBound() + domain.getLowBound());
                         propagateInt(bound, addend);
                     }
                 }
@@ -834,7 +833,7 @@ public class Coalescer {
                 TIntIterator iter = element.getIndex().getDomain().iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
-                    if (IrUtil.intersects(left, element.getArray()[val].getDomain())) {
+                    if (left.intersects(element.getArray()[val].getDomain())) {
                         domain.add(val);
                     }
                 }
@@ -867,9 +866,9 @@ public class Coalescer {
         }
 
         private void propagateSetVar(PartialSet left, IrSetVar right) {
-            IrDomain env = right.getEnv();
-            IrDomain ker = right.getKer();
-            IrDomain card = right.getCard();
+            Domain env = right.getEnv();
+            Domain ker = right.getKer();
+            Domain card = right.getCard();
             if (left.isEnvMask()) {
                 env = left.getEnv();
             }
@@ -887,25 +886,25 @@ public class Coalescer {
 
         private void propagateSingleton(PartialSet left, IrSingleton right) {
             if (left.isKerMask()) {
-                IrDomain ker = left.getKer();
+                Domain ker = left.getKer();
                 if (ker.size() == 1) {
                     propagateInt(ker, right.getValue());
                 }
             } else if (left.isEnvMask()) {
-                IrDomain env = left.getEnv();
+                Domain env = left.getEnv();
                 propagateInt(env, right.getValue());
             }
         }
 
         private void propagateArrayToSet(PartialSet left, IrArrayToSet right) {
             if (left.isEnvMask()) {
-                IrDomain env = left.getEnv();
+                Domain env = left.getEnv();
                 for (IrIntExpr child : right.getArray()) {
                     propagateInt(env, child);
                 }
             }
             if (left.isKerMask()) {
-                TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
                     IrIntExpr index = null;
@@ -928,8 +927,8 @@ public class Coalescer {
         private void propagateJoinRelation(PartialSet left, IrJoinRelation right) {
             if (right.isInjective()) {
                 if (left.isEnvMask() || left.isCardMask()) {
-                    IrDomain env = left.getEnv();
-                    IrDomain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
+                    Domain env = left.getEnv();
+                    Domain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
                     TIntIterator iter = right.getTake().getKer().iterator();
                     PartialSet set = new PartialSet(env, null, card);
                     while (iter.hasNext()) {
@@ -937,7 +936,7 @@ public class Coalescer {
                     }
                 }
                 if (left.isKerMask()) {
-                    TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                    TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
                     while (iter.hasNext()) {
                         int val = iter.next();
                         TIntIterator env = right.getTake().getEnv().iterator();
@@ -1008,14 +1007,14 @@ public class Coalescer {
 
         private void propagateJoinFunction(PartialSet left, IrJoinFunction right) {
             if (left.isEnvMask()) {
-                IrDomain env = left.getEnv();
+                Domain env = left.getEnv();
                 TIntIterator iter = right.getTake().getKer().iterator();
                 while (iter.hasNext()) {
                     propagateInt(env, right.getRefs()[iter.next()]);
                 }
             }
             if (left.isKerMask()) {
-                TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
                     TIntIterator env = right.getTake().getEnv().iterator();
@@ -1037,7 +1036,7 @@ public class Coalescer {
                 }
             }
             if (left.isCardMask()) {
-                IrDomain card = left.getCard();
+                Domain card = left.getCard();
                 IrSetExpr take = right.getTake();
                 int low = Math.max(take.getKer().size(), card.getLowBound());
                 int high = Math.min(take.getEnv().size(),
@@ -1053,7 +1052,7 @@ public class Coalescer {
         private void propagateSetUnion(PartialSet left, IrSetUnion right) {
             if (left.isEnvMask() || left.isCardMask()) {
                 IrSetExpr[] operands = right.getOperands();
-                IrDomain env = left.getEnv();
+                Domain env = left.getEnv();
                 if (right.isDisjoint() && left.isCardMask()) {
                     int lowCards = 0;
                     int highCards = 0;
@@ -1062,14 +1061,14 @@ public class Coalescer {
                         highCards += operand.getCard().getHighBound();
                     }
                     for (IrSetExpr operand : operands) {
-                        IrDomain card = boundDomain(
+                        Domain card = boundDomain(
                                 left.getCard().getLowBound() - highCards + operand.getCard().getHighBound(),
                                 left.getCard().getHighBound() - lowCards + operand.getCard().getLowBound());
                         PartialSet set = new PartialSet(env, null, card);
                         propagateSet(set, operand);
                     }
                 } else {
-                    IrDomain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
+                    Domain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
                     PartialSet set = new PartialSet(env, null, card);
                     for (IrSetExpr operand : operands) {
                         propagateSet(set, operand);
@@ -1077,7 +1076,7 @@ public class Coalescer {
                 }
             }
             if (left.isKerMask()) {
-                TIntIterator iter = IrUtil.difference(left.getKer(), right.getKer()).iterator();
+                TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
                     IrSetExpr index = null;
@@ -1099,21 +1098,21 @@ public class Coalescer {
 
         private void propagateOffset(PartialSet left, IrOffset right) {
             int offset = right.getOffset();
-            IrDomain env = left.isEnvMask() ? IrUtil.offset(left.getEnv(), -offset) : null;
-            IrDomain ker = left.isKerMask() ? IrUtil.offset(left.getKer(), -offset) : null;
-            IrDomain card = left.isCardMask() ? left.getCard() : null;
+            Domain env = left.isEnvMask() ? left.getEnv().offset(-offset) : null;
+            Domain ker = left.isKerMask() ? left.getKer().offset(-offset) : null;
+            Domain card = left.isCardMask() ? left.getCard() : null;
             propagateSet(new PartialSet(env, ker, card), right.getSet());
         }
 
-        private void propagateEnv(IrDomain left, IrSetExpr right) {
+        private void propagateEnv(Domain left, IrSetExpr right) {
             propagateSet(env(left), right);
         }
 
-        private void propagateKer(IrDomain left, IrSetExpr right) {
+        private void propagateKer(Domain left, IrSetExpr right) {
             propagateSet(ker(left), right);
         }
 
-        private void propagateCard(IrDomain left, IrSetExpr right) {
+        private void propagateCard(Domain left, IrSetExpr right) {
             propagateSet(card(left), right);
         }
 
@@ -1203,8 +1202,8 @@ public class Coalescer {
                 return (IrStringVar) expr;
             }
             IrIntVar chars[] = chars(expr);
-            IrIntVar length = tint(IrUtil.boundBetween(
-                    expr.getLength(), 0, chars.length));
+            IrIntVar length = tint(
+                    expr.getLength().boundBetween(0, chars.length));
             return tstring(chars, length);
         }
 
@@ -1262,7 +1261,7 @@ public class Coalescer {
         }
     }
 
-    private static TempIntVar tint(IrDomain domain) {
+    private static TempIntVar tint(Domain domain) {
         try {
             return new TempIntVar(domain);
         } catch (IllegalIntException e) {
@@ -1278,7 +1277,7 @@ public class Coalescer {
         }
     }
 
-    private static IrIntVar[] mapTint(IrDomain[] domains) {
+    private static IrIntVar[] mapTint(Domain[] domains) {
         IrIntVar[] vars = new IrIntVar[domains.length];
         for (int i = 0; i < vars.length; i++) {
             vars[i] = tint(domains[i]);
@@ -1286,41 +1285,41 @@ public class Coalescer {
         return vars;
     }
 
-    private static PartialSet env(IrDomain env) {
+    private static PartialSet env(Domain env) {
         return new PartialSet(env, null, null);
     }
 
-    private static PartialSet ker(IrDomain ker) {
+    private static PartialSet ker(Domain ker) {
         return new PartialSet(null, ker, null);
     }
 
-    private static PartialSet card(IrDomain card) {
+    private static PartialSet card(Domain card) {
         return new PartialSet(null, null, card);
     }
 
     private static class PartialSet {
 
-        private final IrDomain env;
-        private final IrDomain ker;
-        private final IrDomain card;
+        private final Domain env;
+        private final Domain ker;
+        private final Domain card;
         private byte mask;
 
-        PartialSet(IrDomain env, IrDomain ker, IrDomain card) {
+        PartialSet(Domain env, Domain ker, Domain card) {
             assert env != null || ker != null || card != null;
             this.env = env;
             this.ker = ker;
             this.card = card;
         }
 
-        IrDomain getEnv() {
+        Domain getEnv() {
             return env;
         }
 
-        IrDomain getKer() {
+        Domain getKer() {
             return ker;
         }
 
-        IrDomain getCard() {
+        Domain getCard() {
             return card;
         }
 
@@ -1340,14 +1339,14 @@ public class Coalescer {
             return mask != 0;
         }
 
-        void updateMask(IrDomain env, IrDomain ker, IrDomain card) {
-            if (this.env != null && !IrUtil.isSubsetOf(env, this.env)) {
+        void updateMask(Domain env, Domain ker, Domain card) {
+            if (this.env != null && !env.isSubsetOf(this.env)) {
                 mask |= 1;
             }
-            if (this.ker != null && !IrUtil.isSubsetOf(this.ker, ker)) {
+            if (this.ker != null && !this.ker.isSubsetOf(ker)) {
                 mask |= 2;
             }
-            if (this.card != null && !IrUtil.isSubsetOf(card, this.card)) {
+            if (this.card != null && !card.isSubsetOf(this.card)) {
                 mask |= 4;
             }
         }
@@ -1370,7 +1369,7 @@ public class Coalescer {
 
     private static class TempIntVar extends IrIntVar {
 
-        TempIntVar(IrDomain domain) {
+        TempIntVar(Domain domain) {
             super("temp", domain);
         }
 
@@ -1378,14 +1377,14 @@ public class Coalescer {
             if (getDomain().contains(value)) {
                 return this;
             }
-            return new TempIntVar(IrUtil.add(getDomain(), value));
+            return new TempIntVar(getDomain().insert(value));
         }
 
         TempIntVar boundLow(int lb) {
             if (lb <= getDomain().getLowBound()) {
                 return this;
             }
-            IrDomain domain = IrUtil.boundLow(getDomain(), lb);
+            Domain domain = getDomain().boundLow(lb);
             failIf(domain.isEmpty());
             return new TempIntVar(domain);
         }
@@ -1394,7 +1393,7 @@ public class Coalescer {
             if (hb >= getDomain().getHighBound()) {
                 return this;
             }
-            IrDomain domain = IrUtil.boundHigh(getDomain(), hb);
+            Domain domain = getDomain().boundHigh(hb);
             failIf(domain.isEmpty());
             return new TempIntVar(domain);
         }
@@ -1403,13 +1402,13 @@ public class Coalescer {
             if (lb <= getDomain().getLowBound() && hb >= getDomain().getHighBound()) {
                 return this;
             }
-            IrDomain domain = IrUtil.boundBetween(getDomain(), lb, hb);
+            Domain domain = getDomain().boundBetween(lb, hb);
             failIf(domain.isEmpty());
             return new TempIntVar(domain);
         }
 
-        TempIntVar union(IrDomain union) {
-            IrDomain domain = IrUtil.union(getDomain(), union);
+        TempIntVar union(Domain union) {
+            Domain domain = getDomain().union(union);
             if (domain.equals(getDomain())) {
                 return this;
             }
@@ -1423,7 +1422,7 @@ public class Coalescer {
 
     private static class TempSetVar extends IrSetVar {
 
-        TempSetVar(IrDomain env, IrDomain ker, IrIntVar card) {
+        TempSetVar(Domain env, Domain ker, IrIntVar card) {
             super("temp", env, ker, card);
         }
     }
@@ -1436,11 +1435,11 @@ public class Coalescer {
 
         boolean isRestrictive(IrStringVar var) {
             for (int i = 0; i < Math.min(getChars().length, var.getChars().length); i++) {
-                if (!IrUtil.isSubsetOf(var.getChars()[i], getChars()[i])) {
+                if (!var.getChars()[i].isSubsetOf(getChars()[i])) {
                     return true;
                 }
             }
-            return !IrUtil.isSubsetOf(var.getLength(), getLength());
+            return !var.getLength().isSubsetOf(getLength());
         }
 
         TempStringVar boundLowLength(int lb) {

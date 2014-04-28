@@ -83,7 +83,8 @@ import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
+import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
@@ -1155,10 +1156,10 @@ public class AstCompiler {
 
             IrIntVar[] score = new IrIntVar[members.length];
             for (int i = 0; i < members.length; i++) {
-                IrDomain domain = refs[i].getDomain();
+                Domain domain = refs[i].getDomain();
                 int uninitializedRef = getUninitalizedRef(setType.getRef().getTargetType());
                 // Score's use 0 as the uninitialized value.
-                domain = IrUtil.add(IrUtil.remove(domain, uninitializedRef), 0);
+                domain = domain.remove(uninitializedRef).insert(0);
                 score[i] = domainInt("Score" + count + "@" + i, domain);
                 module.addConstraint(ifThenElse(members[i],
                         equal(score[i], refs[i]), equal(score[i], 0)));
@@ -1305,8 +1306,8 @@ public class AstCompiler {
             }
             if (body instanceof IrSetExpr) {
                 IrSetExpr setBody = (IrSetExpr) body;
-                IrDomain env = setBody.getEnv();
-                IrDomain ker = setBody.getKer();
+                Domain env = setBody.getEnv();
+                Domain ker = setBody.getKer();
                 // TODO: need a different strategy otherwise
                 assert env.getLowBound() >= 0;
                 @SuppressWarnings("unchecked")
@@ -1445,8 +1446,8 @@ public class AstCompiler {
         IrSetVar[] skip = new IrSetVar[parentScope];
         for (int i = 0; i < skip.length; i++) {
             if (low <= max) {
-                IrDomain env = boundDomain(low, Math.min(high - 1, max));
-                IrDomain ker = EmptyDomain;
+                Domain env = boundDomain(low, Math.min(high - 1, max));
+                Domain ker = EmptyDomain;
                 int cardLow = 0;
                 int cardHigh = card.getHigh();
                 if (partialParentSolution.hasClafer(i)) {
@@ -1515,13 +1516,13 @@ public class AstCompiler {
         assert !(tar instanceof AstStringClafer);
 
         PartialSolution partialSolution = getPartialSolution(src);
-        IrDomain[] partialInts = getPartialInts(ref);
+        Domain[] partialInts = getPartialInts(ref);
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
         for (int i = 0; i < ivs.length; i++) {
             if (partialSolution.hasClafer(i)) {
                 ivs[i] = domainInt(src.getName() + "@Ref" + i, partialInts[i]);
             } else {
-                ivs[i] = domainInt(src.getName() + "@Ref" + i, IrUtil.add(partialInts[i], getUninitalizedRef(tar)));
+                ivs[i] = domainInt(src.getName() + "@Ref" + i, partialInts[i].insert(getUninitalizedRef(tar)));
             }
         }
 
@@ -1537,7 +1538,7 @@ public class AstCompiler {
         int stringLength = analysis.getScope().getStringLength();
         char charLow = analysis.getScope().getCharLow();
         char charHigh = analysis.getScope().getCharHigh();
-        IrDomain charDomain = IrUtil.add(boundDomain(charLow, charHigh), 0);
+        Domain charDomain = boundDomain(charLow, charHigh).insert(0);
 
         IrStringVar[] svs = new IrStringVar[getScope(src)];
         for (int i = 0; i < svs.length; i++) {
@@ -1602,7 +1603,7 @@ public class AstCompiler {
         return getPartialSolution(clafer.getParent());
     }
 
-    private IrDomain[] getPartialInts(AstRef ref) {
+    private Domain[] getPartialInts(AstRef ref) {
         return analysis.getPartialInts(ref);
     }
 

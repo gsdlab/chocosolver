@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -10,7 +11,7 @@ public class IrMinus extends IrAbstractInt {
 
     private final IrIntExpr expr;
 
-    public IrMinus(IrIntExpr expr, IrDomain domain) {
+    public IrMinus(IrIntExpr expr, Domain domain) {
         super(domain);
         this.expr = Check.notNull(expr);
     }

@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import static org.clafer.test.TestUtil.*;
 import org.clafer.choco.constraint.Constraints;
 import static org.clafer.ir.Irs.*;
@@ -174,7 +175,7 @@ public class BasicBoolExprTest extends IrTest {
     public void testWithin() {
         randomizedTest(new TestCaseByConvention() {
 
-            IrBoolExpr setup(IrIntVar value, @NonEmpty IrDomain range) {
+            IrBoolExpr setup(IrIntVar value, @NonEmpty Domain range) {
                 return within(value, range);
             }
 
@@ -188,7 +189,7 @@ public class BasicBoolExprTest extends IrTest {
     public void testNotWithin() {
         randomizedTest(new TestCaseByConvention() {
 
-            IrBoolExpr setup(IrIntVar value, @NonEmpty IrDomain range) {
+            IrBoolExpr setup(IrIntVar value, @NonEmpty Domain range) {
                 return notWithin(value, range);
             }
 

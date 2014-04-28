@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -12,7 +13,7 @@ public class IrStringCompare extends IrAbstractBool {
     private final Op op;
     private final IrStringExpr right;
 
-    IrStringCompare(IrStringExpr left, Op op, IrStringExpr right, IrBoolDomain domain) {
+    IrStringCompare(IrStringExpr left, Op op, IrStringExpr right, BoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);

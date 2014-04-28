@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -12,7 +13,7 @@ public class IrSetTernary extends IrAbstractSet {
     private final IrSetExpr consequent;
     private final IrSetExpr alternative;
 
-    public IrSetTernary(IrBoolExpr antecedent, IrSetExpr consequent, IrSetExpr alternative, IrDomain env, IrDomain ker, IrDomain card) {
+    public IrSetTernary(IrBoolExpr antecedent, IrSetExpr consequent, IrSetExpr alternative, Domain env, Domain ker, Domain card) {
         super(env, ker, card);
         this.antecedent = Check.notNull(antecedent);
         this.consequent = Check.notNull(consequent);

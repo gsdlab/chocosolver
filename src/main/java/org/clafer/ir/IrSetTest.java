@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -12,7 +13,7 @@ public class IrSetTest extends IrAbstractBool {
     private final Op op;
     private final IrSetExpr right;
 
-    IrSetTest(IrSetExpr left, Op op, IrSetExpr right, IrBoolDomain domain) {
+    IrSetTest(IrSetExpr left, Op op, IrSetExpr right, BoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);

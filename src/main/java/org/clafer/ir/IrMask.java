@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -12,7 +13,7 @@ public class IrMask extends IrAbstractSet {
     private final int from;
     private final int to;
 
-    IrMask(IrSetExpr set, int from, int to, IrDomain env, IrDomain ker, IrDomain card) {
+    IrMask(IrSetExpr set, int from, int to, Domain env, Domain ker, Domain card) {
         super(env, ker, card);
 
         if (from > to) {

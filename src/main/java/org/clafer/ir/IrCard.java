@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -10,12 +11,9 @@ public class IrCard extends IrAbstractInt {
 
     private final IrSetExpr set;
 
-    IrCard(IrSetExpr set, IrDomain domain) {
+    IrCard(IrSetExpr set, Domain domain) {
         super(domain);
         this.set = Check.notNull(set);
-        if (!IrUtil.isSubsetOf(domain, set.getCard())) {
-            throw new IllegalArgumentException();
-        }
     }
 
     public IrSetExpr getSet() {

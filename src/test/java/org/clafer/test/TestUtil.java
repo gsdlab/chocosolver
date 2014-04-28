@@ -5,21 +5,20 @@ import solver.variables.CStringVar;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
+import static org.clafer.domain.Domains.*;
+import org.clafer.domain.EmptyDomain;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
-import org.clafer.ir.IrUtil;
 import static org.clafer.ir.Irs.*;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.Propagator;
-import solver.constraints.set.SCF;
 import solver.search.strategy.ISF;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.selectors.SetValueSelector;
@@ -128,7 +127,7 @@ public class TestUtil {
         return randInt(0, 4);
     }
 
-    public static IrDomain randDomain(int low, int high) {
+    public static Domain randDomain(int low, int high) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
@@ -137,15 +136,15 @@ public class TestUtil {
                 : randNonEmptyDomain(low, high);
     }
 
-    public static IrDomain randDomain() {
+    public static Domain randDomain() {
         return randDomain(-4, 4);
     }
 
-    public static IrDomain randPositiveDomain() {
+    public static Domain randPositiveDomain() {
         return randDomain(0, 4);
     }
 
-    public static IrDomain randNonEmptyDomain(int low, int high) {
+    public static Domain randNonEmptyDomain(int low, int high) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
@@ -174,11 +173,11 @@ public class TestUtil {
         }
     }
 
-    public static IrDomain randNonEmptyDomain() {
+    public static Domain randNonEmptyDomain() {
         return randNonEmptyDomain(-4, 4);
     }
 
-    public static IrDomain randNonEmptyPositiveDomain() {
+    public static Domain randNonEmptyPositiveDomain() {
         return randNonEmptyDomain(0, 4);
     }
 
@@ -216,11 +215,11 @@ public class TestUtil {
         if (low > high) {
             throw new IllegalArgumentException();
         }
-        IrDomain env = randDomain(low, high);
-        IrDomain ker = IrUtil.intersection(randDomain(low, high), env);
+        Domain env = randDomain(low, high);
+        Domain ker = randDomain(low, high).intersection(env);
         int a = randInt(ker.size(), env.size());
         int b = randInt(ker.size(), env.size());
-        IrDomain card = a < b ? randNonEmptyDomain(a, b) : randNonEmptyDomain(b, a);
+        Domain card = a < b ? randNonEmptyDomain(a, b) : randNonEmptyDomain(b, a);
         return set("Set" + varCount++, env, ker, card);
     }
 
@@ -237,10 +236,10 @@ public class TestUtil {
         IrIntVar length = randIrIntVar(0, 4);
         IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
         for (int i = 0; i < chars.length; i++) {
-            IrDomain domain = randNonEmptyDomain('a', 'c');
+            Domain domain = randNonEmptyDomain('a', 'c');
             chars[i] = domainInt(name + "[" + i + "]",
                     i < length.getDomain().getLowBound()
-                    ? domain : IrUtil.add(domain, 0));
+                    ? domain : domain.insert(0));
         }
         return string(name, chars, length);
     }
@@ -251,7 +250,7 @@ public class TestUtil {
                 return Var.zero(solver);
             case TrueDomain:
                 return Var.one(solver);
-            case BoolDomain:
+            case TrueFalseDomain:
                 return Var.bool(var.getName(), solver);
             default:
                 throw new IllegalStateException();
@@ -259,7 +258,7 @@ public class TestUtil {
     }
 
     public static IntVar toVar(IrIntVar var, Solver solver) {
-        IrDomain domain = var.getDomain();
+        Domain domain = var.getDomain();
         return domain.isBounded()
                 ? Var.enumerated(var.getName(), domain.getLowBound(), domain.getHighBound(), solver)
                 : Var.enumerated(var.getName(), domain.getValues(), solver);

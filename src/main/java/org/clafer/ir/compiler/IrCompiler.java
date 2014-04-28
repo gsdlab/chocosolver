@@ -19,7 +19,7 @@ import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
-import org.clafer.ir.IrBoolDomain;
+import org.clafer.domain.BoolDomain;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolExprVisitor;
 import org.clafer.ir.IrBoolVar;
@@ -28,7 +28,7 @@ import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrConcat;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrElementString;
 import org.clafer.ir.IrExpr;
@@ -208,7 +208,7 @@ public class IrCompiler {
         solver.post(constraint);
     }
 
-    private BoolVar boolVar(String name, IrBoolDomain domain) {
+    private BoolVar boolVar(String name, BoolDomain domain) {
         switch (domain) {
             case TrueDomain:
                 return one(solver);
@@ -219,7 +219,7 @@ public class IrCompiler {
         }
     }
 
-    private IntVar intVar(String name, IrDomain domain) {
+    private IntVar intVar(String name, Domain domain) {
         if (domain.size() == 1) {
             int constant = domain.getLowBound();
             switch (domain.getLowBound()) {
@@ -240,8 +240,7 @@ public class IrCompiler {
         return enumerated(name, domain.getValues(), solver);
     }
 
-    private SetVar setVar(String name, IrDomain env, IrDomain ker) {
-        assert IrUtil.isSubsetOf(ker, env);
+    private SetVar setVar(String name, Domain env, Domain ker) {
         if (env.size() == ker.size()) {
             int[] values = ker.getValues();
             TIntHashSet valueSet = new TIntHashSet(values);
@@ -255,12 +254,12 @@ public class IrCompiler {
         return set(name, env.getValues(), ker.getValues(), solver);
     }
 
-    private CSetVar cset(String name, IrDomain env, IrDomain ker, IrDomain card) {
+    private CSetVar cset(String name, Domain env, Domain ker, Domain card) {
         SetVar set = setVar(name, env, ker);
         return new CSetVar(set, intVar("|" + name + "|", card));
     }
 
-    private CStringVar cstring(String name, IrDomain[] chars, IrDomain length) {
+    private CStringVar cstring(String name, Domain[] chars, Domain length) {
         IntVar[] $chars = new IntVar[chars.length];
         for (int i = 0; i < $chars.length; i++) {
             $chars[i] = intVar(name + "[" + i + "]", chars[i]);
@@ -270,22 +269,22 @@ public class IrCompiler {
     }
 
     private BoolVar numBoolVar(String name) {
-        return boolVar(name + "#" + varNum++, IrBoolDomain.BoolDomain);
+        return boolVar(name + "#" + varNum++, BoolDomain.TrueFalseDomain);
     }
 
-    private IntVar numIntVar(String name, IrDomain domain) {
+    private IntVar numIntVar(String name, Domain domain) {
         return intVar(name + "#" + varNum++, domain);
     }
 
-    private SetVar numSetVar(String name, IrDomain env, IrDomain ker) {
+    private SetVar numSetVar(String name, Domain env, Domain ker) {
         return setVar(name + "#" + varNum++, env, ker);
     }
 
-    private CSetVar numCset(String name, IrDomain env, IrDomain ker, IrDomain card) {
+    private CSetVar numCset(String name, Domain env, Domain ker, Domain card) {
         return cset(name + "#" + varNum++, env, ker, card);
     }
 
-    private CStringVar numCstring(String name, IrDomain[] chars, IrDomain length) {
+    private CStringVar numCstring(String name, Domain[] chars, Domain length) {
         return cstring(name + "#" + varNum++, chars, length);
     }
 
@@ -839,7 +838,7 @@ public class IrCompiler {
         @Override
         public Object visit(IrWithin ir, BoolArg a) {
             IntVar var = compile(ir.getValue());
-            IrDomain range = ir.getRange();
+            Domain range = ir.getRange();
             if (range.isBounded()) {
                 return _within(var, range.getLowBound(), range.getHighBound());
             }
@@ -849,7 +848,7 @@ public class IrCompiler {
         @Override
         public Object visit(IrNotWithin ir, BoolArg a) {
             IntVar var = compile(ir.getValue());
-            IrDomain range = ir.getRange();
+            Domain range = ir.getRange();
             if (range.isBounded()) {
                 return _not_within(var, range.getLowBound(), range.getHighBound());
             }
@@ -1131,7 +1130,7 @@ public class IrCompiler {
                     int[] coefficients = coeffs.getFst();
                     IntVar[] operands = compile(coeffs.getSnd());
                     if (reify == null) {
-                        IntVar sum = numIntVar("Sum", IrUtil.offset(ir.getDomain(), -offset));
+                        IntVar sum = numIntVar("Sum", ir.getDomain().offset(-offset));
                         post(_scalar(sum, coefficients, operands));
                         return _offset(sum, offset);
                     }

@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
+
 /**
  * An immutable expression that evaluates to a string.
  *
@@ -12,14 +14,14 @@ public interface IrStringExpr extends IrExpr {
      *
      * @return the length domain
      */
-    public IrDomain getLength();
+    public Domain getLength();
 
     /**
      * The characters of the string.
      *
      * @return the character domains
      */
-    public IrDomain[] getChars();
+    public Domain[] getChars();
 
     /**
      * Dynamic dispatch on the visitor.

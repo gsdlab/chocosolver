@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -20,8 +21,8 @@ public class IrStringVar extends IrAbstractString implements IrVar {
         this.length = length;
     }
 
-    private static IrDomain[] getCharDomains(IrIntExpr[] chars) {
-        IrDomain[] charDomains = new IrDomain[chars.length];
+    private static Domain[] getCharDomains(IrIntExpr[] chars) {
+        Domain[] charDomains = new Domain[chars.length];
         for (int i = 0; i < charDomains.length; i++) {
             charDomains[i] = chars[i].getDomain();
         }

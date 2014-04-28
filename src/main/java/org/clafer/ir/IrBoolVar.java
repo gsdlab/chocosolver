@@ -1,18 +1,20 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
+
 /**
  *
  * @author jimmy
  */
 public class IrBoolVar extends IrIntVar implements IrBoolExpr, IrVar {
 
-    IrBoolVar(String name, IrBoolDomain domain) {
+    IrBoolVar(String name, BoolDomain domain) {
         super(name, domain);
     }
 
     @Override
-    public IrBoolDomain getDomain() {
-        return (IrBoolDomain) super.getDomain();
+    public BoolDomain getDomain() {
+        return (BoolDomain) super.getDomain();
     }
 
     @Override

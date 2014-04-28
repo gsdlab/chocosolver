@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -11,7 +12,7 @@ public class IrSortSets extends IrAbstractBool {
 
     private final IrSetExpr[] sets;
 
-    public IrSortSets(IrSetExpr[] sets, IrBoolDomain domain) {
+    public IrSortSets(IrSetExpr[] sets, BoolDomain domain) {
         super(domain);
         this.sets = Check.noNullsNotEmpty(sets);
     }

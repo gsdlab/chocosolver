@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -10,7 +11,7 @@ public class IrIfOnlyIf extends IrAbstractBool {
 
     private final IrBoolExpr left, right;
 
-    IrIfOnlyIf(IrBoolExpr left, IrBoolExpr right, IrBoolDomain domain) {
+    IrIfOnlyIf(IrBoolExpr left, IrBoolExpr right, BoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);

@@ -1,6 +1,6 @@
 package org.clafer.ast;
 
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
 
 /**
  *
@@ -8,7 +8,7 @@ import org.clafer.ir.IrDomain;
  */
 public class JoinSetWithStringException extends AstException {
 
-    public JoinSetWithStringException(AstSetExpr expr, IrDomain card) {
+    public JoinSetWithStringException(AstSetExpr expr, Domain card) {
         super("Cannot join a non-singleton set with strings. For example:\n"
                 + "\n"
                 + "    A -> string 0..1\n"

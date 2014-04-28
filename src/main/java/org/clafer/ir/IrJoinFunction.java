@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
@@ -14,7 +15,7 @@ public class IrJoinFunction extends IrAbstractSet {
     private final IrIntExpr[] refs;
     private final Integer globalCardinality;
 
-    IrJoinFunction(IrSetExpr take, IrIntExpr[] refs, IrDomain env, IrDomain ker, IrDomain card, Integer globalCardinality) {
+    IrJoinFunction(IrSetExpr take, IrIntExpr[] refs, Domain env, Domain ker, Domain card, Integer globalCardinality) {
         super(env, ker, card);
         this.take = Check.notNull(take);
         this.refs = Check.noNullsNotEmpty(refs);

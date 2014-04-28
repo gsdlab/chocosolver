@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -14,7 +15,7 @@ public class IrElementString extends IrAbstractString {
     private final IrIntExpr index;
 
     IrElementString(IrStringExpr[] array, IrIntExpr index,
-            IrDomain[] charDomains, IrDomain lengthDomain) {
+            Domain[] charDomains, Domain lengthDomain) {
         super(charDomains, lengthDomain);
         this.array = Check.noNullsNotEmpty(array);
         this.index = Check.notNull(index);

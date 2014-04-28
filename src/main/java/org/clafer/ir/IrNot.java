@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -10,7 +11,7 @@ public class IrNot extends IrAbstractBool {
 
     private final IrBoolExpr expr;
 
-    public IrNot(IrBoolExpr expr, IrBoolDomain domain) {
+    public IrNot(IrBoolExpr expr, BoolDomain domain) {
         super(domain);
         this.expr = Check.notNull(expr);
     }

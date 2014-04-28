@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -12,7 +13,7 @@ public class IrTernary extends IrAbstractInt {
     private final IrIntExpr consequent;
     private final IrIntExpr alternative;
 
-    public IrTernary(IrBoolExpr antecedent, IrIntExpr consequent, IrIntExpr alternative, IrDomain domain) {
+    public IrTernary(IrBoolExpr antecedent, IrIntExpr consequent, IrIntExpr alternative, Domain domain) {
         super(domain);
         this.antecedent = Check.notNull(antecedent);
         this.consequent = Check.notNull(consequent);

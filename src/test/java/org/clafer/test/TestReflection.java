@@ -10,7 +10,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import static org.clafer.test.TestUtil.*;
 import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
@@ -128,7 +128,7 @@ public class TestReflection {
             return term;
         } else if (int.class.equals(type)) {
             return randInt(low, high);
-        } else if (IrDomain.class.equals(type)) {
+        } else if (Domain.class.equals(type)) {
             return annotations.hasAnnotation(NonEmpty.class)
                     ? randNonEmptyDomain(low, high)
                     : randDomain(low, high);
@@ -164,7 +164,7 @@ public class TestReflection {
             return randBool();
         } else if (int.class.equals(type)) {
             return randInt(low, high);
-        } else if (IrDomain.class.equals(type)) {
+        } else if (Domain.class.equals(type)) {
             return hasAnnotation(NonEmpty.class, annotations)
                     ? randNonEmptyDomain(low, high)
                     : randDomain(low, high);
@@ -203,7 +203,7 @@ public class TestReflection {
         } else if (int.class.equals(type)) {
             return irVar;
         } else if (int[].class.equals(type)) {
-            return ((IrDomain) irVar).getValues();
+            return ((Domain) irVar).getValues();
         } else if (type.isArray()) {
             Object[] irVars = (Object[]) irVar;
             Object creates = Array.newInstance(type.getComponentType(), irVars.length);
@@ -227,8 +227,8 @@ public class TestReflection {
             return irVar;
         } else if (irVar instanceof Term) {
             return ((Term) irVar).getValue(solution);
-        } else if (irVar instanceof IrDomain) {
-            return new TIntArrayList(((IrDomain) irVar).getValues());
+        } else if (irVar instanceof Domain) {
+            return new TIntArrayList(((Domain) irVar).getValues());
         } else if (irVar instanceof Object[]) {
             Object[] vars = (Object[]) irVar;
             Object[] values = new Object[vars.length];

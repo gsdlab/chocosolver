@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -11,7 +12,7 @@ public class IrSetDifference extends IrAbstractSet {
     private final IrSetExpr minuend, subtrahend;
 
     IrSetDifference(IrSetExpr minuend, IrSetExpr subtrahend,
-            IrDomain env, IrDomain ker, IrDomain card) {
+            Domain env, Domain ker, Domain card) {
         super(env, ker, card);
         this.minuend = Check.notNull(minuend);
         this.subtrahend = Check.notNull(subtrahend);

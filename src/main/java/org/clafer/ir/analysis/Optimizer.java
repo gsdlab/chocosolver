@@ -4,7 +4,7 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCompare;
 import static org.clafer.ir.IrCompare.Op.Equal;
 import static org.clafer.ir.IrCompare.Op.NotEqual;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrLone;
@@ -171,7 +171,7 @@ public class Optimizer {
      * Optimize {@code lone(antecedent, left `op` right)} where `op` is = or !=.
      */
     private static IrBoolExpr optimizeLoneCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
-        IrDomain domain = left.getDomain();
+        Domain domain = left.getDomain();
         Integer constant = IrUtil.getConstant(right);
         if (domain.size() == 2 && constant != null) {
             switch (op) {
@@ -226,7 +226,7 @@ public class Optimizer {
      * Optimize {@code antecedent or (left `op` right)} where `op` is = or !=.
      */
     private static IrBoolExpr optimizeOrCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
-        IrDomain domain = left.getDomain();
+        Domain domain = left.getDomain();
         Integer constant = IrUtil.getConstant(right);
         if (domain.size() == 2 && constant != null) {
             switch (op) {
@@ -281,7 +281,7 @@ public class Optimizer {
      * Optimize {@code antecedent => (left `op` right)} where `op` is = or !=.
      */
     private static IrBoolExpr optimizeImplicationCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
-        IrDomain domain = left.getDomain();
+        Domain domain = left.getDomain();
         Integer constant = IrUtil.getConstant(right);
         if (domain.size() == 2 && constant != null) {
             switch (op) {

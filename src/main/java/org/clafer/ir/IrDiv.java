@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -16,7 +17,7 @@ public class IrDiv extends IrAbstractInt {
      */
     private final IrIntExpr dividend, divisor;
 
-    IrDiv(IrIntExpr dividend, IrIntExpr divisor, IrDomain domain) {
+    IrDiv(IrIntExpr dividend, IrIntExpr divisor, Domain domain) {
         super(domain);
         this.dividend = Check.notNull(dividend);
         this.divisor = Check.notNull(divisor);

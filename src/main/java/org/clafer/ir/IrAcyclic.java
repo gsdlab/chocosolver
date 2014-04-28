@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -11,7 +12,7 @@ public class IrAcyclic extends IrAbstractBool {
 
     private final IrIntExpr[] edges;
 
-    public IrAcyclic(IrIntExpr[] edges, IrBoolDomain domain) {
+    public IrAcyclic(IrIntExpr[] edges, BoolDomain domain) {
         super(domain);
         this.edges = Check.noNullsNotEmpty(edges);
     }

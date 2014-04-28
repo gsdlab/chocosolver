@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -11,7 +12,7 @@ public class IrMember extends IrAbstractBool {
     private final IrIntExpr element;
     private final IrSetExpr set;
 
-    IrMember(IrIntExpr element, IrSetExpr set, IrBoolDomain domain) {
+    IrMember(IrIntExpr element, IrSetExpr set, BoolDomain domain) {
         super(domain);
         this.element = Check.notNull(element);
         this.set = Check.notNull(set);

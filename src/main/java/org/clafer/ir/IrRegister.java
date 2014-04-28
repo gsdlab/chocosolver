@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
+
 /**
  *
  * @author jimmy
@@ -10,8 +12,8 @@ public class IrRegister extends IrAbstractBool {
 
     public IrRegister(IrVar variable) {
         super(variable instanceof IrConstant
-                ? IrBoolDomain.TrueDomain
-                : IrBoolDomain.BoolDomain);
+                ? BoolDomain.TrueDomain
+                : BoolDomain.TrueFalseDomain);
         this.variable = variable;
     }
 

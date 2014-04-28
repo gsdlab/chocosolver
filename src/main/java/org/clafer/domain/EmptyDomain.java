@@ -1,114 +1,136 @@
-package org.clafer.ir;
+package org.clafer.domain;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import org.clafer.collection.EmptyIntIterator;
+import org.clafer.ir.IrException;
 
 /**
  * A domain of size 0. Contains nothing.
  *
  * @author jimmy
  */
-public class IrEmptyDomain implements IrDomain {
+public class EmptyDomain implements Domain {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isBounded() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean contains(int value) {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int getLowBound() {
         throw new IrException("Emtpy domain does not have a low bound.");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int getHighBound() {
         throw new IrException("Emtpy domain does not have a high bound.");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isEmpty() {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int size() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
+    public boolean isSubsetOf(Domain superset) {
+        return true;
+    }
+
+    @Override
+    public boolean intersects(Domain other) {
+        return false;
+    }
+
+    @Override
+    public Domain insert(int value) {
+        return Domains.constantDomain(value);
+    }
+
+    @Override
+    public Domain remove(int value) {
+        return this;
+    }
+
+    @Override
+    public Domain boundLow(int low) {
+        return this;
+    }
+
+    @Override
+    public Domain boundHigh(int high) {
+        return this;
+    }
+
+    @Override
+    public Domain boundBetween(int low, int high) {
+        return this;
+    }
+
+    @Override
+    public Domain minus() {
+        return this;
+    }
+
+    @Override
+    public Domain difference(Domain other) {
+        return this;
+    }
+
+    @Override
+    public Domain intersection(Domain other) {
+        return this;
+    }
+
+    @Override
+    public Domain union(Domain other) {
+        return other;
+    }
+
+    @Override
+    public Domain offset(int c) {
+        return this;
+    }
+
     @Override
     public int[] getValues() {
         return new int[]{};
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public TIntIterator iterator() {
         return EmptyIntIterator.getIterator();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public TIntIterator iterator(boolean increasing) {
         return EmptyIntIterator.getIterator();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void transferTo(TIntCollection collection) {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof IrEmptyDomain;
+        return obj instanceof EmptyDomain;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return 305419896;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return "{}";

@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -16,7 +17,7 @@ public class IrMul extends IrAbstractInt {
      */
     private final IrIntExpr multiplicand, multiplier;
 
-    IrMul(IrIntExpr multiplicand, IrIntExpr multiplier, IrDomain domain) {
+    IrMul(IrIntExpr multiplicand, IrIntExpr multiplier, Domain domain) {
         super(domain);
         this.multiplicand = Check.notNull(multiplicand);
         this.multiplier = Check.notNull(multiplier);
