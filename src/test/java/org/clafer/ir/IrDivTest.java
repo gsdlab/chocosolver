@@ -5,11 +5,9 @@ import static org.clafer.ir.Irs.*;
 import static org.junit.Assume.assumeFalse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
 import solver.constraints.Constraint;
 import solver.constraints.ICF;
 import solver.variables.IntVar;
-import solver.variables.VF;
 
 /**
  *
@@ -19,13 +17,13 @@ import solver.variables.VF;
 public class IrDivTest {
 
     @Test(timeout = 60000)
-    public IrBoolExpr setup(IrIntVar quotient, IrIntVar dividend, IrIntVar divisor) {
+    public IrBoolExpr setup(IrIntVar dividend, IrIntVar divisor, IrIntVar quotient) {
         assumeFalse(divisor.getDomain().contains(0));
-        return equal(quotient, div(dividend, divisor));
+        return equal(div(dividend, divisor), quotient);
     }
 
     @Solution
-    public Constraint setup(IntVar quotient, IntVar dividend, IntVar divisor) {
+    public Constraint setup(IntVar dividend, IntVar divisor, IntVar quotient) {
         return ICF.eucl_div(dividend, divisor, quotient);
     }
 }

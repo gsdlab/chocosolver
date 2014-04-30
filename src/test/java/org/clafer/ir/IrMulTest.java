@@ -16,12 +16,12 @@ import solver.variables.IntVar;
 public class IrMulTest {
 
     @Test(timeout = 60000)
-    public IrBoolExpr setup(IrIntVar product, IrIntVar multiplicand, IrIntVar multiplier) {
-        return equal(product, mul(multiplicand, multiplier));
+    public IrBoolExpr setup(IrIntVar multiplicand, IrIntVar multiplier, IrIntVar product) {
+        return equal(mul(multiplicand, multiplier), product);
     }
 
     @Solution
-    public Constraint setup(IntVar product, IntVar multiplicand, IntVar multiplier) {
+    public Constraint setup(IntVar multiplicand, IntVar multiplier, IntVar product) {
         return ICF.times(multiplicand, multiplier, product);
     }
 }

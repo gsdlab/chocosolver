@@ -16,12 +16,12 @@ import solver.variables.IntVar;
 public class IrAddTest {
 
     @Test(timeout = 60000)
-    public IrBoolExpr setup(IrIntVar sum, IrIntVar[] is) {
-        return equal(sum, add(is));
+    public IrBoolExpr setup(IrIntVar[] is, IrIntVar sum) {
+        return equal(add(is), sum);
     }
 
     @Solution
-    public Constraint setup(IntVar sum, IntVar[] is) {
+    public Constraint setup(IntVar[] is, IntVar sum) {
         return ICF.sum(is, sum);
     }
 }
