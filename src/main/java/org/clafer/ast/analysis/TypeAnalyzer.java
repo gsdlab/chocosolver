@@ -137,7 +137,7 @@ public class TypeAnalyzer implements Analyzer {
 
         private <T extends AstExpr> TypedExpr<T>[] typeCheck(T[] exprs) {
             @SuppressWarnings("unchecked")
-            TypedExpr<T>[] typeChecked = new TypedExpr[exprs.length];
+            TypedExpr<T>[] typeChecked = (TypedExpr<T>[]) new TypedExpr<?>[exprs.length];
             for (int i = 0; i < exprs.length; i++) {
                 typeChecked[i] = typeCheck(exprs[i]);
             }
@@ -357,7 +357,10 @@ public class TypeAnalyzer implements Analyzer {
                     throw new TypeException("Cannot sum(" + set.getType() + ")");
                 case 1:
                     AstRef ref = refs.iterator().next();
-                    return put(ref.getTargetType(), sum(castTo(set, ref.getSourceType())));
+                    if (ref.getTargetType() instanceof AstIntClafer) {
+                        return put(ref.getTargetType(), sum(castTo(set, ref.getSourceType())));
+                    }
+                    throw new TypeException("Cannot sum(" + set.getType() + ")");
                 default:
                     throw new TypeException("Ambiguous sum(" + set.getType() + ")");
             }
