@@ -127,6 +127,46 @@ public class TypeAnalyzerTest {
 
     /**
      * <pre>
+     * A
+     *     B ?
+     * C
+     *     D ?
+     * [ some C.B ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinNonOwnedChild() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("b").withCard(Optional);
+        AstConcreteClafer c = model.addChild("c").withCard(Mandatory);
+        AstConcreteClafer d = c.addChild("d").withCard(Optional);
+        model.addConstraint(some(join(global(c), b)));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> integer
+     *     B ?
+     * [ some A.ref.B ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinInteger() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("b").withCard(Optional);
+        model.addConstraint(some(join(joinRef(global(a)), b)));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
      * A -> int
      * B -> A
      * [ A = sum B ]
