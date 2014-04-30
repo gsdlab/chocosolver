@@ -221,6 +221,108 @@ public class TypeAnalyzerTest {
 
     /**
      * <pre>
+     * A
+     * [ some A.ref ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinRefNoRef() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
+        model.addConstraint(some(joinRef(global(a))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * [ some A.ref.ref ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinRefInteger() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(Mandatory).refToUnique(IntType);
+        model.addConstraint(some(joinRef(joinRef(global(a)))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> int
+     * C -> int
+     * [ C.ref = (A ++ B).ref ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinRefDifferentTypes() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("b").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("c").refToUnique(IntType).withCard(Mandatory);
+        model.addConstraint(equal(joinRef(c), joinRef(union(global(a), global(b)))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A
+     * [ some (sum A) ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testSumNoRef() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
+        model.addConstraint(some(sum(global(a))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A
+     * [ 3 = A ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testCompareNonInteger() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
+        model.addConstraint(equal(constant(3), global(a)));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * B
+     * [ 3 = A.ref + B ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testArithmNonInteger() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("b").withCard(Mandatory);
+        model.addConstraint(equal(constant(3), add(joinRef(global(a)), global(b))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
      * A -> int
      * B -> A
      * [ A = sum B ]
