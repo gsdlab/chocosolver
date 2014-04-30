@@ -53,7 +53,6 @@ import org.clafer.ir.IrMul;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrNotMember;
-import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
 import org.clafer.ir.IrOr;
@@ -838,16 +837,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrNotWithin ir, BoolArg a) {
-            IntVar var = compile(ir.getValue());
-            Domain range = ir.getRange();
-            if (range.isBounded()) {
-                return _not_within(var, range.getLowBound(), range.getHighBound());
-            }
-            return _not_within(var, range.getValues());
-        }
-
-        @Override
         public Object visit(IrCompare ir, BoolArg a) {
             IrCompare.Op op = ir.getOp();
             IrIntExpr left = ir.getLeft();
@@ -1321,11 +1310,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrNotWithin ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
         public Object visit(IrCompare ir, IntVar a) {
             return compileBool(ir, a);
         }
@@ -1737,14 +1721,6 @@ public class IrCompiler {
 
     private static Constraint _within(IntVar var, int[] values) {
         return ICF.member(var, values);
-    }
-
-    private static Constraint _not_within(IntVar var, int low, int high) {
-        return ICF.not_member(var, low, high);
-    }
-
-    private static Constraint _not_within(IntVar var, int[] values) {
-        return ICF.not_member(var, values);
     }
 
     private static Constraint _member(IntVar element, SetVar set) {

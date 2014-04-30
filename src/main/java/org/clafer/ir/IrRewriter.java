@@ -252,14 +252,6 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrNotWithin ir, T a) {
-        IrIntExpr value = rewrite(ir.getValue(), a);
-        return changed(ir.getValue(), value)
-                ? notWithin(value, ir.getRange())
-                : ir;
-    }
-
-    @Override
     public IrBoolExpr visit(IrCompare ir, T a) {
         IrIntExpr left = rewrite(ir.getLeft(), a);
         IrIntExpr right = rewrite(ir.getRight(), a);

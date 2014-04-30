@@ -325,23 +325,6 @@ public class Irs {
         }
     }
 
-    public static IrBoolExpr notWithin(IrIntExpr value, Domain range) {
-        Domain domain = value.getDomain();
-        if (range.isBounded()
-                && domain.getLowBound() >= range.getLowBound()
-                && domain.getHighBound() <= range.getHighBound()) {
-            return False;
-        }
-        if (domain.getLowBound() > range.getHighBound()
-                || domain.getHighBound() < range.getLowBound()) {
-            return True;
-        }
-        if (range.size() == 1) {
-            return notEqual(value, range.getLowBound());
-        }
-        return new IrNotWithin(value, range, TrueFalseDomain);
-    }
-
     public static IrBoolExpr compare(int left, IrCompare.Op op, IrIntExpr right) {
         return compare(constant(left), op, right);
     }
@@ -647,7 +630,7 @@ public class Irs {
             return False;
         }
         if (IrUtil.isConstant(set)) {
-            return notWithin(element, set.getEnv());
+            return within(element, set.getEnv()).negate();
         }
         return new IrNotMember(element, set, TrueFalseDomain);
     }

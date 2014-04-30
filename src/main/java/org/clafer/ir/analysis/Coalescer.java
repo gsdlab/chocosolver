@@ -48,7 +48,6 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrNotMember;
-import org.clafer.ir.IrNotWithin;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrPrefix;
 import org.clafer.ir.IrRegister;
@@ -336,12 +335,6 @@ public class Coalescer {
         @Override
         public Void visit(IrWithin ir, Void a) {
             propagateInt(ir.getRange(), ir.getValue());
-            return null;
-        }
-
-        @Override
-        public Void visit(IrNotWithin ir, Void a) {
-            propagateInt(ir.getValue().getDomain().difference(ir.getRange()), ir.getValue());
             return null;
         }
 

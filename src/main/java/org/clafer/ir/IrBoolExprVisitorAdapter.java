@@ -68,11 +68,6 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     }
 
     @Override
-    public B visit(IrNotWithin ir, A a) {
-        return null;
-    }
-
-    @Override
     public B visit(IrCompare ir, A a) {
         return null;
     }
