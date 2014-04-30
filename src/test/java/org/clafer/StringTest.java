@@ -1,5 +1,6 @@
 package org.clafer;
 
+import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
@@ -122,6 +123,39 @@ public class StringTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
                 .stringLength(5).charLow('a').charHigh('c'));
         assertEquals(2, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract A -> string
+     * B : A ?
+     *     [ this.ref = "b"
+     * C : A ?
+     *     [ this.ref = "c" ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinSuperStringEqualJoinString() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A").refToUnique(StringType);
+        AstConcreteClafer b = model.addChild("B").extending(a).withCard(Optional);
+        AstConcreteClafer c = model.addChild("C").extending(a).withCard(Optional);
+        b.addConstraint(equal(joinRef($this()), constant("b")));
+        c.addConstraint(equal(joinRef($this()), constant("c")));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
+                .stringLength(5).charLow('a').charHigh('c'));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer B : instance.getTopClafers(b)) {
+                assertEquals("b", B.getRef().getValue());
+            }
+            for (InstanceClafer C : instance.getTopClafers(c)) {
+                assertEquals("c", C.getRef().getValue());
+            }
+        }
+        assertEquals(4, solver.instanceCount());
     }
 
     /**
