@@ -3,7 +3,7 @@ package org.clafer.ir;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrQuickTest.Solution;
 import static org.clafer.ir.Irs.*;
-import org.clafer.test.NonEmpty;
+import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import solver.constraints.Constraint;
@@ -18,7 +18,8 @@ import solver.variables.SetVar;
 public class IrIntChannelTest {
 
     @Test(timeout = 60000)
-    public IrBoolExpr setup(@NonEmpty IrIntVar[] ints, @NonEmpty IrSetVar[] sets) {
+    public IrBoolExpr setup(IrIntVar[] ints, IrSetVar[] sets) {
+        assumeTrue(ints.length > 0 || sets.length > 0);
         return intChannel(ints, sets);
     }
 
