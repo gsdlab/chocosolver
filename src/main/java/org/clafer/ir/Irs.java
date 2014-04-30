@@ -423,10 +423,10 @@ public class Irs {
         if (left.equals(right)) {
             switch (op) {
                 case Equal:
-                case LessThan:
+                case LessThanEqual:
                     return True;
                 case NotEqual:
-                case LessThanEqual:
+                case LessThan:
                     return False;
                 default:
                     throw new IllegalArgumentException();
@@ -458,7 +458,7 @@ public class Irs {
         return and(ands);
     }
 
-    public static IrBoolExpr equality(IrSetExpr left, IrSetTest.Op op, IrSetExpr right) {
+    public static IrBoolExpr equality(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
                 if (left.equals(right)) {
@@ -547,11 +547,11 @@ public class Irs {
             default:
                 throw new IllegalArgumentException();
         }
-        return new IrSetTest(left, op, right, TrueFalseDomain);
+        return new IrSetEquality(left, op, right, TrueFalseDomain);
     }
 
     public static IrBoolExpr equal(IrSetExpr left, IrSetExpr right) {
-        return equality(left, IrSetTest.Op.Equal, right);
+        return equality(left, IrSetEquality.Op.Equal, right);
     }
 
     public static IrBoolExpr equal(IrStringExpr left, IrStringExpr right) {
@@ -571,7 +571,7 @@ public class Irs {
     }
 
     public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
-        return equality(left, IrSetTest.Op.NotEqual, right);
+        return equality(left, IrSetEquality.Op.NotEqual, right);
     }
 
     public static IrBoolExpr notEqual(IrStringExpr left, IrStringExpr right) {
@@ -837,7 +837,7 @@ public class Irs {
         if (strings.length < 2) {
             return True;
         }
-        List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
+        boolean[] filter = new boolean[strings.length];
         for (int i = 0; i < strings.length - 1; i++) {
             switch (IrUtil.compareString(strings[i], strings[i + 1])) {
                 case EQ:
@@ -849,10 +849,16 @@ public class Irs {
                 case GT:
                 case GE:
                 case UNKNOWN:
-                    filterStrings.add(strings[i]);
+                    filter[i] = true;
+                    filter[i + 1] = true;
             }
         }
-        filterStrings.add(strings[strings.length - 1]);
+        List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
+        for (int i = 0; i < filter.length; i++) {
+            if (filter[i]) {
+                filterStrings.add(strings[i]);
+            }
+        }
         IrIntExpr[][] fstrings = filterStrings.toArray(new IrIntExpr[filterStrings.size()][]);
 
         if (fstrings.length < 2) {
@@ -1232,6 +1238,8 @@ public class Irs {
         Integer multiplierConstant = IrUtil.getConstant(multiplier);
         if (multiplicandConstant != null) {
             switch (multiplicandConstant) {
+                case -1:
+                    return minus(multiplier);
                 case 0:
                     return multiplicand;
                 case 1:
@@ -1240,6 +1248,8 @@ public class Irs {
         }
         if (multiplierConstant != null) {
             switch (multiplierConstant) {
+                case -1:
+                    return minus(multiplicand);
                 case 0:
                     return multiplier;
                 case 1:
@@ -1931,7 +1941,7 @@ public class Irs {
         while (iter.hasNext()) {
             int val = iter.next();
             if (val < $array.length) {
-                IrStringExpr string = $array[iter.next()];
+                IrStringExpr string = $array[val];
                 length = length.union(string.getLength());
                 for (int i = 0; i < string.getChars().length; i++) {
                     chars[i] = chars[i].union(string.getChars()[i]);
@@ -1939,11 +1949,14 @@ public class Irs {
             }
         }
         for (int i = 0; i < chars.length; i++) {
-            if (chars[i].isEmpty()) {
-                chars[i] = ZeroDomain;
+            if (i < length.getLowBound()) {
+                chars[i] = chars[i].remove(0);
+            } else {
+                assert i < length.getHighBound();
+                chars[i] = chars[i].insert(0);
             }
         }
-        return new IrElementString($array, index, chars, length);
+        return new IrStringElement($array, index, chars, length);
     }
 
     public static IrStringExpr concat(IrStringExpr left, IrStringExpr right) {

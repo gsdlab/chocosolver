@@ -49,10 +49,7 @@ public class ConstraintQuickTest extends Suite {
             throw new Exception(klass + " must contain at least one method marked @Check.");
         }
         for (FrameworkMethod parameterMethod : parametersMethods) {
-            String name = parameterMethod.getName();
-            InputTestRunner runner = new InputTestRunner(
-                    klass, parameterMethod, name);
-            getChildren().add(runner);
+            getChildren().add(new InputTestRunner(klass, parameterMethod, parameterMethod.getName()));
         }
         getChildren().add(new QuickTestRunner(klass));
     }

@@ -127,6 +127,11 @@ public class TestUtil {
         return randInt(0, 4);
     }
 
+    @SafeVarargs
+    public static <T> T randElement(T... array) {
+        return array[rand.nextInt(array.length)];
+    }
+
     public static Domain randDomain(int low, int high) {
         if (low > high) {
             throw new IllegalArgumentException();
@@ -244,6 +249,19 @@ public class TestUtil {
         return string(name, chars, length);
     }
 
+    public static IrStringVar randNonEmptyIrStringVar() {
+        String name = "String" + varCount++;
+        IrIntVar length = randIrIntVar(1, 4);
+        IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
+        for (int i = 0; i < chars.length; i++) {
+            Domain domain = randNonEmptyDomain('a', 'c');
+            chars[i] = domainInt(name + "[" + i + "]",
+                    i < length.getDomain().getLowBound()
+                    ? domain : domain.insert(0));
+        }
+        return string(name, chars, length);
+    }
+
     public static BoolVar toVar(IrBoolVar var, Solver solver) {
         switch (var.getDomain()) {
             case FalseDomain:
@@ -316,6 +334,10 @@ public class TestUtil {
 
     public static CStringVar randStringVar(Solver solver) {
         return toVar(randIrStringVar(), solver);
+    }
+
+    public static CStringVar randNonEmptyStringVar(Solver solver) {
+        return toVar(randNonEmptyIrStringVar(), solver);
     }
 
     public static Term randTerm() {

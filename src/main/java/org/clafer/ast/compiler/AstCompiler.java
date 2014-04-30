@@ -701,13 +701,17 @@ public class AstCompiler {
         PartialSolution partialParentSolution = getPartialParentSolution(clafer);
 
         IrSetVar[] children = new IrSetVar[partialParentSolution.size()];
-        assert getCard(clafer).getLow() == getCard(clafer).getHigh();
-        int lowCard = getCard(clafer).getLow();
+        Card card = getCard(clafer);
+        assert card.getLow() == card.getHigh();
+        int lowCard = card.getLow();
         for (int i = 0; i < children.length; i++) {
             if (partialParentSolution.hasClafer(i)) {
                 children[i] = constant(Util.fromTo(i * lowCard, i * lowCard + lowCard));
             } else {
-                children[i] = set(clafer.getName() + "#" + i, Util.fromTo(i * lowCard, i * lowCard + lowCard));
+                children[i] = set(clafer.getName() + "#" + i,
+                        boundDomain(i * lowCard, i * lowCard + lowCard - 1),
+                        EmptyDomain,
+                        boundDomain(card.getLow(), card.getHigh()).insert(0));
             }
         }
 
@@ -1448,19 +1452,21 @@ public class AstCompiler {
             if (low <= max) {
                 Domain env = boundDomain(low, Math.min(high - 1, max));
                 Domain ker = EmptyDomain;
-                int cardLow = 0;
-                int cardHigh = card.getHigh();
                 if (partialParentSolution.hasClafer(i)) {
                     int prevHigh = high - card.getHigh();
                     int nextLow = low + card.getLow();
                     if (nextLow > prevHigh) {
                         ker = boundDomain(prevHigh, Math.min(nextLow - 1, max));
                     }
-                    cardLow = card.getLow();
                 }
-                cardLow = Math.max(cardLow, ker.size());
-                cardHigh = Math.min(cardHigh, env.size());
-                skip[i] = set(clafer.getName() + "#" + i, env, ker, boundDomain(cardLow, cardHigh));
+                int cardLow = Math.max(card.getLow(), ker.size());
+                int cardHigh = Math.min(card.getHigh(), env.size());
+                Domain cardDomain = cardLow <= cardHigh
+                        ? boundDomain(cardLow, cardHigh)
+                        // Unsatisfiable
+                        : boundDomain(0, cardHigh);
+                cardDomain = partialParentSolution.hasClafer(i) ? cardDomain : cardDomain.insert(0);
+                skip[i] = set(clafer.getName() + "#" + i, env, ker, cardDomain);
             } else {
                 skip[i] = EmptySet;
             }

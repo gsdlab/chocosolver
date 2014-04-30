@@ -30,7 +30,7 @@ import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
 import org.clafer.domain.Domain;
 import org.clafer.ir.IrElement;
-import org.clafer.ir.IrElementString;
+import org.clafer.ir.IrStringElement;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIfOnlyIf;
@@ -66,7 +66,7 @@ import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
 import org.clafer.ir.IrSetSum;
 import org.clafer.ir.IrSetTernary;
-import org.clafer.ir.IrSetTest;
+import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSetUnion;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSingleton;
@@ -455,17 +455,9 @@ public class IrCompiler {
             // a ◁ !b <=> a ◁ 1 - b <=> a + b ◁ 1
             return compileArithm(a, Arithm.ADD, not.getExpr(), op, 1);
         }
-        if (a instanceof IrIntConstant) {
-            IrIntConstant constant = (IrIntConstant) a;
-            return _arithm(compile(b), op.reverse().getSyntax(), constant.getValue());
-        }
-        if (b instanceof IrIntConstant) {
-            IrIntConstant constant = (IrIntConstant) b;
-            return _arithm(compile(a), op.getSyntax(), constant.getValue());
-        }
         switch (op) {
             case EQ:
-                if (b instanceof IrBoolVar) {
+                if (b instanceof IrVar) {
                     return compileAsConstraint(a, compile(b));
                 }
                 return compileAsConstraint(b, compile(a));
@@ -919,7 +911,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrSetTest ir, BoolArg a) {
+        public Object visit(IrSetEquality ir, BoolArg a) {
             switch (ir.getOp()) {
                 case Equal:
                     if (ir.getRight() instanceof IrSetVar) {
@@ -946,8 +938,12 @@ public class IrCompiler {
                     return Constraints.notEqual(
                             string1.getChars(), string1.getLength(),
                             string2.getChars(), string2.getLength());
+                case LessThan:
+                    return Constraints.lessThan(string1.getChars(), string2.getChars());
+                case LessThanEqual:
+                    return Constraints.lessThanEqual(string1.getChars(), string2.getChars());
                 default:
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                    throw new IllegalArgumentException("Unexpected operator.");
             }
         }
 
@@ -1146,6 +1142,9 @@ public class IrCompiler {
         public Object visit(IrMul ir, IntVar reify) {
             IrIntExpr multiplicand = ir.getMultiplicand();
             IrIntExpr multiplier = ir.getMultiplier();
+            if (reify != null) {
+                return _times(compile(multiplicand), compile(multiplier), reify);
+            }
             Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
             Integer multiplierConstant = IrUtil.getConstant(multiplier);
             if (multiplicandConstant != null) {
@@ -1172,12 +1171,9 @@ public class IrCompiler {
                         }
                 }
             }
-            if (reify == null) {
-                IntVar product = numIntVar("Mul", ir.getDomain());
-                post(_times(compile(multiplicand), compile(multiplier), product));
-                return product;
-            }
-            return _times(compile(multiplicand), compile(multiplier), reify);
+            IntVar product = numIntVar("Mul", ir.getDomain());
+            post(_times(compile(multiplicand), compile(multiplier), product));
+            return product;
         }
 
         @Override
@@ -1335,7 +1331,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrSetTest ir, IntVar a) {
+        public Object visit(IrSetEquality ir, IntVar a) {
             return compileBool(ir, a);
         }
 
@@ -1588,7 +1584,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrElementString ir, CStringVar reify) {
+        public Object visit(IrStringElement ir, CStringVar reify) {
             IntVar index = compile(ir.getIndex());
             CStringVar[] array = compile(ir.getArray());
             if (reify == null) {
@@ -1650,6 +1646,9 @@ public class IrCompiler {
     }
 
     private static Constraint _div(IntVar dividend, IntVar divisor, IntVar quotient) {
+        if (divisor.contains(0)) {
+            divisor.getSolver().post(_arithm(divisor, "!=", 0));
+        }
         return ICF.eucl_div(dividend, divisor, quotient);
     }
 

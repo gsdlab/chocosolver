@@ -54,7 +54,7 @@ import org.clafer.ir.IrPrefix;
 import org.clafer.ir.IrRegister;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrSetTest;
+import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSetUnion;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSingleton;
@@ -367,10 +367,10 @@ public class Coalescer {
         }
 
         @Override
-        public Void visit(IrSetTest ir, Void a) {
+        public Void visit(IrSetEquality ir, Void a) {
             IrSetExpr left = ir.getLeft();
             IrSetExpr right = ir.getRight();
-            if (IrSetTest.Op.Equal.equals(ir.getOp())) {
+            if (IrSetEquality.Op.Equal.equals(ir.getOp())) {
                 if (left instanceof IrSetVar && right instanceof IrSetVar) {
                     setGraph.union((IrSetVar) left, (IrSetVar) right);
                 } else {

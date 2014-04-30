@@ -269,7 +269,7 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrSetTest ir, T a) {
+    public IrBoolExpr visit(IrSetEquality ir, T a) {
         IrSetExpr left = rewrite(ir.getLeft(), a);
         IrSetExpr right = rewrite(ir.getRight(), a);
         return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
@@ -628,7 +628,7 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrStringExpr visit(IrElementString ir, T a) {
+    public IrStringExpr visit(IrStringElement ir, T a) {
         IrStringExpr[] array = rewrite(ir.getArray(), a);
         IrIntExpr index = rewrite(ir.getIndex(), a);
         return changed(ir.getArray(), array) || changed(ir.getIndex(), index)

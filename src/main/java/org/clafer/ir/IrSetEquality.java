@@ -7,13 +7,13 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSetTest extends IrAbstractBool {
+public class IrSetEquality extends IrAbstractBool {
 
     private final IrSetExpr left;
     private final Op op;
     private final IrSetExpr right;
 
-    IrSetTest(IrSetExpr left, Op op, IrSetExpr right, BoolDomain domain) {
+    IrSetEquality(IrSetExpr left, Op op, IrSetExpr right, BoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
@@ -34,7 +34,7 @@ public class IrSetTest extends IrAbstractBool {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrSetTest(left, op.negate(), right, getDomain().invert());
+        return new IrSetEquality(left, op.negate(), right, getDomain().invert());
     }
 
     @Override
@@ -54,8 +54,8 @@ public class IrSetTest extends IrAbstractBool {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrSetTest) {
-            IrSetTest other = (IrSetTest) obj;
+        if (obj instanceof IrSetEquality) {
+            IrSetEquality other = (IrSetEquality) obj;
             return left.equals(other.left) && op.equals(other.op) && right.equals(other.right) && super.equals(other);
         }
         return false;

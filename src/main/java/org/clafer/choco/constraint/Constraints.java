@@ -34,9 +34,9 @@ import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
-import org.clafer.ir.IrIntVar;
 import solver.Solver;
 import solver.constraints.Constraint;
+import solver.constraints.ICF;
 import solver.constraints.Propagator;
 import solver.constraints.binary.PropEqualXY_C;
 import solver.constraints.binary.PropEqualX_Y;
@@ -805,8 +805,21 @@ public class Constraints {
         return equal(chars1, length1, chars2, length2).getOpposite();
     }
 
-    private static IntVar[] charsAt(IntVar[][] strings, int index) {
-        Solver solver = strings[0][0].getSolver();
+    public static Constraint lessThan(IntVar[] chars1, IntVar[] chars2) {
+        int maxLength = Math.max(chars1.length, chars2.length);
+        return ICF.lex_less(
+                pad(chars1, maxLength, chars1[0].getSolver().ZERO),
+                pad(chars2, maxLength, chars1[0].getSolver().ZERO));
+    }
+
+    public static Constraint lessThanEqual(IntVar[] chars1, IntVar[] chars2) {
+        int maxLength = Math.max(chars1.length, chars2.length);
+        return ICF.lex_less_eq(
+                pad(chars1, maxLength, chars1[0].getSolver().ZERO),
+                pad(chars2, maxLength, chars1[0].getSolver().ZERO));
+    }
+
+    private static IntVar[] charsAt(Solver solver, IntVar[][] strings, int index) {
         IntVar[] charsAt = new IntVar[strings.length];
         for (int i = 0; i < charsAt.length; i++) {
             charsAt[i] = index < strings[i].length
@@ -832,7 +845,7 @@ public class Constraints {
         propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
         propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
         for (int i = 0; i < value.length; i++) {
-            IntVar[] charsAt = charsAt(array, i);
+            IntVar[] charsAt = charsAt(index.getSolver(), array, i);
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
         }

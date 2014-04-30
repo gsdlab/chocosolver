@@ -91,18 +91,12 @@ public class TestReflection {
         }
     }
 
-    public static void addVariables(IrModule module, Object os) {
-        if (os instanceof IrVar) {
-            module.addVariable((IrVar) os);
-        } else if (os instanceof Object[]) {
-            for (Object o : (Object[]) os) {
-                addVariables(module, o);
-            }
-        }
+    public static Object randIrVar(Annotation[] annotations, Class<?> type, IrModule module) {
+        return randIrVar(annotations, type, module, null);
     }
 
-    public static Object randIrVar(Annotations annotations, Class<?> type, IrModule module) {
-        int low = annotations.hasAnnotation(Positive.class) ? 0 : -4;
+    public static Object randIrVar(Annotation[] annotations, Class<?> type, IrModule module, Integer sameLength) {
+        int low = hasAnnotation(Positive.class, annotations) ? 0 : -4;
         int high = 4;
         if (IrBoolVar.class.equals(type)) {
             IrVar var = randIrBoolVar();
@@ -117,26 +111,39 @@ public class TestReflection {
             module.addVariable(var);
             return var;
         } else if (IrStringVar.class.equals(type)) {
-            IrVar var = randIrStringVar();
+            IrVar var = hasAnnotation(NonEmpty.class, annotations)
+                    ? randNonEmptyIrStringVar()
+                    : randIrStringVar();
             module.addVariable(var);
             return var;
         } else if (Term.class.equals(type)) {
-            Term term = annotations.hasAnnotation(Fixed.class)
+            Term term = hasAnnotation(Fixed.class, annotations)
                     ? TestUtil.randFixedTerm()
                     : randTerm();
             module.addVariable(term.getIrVar());
             return term;
+        } else if (boolean.class.equals(type)) {
+            return randBool();
         } else if (int.class.equals(type)) {
             return randInt(low, high);
         } else if (Domain.class.equals(type)) {
-            return annotations.hasAnnotation(NonEmpty.class)
+            return hasAnnotation(NonEmpty.class, annotations)
                     ? randNonEmptyDomain(low, high)
                     : randDomain(low, high);
+        } else if (type.isEnum()) {
+            return randElement(type.getEnumConstants());
         } else if (type.isArray()) {
-            int length = annotations.hasAnnotation(NonEmpty.class) ? randInt(1, 3) : randInt(0, 3);
+            int length
+                    = sameLength == null
+                    ? hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3)
+                    : sameLength;
+            Integer recurSameLength = null;
+            if (hasAnnotation(SameLength.class, annotations)) {
+                recurSameLength = hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3);
+            }
             Object array = Array.newInstance(type.getComponentType(), length);
             for (int i = 0; i < length; i++) {
-                Array.set(array, i, randIrVar(annotations, type.getComponentType(), module));
+                Array.set(array, i, randIrVar(annotations, type.getComponentType(), module, recurSameLength));
             }
             return array;
         }
@@ -159,7 +166,9 @@ public class TestReflection {
         } else if (CSetVar.class.equals(type)) {
             return randSetVar(low, high, solver);
         } else if (CStringVar.class.equals(type)) {
-            return randStringVar(solver);
+            return hasAnnotation(NonEmpty.class, annotations)
+                    ? randNonEmptyStringVar(solver)
+                    : randStringVar(solver);
         } else if (boolean.class.equals(type)) {
             return randBool();
         } else if (int.class.equals(type)) {
@@ -200,7 +209,11 @@ public class TestReflection {
             return TestUtil.toVar((IrSetVar) irVar, solver);
         } else if (CStringVar.class.equals(type)) {
             return TestUtil.toVar((IrStringVar) irVar, solver);
+        } else if (boolean.class.equals(type)) {
+            return irVar;
         } else if (int.class.equals(type)) {
+            return irVar;
+        } else if (type.isEnum()) {
             return irVar;
         } else if (int[].class.equals(type)) {
             return ((Domain) irVar).getValues();
@@ -229,6 +242,12 @@ public class TestReflection {
             return ((Term) irVar).getValue(solution);
         } else if (irVar instanceof Domain) {
             return new TIntArrayList(((Domain) irVar).getValues());
+        } else if (irVar instanceof Boolean) {
+            return irVar;
+        } else if (irVar instanceof Integer) {
+            return irVar;
+        } else if (irVar instanceof Enum) {
+            return irVar;
         } else if (irVar instanceof Object[]) {
             Object[] vars = (Object[]) irVar;
             Object[] values = new Object[vars.length];
@@ -254,7 +273,11 @@ public class TestReflection {
                 chars[i] = (char) string.getChars()[i].getValue();
             }
             return new String(chars);
+        } else if (var instanceof Boolean) {
+            return var;
         } else if (var instanceof Integer) {
+            return var;
+        } else if (var instanceof Enum) {
             return var;
         } else if (var instanceof int[]) {
             return new TIntArrayList((int[]) var);
@@ -311,15 +334,6 @@ public class TestReflection {
                     : Arrays.asList(values);
         }
         throw new IllegalStateException("Unexpected type " + var.getClass());
-    }
-
-    public static <T> Procedure<T> method(Class<?> c, String name, Class<T> returnType) {
-        for (Method method : c.getDeclaredMethods()) {
-            if (returnType.equals(method.getReturnType())) {
-                return new Procedure<>(method);
-            }
-        }
-        throw new IllegalArgumentException("No method named \"" + name + "\" that returns " + returnType);
     }
 
     public static boolean hasAnnotation(Class<?> type, Annotation[] annotations) {

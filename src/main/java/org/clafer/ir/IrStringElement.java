@@ -9,12 +9,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrElementString extends IrAbstractString {
+public class IrStringElement extends IrAbstractString {
 
     private final IrStringExpr[] array;
     private final IrIntExpr index;
 
-    IrElementString(IrStringExpr[] array, IrIntExpr index,
+    IrStringElement(IrStringExpr[] array, IrIntExpr index,
             Domain[] charDomains, Domain lengthDomain) {
         super(charDomains, lengthDomain);
         this.array = Check.noNullsNotEmpty(array);
@@ -36,8 +36,8 @@ public class IrElementString extends IrAbstractString {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrElementString) {
-            IrElementString other = (IrElementString) obj;
+        if (obj instanceof IrStringElement) {
+            IrStringElement other = (IrStringElement) obj;
             return Arrays.equals(array, other.array) && index.equals(other.index);
         }
         return false;
