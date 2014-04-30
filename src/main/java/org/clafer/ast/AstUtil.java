@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -158,26 +157,6 @@ public class AstUtil {
     }
 
     /**
-     * Find the highest non-root Clafer above the supplied one.
-     *
-     * @param clafer the Clafer
-     * @return the highest non-root ancestor
-     */
-    public static AstClafer getTopParent(AstClafer clafer) {
-        if (clafer instanceof AstConcreteClafer) {
-            AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-            if (!concrete.hasParent()) {
-                throw new IllegalArgumentException("Root does not have a non-root parent.");
-            }
-            if (!(concrete.getParent() instanceof AstConcreteClafer
-                    && isRoot((AstConcreteClafer) concrete.getParent()))) {
-                return getTopParent(concrete.getParent());
-            }
-        }
-        return clafer;
-    }
-
-    /**
      * Find all the Clafers below the supplied one, including itself.
      *
      * @param clafer the Clafer
@@ -297,52 +276,6 @@ public class AstUtil {
                 && getSupers(from).contains((AstAbstractClafer) to));
     }
 
-    /**
-     * Detects if a set of {@code t1} can share elements with a set of
-     * {@code t2}.
-     *
-     * @param t1 first type
-     * @param t2 second type
-     * @return {@code true} if and only if the first and second type intersect,
-     * {@code false} otherwise
-     */
-    public static boolean hasNonEmptyIntersectionType(AstClafer t1, AstClafer t2) {
-        if (t1.equals(t2)) {
-            return true;
-        }
-        if (t1 instanceof AstAbstractClafer
-                && getSupers(t2).contains((AstAbstractClafer) t1)) {
-            return true;
-        }
-        if (t2 instanceof AstAbstractClafer
-                && getSupers(t1).contains((AstAbstractClafer) t2)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Detects if the union type is fully covered by the partitions. For
-     * example,
-     * {@code isUnionType(Animal, Arrays.asList(Primate, Human, Dolphin))} would
-     * return {@code true} if and only if primates, humans, and dolphins are the
-     * only animals. If humans are primates, the result would still hold.
-     *
-     * @param union the union type
-     * @param partitions the partition of the union type
-     * @return {@code true} if and only if the partitions fully cover the union
-     * type, {@code false} otherwise
-     */
-    public static boolean isUnionType(AstClafer union, AstClafer[] partitions) {
-        Set<AstConcreteClafer> unionSubs = new HashSet<>();
-        getConcreteSubs(union, unionSubs);
-        Set<AstConcreteClafer> partitionSubs = new HashSet<>();
-        for (AstClafer partition : partitions) {
-            getConcreteSubs(partition, partitionSubs);
-        }
-        return unionSubs.equals(partitionSubs);
-    }
-
     private static List<AstClafer> getUnionTypeHierarchy(
             List<AstClafer> typeHierarchy1, List<AstClafer> typeHierarchy2) {
         if (typeHierarchy1.size() > typeHierarchy2.size()) {
@@ -391,10 +324,6 @@ public class AstUtil {
      */
     public static AstClafer getLowestCommonSupertype(AstClafer... unionType) {
         return getLowestCommonSupertype(Arrays.asList(unionType));
-    }
-
-    public static boolean hasInheritedRef(AstClafer clafer) {
-        return getInheritedRef(clafer) != null;
     }
 
     /**
