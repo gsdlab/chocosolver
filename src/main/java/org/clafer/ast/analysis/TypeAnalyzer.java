@@ -247,7 +247,7 @@ public class TypeAnalyzer implements Analyzer {
                 AstClafer childrenType = children.getType().getBasicType();
                 if (childrenType instanceof AstConcreteClafer) {
                     AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
-                    if (concreteChildrenType.hasParent()) {
+                    if (!AstUtil.isTop(concreteChildrenType)) {
                         return put(concreteChildrenType.getParent(),
                                 joinParent(children.getExpr()));
                     }

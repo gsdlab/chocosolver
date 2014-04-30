@@ -167,6 +167,60 @@ public class TypeAnalyzerTest {
 
     /**
      * <pre>
+     * A
+     * [ some A.parent ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinParentTopClafer() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
+        model.addConstraint(some(joinParent(global(a))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> integer
+     *     B ?
+     * [ some A.ref.parent ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinParentInteger() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("b").withCard(Optional);
+        model.addConstraint(some(joinParent(joinRef(global(a)))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A
+     *     B ?
+     *     C ?
+     * [ some (B ++ C).parent ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testJoinParentDifferentTypes() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("b").withCard(Optional);
+        AstConcreteClafer c = a.addChild("c").withCard(Optional);
+        model.addConstraint(some(joinParent(union(global(b), global(c)))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
      * A -> int
      * B -> A
      * [ A = sum B ]
