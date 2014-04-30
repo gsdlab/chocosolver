@@ -94,10 +94,10 @@ public class IrUtil {
         return env.size() == ker.size();
     }
 
-    public static int[] getConstant(IrSetExpr s) {
+    public static Domain getConstant(IrSetExpr s) {
         Domain env = s.getEnv();
         Domain ker = s.getKer();
-        return env.size() == ker.size() ? ker.getValues() : null;
+        return env.size() == ker.size() ? ker : null;
     }
 
     public static IrSetVar asConstant(IrSetVar s) {
@@ -139,9 +139,9 @@ public class IrUtil {
         if (set instanceof IrSingleton) {
             return ((IrSingleton) set).getValue();
         }
-        int[] constant = getConstant(set);
-        if (constant != null && constant.length == 1) {
-            return Irs.constant(constant[0]);
+        Domain constant = getConstant(set);
+        if (constant != null && constant.size() == 1) {
+            return Irs.constant(constant.getLowBound());
         }
         return null;
     }
@@ -199,15 +199,6 @@ public class IrUtil {
             maxLength = Math.max(maxLength, string.getChars().length);
         }
         return maxLength;
-    }
-
-    public static boolean containsAll(int[] values, Domain domain) {
-        for (int value : values) {
-            if (!domain.contains(value)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public static Ordering compare(IrIntExpr a, IrIntExpr b) {

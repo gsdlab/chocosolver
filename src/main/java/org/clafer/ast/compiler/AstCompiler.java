@@ -907,9 +907,11 @@ public class AstCompiler {
         public IrExpr visit(AstGlobal ast, Void a) {
             IrSetVar global = sets.get(ast.getType());
             if (global.getEnv().size() == 1) {
-                int[] constant = IrUtil.getConstant(global);
+                Domain constant = IrUtil.getConstant(global);
                 if (constant != null) {
-                    return constant(constant[0]);
+                    assert constant.size() == 1;
+                    // Use an integer representation instead for a singleton set.
+                    return constant(constant.getLowBound());
                 }
             }
             return global;

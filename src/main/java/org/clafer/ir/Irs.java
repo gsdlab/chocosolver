@@ -454,7 +454,7 @@ public class Irs {
                 if (!left.getCard().intersects(right.getCard())) {
                     return False;
                 }
-                int[] constant = IrUtil.getConstant(left);
+                Domain constant = IrUtil.getConstant(left);
                 if (constant != null) {
                     /*
                      * The idea is that integer constraints are easier to
@@ -462,22 +462,22 @@ public class Irs {
                      * level expression than the cardinality propagator will
                      * optimize this expression away anyways.
                      */
-                    if (constant.length == 0) {
+                    if (constant.isEmpty()) {
                         return equal(card(right), 0);
                     }
-                    if (constant.length == right.getEnv().size()) {
-                        return IrUtil.containsAll(constant, right.getEnv())
-                                ? equal(card(right), constant.length) : False;
+                    if (constant.size() == right.getEnv().size()) {
+                        return constant.isSubsetOf(right.getEnv())
+                                ? equal(card(right), constant.size()) : False;
                     }
                 }
                 constant = IrUtil.getConstant(right);
                 if (constant != null) {
-                    if (constant.length == 0) {
+                    if (constant.isEmpty()) {
                         return equal(card(left), 0);
                     }
-                    if (constant.length == left.getEnv().size()) {
-                        return IrUtil.containsAll(constant, left.getEnv())
-                                ? equal(card(left), constant.length) : False;
+                    if (constant.size() == left.getEnv().size()) {
+                        return constant.isSubsetOf(left.getEnv())
+                                ? equal(card(left), constant.size()) : False;
                     }
                 }
                 IrIntExpr leftInt = IrUtil.asInt(left);
@@ -501,22 +501,22 @@ public class Irs {
                 }
                 constant = IrUtil.getConstant(left);
                 if (constant != null) {
-                    if (constant.length == 0) {
+                    if (constant.isEmpty()) {
                         return notEqual(card(right), 0);
                     }
-                    if (constant.length == right.getEnv().size()) {
-                        return IrUtil.containsAll(constant, right.getEnv())
-                                ? notEqual(card(right), constant.length) : True;
+                    if (constant.size() == right.getEnv().size()) {
+                        return constant.isSubsetOf(right.getEnv())
+                                ? notEqual(card(right), constant.size()) : True;
                     }
                 }
                 constant = IrUtil.getConstant(right);
                 if (constant != null) {
-                    if (constant.length == 0) {
+                    if (constant.isEmpty()) {
                         return notEqual(card(left), 0);
                     }
-                    if (constant.length == left.getEnv().size()) {
-                        return IrUtil.containsAll(constant, left.getEnv())
-                                ? notEqual(card(left), constant.length) : True;
+                    if (constant.size() == left.getEnv().size()) {
+                        return constant.isSubsetOf(left.getEnv())
+                                ? notEqual(card(left), constant.size()) : True;
                     }
                 }
                 leftInt = IrUtil.asInt(left);
@@ -649,11 +649,11 @@ public class Irs {
         if (set.getEnv().isEmpty()
                 || (set.getEnv().getLowBound() >= 0 && set.getEnv().getHighBound() < bools.length)) {
             {
-                int[] constant = IrUtil.getConstant(set);
+                Domain constant = IrUtil.getConstant(set);
                 if (constant != null) {
                     IrBoolExpr[] ands = new IrBoolExpr[bools.length];
                     for (int i = 0; i < ands.length; i++) {
-                        ands[i] = equal(bools[i], Util.in(i, constant) ? True : False);
+                        ands[i] = equal(bools[i], constant.contains(i) ? True : False);
                     }
                     return and(ands);
                 }
@@ -728,9 +728,11 @@ public class Irs {
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            int[] constant = IrUtil.getConstant(sets[i]);
+            Domain constant = IrUtil.getConstant(sets[i]);
             if (constant != null) {
-                for (int j : constant) {
+                TIntIterator iter = constant.iterator();
+                while (iter.hasNext()) {
+                    int j = iter.next();
                     if (j < 0 || j >= ints.length) {
                         return False;
                     }
@@ -1009,13 +1011,14 @@ public class Irs {
     }
 
     public static IrBoolExpr filterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result) {
-        int[] constant = IrUtil.getConstant(set);
+        Domain constant = IrUtil.getConstant(set);
         if (constant != null) {
+            int[] array = constant.getValues();
             IrBoolExpr[] ands = new IrBoolExpr[result.length];
-            for (int i = 0; i < constant.length; i++) {
-                ands[i] = equal(string[constant[i] - offset], result[i]);
+            for (int i = 0; i < array.length; i++) {
+                ands[i] = equal(string[array[i] - offset], result[i]);
             }
-            for (int i = constant.length; i < result.length; i++) {
+            for (int i = array.length; i < result.length; i++) {
                 ands[i] = equal(result[i], -1);
             }
             return and(ands);
@@ -1533,11 +1536,12 @@ public class Irs {
             return joinFunction(take, ints, injective ? 1 : 0);
         }
 
-        int[] constant = IrUtil.getConstant(take);
+        Domain constant = IrUtil.getConstant(take);
         if (constant != null) {
-            IrSetExpr[] to = new IrSetExpr[constant.length];
+            int[] array = constant.getValues();
+            IrSetExpr[] to = new IrSetExpr[array.length];
             for (int i = 0; i < to.length; i++) {
-                to[i] = $children[constant[i]];
+                to[i] = $children[array[i]];
             }
             return union(to, injective);
         }
@@ -1630,11 +1634,12 @@ public class Irs {
             }
         }
 
-        int[] constant = IrUtil.getConstant(take);
+        Domain constant = IrUtil.getConstant(take);
         if (constant != null) {
-            IrIntExpr[] to = new IrIntExpr[constant.length];
+            int[] array = constant.getValues();
+            IrIntExpr[] to = new IrIntExpr[array.length];
             for (int i = 0; i < to.length; i++) {
-                to[i] = $refs[constant[i]];
+                to[i] = $refs[array[i]];
             }
             return arrayToSet(to, globalCardinality);
         }
@@ -1710,14 +1715,14 @@ public class Irs {
         TIntSet constants = null;
         List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
-            int[] constant = IrUtil.getConstant(operand);
+            Domain constant = IrUtil.getConstant(operand);
             if (constant == null) {
                 filter.add(operand);
             } else {
                 if (constants == null) {
-                    constants = new TIntHashSet(constant);
+                    constants = new TIntHashSet(constant.getValues());
                 } else {
-                    constants.retainAll(constant);
+                    constants.retainAll(constant.getValues());
                 }
             }
         }
@@ -1764,11 +1769,11 @@ public class Irs {
         TIntSet constants = new TIntHashSet();
         List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
-            int[] constant = IrUtil.getConstant(operand);
+            Domain constant = IrUtil.getConstant(operand);
             if (constant == null) {
                 filter.add(operand);
             } else {
-                constants.addAll(constant);
+                constant.transferTo(constants);
             }
         }
         if (!constants.isEmpty()) {
