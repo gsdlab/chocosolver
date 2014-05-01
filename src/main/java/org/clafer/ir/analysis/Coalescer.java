@@ -1360,10 +1360,12 @@ public class Coalescer {
         return new TempStringVar(chars, length);
     }
 
+    private static int count = 0;
+
     private static class TempIntVar extends IrIntVar {
 
         TempIntVar(Domain domain) {
-            super("temp", domain);
+            super("temp" + count++, domain);
         }
 
         TempIntVar add(int value) {
@@ -1416,14 +1418,14 @@ public class Coalescer {
     private static class TempSetVar extends IrSetVar {
 
         TempSetVar(Domain env, Domain ker, IrIntVar card) {
-            super("temp", env, ker, card);
+            super("temp" + count++, env, ker, card);
         }
     }
 
     private static class TempStringVar extends IrStringVar {
 
         TempStringVar(IrIntVar[] chars, IrIntVar length) {
-            super("temp", chars, length);
+            super("temp" + count++, chars, length);
         }
 
         boolean isRestrictive(IrStringVar var) {
