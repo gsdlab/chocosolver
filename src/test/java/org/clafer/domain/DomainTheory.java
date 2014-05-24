@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
  * @author jimmy
  */
 @RunWith(Theories.class)
-public class DomainTheoryTest {
+public class DomainTheory {
 
     private void assertImplies(boolean a, boolean b) {
         assertTrue(!a || b);
