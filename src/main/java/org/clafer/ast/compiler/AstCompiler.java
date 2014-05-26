@@ -323,6 +323,7 @@ public class AstCompiler {
             IrIntVar objectiveVar = domainInt("Objective" + objective.getKey(),
                     objectiveExpr.getDomain());
             module.addConstraint(equal(objectiveVar, objectiveExpr));
+            module.addVariable(objectiveVar);
             objectiveVars.put(objective.getKey(), objectiveVar);
         }
 

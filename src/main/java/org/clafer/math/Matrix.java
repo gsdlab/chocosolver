@@ -163,7 +163,11 @@ public class Matrix {
     }
 
     public Matrix subColumns(int start) {
-        return subMatrix(0, numberOfRows(), start, numberOfColumns());
+        return subColumns(start, numberOfColumns());
+    }
+
+    public Matrix subColumns(int start, int end) {
+        return subMatrix(0, numberOfRows(), start, end);
     }
 
     public Matrix subMatrix(int rowStart, int rowEnd, int columnStart, int columnEnd) {

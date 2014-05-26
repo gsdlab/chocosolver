@@ -9,7 +9,7 @@ import java.util.List;
  *
  * @author jimmy
  */
-public class LinearFunctionBuilder {
+public class LinearFunctionBuilder implements LinearFunctionable {
 
     private final TIntList coefficients = new TIntArrayList();
     private final List<Variable> variables = new ArrayList<>();
@@ -27,6 +27,10 @@ public class LinearFunctionBuilder {
         return new LinearFunctionBuilder().plusConstant(c);
     }
 
+    public static LinearFunctionBuilder function(LinearFunction function) {
+        return new LinearFunctionBuilder().plusFunction(function);
+    }
+
     public LinearFunctionBuilder plusTerm(Variable variable) {
         return plusTerm(1, variable);
     }
@@ -42,6 +46,17 @@ public class LinearFunctionBuilder {
         return this;
     }
 
+    public LinearFunctionBuilder plusFunction(LinearFunction function) {
+        int[] cs = function.getCoefficients();
+        Variable[] vs = function.getVariables();
+        for (int i = 0; i < cs.length; i++) {
+            plusTerm(cs[i], vs[i]);
+        }
+        plusConstant(function.getConstant());
+        return this;
+    }
+
+    @Override
     public LinearFunction toFunction() {
         return new LinearFunction(
                 coefficients.toArray(),

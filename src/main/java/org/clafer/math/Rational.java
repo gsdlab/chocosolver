@@ -1,11 +1,13 @@
 package org.clafer.math;
 
+import org.clafer.common.Util;
+
 /**
  * A rational number.
  *
  * @author jimmy
  */
-public class Rational {
+public class Rational implements Comparable<Rational> {
 
     public static Rational Zero = new Rational(0);
     public static Rational One = new Rational(1);
@@ -29,7 +31,7 @@ public class Rational {
             n = -numerator;
             d = -denominator;
         }
-        long gcd = gcd(Math.abs(n), d);
+        long gcd = Util.gcd(Math.abs(n), d);
         assert gcd > 0;
         assert n % gcd == 0;
         assert d % gcd == 0;
@@ -70,8 +72,23 @@ public class Rational {
         return numerator > 0;
     }
 
+    public long ceil() {
+        return Util.divCeil(numerator, denominator);
+    }
+
+    public long floor() {
+        return Util.divFloor(numerator, denominator);
+    }
+
     public Rational minus() {
         return new Rational(-numerator, denominator, true);
+    }
+
+    public Rational add(long addend) {
+        return new Rational(
+                numerator + denominator * addend,
+                denominator
+        );
     }
 
     public Rational add(Rational addend) {
@@ -81,11 +98,24 @@ public class Rational {
         );
     }
 
+    public Rational sub(long subtrahend) {
+        return new Rational(
+                numerator - denominator * subtrahend,
+                denominator
+        );
+    }
+
     public Rational sub(Rational subtrahend) {
         return new Rational(
                 numerator * subtrahend.denominator - denominator * subtrahend.numerator,
                 denominator * subtrahend.denominator
         );
+    }
+
+    public Rational mul(long multiplier) {
+        return new Rational(
+                numerator * multiplier,
+                denominator);
     }
 
     public Rational mul(Rational multiplier) {
@@ -98,6 +128,11 @@ public class Rational {
         return new Rational(
                 numerator * divisor.denominator,
                 denominator * divisor.numerator);
+    }
+
+    @Override
+    public int compareTo(Rational o) {
+        return Long.compare(numerator * o.denominator, o.numerator * denominator);
     }
 
     @Override
@@ -124,9 +159,5 @@ public class Rational {
             return Long.toString(numerator);
         }
         return numerator + "/" + denominator;
-    }
-
-    private static long gcd(long a, long b) {
-        return b == 0 ? a : gcd(b, a % b);
     }
 }

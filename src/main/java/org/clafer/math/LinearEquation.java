@@ -19,47 +19,56 @@ public class LinearEquation {
         if (left.hasConstant()) {
             throw new IllegalArgumentException();
         }
-        this.left = left;
+        if (Op.Equal.equals(op) && mostlyNegative(left.getCoefficients())) {
+            this.left = left.scale(-1);
+            this.right = -right;
+        } else {
+            this.left = left;
+            this.right = right;
+        }
         this.op = op;
-        this.right = right;
     }
 
-    public static LinearEquation equal(
-            LinearFunction left, LinearFunction right) {
-        LinearFunction combine = left.sub(right);
+    private static boolean mostlyNegative(int[] is) {
+        int negative = 0;
+        for (int i : is) {
+            if (i < 0) {
+                negative++;
+            }
+        }
+        return negative * 2 > is.length;
+    }
+
+    public static LinearEquation equal(LinearFunctionable left, LinearFunctionable right) {
+        LinearFunction combine = left.toFunction().sub(right.toFunction());
         return new LinearEquation(
                 combine.sub(combine.getConstant()),
                 Op.Equal,
                 -combine.getConstant());
     }
 
-    public static LinearEquation equal(
-            LinearFunctionBuilder left, LinearFunctionBuilder right) {
-        return equal(left.toFunction(), right.toFunction());
+    public static LinearEquation lessThan(LinearFunctionable left, LinearFunctionable right) {
+        LinearFunction combine = left.toFunction().sub(right.toFunction());
+        return new LinearEquation(
+                combine.sub(combine.getConstant()),
+                Op.LessThanEqual,
+                -combine.getConstant() - 1);
     }
 
-    public static LinearEquation lessThanEqual(
-            LinearFunction left, LinearFunction right) {
-        LinearFunction combine = left.sub(right);
+    public static LinearEquation lessThanEqual(LinearFunctionable left, LinearFunctionable right) {
+        LinearFunction combine = left.toFunction().sub(right.toFunction());
         return new LinearEquation(
                 combine.sub(combine.getConstant()),
                 Op.LessThanEqual,
                 -combine.getConstant());
     }
 
-    public static LinearEquation lessThanEqual(
-            LinearFunctionBuilder left, LinearFunctionBuilder right) {
-        return lessThanEqual(left.toFunction(), right.toFunction());
+    public static LinearEquation greaterThan(LinearFunctionable left, LinearFunctionable right) {
+        return lessThan(right, left);
     }
 
-    public static LinearEquation greaterThanEqual(
-            LinearFunction left, LinearFunction right) {
+    public static LinearEquation greaterThanEqual(LinearFunctionable left, LinearFunctionable right) {
         return lessThanEqual(right, left);
-    }
-
-    public static LinearEquation greaterThanEqual(
-            LinearFunctionBuilder left, LinearFunctionBuilder right) {
-        return greaterThanEqual(left.toFunction(), right.toFunction());
     }
 
     public LinearFunction getLeft() {
@@ -97,42 +106,6 @@ public class LinearEquation {
         }
     }
 
-//    public int getLowBound(Variable variable) {
-//        int low = right;
-//        int[] coefficients = left.getCoefficients();
-//        Variable[] variables = left.getVariables();
-//        assert Util.in(variable, variables);
-//        int ai = 0;
-//        for (int i = 0; i < coefficients.length; i++) {
-//            if (!variable.equals(variables[i])) {
-//                low -= coefficients[i] * (coefficients[i] > 0
-//                        ? variables[i].getHighBound()
-//                        : variables[i].getLowBound());
-//                System.out.println(variables[i] + " : " + low);
-//            } else {
-//                ai = coefficients[i];
-//            }
-//        }
-//        return MathUtils.divCeil(low, ai);
-//    }
-//
-//    public int getHighBound(Variable variable) {
-//        int high = right;
-//        int[] coefficients = left.getCoefficients();
-//        Variable[] variables = left.getVariables();
-//        assert Util.in(variable, variables);
-//        int ai = 0;
-//        for (int i = 0; i < coefficients.length; i++) {
-//            if (!variable.equals(variables[i])) {
-//                high -= coefficients[i] * (coefficients[i] > 0
-//                        ? variables[i].getLowBound()
-//                        : variables[i].getHighBound());
-//            } else {
-//                ai = coefficients[i];
-//            }
-//        }
-//        return MathUtils.divFloor(high, ai);
-//    }
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {

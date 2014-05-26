@@ -95,6 +95,14 @@ public class Asts {
         return new AstSetTest(left, op, right);
     }
 
+    public static AstBoolExpr equal(int left, AstSetExpr right) {
+        return equal(constant(left), right);
+    }
+
+    public static AstBoolExpr equal(AstSetExpr left, int right) {
+        return equal(left, constant(right));
+    }
+
     public static AstBoolExpr equal(AstSetExpr left, AstSetExpr right) {
         return test(left, AstSetTest.Op.Equal, right);
     }
@@ -109,6 +117,14 @@ public class Asts {
 
     public static AstBoolExpr lessThan(AstSetExpr left, AstSetExpr right) {
         return compare(left, AstCompare.Op.LessThan, right);
+    }
+
+    public static AstBoolExpr lessThanEqual(int left, AstSetExpr right) {
+        return lessThanEqual(constant(left), right);
+    }
+
+    public static AstBoolExpr lessThanEqual(AstSetExpr left, int right) {
+        return lessThanEqual(left, constant(right));
     }
 
     public static AstBoolExpr lessThanEqual(AstSetExpr left, AstSetExpr right) {
@@ -136,6 +152,14 @@ public class Asts {
 
     public static AstSetExpr sub(AstSetExpr... subtrahends) {
         return arithm(AstArithm.Op.Sub, subtrahends);
+    }
+
+    public static AstSetExpr mul(int multiplicand, AstSetExpr multiplier) {
+        return mul(constant(multiplicand), multiplier);
+    }
+
+    public static AstSetExpr mul(AstSetExpr multiplicand, int multiplier) {
+        return mul(multiplicand, constant(multiplier));
     }
 
     public static AstSetExpr mul(AstSetExpr... multipliers) {

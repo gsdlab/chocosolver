@@ -6,8 +6,11 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import util.iterators.IntIterator;
 
@@ -668,6 +671,78 @@ public class Util {
     }
 
     /**
+     * @param a
+     * @param b
+     * @return the greatest common divisor of {@code a} and {@code b}
+     */
+    public static int gcd(int a, int b) {
+        return b == 0 ? a : gcd(b, a % b);
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return the greatest common divisor of {@code a} and {@code b}
+     */
+    public static long gcd(long a, long b) {
+        return b == 0 ? a : gcd(b, a % b);
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return the least common multiple of {@code a} and {@code b}
+     */
+    public static int lcm(int a, int b) {
+        return a * (b / gcd(a, b));
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return the least common multiple of {@code a} and {@code b}
+     */
+    public static long lcm(long a, long b) {
+        return a * (b / gcd(a, b));
+    }
+
+    public static int divFloor(int a, int b) {
+        if (b < 0) {
+            return divFloor(-a, -b);
+        } else if (a < 0) {
+            return (a - b + 1) / b;
+        }
+        return (a / b);
+    }
+
+    public static long divFloor(long a, long b) {
+        if (b < 0) {
+            return divFloor(-a, -b);
+        } else if (a < 0) {
+            return (a - b + 1) / b;
+        }
+        return (a / b);
+    }
+
+    public static int divCeil(int a, int b) {
+        if (b < 0) {
+            return divCeil(-a, -b);
+        } else if (a >= 0) {
+            return ((a + b - 1) / b);
+        }
+        return a / b;
+    }
+
+    public static long divCeil(long a, long b) {
+        if (b < 0) {
+            return divCeil(-a, -b);
+        } else if (a >= 0) {
+            return ((a + b - 1) / b);
+        }
+        return a / b;
+    }
+
+    /**
      * Enumerate the iterator and return the values discovered. The iterator is
      * exhausted on return.
      *
@@ -680,6 +755,22 @@ public class Util {
             i.add(iter.next());
         }
         return i.toArray();
+    }
+
+    /**
+     * @param <K> input type
+     * @param <V> return type
+     * @param map a bijection
+     * @return the inverse of map
+     */
+    public static <K, V> Map<V, K> inverse(Map<K, V> map) {
+        Map<V, K> inverse = new HashMap<>(map.size());
+        for (Entry<K, V> entry : map.entrySet()) {
+            if (inverse.put(entry.getValue(), entry.getKey()) != null) {
+                throw new IllegalArgumentException(map + " is not a bijection.");
+            }
+        }
+        return inverse;
     }
 
     /**

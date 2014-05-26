@@ -3,6 +3,7 @@ package org.clafer.common;
 import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.*;
+import static org.clafer.common.Util.*;
 import org.junit.Test;
 
 /**
@@ -22,16 +23,16 @@ public class UtilTest {
     @Test
     public void testConcat() {
         assertArrayEquals(array(1, 2, 3, 3, 4, 5, 6, 6, 7),
-                Util.concat(new Integer[][]{array(1, 2, 3), array(3, 4, 5, 6), array(6, 7)}));
+                concat(new Integer[][]{array(1, 2, 3), array(3, 4, 5, 6), array(6, 7)}));
         assertArrayEquals(array(1, 2, 3, 6, 7),
-                Util.concat(new Integer[][]{array(1, 2, 3), array(), array(6, 7)}));
+                concat(new Integer[][]{array(1, 2, 3), array(), array(6, 7)}));
         assertArrayEquals(array(1, 2, 3, 3, 4, 5, 6),
-                Util.concat(new Integer[][]{array(1, 2, 3), array(3, 4, 5, 6), array()}));
+                concat(new Integer[][]{array(1, 2, 3), array(3, 4, 5, 6), array()}));
         assertArrayEquals(array(3, 4, 5, 6, 6, 7),
-                Util.concat(new Integer[][]{array(), array(3, 4, 5, 6), array(6, 7)}));
+                concat(new Integer[][]{array(), array(3, 4, 5, 6), array(6, 7)}));
         assertArrayEquals(array(),
-                Util.concat(new Integer[][]{array(), array(), array()}));
-        assertArrayEquals(array(), Util.concat(new Integer[][]{}));
+                concat(new Integer[][]{array(), array(), array()}));
+        assertArrayEquals(array(), concat(new Integer[][]{}));
     }
 
     @Test
@@ -39,9 +40,9 @@ public class UtilTest {
         assertTrue(Arrays.deepEquals(new Integer[][]{
             array(1, 2), array(1, 3), array(1, 4), array(2, 1), array(2, 3), array(2, 4),
             array(3, 1), array(3, 2), array(3, 4), array(4, 1), array(4, 2), array(4, 3)
-        }, Util.permutations(array(1, 2, 3, 4), 2)));
-        assertTrue(Arrays.deepEquals(new Integer[][]{array()}, Util.permutations(array(1, 2, 3, 4), 0)));
-        assertTrue(Arrays.deepEquals(new Integer[][]{array()}, Util.permutations(array(), 0)));
+        }, permutations(array(1, 2, 3, 4), 2)));
+        assertTrue(Arrays.deepEquals(new Integer[][]{array()}, permutations(array(1, 2, 3, 4), 0)));
+        assertTrue(Arrays.deepEquals(new Integer[][]{array()}, permutations(array(), 0)));
     }
 
     @Test
@@ -51,57 +52,91 @@ public class UtilTest {
             array(2, 4, 8), array(2, 4, 9), array(2, 5, 8), array(2, 5, 9), array(2, 6, 8), array(2, 6, 9),
             array(2, 7, 8), array(2, 7, 9), array(3, 4, 8), array(3, 4, 9), array(3, 5, 8), array(3, 5, 9),
             array(3, 6, 8), array(3, 6, 9), array(3, 7, 8), array(3, 7, 9)
-        }, Util.sequence(new Integer[][]{array(1, 2, 3), array(4, 5, 6, 7), array(8, 9)})));
+        }, sequence(new Integer[][]{array(1, 2, 3), array(4, 5, 6, 7), array(8, 9)})));
         assertTrue(Arrays.deepEquals(new Integer[][]{},
-                Util.sequence(new Integer[][]{array(1, 2, 3), array(4, 5, 6, 7), array(), array(8, 9)})));
+                sequence(new Integer[][]{array(1, 2, 3), array(4, 5, 6, 7), array(), array(8, 9)})));
         assertTrue(Arrays.deepEquals(new Integer[][]{array()},
-                Util.sequence(new Integer[][]{})));
+                sequence(new Integer[][]{})));
     }
 
     @Test
     public void testTakeUntil() {
-        assertEquals(Util.takeUntil(1, list(1, 2, 3, 4, 2)), list(1));
-        assertEquals(Util.takeUntil(2, list(1, 2, 3, 4, 2)), list(1, 2));
-        assertEquals(Util.takeUntil(3, list(1, 2, 3, 4, 2)), list(1, 2, 3));
-        assertEquals(Util.takeUntil(4, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4));
-        assertEquals(Util.takeUntil(5, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4, 2));
+        assertEquals(takeUntil(1, list(1, 2, 3, 4, 2)), list(1));
+        assertEquals(takeUntil(2, list(1, 2, 3, 4, 2)), list(1, 2));
+        assertEquals(takeUntil(3, list(1, 2, 3, 4, 2)), list(1, 2, 3));
+        assertEquals(takeUntil(4, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4));
+        assertEquals(takeUntil(5, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4, 2));
     }
 
     @Test
     public void testDropUntil() {
-        assertEquals(Util.dropUntil(1, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4, 2));
-        assertEquals(Util.dropUntil(2, list(1, 2, 3, 4, 2)), list(2, 3, 4, 2));
-        assertEquals(Util.dropUntil(3, list(1, 2, 3, 4, 2)), list(3, 4, 2));
-        assertEquals(Util.dropUntil(4, list(1, 2, 3, 4, 2)), list(4, 2));
-        assertEquals(Util.dropUntil(5, list(1, 2, 3, 4, 2)), list());
+        assertEquals(dropUntil(1, list(1, 2, 3, 4, 2)), list(1, 2, 3, 4, 2));
+        assertEquals(dropUntil(2, list(1, 2, 3, 4, 2)), list(2, 3, 4, 2));
+        assertEquals(dropUntil(3, list(1, 2, 3, 4, 2)), list(3, 4, 2));
+        assertEquals(dropUntil(4, list(1, 2, 3, 4, 2)), list(4, 2));
+        assertEquals(dropUntil(5, list(1, 2, 3, 4, 2)), list());
     }
 
     @Test
     public void testStartsWith() {
-        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list()));
-        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1)));
-        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2)));
-        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3)));
-        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4)));
-        assertTrue(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2)));
+        assertTrue(startsWith(list(1, 2, 3, 4, 2), list()));
+        assertTrue(startsWith(list(1, 2, 3, 4, 2), list(1)));
+        assertTrue(startsWith(list(1, 2, 3, 4, 2), list(1, 2)));
+        assertTrue(startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3)));
+        assertTrue(startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4)));
+        assertTrue(startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2)));
 
-        assertFalse(Util.startsWith(list(1, 2, 3, 4, 2), list(2)));
-        assertFalse(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 3)));
-        assertFalse(Util.startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2, 3)));
+        assertFalse(startsWith(list(1, 2, 3, 4, 2), list(2)));
+        assertFalse(startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 3)));
+        assertFalse(startsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2, 3)));
     }
 
     @Test
     public void testEndsWith() {
-        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list()));
-        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(2)));
-        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(4, 2)));
-        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(3, 4, 2)));
-        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(2, 3, 4, 2)));
-        assertTrue(Util.endsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2)));
+        assertTrue(endsWith(list(1, 2, 3, 4, 2), list()));
+        assertTrue(endsWith(list(1, 2, 3, 4, 2), list(2)));
+        assertTrue(endsWith(list(1, 2, 3, 4, 2), list(4, 2)));
+        assertTrue(endsWith(list(1, 2, 3, 4, 2), list(3, 4, 2)));
+        assertTrue(endsWith(list(1, 2, 3, 4, 2), list(2, 3, 4, 2)));
+        assertTrue(endsWith(list(1, 2, 3, 4, 2), list(1, 2, 3, 4, 2)));
 
-        assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(1)));
-        assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(2, 4, 2)));
-        assertFalse(Util.endsWith(list(1, 2, 3, 4, 2), list(1, 1, 2, 3, 4, 2)));
+        assertFalse(endsWith(list(1, 2, 3, 4, 2), list(1)));
+        assertFalse(endsWith(list(1, 2, 3, 4, 2), list(2, 4, 2)));
+        assertFalse(endsWith(list(1, 2, 3, 4, 2), list(1, 1, 2, 3, 4, 2)));
+    }
+
+    @Test
+    public void testDivFloor() {
+        assertEquals(4, divFloor(16, 4));
+        assertEquals(4, divFloor(17, 4));
+        assertEquals(4, divFloor(18, 4));
+        assertEquals(4, divFloor(19, 4));
+        assertEquals(-4, divFloor(-16, 4));
+        assertEquals(-5, divFloor(-17, 4));
+        assertEquals(-5, divFloor(-18, 4));
+        assertEquals(-5, divFloor(-19, 4));
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testDivZeroFloor() {
+        divFloor(16, 0);
+    }
+
+    @Test
+    public void testDivCeil() {
+        assertEquals(4, divCeil(16, 4));
+        assertEquals(5, divCeil(17, 4));
+        assertEquals(5, divCeil(18, 4));
+        assertEquals(5, divCeil(19, 4));
+        assertEquals(-4, divCeil(-16, 4));
+        assertEquals(-4, divCeil(-17, 4));
+        assertEquals(-4, divCeil(-18, 4));
+        assertEquals(-4, divCeil(-19, 4));
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testDivZeroCeil() {
+        divCeil(16, 0);
     }
 
     @Test

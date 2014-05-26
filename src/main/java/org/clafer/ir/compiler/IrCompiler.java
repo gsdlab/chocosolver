@@ -89,6 +89,7 @@ import org.clafer.ir.analysis.CoalesceException;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
+import org.clafer.ir.analysis.LinearEquationOptimizer;
 import org.clafer.ir.analysis.Optimizer;
 import solver.Solver;
 import solver.constraints.Constraint;
@@ -150,7 +151,7 @@ public class IrCompiler {
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
         }
-
+        optModule = LinearEquationOptimizer.optimize(optModule);
         commonSubexpressions.addAll(CommonSubexpression.findCommonSubexpressions(optModule));
 
         for (IrBoolExpr constraint : optModule.getConstraints()) {
