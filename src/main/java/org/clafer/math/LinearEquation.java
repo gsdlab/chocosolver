@@ -10,9 +10,13 @@ public class LinearEquation {
 
     private final LinearFunction left;
     private final Op op;
-    private final int right;
+    private final Rational right;
 
-    public LinearEquation(LinearFunction left, Op op, int right) {
+    public LinearEquation(LinearFunction left, Op op, long right) {
+        this(left, op, new Rational(right));
+    }
+
+    public LinearEquation(LinearFunction left, Op op, Rational right) {
         Check.notNull(left);
         Check.notNull(op);
         Check.notNull(right);
@@ -20,8 +24,8 @@ public class LinearEquation {
             throw new IllegalArgumentException();
         }
         if (Op.Equal.equals(op) && mostlyNegative(left.getCoefficients())) {
-            this.left = left.scale(-1);
-            this.right = -right;
+            this.left = left.minus();
+            this.right = right.minus();
         } else {
             this.left = left;
             this.right = right;
@@ -29,10 +33,10 @@ public class LinearEquation {
         this.op = op;
     }
 
-    private static boolean mostlyNegative(int[] is) {
+    private static boolean mostlyNegative(Rational[] is) {
         int negative = 0;
-        for (int i : is) {
-            if (i < 0) {
+        for (Rational i : is) {
+            if (i.isNegative()) {
                 negative++;
             }
         }
@@ -44,7 +48,7 @@ public class LinearEquation {
         return new LinearEquation(
                 combine.sub(combine.getConstant()),
                 Op.Equal,
-                -combine.getConstant());
+                combine.getConstant().minus());
     }
 
     public static LinearEquation lessThan(LinearFunctionable left, LinearFunctionable right) {
@@ -52,7 +56,7 @@ public class LinearEquation {
         return new LinearEquation(
                 combine.sub(combine.getConstant()),
                 Op.LessThanEqual,
-                -combine.getConstant() - 1);
+                combine.getConstant().minus().sub(Rational.One));
     }
 
     public static LinearEquation lessThanEqual(LinearFunctionable left, LinearFunctionable right) {
@@ -60,7 +64,7 @@ public class LinearEquation {
         return new LinearEquation(
                 combine.sub(combine.getConstant()),
                 Op.LessThanEqual,
-                -combine.getConstant());
+                combine.getConstant().minus());
     }
 
     public static LinearEquation greaterThan(LinearFunctionable left, LinearFunctionable right) {
@@ -79,25 +83,37 @@ public class LinearEquation {
         return op;
     }
 
-    public int getRight() {
+    public Rational getRight() {
         return right;
+    }
+
+    public Variable[] getVariables() {
+        return left.getVariables();
+    }
+
+    public LinearEquation replace(Variable variable, LinearFunction value) {
+        LinearFunction newLeft = left.replace(variable, value);
+        return new LinearEquation(
+                newLeft.sub(newLeft.getConstant()),
+                op,
+                right.sub(newLeft.getConstant()));
     }
 
     public BoolDomain isEntailed() {
         switch (op) {
             case Equal:
-                if (left.getLowBound() > right || left.getHighBound() < right) {
+                if (left.getLowBound().compareTo(right) > 0 || left.getHighBound().compareTo(right) < 0) {
                     return BoolDomain.FalseDomain;
                 }
-                if (left.getLowBound() == right && left.getHighBound() == right) {
+                if (left.getLowBound().equals(right) && left.getHighBound().equals(right)) {
                     return BoolDomain.TrueDomain;
                 }
                 return BoolDomain.TrueFalseDomain;
             case LessThanEqual:
-                if (left.getLowBound() > right) {
+                if (left.getLowBound().compareTo(right) > 0) {
                     return BoolDomain.FalseDomain;
                 }
-                if (left.getHighBound() <= right) {
+                if (left.getHighBound().compareTo(right) <= 0) {
                     return BoolDomain.TrueDomain;
                 }
                 return BoolDomain.TrueFalseDomain;
@@ -113,7 +129,7 @@ public class LinearEquation {
         }
         if (obj instanceof LinearEquation) {
             LinearEquation other = (LinearEquation) obj;
-            return right == other.right && op.equals(other.op) && left.equals(other.left);
+            return op.equals(other.op) && left.equals(other.left) && right.equals(other.right);
         }
         return false;
     }
@@ -122,7 +138,7 @@ public class LinearEquation {
     public int hashCode() {
         // op.hashCode() can change between runs which makes the output change
         // every time.
-        return left.hashCode() ^ op.ordinal() ^ right;
+        return left.hashCode() ^ op.ordinal() ^ right.hashCode();
     }
 
     @Override

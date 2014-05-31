@@ -84,7 +84,14 @@ public class Rational implements Comparable<Rational> {
         return new Rational(-numerator, denominator, true);
     }
 
+    public Rational abs() {
+        return isNegative() ? minus() : this;
+    }
+
     public Rational add(long addend) {
+        if (addend == 0) {
+            return this;
+        }
         return new Rational(
                 numerator + denominator * addend,
                 denominator
@@ -92,6 +99,9 @@ public class Rational implements Comparable<Rational> {
     }
 
     public Rational add(Rational addend) {
+        if (addend.isZero()) {
+            return this;
+        }
         return new Rational(
                 numerator * addend.denominator + denominator * addend.numerator,
                 denominator * addend.denominator
@@ -99,6 +109,9 @@ public class Rational implements Comparable<Rational> {
     }
 
     public Rational sub(long subtrahend) {
+        if (subtrahend == 0) {
+            return this;
+        }
         return new Rational(
                 numerator - denominator * subtrahend,
                 denominator
@@ -106,6 +119,9 @@ public class Rational implements Comparable<Rational> {
     }
 
     public Rational sub(Rational subtrahend) {
+        if (subtrahend.isZero()) {
+            return this;
+        }
         return new Rational(
                 numerator * subtrahend.denominator - denominator * subtrahend.numerator,
                 denominator * subtrahend.denominator
@@ -113,18 +129,38 @@ public class Rational implements Comparable<Rational> {
     }
 
     public Rational mul(long multiplier) {
+        if (multiplier == 1) {
+            return this;
+        }
         return new Rational(
                 numerator * multiplier,
                 denominator);
     }
 
     public Rational mul(Rational multiplier) {
+        if (multiplier.isOne()) {
+            return this;
+        }
         return new Rational(
                 numerator * multiplier.numerator,
                 denominator * multiplier.denominator);
     }
 
+    public Rational div(long divisor) {
+        if (divisor == 0) {
+            throw new ArithmeticException("/ by zero");
+        } else if (divisor == 1) {
+            return this;
+        }
+        return div(new Rational(divisor));
+    }
+
     public Rational div(Rational divisor) {
+        if (divisor.isZero()) {
+            throw new ArithmeticException("/ by zero");
+        } else if (divisor.isOne()) {
+            return this;
+        }
         return new Rational(
                 numerator * divisor.denominator,
                 denominator * divisor.numerator);

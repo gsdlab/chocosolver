@@ -1,7 +1,5 @@
 package org.clafer.math;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,19 +9,23 @@ import java.util.List;
  */
 public class LinearFunctionBuilder implements LinearFunctionable {
 
-    private final TIntList coefficients = new TIntArrayList();
+    private final List<Rational> coefficients = new ArrayList<>();
     private final List<Variable> variables = new ArrayList<>();
-    private int constant;
+    private Rational constant = Rational.Zero;
 
     public static LinearFunctionBuilder term(Variable variable) {
-        return term(1, variable);
+        return term(Rational.One, variable);
     }
 
-    public static LinearFunctionBuilder term(int coefficient, Variable variable) {
+    public static LinearFunctionBuilder term(Rational coefficient, Variable variable) {
         return new LinearFunctionBuilder().plusTerm(coefficient, variable);
     }
 
-    public static LinearFunctionBuilder constant(int c) {
+    public static LinearFunctionBuilder constant(long c) {
+        return constant(new Rational(c));
+    }
+
+    public static LinearFunctionBuilder constant(Rational c) {
         return new LinearFunctionBuilder().plusConstant(c);
     }
 
@@ -32,22 +34,27 @@ public class LinearFunctionBuilder implements LinearFunctionable {
     }
 
     public LinearFunctionBuilder plusTerm(Variable variable) {
-        return plusTerm(1, variable);
+        return plusTerm(Rational.One, variable);
     }
 
-    public LinearFunctionBuilder plusTerm(int coefficient, Variable variable) {
+    public LinearFunctionBuilder plusTerm(Rational coefficient, Variable variable) {
         coefficients.add(coefficient);
         variables.add(variable);
         return this;
     }
 
-    public LinearFunctionBuilder plusConstant(int constant) {
-        this.constant += constant;
+    public LinearFunctionBuilder plusConstant(long constant) {
+        this.constant = this.constant.add(constant);
+        return this;
+    }
+
+    public LinearFunctionBuilder plusConstant(Rational constant) {
+        this.constant = this.constant.add(constant);
         return this;
     }
 
     public LinearFunctionBuilder plusFunction(LinearFunction function) {
-        int[] cs = function.getCoefficients();
+        Rational[] cs = function.getCoefficients();
         Variable[] vs = function.getVariables();
         for (int i = 0; i < cs.length; i++) {
             plusTerm(cs[i], vs[i]);
@@ -59,7 +66,7 @@ public class LinearFunctionBuilder implements LinearFunctionable {
     @Override
     public LinearFunction toFunction() {
         return new LinearFunction(
-                coefficients.toArray(),
+                coefficients.toArray(new Rational[coefficients.size()]),
                 variables.toArray(new Variable[variables.size()]),
                 constant);
     }

@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +17,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 import org.clafer.math.LinearEquation.Op;
 import static org.clafer.math.LinearEquation.*;
 import static org.clafer.math.LinearEquation.Op.*;
-import util.tools.MathUtils;
 
 /**
  * @author jimmy
@@ -34,11 +33,31 @@ public class LinearSystem {
     }
 
     public LinearSystem(LinearEquation... equations) {
-        this.equations = Check.noNullsNotEmpty(equations);
+        this.equations = Check.noNulls(equations);
     }
 
     public LinearEquation[] getEquations() {
         return equations;
+    }
+
+    public LinearSystem addEquations(LinearEquation[] equations) {
+        if (equations.length == 0) {
+            return this;
+        }
+        Set<LinearEquation> newEquations = new LinkedHashSet<>(this.equations.length + equations.length);
+        addAll(newEquations, this.equations);
+        addAll(newEquations, equations);
+        return new LinearSystem(newEquations);
+    }
+
+    public LinearSystem addEquations(Collection<LinearEquation> equations) {
+        if (equations.isEmpty()) {
+            return this;
+        }
+        Set<LinearEquation> newEquations = new LinkedHashSet<>(this.equations.length + equations.size());
+        addAll(newEquations, this.equations);
+        newEquations.addAll(equations);
+        return new LinearSystem(newEquations);
     }
 
     /**
@@ -49,6 +68,9 @@ public class LinearSystem {
      * @return a linear system with redundant constraints
      */
     public LinearSystem gaussJordanElimination() {
+        if (equations.length == 0) {
+            return this;
+        }
         Set<Variable> variables = new HashSet<>();
         int numSlack = 0;
         for (LinearEquation equation : equations) {
@@ -78,12 +100,12 @@ public class LinearSystem {
             }
             LinearFunction function = equation.getLeft();
             for (int j = 0; j < function.getCoefficients().length; j++) {
-                int coeffient = function.getCoefficients()[j];
+                Rational coeffient = function.getCoefficients()[j];
                 int variable = variableIds.get(function.getVariables()[j]);
                 assert row[variable].isZero();
-                row[variable] = new Rational(coeffient);
+                row[variable] = coeffient;
             }
-            column[i] = new Rational(equation.getRight());
+            column[i] = equation.getRight();
         }
 
         Matrix a = new Matrix(rows);
@@ -91,10 +113,10 @@ public class LinearSystem {
         Matrix p = a.addColumns(Matrix.identity(a.numberOfRows())).gaussJordanElimination()
                 .subColumns(a.numberOfColumns());
 
-        Set<LinearEquation> optimize = new LinkedHashSet<>(equations.length * 2);
-        optimize.addAll(Arrays.asList(equations));
+        Set<LinearEquation> optimize = new LinkedHashSet<>(equations.length);
         for (TIntObjectMap<Rational> row : p.multiply(a.addColumns(b)).getRows()) {
-            for (LinearEquation equation : toEquation(row, id + 1, variableOrder)) {
+            LinearEquation equation = toEquation(row, id + 1, variableOrder);
+            if (equation != null) {
                 switch (equation.isEntailed()) {
                     case TrueFalseDomain:
                         optimize.add(equation);
@@ -107,13 +129,15 @@ public class LinearSystem {
         return new LinearSystem(optimize);
     }
 
-    private static LinearEquation[] toEquation(TIntObjectMap<Rational> row, int columns, Variable[] variables) {
+    private static LinearEquation toEquation(TIntObjectMap<Rational> row, int columns, Variable[] variables) {
+        if (row.isEmpty()) {
+            return null;
+        }
         int slacks = columns - 1 - variables.length;
         boolean hasSlack = false;
         List<Rational> cs = new ArrayList<>(row.size() - 1);
         List<Variable> vs = new ArrayList<>(row.size() - 1);
 
-        boolean allWhole = true;
         Rational right = Rational.Zero;
         TIntObjectIterator<Rational> iter = row.iterator();
         for (int i = row.size(); i-- > 0;) {
@@ -121,151 +145,192 @@ public class LinearSystem {
             int column = iter.key();
             Rational r = iter.value();
             if (column == columns - 1) {
-                allWhole &= r.isWhole();
                 right = r;
             } else if (column < slacks) {
                 assert !hasSlack;
                 assert r.isOne();
                 hasSlack = true;
             } else {
-                allWhole &= r.isWhole();
                 cs.add(r);
                 vs.add(variables[column - slacks]);
             }
         }
-        if (allWhole) {
-            int[] ics = new int[cs.size()];
-            for (int i = 0; i < ics.length; i++) {
-                assert cs.get(i).getDenominator() == 1;
-                ics[i] = (int) cs.get(i).getNumerator();
-            }
-            assert right.getDenominator() == 1;
-            LinearFunction left = new LinearFunction(ics, vs.toArray(new Variable[vs.size()]), 0);
-            return new LinearEquation[]{new LinearEquation(left, hasSlack ? LessThanEqual : Equal, (int) right.getNumerator())};
-        }
-        Rational min = right;
-        Rational max = right;
-        long lcm = right.getDenominator();
-        for (Rational c : cs) {
-            if (min.compareTo(c) > 0) {
-                min = c;
-            }
-            if (max.compareTo(c) < 0) {
-                max = c;
-            }
-            lcm = Util.lcm(lcm, c.getDenominator());
-        }
-        if (max.ceil() * lcm < 50000 && min.floor() * lcm > -50000) {
-            int[] ics = new int[cs.size()];
-            for (int i = 0; i < ics.length; i++) {
-                Rational c = cs.get(i);
-                ics[i] = (int) (c.getNumerator() * (lcm / c.getDenominator()));
-            }
-            int r = (int) (right.getNumerator() * (lcm / right.getDenominator()));
-            LinearFunction left = new LinearFunction(ics, vs.toArray(new Variable[vs.size()]), 0);
-            return new LinearEquation[]{new LinearEquation(left, hasSlack ? LessThanEqual : Equal, r)};
-        }
-        long multiplier = Math.min(Math.abs(50000 / max.ceil()), Math.abs(50000 / min.floor()));
-        if (multiplier == 0) {
-            multiplier = 1;
-        }
-        int[] lIcs = new int[cs.size()];
-        int[] gIcs = new int[cs.size()];
-        Rational lR = right.mul(multiplier);
-        Rational gR = lR;
-        for (int i = 0; i < lIcs.length; i++) {
-            Rational c = cs.get(i).mul(multiplier);
-            assert !c.isZero();
-            if (c.isPositive()) {
-                lIcs[i] = (int) c.floor();
-                gIcs[i] = (int) -c.ceil();
-                lR = lR.add(vs.get(i).getHighBound());
-                gR = gR.sub(vs.get(i).getHighBound());
-            } else {
-                lIcs[i] = (int) c.ceil();
-                gIcs[i] = (int) -c.floor();
-                lR = lR.sub(vs.get(i).getLowBound());
-                gR = gR.add(vs.get(i).getLowBound());
-            }
-        }
-        LinearFunction lte = new LinearFunction(lIcs, vs.toArray(new Variable[vs.size()]), 0);
-        LinearFunction gte = new LinearFunction(gIcs, vs.toArray(new Variable[vs.size()]), 0);
-        return hasSlack
-                ? new LinearEquation[]{new LinearEquation(lte, LessThanEqual, (int) lR.ceil())}
-                : new LinearEquation[]{new LinearEquation(lte, LessThanEqual, (int) lR.ceil()),
-                    new LinearEquation(gte, LessThanEqual, (int) -gR.floor())};
+        LinearFunction left = new LinearFunction(
+                cs.toArray(new Rational[cs.size()]),
+                vs.toArray(new Variable[vs.size()]),
+                Rational.Zero);
+        return new LinearEquation(left, hasSlack ? LessThanEqual : Equal, right);
     }
 
-    private void replaceEquation(
-            LinearEquation oldEquation,
-            LinearEquation newEquation,
-            Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurences,
-            Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurences) {
-        if (oldEquation != null) {
-            LinearFunction left = oldEquation.getLeft();
-            int[] coefficients = left.getCoefficients();
-            Variable[] variables = left.getVariables();
-            for (int i = 0; i < coefficients.length; i++) {
-                assert coefficients[i] != 0;
-                Map<Variable, TObjectIntMap<LinearEquation>> map
-                        = coefficients[i] > 0 ? positiveOccurences : negativeOccurences;
-                TObjectIntMap<LinearEquation> references = map.get(variables[i]);
-                assert references != null;
-                if (references.adjustOrPutValue(oldEquation, -1, 0) == 0) {
-                    references.remove(variables[i]);
-                }
+    private static <E> boolean containsAny(Collection<E> set, E[] items) {
+        for (E item : items) {
+            if (set.contains(item)) {
+                return true;
             }
         }
-        LinearFunction left = newEquation.getLeft();
-        int[] coefficients = left.getCoefficients();
+        return false;
+    }
+
+    private static <E> void addAll(Collection<E> set, E[] items) {
+        for (E item : items) {
+            set.add(item);
+        }
+    }
+
+    public LinearSystem equalityElimination() {
+        if (equations.length == 0) {
+            return this;
+        }
+        List<LinearEquation> pool = new ArrayList<>(Arrays.asList(equations));
+
+        HashSet<Variable> touched = new HashSet<>();
+        do {
+            touched.clear();
+
+            List<Variable> assignmentKeys = new ArrayList<>();
+            List<LinearFunction> assignmentValues = new ArrayList<>();
+            Iterator<LinearEquation> iter = pool.iterator();
+            while (iter.hasNext()) {
+                LinearEquation equation = iter.next();
+                if (containsAny(touched, equation.getVariables())) {
+                    continue;
+                }
+                if (Equal.equals(equation.getOp()) && equation.getVariables().length <= 2) {
+                    LinearFunction function = equation.getLeft();
+                    // Find the variable with the coefficient closest to zero.
+                    // Tie break 1: The variable with less occurrences.
+                    // Tie break 2: The variable's name.
+                    Rational min = function.getCoefficients()[0].abs();
+                    Variable left = function.getVariables()[0];
+                    for (int i = 1; i < function.getCoefficients().length; i++) {
+                        Variable v1 = left;
+                        Variable v2 = function.getVariables()[i];
+                        Rational r = function.getCoefficients()[i].abs();
+                        int c = min.compareTo(r);
+                        if (c > 0) {
+                            min = r;
+                            left = v2;
+                        } else if (c == 0 && v1.getName().compareTo(v2.getName()) > 0) {
+                            min = r;
+                            left = v2;
+                        }
+                    }
+                    Rational coefficient = equation.getLeft().getCoefficient(left);
+                    LinearFunction right = new LinearFunction(coefficient, left, equation.getRight()).sub(equation.getLeft()).div(coefficient);
+                    assignmentKeys.add(left);
+                    assignmentValues.add(right);
+                    addAll(touched, equation.getVariables());
+                    iter.remove();
+                }
+            }
+            assert assignmentKeys.size() == assignmentValues.size();
+            if (!assignmentKeys.isEmpty()) {
+                for (int i = 0; i < pool.size(); i++) {
+                    LinearEquation equation = pool.get(i);
+                    for (int j = 0; j < assignmentKeys.size(); j++) {
+                        equation = equation.replace(assignmentKeys.get(j), assignmentValues.get(j));
+                    }
+                    pool.set(i, equation);
+                }
+            }
+        } while (!touched.isEmpty());
+
+        List<LinearEquation> newEquations = new ArrayList<>(pool.size());
+        for (LinearEquation equation : pool) {
+            switch (equation.getOp()) {
+                case Equal:
+                    LinearFunction left = equation.getLeft();
+                    Rational right = equation.getRight();
+                    newEquations.add(new LinearEquation(left, LessThanEqual, right));
+                    newEquations.add(new LinearEquation(left.minus(), LessThanEqual, right.minus()));
+                    break;
+                case LessThanEqual:
+                    newEquations.add(equation);
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        }
+        return new LinearSystem(newEquations);
+    }
+
+    private void removeEquation(LinearEquation equation,
+            Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences,
+            Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurrences) {
+        LinearFunction left = equation.getLeft();
+        Rational[] coefficients = left.getCoefficients();
         Variable[] variables = left.getVariables();
         for (int i = 0; i < coefficients.length; i++) {
-            assert coefficients[i] != 0;
+            assert !coefficients[i].isZero();
             Map<Variable, TObjectIntMap<LinearEquation>> map
-                    = coefficients[i] > 0 ? positiveOccurences : negativeOccurences;
+                    = coefficients[i].isPositive() ? positiveOccurrences : negativeOccurrences;
+            TObjectIntMap<LinearEquation> references = map.get(variables[i]);
+            assert references != null;
+            if (references.adjustOrPutValue(equation, -1, 0) == 0) {
+                references.remove(variables[i]);
+            }
+        }
+    }
+
+    private void addEquation(
+            LinearEquation equation,
+            Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences,
+            Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurrences) {
+
+        LinearFunction left = equation.getLeft();
+        Rational[] coefficients = left.getCoefficients();
+        Variable[] variables = left.getVariables();
+        for (int i = 0; i < coefficients.length; i++) {
+            assert !coefficients[i].isZero();
+            Map<Variable, TObjectIntMap<LinearEquation>> map
+                    = coefficients[i].isPositive() ? positiveOccurrences : negativeOccurrences;
             TObjectIntMap<LinearEquation> references = map.get(variables[i]);
             if (references == null) {
                 references = new TObjectIntHashMap<>();
                 map.put(variables[i], references);
             }
-            references.adjustOrPutValue(newEquation, 1, 1);
+            references.adjustOrPutValue(equation, 1, 1);
         }
     }
 
     private boolean cost(LinearEquation equation,
-            Map<Variable, Pair<LinearEquation, Integer>> bestLowBound,
-            Map<Variable, Pair<LinearEquation, Integer>> bestHighBound,
-            Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurences,
-            Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurences) {
+            Map<Variable, Pair<LinearEquation, Rational>> bestLowBound,
+            Map<Variable, Pair<LinearEquation, Rational>> bestHighBound,
+            Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences,
+            Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurrences) {
         LinearFunction left = equation.getLeft();
-        int[] coefficients = left.getCoefficients();
+        Rational[] coefficients = left.getCoefficients();
         Variable[] variables = left.getVariables();
-        assert left.getConstant() == 0;
-        int right = equation.getRight();
+        assert left.getConstant().isZero();
+        Rational right = equation.getRight();
 
-        int low = left.getLowBound();
+        Rational low = left.getLowBound();
         assert LessThanEqual.equals(equation.getOp());
         boolean changed = false;
         for (int i = 0; i < coefficients.length; i++) {
-            int ai = coefficients[i];
+            Rational ai = coefficients[i];
             Variable vi = variables[i];
-            assert ai != 0;
-            if (ai > 0) {
-                int hb = MathUtils.divCeil(right - (low - ai * vi.getLowBound()), ai);
-                Pair<LinearEquation, Integer> best = bestHighBound.get(vi);
-                if (best == null || best.getSnd() > hb) {
+            assert !ai.isZero();
+            if (ai.isPositive()) {
+                Rational hb = right.sub(low.sub(ai.mul(vi.getLowBound()))).div(ai);
+                Pair<LinearEquation, Rational> best = bestHighBound.get(vi);
+                if (best == null || best.getSnd().compareTo(hb) > 0) {
                     bestHighBound.put(vi, new Pair<>(equation, hb));
-                    replaceEquation(best == null ? null : best.getFst(),
-                            equation, positiveOccurences, negativeOccurences);
+                    if (best != null) {
+                        removeEquation(best.getFst(), positiveOccurrences, negativeOccurrences);
+                    }
+                    addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
                 }
             } else {
-                int lb = MathUtils.divFloor(right - (low - ai * vi.getHighBound()), ai);
-                Pair<LinearEquation, Integer> best = bestLowBound.get(vi);
-                if (best == null || best.getSnd() < lb) {
+                Rational lb = right.sub(low.sub(ai.mul(vi.getHighBound()))).div(ai);
+                Pair<LinearEquation, Rational> best = bestLowBound.get(vi);
+                if (best == null || best.getSnd().compareTo(lb) < 0) {
                     bestLowBound.put(vi, new Pair<>(equation, lb));
-                    replaceEquation(best == null ? null : best.getFst(),
-                            equation, positiveOccurences, negativeOccurences);
+                    if (best != null) {
+                        removeEquation(best.getFst(), positiveOccurrences, negativeOccurrences);
+                    }
+                    addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
                 }
             }
@@ -281,30 +346,35 @@ public class LinearSystem {
      * @return a linear system with redundant constraints
      */
     public LinearSystem fourierMotzkinElimination() {
+        if (equations.length == 0) {
+            return this;
+        }
         // bestLowBound[v] returns the constraint that gives the highest low bound for v
-        Map<Variable, Pair<LinearEquation, Integer>> bestLowBound = new HashMap<>();
+        Map<Variable, Pair<LinearEquation, Rational>> bestLowBound = new HashMap<>();
         // bestLowBound[v] returns the constraint that gives the lowest high bound for v
-        Map<Variable, Pair<LinearEquation, Integer>> bestHighBound = new HashMap<>();
-        // positiveOccurences[v] returns the equations where v has a positive coefficient.
+        Map<Variable, Pair<LinearEquation, Rational>> bestHighBound = new HashMap<>();
+        // positiveOccurrences[v] returns the equations where v has a positive coefficient.
         // Each equation may occur multiple times, treated like a reference count.
-        Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurences = new HashMap<>();
-        // positiveOccurences[v] returns the equations where v has a negative coefficient.
+        Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences = new HashMap<>();
+        // positiveOccurrences[v] returns the equations where v has a negative coefficient.
         // Each equation may occur multiple times, treated like a reference count.
-        Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurences = new HashMap<>();
+        Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurrences = new HashMap<>();
 
         for (LinearEquation equation : equations) {
             switch (equation.getOp()) {
                 case Equal:
                     LinearFunction left = equation.getLeft();
-                    int right = equation.getRight();
+                    Rational right = equation.getRight();
                     cost(new LinearEquation(left, Op.LessThanEqual, right),
-                            bestLowBound, bestHighBound, positiveOccurences, negativeOccurences);
-                    cost(new LinearEquation(left.scale(-1), Op.LessThanEqual, -right),
-                            bestLowBound, bestHighBound, positiveOccurences, negativeOccurences);
+                            bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
+                    cost(new LinearEquation(left.minus(), Op.LessThanEqual, right.minus()),
+                            bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
                     break;
                 case LessThanEqual:
-                    cost(equation, bestLowBound, bestHighBound, positiveOccurences, negativeOccurences);
+                    cost(equation, bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
                     break;
+                default:
+                    throw new IllegalStateException();
             }
         }
 
@@ -315,43 +385,43 @@ public class LinearSystem {
             // need to copy it first.
             @SuppressWarnings("unchecked")
             Entry<Variable, TObjectIntMap<LinearEquation>>[] entries
-                    = (Entry<Variable, TObjectIntMap<LinearEquation>>[]) new Entry<?, ?>[positiveOccurences.size()];
-            entries = positiveOccurences.entrySet().toArray(entries);
+                    = (Entry<Variable, TObjectIntMap<LinearEquation>>[]) new Entry<?, ?>[positiveOccurrences.size()];
+            entries = positiveOccurrences.entrySet().toArray(entries);
             for (Entry<Variable, TObjectIntMap<LinearEquation>> entry : entries) {
                 Variable variable = entry.getKey();
                 TObjectIntMap<LinearEquation> positives = entry.getValue();
                 if (!positives.isEmpty()) {
-                    TObjectIntMap<LinearEquation> negatives = negativeOccurences.get(variable);
+                    TObjectIntMap<LinearEquation> negatives = negativeOccurrences.get(variable);
                     if (negatives != null && !negatives.isEmpty()) {
                         // Need to copy the set to avoid concurrent modification exception.
                         for (LinearEquation p : positives.keySet().toArray(new LinearEquation[positives.size()])) {
                             LinearFunction pLeft = p.getLeft();
-                            int[] pCoefficients = pLeft.getCoefficients();
+                            Rational[] pCoefficients = pLeft.getCoefficients();
                             Variable[] pVariables = pLeft.getVariables();
-                            int a0 = p.getRight();
-                            int ak = pLeft.getCoefficient(variable);
+                            Rational a0 = p.getRight();
+                            Rational ak = pLeft.getCoefficient(variable);
                             // Need to copy the set to avoid concurrent modification exception.
                             for (LinearEquation n : negatives.keySet().toArray(new LinearEquation[negatives.size()])) {
                                 LinearFunction nLeft = n.getLeft();
-                                int[] nCoefficients = nLeft.getCoefficients();
+                                Rational[] nCoefficients = nLeft.getCoefficients();
                                 Variable[] nVariables = nLeft.getVariables();
-                                int b0 = n.getRight();
-                                int bk = nLeft.getCoefficient(variable);
+                                Rational b0 = n.getRight();
+                                Rational bk = nLeft.getCoefficient(variable);
 
-                                int[] newCoefficients = new int[pCoefficients.length + nCoefficients.length - 2];
+                                Rational[] newCoefficients = new Rational[pCoefficients.length + nCoefficients.length - 2];
                                 Variable[] newVariables = new Variable[newCoefficients.length];
 
                                 int z = 0;
                                 for (int i = 0; i < pCoefficients.length; i++) {
                                     if (!variable.equals(pVariables[i])) {
-                                        newCoefficients[z] = pCoefficients[i] * -bk;
+                                        newCoefficients[z] = pCoefficients[i].mul(bk.minus());
                                         newVariables[z] = pVariables[i];
                                         z++;
                                     }
                                 }
                                 for (int i = 0; i < nCoefficients.length; i++) {
                                     if (!variable.equals(nVariables[i])) {
-                                        newCoefficients[z] = nCoefficients[i] * ak;
+                                        newCoefficients[z] = nCoefficients[i].mul(ak);
                                         newVariables[z] = nVariables[i];
                                         z++;
                                     }
@@ -360,12 +430,12 @@ public class LinearSystem {
                                 assert z == newVariables.length;
 
                                 LinearEquation newEquation = new LinearEquation(
-                                        new LinearFunction(newCoefficients, newVariables, 0),
+                                        new LinearFunction(newCoefficients, newVariables, Rational.Zero),
                                         LessThanEqual,
-                                        a0 * -bk + b0 * ak);
+                                        a0.mul(bk.minus()).add(b0.mul(ak)));
                                 switch (newEquation.isEntailed()) {
                                     case TrueFalseDomain:
-                                        changed |= cost(newEquation, bestLowBound, bestHighBound, positiveOccurences, negativeOccurences);
+                                        changed |= cost(newEquation, bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
                                         break;
                                     case FalseDomain:
                                     // TODO
@@ -378,13 +448,42 @@ public class LinearSystem {
         } while (changed);
 
         Set<LinearEquation> newEquations = new LinkedHashSet<>(
-                bestLowBound.size() + bestHighBound.size() + equations.length);
-        newEquations.addAll(Arrays.asList(equations));
-        for (Pair<LinearEquation, Integer> b : bestLowBound.values()) {
+                bestLowBound.size() + bestHighBound.size() );
+        for (Pair<LinearEquation, ?> b : bestLowBound.values()) {
             newEquations.add(b.getFst());
         }
-        for (Pair<LinearEquation, Integer> b : bestHighBound.values()) {
+        for (Pair<LinearEquation, ?> b : bestHighBound.values()) {
             newEquations.add(b.getFst());
+        }
+        return new LinearSystem(newEquations);
+    }
+
+    /**
+     * If a &le; b and -b &le; a, then replace with a = b.
+     *
+     * @return a linear system with fewer inequalities
+     */
+    public LinearSystem strengthenInequalities() {
+        if (equations.length == 0) {
+            return this;
+        }
+        Set<LinearEquation> newEquations = new LinkedHashSet<>(equations.length);
+        for (LinearEquation equation : equations) {
+            switch (equation.getOp()) {
+                case LessThanEqual:
+                    LinearFunction left = equation.getLeft();
+                    Rational right = equation.getRight();
+                    if (newEquations.remove(new LinearEquation(left.minus(), LessThanEqual, right.minus()))) {
+                        newEquations.add(new LinearEquation(left, Equal, right));
+                        break;
+                    }
+                // fallthrough
+                case Equal:
+                    newEquations.add(equation);
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
         }
         return new LinearSystem(newEquations);
     }
@@ -395,11 +494,14 @@ public class LinearSystem {
      * @return a linear system with less redundant constraints
      */
     public LinearSystem dominantElimination() {
+        if (equations.length == 0) {
+            return this;
+        }
         Set<LinearEquation> optimize = new LinkedHashSet<>(Arrays.asList(equations));
         for (LinearEquation equation : equations) {
             if (Equal.equals(equation.getOp())) {
                 optimize.remove(new LinearEquation(equation.getLeft(), LessThanEqual, equation.getRight()));
-                optimize.remove(new LinearEquation(equation.getLeft().scale(-1), LessThanEqual, -equation.getRight()));
+                optimize.remove(new LinearEquation(equation.getLeft().minus(), LessThanEqual, equation.getRight().minus()));
             }
         }
         return optimize.size() == equations.length ? this : new LinearSystem(optimize);

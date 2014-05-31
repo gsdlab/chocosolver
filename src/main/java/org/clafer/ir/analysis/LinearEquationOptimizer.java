@@ -19,9 +19,11 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import static org.clafer.ir.Irs.*;
 import org.clafer.math.LinearEquation;
+import org.clafer.math.LinearEquation.Op;
 import org.clafer.math.LinearFunction;
 import org.clafer.math.LinearFunctionBuilder;
 import org.clafer.math.LinearSystem;
+import org.clafer.math.Rational;
 import org.clafer.math.Variable;
 
 /**
@@ -77,7 +79,7 @@ public class LinearEquationOptimizer {
             }
             LinearFunctionBuilder mulBuilder = new LinearFunctionBuilder();
             if (linearFunction(variable, mulBuilder, map)) {
-                builder.plusFunction(mulBuilder.toFunction().scale(coefficient));
+                builder.plusFunction(mulBuilder.toFunction().mul(coefficient));
                 return true;
             }
         }
@@ -108,6 +110,95 @@ public class LinearEquationOptimizer {
         return null;
     }
 
+    private static LinearEquation[] round(LinearEquation equation) {
+        LinearFunction left = equation.getLeft();
+        Rational[] cs = left.getCoefficients();
+        Variable[] vs = left.getVariables();
+        Rational right = equation.getRight();
+        Rational min = right;
+        Rational max = right;
+        long lcm = right.getDenominator();
+        for (Rational c : cs) {
+            if (min.compareTo(c) > 0) {
+                min = c;
+            }
+            if (max.compareTo(c) < 0) {
+                max = c;
+            }
+            lcm = Util.lcm(lcm, c.getDenominator());
+        }
+        if (max.ceil() * lcm < 50000 && min.floor() * lcm > -50000) {
+            return new LinearEquation[]{
+                new LinearEquation(equation.getLeft().mul(lcm), equation.getOp(), equation.getRight().mul(lcm))
+            };
+        }
+        long multiplier = Math.min(Math.abs(50000 / max.ceil()), Math.abs(50000 / min.floor()));
+        if (multiplier == 0) {
+            multiplier = 1;
+        }
+        long[] lIcs = new long[cs.length];
+        long[] gIcs = new long[cs.length];
+        Rational lR = right.mul(multiplier);
+        Rational gR = lR;
+        for (int i = 0; i < lIcs.length; i++) {
+            Rational c = cs[i].mul(multiplier);
+            assert !c.isZero();
+            if (c.isPositive()) {
+                lIcs[i] = c.floor();
+                gIcs[i] = -c.ceil();
+                lR = lR.add(vs[i].getHighBound());
+                gR = gR.sub(vs[i].getHighBound());
+            } else {
+                lIcs[i] = c.ceil();
+                gIcs[i] = -c.floor();
+                lR = lR.sub(vs[i].getLowBound());
+                gR = gR.add(vs[i].getLowBound());
+            }
+        }
+        LinearFunction lte = new LinearFunction(lIcs, vs, 0);
+        LinearFunction gte = new LinearFunction(gIcs, vs, 0);
+        switch (equation.getOp()) {
+            case Equal:
+                return new LinearEquation[]{
+                    new LinearEquation(lte, Op.LessThanEqual, lR.ceil()),
+                    new LinearEquation(gte, Op.LessThanEqual, -gR.floor())};
+            case LessThanEqual:
+                return new LinearEquation[]{new LinearEquation(lte, Op.LessThanEqual, lR.ceil())};
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
+    private static IrBoolExpr[] boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map) {
+        LinearEquation[] rounds = round(equation);
+        IrBoolExpr[] exprs = new IrBoolExpr[rounds.length];
+        for (int i = 0; i < exprs.length; i++) {
+            LinearEquation round = rounds[i];
+            LinearFunction left = round.getLeft();
+            Rational[] cs = left.getCoefficients();
+            Variable[] vs = left.getVariables();
+            Rational right = round.getRight();
+
+            IrIntExpr[] addends = new IrIntExpr[cs.length];
+            for (int j = 0; j < addends.length; j++) {
+                assert cs[j].isWhole();
+                addends[j] = mul((int) cs[j].getNumerator(), map.get(vs[j]));
+            }
+            assert right.isWhole();
+            switch (round.getOp()) {
+                case Equal:
+                    exprs[i] = equal(add(addends), (int) right.getNumerator());
+                    break;
+                case LessThanEqual:
+                    exprs[i] = lessThanEqual(add(addends), (int) right.getNumerator());
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        }
+        return exprs;
+    }
+
     public static IrModule optimize(IrModule module) {
         List<IrBoolExpr> constraints = new ArrayList<>();
         Set<LinearEquation> equations = new HashSet<>();
@@ -126,27 +217,15 @@ public class LinearEquationOptimizer {
 
             LinearSystem system = new LinearSystem(equations);
             for (LinearEquation equation : system
+                    .equalityElimination()
                     .fourierMotzkinElimination()
+                    .strengthenInequalities()
                     .gaussJordanElimination()
+                    .addEquations(equations)
                     .dominantElimination()
                     .getEquations()) {
-                LinearFunction left = equation.getLeft();
-                int[] coefficients = left.getCoefficients();
-                Variable[] variables = left.getVariables();
-                int right = equation.getRight();
-                List<IrIntExpr> addends = new ArrayList<>(coefficients.length);
-                for (int i = 0; i < coefficients.length; i++) {
-                    addends.add(mul(constant(coefficients[i]), inverse.get(variables[i])));
-                }
-                switch (equation.getOp()) {
-                    case Equal:
-                        constraints.add(equal(add(addends), right));
-                        break;
-                    case LessThanEqual:
-                        constraints.add(lessThanEqual(add(addends), right));
-                        break;
-                    default:
-                        throw new IllegalStateException();
+                for (IrBoolExpr constraint : boolExpr(equation, inverse)) {
+                    constraints.add(constraint);
                 }
             }
             return new IrModule().addConstraints(constraints);
