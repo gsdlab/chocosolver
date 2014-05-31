@@ -19,11 +19,11 @@ public class IrArrayToSetTest {
 
     @Test(timeout = 60000)
     public IrBoolExpr setup(@NonEmpty IrIntVar[] array, int globalCardinality, IrSetVar set) {
-        return equal(arrayToSet(array, globalCardinality > 0 ? globalCardinality : null), set);
+        return equal(arrayToSet(array, null), set);
     }
 
     @Solution
     public Constraint setup(IntVar[] array, int globalCardinality, CSetVar set) {
-        return Constraints.arrayToSet(array, set.getSet(), set.getCard(), globalCardinality > 0 ? globalCardinality : null);
+        return Constraints.arrayToSet(array, set.getSet(), set.getCard(), null);
     }
 }
