@@ -684,7 +684,7 @@ public class SimpleStructureTest {
     /**
      * <pre>
      * A 1..2
-     *     B +
+     *     B 2+
      * </pre>
      */
     @Test(timeout = 60000)

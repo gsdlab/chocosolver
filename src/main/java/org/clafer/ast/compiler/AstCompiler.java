@@ -1466,8 +1466,8 @@ public class AstCompiler {
                 int cardHigh = Math.min(card.getHigh(), env.size());
                 Domain cardDomain = cardLow <= cardHigh
                         ? boundDomain(cardLow, cardHigh)
-                        // Unsatisfiable
-                        : boundDomain(0, cardHigh);
+                        // Cannot exist
+                        : EmptyDomain;
                 cardDomain = partialParentSolution.hasClafer(i) ? cardDomain : cardDomain.insert(0);
                 skip[i] = set(clafer.getName() + "#" + i, env, ker, cardDomain);
             } else {

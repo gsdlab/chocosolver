@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.clafer.common.Check;
+import org.clafer.common.UnsatisfiableException;
 
 /**
  * The compiled model in IR. A module contains variables and constraints. The IR
@@ -65,8 +66,13 @@ public class IrModule {
             IrNotImplies notImplies = (IrNotImplies) expr;
             addConstraint(notImplies.getAntecedent());
             addConstraint(Irs.not(notImplies.getConsequent()));
-        } else if (!IrUtil.isTrue(expr)) {
-            constraints.add(expr);
+        } else {
+            switch (expr.getDomain()) {
+                case FalseDomain:
+                    throw new UnsatisfiableException();
+                case TrueFalseDomain:
+                    constraints.add(expr);
+            }
         }
         return this;
     }

@@ -17,6 +17,12 @@ public class ClaferSolver implements ClaferSearch {
     private int count = 0;
     private boolean more = true;
 
+    ClaferSolver() {
+        this.solver = new Solver();
+        this.solver.post(solver.FALSE);
+        this.solutionMap = null;
+    }
+
     ClaferSolver(Solver solver, ClaferSolutionMap solutionMap) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);

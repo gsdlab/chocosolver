@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Triple;
+import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.ir.IllegalIntException;
 import org.clafer.ir.IllegalSetException;
@@ -214,7 +215,7 @@ public class Coalescer {
                                 card == null ? setVar.getCardVar() : card
                         );
                     } catch (IllegalSetException e) {
-                        throw new CoalesceException(e);
+                        throw new UnsatisfiableException(e);
                     }
                 }
             }
@@ -252,7 +253,7 @@ public class Coalescer {
                         string = string(stringVar.getName(), chars, length);
                         stringVarCache.put(key, string);
                     } catch (IllegalStringException e) {
-                        throw new CoalesceException(e);
+                        throw new UnsatisfiableException(e);
                     }
                 }
                 coalescedStrings.put(stringVar, string);
@@ -269,7 +270,7 @@ public class Coalescer {
         try {
             return new TempSetVar(env, ker, tint(card));
         } catch (IllegalSetException e) {
-            throw new CoalesceException(e);
+            throw new UnsatisfiableException(e);
         }
     }
 
@@ -1234,7 +1235,7 @@ public class Coalescer {
      * The model is unsatisfiable.
      */
     private static void fail() {
-        throw new CoalesceException();
+        throw new UnsatisfiableException();
     }
 
     private static void failIf(boolean fail) {
@@ -1250,7 +1251,7 @@ public class Coalescer {
         try {
             return new TempIntVar(var.getDomain());
         } catch (IllegalIntException e) {
-            throw new CoalesceException(e);
+            throw new UnsatisfiableException(e);
         }
     }
 
@@ -1258,7 +1259,7 @@ public class Coalescer {
         try {
             return new TempIntVar(domain);
         } catch (IllegalIntException e) {
-            throw new CoalesceException(e);
+            throw new UnsatisfiableException(e);
         }
     }
 
@@ -1266,7 +1267,7 @@ public class Coalescer {
         try {
             return new TempIntVar(boundDomain(low, high));
         } catch (IllegalIntException e) {
-            throw new CoalesceException(e);
+            throw new UnsatisfiableException(e);
         }
     }
 

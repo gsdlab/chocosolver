@@ -530,4 +530,19 @@ public class SimpleConstraintTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(10));
         assertTrue(solver.find());
     }
+
+    /**
+     * <pre>
+     * [4 = 5]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testConstantEqualUnsat() {
+        AstModel model = newModel();
+
+        model.addConstraint(equal(constant(4), constant(5)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
+        assertFalse(solver.find());
+    }
 }

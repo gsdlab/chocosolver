@@ -15,6 +15,7 @@ import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.collection.Either;
 import org.clafer.collection.Maybe;
+import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
@@ -155,18 +156,22 @@ public class ClaferCompiler {
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOptions options) {
-        Solver solver = new Solver();
-        IrModule module = new IrModule();
+        try {
+            Solver solver = new Solver();
+            IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
-                options.isFullSymmetryBreaking());
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
-        ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
+            AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
+                    options.isFullSymmetryBreaking());
+            IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
+            ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        set(solver,
-                setStrategy(getSetVars(in, solution), options),
-                firstFailInDomainMin(getIntVars(in, solution)));
-        return new ClaferSolver(solver, solution);
+            set(solver,
+                    setStrategy(getSetVars(in, solution), options),
+                    firstFailInDomainMin(getIntVars(in, solution)));
+            return new ClaferSolver(solver, solution);
+        } catch (UnsatisfiableException e) {
+            return new ClaferSolver();
+        }
     }
 
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective... objectives) {
@@ -174,33 +179,37 @@ public class ClaferCompiler {
     }
 
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOptions options) {
-        Solver solver = new Solver();
-        IrModule module = new IrModule();
+        try {
+            Solver solver = new Solver();
+            IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(
-                in, scope.toScope(), objectives, module,
-                options.isFullSymmetryBreaking());
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
-        ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
+            AstSolutionMap astSolution = AstCompiler.compile(
+                    in, scope.toScope(), objectives, module,
+                    options.isFullSymmetryBreaking());
+            IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
+            ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        IrIntVar[] objectiveIrVars = new IrIntVar[objectives.length];
-        for (int i = 0; i < objectiveIrVars.length; i++) {
-            objectiveIrVars[i] = astSolution.getObjectiveVar(objectives[i]);
+            IrIntVar[] objectiveIrVars = new IrIntVar[objectives.length];
+            for (int i = 0; i < objectiveIrVars.length; i++) {
+                objectiveIrVars[i] = astSolution.getObjectiveVar(objectives[i]);
+            }
+            Either<Integer, IntVar>[] objectiveVars = irSolution.getVars(objectiveIrVars);
+
+            boolean[] maximizes = new boolean[objectives.length];
+            for (int i = 0; i < maximizes.length; i++) {
+                maximizes[i] = objectives[i].isMaximize();
+            }
+
+            set(solver,
+                    setStrategy(getSetVars(in, solution), options),
+                    //                firstFailInDomainMax(objectiveVars),
+                    firstFailInDomainMin(getIntVars(in, solution)));
+            return maximizes.length == 1
+                    ? new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0])
+                    : new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars);
+        } catch (UnsatisfiableException e) {
+            return new ClaferUnsatOptimizer();
         }
-        Either<Integer, IntVar>[] objectiveVars = irSolution.getVars(objectiveIrVars);
-
-        boolean[] maximizes = new boolean[objectives.length];
-        for (int i = 0; i < maximizes.length; i++) {
-            maximizes[i] = objectives[i].isMaximize();
-        }
-
-        set(solver,
-                setStrategy(getSetVars(in, solution), options),
-                //                firstFailInDomainMax(objectiveVars),
-                firstFailInDomainMin(getIntVars(in, solution)));
-        return maximizes.length == 1
-                ? new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0])
-                : new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars);
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope) {

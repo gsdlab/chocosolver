@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.domain.BoolDomain;
 
@@ -1503,6 +1504,10 @@ public class Irs {
                         globalCardinality == null ? 1 : divRoundUp(array.length, globalCardinality),
                         ker.size());
                 int highCard = Math.min(array.length, env.size());
+                if (lowCard > highCard) {
+                    assert globalCardinality > 0;
+                    throw new UnsatisfiableException();
+                }
                 Domain card = boundDomain(lowCard, highCard);
                 return IrUtil.asConstant(new IrArrayToSet(array, env, ker, card, globalCardinality));
         }

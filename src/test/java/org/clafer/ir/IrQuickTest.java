@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.clafer.common.UnsatisfiableException;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.test.TestReflection;
@@ -97,21 +98,25 @@ public class IrQuickTest extends Suite {
                         module);
             }
             try {
-                IrBoolExpr irConstraint = (IrBoolExpr) testMethod.invokeExplosively(target, irArgs);
-                irConstraint = positive ? irConstraint : irConstraint.negate();
-                module.addConstraint(irConstraint);
-
                 Set<Object> solutions = new HashSet<>();
-                Solver irSolver = new Solver();
-                IrSolutionMap irSolutionMap = IrCompiler.compile(module, irSolver);
-                for (FrameworkMethod checkMethod : checkMethods) {
-                    checkMethod.invokeExplosively(target, irSolver);
-                }
+                try {
+                    IrBoolExpr irConstraint = (IrBoolExpr) testMethod.invokeExplosively(target, irArgs);
+                    irConstraint = positive ? irConstraint : irConstraint.negate();
+                    module.addConstraint(irConstraint);
 
-                if (randomizeStrategy(irSolver).findSolution()) {
-                    do {
-                        solutions.add(TestReflection.value(irSolutionMap, irArgs));
-                    } while (irSolver.nextSolution());
+                    Solver irSolver = new Solver();
+                    IrSolutionMap irSolutionMap = IrCompiler.compile(module, irSolver);
+                    for (FrameworkMethod checkMethod : checkMethods) {
+                        checkMethod.invokeExplosively(target, irSolver);
+                    }
+
+                        if (randomizeStrategy(irSolver).findSolution()) {
+                            do {
+                                solutions.add(TestReflection.value(irSolutionMap, irArgs));
+                            } while (irSolver.nextSolution());
+                        }
+                } catch (UnsatisfiableException e) {
+                    // Do nothing.
                 }
 
                 for (FrameworkMethod solutionMethod : solutionMethods) {

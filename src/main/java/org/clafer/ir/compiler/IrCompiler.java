@@ -85,7 +85,6 @@ import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.IrXor;
 import org.clafer.ir.Irs;
-import org.clafer.ir.analysis.CoalesceException;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
@@ -134,20 +133,16 @@ public class IrCompiler {
         Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
         Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
         if (coalesceVariables) {
-            try {
-                Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
-                coalescedIntVars = coalesceTriple.getFst();
-                coalescedSetVars = coalesceTriple.getSnd();
+            Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
+            coalescedIntVars = coalesceTriple.getFst();
+            coalescedSetVars = coalesceTriple.getSnd();
+            optModule = coalesceTriple.getThd();
+            while (!coalesceTriple.getFst().isEmpty()
+                    || !coalesceTriple.getSnd().isEmpty()) {
+                coalesceTriple = Coalescer.coalesce(optModule);
+                coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
+                coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
                 optModule = coalesceTriple.getThd();
-                while (!coalesceTriple.getFst().isEmpty()
-                        || !coalesceTriple.getSnd().isEmpty()) {
-                    coalesceTriple = Coalescer.coalesce(optModule);
-                    coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
-                    coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
-                    optModule = coalesceTriple.getThd();
-                }
-            } catch (CoalesceException e) {
-                // Compile anyways?
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
         }
