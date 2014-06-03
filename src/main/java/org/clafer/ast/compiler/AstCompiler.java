@@ -706,13 +706,15 @@ public class AstCompiler {
         assert card.getLow() == card.getHigh();
         int lowCard = card.getLow();
         for (int i = 0; i < children.length; i++) {
-            if (partialParentSolution.hasClafer(i)) {
+            if (lowCard == 0) {
+                children[i] = EmptySet;
+            } else if (partialParentSolution.hasClafer(i)) {
                 children[i] = constant(Util.fromTo(i * lowCard, i * lowCard + lowCard));
             } else {
                 children[i] = set(clafer.getName() + "#" + i,
                         boundDomain(i * lowCard, i * lowCard + lowCard - 1),
                         EmptyDomain,
-                        boundDomain(card.getLow(), card.getHigh()).insert(0));
+                        enumDomain(0, lowCard));
             }
         }
 
@@ -1397,7 +1399,6 @@ public class AstCompiler {
                     return or(compiled);
                 default:
                     throw new AstException();
-
             }
         }
 

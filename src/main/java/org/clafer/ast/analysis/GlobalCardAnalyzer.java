@@ -9,8 +9,13 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstUtil;
+import static org.clafer.ast.Asts.IntType;
 import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
+import org.clafer.graph.GraphUtil;
+import org.clafer.graph.KeyGraph;
+import org.clafer.graph.Vertex;
 
 /**
  *
@@ -18,13 +23,34 @@ import org.clafer.collection.Pair;
  */
 public class GlobalCardAnalyzer implements Analyzer {
 
+    private Iterable<Set<AstClafer>> order(Analysis analysis) {
+        KeyGraph<AstClafer> dependency = new KeyGraph<>();
+        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
+            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
+            for (AstClafer sub : abstractClafer.getSubs()) {
+                node.addNeighbour(dependency.getVertex(sub));
+            }
+        }
+        for (AstConcreteClafer concreteClafer : analysis.getConcreteClafers()) {
+            if (concreteClafer.hasParent()) {
+                dependency.addEdge(concreteClafer, concreteClafer.getParent());
+            }
+            AstRef ref = AstUtil.getInheritedRef(concreteClafer);
+            if (ref != null && ref.isUnique() && !ref.getTargetType().isPrimitive()) {
+                dependency.addEdge(concreteClafer, ref.getTargetType());
+            }
+        }
+        return GraphUtil.computeStronglyConnectedComponents(dependency);
+    }
+
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstClafer, Card> globalCardMap = new HashMap<>();
         globalCardMap.put(analysis.getModel(), new Card(1, 1));
+        globalCardMap.put(IntType, new Card(0, analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1));
         List<Pair<AstClafer, Integer>> insufficientScopes = new ArrayList<>();
 
-        for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {
+        for (Set<AstClafer> component : order(analysis)) {
             for (AstClafer clafer : component) {
                 if (clafer instanceof AstConcreteClafer) {
                     analyze((AstConcreteClafer) clafer, analysis, globalCardMap, insufficientScopes);
@@ -97,7 +123,7 @@ public class GlobalCardAnalyzer implements Analyzer {
             }
         }
         // Cap by scope
-        Card globalCard = parentGlobalCard.mult(analysis.getCard(clafer));
+        Card globalCard = parentGlobalCard.mult(getCard(clafer, analysis, globalCardMap));
         int scope = analysis.getScope(clafer);
         if (scope < globalCard.getLow()) {
             insufficientScopes.add(new Pair<AstClafer, Integer>(clafer, globalCard.getLow()));
@@ -108,5 +134,20 @@ public class GlobalCardAnalyzer implements Analyzer {
                     Math.min(globalCard.getHigh(), scope));
         }
         globalCardMap.put(clafer, globalCard);
+    }
+
+    private static Card getCard(AstConcreteClafer clafer, Analysis analysis, Map<AstClafer, Card> globalCardMap) {
+        Card card = analysis.getCard(clafer);
+        AstRef ref = AstUtil.getInheritedRef(clafer);
+        if (ref != null && ref.isUnique()) {
+            Card targetCard = globalCardMap.get(ref.getTargetType());
+            // targetCard can be null if cycle.
+            if (targetCard != null && targetCard.getHigh() < card.getHigh()) {
+                if (card.getLow() <= targetCard.getHigh()) {
+                    return new Card(card.getLow(), targetCard.getHigh());
+                }
+            }
+        }
+        return card;
     }
 }
