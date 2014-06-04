@@ -13,6 +13,7 @@ var min = rc.addMinimizeObjective.bind(rc);
 
 var Int = Asts.IntType; // Some Javascript engine versions has "int" as a keyword.
 var Bool = Asts.BoolType;
+var string = Asts.StringType; // Some Javascript engine versions has "String" as a builtin function.
 
 var $this = Asts.$this;
 var global = Asts.global;
