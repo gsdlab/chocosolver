@@ -78,3 +78,7 @@ var lone = Asts.lone;
 var none = Asts.none;
 var one = Asts.one;
 var some = Asts.some;
+var length = Asts.length;
+var concat = Asts.concat;
+var prefix = Asts.prefix;
+var suffix = Asts.suffix;
