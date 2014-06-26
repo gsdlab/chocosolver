@@ -137,7 +137,7 @@ public class GraphUtil {
 
     private static class Index {
 
-        private int index;
+        private final int index;
         private int lowIndex;
 
         Index(int index, int lowIndex) {

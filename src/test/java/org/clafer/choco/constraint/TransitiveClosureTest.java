@@ -15,7 +15,6 @@ import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.SetVar;
-import solver.variables.VF;
 import static solver.variables.VariableFactory.set;
 
 /**
@@ -63,15 +62,7 @@ public class TransitiveClosureTest {
         }
         return $(relation, closure);
     }
-    public static void main(String[] args) {
-        Solver s= new Solver();
-        SetVar empty = VF.fixed("{}", new int[]{}, s);
-        SetVar one = VF.fixed("{1}", new int[]{1}, s);
-        SetVar[] relation = new SetVar[]{empty, empty, empty};
-        SetVar[] closure = new SetVar[]{empty, one, empty};
-        s.post(Constraints.transitiveClosure(relation, closure));
-        System.out.println(s.findSolution());
-    }
+
     @Check
     public void check(TIntSet[] relation, TIntSet[] closure) {
         for (int i = 0; i < relation.length; i++) {
