@@ -18,6 +18,8 @@ import util.ESat;
  */
 public class PropLexChainChannel extends Propagator<IntVar> {
 
+    private static final long serialVersionUID = 1L;
+
     private final IntVar[][] strings;
     private final IntVar[] ints;
 
@@ -356,11 +358,6 @@ public class PropLexChainChannel extends Propagator<IntVar> {
     public void propagate(int evtmask) throws ContradictionException {
         propagateStrings();
         while (propagateInts() && propagateStrings());
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

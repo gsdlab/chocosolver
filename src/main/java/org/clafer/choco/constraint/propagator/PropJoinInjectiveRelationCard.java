@@ -16,6 +16,8 @@ import util.ESat;
  */
 public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
+    private static final long serialVersionUID = 1L;
+
     private final SetVar take;
     private final IntVar takeCard;
     private final IntVar[] childrenCards;
@@ -160,11 +162,6 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             kerMaxCard += envUbs[i];
         }
         takeCard.updateLowerBound(envUbs.length - 1 - i + take.getKernelSize(), aCause);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

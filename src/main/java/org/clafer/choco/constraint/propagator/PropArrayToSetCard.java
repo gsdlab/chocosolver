@@ -17,6 +17,8 @@ import util.ESat;
  */
 public class PropArrayToSetCard extends Propagator<Variable> {
 
+    private static final long serialVersionUID = 1L;
+
     private final IntVar[] as;
     private final IntVar sCard;
     private final Integer globalCardinality;
@@ -190,11 +192,6 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                 }
             }
         } while (changed);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

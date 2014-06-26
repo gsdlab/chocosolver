@@ -16,6 +16,8 @@ import util.ESat;
  */
 public class PropSortedSetsCard extends Propagator<Variable> {
 
+    private static final long serialVersionUID = 1L;
+
     private final SetVar[] sets;
     private final IntVar[] cards;
 
@@ -83,11 +85,6 @@ public class PropSortedSetsCard extends Propagator<Variable> {
     }
 
     @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
-    }
-
-    @Override
     public ESat isEntailed() {
         int low = 0;
         int high = 0;
@@ -118,6 +115,6 @@ public class PropSortedSetsCard extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return "sorted(" + Arrays.toString(sets) + " || " + Arrays.toString(cards) + ")";
+        return "sortedSetsCard(" + Arrays.toString(sets) + " || " + Arrays.toString(cards) + ")";
     }
 }

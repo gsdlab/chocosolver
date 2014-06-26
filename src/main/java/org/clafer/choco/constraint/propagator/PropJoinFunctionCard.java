@@ -18,6 +18,8 @@ import util.ESat;
  */
 public class PropJoinFunctionCard extends Propagator<Variable> {
 
+    private static final long serialVersionUID = 1L;
+
     private final SetVar take;
     private final IntVar takeCard;
     private final IntVar[] refs;
@@ -211,7 +213,6 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                 cardChanged |= takeCard.updateLowerBound(toCard.getLB(), aCause);
             } while (cardChanged);
 
-
             if (maxUninstantiated != 0) {
                 if (instCard == toCard.getUB()) {
                     // The rest must be duplicates.
@@ -239,11 +240,6 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                 }
             }
         } while (changed);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

@@ -504,7 +504,6 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isKerSubsetKer(SetVar sub, SetVar sup) {
-
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
             if (!sup.kernelContains(i)) {
                 return false;

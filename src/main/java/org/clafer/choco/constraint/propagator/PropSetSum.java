@@ -19,6 +19,8 @@ import util.ESat;
  */
 public class PropSetSum extends Propagator<Variable> {
 
+    private static final long serialVersionUID = 1L;
+
     private final SetVar set;
     private final IntVar setCard;
     private final IntVar sum;
@@ -149,11 +151,6 @@ public class PropSetSum extends Propagator<Variable> {
                 }
             }
         } while (changed);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override
