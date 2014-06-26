@@ -45,11 +45,6 @@ public class PropSortedSets extends Propagator<SetVar> {
     }
 
     @Override
-    public void propagate(final int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
-    }
-
-    @Override
     public ESat isEntailed() {
         for (int i = 0; i < sets.length; i++) {
             SetVar set = sets[i];

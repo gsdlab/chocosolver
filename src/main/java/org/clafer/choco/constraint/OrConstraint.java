@@ -43,7 +43,7 @@ public class OrConstraint extends Constraint {
         private final Constraint[] constraints;
 
         protected PropOr(Variable[] vars, Constraint[] constraints) {
-            super(vars, PropagatorPriority.LINEAR, true);
+            super(vars, PropagatorPriority.LINEAR, false);
             this.constraints = constraints;
         }
 
@@ -68,11 +68,6 @@ public class OrConstraint extends Constraint {
             if (allFalse) {
                 contradiction(vars[0], "All unsat.");
             }
-        }
-
-        @Override
-        public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-            forcePropagate(EventType.CUSTOM_PROPAGATION);
         }
 
         @Override
