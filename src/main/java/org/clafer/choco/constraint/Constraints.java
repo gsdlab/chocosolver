@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint;
 
+import org.clafer.choco.constraint.propagator.PropTransitive;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -7,6 +8,7 @@ import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
+import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
@@ -21,6 +23,7 @@ import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropMask;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
+import org.clafer.choco.constraint.propagator.PropReflexive;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
@@ -31,6 +34,7 @@ import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropSortedSets;
 import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
+import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
@@ -930,5 +934,48 @@ public class Constraints {
         IntVar[] pad = Arrays.copyOf(chars, length);
         Arrays.fill(pad, chars.length, pad.length, zero);
         return pad;
+    }
+
+    public static Constraint transitive(SetVar[] relation) {
+        return new Constraint("transitive",
+                new PropTransitive(relation),
+                new PropTransitiveUnreachable(relation));
+    }
+
+    public static Constraint reflexive(SetVar[] relation) {
+        return new Constraint("transitive", new PropReflexive(relation));
+    }
+
+    public static Constraint transitiveClosure(SetVar[] relation, SetVar[] closure) {
+        if (relation.length != closure.length) {
+            throw new IllegalArgumentException();
+        }
+        @SuppressWarnings("unchecked")
+        Propagator<SetVar>[] propagators
+                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 3];
+        for (int i = 0; i < relation.length; i++) {
+            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+        }
+        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, false);
+        propagators[relation.length + 1] = new PropTransitive(closure);
+        propagators[relation.length + 2] = new PropTransitiveUnreachable(closure);
+        return new Constraint("transitive", propagators);
+    }
+
+    public static Constraint transitiveReflexiveClosure(SetVar[] relation, SetVar[] closure) {
+        if (relation.length != closure.length) {
+            throw new IllegalArgumentException();
+        }
+        @SuppressWarnings("unchecked")
+        Propagator<SetVar>[] propagators
+                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 4];
+        for (int i = 0; i < relation.length; i++) {
+            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+        }
+        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, true);
+        propagators[relation.length + 1] = new PropReflexive(closure);
+        propagators[relation.length + 2] = new PropTransitive(closure);
+        propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
+        return new Constraint("transitiveReflexive", propagators);
     }
 }
