@@ -1,7 +1,7 @@
 chocosolver
 ===========
 
-v0.3.6.20-01-2014
+v0.3.6.1
 
 A backend for [Clafer](http://clafer.org) using the Choco 3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
 
@@ -13,7 +13,7 @@ Contributors
 Getting Clafer Tools
 --------------------
 
-Binary distributions of the release 0.3.6 of Clafer Tools for Windows, Mac, and Linux, 
+Binary distributions of the release 0.3.6.1 of Clafer Tools for Windows, Mac, and Linux, 
 can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions). 
 Clafer Wiki requires Haskell Platform and MinGW to run on Windows. 
 
@@ -27,7 +27,7 @@ Prerequisites
 
 Optional
 --------
-* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below) v0.3.6.
+* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below) v0.3.6.1.
 
 ```bash
 git clone https://github.com/gsdlab/clafer.git
@@ -50,10 +50,10 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.6</version>
+    <version>0.3.6.1</version>
 </dependency>
 ```
-The CLI is installed to target/chocosolver-0.3.6-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.6-jar-with-dependencies.jar mymodel.js".
+The CLI is installed to target/chocosolver-0.3.6.1-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.6.1-jar-with-dependencies.jar mymodel.js".
 
 ### Important: Branches must correspond
 

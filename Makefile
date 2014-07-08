@@ -15,4 +15,4 @@ clean:
 install:  
 	mkdir -p $(to)
 	cp -f README.md $(to)/chocosolver-README.md
-	cp -f target/chocosolver-0.3.5-jar-with-dependencies.jar $(to)
+	cp -f target/chocosolver-0.3.6.1-jar-with-dependencies.jar $(to)
