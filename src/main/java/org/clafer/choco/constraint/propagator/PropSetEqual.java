@@ -5,7 +5,7 @@ import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -17,7 +17,7 @@ import util.procedure.IntProcedure;
 public class PropSetEqual extends Propagator<SetVar> {
 
     private final SetVar s1, s2;
-    private SetDeltaMonitor s1D, s2D;
+    private ISetDeltaMonitor s1D, s2D;
 
     public PropSetEqual(SetVar s1, SetVar s2) {
         super(new SetVar[]{s1, s2}, PropagatorPriority.LINEAR, true);
@@ -93,7 +93,7 @@ public class PropSetEqual extends Propagator<SetVar> {
         if (!PropUtil.isKerSubsetEnv(s1, s2) || !PropUtil.isKerSubsetEnv(s2, s1)) {
             return ESat.FALSE;
         }
-        return s1.instantiated() && s2.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return s1.isInstantiated() && s2.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

@@ -33,7 +33,7 @@ public class ImplicationFlattener {
         for (IrBoolExpr constraint : module.getConstraints()) {
             constraints.add(flattener.rewrite(constraint, null));
         }
-        return new IrModule().addVariables(module.getVariables()).addConstraints(constraints);
+        return new IrModule().addConstraints(constraints);
     }
     private static final IrRewriter<Void> flattener = new IrRewriter<Void>() {
         @Override

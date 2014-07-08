@@ -49,6 +49,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstStringConstant ast, T a) {
+        return ast;
+    }
+
+    @Override
     public AstExpr visit(AstJoin ast, T a) {
         return join(rewrite(ast.getLeft(), a), ast.getRight());
     }
@@ -160,5 +165,25 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
             decls[i] = decl(decl.isDisjoint(), locals, rewrite(decl.getBody(), a));
         }
         return quantify(ast.getQuantifier(), decls, rewrite(ast.getBody(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstLength ast, T a) {
+        return length(rewrite(ast.getString(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstConcat ast, T a) {
+        return concat(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstPrefix ast, T a) {
+        return prefix(rewrite(ast.getPrefix(), a), rewrite(ast.getWord(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstSuffix ast, T a) {
+        return suffix(rewrite(ast.getSuffix(), a), rewrite(ast.getWord(), a));
     }
 }

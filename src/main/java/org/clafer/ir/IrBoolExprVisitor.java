@@ -9,6 +9,8 @@ package org.clafer.ir;
  */
 public interface IrBoolExprVisitor<A, B> {
 
+    public B visit(IrRegister ir, A a);
+
     public B visit(IrBoolVar ir, A a);
 
     public B visit(IrNot ir, A a);
@@ -33,11 +35,11 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrWithin ir, A a);
 
-    public B visit(IrNotWithin ir, A a);
-
     public B visit(IrCompare ir, A a);
 
-    public B visit(IrSetTest ir, A a);
+    public B visit(IrSetEquality ir, A a);
+
+    public B visit(IrStringCompare ir, A a);
 
     public B visit(IrMember ir, A a);
 
@@ -64,4 +66,8 @@ public interface IrBoolExprVisitor<A, B> {
     public B visit(IrUnreachable ir, A a);
 
     public B visit(IrFilterString ir, A a);
+
+    public B visit(IrPrefix ir, A a);
+
+    public B visit(IrSuffix ir, A a);
 }

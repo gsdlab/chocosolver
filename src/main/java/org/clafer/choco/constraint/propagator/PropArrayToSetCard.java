@@ -92,7 +92,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
     private TIntIntHashMap countRefs() {
         TIntIntHashMap map = new TIntIntHashMap(as.length);
         for (IntVar a : as) {
-            if (a.instantiated()) {
+            if (a.isInstantiated()) {
                 map.adjustOrPutValue(a.getValue(), 1, 1);
             }
         }
@@ -115,7 +115,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
         assert explored < as.length;
 
         IntVar a = as[index];
-        if (a.instantiated()) {
+        if (a.isInstantiated()) {
             int value = a.getValue();
             int count = map.adjustOrPutValue(value, 1, 1);
             int gc = getGlobalCardinality();
@@ -123,7 +123,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
             if (count == gc) {
                 for (int j = 0; j < explored; j++) {
                     IntVar b = as[j];
-                    if (!b.instantiatedTo(value) && b.removeValue(value, aCause)) {
+                    if (!b.isInstantiatedTo(value) && b.removeValue(value, aCause)) {
                         constrainGlobalCardinality(j, explored, map);
                     }
                 }
@@ -152,7 +152,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
             int instCard = map.size();
             int uninstantiated = 0;
             for (IntVar a : as) {
-                if (!a.instantiated()) {
+                if (!a.isInstantiated()) {
                     uninstantiated++;
                 }
             }
@@ -169,20 +169,20 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                 if (instCard == sCard.getUB()) {
                     // The rest must be duplicates.
                     for (IntVar a : as) {
-                        assert !a.instantiated() || map.contains(a.getValue());
-                        if (!a.instantiated()) {
-                            changed |= PropUtil.domSubsetSet(a, map.keySet(), aCause) && a.instantiated();
+                        assert !a.isInstantiated() || map.contains(a.getValue());
+                        if (!a.isInstantiated()) {
+                            changed |= PropUtil.domSubsetSet(a, map.keySet(), aCause) && a.isInstantiated();
                         }
                     }
                 }
                 if (maxCard == sCard.getLB()) {
                     // No more duplicate values.
                     for (IntVar a : as) {
-                        if (!a.instantiated()) {
+                        if (!a.isInstantiated()) {
                             TIntIntIterator iter = map.iterator();
                             for (int i = map.size(); i-- > 0;) {
                                 iter.advance();
-                                changed |= a.removeValue(iter.key(), aCause) && a.instantiated();
+                                changed |= a.removeValue(iter.key(), aCause) && a.isInstantiated();
                             }
                             assert !iter.hasNext();
                         }
@@ -203,7 +203,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
         int gc = hasGlobalCardinality() ? getGlobalCardinality() : Integer.MAX_VALUE;
         int uninstantiated = 0;
         for (IntVar a : as) {
-            if (a.instantiated()) {
+            if (a.isInstantiated()) {
                 if (map.adjustOrPutValue(a.getValue(), 1, 1) > gc) {
                     return ESat.FALSE;
                 }

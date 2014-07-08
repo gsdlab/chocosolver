@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -7,12 +8,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSelectN extends IrAbstractBool implements IrBoolExpr {
+public class IrSelectN extends IrAbstractBool {
 
     private final IrBoolExpr[] bools;
     private final IrIntExpr n;
 
-    IrSelectN(IrBoolExpr[] bools, IrIntExpr n, IrBoolDomain domain) {
+    IrSelectN(IrBoolExpr[] bools, IrIntExpr n, BoolDomain domain) {
         super(domain);
         this.bools = Check.noNulls(bools);
         this.n = Check.notNull(n);

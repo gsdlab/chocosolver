@@ -39,7 +39,7 @@ public class PropAnd extends Propagator<BoolVar> {
     public ESat isEntailed() {
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 if (var.getValue() == 0) {
                     return ESat.FALSE;
                 }

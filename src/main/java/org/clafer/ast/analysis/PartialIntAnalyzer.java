@@ -25,9 +25,9 @@ import org.clafer.ast.AstUtil;
 import org.clafer.collection.FList;
 import static org.clafer.collection.FList.*;
 import org.clafer.collection.Pair;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 import org.clafer.ir.IrUtil;
-import org.clafer.ir.Irs;
 import org.clafer.scope.Scope;
 
 /**
@@ -38,7 +38,7 @@ public class PartialIntAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstRef, IrDomain[]> partialInts = new HashMap<>();
+        Map<AstRef, Domain[]> partialInts = new HashMap<>();
 
         List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
@@ -61,7 +61,7 @@ public class PartialIntAnalyzer implements Analyzer {
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer.hasRef()) {
                 int scope = analysis.getScope(clafer);
-                IrDomain[] ints = new IrDomain[scope];
+                Domain[] ints = new Domain[scope];
                 for (int i = 0; i < scope; i++) {
                     ints[i] = partialInts(i, clafer.getRef(), automata, analysis);
                 }
@@ -71,7 +71,7 @@ public class PartialIntAnalyzer implements Analyzer {
         return analysis.setPartialIntsMap(partialInts);
     }
 
-    private static IrDomain partialInts(
+    private static Domain partialInts(
             final int id, final AstRef ref, final AssignmentAutomata automata,
             final Analysis analysis) {
         TIntHashSet ints = new TIntHashSet();
@@ -79,13 +79,13 @@ public class PartialIntAnalyzer implements Analyzer {
         AstClafer target = ref.getTargetType();
         if (!partialInts(new int[]{id}, source, automata, analysis, ints)) {
             Scope scope = analysis.getScope();
-            IrDomain unbounded =
-                    target instanceof AstIntClafer
-                    ? Irs.boundDomain(scope.getIntLow(), scope.getIntHigh())
-                    : Irs.fromToDomain(0, scope.getScope(target));
-            return IrUtil.union(unbounded, Irs.enumDomain(ints));
+            Domain unbounded
+                    = target instanceof AstIntClafer
+                    ? Domains.boundDomain(scope.getIntLow(), scope.getIntHigh())
+                    : Domains.fromToDomain(0, scope.getScope(target));
+            return unbounded.union(Domains.enumDomain(ints));
         }
-        return Irs.enumDomain(ints);
+        return Domains.enumDomain(ints);
     }
 
     private static boolean partialInts(

@@ -9,7 +9,9 @@ import static org.clafer.ir.Irs.*;
  * @author jimmy
  */
 public abstract class IrRewriter<T>
-        implements IrIntExprVisitor<T, IrIntExpr>, IrSetExprVisitor<T, IrSetExpr> {
+        implements IrIntExprVisitor<T, IrIntExpr>,
+        IrSetExprVisitor<T, IrSetExpr>,
+        IrStringExprVisitor<T, IrStringExpr> {
 
     protected static <T> boolean changed(T t1, T t2) {
         if (t1 == t2) {
@@ -50,16 +52,7 @@ public abstract class IrRewriter<T>
     }
 
     public IrModule rewrite(IrModule module, T t) {
-        IrModule optModule = new IrModule(module.getVariables().size(), module.getConstraints().size());
-        for (IrVar variable : module.getVariables()) {
-            if (variable instanceof IrBoolVar) {
-                optModule.addVariable(visit((IrBoolVar) variable, t));
-            } else if (variable instanceof IrIntVar) {
-                optModule.addVariable(visit((IrIntVar) variable, t));
-            } else {
-                optModule.addVariable(visit((IrSetVar) variable, t));
-            }
-        }
+        IrModule optModule = new IrModule(module.getConstraints().size());
         for (IrBoolExpr constraint : module.getConstraints()) {
             optModule.addConstraint(rewrite(constraint, t));
         }
@@ -116,6 +109,43 @@ public abstract class IrRewriter<T>
             rewritten[i] = rewrite(exprs[i], t);
         }
         return rewritten;
+    }
+
+    public IrStringExpr rewrite(IrStringExpr expr, T t) {
+        return expr.accept(this, t);
+    }
+
+    public IrStringExpr[] rewrite(IrStringExpr[] exprs, T t) {
+        IrStringExpr[] rewritten = new IrStringExpr[exprs.length];
+        for (int i = 0; i < rewritten.length; i++) {
+            rewritten[i] = rewrite(exprs[i], t);
+        }
+        return rewritten;
+    }
+
+    public IrStringExpr[][] rewrite(IrStringExpr[][] exprs, T t) {
+        IrStringExpr[][] rewritten = new IrStringExpr[exprs.length][];
+        for (int i = 0; i < rewritten.length; i++) {
+            rewritten[i] = rewrite(exprs[i], t);
+        }
+        return rewritten;
+    }
+
+    @Override
+    public IrIntExpr visit(IrRegister ir, T a) {
+        IrVar variable = ir.getVariable();
+        if (variable instanceof IrBoolVar) {
+            variable = (IrVar) rewrite((IrBoolVar) variable, a);
+        } else if (variable instanceof IrIntVar) {
+            variable = (IrVar) rewrite((IrIntVar) variable, a);
+        } else if (variable instanceof IrSetVar) {
+            variable = (IrVar) rewrite((IrSetVar) variable, a);
+        } else {
+            variable = (IrVar) rewrite((IrStringVar) variable, a);
+        }
+        return changed(ir.getVariable(), variable)
+                ? new IrRegister(variable)
+                : ir;
     }
 
     @Override
@@ -222,14 +252,6 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrNotWithin ir, T a) {
-        IrIntExpr value = rewrite(ir.getValue(), a);
-        return changed(ir.getValue(), value)
-                ? notWithin(value, ir.getRange())
-                : ir;
-    }
-
-    @Override
     public IrBoolExpr visit(IrCompare ir, T a) {
         IrIntExpr left = rewrite(ir.getLeft(), a);
         IrIntExpr right = rewrite(ir.getRight(), a);
@@ -239,11 +261,20 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrSetTest ir, T a) {
+    public IrBoolExpr visit(IrSetEquality ir, T a) {
         IrSetExpr left = rewrite(ir.getLeft(), a);
         IrSetExpr right = rewrite(ir.getRight(), a);
         return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
                 ? equality(left, ir.getOp(), right)
+                : ir;
+    }
+
+    @Override
+    public IrIntExpr visit(IrStringCompare ir, T a) {
+        IrStringExpr left = rewrite(ir.getLeft(), a);
+        IrStringExpr right = rewrite(ir.getRight(), a);
+        return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
+                ? compare(left, ir.getOp(), right)
                 : ir;
     }
 
@@ -363,6 +394,26 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrPrefix ir, T a) {
+        IrStringExpr prefix = rewrite(ir.getPrefix(), a);
+        IrStringExpr word = rewrite(ir.getWord(), a);
+        return changed(ir.getPrefix(), prefix)
+                || changed(ir.getWord(), word)
+                ? prefix(prefix, word)
+                : ir;
+    }
+
+    @Override
+    public IrIntExpr visit(IrSuffix ir, T a) {
+        IrStringExpr suffix = rewrite(ir.getSuffix(), a);
+        IrStringExpr word = rewrite(ir.getWord(), a);
+        return changed(ir.getSuffix(), suffix)
+                || changed(ir.getWord(), word)
+                ? suffix(suffix, word)
+                : ir;
+    }
+
+    @Override
     public IrIntVar visit(IrIntVar ir, T a) {
         return ir;
     }
@@ -447,8 +498,19 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrLength ir, T a) {
+        IrStringExpr string = rewrite(ir.getString(), a);
+        return changed(ir.getString(), string)
+                ? length(string)
+                : ir;
+    }
+
+    @Override
     public IrSetVar visit(IrSetVar ir, T a) {
-        return ir;
+        IrIntVar card = (IrIntVar) rewrite(ir.getCardVar(), a);
+        return changed(ir.getCardVar(), card)
+                ? set(ir.getName(), ir.getEnv(), ir.getKer(), card)
+                : ir;
     }
 
     @Override
@@ -535,6 +597,34 @@ public abstract class IrRewriter<T>
                 || changed(ir.getConsequent(), consequent)
                 || changed(ir.getAlternative(), alternative)
                 ? ternary(antecedent, consequent, alternative)
+                : ir;
+    }
+
+    @Override
+    public IrStringVar visit(IrStringVar ir, T a) {
+        IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getCharVars(), a));
+        IrIntVar length = (IrIntVar) rewrite(ir.getLengthVar(), a);
+        return changed(ir.getCharVars(), chars)
+                || changed(ir.getLengthVar(), length)
+                ? string(ir.getName(), chars, length)
+                : ir;
+    }
+
+    @Override
+    public IrStringExpr visit(IrConcat ir, T a) {
+        IrStringExpr left = rewrite(ir.getLeft(), a);
+        IrStringExpr right = rewrite(ir.getRight(), a);
+        return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
+                ? concat(left, right)
+                : ir;
+    }
+
+    @Override
+    public IrStringExpr visit(IrStringElement ir, T a) {
+        IrStringExpr[] array = rewrite(ir.getArray(), a);
+        IrIntExpr index = rewrite(ir.getIndex(), a);
+        return changed(ir.getArray(), array) || changed(ir.getIndex(), index)
+                ? element(array, index)
                 : ir;
     }
 }

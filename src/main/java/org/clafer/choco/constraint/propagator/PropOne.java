@@ -38,7 +38,7 @@ public class PropOne extends Propagator<BoolVar> {
         BoolVar last = null;
         for (int i = 0; i < vars.length; i++) {
             BoolVar var = vars[i];
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
                     clearAllBut(i);
                     return;
@@ -72,7 +72,7 @@ public class PropOne extends Propagator<BoolVar> {
         int count = 0;
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
                     count++;
                     if (count > 1) {

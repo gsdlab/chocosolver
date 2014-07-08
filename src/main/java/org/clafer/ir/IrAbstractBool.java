@@ -1,21 +1,33 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
  *
  * @author jimmy
  */
-public abstract class IrAbstractBool {
+public abstract class IrAbstractBool implements IrBoolExpr {
 
-    private final IrBoolDomain domain;
+    private final BoolDomain domain;
 
-    public IrAbstractBool(IrBoolDomain domain) {
+    public IrAbstractBool(BoolDomain domain) {
         this.domain = Check.notNull(domain);
     }
 
-    public IrBoolDomain getDomain() {
+    @Override
+    public BoolDomain getDomain() {
         return domain;
+    }
+
+    @Override
+    public int getLowBound() {
+        return domain.getLowBound();
+    }
+
+    @Override
+    public int getHighBound() {
+        return domain.getHighBound();
     }
 
     @Override
@@ -29,7 +41,7 @@ public abstract class IrAbstractBool {
 
     @Override
     public int hashCode() {
-        // Subclasses can choose not to callthis hashCode function since it can
+        // Subclasses can choose not to call this hashCode function since it can
         // be expensive.
         return domain.hashCode();
     }

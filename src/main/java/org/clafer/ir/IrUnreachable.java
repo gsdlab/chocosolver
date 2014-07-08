@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -7,12 +8,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrUnreachable extends IrAbstractBool implements IrBoolExpr {
+public class IrUnreachable extends IrAbstractBool {
 
     private final IrIntExpr[] edges;
     private final int from, to;
 
-    public IrUnreachable(IrIntExpr[] edges, int from, int to, IrBoolDomain domain) {
+    public IrUnreachable(IrIntExpr[] edges, int from, int to, BoolDomain domain) {
         super(domain);
         this.edges = Check.noNullsNotEmpty(edges);
         this.from = from;

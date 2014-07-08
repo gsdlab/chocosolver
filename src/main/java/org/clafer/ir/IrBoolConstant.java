@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
+
 /**
  *
  * @author jimmy
@@ -9,7 +11,7 @@ public class IrBoolConstant extends IrBoolVar implements IrConstant {
     private final boolean value;
 
     IrBoolConstant(boolean value) {
-        super(Boolean.toString(value), value ? IrBoolDomain.TrueDomain : IrBoolDomain.FalseDomain);
+        super(Boolean.toString(value), value ? BoolDomain.TrueDomain : BoolDomain.FalseDomain);
         this.value = value;
     }
 
@@ -24,7 +26,6 @@ public class IrBoolConstant extends IrBoolVar implements IrConstant {
         }
         if (obj instanceof IrBoolConstant) {
             IrBoolConstant other = (IrBoolConstant) obj;
-            // Don't need to call super.equals since the domain is the same as value.
             return value == other.value;
         }
         return false;

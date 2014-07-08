@@ -6,8 +6,11 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import util.iterators.IntIterator;
 
@@ -130,6 +133,7 @@ public class Util {
     /**
      * Randomly shuffle an array in place.
      *
+     * @param <T> the type of the elements
      * @param array the array to shuffle
      * @param rand the random number generator
      */
@@ -427,7 +431,7 @@ public class Util {
 
         int[] indices = new int[choose];
         indices[indices.length - 1]--;
-        for (int i = 0; i < permutations.length; i++) {
+        for (T[] permutation : permutations) {
             do {
                 int j = indices.length - 1;
                 indices[j]++;
@@ -438,7 +442,7 @@ public class Util {
                 }
             } while (!isUnique(indices));
             for (int k = 0; k < indices.length; k++) {
-                permutations[i][k] = array[indices[k]];
+                permutation[k] = array[indices[k]];
             }
         }
         return permutations;
@@ -489,7 +493,7 @@ public class Util {
 
         int[] indices = new int[arrays.length];
         indices[indices.length - 1]--;
-        for (int i = 0; i < sequence.length; i++) {
+        for (T[] array : sequence) {
             int j = indices.length - 1;
             indices[j]++;
             while (indices[j] >= arrays[j].length) {
@@ -498,7 +502,7 @@ public class Util {
                 indices[j]++;
             }
             for (int k = 0; k < indices.length; k++) {
-                sequence[i][k] = arrays[k][indices[k]];
+                array[k] = arrays[k][indices[k]];
             }
         }
         return sequence;
@@ -552,8 +556,8 @@ public class Util {
      * @param <T> the element type
      * @param string the list
      * @param prefix the starting elements of the list
-     * @return {@code true} if and only if {@code string} starts with {@code prefix},
-     *         {@code false} otherwise
+     * @return {@code true} if and only if {@code string} starts with
+     * {@code prefix}, {@code false} otherwise
      */
     public static <T> boolean startsWith(List<T> string, List<T> prefix) {
         final int stringSize = string.size();
@@ -570,8 +574,8 @@ public class Util {
      * @param <T> the element type
      * @param string the list
      * @param suffix the ending elements of the list
-     * @return {@code true} if and only if {@code string} ends with {@code suffix},
-     *         {@code false} otherwise
+     * @return {@code true} if and only if {@code string} ends with
+     * {@code suffix}, {@code false} otherwise
      */
     public static <T> boolean endsWith(List<T> string, List<T> suffix) {
         final int stringSize = string.size();
@@ -667,6 +671,78 @@ public class Util {
     }
 
     /**
+     * @param a
+     * @param b
+     * @return the greatest common divisor of {@code a} and {@code b}
+     */
+    public static int gcd(int a, int b) {
+        return b == 0 ? a : gcd(b, a % b);
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return the greatest common divisor of {@code a} and {@code b}
+     */
+    public static long gcd(long a, long b) {
+        return b == 0 ? a : gcd(b, a % b);
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return the least common multiple of {@code a} and {@code b}
+     */
+    public static int lcm(int a, int b) {
+        return a * (b / gcd(a, b));
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return the least common multiple of {@code a} and {@code b}
+     */
+    public static long lcm(long a, long b) {
+        return a * (b / gcd(a, b));
+    }
+
+    public static int divFloor(int a, int b) {
+        if (b < 0) {
+            return divFloor(-a, -b);
+        } else if (a < 0) {
+            return (a - b + 1) / b;
+        }
+        return (a / b);
+    }
+
+    public static long divFloor(long a, long b) {
+        if (b < 0) {
+            return divFloor(-a, -b);
+        } else if (a < 0) {
+            return (a - b + 1) / b;
+        }
+        return (a / b);
+    }
+
+    public static int divCeil(int a, int b) {
+        if (b < 0) {
+            return divCeil(-a, -b);
+        } else if (a >= 0) {
+            return ((a + b - 1) / b);
+        }
+        return a / b;
+    }
+
+    public static long divCeil(long a, long b) {
+        if (b < 0) {
+            return divCeil(-a, -b);
+        } else if (a >= 0) {
+            return ((a + b - 1) / b);
+        }
+        return a / b;
+    }
+
+    /**
      * Enumerate the iterator and return the values discovered. The iterator is
      * exhausted on return.
      *
@@ -679,6 +755,22 @@ public class Util {
             i.add(iter.next());
         }
         return i.toArray();
+    }
+
+    /**
+     * @param <K> input type
+     * @param <V> return type
+     * @param map a bijection
+     * @return the inverse of map
+     */
+    public static <K, V> Map<V, K> inverse(Map<K, V> map) {
+        Map<V, K> inverse = new HashMap<>(map.size());
+        for (Entry<K, V> entry : map.entrySet()) {
+            if (inverse.put(entry.getValue(), entry.getKey()) != null) {
+                throw new IllegalArgumentException(map + " is not a bijection.");
+            }
+        }
+        return inverse;
     }
 
     /**
@@ -742,5 +834,15 @@ public class Util {
             }
         }
         return result.toString();
+    }
+
+    @SafeVarargs
+    public static <T> T[] cast(Object[] array, T... dest) {
+        @SuppressWarnings("unchecked")
+        T[] to = dest.length == array.length
+                ? dest
+                : (T[]) Array.newInstance(dest.getClass().getComponentType(), array.length);
+        System.arraycopy(array, 0, to, 0, to.length);
+        return to;
     }
 }

@@ -1,17 +1,19 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
  *
  * @author jimmy
  */
-public class IrWithin extends IrAbstractBool implements IrBoolExpr {
+public class IrWithin extends IrAbstractBool {
 
     private final IrIntExpr value;
-    private final IrDomain range;
+    private final Domain range;
 
-    IrWithin(IrIntExpr value, IrDomain range, IrBoolDomain domain) {
+    IrWithin(IrIntExpr value, Domain range, BoolDomain domain) {
         super(domain);
         this.value = Check.notNull(value);
         this.range = Check.notNull(range);
@@ -25,13 +27,17 @@ public class IrWithin extends IrAbstractBool implements IrBoolExpr {
         return value;
     }
 
-    public IrDomain getRange() {
+    public Domain getRange() {
         return range;
     }
 
     @Override
     public IrBoolExpr negate() {
-        return new IrNotWithin(value, range, getDomain().invert());
+        Domain inverse = value.getDomain().difference(range);
+        if (inverse == null) {
+            return Irs.False;
+        }
+        return new IrWithin(value, inverse, getDomain().invert());
     }
 
     @Override

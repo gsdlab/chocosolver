@@ -1,17 +1,18 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
  *
  * @author jimmy
  */
-public class IrImplies extends IrAbstractBool implements IrBoolExpr {
+public class IrImplies extends IrAbstractBool {
 
     private final IrBoolExpr antecedent;
     private final IrBoolExpr consequent;
 
-    IrImplies(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolDomain domain) {
+    IrImplies(IrBoolExpr antecedent, IrBoolExpr consequent, BoolDomain domain) {
         super(domain);
         this.antecedent = Check.notNull(antecedent);
         this.consequent = Check.notNull(consequent);

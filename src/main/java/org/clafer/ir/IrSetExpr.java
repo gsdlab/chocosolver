@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
+
 /**
  * An immutable expression that evaluates to a set of integers.
  *
@@ -12,21 +14,21 @@ public interface IrSetExpr extends IrExpr {
      *
      * @return the env domain
      */
-    public IrDomain getEnv();
+    public Domain getEnv();
 
     /**
      * Ker or kernel is the intersection of all possible values the set can be
      *
      * @return the ker domain
      */
-    public IrDomain getKer();
+    public Domain getKer();
 
     /**
      * Card or cardinality is all the possible size of the set.
      *
      * @return the card domain
      */
-    public IrDomain getCard();
+    public Domain getCard();
 
     /**
      * Dynamic dispatch on the visitor.

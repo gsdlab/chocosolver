@@ -25,6 +25,9 @@ public class JavascriptContext {
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
+    private int stringLength = 10;
+    private char charLow = 0x20;
+    private char charHigh = 0x7e;
     private final AstModel model = Asts.newModel();
 
     public void setScope(Map<String, Number> scope) {
@@ -49,6 +52,21 @@ public class JavascriptContext {
         this.intHigh = intHigh;
     }
 
+    public void setStringLength(int stringLength) {
+        if (stringLength < 0) {
+            throw new IllegalArgumentException();
+        }
+        this.stringLength = stringLength;
+    }
+
+    public void setCharRange(char charLow, char charHigh) {
+        if (charLow > charHigh) {
+            throw new IllegalArgumentException();
+        }
+        this.charLow = charLow;
+        this.charHigh = charHigh;
+    }
+
     public Scope getScope(Scriptable engine) {
         Map<AstClafer, Integer> resolvedScope = new HashMap<>();
         for (Entry<String, Integer> entry : scope.entrySet()) {
@@ -68,7 +86,8 @@ public class JavascriptContext {
             }
             resolvedScope.put(clafer, entry.getValue());
         }
-        return new Scope(resolvedScope, defaultScope, intLow, intHigh);
+        return new Scope(resolvedScope, defaultScope, intLow, intHigh,
+                stringLength, charLow, charHigh);
     }
 
     public void addMaximizeObjective(AstSetExpr expr) {

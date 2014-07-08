@@ -42,7 +42,7 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
     }
 
     private void propagateReifyVar() throws ContradictionException {
-        assert reify.instantiated();
+        assert reify.isInstantiated();
         if (reify.getValue() == reifyC) {
             x.instantiateTo(c, aCause);
         } else {
@@ -53,7 +53,7 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
 
     private void propagateXVar() throws ContradictionException {
         if (x.contains(c)) {
-            if (x.instantiated()) {
+            if (x.isInstantiated()) {
                 reify.instantiateTo(reifyC, aCause);
                 setPassive();
             }
@@ -65,7 +65,7 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (reify.instantiated()) {
+        if (reify.isInstantiated()) {
             propagateReifyVar();
         } else {
             propagateXVar();
@@ -84,11 +84,11 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        if (reify.instantiated()) {
+        if (reify.isInstantiated()) {
             if (!x.contains(c)) {
                 return reify.getValue() == reifyC ? ESat.FALSE : ESat.TRUE;
             }
-            if (x.instantiated()) {
+            if (x.isInstantiated()) {
                 return reify.getValue() == reifyC ? ESat.TRUE : ESat.FALSE;
             }
         }

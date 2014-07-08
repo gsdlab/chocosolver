@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
@@ -14,7 +15,7 @@ public class IrAdd extends IrAbstractInt {
     private final IrIntExpr[] addends;
     private final int offset;
 
-    IrAdd(IrIntExpr[] addends, int offset, IrDomain domain) {
+    IrAdd(IrIntExpr[] addends, int offset, Domain domain) {
         super(domain);
         this.addends = Check.noNullsNotEmpty(addends);
         this.offset = offset;

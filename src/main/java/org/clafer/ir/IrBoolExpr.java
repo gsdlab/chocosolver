@@ -1,5 +1,7 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
+
 /**
  * An immutable expression that evaluates to a boolean.
  *
@@ -11,7 +13,7 @@ public interface IrBoolExpr extends IrIntExpr {
      * @return the domain of values this expression can take
      */
     @Override
-    public IrBoolDomain getDomain();
+    public BoolDomain getDomain();
 
     /**
      * The negated expression is true if and only if this expression is false.

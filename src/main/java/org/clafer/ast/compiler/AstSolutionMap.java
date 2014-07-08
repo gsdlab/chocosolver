@@ -12,6 +12,7 @@ import org.clafer.common.Check;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
 import org.clafer.objective.Objective;
 
 /**
@@ -23,6 +24,7 @@ public class AstSolutionMap {
     private final AstModel model;
     private final Map<AstClafer, IrSetVar[]> siblingVars;
     private final Map<AstRef, IrIntVar[]> refVars;
+    private final Map<AstRef, IrStringVar[]> refStrings;
     private final Map<AstConstraint, IrBoolVar> softVars;
     private final IrIntVar sumSoftVar;
     private final Map<Objective, IrIntVar> objectiveVars;
@@ -31,6 +33,7 @@ public class AstSolutionMap {
     AstSolutionMap(AstModel model,
             Map<AstClafer, IrSetVar[]> sibling,
             Map<AstRef, IrIntVar[]> refVars,
+            Map<AstRef, IrStringVar[]> refStrings,
             Map<AstConstraint, IrBoolVar> softVars,
             IrIntVar sumSoftVar,
             Map<Objective, IrIntVar> objectiveVars,
@@ -38,6 +41,7 @@ public class AstSolutionMap {
         this.model = Check.notNull(model);
         this.siblingVars = Check.notNull(sibling);
         this.refVars = Check.notNull(refVars);
+        this.refStrings = Check.notNull(refStrings);
         this.softVars = Check.notNull(softVars);
         this.sumSoftVar = Check.notNull(sumSoftVar);
         this.objectiveVars = Check.notNull(objectiveVars);
@@ -70,6 +74,10 @@ public class AstSolutionMap {
      */
     public IrIntVar[] getRefVars(AstRef ref) {
         return notNull(ref + " not part of the AST solution", refVars.get(ref));
+    }
+
+    public IrStringVar[] getRefStrings(AstRef ref) {
+        return notNull(ref + " not part of the AST solution", refStrings.get(ref));
     }
 
     /**

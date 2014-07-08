@@ -33,7 +33,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         for (AstConstraint constraint : analysis.getConstraints()) {
             constraintExprs.put(constraint, rewrite(analysis.getExpr(constraint), analysis));
         }
-        Map<Objective, AstSetExpr> objectiveExprs = new HashMap<>(analysis.getObjectives().size());
+        Map<Objective, AstSetExpr> objectiveExprs = new HashMap<>(analysis.getObjectives().length);
         for (Objective objective : analysis.getObjectives()) {
             objectiveExprs.put(objective, rewrite(analysis.getExpr(objective), analysis));
         }
@@ -45,10 +45,12 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
     @Override
     public AstExpr visit(AstJoin ast, Analysis a) {
         AstSetExpr left = rewrite(ast.getLeft(), a);
+        AstConcreteClafer right = ast.getRight();
         if (left instanceof AstThis) {
             if (a.getScope(a.getCommonSupertype(ast.getLeft())) == 1) {
                 Card childCard = a.getCard(ast.getRight());
-                if (childCard.isExact()) {
+                if (Format.ParentGroup.equals(a.getFormat(right))) {
+                    assert childCard.isExact();
                     return constant(ast.getRight(), Util.fromTo(0, childCard.getLow()));
                 }
                 return global(ast.getRight());

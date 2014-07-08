@@ -42,11 +42,11 @@ public class ClaferUnsat {
         for (Entry<AstConstraint, IrBoolVar> entry : softVarsMap.entrySet()) {
             soft[i++] = new Pair<>(
                     entry.getKey(),
-                    solutionMap.getIrSolution().getBoolVar(entry.getValue()));
+                    solutionMap.getIrSolution().getVar(entry.getValue()));
         }
         assert i == soft.length;
         this.softVars = soft;
-        this.score = solutionMap.getIrSolution().getIntVar(solutionMap.getAstSolution().getSumSoftVar());
+        this.score = solutionMap.getIrSolution().getVar(solutionMap.getAstSolution().getSumSoftVar());
     }
 
     public Solver getInternalSolver() {
@@ -68,7 +68,7 @@ public class ClaferUnsat {
                 Either<Boolean, BoolVar> var = softVar.getSnd();
                 if (var.isLeft()
                         ? !var.getLeft().booleanValue()
-                        : var.getRight().instantiatedTo(0)) {
+                        : var.getRight().isInstantiatedTo(0)) {
                     unsat.add(softVar.getFst());
                 }
             }
@@ -96,7 +96,7 @@ public class ClaferUnsat {
                         Either<Boolean, BoolVar> var = softVar.getSnd();
                         if (var.isLeft()
                                 ? !var.getLeft().booleanValue()
-                                : var.getRight().instantiatedTo(0)) {
+                                : var.getRight().isInstantiatedTo(0)) {
                             changed |= unsat.add(softVar.getFst());
                             if (var.isRight()) {
                                 minUnsat.add(var.getRight());
@@ -105,7 +105,7 @@ public class ClaferUnsat {
                     }
                     solver.getSearchLoop().reset();
                     for (BoolVar var : minUnsat) {
-                        solver.postCut(ICF.arithm(var, "=", 1));
+                        solver.post(ICF.arithm(var, "=", 1));
                     }
                 } while (changed && ESat.TRUE.equals(maximize()));
                 return unsat;

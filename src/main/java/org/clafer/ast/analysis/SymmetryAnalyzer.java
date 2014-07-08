@@ -2,6 +2,8 @@ package org.clafer.ast.analysis;
 
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +14,7 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
+import org.clafer.collection.ChainedComparator;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
 import org.clafer.graph.GraphUtil;
@@ -81,9 +84,10 @@ public class SymmetryAnalyzer implements Analyzer {
      * @param analysis the analysis
      * @return the analysis
      */
-    private Analysis breakableRefs(Analysis analysis) {
+    private Analysis breakableRefs(final Analysis analysis) {
         // Use this graph to detect when symmetries cannot be broken.
         KeyGraph<AstClafer> graph = new KeyGraph<>();
+        List<AstRef> refs = new ArrayList<>();
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer instanceof AstConcreteClafer) {
                 AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
@@ -98,61 +102,105 @@ public class SymmetryAnalyzer implements Analyzer {
                 addDependency(graph, clafer, child, analysis);
             }
             if (clafer.hasRef()) {
-                addDependency(graph, clafer, clafer.getRef().getTargetType(), analysis);
+                refs.add(clafer.getRef());
             }
         }
 
+        Collections.sort(refs, Collections.reverseOrder(new ChainedComparator<>(
+                new ConcreteClaferComparator<AstRef>() {
+
+                    @Override
+                    AstClafer map(AstRef t) {
+                        return t.getSourceType();
+                    }
+
+                    @Override
+                    int score(AstConcreteClafer clafer) {
+                        return analysis.getCard(clafer).getHigh();
+                    }
+                },
+                new ConcreteClaferComparator<AstRef>() {
+
+                    @Override
+                    AstClafer map(AstRef t) {
+                        return t.getSourceType();
+                    }
+
+                    @Override
+                    int score(AstConcreteClafer clafer) {
+                        return analysis.getCard(clafer).getLow();
+                    }
+                },
+                new Comparator<AstRef>() {
+
+                    @Override
+                    public int compare(AstRef o1, AstRef o2) {
+                        return Integer.compare(
+                                analysis.getScope(o1.getSourceType()),
+                                analysis.getScope(o2.getSourceType()));
+                    }
+                },
+                new Comparator<AstRef>() {
+
+                    @Override
+                    public int compare(AstRef o1, AstRef o2) {
+                        return Integer.compare(
+                                analysis.getScope(o1.getTargetType()),
+                                analysis.getScope(o2.getTargetType()));
+                    }
+                }
+        )));
+
         Map<AstRef, int[]> breakableRefsMap = new HashMap<>();
         Map<AstClafer, AstRef[]> breakableTargetsMap = new HashMap<>();
-        for (AstClafer clafer : analysis.getClafers()) {
-            if (clafer.hasRef()) {
-                if (!GraphUtil.hasPath(
-                        graph.getVertex(clafer.getRef().getTargetType()),
-                        graph.getVertex(clafer),
-                        graph)) {
-                    int scope = analysis.getScope(clafer);
-                    TIntArrayList breakableIds = new TIntArrayList();
-                    for (int i = 0; i < scope; i++) {
-                        Pair<AstConcreteClafer, Integer> concreteId = analysis.getConcreteId(clafer, i);
-                        AstConcreteClafer concreteClafer = concreteId.getFst();
-                        int id = concreteId.getSnd().intValue();
+        for (AstRef ref : refs) {
+            addDependency(graph, ref.getSourceType(), ref.getTargetType(), analysis);
+            if (!GraphUtil.hasPath(
+                    graph.getVertex(ref.getTargetType()),
+                    graph.getVertex(ref.getSourceType()),
+                    graph)) {
+                int scope = analysis.getScope(ref.getSourceType());
+                TIntArrayList breakableIds = new TIntArrayList();
+                for (int i = 0; i < scope; i++) {
+                    Pair<AstConcreteClafer, Integer> concreteId = analysis.getConcreteId(ref.getSourceType(), i);
+                    AstConcreteClafer concreteClafer = concreteId.getFst();
+                    int id = concreteId.getSnd().intValue();
 
-                        if (analysis.getCard(concreteClafer).getHigh() == 1) {
-                            /*
-                             * It is possible this ref id does not need to be broken.
-                             * 
-                             * For example:
-                             *     abstract Feature
-                             *         footprint -> integer
-                             *     A : Feature
-                             *     B : Feature 2
-                             * 
-                             * Then the footprints under A do not have symmetry, since
-                             * there is only one A. However, the footprints under B
-                             * do need to be broken.
-                             */
-                            int[] possibleParents =
-                                    analysis.getPartialSolution(concreteClafer).getPossibleParents(id);
+                    if (analysis.getCard(concreteClafer).getHigh() == 1) {
+                        /*
+                         * It is possible this ref id does not need to be broken.
+                         * 
+                         * For example:
+                         *     abstract Feature
+                         *         footprint -> integer
+                         *     A : Feature
+                         *     B : Feature 2
+                         * 
+                         * Then the footprints under A do not have symmetry, since
+                         * there is only one A. However, the footprints under B
+                         * do need to be broken.
+                         */
+                        int[] possibleParents
+                                = analysis.getPartialSolution(concreteClafer).getPossibleParents(id);
 
-                            if (!singleParentScope(concreteClafer.getParent(), possibleParents, analysis)) {
-                                breakableIds.add(i);
-                            }
-                        } else {
+                        if (!singleParentScope(concreteClafer.getParent(), possibleParents, analysis)) {
                             breakableIds.add(i);
                         }
-                    }
-                    if (!breakableIds.isEmpty()) {
-                        breakableRefsMap.put(clafer.getRef(), breakableIds.toArray());
-                    }
-                    AstRef[] breakableTarget = breakableTargetsMap.get(clafer.getRef().getTargetType());
-                    if (breakableTarget == null) {
-                        breakableTarget = new AstRef[]{clafer.getRef()};
                     } else {
-                        breakableTarget = Util.cons(clafer.getRef(), breakableTarget);
+                        breakableIds.add(i);
                     }
-                    breakableTargetsMap.put(clafer.getRef().getTargetType(), breakableTarget);
+                }
+                if (!breakableIds.isEmpty()) {
+                    breakableRefsMap.put(ref, breakableIds.toArray());
                 }
             }
+            AstRef[] breakableTarget = breakableTargetsMap.get(ref.getTargetType());
+            if (breakableTarget == null) {
+                breakableTarget = new AstRef[]{ref};
+            } else {
+                breakableTarget = Util.cons(ref, breakableTarget);
+            }
+            breakableTargetsMap.put(ref.getTargetType(), breakableTarget);
         }
         Iterator<Entry<AstClafer, AstRef[]>> iter = breakableTargetsMap.entrySet().iterator();
         while (iter.hasNext()) {
@@ -189,5 +237,28 @@ public class SymmetryAnalyzer implements Analyzer {
             }
         }
         return true;
+    }
+
+    private static abstract class ConcreteClaferComparator<T> implements Comparator<T> {
+
+        @Override
+        public int compare(T o1, T o2) {
+            return Integer.compare(score(map(o1)), score(map(o2)));
+        }
+
+        abstract AstClafer map(T t);
+
+        int score(AstClafer clafer) {
+            if (clafer instanceof AstConcreteClafer) {
+                return score((AstConcreteClafer) clafer);
+            }
+            int maxScore = 0;
+            for (AstClafer sub : ((AstAbstractClafer) clafer).getSubs()) {
+                maxScore = Math.max(maxScore, score(sub));
+            }
+            return maxScore;
+        }
+
+        abstract int score(AstConcreteClafer clafer);
     }
 }

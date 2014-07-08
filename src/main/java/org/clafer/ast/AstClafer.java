@@ -28,6 +28,17 @@ public abstract class AstClafer implements AstVar {
     }
 
     /**
+     * Checks if this Clafer is a primitive. The primitives are int, bool, and
+     * string.
+     *
+     * @return {@code true} if and only if this Clafer is a primitive,
+     * {@code false} otherwise
+     */
+    public boolean isPrimitive() {
+        return false;
+    }
+
+    /**
      * Returns the name of the Clafer.
      *
      * @return the name of the Clafer

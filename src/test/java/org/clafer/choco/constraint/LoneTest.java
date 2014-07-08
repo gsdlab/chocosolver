@@ -1,62 +1,50 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.collection.Pair;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import org.clafer.common.Util;
+import org.clafer.test.NonEmpty;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class LoneTest extends ConstraintTest<BoolVar[]> {
+@RunWith(ConstraintQuickTest.class)
+public class LoneTest {
 
-    @Override
-    protected void check(BoolVar[] vars) {
-        int count = 0;
-        for (BoolVar var : vars) {
-            if (var.getValue() == 1) {
-                count++;
-            }
-        }
-        assertTrue(count <= 1);
+    @Input(solutions = 6)
+    public Object testLone(Solver solver) {
+        return $(boolArray("var", 5, solver));
     }
 
-    @Override
-    protected void checkNot(BoolVar[] vars) {
-        int count = 0;
-        for (BoolVar var : vars) {
-            if (var.getValue() == 1) {
-                count++;
-            }
-        }
-        assertTrue(count > 1);
+    @Input(solutions = 2)
+    public Object testOneVar(Solver solver) {
+        return $(boolArray("bool", 1, solver));
     }
 
-    @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<BoolVar[]>() {
-            @Override
-            public Pair<Constraint, BoolVar[]> setup(Solver solver) {
-                BoolVar[] vars = toBoolVars(randBools(nextInt(3) + 1), solver);
-                return pair(Constraints.lone(vars), vars);
-            }
-        });
+    @Input(solutions = 2)
+    public Object testTautology(Solver solver) {
+        return $(new BoolVar[]{solver.ZERO, bool("bool", solver)});
+    }
+
+    @Input(solutions = 0)
+    public Object testFalseTautology(Solver solver) {
+        return $(new BoolVar[]{solver.ONE, bool("bool", solver), solver.ONE});
+    }
+
+    @Check
+    public void check(int[] bools) {
+        assertTrue(Util.sum(bools) <= 1);
     }
 
     @Test(timeout = 60000)
-    public void testLone() {
-        randomizedTest(new TestCase<BoolVar[]>() {
-            @PositiveSolutions(6)
-            @NegativeSolutions(26)
-            @Override
-            public Pair<Constraint, BoolVar[]> setup(Solver solver) {
-                BoolVar[] vars = VF.boolArray("var", 5, solver);
-                return pair(Constraints.lone(vars), vars);
-            }
-        });
+    public Constraint quickTest(@NonEmpty BoolVar[] bools) {
+        return Constraints.lone(bools);
     }
 }

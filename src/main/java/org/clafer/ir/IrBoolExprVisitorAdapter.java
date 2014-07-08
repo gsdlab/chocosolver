@@ -68,17 +68,17 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     }
 
     @Override
-    public B visit(IrNotWithin ir, A a) {
-        return null;
-    }
-
-    @Override
     public B visit(IrCompare ir, A a) {
         return null;
     }
 
     @Override
-    public B visit(IrSetTest ir, A a) {
+    public B visit(IrSetEquality ir, A a) {
+        return null;
+    }
+
+    @Override
+    public B visit(IrStringCompare ir, A a) {
         return null;
     }
 
@@ -144,6 +144,16 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
 
     @Override
     public B visit(IrFilterString ir, A a) {
+        return null;
+    }
+
+    @Override
+    public B visit(IrPrefix ir, A a) {
+        return null;
+    }
+
+    @Override
+    public B visit(IrSuffix ir, A a) {
         return null;
     }
 }

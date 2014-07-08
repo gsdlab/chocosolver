@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -7,12 +8,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
+public class IrSortStrings extends IrAbstractBool {
 
     private final IrIntExpr[][] strings;
     private final boolean strict;
 
-    IrSortStrings(IrIntExpr[][] strings, boolean strict, IrBoolDomain domain) {
+    IrSortStrings(IrIntExpr[][] strings, boolean strict, BoolDomain domain) {
         super(domain);
         this.strings = Check.noNullsNotEmpty(strings);
         this.strict = strict;
@@ -58,5 +59,17 @@ public class IrSortStrings extends IrAbstractBool implements IrBoolExpr {
     @Override
     public int hashCode() {
         return Arrays.deepHashCode(strings) ^ (strict ? 1 : 0);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < strings.length; i++) {
+            if (i > 0) {
+                result.append(strict ? " > " : " >= ");
+            }
+            result.append(Arrays.toString(strings[i]));
+        }
+        return result.toString();
     }
 }

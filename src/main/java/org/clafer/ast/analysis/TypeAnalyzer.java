@@ -12,6 +12,7 @@ import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
+import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
@@ -27,15 +28,20 @@ import org.clafer.ast.AstIntersection;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstNot;
+import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstPrimClafer;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
+import org.clafer.ast.AstStringClafer;
+import org.clafer.ast.AstStringConstant;
+import org.clafer.ast.AstSuffix;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
@@ -52,7 +58,6 @@ import org.clafer.objective.Objective;
  * Type checks and creates explicit upcast nodes in the AST. When the
  * expressions are rewritten, the types need to be reanalyzed.
  * </p>
- * <p>
  * <pre>
  * abstract A
  *     a
@@ -63,7 +68,6 @@ import org.clafer.objective.Objective;
  * D : B
  *     d
  * </pre>
- * </p>
  * <p>
  * A lowest common supertype in this solver directly corresponds to how the
  * expression is stored as a set. For example, suppose there is an expression
@@ -133,7 +137,7 @@ public class TypeAnalyzer implements Analyzer {
 
         private <T extends AstExpr> TypedExpr<T>[] typeCheck(T[] exprs) {
             @SuppressWarnings("unchecked")
-            TypedExpr<T>[] typeChecked = new TypedExpr[exprs.length];
+            TypedExpr<T>[] typeChecked = (TypedExpr<T>[]) new TypedExpr<?>[exprs.length];
             for (int i = 0; i < exprs.length; i++) {
                 typeChecked[i] = typeCheck(exprs[i]);
             }
@@ -219,6 +223,11 @@ public class TypeAnalyzer implements Analyzer {
         }
 
         @Override
+        public TypedExpr<?> visit(AstStringConstant ast, Void a) {
+            return put(Type.basicType(AstStringClafer.Singleton), ast);
+        }
+
+        @Override
         public TypedExpr<AstSetExpr> visit(AstJoin ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             AstConcreteClafer rightType = ast.getRight();
@@ -238,7 +247,7 @@ public class TypeAnalyzer implements Analyzer {
                 AstClafer childrenType = children.getType().getBasicType();
                 if (childrenType instanceof AstConcreteClafer) {
                     AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
-                    if (concreteChildrenType.hasParent()) {
+                    if (!AstUtil.isTop(concreteChildrenType)) {
                         return put(concreteChildrenType.getParent(),
                                 joinParent(children.getExpr()));
                     }
@@ -326,7 +335,7 @@ public class TypeAnalyzer implements Analyzer {
                 if (!(operand.getCommonSupertype() instanceof AstIntClafer)) {
                     throw new TypeException("Cannot "
                             + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
-                            getTypes(operands)));
+                                    getTypes(operands)));
                 }
             }
             return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
@@ -348,7 +357,10 @@ public class TypeAnalyzer implements Analyzer {
                     throw new TypeException("Cannot sum(" + set.getType() + ")");
                 case 1:
                     AstRef ref = refs.iterator().next();
-                    return put(ref.getTargetType(), sum(castTo(set, ref.getSourceType())));
+                    if (ref.getTargetType() instanceof AstIntClafer) {
+                        return put(ref.getTargetType(), sum(castTo(set, ref.getSourceType())));
+                    }
+                    throw new TypeException("Cannot sum(" + set.getType() + ")");
                 default:
                     throw new TypeException("Ambiguous sum(" + set.getType() + ")");
             }
@@ -370,7 +382,6 @@ public class TypeAnalyzer implements Analyzer {
             unionType.addAll(right.getUnionType());
 
             // TODO: check for primitives
-
             Type type = new Type(left.getUnionType(), AstUtil.getLowestCommonSupertype(unionType));
 
             return put(type, diff(
@@ -390,7 +401,6 @@ public class TypeAnalyzer implements Analyzer {
             Set<AstClafer> intersectionType = intersectionType(left.getType(), right.getType());
 
             // TODO: check for primitives
-
             Type type = new Type(intersectionType, AstUtil.getLowestCommonSupertype(unionType));
 
             return put(type, inter(
@@ -408,7 +418,6 @@ public class TypeAnalyzer implements Analyzer {
             unionType.addAll(right.getUnionType());
 
             // TODO: check for primitives
-
             Type type = new Type(unionType);
 
             if (type.getCommonSuperType() == null) {
@@ -498,6 +507,48 @@ public class TypeAnalyzer implements Analyzer {
             }
             TypedExpr<AstBoolExpr> body = typeCheck(ast.getBody());
             return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstLength ast, Void a) {
+            TypedExpr<AstSetExpr> string = typeCheck(ast.getString());
+            if (string.getCommonSupertype() instanceof AstStringClafer) {
+                return put(IntType, length(ast.getString()));
+            }
+            throw new TypeException("Cannot length(" + string.getType() + ")");
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstConcat ast, Void a) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (left.getCommonSupertype() instanceof AstStringClafer
+                    && right.getCommonSupertype() instanceof AstStringClafer) {
+                return put(StringType, concat(left.getExpr(), right.getExpr()));
+            }
+            throw new TypeException("Cannot " + left.getType() + " ++ " + right.getType());
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstPrefix ast, Void a) {
+            TypedExpr<AstSetExpr> prefix = typeCheck(ast.getPrefix());
+            TypedExpr<AstSetExpr> word = typeCheck(ast.getWord());
+            if (prefix.getCommonSupertype() instanceof AstStringClafer
+                    && word.getCommonSupertype() instanceof AstStringClafer) {
+                return put(BoolType, prefix(prefix.getExpr(), word.getExpr()));
+            }
+            throw new TypeException("Cannot " + prefix.getType() + " prefix " + word.getType());
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstSuffix ast, Void a) {
+            TypedExpr<AstSetExpr> suffix = typeCheck(ast.getSuffix());
+            TypedExpr<AstSetExpr> word = typeCheck(ast.getWord());
+            if (suffix.getCommonSupertype() instanceof AstStringClafer
+                    && word.getCommonSupertype() instanceof AstStringClafer) {
+                return put(BoolType, suffix(suffix.getExpr(), word.getExpr()));
+            }
+            throw new TypeException("Cannot " + suffix.getType() + " suffix " + word.getType());
         }
     }
 

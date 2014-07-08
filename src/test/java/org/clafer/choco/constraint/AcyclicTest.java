@@ -1,50 +1,27 @@
 package org.clafer.choco.constraint;
 
 import java.util.Set;
-import org.clafer.collection.Pair;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
+import org.clafer.test.NonEmpty;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class AcyclicTest extends ConstraintTest<IntVar[]> {
+@RunWith(ConstraintQuickTest.class)
+public class AcyclicTest {
 
-    @Override
-    protected void check(IntVar[] s) {
-        KeyGraph<Integer> graph = new KeyGraph<>();
-        for (int i = 0; i < s.length; i++) {
-            int from = i;
-            int to = s[from].getValue();
-            assertNotEquals("Cycle of length 1", from, to);
-            assertTrue(to >= 0 && to <= s.length);
-            graph.addEdge(from, to);
-        }
-        for (Set<Integer> component : GraphUtil.computeStronglyConnectedComponents(graph)) {
-            assertTrue("Cycle of length > 1", component.size() == 1);
-        }
-    }
-
-    @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<IntVar[]>() {
-            @Override
-            public Pair<Constraint, IntVar[]> setup(Solver solver) {
-                IntVar[] edges = toIntVars(randInts(nextInt(5) + 1), solver);
-                return pair(Constraints.acyclic(edges), edges);
-            }
-        });
-    }
-
-    @Test(timeout = 60000)
-    public void testAcyclic() {
+    @Input(solutions = 125)
+    public Object testAcyclic(Solver solver) {
         /*
          * import Control.Monad
          * import Data.Graph
@@ -56,17 +33,37 @@ public class AcyclicTest extends ConstraintTest<IntVar[]> {
          *     where
          *         isAcyclic AcyclicSCC{} = True
          *         isAcyclic _ = False
-         *        
-         * negative = 5^4 - length positive
          */
-        randomizedTest(new TestCase<IntVar[]>() {
-            @PositiveSolutions(125)
-            @NegativeSolutions(500)
-            @Override
-            public Pair<Constraint, IntVar[]> setup(Solver solver) {
-                IntVar[] edges = VF.enumeratedArray("edges", 4, 0, 4, solver);
-                return pair(Constraints.acyclic(edges), edges);
-            }
-        });
+        return $(enumeratedArray("edges", 4, 0, 4, solver));
+    }
+
+    @Input(solutions = 0)
+    public Object testTrivialCyclic(Solver solver) {
+        return $(new IntVar[]{solver.ZERO});
+    }
+
+    @Input(solutions = 1)
+    public Object testTrivialAcyclic(Solver solver) {
+        return $(new IntVar[]{solver.ONE});
+    }
+
+    @Check
+    public void check(int[] edges) {
+        KeyGraph<Integer> graph = new KeyGraph<>();
+        for (int i = 0; i < edges.length; i++) {
+            int from = i;
+            int to = edges[from];
+            assertNotEquals("Cycle of length 1", from, to);
+            assertTrue(to >= 0 && to <= edges.length);
+            graph.addEdge(from, to);
+        }
+        for (Set<Integer> component : GraphUtil.computeStronglyConnectedComponents(graph)) {
+            assertTrue("Cycle of length > 1", component.size() == 1);
+        }
+    }
+
+    @Test(timeout = 60000)
+    public Constraint setup(@NonEmpty IntVar[] edges) {
+        return Constraints.acyclic(edges);
     }
 }

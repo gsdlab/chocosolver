@@ -1,16 +1,17 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
  *
  * @author jimmy
  */
-public class IrSubsetEq extends IrAbstractBool implements IrBoolExpr {
+public class IrSubsetEq extends IrAbstractBool {
 
     private final IrSetExpr subset, superset;
 
-    public IrSubsetEq(IrSetExpr subset, IrSetExpr superset, IrBoolDomain domain) {
+    public IrSubsetEq(IrSetExpr subset, IrSetExpr superset, BoolDomain domain) {
         super(domain);
         this.subset = Check.notNull(subset);
         this.superset = Check.notNull(superset);

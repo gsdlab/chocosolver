@@ -20,7 +20,7 @@ import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
-import org.clafer.ir.IrDomain;
+import org.clafer.domain.Domain;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
 import org.clafer.scope.Scope;
@@ -33,7 +33,7 @@ public class Analysis {
 
     private final AstModel model;
     private Scope scope;
-    private List<Objective> objectives;
+    private Objective[] objectives;
     private Map<Objective, AstSetExpr> objectiveExprs;
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
@@ -47,17 +47,17 @@ public class Analysis {
     private Map<AstClafer, Format> formatMap;
     private Map<AstAbstractClafer, Offsets> offsetMap;
     private Map<AstClafer, PartialSolution> partialSolutionMap;
-    private Map<AstRef, IrDomain[]> partialIntsMap;
+    private Map<AstRef, Domain[]> partialIntsMap;
     private Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap;
     private Map<AstRef, int[]> breakableRefsMap;
     private Map<AstClafer, AstRef[]> breakableTargetsMap;
     private Map<AstExpr, Type> typeMap;
 
     Analysis(AstModel model, Scope scope) {
-        this(model, scope, Collections.<Objective>emptyList());
+        this(model, scope, new Objective[0]);
     }
 
-    Analysis(AstModel model, Scope scope, List<Objective> objectives) {
+    Analysis(AstModel model, Scope scope, Objective[] objectives) {
         this(model, scope, objectives,
                 AstUtil.getAbstractClafersInSubOrder(model),
                 AstUtil.getConcreteClafers(model),
@@ -65,7 +65,7 @@ public class Analysis {
     }
 
     Analysis(AstModel model, Scope scope,
-            List<Objective> objectives,
+            Objective[] objectives,
             List<AstAbstractClafer> abstractClafers,
             List<AstConcreteClafer> concreteClafers,
             List<Set<AstClafer>> clafersInParentAndSubOrder) {
@@ -111,10 +111,10 @@ public class Analysis {
     }
 
     public static Analysis analyze(AstModel model, Scopable scope, Analyzer... analyzers) {
-        return analyze(model, scope, Collections.<Objective>emptyList(), analyzers);
+        return analyze(model, scope, new Objective[0], analyzers);
     }
 
-    public static Analysis analyze(AstModel model, Scopable scope, List<Objective> objectives, Analyzer... analyzers) {
+    public static Analysis analyze(AstModel model, Scopable scope, Objective[] objectives, Analyzer... analyzers) {
         Analysis analysis = new Analysis(model, scope.toScope(), objectives);
         for (Analyzer analyzer : analyzers) {
             analysis = analyzer.analyze(analysis);
@@ -167,8 +167,8 @@ public class Analysis {
         return objectiveExprs.get(objective);
     }
 
-    public List<Objective> getObjectives() {
-        return Collections.unmodifiableList(objectives);
+    public Objective[] getObjectives() {
+        return objectives;
     }
 
     public Map<Objective, AstSetExpr> getObjectiveExprs() {
@@ -381,15 +381,15 @@ public class Analysis {
         return this;
     }
 
-    public IrDomain[] getPartialInts(AstRef ref) {
+    public Domain[] getPartialInts(AstRef ref) {
         return notNull(ref.getSourceType(), "Partial integer", getPartialIntsMap().get(ref));
     }
 
-    public Map<AstRef, IrDomain[]> getPartialIntsMap() {
+    public Map<AstRef, Domain[]> getPartialIntsMap() {
         return notNull("Partial integer", partialIntsMap);
     }
 
-    public Analysis setPartialIntsMap(Map<AstRef, IrDomain[]> partialIntsMap) {
+    public Analysis setPartialIntsMap(Map<AstRef, Domain[]> partialIntsMap) {
         this.partialIntsMap = partialIntsMap;
         return this;
     }

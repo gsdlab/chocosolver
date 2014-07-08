@@ -3,6 +3,8 @@ importClass(Packages.org.clafer.ast.Asts);
 var scope = rc.setScope.bind(rc);
 var defaultScope = rc.setDefaultScope.bind(rc);
 var intRange = rc.setIntRange.bind(rc);
+var stringLength = rc.setStringLength.bind(rc);
+var charRange = rc.setCharRange.bind(rc);
 var Clafer = rc.getModel().addChild.bind(rc.getModel());
 var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript engine versions has "abstract" as a keyword.
 var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
@@ -11,6 +13,7 @@ var min = rc.addMinimizeObjective.bind(rc);
 
 var Int = Asts.IntType; // Some Javascript engine versions has "int" as a keyword.
 var Bool = Asts.BoolType;
+var string = Asts.StringType; // Some Javascript engine versions has "String" as a builtin function.
 
 var $this = Asts.$this;
 var global = Asts.global;
@@ -75,3 +78,7 @@ var lone = Asts.lone;
 var none = Asts.none;
 var one = Asts.one;
 var some = Asts.some;
+var length = Asts.length;
+var concat = Asts.concat;
+var prefix = Asts.prefix;
+var suffix = Asts.suffix;

@@ -62,19 +62,19 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
     };
 
     private void propagateReifyVar() throws ContradictionException {
-        assert reify.instantiated();
+        assert reify.isInstantiated();
         if (reify.getValue() == reifyC) {
             PropUtil.domSubsetDom(x, y, aCause);
             PropUtil.domSubsetDom(y, x, aCause);
-            if (x.instantiated()) {
-                assert y.instantiated();
+            if (x.isInstantiated()) {
+                assert y.isInstantiated();
                 setPassive();
             }
         } else {
-            if (x.instantiated()) {
+            if (x.isInstantiated()) {
                 y.removeValue(x.getValue(), aCause);
                 setPassive();
-            } else if (y.instantiated()) {
+            } else if (y.isInstantiated()) {
                 x.removeValue(y.getValue(), aCause);
                 setPassive();
             }
@@ -82,8 +82,8 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
     }
 
     private void propagateXVar() throws ContradictionException {
-        if (x.instantiated()) {
-            if (reify.instantiated()) {
+        if (x.isInstantiated()) {
+            if (reify.isInstantiated()) {
                 if (reify.getValue() == reifyC) {
                     y.instantiateTo(x.getValue(), aCause);
                 } else {
@@ -91,7 +91,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
                 }
                 setPassive();
             } else if (y.contains(x.getValue())) {
-                if (y.instantiated()) {
+                if (y.isInstantiated()) {
                     reify.instantiateTo(reifyC, aCause);
                     setPassive();
                 }
@@ -99,7 +99,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
                 reify.instantiateTo(1 - reifyC, aCause);
                 setPassive();
             }
-        } else if (reify.instantiatedTo(reifyC)) {
+        } else if (reify.isInstantiatedTo(reifyC)) {
             xD.freeze();
             xD.forEach(pruneYOnXRem, EventType.REMOVE);
             xD.unfreeze();
@@ -107,8 +107,8 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
     }
 
     private void propagateYVar() throws ContradictionException {
-        if (y.instantiated()) {
-            if (reify.instantiated()) {
+        if (y.isInstantiated()) {
+            if (reify.isInstantiated()) {
                 if (reify.getValue() == reifyC) {
                     x.instantiateTo(y.getValue(), aCause);
                 } else {
@@ -116,7 +116,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
                 }
                 setPassive();
             } else if (x.contains(y.getValue())) {
-                if (x.instantiated()) {
+                if (x.isInstantiated()) {
                     reify.instantiateTo(reifyC, aCause);
                     setPassive();
                 }
@@ -124,7 +124,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
                 reify.instantiateTo(1 - reifyC, aCause);
                 setPassive();
             }
-        } else if (reify.instantiatedTo(reifyC)) {
+        } else if (reify.isInstantiatedTo(reifyC)) {
             yD.freeze();
             yD.forEach(pruneXOnYRem, EventType.REMOVE);
             yD.unfreeze();
@@ -140,7 +140,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (reify.instantiated()) {
+        if (reify.isInstantiated()) {
             propagateReifyVar();
         } else {
             propagateXVar();
@@ -173,11 +173,11 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        if (reify.instantiated()) {
+        if (reify.isInstantiated()) {
             if (!PropUtil.isDomIntersectDom(x, y)) {
                 return reify.getValue() == reifyC ? ESat.FALSE : ESat.TRUE;
             }
-            if (x.instantiated() && y.instantiated()) {
+            if (x.isInstantiated() && y.isInstantiated()) {
                 return reify.getValue() == reifyC ? ESat.TRUE : ESat.FALSE;
             }
         }

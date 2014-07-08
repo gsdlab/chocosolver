@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -13,7 +14,7 @@ public class IrJoinRelation extends IrAbstractSet {
     private final IrSetExpr[] children;
     private final boolean injective;
 
-    IrJoinRelation(IrSetExpr take, IrSetExpr[] children, IrDomain env, IrDomain ker, IrDomain card, boolean injective) {
+    IrJoinRelation(IrSetExpr take, IrSetExpr[] children, Domain env, Domain ker, Domain card, boolean injective) {
         super(env, ker, card);
         this.take = Check.notNull(take);
         this.children = Check.noNulls(children);

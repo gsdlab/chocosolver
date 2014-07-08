@@ -8,7 +8,7 @@ import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -21,7 +21,7 @@ public class PropSingleton extends Propagator<Variable> {
     private final IntVar i;
     private final IIntDeltaMonitor iD;
     private final SetVar s;
-    private final SetDeltaMonitor sD;
+    private final ISetDeltaMonitor sD;
 
     public PropSingleton(IntVar ivar, SetVar svar) {
         super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY, true);
@@ -59,7 +59,7 @@ public class PropSingleton extends Propagator<Variable> {
         }
         PropUtil.domSubsetEnv(i, s, aCause);
         PropUtil.envSubsetDom(s, i, aCause);
-        if (i.instantiated()) {
+        if (i.isInstantiated()) {
             s.instantiateTo(new int[]{i.getValue()}, aCause);
         } else if (s.getEnvelopeSize() == 1) {
             int val = s.getEnvelopeFirst();
@@ -71,7 +71,7 @@ public class PropSingleton extends Propagator<Variable> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isIVar(idxVarInProp)) {
-            if (i.instantiated()) {
+            if (i.isInstantiated()) {
                 s.instantiateTo(new int[]{i.getValue()}, aCause);
             } else {
                 iD.freeze();
@@ -91,7 +91,7 @@ public class PropSingleton extends Propagator<Variable> {
                 sD.freeze();
                 sD.forEach(pruneIOnSEnv, EventType.REMOVE_FROM_ENVELOPE);
                 sD.unfreeze();
-                if (i.instantiated()) {
+                if (i.isInstantiated()) {
                     s.instantiateTo(new int[]{i.getValue()}, aCause);
                 }
             }
@@ -119,7 +119,7 @@ public class PropSingleton extends Propagator<Variable> {
             return ESat.FALSE;
         }
         if (PropUtil.isDomIntersectEnv(i, s)) {
-            return i.instantiated() && s.instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+            return i.isInstantiated() && s.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
         }
         return ESat.FALSE;
     }

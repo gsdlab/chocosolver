@@ -1,7 +1,7 @@
 chocosolver
 ===========
 
-v0.3.5.20-01-2014
+v0.3.6.1
 
 A backend for [Clafer](http://clafer.org) using the Choco 3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
 
@@ -13,7 +13,7 @@ Contributors
 Getting Clafer Tools
 --------------------
 
-Binary distributions of the release 0.3.5 of Clafer Tools for Windows, Mac, and Linux, 
+Binary distributions of the release 0.3.6.1 of Clafer Tools for Windows, Mac, and Linux, 
 can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions). 
 Clafer Wiki requires Haskell Platform and MinGW to run on Windows. 
 
@@ -21,13 +21,13 @@ In case these binaries do not work on your particular machine configuration, the
 
 Prerequisites
 -------------
-* [Choco 3](https://github.com/chocoteam/choco3) v3.1.1
-* [Java 6+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - Mainly tested with OracleJDK 7 on Ubuntu.
-* [Maven 2+](http://maven.apache.org/) - Required for building the project.
+* [Choco 3](https://github.com/chocoteam/choco3) v3.1.2
+* [Java 7+](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - Mainly tested with OracleJDK 7 on Ubuntu.
+* [Maven 3](http://maven.apache.org/) - Required for building the project.
 
 Optional
 --------
-* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below) v0.3.5.
+* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below) v0.3.6.1.
 
 ```bash
 git clone https://github.com/gsdlab/clafer.git
@@ -50,10 +50,10 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.5</version>
+    <version>0.3.6.1</version>
 </dependency>
 ```
-The CLI is installed to target/chocosolver-0.3.5-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.5-jar-with-dependencies.jar mymodel.js".
+The CLI is installed to target/chocosolver-0.3.6.1-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.6.1-jar-with-dependencies.jar mymodel.js".
 
 ### Important: Branches must correspond
 
@@ -143,6 +143,8 @@ while (solver.find()) {
     System.out.println(solver.instance());
 }
 ```
+
+The compiler can accept multiple objectives, in which case it will solve for all the Pareto-optimal solutions.
 
 Finding Min-Unsat
 -----------------
@@ -243,3 +245,4 @@ Need help?
 * Take a look at (incomplete) [Clafer wiki](https://github.com/gsdlab/clafer/wiki)
 * Browse example models in the [test suite](https://github.com/gsdlab/clafer/tree/master/test/positive) and [MOO examples](https://github.com/gsdlab/clafer/tree/master/spl_configurator/dataset)
 * Post questions, report bugs, suggest improvements [GSD Lab Bug Tracker](http://gsd.uwaterloo.ca:8888/questions/). Tag your entries with `chocosolver` (so that we know what they are related to) and with `jimmy-liang` or `michal` (so that Jimmy or Michał gets a notification).
+* Did not find a solution? First try increasing the scope/integer range/max string length/char range. If still no solutions, try computing the Unsat-Core to find the overconstraint.

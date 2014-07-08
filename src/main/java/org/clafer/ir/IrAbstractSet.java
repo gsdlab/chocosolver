@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -8,52 +9,39 @@ import org.clafer.common.Check;
  */
 public abstract class IrAbstractSet implements IrSetExpr {
 
-    private final IrDomain env, ker, card;
+    private final Domain env, ker, card;
 
-    public IrAbstractSet(IrDomain env, IrDomain ker, IrDomain card) {
+    public IrAbstractSet(Domain env, Domain ker, Domain card) {
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
         this.card = Check.notNull(card);
 
-        assert IrUtil.isSubsetOf(ker, env);
+        if (!ker.isSubsetOf(env)) {
+            throw new IllegalSetException();
+        }
         if (card.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalSetException();
         }
         if (card.getLowBound() > env.size()) {
-            throw new IllegalArgumentException(card.getLowBound() + " > " + env.size());
-        }
-        if (card.getHighBound() > env.size()) {
-            throw new IllegalArgumentException(card.getHighBound() + " > " + env.size());
-        }
-        if (card.getLowBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getLowBound() + " < " + ker.size());
+            throw new IllegalSetException(card.getLowBound() + " > " + env.size());
         }
         if (card.getHighBound() < ker.size()) {
-            throw new IllegalArgumentException(card.getHighBound() + " < " + ker.size());
+            throw new IllegalSetException(card.getHighBound() + " < " + ker.size());
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public IrDomain getEnv() {
+    public Domain getEnv() {
         return env;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public IrDomain getKer() {
+    public Domain getKer() {
         return ker;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public IrDomain getCard() {
+    public Domain getCard() {
         return card;
     }
 
@@ -68,7 +56,7 @@ public abstract class IrAbstractSet implements IrSetExpr {
 
     @Override
     public int hashCode() {
-        // Subclasses can choose not to callthis hashCode function since it can
+        // Subclasses can choose not to call this hashCode function since it can
         // be expensive.
         return env.hashCode() ^ ker.hashCode() ^ card.hashCode();
     }

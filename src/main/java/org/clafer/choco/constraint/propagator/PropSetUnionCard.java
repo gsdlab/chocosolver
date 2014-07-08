@@ -78,11 +78,6 @@ public class PropSetUnionCard extends Propagator<IntVar> {
     }
 
     @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
-    }
-
-    @Override
     public ESat isEntailed() {
         int min = 0;
         int max = 0;

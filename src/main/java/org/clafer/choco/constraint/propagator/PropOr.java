@@ -29,7 +29,7 @@ public class PropOr extends Propagator<BoolVar> {
         int count = 0;
         BoolVar last = null;
         for (BoolVar var : vars) {
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
                     setPassive();
                     return;
@@ -62,7 +62,7 @@ public class PropOr extends Propagator<BoolVar> {
     public ESat isEntailed() {
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
                     return ESat.TRUE;
                 }

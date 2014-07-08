@@ -15,6 +15,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstConstant ast, A a);
 
+    public B visit(AstStringConstant ast, A a);
+
     public B visit(AstJoin ast, A a);
 
     public B visit(AstJoinParent ast, A a);
@@ -56,4 +58,12 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstLocal ast, A a);
 
     public B visit(AstQuantify ast, A a);
+
+    public B visit(AstLength ast, A a);
+
+    public B visit(AstConcat ast, A a);
+
+    public B visit(AstPrefix ast, A a);
+
+    public B visit(AstSuffix ast, A a);
 }

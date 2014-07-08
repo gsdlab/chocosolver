@@ -78,6 +78,8 @@ public class Scope implements Scopable {
     private final Map<AstClafer, Integer> scopes;
     private final int defaultScope;
     private final int intLow, intHigh;
+    private final int stringLength;
+    private final char charLow, charHigh;
 
     /**
      * Construct a new scope. Altering the map has no affect once the scope is
@@ -87,8 +89,12 @@ public class Scope implements Scopable {
      * @param defaultScope the scope for unspecified Clafers
      * @param intLow the lowest (inclusive) integer used for solving
      * @param intHigh the highest (inclusive) integer used for solving
+     * @param stringLength the longest (inclusive) string used for solving
+     * @param charLow the lowest (inclusive) character used for solving
+     * @param charHigh the highest (inclusive) character used for solving
      */
-    public Scope(Map<AstClafer, Integer> scopes, int defaultScope, int intLow, int intHigh) {
+    public Scope(Map<AstClafer, Integer> scopes, int defaultScope, int intLow, int intHigh,
+            int stringLength, char charLow, char charHigh) {
         if (defaultScope <= 0) {
             throw new IllegalArgumentException("Default scope must be positive");
         }
@@ -98,12 +104,21 @@ public class Scope implements Scopable {
             }
         }
         if (intLow > intHigh) {
-            throw new IllegalArgumentException("intLow(" + intLow + " > intHigh(" + intHigh + ")");
+            throw new IllegalArgumentException("intLow(" + intLow + ") > intHigh(" + intHigh + ")");
+        }
+        if (stringLength < 0) {
+            throw new IllegalArgumentException("stringLength cannot be negative");
+        }
+        if (charLow > charHigh) {
+            throw new IllegalArgumentException("charLow(" + charLow + ") > charHigh(" + charHigh + ")");
         }
         this.scopes = new HashMap<>(scopes);
         this.defaultScope = defaultScope;
         this.intLow = intLow;
         this.intHigh = intHigh;
+        this.stringLength = stringLength;
+        this.charLow = charLow;
+        this.charHigh = charHigh;
     }
 
     /**
@@ -153,6 +168,33 @@ public class Scope implements Scopable {
      */
     public int getIntHigh() {
         return intHigh;
+    }
+
+    /**
+     * Returns the longest (inclusive) string used for solving.
+     *
+     * @return the longest string
+     */
+    public int getStringLength() {
+        return stringLength;
+    }
+
+    /**
+     * Returns the lowest (inclusive) character used for solving.
+     *
+     * @return the lowest character
+     */
+    public char getCharLow() {
+        return charLow;
+    }
+
+    /**
+     * Returns the highest (inclusive) character used for solving.
+     *
+     * @return the highest character
+     */
+    public char getCharHigh() {
+        return charHigh;
     }
 
     /**
@@ -207,6 +249,36 @@ public class Scope implements Scopable {
     }
 
     /**
+     * Equivalent to {@code builder().stringLength(stringLength)}.
+     *
+     * @param stringLength the longest string
+     * @return a new builder
+     */
+    public static ScopeBuilder stringLength(int stringLength) {
+        return builder().stringLength(stringLength);
+    }
+
+    /**
+     * Equivalent to {@code builder().charLow(charLow)}.
+     *
+     * @param charLow the lowest character
+     * @return a new builder
+     */
+    public static ScopeBuilder charLow(char charLow) {
+        return builder().charLow(charLow);
+    }
+
+    /**
+     * Equivalent to {@code builder().charHigh(charHigh)}.
+     *
+     * @param charHigh the highest character
+     * @return a new builder
+     */
+    public static ScopeBuilder charHigh(char charHigh) {
+        return builder().charHigh(charHigh);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -214,8 +286,15 @@ public class Scope implements Scopable {
         return this;
     }
 
+    /**
+     * Construct the scope using the builder pattern. Use the current settings
+     * in this Scope as the defaults in the builder.
+     *
+     * @return a new builder
+     */
     public ScopeBuilder toBuilder() {
-        return new ScopeBuilder(scopes, defaultScope, intLow, intHigh);
+        return new ScopeBuilder(scopes, defaultScope, intLow, intHigh,
+                stringLength, charLow, charHigh);
     }
 
     /**

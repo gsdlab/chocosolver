@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -10,7 +11,7 @@ public class IrSetSum extends IrAbstractInt {
 
     private final IrSetExpr set;
 
-    public IrSetSum(IrSetExpr set, IrDomain domain) {
+    public IrSetSum(IrSetExpr set, Domain domain) {
         super(domain);
         this.set = Check.notNull(set);
     }

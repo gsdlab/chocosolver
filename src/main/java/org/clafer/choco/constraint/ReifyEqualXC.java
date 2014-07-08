@@ -9,20 +9,23 @@ import solver.variables.IntVar;
  *
  * @author jimmy
  */
-public class ReifyEqualXC extends Constraint<IntVar, PropReifyEqualXC> {
+public class ReifyEqualXC extends Constraint {
 
+    private final BoolVar reify;
     private final boolean reifyC;
+    private final IntVar x;
     private final int c;
 
     public ReifyEqualXC(BoolVar reify, boolean reifyC, IntVar x, int c) {
-        super(new IntVar[]{reify, x}, reify.getSolver());
+        super("reifyEqualXC", new PropReifyEqualXC(reify, reifyC, x, c));
+        this.reify = reify;
         this.reifyC = reifyC;
+        this.x = x;
         this.c = c;
-        setPropagators(new PropReifyEqualXC(reify, reifyC, x, c));
     }
 
     @Override
     public Constraint makeOpposite() {
-        return new ReifyEqualXC((BoolVar) vars[0], !reifyC, vars[1], c);
+        return new ReifyEqualXC(reify, !reifyC, x, c);
     }
 }

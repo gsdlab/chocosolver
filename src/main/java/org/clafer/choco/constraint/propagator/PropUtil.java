@@ -6,7 +6,7 @@ import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.delta.IIntDeltaMonitor;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 
 /**
  * Various static utility functions for writing Choco propagators.
@@ -40,8 +40,8 @@ public class PropUtil {
      * @param propagator the propagator
      * @return the variables delta monitors
      */
-    public static SetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propagator) {
-        SetDeltaMonitor[] deltas = new SetDeltaMonitor[vars.length];
+    public static ISetDeltaMonitor[] monitorDeltas(SetVar[] vars, ICause propagator) {
+        ISetDeltaMonitor[] deltas = new ISetDeltaMonitor[vars.length];
         for (int i = 0; i < vars.length; i++) {
             deltas[i] = vars[i].monitorDelta(propagator);
         }
@@ -102,8 +102,8 @@ public class PropUtil {
      *
      * @param union the integers
      * @param value the value
-     * @return {@code true} if
-     * {@code value ∈ dom(union[i]) for some i}, {@code false} otherwise
+     * @return {@code true} if {@code value ∈ dom(union[i]) for some i},
+     * {@code false} otherwise
      */
     public static boolean domsContain(IntVar[] union, int value) {
         for (IntVar var : union) {
@@ -119,8 +119,8 @@ public class PropUtil {
      *
      * @param union the sets
      * @param value the value
-     * @return {@code true} if
-     * {@code value ∈ env(union[i]) for some i}, {@code false} otherwise
+     * @return {@code true} if {@code value ∈ env(union[i]) for some i},
+     * {@code false} otherwise
      */
     public static boolean envsContain(SetVar[] union, int value) {
         for (SetVar var : union) {
@@ -136,8 +136,8 @@ public class PropUtil {
      *
      * @param union the sets
      * @param value the value
-     * @return {@code true} if
-     * {@code value ∈ kernel(union[i]) for some i}, {@code false} otherwise
+     * @return {@code true} if {@code value ∈ kernel(union[i]) for some i},
+     * {@code false} otherwise
      */
     public static boolean kersContain(SetVar[] union, int value) {
         for (SetVar var : union) {
@@ -737,5 +737,27 @@ public class PropUtil {
             changed |= sup.addToKernel(i, propagator);
         }
         return changed;
+    }
+
+    /**
+     * Returns the null-terminated string.
+     *
+     * @param chars the characters
+     * @return the string
+     */
+    public static String toString(IntVar[] chars) {
+        char[] string = new char[chars.length];
+        for (int i = 0; i < string.length; i++) {
+            assert chars[i].isInstantiated();
+            int val = chars[i].getValue();
+            if (val < Character.MIN_VALUE || val > Character.MAX_VALUE) {
+                throw new IllegalArgumentException();
+            }
+            if (val == 0) {
+                return new String(string, 0, i);
+            }
+            string[i] = (char) val;
+        }
+        return new String(string);
     }
 }

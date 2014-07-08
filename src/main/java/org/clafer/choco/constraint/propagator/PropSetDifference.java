@@ -6,7 +6,7 @@ import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.EventType;
 import solver.variables.SetVar;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -17,7 +17,7 @@ import util.procedure.IntProcedure;
 public class PropSetDifference extends Propagator<SetVar> {
 
     private final SetVar minuend, subtrahend, difference;
-    private final SetDeltaMonitor minuendD, subtrahendD, differenceD;
+    private final ISetDeltaMonitor minuendD, subtrahendD, differenceD;
 
     public PropSetDifference(SetVar minuend, SetVar subtrahend, SetVar difference) {
         super(new SetVar[]{minuend, subtrahend, difference}, PropagatorPriority.LINEAR, true);

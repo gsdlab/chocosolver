@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -7,14 +8,14 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrFilterString extends IrAbstractBool implements IrBoolExpr {
+public class IrFilterString extends IrAbstractBool {
 
     private final IrSetExpr set;
     private final int offset;
     private final IrIntExpr[] string;
     private final IrIntExpr[] result;
 
-    public IrFilterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result, IrBoolDomain domain) {
+    public IrFilterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result, BoolDomain domain) {
         super(domain);
         if (offset < 0) {
             throw new IllegalArgumentException();

@@ -1,5 +1,6 @@
 package org.clafer.ir.compiler;
 
+import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
@@ -24,12 +25,12 @@ public class IrCompilerTest {
 
         Solver solver = new Solver();
         IrSolutionMap map = IrCompiler.compile(module, solver);
-        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getSetVar(var).getRight()}));
+        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getVar(var).getRight()}));
 
         int count = 0;
         if (solver.findSolution()) {
             do {
-                assertTrue(map.getSetValue(var).length <= 3);
+                assertTrue(map.getValue(var).length <= 3);
                 count++;
             } while (solver.nextSolution());
         }
@@ -49,13 +50,13 @@ public class IrCompilerTest {
 
         Solver solver = new Solver();
         IrSolutionMap map = IrCompiler.compile(module, solver);
-        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getSetVar(var).getRight()}));
+        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getVar(var).getRight()}));
 
         int count = 0;
         if (solver.findSolution()) {
             do {
-                assertEquals(map.getSetValue(var).length, map.getIntValue(card1));
-                assertEquals(map.getSetValue(var).length, map.getIntValue(card2));
+                assertEquals(map.getValue(var).length, map.getValue(card1));
+                assertEquals(map.getValue(var).length, map.getValue(card2));
                 count++;
             } while (solver.nextSolution());
         }

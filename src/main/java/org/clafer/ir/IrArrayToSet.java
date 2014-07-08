@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
@@ -13,7 +14,7 @@ public class IrArrayToSet extends IrAbstractSet {
     private final IrIntExpr[] array;
     private final Integer globalCardinality;
 
-    IrArrayToSet(IrIntExpr[] array, IrDomain env, IrDomain ker, IrDomain card, Integer globalCardinality) {
+    IrArrayToSet(IrIntExpr[] array, Domain env, Domain ker, Domain card, Integer globalCardinality) {
         super(env, ker, card);
         this.array = Check.noNullsNotEmpty(array);
         if (ker.size() > array.length) {

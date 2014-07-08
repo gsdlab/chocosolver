@@ -78,17 +78,18 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        int minCard = 0;
-        int maxCard = 0;
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            IntVar childCard = childrenCards[i];
-            if (take.kernelContains(i)) {
-                minCard += childCard.getLB();
-            }
-            maxCard += childCard.getUB();
-        }
         boolean changed;
         do {
+            int minCard = 0;
+            int maxCard = 0;
+            for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+                IntVar childCard = childrenCards[i];
+                if (take.kernelContains(i)) {
+                    minCard += childCard.getLB();
+                }
+                maxCard += childCard.getUB();
+            }
+
             changed = false;
             toCard.updateLowerBound(minCard, aCause);
             toCard.updateUpperBound(maxCard, aCause);
@@ -168,13 +169,13 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        boolean completelyInstantiated = take.instantiated() && takeCard.instantiated() && toCard.instantiated();
+        boolean completelyInstantiated = take.isInstantiated() && takeCard.isInstantiated() && toCard.isInstantiated();
         int minCard = 0;
         int maxCard = 0;
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i >= 0 && i < childrenCards.length) {
                 IntVar childCard = childrenCards[i];
-                completelyInstantiated = completelyInstantiated && childCard.instantiated();
+                completelyInstantiated = completelyInstantiated && childCard.isInstantiated();
                 if (take.kernelContains(i)) {
                     minCard += childCard.getLB();
                 }

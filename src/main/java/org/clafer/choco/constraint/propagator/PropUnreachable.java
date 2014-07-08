@@ -36,6 +36,12 @@ public class PropUnreachable extends Propagator<IntVar> {
      */
     public PropUnreachable(IntVar[] edges, int from, int to) {
         super(edges, PropagatorPriority.TERNARY, true);
+        if (from < 0 || from >= vars.length) {
+            throw new IllegalArgumentException();
+        }
+        if (to < 0 || to >= vars.length) {
+            throw new IllegalArgumentException();
+        }
         this.from = from;
         this.to = to;
         this.position = solver.getEnvironment().makeInt(from);
@@ -52,12 +58,10 @@ public class PropUnreachable extends Propagator<IntVar> {
         if (from == to) {
             contradiction(vars[from], "trivial path");
         }
-        for (int i = 0; i < vars.length; i++) {
-            vars[i].updateLowerBound(0, aCause);
-        }
+        vars[from].updateLowerBound(0, aCause);
         vars[from].removeValue(to, aCause);
         for (int i = 0; i < vars.length; i++) {
-            if (vars[i].instantiated() && !isPassive()) {
+            if (vars[i].isInstantiated() && !isPassive()) {
                 follow(i);
             }
         }
@@ -71,16 +75,22 @@ public class PropUnreachable extends Propagator<IntVar> {
     }
 
     private void follow(int follower) throws ContradictionException {
-        assert vars[follower].instantiated();
+        assert vars[follower].isInstantiated();
         int leader = vars[follower].getValue();
         if (position.get() == follower) {
             int cur = leader;
-            int i = 0;
-            for (i = 0; i < vars.length && cur < vars.length && vars[cur].instantiated(); i++) {
+            if (cur < 0) {
+                contradiction(vars[follower], "Reachable");
+            }
+            int i;
+            for (i = 0; i < vars.length && cur < vars.length && vars[cur].isInstantiated(); i++) {
                 if (toComponent.contains(cur)) {
                     contradiction(vars[follower], "Reachable");
                 }
                 cur = vars[cur].getValue();
+                if (cur < 0) {
+                    contradiction(vars[follower], "Reachable");
+                }
             }
             if (toComponent.contains(cur)) {
                 contradiction(vars[follower], "Reachable");
@@ -88,9 +98,10 @@ public class PropUnreachable extends Propagator<IntVar> {
             if (cur >= vars.length || i == vars.length) {
                 setPassive();
             } else {
+                vars[cur].updateLowerBound(0, aCause);
                 remove(vars[cur], toComponent);
                 position.set(cur);
-                if (vars[cur].instantiated()) {
+                if (vars[cur].isInstantiated()) {
                     follow(cur);
                 }
             }
@@ -98,7 +109,7 @@ public class PropUnreachable extends Propagator<IntVar> {
             toComponent.add(follower);
             vars[position.get()].removeValue(follower, aCause);
             for (int i = 0; i < vars.length; i++) {
-                if (vars[i].instantiatedTo(follower)) {
+                if (vars[i].isInstantiatedTo(follower)) {
                     follow(i);
                 }
             }
@@ -112,22 +123,20 @@ public class PropUnreachable extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        for (IntVar var : vars) {
-            if (var.getUB() < 0) {
-                return ESat.FALSE;
-            }
-        }
         // Hopefully escape analysis will make these boolean arrays cheap.
         boolean[] visited = new boolean[vars.length];
         int cur = from;
-        while (cur < vars.length && vars[cur].instantiated() && !visited[cur]) {
+        while (cur < vars.length && vars[cur].isInstantiated() && !visited[cur]) {
             visited[cur] = true;
             if (cur == to) {
                 return ESat.FALSE;
             }
             cur = vars[cur].getValue();
+            if (cur < 0) {
+                return ESat.FALSE;
+            }
         }
-        return cur >= vars.length || vars[cur].instantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return cur >= vars.length || vars[cur].isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

@@ -6,7 +6,7 @@
 // *
 // * @author jimmy
 // */
-//public class IrBoolLiteral extends IrAbstractBool implements IrBoolExpr {
+//public class IrBoolLiteral extends IrAbstractBool {
 //
 //    private final IrBoolVar var;
 //

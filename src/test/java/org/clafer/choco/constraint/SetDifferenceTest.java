@@ -1,83 +1,55 @@
 package org.clafer.choco.constraint;
 
+import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class SetDifferenceTest extends ConstraintTest<Triple<SetVar, SetVar, SetVar>> {
+@RunWith(ConstraintQuickTest.class)
+public class SetDifferenceTest {
 
-    @Override
-    protected void check(Triple<SetVar, SetVar, SetVar> s) {
-        TIntHashSet answer = new TIntHashSet(s.getFst().getValue());
-        answer.removeAll(s.getSnd().getValue());
-        assertEquals(answer, new TIntHashSet(s.getThd().getValue()));
+    @Input(solutions = 128)
+    public Object testSetDifference(Solver solver) {
+        /*
+         * import Control.Monad
+         * import Data.List
+         *
+         * powerset = filterM (const [True, False])
+         *
+         * solutions = do
+         *     minuend <- powerset [-2..1]
+         *     subtrahend <- powerset [-1..2]
+         *     difference <- powerset [-1..2]
+         *     guard $ difference == deleteFirstsBy (==) minuend subtrahend
+         *     return (minuend, subtrahend, difference)
+         */
+        return $(cset(",inuend", -2, 1, solver),
+                cset("subtrahend", -1, 2, solver),
+                cset("difference", -1, 2, solver));
+    }
+
+    @Check
+    public void check(TIntSet minuend, TIntSet subtrahend, TIntSet difference) {
+        TIntHashSet answer = new TIntHashSet(minuend);
+        answer.removeAll(subtrahend);
+        assertEquals(answer, difference);
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<Triple<SetVar, SetVar, SetVar>>() {
-            @Override
-            public Pair<Constraint, Triple<SetVar, SetVar, SetVar>> setup(Solver solver) {
-                CSetVar minuend = toCSetVar(randSet(), solver);
-                CSetVar subtrahend = toCSetVar(randSet(), solver);
-                CSetVar difference = toCSetVar(randSet(), solver);
-
-                return (pair(Constraints.difference(minuend.getSet(), minuend.getCard(),
-                        subtrahend.getSet(), subtrahend.getCard(), difference.getSet(), difference.getCard()),
-                        triple(minuend.getSet(), subtrahend.getSet(), difference.getSet())));
-            }
-        });
-    }
-
-    @Test(timeout = 60000)
-    public void testSetDifference() {
-        randomizedTest(new TestCase<Triple<SetVar, SetVar, SetVar>>() {
-            /*
-             * import Control.Monad
-             * import Data.List
-             *
-             * powerset = filterM (const [True, False])
-             *
-             * positive = do
-             *     minuend <- powerset [-2..1]
-             *     subtrahend <- powerset [-1..2]
-             *     difference <- powerset [-1..2]
-             *     guard $ difference == deleteFirstsBy (==) minuend subtrahend
-             *     return (minuend, subtrahend, difference)
-             * 
-             * negative = do
-             *     minuend <- powerset [-2..1]
-             *     subtrahend <- powerset [-1..2]
-             *     difference <- powerset [-1..2]
-             *     guard $ difference /= deleteFirstsBy (==) minuend subtrahend
-             *     return (minuend, subtrahend, difference)
-             */
-            @PositiveSolutions(128)
-            @NegativeSolutions(3968)
-            @Override
-            public Pair<Constraint, Triple<SetVar, SetVar, SetVar>> setup(Solver solver) {
-                SetVar minuend = VF.set("Minuend", -2, 1, solver);
-                IntVar minuendCard = enforcedCardVar(minuend);
-                SetVar subtrahend = VF.set("Subtrahend", -1, 2, solver);
-                IntVar subtrahendCard = enforcedCardVar(subtrahend);
-                SetVar difference = VF.set("Difference", -1, 2, solver);
-                IntVar differenceCard = enforcedCardVar(difference);
-
-                return (pair(Constraints.difference(minuend, minuendCard,
-                        subtrahend, subtrahendCard, difference, differenceCard),
-                        triple(minuend, subtrahend, difference)));
-            }
-        });
+    public Constraint setup(CSetVar minuend, CSetVar subtrahend, CSetVar difference) {
+        return Constraints.difference(
+                minuend.getSet(), minuend.getCard(),
+                subtrahend.getSet(), subtrahend.getCard(),
+                difference.getSet(), difference.getCard());
     }
 }

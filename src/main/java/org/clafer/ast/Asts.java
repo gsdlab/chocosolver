@@ -16,6 +16,7 @@ public class Asts {
     }
     public static final AstIntClafer IntType = AstIntClafer.Singleton;
     public static final AstBoolClafer BoolType = AstBoolClafer.Singleton;
+    public static final AstStringClafer StringType = AstStringClafer.Singleton;
     // Cardinality keywords
     public static final Card Any = new Card();
     public static final Card Optional = new Card(0, 1);
@@ -58,12 +59,20 @@ public class Asts {
         return new AstConstant(type, value);
     }
 
+    public static AstStringConstant constant(String value) {
+        return new AstStringConstant(value);
+    }
+
     public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
         return new AstJoin(left, right);
     }
 
     public static AstSetExpr joinParent(AstSetExpr children) {
         return new AstJoinParent(children);
+    }
+
+    public static AstSetExpr joinRef(AstClafer clafer) {
+        return joinRef(global(clafer));
     }
 
     public static AstSetExpr joinRef(AstSetExpr deref) {
@@ -86,6 +95,14 @@ public class Asts {
         return new AstSetTest(left, op, right);
     }
 
+    public static AstBoolExpr equal(int left, AstSetExpr right) {
+        return equal(constant(left), right);
+    }
+
+    public static AstBoolExpr equal(AstSetExpr left, int right) {
+        return equal(left, constant(right));
+    }
+
     public static AstBoolExpr equal(AstSetExpr left, AstSetExpr right) {
         return test(left, AstSetTest.Op.Equal, right);
     }
@@ -100,6 +117,14 @@ public class Asts {
 
     public static AstBoolExpr lessThan(AstSetExpr left, AstSetExpr right) {
         return compare(left, AstCompare.Op.LessThan, right);
+    }
+
+    public static AstBoolExpr lessThanEqual(int left, AstSetExpr right) {
+        return lessThanEqual(constant(left), right);
+    }
+
+    public static AstBoolExpr lessThanEqual(AstSetExpr left, int right) {
+        return lessThanEqual(left, constant(right));
     }
 
     public static AstBoolExpr lessThanEqual(AstSetExpr left, AstSetExpr right) {
@@ -127,6 +152,14 @@ public class Asts {
 
     public static AstSetExpr sub(AstSetExpr... subtrahends) {
         return arithm(AstArithm.Op.Sub, subtrahends);
+    }
+
+    public static AstSetExpr mul(int multiplicand, AstSetExpr multiplier) {
+        return mul(constant(multiplicand), multiplier);
+    }
+
+    public static AstSetExpr mul(AstSetExpr multiplicand, int multiplier) {
+        return mul(multiplicand, constant(multiplier));
     }
 
     public static AstSetExpr mul(AstSetExpr... multipliers) {
@@ -332,5 +365,21 @@ public class Asts {
 
     public static AstBoolExpr some(AstDecl decl, AstBoolExpr body) {
         return quantify(Quantifier.Some, decl, body);
+    }
+
+    public static AstSetExpr length(AstSetExpr string) {
+        return new AstLength(string);
+    }
+
+    public static AstSetExpr concat(AstSetExpr left, AstSetExpr right) {
+        return new AstConcat(left, right);
+    }
+
+    public static AstBoolExpr prefix(AstSetExpr prefix, AstSetExpr word) {
+        return new AstPrefix(prefix, word);
+    }
+
+    public static AstBoolExpr suffix(AstSetExpr suffix, AstSetExpr word) {
+        return new AstSuffix(suffix, word);
     }
 }

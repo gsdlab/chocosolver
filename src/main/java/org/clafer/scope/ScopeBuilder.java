@@ -20,12 +20,19 @@ public class ScopeBuilder implements Scopable {
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
+    private int stringLength = 10;
+    private char charLow = 0x20;
+    private char charHigh = 0x7e;
 
-    ScopeBuilder(Map<AstClafer, Integer> scope, int defaultScope, int intLow, int intHigh) {
+    ScopeBuilder(Map<AstClafer, Integer> scope, int defaultScope, int intLow, int intHigh,
+            int stringLength, char charLow, char charHigh) {
         this.scope = new HashMap<>(scope);
         this.defaultScope = defaultScope;
         this.intLow = intLow;
         this.intHigh = intHigh;
+        this.stringLength = stringLength;
+        this.charLow = charLow;
+        this.charHigh = charHigh;
     }
 
     ScopeBuilder() {
@@ -132,6 +139,78 @@ public class ScopeBuilder implements Scopable {
     }
 
     /**
+     * Set the longest (inclusive) string used for solving. If the longest
+     * string is already set, then the new longest string overrides thy previous
+     * one.
+     *
+     * @param stringLength the longest string
+     * @return this builder
+     */
+    public ScopeBuilder stringLength(int stringLength) {
+        this.stringLength = stringLength;
+        return this;
+    }
+
+    /**
+     * Adjust the longest string used for solving.
+     *
+     * @param adjust increment the longest string by this amount
+     * @return this builder
+     */
+    public ScopeBuilder adjustStringLength(int adjust) {
+        stringLength += adjust;
+        return this;
+    }
+
+    /**
+     * Set the lowest (inclusive) character used for solving. If the lowest
+     * character is already set, then the new lowest character overrides the
+     * previous one.
+     *
+     * @param charLow the lowest character
+     * @return this builder
+     */
+    public ScopeBuilder charLow(char charLow) {
+        this.charLow = charLow;
+        return this;
+    }
+
+    /**
+     * Adjust the lowest character used for solving.
+     *
+     * @param adjust increment the lowest character by this amount
+     * @return this builder
+     */
+    public ScopeBuilder adjustCharLow(int adjust) {
+        charLow += adjust;
+        return this;
+    }
+
+    /**
+     * Set the highest (inclusive) character used for solving. If the highest
+     * character is already set, then the new highest character overrides the
+     * previous one.
+     *
+     * @param charHigh the highest character
+     * @return this builder
+     */
+    public ScopeBuilder charHigh(char charHigh) {
+        this.charHigh = charHigh;
+        return this;
+    }
+
+    /**
+     * Adjust the highest character used for solving.
+     *
+     * @param adjust increment the highest character by this amount
+     * @return this builder
+     */
+    public ScopeBuilder adjustCharHigh(int adjust) {
+        charHigh += adjust;
+        return this;
+    }
+
+    /**
      * Finalizes all the decisions made in the builder. Further changes to this
      * builder is permitted for building more scopes, but the returned scope
      * will not be affected.
@@ -140,6 +219,7 @@ public class ScopeBuilder implements Scopable {
      */
     @Override
     public Scope toScope() {
-        return new Scope(scope, defaultScope, intLow, intHigh);
+        return new Scope(scope, defaultScope, intLow, intHigh,
+                stringLength, charLow, charHigh);
     }
 }

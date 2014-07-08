@@ -111,8 +111,6 @@ public class DuplicateConstraints {
             constraints.add(Irs.lessThanEqual(p.getFst(), p.getSnd()));
         }
 
-        HashSet<IrVar> variables = new HashSet<>(module.getVariables());
-
-        return new IrModule().addVariables(variables).addConstraints(constraints);
+        return new IrModule().addConstraints(constraints);
     }
 }

@@ -1,63 +1,43 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import org.clafer.test.NonEmpty;
+import org.clafer.test.Positive;
 import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class UnreachableTest extends ConstraintTest<Triple<IntVar[], Integer, Integer>> {
+@RunWith(ConstraintQuickTest.class)
+public class UnreachableTest {
 
-    @Override
-    protected void check(Triple<IntVar[], Integer, Integer> s) {
-        IntVar[] edges = s.getFst();
-        int from = s.getSnd();
-        int to = s.getThd();
+    @Input(solutions = 440)
+    public Object testUnreachable(Solver solver) {
+        return $(enumeratedArray("edge", 4, 0, 4, solver), 3, 1);
+    }
+
+    @Check
+    public void check(int[] edges, int from, int to) {
         int cur = from;
         for (int i = 0; i < edges.length && cur < edges.length; i++) {
             assertTrue(cur >= 0);
             assertNotEquals(cur, to);
-            cur = edges[cur].getValue();
-        }
-        for (IntVar edge : edges) {
-            assertTrue(edge.getValue() >= 0);
+            cur = edges[cur];
         }
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<Triple<IntVar[], Integer, Integer>>() {
-            @Override
-            public Pair<Constraint, Triple<IntVar[], Integer, Integer>> setup(Solver solver) {
-                IntVar[] edges = toIntVars(randInts(nextInt(5) + 1), solver);
-                int from = nextInt(edges.length);
-                int to = nextInt(edges.length);
-                return pair(Constraints.unreachable(edges, from, to),
-                        triple(edges, from, to));
-            }
-        });
-    }
-
-    @Test(timeout = 60000)
-    public void testUnreachable() {
-        randomizedTest(new TestCase<Triple<IntVar[], Integer, Integer>>() {
-            @PositiveSolutions(440)
-            @NegativeSolutions(185)
-            @Override
-            public Pair<Constraint, Triple<IntVar[], Integer, Integer>> setup(Solver solver) {
-                IntVar[] edges = VF.enumeratedArray("is", 4, 0, 4, solver);
-                int from = 3;
-                int to = 1;
-                return pair(Constraints.unreachable(edges, from, to),
-                        triple(edges, from, to));
-            }
-        });
+    public Constraint setup(@NonEmpty IntVar[] edges, @Positive int from, @Positive int to) {
+        assumeTrue(from < edges.length);
+        assumeTrue(to < edges.length);
+        return Constraints.unreachable(edges, from, to);
     }
 }

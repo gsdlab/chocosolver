@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 
@@ -7,12 +8,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrIntChannel extends IrAbstractBool implements IrBoolExpr {
+public class IrIntChannel extends IrAbstractBool {
 
     private final IrIntExpr[] ints;
     private final IrSetExpr[] sets;
 
-    IrIntChannel(IrIntExpr[] ints, IrSetExpr[] sets, IrBoolDomain domain) {
+    IrIntChannel(IrIntExpr[] ints, IrSetExpr[] sets, BoolDomain domain) {
         super(domain);
         this.ints = Check.noNullsNotEmpty(ints);
         this.sets = Check.noNullsNotEmpty(sets);

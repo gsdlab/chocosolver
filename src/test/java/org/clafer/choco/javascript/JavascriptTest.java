@@ -25,6 +25,8 @@ public class JavascriptTest {
                 "scope({A:3, B:2, C:1})\n"
                 + "defaultScope(2)\n"
                 + "intRange(-10, 20);\n"
+                + "stringLength(3);\n"
+                + "charRange('a', 'z');\n"
                 + "A = Clafer('A').withCard(1,1).refTo(Int)\n"
                 + "B = Abstract('B')\n"
                 + "C = B.addChild('C').extending(B).withGroupCard(0, 1)\n"
@@ -57,7 +59,10 @@ public class JavascriptTest {
         assertEquals(2, scope.getDefaultScope());
         assertEquals(-10, scope.getIntLow());
         assertEquals(20, scope.getIntHigh());
-        
+        assertEquals(3, scope.getStringLength());
+        assertEquals('a', scope.getCharLow());
+        assertEquals('z', scope.getCharHigh());
+
         Objective[] objectives = triple.getThd();
         assertEquals(1, objectives.length);
         assertFalse(objectives[0].isMaximize());

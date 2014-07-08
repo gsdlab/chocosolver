@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
@@ -10,7 +11,7 @@ public class IrIntVar extends IrAbstractInt implements IrVar {
 
     private final String name;
 
-    protected IrIntVar(String name, IrDomain domain) {
+    protected IrIntVar(String name, Domain domain) {
         super(domain);
         this.name = Check.notNull(name);
     }

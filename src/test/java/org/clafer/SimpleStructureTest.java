@@ -6,6 +6,8 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
+import org.clafer.ast.analysis.InsufficientScopeException;
+import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceModel;
@@ -501,8 +503,32 @@ public class SimpleStructureTest {
     }
 
     /**
+     * <pre>
+     * A ?
+     * B ->> A 2..3
+     * </pre>
+     */
+    public void testNotEnoughRef() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 1);
+        AstConcreteClafer b = model.addChild("B").refTo(a).withCard(2, 3);
+
+        try {
+            ClaferCompiler.compile(model, Scope.setScope(a, 1).setScope(b, 3));
+            fail();
+        } catch (InsufficientScopeException e) {
+            assertArrayEquals(
+                    new Pair<?, ?>[]{new Pair<>(a, 1)},
+                    e.getInsufficientScopes());
+        }
+    }
+
+    /**
+     * <pre>
      * A
      * B -> A 2..3
+     * </pre>
      */
     @Test(timeout = 60000)
     public void testNotEnoughUniqueRef() {
@@ -511,8 +537,65 @@ public class SimpleStructureTest {
         AstConcreteClafer a = model.addChild("A").withCard(1, 1);
         AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 3);
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
-        assertEquals(0, solver.allInstances().length);
+        try {
+            ClaferCompiler.compile(model, Scope.defaultScope(4));
+            fail();
+        } catch (InsufficientScopeException e) {
+            assertArrayEquals(
+                    new Pair<?, ?>[]{new Pair<>(a, 2)},
+                    e.getInsufficientScopes());
+        }
+    }
+
+    /**
+     * <pre>
+     * A
+     * B -> A 2..3
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNotEnoughAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstConcreteClafer b = model.addChild("B").refToUnique(a).withCard(2, 3);
+
+        try {
+            ClaferCompiler.compile(model, Scope.defaultScope(4));
+            fail();
+        } catch (InsufficientScopeException e) {
+            assertArrayEquals(
+                    new Pair<?, ?>[]{new Pair<>(a, 2)},
+                    e.getInsufficientScopes());
+        }
+    }
+
+    /**
+     * <pre>
+     * abstract A -> D
+     * B : A
+     * C : A 2
+     * D
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNotEnoughFromAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstConcreteClafer b = model.addChild("B").extending(a).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("C").extending(a).withCard(2, 2);
+        AstConcreteClafer d = model.addChild("D").withCard(Mandatory);
+        a.refToUnique(d);
+
+        try {
+            ClaferCompiler.compile(model, Scope.defaultScope(2));
+            fail();
+        } catch (InsufficientScopeException e) {
+            assertArrayEquals(
+                    new Pair<?, ?>[]{new Pair<>(d, 2)},
+                    e.getInsufficientScopes());
+        }
     }
 
     /**
@@ -601,7 +684,7 @@ public class SimpleStructureTest {
     /**
      * <pre>
      * A 1..2
-     *     B +
+     *     B 2+
      * </pre>
      */
     @Test(timeout = 60000)

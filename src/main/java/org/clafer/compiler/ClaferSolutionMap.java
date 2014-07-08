@@ -5,6 +5,7 @@ import java.util.List;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstStringClafer;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
@@ -13,6 +14,7 @@ import org.clafer.instance.InstanceModel;
 import org.clafer.instance.InstanceRef;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.compiler.IrSolutionMap;
 
 /**
@@ -34,7 +36,7 @@ public class ClaferSolutionMap {
         for (AstConcreteClafer child : astSolution.getModel().getChildren()) {
             // [0] because top clafers only have exactly one children set
             IrSetVar topSetIrVar = astSolution.getSiblingVars(child)[0];
-            int[] topIds = irSolution.getSetValue(topSetIrVar);
+            int[] topIds = irSolution.getValue(topSetIrVar);
             for (int topId : topIds) {
                 topInstances.add(getInstanceClafer(child, topId));
             }
@@ -51,7 +53,7 @@ public class ClaferSolutionMap {
     private InstanceRef getInstanceClafer(AstClafer clafer, int id, List<InstanceClafer> children) {
         for (AstConcreteClafer child : clafer.getChildren()) {
             IrSetVar childSetIrVar = astSolution.getSiblingVars(child)[id];
-            int[] childIds = irSolution.getSetValue(childSetIrVar);
+            int[] childIds = irSolution.getValue(childSetIrVar);
             for (int childId : childIds) {
                 children.add(getInstanceClafer(child, childId));
             }
@@ -63,16 +65,22 @@ public class ClaferSolutionMap {
                     children);
         }
         if (clafer.hasRef()) {
-            IrIntVar refIrVar = astSolution.getRefVars(clafer.getRef())[id];
             AstClafer targetType = clafer.getRef().getTargetType();
-            int value = irSolution.getIntValue(refIrVar);
-            if (targetType instanceof AstAbstractClafer) {
-                Pair<AstConcreteClafer, Integer> concreteRef = astSolution.getAnalysis().getConcreteId(
-                        targetType, value);
-                targetType = concreteRef.getFst();
-                value = concreteRef.getSnd().intValue();
+            if (targetType instanceof AstStringClafer) {
+                IrStringVar refIrVar = astSolution.getRefStrings(clafer.getRef())[id];
+                String value = irSolution.getValue(refIrVar);
+                ref = new InstanceRef(targetType, value);
+            } else {
+                IrIntVar refIrVar = astSolution.getRefVars(clafer.getRef())[id];
+                int value = irSolution.getValue(refIrVar);
+                if (targetType instanceof AstAbstractClafer) {
+                    Pair<AstConcreteClafer, Integer> concreteRef = astSolution.getAnalysis().getConcreteId(
+                            targetType, value);
+                    targetType = concreteRef.getFst();
+                    value = concreteRef.getSnd().intValue();
+                }
+                ref = new InstanceRef(targetType, value);
             }
-            ref = new InstanceRef(targetType, value);
         }
         return ref;
     }

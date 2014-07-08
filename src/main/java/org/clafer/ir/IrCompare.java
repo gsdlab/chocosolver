@@ -1,5 +1,6 @@
 package org.clafer.ir;
 
+import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
 
 /**
@@ -7,13 +8,13 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class IrCompare extends IrAbstractBool implements IrBoolExpr {
+public class IrCompare extends IrAbstractBool {
 
     private final IrIntExpr left;
     private final Op op;
     private final IrIntExpr right;
 
-    IrCompare(IrIntExpr left, Op op, IrIntExpr right, IrBoolDomain domain) {
+    IrCompare(IrIntExpr left, Op op, IrIntExpr right, BoolDomain domain) {
         super(domain);
         this.left = Check.notNull(left);
         this.op = Check.notNull(op);
@@ -67,7 +68,8 @@ public class IrCompare extends IrAbstractBool implements IrBoolExpr {
     public boolean equals(Object obj) {
         if (obj instanceof IrCompare) {
             IrCompare other = (IrCompare) obj;
-            return left.equals(other.left) && op.equals(other.op) && right.equals(other.right) && super.equals(other);
+            return left.equals(other.left) && op.equals(other.op)
+                    && right.equals(other.right) && super.equals(other);
         }
         return false;
     }

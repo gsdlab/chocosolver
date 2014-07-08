@@ -9,7 +9,7 @@ import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
-import solver.variables.delta.monitor.SetDeltaMonitor;
+import solver.variables.delta.ISetDeltaMonitor;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -22,7 +22,7 @@ public class PropArrayToSet extends Propagator<Variable> {
     private final IntVar[] as;
     private final IIntDeltaMonitor[] asD;
     private final SetVar s;
-    private final SetDeltaMonitor sD;
+    private final ISetDeltaMonitor sD;
 
     public PropArrayToSet(IntVar[] as, SetVar s) {
         super(buildArray(as, s), PropagatorPriority.TERNARY, true);
@@ -107,7 +107,7 @@ public class PropArrayToSet extends Propagator<Variable> {
         findMates();
         // Pick s
         for (IntVar a : as) {
-            if (a.instantiated()) {
+            if (a.isInstantiated()) {
                 s.addToKernel(a.getValue(), aCause);
             }
         }
@@ -131,7 +131,7 @@ public class PropArrayToSet extends Propagator<Variable> {
                 asD[id].forEach(pruneSOnARem, EventType.REMOVE);
                 asD[id].unfreeze();
             }
-            if (as[id].instantiated()) {
+            if (as[id].isInstantiated()) {
                 s.addToKernel(as[id].getValue(), aCause);
             }
         }
@@ -140,7 +140,7 @@ public class PropArrayToSet extends Propagator<Variable> {
         @Override
         public void execute(int sEnv) throws ContradictionException {
             for (IntVar a : as) {
-                if (a.removeValue(sEnv, aCause) && a.instantiated()) {
+                if (a.removeValue(sEnv, aCause) && a.isInstantiated()) {
                     s.addToKernel(a.getValue(), aCause);
                 }
             }

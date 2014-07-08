@@ -1,55 +1,42 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.collection.Pair;
+import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
-import solver.variables.VF;
+import static solver.variables.Var.*;
 
 /**
  *
  * @author jimmy
  */
-public class SelectNTest extends ConstraintTest<Pair<BoolVar[], IntVar>> {
+@RunWith(ConstraintQuickTest.class)
+public class SelectNTest {
 
-    @Override
-    protected void check(Pair<BoolVar[], IntVar> s) {
-        for (int i = 0; i < s.getSnd().getValue(); i++) {
-            assertEquals(1, s.getFst()[i].getValue());
+    @Input(solutions = 5)
+    public Object testSelectN(Solver solver) {
+        return $(boolArray("bool", 4, solver),
+                enumerated("n", 0, 4, solver));
+    }
+
+    @Check
+    public void check(boolean[] bools, int n) {
+        assertTrue(n >= 0);
+        assertTrue(n <= bools.length);
+        for (int i = 0; i < n; i++) {
+            assertTrue(bools[i]);
         }
-        for (int i = s.getSnd().getValue(); i < s.getFst().length; i++) {
-            assertEquals(0, s.getFst()[i].getValue());
+        for (int i = n; i < bools.length; i++) {
+            assertFalse(bools[i]);
         }
     }
 
     @Test(timeout = 60000)
-    public void quickTest() {
-        randomizedTest(new TestCase<Pair<BoolVar[], IntVar>>() {
-            @Override
-            public Pair<Constraint, Pair<BoolVar[], IntVar>> setup(Solver solver) {
-                BoolVar[] bools = toBoolVars(randBools(nextInt(5) + 1), solver);
-                IntVar n = toIntVar(randInt(0, bools.length), solver);
-                return pair(Constraints.selectN(bools, n),
-                        pair(bools, n));
-            }
-        });
-    }
-
-    @Test(timeout = 60000)
-    public void testSelectN() {
-        randomizedTest(new TestCase<Pair<BoolVar[], IntVar>>() {
-            @PositiveSolutions(5)
-            @NegativeSolutions(75)
-            @Override
-            public Pair<Constraint, Pair<BoolVar[], IntVar>> setup(Solver solver) {
-                BoolVar[] bools = VF.boolArray("bool", 4, solver);
-                IntVar n = VF.enumerated("n", 0, 4, solver);
-                return pair(Constraints.selectN(bools, n),
-                        pair(bools, n));
-            }
-        });
+    public Constraint quickTest(BoolVar[] bools, IntVar n) {
+        return Constraints.selectN(bools, n);
     }
 }

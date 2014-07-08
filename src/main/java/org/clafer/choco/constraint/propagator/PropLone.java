@@ -35,7 +35,7 @@ public class PropLone extends Propagator<BoolVar> {
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
             BoolVar var = vars[i];
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
                     clearAllBut(i);
                     return;
@@ -57,7 +57,7 @@ public class PropLone extends Propagator<BoolVar> {
         int count = 0;
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
-            if (var.instantiated()) {
+            if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
                     count++;
                     if (count > 1) {
