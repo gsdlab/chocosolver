@@ -303,6 +303,10 @@ public class Irs {
 
     public static IrBoolExpr within(IrIntExpr value, Domain range) {
         Domain domain = value.getDomain();
+        range = domain.intersection(range);
+        if (range.isEmpty()) {
+            return False;
+        }
         if (range.isBounded()
                 && domain.getLowBound() >= range.getLowBound()
                 && domain.getHighBound() <= range.getHighBound()) {
