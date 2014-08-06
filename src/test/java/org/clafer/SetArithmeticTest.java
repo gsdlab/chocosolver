@@ -51,7 +51,7 @@ public class SetArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
-        model.addConstraint(equal(joinRef(join(diff(global(backup), global(firewall)), cost)), constant(1)));
+        model.addConstraint(equal(joinRef(join(diff(global(feature), global(firewall)), cost)), constant(1)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
         assertEquals(18, solver.allInstances().length);
