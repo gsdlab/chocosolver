@@ -274,51 +274,56 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     // Idempotent.
     private boolean propagateStrings() throws ContradictionException {
-        int eqs = 0;
-        boolean[] notSmallest = new boolean[strings.length];
-        boolean[] lessThanEqual = new boolean[strings.length];
         boolean changed = false;
-        for (int i = 0; i < strings.length; i++) {
-            boolean equivalenceClass = false;
-            for (int j = i + 1; j < strings.length; j++) {
-                Ordering ord = compareString(strings[i], strings[j]);
-                switch (ord) {
-                    case EQ:
-                        changed |= equal(ints[i], ints[j]);
-                        equivalenceClass = true;
-                        break;
-                    case LE:
-                        changed |= lessThanEqual(ints[i], ints[j]);
-                        lessThanEqual[i] = true;
-                        notSmallest[j] = true;
-                        break;
-                    case LT:
-                        changed |= lessThan(ints[i], ints[j]);
-                        notSmallest[j] = true;
-                        break;
-                    case GE:
-                        changed |= lessThanEqual(ints[j], ints[i]);
-                        lessThanEqual[j] = true;
-                        notSmallest[i] = true;
-                        break;
-                    case GT:
-                        changed |= lessThan(ints[j], ints[i]);
-                        notSmallest[i] = true;
-                        break;
-                    case UNKNOWN:
-                        notSmallest[i] = true;
-                        notSmallest[j] = true;
-                        break;
+        boolean repeat;
+        do {
+            repeat = false;
+            int eqs = 0;
+            boolean[] notSmallest = new boolean[strings.length];
+            boolean[] lessThanEqual = new boolean[strings.length];
+            for (int i = 0; i < strings.length; i++) {
+                boolean equivalenceClass = false;
+                for (int j = i + 1; j < strings.length; j++) {
+                    Ordering ord = compareString(strings[i], strings[j]);
+                    switch (ord) {
+                        case EQ:
+                            repeat |= equal(ints[i], ints[j]);
+                            equivalenceClass = true;
+                            break;
+                        case LE:
+                            repeat |= lessThanEqual(ints[i], ints[j]);
+                            lessThanEqual[i] = true;
+                            notSmallest[j] = true;
+                            break;
+                        case LT:
+                            repeat |= lessThan(ints[i], ints[j]);
+                            notSmallest[j] = true;
+                            break;
+                        case GE:
+                            repeat |= lessThanEqual(ints[j], ints[i]);
+                            lessThanEqual[j] = true;
+                            notSmallest[i] = true;
+                            break;
+                        case GT:
+                            repeat |= lessThan(ints[j], ints[i]);
+                            notSmallest[i] = true;
+                            break;
+                        case UNKNOWN:
+                            notSmallest[i] = true;
+                            notSmallest[j] = true;
+                            break;
+                    }
+                }
+                if (equivalenceClass) {
+                    eqs++;
                 }
             }
-            if (equivalenceClass) {
-                eqs++;
+            repeat |= propagateSmallest(notSmallest, notSmallest, lessThanEqual, 0);
+            for (int i = 0; i < ints.length; i++) {
+                repeat |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
             }
-        }
-        changed |= propagateSmallest(notSmallest, notSmallest, lessThanEqual, 0);
-        for (int i = 0; i < ints.length; i++) {
-            changed |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
-        }
+            changed |= repeat;
+        } while (repeat);
         return changed;
     }
 
