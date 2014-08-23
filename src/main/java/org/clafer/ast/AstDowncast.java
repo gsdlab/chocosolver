@@ -9,9 +9,9 @@ import org.clafer.common.Check;
 public class AstDowncast implements AstSetExpr {
 
     private final AstSetExpr base;
-    private final AstClafer target;
+    private final ProductType target;
 
-    AstDowncast(AstSetExpr base, AstClafer target) {
+    AstDowncast(AstSetExpr base, ProductType target) {
         this.base = Check.notNull(base);
         this.target = Check.notNull(target);
     }
@@ -20,7 +20,7 @@ public class AstDowncast implements AstSetExpr {
         return base;
     }
 
-    public AstClafer getTarget() {
+    public ProductType getTarget() {
         return target;
     }
 

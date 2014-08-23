@@ -15,6 +15,7 @@ import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
+import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcat;
@@ -44,6 +45,7 @@ import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstRefRelation;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstStringClafer;
@@ -55,8 +57,10 @@ import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
+import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
 import org.clafer.ast.JoinSetWithStringException;
+import org.clafer.ast.ProductType;
 import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.Analyzer;
@@ -245,6 +249,37 @@ public class AstCompiler {
         IrIntExpr softSum = add(softVars.values());
         IrIntVar sumSoftVars = domainInt("SumSoftVar", softSum.getDomain());
         module.addConstraint(equal(sumSoftVars, softSum));
+
+        List<IrSetExpr> deploys = new ArrayList<>();
+        List<IrIntExpr> deployedTo = new ArrayList<>();
+        for (AstConcreteClafer c : analysis.getConcreteClafers()) {
+            if (c.getName().equals("c0_deploys")) {
+                AstClafer parent = c.getParent();
+                int scope = getScope(parent);
+                int targetScope = getScope(c.getRef().getTargetType());
+                for (int j = 0; j < scope; j++) {
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    AstSetExpr jo = Asts.join(Asts.$this(), c);
+                    analysis.getTypeMap().put(jo, Type.basicType(c));
+                    deploys.add((IrSetExpr) expressionCompiler.compile(Asts.joinRef(jo)));
+                }
+                System.out.println(c.getRef().getTargetType() + " : " + targetScope);
+                deploys.add(set("deploysUnused", 0, targetScope));
+            } else if (c.getName().equals("c0_deployedTo")) {
+                AstClafer parent = c.getParent();
+                int scope = getScope(parent);
+                int targetScope = getScope(c.getRef().getTargetType());
+                for (int j = 0; j < scope; j++) {
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    AstSetExpr jo = Asts.join(Asts.$this(), c);
+                    analysis.getTypeMap().put(jo, Type.basicType(c));
+                    deployedTo.add((IrIntExpr) expressionCompiler.compile(Asts.joinRef(jo)));
+                }
+            }
+        }
+        module.addConstraint(intChannel(
+                deployedTo.toArray(new IrIntExpr[]{}),
+                deploys.toArray(new IrSetExpr[]{})));
 
         for (IrSetVar[] childSet : siblingSets.values()) {
             module.addVariables(childSet);
@@ -922,11 +957,12 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstConstant ast, Void a) {
-            int[] value = ast.getValue();
+            int[][] value = ast.getValue();
             if (value.length == 1) {
-                return constant(value[0]);
+                int[] set = value[0];
+                return set.length == 1 ? constant(set[0]) : constant(set);
             }
-            return constant(value);
+            throw new UnsupportedOperationException("TODO");
         }
 
         @Override
@@ -958,7 +994,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoinParent ast, Void a) {
-            AstConcreteClafer childrenType = (AstConcreteClafer) getCommonSupertype(ast.getChildren());
+            AstConcreteClafer childrenType = (AstConcreteClafer) getCommonSupertype(ast.getChildren()).getClaferType();
 
             IrExpr children = compile(ast.getChildren());
             if (children instanceof IrIntExpr) {
@@ -989,7 +1025,7 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstJoinRef ast, Void a) {
             AstSetExpr deref = ast.getDeref();
-            AstClafer derefType = getCommonSupertype(deref);
+            AstClafer derefType = getCommonSupertype(deref).getClaferType();
 
             Integer globalCardinality = null;
             IrExpr $deref;
@@ -1135,7 +1171,7 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstSum ast, Void a) {
             AstSetExpr set = ast.getSet();
-            AstClafer setType = getCommonSupertype(set);
+            AstClafer setType = getCommonSupertype(set).getClaferType();
             assert setType.hasRef();
             IrIntVar[] refs = refPointers.get(setType.getRef());
 
@@ -1271,20 +1307,20 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstDowncast ast, Void a) {
             AstSetExpr base = ast.getBase();
-            int offset = getOffset((AstAbstractClafer) getCommonSupertype(base), ast.getTarget());
+            int offset = getOffset((AstAbstractClafer) getCommonSupertype(base).getClaferType(), ast.getTarget().getClaferType());
 
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
                 return sub(intBase, constant(offset));
             }
-            return mask((IrSetExpr) $base, offset, offset + getScope(ast.getTarget()));
+            return mask((IrSetExpr) $base, offset, offset + getScope(ast.getTarget().getClaferType()));
         }
 
         @Override
         public IrExpr visit(AstUpcast ast, Void a) {
             AstSetExpr base = ast.getBase();
-            int offset = getOffset(ast.getTarget(), getCommonSupertype(base));
+            int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(base).getClaferType());
 
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
@@ -1423,6 +1459,16 @@ public class AstCompiler {
         public IrExpr visit(AstSuffix ast, Void a) {
             return suffix(asString(compile(ast.getSuffix())),
                     asString(compile(ast.getWord())));
+        }
+
+        @Override
+        public IrExpr visit(AstChildRelation ast, Void a) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public IrExpr visit(AstRefRelation ast, Void a) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     };
 
@@ -1640,7 +1686,7 @@ public class AstCompiler {
         return analysis.getType(expr);
     }
 
-    private AstClafer getCommonSupertype(AstExpr expr) {
+    private ProductType getCommonSupertype(AstExpr expr) {
         return analysis.getCommonSupertype(expr);
     }
 

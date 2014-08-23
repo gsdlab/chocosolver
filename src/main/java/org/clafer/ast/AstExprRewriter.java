@@ -186,4 +186,14 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     public AstExpr visit(AstSuffix ast, T a) {
         return suffix(rewrite(ast.getSuffix(), a), rewrite(ast.getWord(), a));
     }
+
+    @Override
+    public AstExpr visit(AstChildRelation ast, T a) {
+        return ast;
+    }
+
+    @Override
+    public AstExpr visit(AstRefRelation ast, T a) {
+        return ast;
+    }
 }

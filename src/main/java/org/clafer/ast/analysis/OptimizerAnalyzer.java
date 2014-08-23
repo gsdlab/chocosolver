@@ -16,6 +16,7 @@ import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstThis;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.Card;
+import org.clafer.ast.ProductType;
 import org.clafer.common.Util;
 import org.clafer.objective.Objective;
 
@@ -61,15 +62,18 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
             Card childCard = a.getCard(ast.getRight());
             if (Format.ParentGroup.equals(a.getFormat(ast.getRight()))) {
                 AstConstant constant = (AstConstant) left;
-                assert childCard.isExact();
-                int[] childConstant = new int[constant.getValue().length * childCard.getLow()];
-                for (int i = 0; i < constant.getValue().length; i++) {
-                    for (int j = 0; j < childCard.getLow(); j++) {
-                        childConstant[i * childCard.getLow() + j] =
-                                i * constant.getValue()[i] + j;
+                if (constant.getType().arity() == 1) {
+                    int[] value = constant.getValue()[0];
+                    assert childCard.isExact();
+                    int[] childConstant = new int[value.length * childCard.getLow()];
+                    for (int i = 0; i < constant.getValue().length; i++) {
+                        for (int j = 0; j < childCard.getLow(); j++) {
+                            childConstant[i * childCard.getLow() + j]
+                                    = i * value[i] + j;
+                        }
                     }
+                    return constant(ast.getRight(), childConstant);
                 }
-                return constant(ast.getRight(), childConstant);
             }
             assert childCard.getLow() != a.getScope(ast.getRight()) :
                     "Didn't run scope analysis before format analysis?";
@@ -81,21 +85,24 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
     public AstExpr visit(AstJoinParent ast, Analysis a) {
         AstSetExpr children = rewrite(ast.getChildren(), a);
         if (children instanceof AstThis) {
-            AstClafer type = a.getCommonSupertype(ast);
+            ProductType type = a.getCommonSupertype(ast);
             if (a.getScope(type) == 1) {
                 return constant(type, 0);
             }
         } else if (children instanceof AstGlobal) {
-            AstClafer childType = a.getCommonSupertype(ast.getChildren());
-            if (childType instanceof AstConcreteClafer) {
-                AstConcreteClafer concreteChildType = (AstConcreteClafer) childType;
-                if (a.getCard(concreteChildType).hasLow()) {
-                    return global(a.getCommonSupertype(ast));
+            ProductType childType = a.getCommonSupertype(ast.getChildren());
+            if (childType.isClaferType()) {
+                AstClafer childClafer = childType.getClaferType();
+                if (childClafer instanceof AstConcreteClafer) {
+                    AstConcreteClafer concreteChildType = (AstConcreteClafer) childClafer;
+                    if (a.getCard(concreteChildType).hasLow()) {
+                        return global(concreteChildType.getParent());
+                    }
                 }
             }
         } else if (children instanceof AstConstant) {
             AstConstant constant = (AstConstant) children;
-            AstClafer type = a.getCommonSupertype(ast);
+            ProductType type = a.getCommonSupertype(ast);
             if (constant.getValue().length > 0 && a.getScope(type) == 1) {
                 return constant(type, 0);
             }

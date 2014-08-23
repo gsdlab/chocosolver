@@ -27,7 +27,6 @@ import static org.clafer.collection.FList.*;
 import org.clafer.collection.Pair;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
-import org.clafer.ir.IrUtil;
 import org.clafer.scope.Scope;
 
 /**
@@ -147,9 +146,11 @@ public class PartialIntAnalyzer implements Analyzer {
 
     private static Pair<FList<AstConcreteClafer>, Integer> analyzeEqual(
             AstJoinRef exp, AstConstant constant) throws NotAssignmentException {
-        int[] value = constant.getValue();
-        if (value.length == 1) {
-            return new Pair<>(analyze(exp), value[0]);
+        if (constant.getType().arity() == 1) {
+            int[] value = constant.getValue()[0];
+            if (value.length == 1) {
+                return new Pair<>(analyze(exp), value[0]);
+            }
         }
         throw new NotAssignmentException();
     }

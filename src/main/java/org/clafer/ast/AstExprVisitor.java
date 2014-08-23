@@ -23,6 +23,10 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstJoinRef ast, A a);
 
+    public B visit(AstChildRelation ast, A a);
+
+    public B visit(AstRefRelation ast, A a);
+
     public B visit(AstNot ast, A a);
 
     public B visit(AstMinus ast, A a);
