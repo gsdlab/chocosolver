@@ -56,7 +56,7 @@ public class Type implements Iterable<ProductType> {
         return unionType;
     }
 
-    public ProductType getCommonSuperType() {
+    public ProductType getCommonSupertype() {
         return commonSupertype;
     }
 
@@ -78,7 +78,7 @@ public class Type implements Iterable<ProductType> {
     }
 
     public AstClafer getClaferType() {
-        assert isClaferType();
+        assert isClaferType() : this + " is not a Clafer type";
         return unionType.iterator().next().getProduct()[0];
     }
 

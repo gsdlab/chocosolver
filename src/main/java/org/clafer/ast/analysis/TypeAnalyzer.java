@@ -26,6 +26,7 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
+import org.clafer.ast.AstJJoin;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -76,7 +77,7 @@ import org.clafer.objective.Objective;
  * and D0 is also stored as 0 for the type D. The way the solver does it is to
  * upcast both C0 and D0 to the type B, where C0 = B0 and D0 = B1 so the set
  * {C0, D0} can be stored as {B0, B1}, ie. {0, 1} in Choco.
- * {@link Type#getCommonSuperType()} of each expression is the type used for
+ * {@link Type#getCommonSupertype()} of each expression is the type used for
  * representing the set in Choco.
  * </p>
  * <p>
@@ -180,7 +181,7 @@ public class TypeAnalyzer implements Analyzer {
          * @return the same expression but with the target type
          */
         private AstSetExpr downcastTo(TypedExpr<AstSetExpr> expr, ProductType target) {
-            if (expr.getType().getCommonSuperType().equals(target)) {
+            if (expr.getType().getCommonSupertype().equals(target)) {
                 return expr.getExpr();
             }
             if (isAnyAssignable(target, expr.getUnionType())) {
@@ -199,7 +200,7 @@ public class TypeAnalyzer implements Analyzer {
          * @return the same expression but with the target type
          */
         private AstSetExpr upcastTo(TypedExpr<AstSetExpr> expr, ProductType target) {
-            if (expr.getType().getCommonSuperType().equals(target)) {
+            if (expr.getType().getCommonSupertype().equals(target)) {
                 return expr.getExpr();
             }
             if (isAssignable(expr.getCommonSupertype(), target)) {
@@ -212,6 +213,14 @@ public class TypeAnalyzer implements Analyzer {
 
         private <T extends AstExpr> TypedExpr<T> put(AstClafer basicType, T expr) {
             return put(Type.basicType(basicType), expr);
+        }
+
+        private <T extends AstExpr> TypedExpr<T> put(AstClafer paramType, AstClafer returnType, T expr) {
+            return put(new Type(new ProductType(paramType, returnType)), expr);
+        }
+
+        private <T extends AstExpr> TypedExpr<T> put(ProductType type, T expr) {
+            return put(new Type(type), expr);
         }
 
         private <T extends AstExpr> TypedExpr<T> put(Type type, T expr) {
@@ -237,6 +246,32 @@ public class TypeAnalyzer implements Analyzer {
         @Override
         public TypedExpr<?> visit(AstStringConstant ast, Void a) {
             return put(Type.basicType(AstStringClafer.Singleton), ast);
+        }
+
+        @Override
+        public TypedExpr<AstSetExpr> visit(AstJJoin ast, Void a) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (right.getCommonSupertype().arity() == 2) {
+                AstClafer rightParamType = right.getCommonSupertype().get(0);
+                AstClafer rightReturnType = right.getCommonSupertype().get(1);
+                switch (left.getType().getCommonSupertype().arity()) {
+                    case 1:
+                        if (isAnyAssignable(left.getType().getUnionType(), rightParamType)) {
+                            return put(rightReturnType, join(castTo(left, rightParamType), right.getExpr()));
+                        }
+                        break;
+                    case 2:
+                        AstClafer leftParamType = left.getCommonSupertype().get(0);
+                        AstClafer leftReturnType = left.getCommonSupertype().get(1);
+                        // TODO
+                        if (true) {
+                            return put(leftParamType, rightReturnType, join(left.getExpr(), right.getExpr()));
+                        }
+                        break;
+                }
+            }
+            throw new TypeException("Cannot join " + left.getType() + " . " + right.getType());
         }
 
         @Override
@@ -413,8 +448,8 @@ public class TypeAnalyzer implements Analyzer {
 
             // TODO: check for primitives
             return put(intersectionType, inter(
-                    downcastTo(left, intersectionType.getCommonSuperType()),
-                    downcastTo(right, intersectionType.getCommonSuperType())));
+                    downcastTo(left, intersectionType.getCommonSupertype()),
+                    downcastTo(right, intersectionType.getCommonSupertype())));
         }
 
         @Override
@@ -424,12 +459,12 @@ public class TypeAnalyzer implements Analyzer {
 
             Type unionType = unionType(left.getType(), right.getType());
 
-            if (unionType.getCommonSuperType() == null) {
+            if (unionType.getCommonSupertype() == null) {
                 throw new TypeException("Cannot " + left.getType() + " ++ " + right.getType());
             }
             return put(unionType, union(
-                    upcastTo(left, unionType.getCommonSuperType()),
-                    upcastTo(right, unionType.getCommonSuperType())));
+                    upcastTo(left, unionType.getCommonSupertype()),
+                    upcastTo(right, unionType.getCommonSupertype())));
         }
 
         @Override
@@ -558,7 +593,8 @@ public class TypeAnalyzer implements Analyzer {
 
         @Override
         public TypedExpr<?> visit(AstRefRelation ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            AstRef ref = ast.getRef();
+            return put(ref.getSourceType(), ref.getTargetType(), ast);
         }
     }
 
@@ -723,15 +759,7 @@ public class TypeAnalyzer implements Analyzer {
         }
 
         public ProductType getCommonSupertype() {
-            return type.getCommonSuperType();
-        }
-
-        public boolean isBasicType() {
-            return type.isBasicType();
-        }
-
-        public ProductType getBasicType() {
-            return type.getBasicType();
+            return type.getCommonSupertype();
         }
 
         public T getExpr() {

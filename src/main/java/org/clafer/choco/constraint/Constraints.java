@@ -9,6 +9,7 @@ import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
+import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
@@ -274,6 +275,18 @@ public class Constraints {
      */
     public static Constraint reifyNotEqual(BoolVar reify, IntVar v1, IntVar v2) {
         return new ReifyEqualXY(reify, false, v1, v2);
+    }
+
+    /**
+     * A constraint enforcing {@code count = (Σ_i array[i] != value)}.
+     *
+     * @param value the value
+     * @param array the array
+     * @param count the count
+     * @return constraint {@code count = (Σ_i array[i] != value)}
+     */
+    public static Constraint countNotEqual(int value, IntVar[] array, IntVar count) {
+        return new Constraint("countNotEqual", new PropCountNotEqual(value, array, count));
     }
 
     /**

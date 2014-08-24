@@ -486,7 +486,7 @@ public class Analysis {
     }
 
     public ProductType getCommonSupertype(AstExpr expr) {
-        return notNull(expr.toString(), "Type", getTypeMap().get(expr)).getCommonSuperType();
+        return notNull(expr.toString(), "Type", getTypeMap().get(expr)).getCommonSupertype();
     }
 
     public Map<AstExpr, Type> getTypeMap() {

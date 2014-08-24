@@ -29,6 +29,7 @@ import org.clafer.ir.IrConcat;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrDiv;
 import org.clafer.domain.Domain;
+import org.clafer.ir.IrCountNotEqual;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrStringElement;
 import org.clafer.ir.IrExpr;
@@ -1188,10 +1189,21 @@ public class IrCompiler {
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {
                 IntVar count = numIntVar("Count", ir.getDomain());
-                post(_count(ir.getValue(), array, count));
+                post(ICF.count(ir.getValue(), array, count));
                 return count;
             }
-            return _count(ir.getValue(), array, reify);
+            return ICF.count(ir.getValue(), array, reify);
+        }
+
+        @Override
+        public Object visit(IrCountNotEqual ir, IntVar reify) {
+            IntVar[] array = compile(ir.getArray());
+            if (reify == null) {
+                IntVar count = numIntVar("CountNotEqual", ir.getDomain());
+                post(Constraints.countNotEqual(ir.getValue(), array, count));
+                return count;
+            }
+            return Constraints.countNotEqual(ir.getValue(), array, reify);
         }
 
         @Override
@@ -1687,10 +1699,6 @@ public class IrCompiler {
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
         return ICF.element(value, array, index, 0);
-    }
-
-    private static Constraint _count(int value, IntVar[] array, IntVar count) {
-        return ICF.count(value, array, count);
     }
 
     private static Constraint _equal(CSetVar var1, CSetVar var2) {

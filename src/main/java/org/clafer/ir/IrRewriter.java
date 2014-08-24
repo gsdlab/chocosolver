@@ -478,6 +478,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrCountNotEqual ir, T a) {
+        IrIntExpr[] array = rewrite(ir.getArray(), a);
+        return changed(ir.getArray(), array)
+                ? count(ir.getValue(), array)
+                : ir;
+    }
+
+    @Override
     public IrIntExpr visit(IrSetSum ir, T a) {
         IrSetExpr set = rewrite(ir.getSet(), a);
         return changed(ir.getSet(), set)

@@ -3,12 +3,6 @@ package org.clafer.ast;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import org.clafer.ast.AstBoolClafer;
-import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstIntClafer;
-import org.clafer.ast.AstPrimClafer;
-import org.clafer.ast.AstStringClafer;
-import org.clafer.ast.AstUtil;
 import org.clafer.collection.ArrayIterator;
 import org.clafer.common.Check;
 
@@ -21,11 +15,7 @@ public class ProductType implements Iterable<AstClafer> {
 
     private final AstClafer[] types;
 
-    public ProductType(AstClafer type) {
-        this.types = new AstClafer[]{Check.notNull(type)};
-    }
-
-    public ProductType(AstClafer[] types) {
+    public ProductType(AstClafer... types) {
         this.types = Check.noNullsNotEmpty(types);
     }
 

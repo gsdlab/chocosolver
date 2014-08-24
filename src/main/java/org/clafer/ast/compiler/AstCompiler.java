@@ -32,6 +32,7 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
+import org.clafer.ast.AstJJoin;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -90,6 +91,7 @@ import org.clafer.ir.IrBoolVar;
 import org.clafer.domain.Domain;
 import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrExpr;
+import org.clafer.ir.IrIntArray;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
@@ -249,37 +251,6 @@ public class AstCompiler {
         IrIntExpr softSum = add(softVars.values());
         IrIntVar sumSoftVars = domainInt("SumSoftVar", softSum.getDomain());
         module.addConstraint(equal(sumSoftVars, softSum));
-
-        List<IrSetExpr> deploys = new ArrayList<>();
-        List<IrIntExpr> deployedTo = new ArrayList<>();
-        for (AstConcreteClafer c : analysis.getConcreteClafers()) {
-            if (c.getName().equals("c0_deploys")) {
-                AstClafer parent = c.getParent();
-                int scope = getScope(parent);
-                int targetScope = getScope(c.getRef().getTargetType());
-                for (int j = 0; j < scope; j++) {
-                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    AstSetExpr jo = Asts.join(Asts.$this(), c);
-                    analysis.getTypeMap().put(jo, Type.basicType(c));
-                    deploys.add((IrSetExpr) expressionCompiler.compile(Asts.joinRef(jo)));
-                }
-                System.out.println(c.getRef().getTargetType() + " : " + targetScope);
-                deploys.add(set("deploysUnused", 0, targetScope));
-            } else if (c.getName().equals("c0_deployedTo")) {
-                AstClafer parent = c.getParent();
-                int scope = getScope(parent);
-                int targetScope = getScope(c.getRef().getTargetType());
-                for (int j = 0; j < scope; j++) {
-                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    AstSetExpr jo = Asts.join(Asts.$this(), c);
-                    analysis.getTypeMap().put(jo, Type.basicType(c));
-                    deployedTo.add((IrIntExpr) expressionCompiler.compile(Asts.joinRef(jo)));
-                }
-            }
-        }
-        module.addConstraint(intChannel(
-                deployedTo.toArray(new IrIntExpr[]{}),
-                deploys.toArray(new IrSetExpr[]{})));
 
         for (IrSetVar[] childSet : siblingSets.values()) {
             module.addVariables(childSet);
@@ -971,6 +942,32 @@ public class AstCompiler {
         }
 
         @Override
+        public IrExpr visit(AstJJoin ast, Void a) {
+            IrExpr left = compile(ast.getLeft());
+            IrIntArray right = (IrIntArray) compile(ast.getRight());
+            if (left instanceof IrIntExpr) {
+                IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
+                // Why uninitialized? The left var can contain unused.
+                return element(Util.snoc(right.getArray(), uninitialized), (IrIntExpr) left);
+            } else if (left instanceof IrSetExpr) {
+                IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
+                // Why uninitialized? The left var can contain unused.
+                return joinFunction((IrSetExpr) left, Util.snoc(right.getArray(), uninitialized), null);
+            } else if (left instanceof IrIntArray) {
+                IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getCommonSupertype().get(1)));
+                // Why uninitialized? The left var can contain unused.
+                IrIntExpr[] leftArray = ((IrIntArray) left).getArray();
+                IrIntExpr[] rightArray = Util.snoc(right.getArray(), uninitialized);
+                IrIntExpr[] join = new IrIntExpr[leftArray.length];
+                for (int i = 0; i < join.length; i++) {
+                    join[i] = element(rightArray, leftArray[i]);
+                }
+                return array(join);
+            }
+            throw new AstException();
+        }
+
+        @Override
         public IrExpr visit(AstJoin ast, Void a) {
             return doJoin(compile(ast.getLeft()), ast.getRight());
         }
@@ -1074,8 +1071,13 @@ public class AstCompiler {
             IrExpr set = compile(ast.getSet());
             if (set instanceof IrIntExpr) {
                 return One;
+            } else if (set instanceof IrSetExpr) {
+                return card((IrSetExpr) set);
             }
-            return card((IrSetExpr) set);
+            IrIntArray array = (IrIntArray) set;
+            Type type = getType(ast.getSet());
+            assert type.getCommonSupertype().arity() == 2;
+            return countNotEqual(getUninitalizedRef(type.getCommonSupertype().get(1)), array.getArray());
         }
 
         @Override
@@ -1468,7 +1470,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstRefRelation ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            return array(refPointers.get(ast.getRef()));
         }
     };
 

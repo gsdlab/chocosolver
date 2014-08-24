@@ -67,6 +67,10 @@ public class Asts {
         return new AstStringConstant(value);
     }
 
+    public static AstSetExpr join(AstSetExpr left, AstSetExpr right) {
+        return new AstJJoin(left, right);
+    }
+
     public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
         return new AstJoin(left, right);
     }

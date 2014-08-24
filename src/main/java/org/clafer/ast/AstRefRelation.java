@@ -14,7 +14,7 @@ public class AstRefRelation implements AstSetExpr {
         this.refRelation = Check.notNull(refRelation);
     }
 
-    public AstRef getRefRelation() {
+    public AstRef getRef() {
         return refRelation;
     }
 

@@ -1142,10 +1142,16 @@ public class Irs {
     }
 
     public static IrIntExpr add(int addend1, IrIntExpr addend2) {
+        if (addend1 == 0) {
+            return addend2;
+        }
         return add(constant(addend1), addend2);
     }
 
     public static IrIntExpr add(IrIntExpr addend1, int addend2) {
+        if (addend2 == 0) {
+            return addend1;
+        }
         return add(addend1, constant(addend2));
     }
 
@@ -1193,10 +1199,16 @@ public class Irs {
     }
 
     public static IrIntExpr sub(int minuend, IrIntExpr subtrahend) {
+        if(minuend == 0) {
+            return subtrahend;
+        }
         return sub(constant(minuend), subtrahend);
     }
 
     public static IrIntExpr sub(IrIntExpr minuend, int subtrahend) {
+        if(subtrahend == 0) {
+            return minuend;
+        }
         return sub(minuend, constant(subtrahend));
     }
 
@@ -1217,10 +1229,16 @@ public class Irs {
     }
 
     public static IrIntExpr mul(int multiplicand, IrIntExpr multiplier) {
+        if (multiplicand == 1) {
+            return multiplier;
+        }
         return mul(constant(multiplicand), multiplier);
     }
 
     public static IrIntExpr mul(IrIntExpr multiplicand, int multiplier) {
+        if (multiplier == 1) {
+            return multiplicand;
+        }
         return mul(multiplicand, constant(multiplier));
     }
 
@@ -1264,6 +1282,9 @@ public class Irs {
     }
 
     public static IrIntExpr div(IrIntExpr dividend, int divisor) {
+        if(divisor == 1) {
+            return dividend;
+        }
         return div(dividend, constant(divisor));
     }
 
@@ -1325,11 +1346,8 @@ public class Irs {
         List<IrIntExpr> filter = new ArrayList<>();
         int count = 0;
         for (IrIntExpr i : array) {
-            Integer constant = IrUtil.getConstant(i);
-            if (constant != null) {
-                if (constant == value) {
-                    count++;
-                }
+            if (i.equals(constant(value))) {
+                count++;
             } else if (i.getDomain().contains(value)) {
                 filter.add(i);
             }
@@ -1342,6 +1360,28 @@ public class Irs {
             default:
                 return add(
                         new IrCount(value, filter.toArray(new IrIntExpr[filter.size()]), boundDomain(0, filter.size())),
+                        count);
+        }
+    }
+
+    public static IrIntExpr countNotEqual(int value, IrIntExpr[] array) {
+        List<IrIntExpr> filter = new ArrayList<>();
+        int count = 0;
+        for (IrIntExpr i : array) {
+            if (!i.getDomain().contains(value)) {
+                count++;
+            } else if (!i.equals(constant(value))) {
+                filter.add(i);
+            }
+        }
+        switch (filter.size()) {
+            case 0:
+                return constant(count);
+            case 1:
+                return add(notEqual(value, filter.get(0)), count);
+            default:
+                return add(
+                        new IrCountNotEqual(value, filter.toArray(new IrIntExpr[filter.size()]), boundDomain(0, filter.size())),
                         count);
         }
     }
@@ -1860,6 +1900,17 @@ public class Irs {
         Domain ker = consequent.getKer().intersection(alternative.getKer());
         Domain card = consequent.getCard().union(alternative.getCard());
         return new IrSetTernary(antecedent, consequent, alternative, env, ker, card);
+    }
+
+    /**
+     *******************
+     *
+     * Array
+     *
+     *******************
+     */
+    public static IrIntArray array(IrIntExpr... array) {
+        return new IrIntArray(array);
     }
 
     /**

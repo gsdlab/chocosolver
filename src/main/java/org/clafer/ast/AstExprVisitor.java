@@ -17,6 +17,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstStringConstant ast, A a);
 
+    public B visit(AstJJoin ast, A a);
+
     public B visit(AstJoin ast, A a);
 
     public B visit(AstJoinParent ast, A a);
