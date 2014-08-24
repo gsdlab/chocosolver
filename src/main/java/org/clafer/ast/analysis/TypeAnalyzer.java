@@ -588,7 +588,11 @@ public class TypeAnalyzer implements Analyzer {
 
         @Override
         public TypedExpr<?> visit(AstChildRelation ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            AstConcreteClafer child = ast.getChildRelation();
+            if (!child.hasParent()) {
+                throw new TypeException(child + " does not have a parent");
+            }
+            return put(child.getParent(), child, ast);
         }
 
         @Override

@@ -58,7 +58,6 @@ import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
-import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
 import org.clafer.ast.JoinSetWithStringException;
 import org.clafer.ast.ProductType;
@@ -95,6 +94,7 @@ import org.clafer.ir.IrIntArray;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrSetArray;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringExpr;
@@ -944,27 +944,67 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstJJoin ast, Void a) {
             IrExpr left = compile(ast.getLeft());
-            IrIntArray right = (IrIntArray) compile(ast.getRight());
-            if (left instanceof IrIntExpr) {
-                IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
-                // Why uninitialized? The left var can contain unused.
-                return element(Util.snoc(right.getArray(), uninitialized), (IrIntExpr) left);
-            } else if (left instanceof IrSetExpr) {
-                IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
-                // Why uninitialized? The left var can contain unused.
-                return joinFunction((IrSetExpr) left, Util.snoc(right.getArray(), uninitialized), null);
-            } else if (left instanceof IrIntArray) {
-                IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getCommonSupertype().get(1)));
-                // Why uninitialized? The left var can contain unused.
-                IrIntExpr[] leftArray = ((IrIntArray) left).getArray();
-                IrIntExpr[] rightArray = Util.snoc(right.getArray(), uninitialized);
-                IrIntExpr[] join = new IrIntExpr[leftArray.length];
-                for (int i = 0; i < join.length; i++) {
-                    join[i] = element(rightArray, leftArray[i]);
+            IrExpr right = compile(ast.getRight());
+            if (right instanceof IrIntArray) {
+                IrIntExpr[] rightArray = ((IrIntArray) right).getArray();
+                if (left instanceof IrIntExpr) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
+                    // Why uninitialized? The left expression can contain unused.
+                    return element(Util.snoc(rightArray, uninitialized), (IrIntExpr) left);
+                } else if (left instanceof IrSetExpr) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
+                    // Why uninitialized? The left expression can contain unused.
+                    return joinFunction((IrSetExpr) left, Util.snoc(rightArray, uninitialized), null);
+                } else if (left instanceof IrIntArray) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getCommonSupertype().get(1)));
+                    // Why uninitialized? The left expression can contain unused.
+                    IrIntExpr[] leftArray = ((IrIntArray) left).getArray();
+                    rightArray = Util.snoc(rightArray, uninitialized);
+                    IrIntExpr[] join = new IrIntExpr[leftArray.length];
+                    for (int i = 0; i < join.length; i++) {
+                        join[i] = element(rightArray, leftArray[i]);
+                    }
+                    return array(join);
+                } else if (left instanceof IrSetArray) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getCommonSupertype().get(1)));
+                    // Why uninitialized? The left expression can contain unused.
+                    IrSetExpr[] leftArray = ((IrSetArray) left).getArray();
+                    rightArray = Util.snoc(rightArray, uninitialized);
+                    IrSetExpr[] join = new IrSetExpr[leftArray.length];
+                    for (int i = 0; i < join.length; i++) {
+                        // TODO global cardinality?
+                        join[i] = joinFunction(leftArray[i], rightArray, null);
+                    }
+                    return array(join);
                 }
-                return array(join);
+            } else if (right instanceof IrSetArray) {
+                // Why empty set? The left expression can contain unused.
+                IrSetExpr[] rightArray = Util.snoc(((IrSetArray) right).getArray(), EmptySet);
+                if (left instanceof IrIntExpr) {
+                    // TODO which relations are injective?
+                    return joinRelation(singleton((IrIntExpr) left), rightArray, false);
+                } else if (left instanceof IrSetExpr) {
+                    // TODO which relations are injective?
+                    return joinRelation((IrSetExpr) left, rightArray, false);
+                } else if (left instanceof IrIntArray) {
+                    IrIntExpr[] leftArray = ((IrIntArray) left).getArray();
+                    IrSetExpr[] join = new IrSetExpr[leftArray.length];
+                    for (int i = 0; i < join.length; i++) {
+                        // TODO which relations are injective?
+                        join[i] = joinRelation(singleton(leftArray[i]), rightArray, false);
+                    }
+                    return array(join);
+                } else if(left instanceof IrSetArray) {
+                    IrSetExpr[] leftArray = ((IrSetArray) left).getArray();
+                    IrSetExpr[] join = new IrSetExpr[leftArray.length];
+                    for (int i = 0; i < join.length; i++) {
+                        // TODO which relations are injective?
+                        join[i] = joinRelation(leftArray[i], rightArray, false);
+                    }
+                    return array(join);
+                }
             }
-            throw new AstException();
+            throw new AstException(left.getClass() + " : " + right.getClass());
         }
 
         @Override
@@ -1073,11 +1113,18 @@ public class AstCompiler {
                 return One;
             } else if (set instanceof IrSetExpr) {
                 return card((IrSetExpr) set);
+            } else if (set instanceof IrIntArray) {
+                IrIntExpr[] array = ((IrIntArray) set).getArray();
+                Type type = getType(ast.getSet());
+                assert type.getCommonSupertype().arity() == 2;
+                return countNotEqual(getUninitalizedRef(type.getCommonSupertype().get(1)), array);
             }
-            IrIntArray array = (IrIntArray) set;
-            Type type = getType(ast.getSet());
-            assert type.getCommonSupertype().arity() == 2;
-            return countNotEqual(getUninitalizedRef(type.getCommonSupertype().get(1)), array.getArray());
+            IrSetExpr[] array = ((IrSetArray) set).getArray();
+            IrIntExpr[] cards = new IrIntExpr[array.length];
+            for (int i = 0; i < cards.length; i++) {
+                cards[i] = card(array[i]);
+            }
+            return add(cards);
         }
 
         @Override
@@ -1114,6 +1161,20 @@ public class AstCompiler {
                         return equal(stringLeft, stringRight);
                     case NotEqual:
                         return notEqual(stringLeft, stringRight);
+                }
+            }
+
+            if (left instanceof IrIntArray) {
+                IrIntExpr[] leftArray = ((IrIntArray) left).getArray();
+                if (right instanceof IrIntArray) {
+                    IrIntExpr[] rightArray = ((IrIntArray) right).getArray();
+                    return equal(leftArray, rightArray);
+                }
+            } else if(left instanceof IrSetArray) {
+                IrSetExpr[] leftArray = ((IrSetArray) left).getArray();
+                if (right instanceof IrSetArray) {
+                    IrSetExpr[] rightArray = ((IrSetArray) right).getArray();
+                    return equal(leftArray, rightArray);
                 }
             }
 
@@ -1465,7 +1526,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstChildRelation ast, Void a) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            return array(siblingSets.get(ast.getChildRelation()));
         }
 
         @Override

@@ -22,6 +22,52 @@ public class RelationalTest {
 
     /**
      * <pre>
+     * A ->> B *
+     * B ->> A *
+     * [ (A -> B) = (A -> B) . (B -> A) . (A -> B) ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testFunctionEquality() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = model.addChild("B");
+        a.refTo(b);
+        b.refTo(a);
+        model.addConstraint(equal(
+                relation(a.getRef()),
+                join(join(relation(a.getRef()), relation(b.getRef())), relation(a.getRef()))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
+        assertEquals(35, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A *
+     *     B ->> A *
+     *     C ->> A *
+     * [ (A -> B) . (B -> A) = (A -> C) . (C -> A)]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRelationEquality() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B").refTo(a);
+        AstConcreteClafer c = a.addChild("C").refTo(a);
+        model.addConstraint(equal(
+                join(relation(b), relation(b.getRef())),
+                join(relation(c), relation(c.getRef()))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
+        assertEquals(362, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * Cost ->> int *
      * [ #(Cost -> int) = 2 ]
      * </pre>
@@ -31,7 +77,7 @@ public class RelationalTest {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").refTo(IntType);
-        model.addConstraint(equal(card(relation(cost.getRef())), constant(2)));
+        model.addConstraint(equal(card(relation(cost.getRef())), 2));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
         assertEquals(28, solver.allInstances().length);
@@ -50,10 +96,10 @@ public class RelationalTest {
 
         AstConcreteClafer product = model.addChild("Product");
         AstConcreteClafer feature = product.addChild("Feature");
-        model.addConstraint(equal(card(relation(feature)), constant(3)));
+        model.addConstraint(equal(card(relation(feature)), 3));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(28, solver.allInstances().length);
+        assertEquals(6, solver.allInstances().length);
     }
 
     /**
@@ -67,7 +113,7 @@ public class RelationalTest {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").refTo(IntType).withCard(Mandatory);
-        model.addConstraint(equal(join(global(cost), relation(cost.getRef())), constant(2)));
+        model.addConstraint(equal(join(global(cost), relation(cost.getRef())), 2));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
         while (solver.find()) {
@@ -77,6 +123,25 @@ public class RelationalTest {
             }
         }
         assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * Product
+     *     Feature *
+     * [ #(Product . (Product -> Feature)) = 3 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSingeletonJoinRelation() {
+        AstModel model = newModel();
+
+        AstConcreteClafer product = model.addChild("Product").withCard(Mandatory);
+        AstConcreteClafer feature = product.addChild("Feature");
+        model.addConstraint(equal(card(join(global(product), relation(feature))), 3));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
+        assertEquals(1, solver.allInstances().length);
     }
 
     /**
@@ -91,7 +156,7 @@ public class RelationalTest {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").refTo(IntType);
-        model.addConstraint(equal(join(global(cost), relation(cost.getRef())), constant(2)));
+        model.addConstraint(equal(join(global(cost), relation(cost.getRef())), 2));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
         while (solver.find()) {
@@ -101,6 +166,25 @@ public class RelationalTest {
             }
         }
         assertEquals(3, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * Product
+     *     Feature *
+     * [ #(Product . (Product -> Feature)) = 3 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSetJoinRelation() {
+        AstModel model = newModel();
+
+        AstConcreteClafer product = model.addChild("Product");
+        AstConcreteClafer feature = product.addChild("Feature");
+        model.addConstraint(equal(card(join(global(product), relation(feature))), 3));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
+        assertEquals(6, solver.allInstances().length);
     }
 
     /**
@@ -116,7 +200,7 @@ public class RelationalTest {
 
         AstConcreteClafer feature = model.addChild("Feature").refTo(IntType);
         AstConcreteClafer product = model.addChild("Product").refTo(feature);
-        model.addConstraint(equal(card(join(relation(product.getRef()), relation(feature.getRef()))), constant(2)));
+        model.addConstraint(equal(card(join(relation(product.getRef()), relation(feature.getRef()))), 2));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-2).intHigh(2));
         while (solver.find()) {
@@ -124,10 +208,71 @@ public class RelationalTest {
             Set<Pair<Integer, Integer>> tuples = new HashSet<>();
             InstanceClafer[] fs = instance.getTopClafers(feature);
             for (InstanceClafer p : instance.getTopClafers(product)) {
-                tuples.add(new Pair<Integer, Integer>(p.getId(), (Integer) fs[(Integer) p.getRef().getValue()].getRef().getValue()));
+                tuples.add(new Pair<>(p.getId(), (Integer) fs[(Integer) p.getRef().getValue()].getRef().getValue()));
             }
             assert tuples.size() == 2;
         }
         assertEquals(45, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * A *
+     *     B *
+     * C ->> A *
+     * [ #((C -> A) . (A -> B)) = 3 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testFunctionJoinRelation() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B");
+        AstConcreteClafer c = model.addChild("C").refTo(a);
+        model.addConstraint(equal(card(join(relation(c.getRef()), relation(b))), 3));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(23, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A *
+     *     B ->> int
+     * [ #((A -> B) . (B -> int)) = 3 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRelationJoinFunction() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B").refTo(IntType);
+        model.addConstraint(equal(card(join(relation(b), relation(b.getRef()))), 3));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(165, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A *
+     *     B *
+     *         C *
+     * [ #((A -> B) . (B -> C)) = 3 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRelationJoinRelation() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B");
+        AstConcreteClafer c = b.addChild("C");
+        model.addConstraint(equal(card(join(relation(b), relation(c))), 3));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
+        assertEquals(37, solver.allInstances().length);
     }
 }

@@ -542,6 +542,17 @@ public class Irs {
         return equality(left, IrSetEquality.Op.Equal, right);
     }
 
+    public static IrBoolExpr equal(IrSetExpr[] left, IrSetExpr[] right) {
+        if (left.length != right.length) {
+            throw new IllegalArgumentException();
+        }
+        IrBoolExpr[] ands = new IrBoolExpr[left.length];
+        for (int i = 0; i < ands.length; i++) {
+            ands[i] = equal(left[i], right[i]);
+        }
+        return and(ands);
+    }
+
     public static IrBoolExpr equal(IrStringExpr left, IrStringExpr right) {
         return compare(left, IrStringCompare.Op.Equal, right);
     }
@@ -1911,6 +1922,10 @@ public class Irs {
      */
     public static IrIntArray array(IrIntExpr... array) {
         return new IrIntArray(array);
+    }
+
+    public static IrSetArray array(IrSetExpr... array) {
+        return new IrSetArray(array);
     }
 
     /**
