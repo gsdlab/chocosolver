@@ -22,9 +22,9 @@ public class RelationalTest {
 
     /**
      * <pre>
-     * A ->> B *
-     * B ->> A *
-     * [ (A -> B) = (A -> B) . (B -> A) . (A -> B) ]
+     * A *
+     *     B -> A*
+     * [ (B -> parent) = (B -> ref) ]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -32,15 +32,11 @@ public class RelationalTest {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A");
-        AstConcreteClafer b = model.addChild("B");
-        a.refTo(b);
-        b.refTo(a);
-        model.addConstraint(equal(
-                relation(a.getRef()),
-                join(join(relation(a.getRef()), relation(b.getRef())), relation(a.getRef()))));
+        AstConcreteClafer b = a.addChild("B").refTo(a);
+        model.addConstraint(equal(parent(b), ref(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(35, solver.allInstances().length);
+        assertEquals(18, solver.allInstances().length);
     }
 
     /**

@@ -35,6 +35,7 @@ import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstNot;
+import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
@@ -593,6 +594,15 @@ public class TypeAnalyzer implements Analyzer {
                 throw new TypeException(child + " does not have a parent");
             }
             return put(child.getParent(), child, ast);
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstParentRelation ast, Void a) {
+            AstConcreteClafer child = ast.getParentRelation();
+            if (!child.hasParent()) {
+                throw new TypeException(child + " does not have a parent");
+            }
+            return put(child, child.getParent(), ast);
         }
 
         @Override

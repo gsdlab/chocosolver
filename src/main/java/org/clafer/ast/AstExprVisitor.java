@@ -27,6 +27,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstChildRelation ast, A a);
 
+    public B visit(AstParentRelation ast, A a);
+
     public B visit(AstRefRelation ast, A a);
 
     public B visit(AstNot ast, A a);

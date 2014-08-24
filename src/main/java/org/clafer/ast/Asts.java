@@ -91,6 +91,14 @@ public class Asts {
         return new AstChildRelation(child);
     }
 
+    public static AstSetExpr parent(AstConcreteClafer child) {
+        return new AstParentRelation(child);
+    }
+
+    public static AstSetExpr ref(AstClafer source) {
+        return relation(source.getRef());
+    }
+
     public static AstSetExpr relation(AstRef ref) {
         return new AstRefRelation(ref);
     }

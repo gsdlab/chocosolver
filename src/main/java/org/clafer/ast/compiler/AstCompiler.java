@@ -42,6 +42,7 @@ import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
+import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
@@ -994,7 +995,7 @@ public class AstCompiler {
                         join[i] = joinRelation(singleton(leftArray[i]), rightArray, false);
                     }
                     return array(join);
-                } else if(left instanceof IrSetArray) {
+                } else if (left instanceof IrSetArray) {
                     IrSetExpr[] leftArray = ((IrSetArray) left).getArray();
                     IrSetExpr[] join = new IrSetExpr[leftArray.length];
                     for (int i = 0; i < join.length; i++) {
@@ -1170,7 +1171,7 @@ public class AstCompiler {
                     IrIntExpr[] rightArray = ((IrIntArray) right).getArray();
                     return equal(leftArray, rightArray);
                 }
-            } else if(left instanceof IrSetArray) {
+            } else if (left instanceof IrSetArray) {
                 IrSetExpr[] leftArray = ((IrSetArray) left).getArray();
                 if (right instanceof IrSetArray) {
                     IrSetExpr[] rightArray = ((IrSetArray) right).getArray();
@@ -1527,6 +1528,11 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstChildRelation ast, Void a) {
             return array(siblingSets.get(ast.getChildRelation()));
+        }
+
+        @Override
+        public IrExpr visit(AstParentRelation ast, Void a) {
+            return array(parentPointers.get(ast.getParentRelation()));
         }
 
         @Override
