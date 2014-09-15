@@ -49,8 +49,10 @@ import solver.constraints.binary.PropEqualX_YC;
 import solver.constraints.binary.PropGreaterOrEqualX_Y;
 import solver.constraints.nary.element.PropElementV_fast;
 import solver.constraints.nary.sum.PropSumEq;
+import solver.constraints.set.PropElement;
 import solver.constraints.set.PropIntersection;
 import solver.constraints.set.PropSubsetEq;
+import solver.constraints.set.SCF;
 import solver.constraints.unary.PropEqualXC;
 import solver.constraints.unary.PropGreaterOrEqualXC;
 import solver.constraints.unary.PropLessOrEqualXC;
@@ -753,6 +755,17 @@ public class Constraints {
                 disjoint
                 ? sumEq(operandCards, unionCard)
                 : new PropSetUnionCard(operandCards, unionCard));
+    }
+
+    public static Constraint element(IntVar index, SetVar[] array, IntVar[] arrayCards, SetVar value, IntVar valueCard) {
+        if(array.length != arrayCards.length) {
+            throw new IllegalArgumentException();
+        }
+        return new Constraint("element",
+                new PropElement(index, array, 0, value),
+                new PropElement(index, array, 0, value),
+                new PropElementV_fast(valueCard, arrayCards, index, 0, true),
+                new PropElementV_fast(valueCard, arrayCards, index, 0, true));
     }
 
     /**

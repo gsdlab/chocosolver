@@ -1568,6 +1568,55 @@ public class Irs {
         }
     }
 
+//    public static IrSetExpr element(IrSetExpr[] array, IrIntExpr index) {
+//        IrSetExpr[] $array = index.getDomain().getHighBound() + 1 < array.length
+//                ? Arrays.copyOf(array, index.getDomain().getHighBound() + 1)
+//                : array.clone();
+//        for (int i = 0; i < $array.length; i++) {
+//            if (!index.getDomain().contains(i)) {
+//                $array[i] = EmptySet;
+//            }
+//        }
+//
+//        Integer constant = IrUtil.getConstant(index);
+//        if (constant != null) {
+//            return $array[constant];
+//        }
+//        TIntIterator iter = index.getDomain().iterator();
+//        assert iter.hasNext();
+//
+//        int val = iter.next();
+//        Domain env = $array[val].getEnv();
+//        Domain ker = $array[val].getKer();
+//        Domain card = $array[val].getCard();
+//        while (iter.hasNext()) {
+//            val = iter.next();
+//            if (val < $array.length) {
+//                env = env.union($array[val].getEnv());
+//                ker = ker.intersection($array[val].getKer());
+//                card = card.union($array[val].getCard());
+//            }
+//        }
+//        return new IrSetElement($array, index, env, ker, card);
+//    }
+    public static IrSetExpr element(IrSetArrayExpr array, IrIntExpr index) {
+        // TODO bound for other element calls
+        TIntIterator iter = index.getDomain().boundBetween(0, array.length() - 1).iterator();
+        assert iter.hasNext();
+
+        int val = iter.next();
+        Domain env = array.getEnvs()[val];
+        Domain ker = array.getKers()[val];
+        Domain card = array.getCards()[val];
+        while (iter.hasNext()) {
+            val = iter.next();
+            env = env.union(array.getEnvs()[val]);
+            ker = ker.intersection(array.getKers()[val]);
+            card = card.union(array.getCards()[val]);
+        }
+        return new IrSetElement(array, index, env, ker, card);
+    }
+
     /**
      * Relational join.
      *
@@ -1924,8 +1973,8 @@ public class Irs {
         return new IrIntArray(array);
     }
 
-    public static IrSetArray array(IrSetExpr... array) {
-        return new IrSetArray(array);
+    public static IrSetArrayExpr array(IrSetExpr... array) {
+        return new IrSetArrayVar(array);
     }
 
     /**

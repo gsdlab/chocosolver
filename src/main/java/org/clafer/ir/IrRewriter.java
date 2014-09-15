@@ -11,7 +11,8 @@ import static org.clafer.ir.Irs.*;
 public abstract class IrRewriter<T>
         implements IrIntExprVisitor<T, IrIntExpr>,
         IrSetExprVisitor<T, IrSetExpr>,
-        IrStringExprVisitor<T, IrStringExpr> {
+        IrStringExprVisitor<T, IrStringExpr>,
+        IrSetArrayExprVisitor<T, IrSetArrayExpr> {
 
     protected static <T> boolean changed(T t1, T t2) {
         if (t1 == t2) {
@@ -129,6 +130,10 @@ public abstract class IrRewriter<T>
             rewritten[i] = rewrite(exprs[i], t);
         }
         return rewritten;
+    }
+
+    public IrSetArrayExpr rewrite(IrSetArrayExpr expr, T t) {
+        return expr.accept(this, t);
     }
 
     @Override
@@ -538,6 +543,15 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrSetExpr visit(IrSetElement ir, T a) {
+        IrSetArrayExpr array = rewrite(ir.getArray(), a);
+        IrIntExpr index = rewrite(ir.getIndex(), a);
+        return changed(ir.getArray(), array) || changed(ir.getIndex(), index)
+                ? element(array, index)
+                : ir;
+    }
+
+    @Override
     public IrSetExpr visit(IrJoinRelation ir, T a) {
         IrSetExpr take = rewrite(ir.getTake(), a);
         IrSetExpr[] children = rewrite(ir.getChildren(), a);
@@ -634,5 +648,18 @@ public abstract class IrRewriter<T>
         return changed(ir.getArray(), array) || changed(ir.getIndex(), index)
                 ? element(array, index)
                 : ir;
+    }
+
+    @Override
+    public IrSetArrayExpr visit(IrSetArrayVar ir, T a) {
+        IrSetExpr[] array = rewrite(ir.getArray(), a);
+        return changed(ir.getArray(), array)
+                ? array(array)
+                : ir;
+    }
+
+    @Override
+    public IrSetArrayExpr visit(IrTransitiveClosure ir, T a) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

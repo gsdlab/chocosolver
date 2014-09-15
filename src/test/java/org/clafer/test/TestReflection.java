@@ -263,9 +263,9 @@ public class TestReflection {
         if (var instanceof IntVar) {
             return ((IntVar) var).getValue();
         } else if (var instanceof SetVar) {
-            return new TIntHashSet(((SetVar) var).getValue());
+            return new TIntHashSet(((SetVar) var).getValues());
         } else if (var instanceof CSetVar) {
-            return new TIntHashSet(((CSetVar) var).getSet().getValue());
+            return new TIntHashSet(((CSetVar) var).getSet().getValues());
         } else if (var instanceof CStringVar) {
             CStringVar string = (CStringVar) var;
             char[] chars = new char[string.getLength().getValue()];
@@ -301,12 +301,12 @@ public class TestReflection {
         } else if (var instanceof IntVar) {
             return ((IntVar) var).getValue();
         } else if (var instanceof SetVar) {
-            int[] set = ((SetVar) var).getValue();
+            int[] set = ((SetVar) var).getValues();
             return int[].class.equals(type)
                     ? set
                     : new TIntHashSet(set);
         } else if (var instanceof CSetVar) {
-            int[] set = ((CSetVar) var).getSet().getValue();
+            int[] set = ((CSetVar) var).getSet().getValues();
             return int[].class.equals(type)
                     ? set
                     : new TIntHashSet(set);

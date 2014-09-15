@@ -56,6 +56,7 @@ import org.clafer.ast.AstSuffix;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
+import org.clafer.ast.AstTransitiveClosure;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
@@ -95,7 +96,8 @@ import org.clafer.ir.IrIntArray;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrSetArray;
+import org.clafer.ir.IrSetArrayExpr;
+import org.clafer.ir.IrSetArrayVar;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringExpr;
@@ -1538,6 +1540,11 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstRefRelation ast, Void a) {
             return array(refPointers.get(ast.getRef()));
+        }
+
+        @Override
+        public IrExpr visit(AstTransitiveClosure ast, Void a) {
+            throw new Error();
         }
     };
 

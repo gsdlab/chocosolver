@@ -48,6 +48,7 @@ import org.clafer.ast.AstSuffix;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
+import org.clafer.ast.AstTransitiveClosure;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
@@ -609,6 +610,17 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<?> visit(AstRefRelation ast, Void a) {
             AstRef ref = ast.getRef();
             return put(ref.getSourceType(), ref.getTargetType(), ast);
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstTransitiveClosure ast, Void a) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            if (relation.getCommonSupertype().arity() == 2) {
+                if (relation.getCommonSupertype().get(0).equals(relation.getCommonSupertype().get(1))) {
+                    return put(relation.getType(), transitiveClosure(relation.getExpr()));
+                }
+            }
+            throw new TypeException(relation + " cannot be transitively closed");
         }
     }
 

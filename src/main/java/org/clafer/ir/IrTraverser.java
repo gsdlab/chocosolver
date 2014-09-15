@@ -8,7 +8,8 @@ package org.clafer.ir;
 public abstract class IrTraverser<T>
         implements IrIntExprVisitor<T, Void>,
         IrSetExprVisitor<T, Void>,
-        IrStringExprVisitor<T, Void> {
+        IrStringExprVisitor<T, Void>,
+        IrSetArrayExprVisitor<T, Void> {
 
     public void traverse(IrModule module, T a) {
         for (IrBoolExpr constraint : module.getConstraints()) {
@@ -60,6 +61,10 @@ public abstract class IrTraverser<T>
         for (IrStringExpr expr : exprs) {
             traverse(expr, a);
         }
+    }
+
+    public void traverse(IrSetArrayExpr expr, T a) {
+        expr.accept(this, a);
     }
 
     @Override
@@ -369,6 +374,13 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrSetElement ir, T a) {
+        traverse(ir.getArray(), a);
+        traverse(ir.getIndex(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrJoinRelation ir, T a) {
         traverse(ir.getTake(), a);
         traverse(ir.getChildren(), a);
@@ -438,5 +450,16 @@ public abstract class IrTraverser<T>
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
         return null;
+    }
+
+    @Override
+    public Void visit(IrSetArrayVar ir, T a) {
+        traverse(ir.getArray(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrTransitiveClosure ir, T a) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

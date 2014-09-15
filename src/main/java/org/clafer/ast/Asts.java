@@ -87,22 +87,6 @@ public class Asts {
         return new AstJoinRef(deref);
     }
 
-    public static AstSetExpr relation(AstConcreteClafer child) {
-        return new AstChildRelation(child);
-    }
-
-    public static AstSetExpr parent(AstConcreteClafer child) {
-        return new AstParentRelation(child);
-    }
-
-    public static AstSetExpr ref(AstClafer source) {
-        return relation(source.getRef());
-    }
-
-    public static AstSetExpr relation(AstRef ref) {
-        return new AstRefRelation(ref);
-    }
-
     public static AstBoolExpr not(AstBoolExpr expr) {
         return new AstNot(expr);
     }
@@ -405,5 +389,25 @@ public class Asts {
 
     public static AstBoolExpr suffix(AstSetExpr suffix, AstSetExpr word) {
         return new AstSuffix(suffix, word);
+    }
+
+    public static AstSetExpr relation(AstConcreteClafer child) {
+        return new AstChildRelation(child);
+    }
+
+    public static AstSetExpr parent(AstConcreteClafer child) {
+        return new AstParentRelation(child);
+    }
+
+    public static AstSetExpr ref(AstClafer source) {
+        return relation(source.getRef());
+    }
+
+    public static AstSetExpr relation(AstRef ref) {
+        return new AstRefRelation(ref);
+    }
+
+    public static AstSetExpr transitiveClosure(AstSetExpr relation) {
+        return new AstTransitiveClosure(relation);
     }
 }

@@ -60,7 +60,11 @@ import org.clafer.ir.IrOr;
 import org.clafer.ir.IrPrefix;
 import org.clafer.ir.IrRegister;
 import org.clafer.ir.IrSelectN;
+import org.clafer.ir.IrSetArrayExpr;
+import org.clafer.ir.IrSetArrayExprVisitor;
+import org.clafer.ir.IrSetArrayVar;
 import org.clafer.ir.IrSetDifference;
+import org.clafer.ir.IrSetElement;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetExprVisitor;
 import org.clafer.ir.IrSetIntersection;
@@ -80,6 +84,7 @@ import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrSuffix;
 import org.clafer.ir.IrTernary;
+import org.clafer.ir.IrTransitiveClosure;
 import org.clafer.ir.IrUnreachable;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
@@ -198,6 +203,7 @@ public class IrCompiler {
     private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<>();
     private final Map<IrSetExpr, CSetVar> cachedCommonSetSubexpressions = new HashMap<>();
     private final Map<IrStringExpr, CStringVar> cachedCommonStringSubexpressions = new HashMap<>();
+    private final Map<IrSetArrayExpr, CSetVar[]> cachedCommonSetArraySubexpressions = new HashMap<>();
 
     private void post(Constraint constraint) {
         assert (!solver.TRUE.equals(constraint));
@@ -686,14 +692,14 @@ public class IrCompiler {
     }
 
     private CStringVar compile(IrStringExpr expr) {
-        CStringVar set = cachedCommonStringSubexpressions.get(expr);
-        if (set == null) {
-            set = (CStringVar) expr.accept(stringExprCompiler, null);
+        CStringVar string = cachedCommonStringSubexpressions.get(expr);
+        if (string == null) {
+            string = (CStringVar) expr.accept(stringExprCompiler, null);
             if (commonSubexpressions.contains(expr)) {
-                cachedCommonStringSubexpressions.put(expr, set);
+                cachedCommonStringSubexpressions.put(expr, string);
             }
         }
-        return set;
+        return string;
     }
 
     private CStringVar[] compile(IrStringExpr[] exprs) {
@@ -703,6 +709,18 @@ public class IrCompiler {
         }
         return vars;
     }
+
+    private CSetVar[] compile(IrSetArrayExpr expr) {
+        CSetVar[] sets = cachedCommonSetArraySubexpressions.get(expr);
+        if (sets == null) {
+            sets = (CSetVar[]) expr.accept(setArrayExprCompiler, null);
+            if (commonSubexpressions.contains(expr)) {
+                cachedCommonSetArraySubexpressions.put(expr, sets);
+            }
+        }
+        return sets;
+    }
+
     private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
 
         @Override
@@ -1436,6 +1454,18 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrSetElement ir, CSetVar reify) {
+            CSetVar[] array = compile(ir.getArray());
+            IntVar index = compile(ir.getIndex());
+            if (reify == null) {
+                CSetVar set = numCset("Element", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(Constraints.element(index, mapSet(array), mapCard(array), set.getSet(), set.getCard()));
+                return set;
+            }
+            return Constraints.element(index, mapSet(array), mapCard(array), reify.getSet(), reify.getCard());
+        }
+
+        @Override
         public Object visit(IrJoinRelation ir, CSetVar reify) {
             CSetVar take = compile(ir.getTake());
             CSetVar[] children = compile(ir.getChildren());
@@ -1543,7 +1573,7 @@ public class IrCompiler {
         }
     };
 
-    private IrStringExprVisitor<CStringVar, Object> stringExprCompiler = new IrStringExprVisitor<CStringVar, Object>() {
+    private final IrStringExprVisitor<CStringVar, Object> stringExprCompiler = new IrStringExprVisitor<CStringVar, Object>() {
 
         @Override
         public Object visit(IrStringVar ir, CStringVar reify) {
@@ -1589,6 +1619,19 @@ public class IrCompiler {
             return Constraints.element(index,
                     mapChars(array), mapLength(array),
                     reify.getChars(), reify.getLength());
+        }
+    };
+
+    private final IrSetArrayExprVisitor<IrSetVar[], Object> setArrayExprCompiler = new IrSetArrayExprVisitor<IrSetVar[], Object>() {
+
+        @Override
+        public Object visit(IrSetArrayVar ir, IrSetVar[] a) {
+            return compile(ir.getArray());
+        }
+
+        @Override
+        public Object visit(IrTransitiveClosure ir, IrSetVar[] a) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     };
 
@@ -1707,10 +1750,10 @@ public class IrCompiler {
 
     private static Constraint _not_equal(CSetVar var1, CSetVar var2) {
         if (var1.getSet().isInstantiated()) {
-            return Constraints.notEqual(var2.getSet(), var1.getSet().getValue());
+            return Constraints.notEqual(var2.getSet(), var1.getSet().getValues());
         }
         if (var2.getSet().isInstantiated()) {
-            return Constraints.notEqual(var1.getSet(), var2.getSet().getValue());
+            return Constraints.notEqual(var1.getSet(), var2.getSet().getValues());
         }
         return Constraints.notEqual(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
     }

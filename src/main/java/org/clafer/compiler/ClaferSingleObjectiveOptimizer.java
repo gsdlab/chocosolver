@@ -134,7 +134,7 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         }
         for (SetVar var : solutionMap.getIrSolution().getSetVars()) {
             if ((var.getTypeAndKind() & Variable.CSTE) == 0) {
-                if (!Arrays.equals(var.getValue(), firstSolution.getSetVal(var))) {
+                if (!Arrays.equals(var.getValues(), firstSolution.getSetVal(var))) {
                     return false;
                 }
             }

@@ -25,12 +25,6 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstJoinRef ast, A a);
 
-    public B visit(AstChildRelation ast, A a);
-
-    public B visit(AstParentRelation ast, A a);
-
-    public B visit(AstRefRelation ast, A a);
-
     public B visit(AstNot ast, A a);
 
     public B visit(AstMinus ast, A a);
@@ -74,4 +68,12 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstPrefix ast, A a);
 
     public B visit(AstSuffix ast, A a);
+
+    public B visit(AstChildRelation ast, A a);
+
+    public B visit(AstParentRelation ast, A a);
+
+    public B visit(AstRefRelation ast, A a);
+
+    public B visit(AstTransitiveClosure ast, A a);
 }

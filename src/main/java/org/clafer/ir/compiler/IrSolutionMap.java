@@ -146,7 +146,7 @@ public class IrSolutionMap {
         Either<int[], SetVar> setVar = getVar(var);
         return setVar.isLeft()
                 ? setVar.getLeft()
-                : setVar.getRight().getValue();
+                : setVar.getRight().getValues();
     }
 
     public int[][] getValues(IrSetVar... vars) {
