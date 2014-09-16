@@ -14,6 +14,7 @@ public class ClaferSolver implements ClaferSearch {
 
     private final Solver solver;
     private final ClaferSolutionMap solutionMap;
+    private final boolean restartAfterEachSolution;
     private int count = 0;
     private boolean more = true;
 
@@ -21,11 +22,17 @@ public class ClaferSolver implements ClaferSearch {
         this.solver = new Solver();
         this.solver.post(solver.FALSE);
         this.solutionMap = null;
+        this.restartAfterEachSolution = false;
     }
 
     ClaferSolver(Solver solver, ClaferSolutionMap solutionMap) {
+        this(solver, solutionMap, false);
+    }
+
+    ClaferSolver(Solver solver, ClaferSolutionMap solutionMap, boolean restartAfterEachSolution) {
         this.solver = Check.notNull(solver);
         this.solutionMap = Check.notNull(solutionMap);
+        this.restartAfterEachSolution = restartAfterEachSolution;
     }
 
     public ClaferSolutionMap getSolutionMap() {
@@ -37,7 +44,13 @@ public class ClaferSolver implements ClaferSearch {
         if (!more) {
             return false;
         }
-        more &= count == 0 ? solver.findSolution() : solver.nextSolution();
+        if (restartAfterEachSolution) {
+            solver.getEngine().flush();
+            solver.getSearchLoop().reset();
+            more &= solver.findSolution();
+        } else {
+            more &= count == 0 ? solver.findSolution() : solver.nextSolution();
+        }
         if (more) {
             count++;
         }
