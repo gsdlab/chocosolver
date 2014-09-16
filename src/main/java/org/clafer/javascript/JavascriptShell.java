@@ -14,7 +14,7 @@ import org.clafer.ast.Asts;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
-import org.clafer.compiler.ClaferOptions;
+import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearch;
 import org.clafer.compiler.ClaferUnsat;
 import org.clafer.instance.InstanceModel;
@@ -332,7 +332,7 @@ public class JavascriptShell {
 
     public static class Options implements Messagable {
 
-        private ClaferOptions options = ClaferOptions.Default;
+        private ClaferOption options = ClaferOption.Default;
 
         public String preferSmallerInstances() {
             options = options.preferSmallerInstances();

@@ -127,7 +127,7 @@ public class ClaferCompiler {
         }
     }
 
-    private static Maybe<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOptions options) {
+    private static Maybe<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOption options) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
@@ -152,10 +152,10 @@ public class ClaferCompiler {
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
-        return compile(in, scope, ClaferOptions.Default);
+        return compile(in, scope, ClaferOption.Default);
     }
 
-    public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOptions options) {
+    public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOption options) {
         try {
             Solver solver = new Solver();
             IrModule module = new IrModule();
@@ -175,10 +175,10 @@ public class ClaferCompiler {
     }
 
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective... objectives) {
-        return compile(in, scope, objectives, ClaferOptions.Default);
+        return compile(in, scope, objectives, ClaferOption.Default);
     }
 
-    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOptions options) {
+    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOption options) {
         try {
             Solver solver = new Solver();
             IrModule module = new IrModule();
@@ -213,10 +213,10 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope) {
-        return compileUnsat(in, scope.toScope(), ClaferOptions.Default);
+        return compileUnsat(in, scope.toScope(), ClaferOption.Default);
     }
 
-    public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOptions options) {
+    public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOption options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 

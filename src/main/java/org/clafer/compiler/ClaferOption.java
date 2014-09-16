@@ -8,7 +8,7 @@ package org.clafer.compiler;
  *
  * @author jimmy
  */
-public class ClaferOptions {
+public class ClaferOption {
 
     /*
      * true: prefer larger instances
@@ -28,11 +28,11 @@ public class ClaferOptions {
     /**
      * Use the default options.
      */
-    public static ClaferOptions Optimized = new ClaferOptions(false, false, false);
-    public static ClaferOptions Basic = new ClaferOptions(false, true, true);
-    public static ClaferOptions Default = Optimized;
+    public static ClaferOption Optimized = new ClaferOption(false, false, false);
+    public static ClaferOption Basic = new ClaferOption(false, true, true);
+    public static ClaferOption Default = Optimized;
 
-    private ClaferOptions(boolean preferSmallerInstances, boolean basicSymmetryBreaking, boolean basicOptimizations) {
+    private ClaferOption(boolean preferSmallerInstances, boolean basicSymmetryBreaking, boolean basicOptimizations) {
         this.preferSmallerInstances = preferSmallerInstances;
         this.basicSymmetryBreaking = basicSymmetryBreaking;
         this.basicOptimizations = basicOptimizations;
@@ -46,12 +46,12 @@ public class ClaferOptions {
         return !preferSmallerInstances;
     }
 
-    public ClaferOptions preferSmallerInstances() {
-        return new ClaferOptions(true, basicSymmetryBreaking, basicOptimizations);
+    public ClaferOption preferSmallerInstances() {
+        return new ClaferOption(true, basicSymmetryBreaking, basicOptimizations);
     }
 
-    public ClaferOptions preferLargerInstances() {
-        return new ClaferOptions(false, basicSymmetryBreaking, basicOptimizations);
+    public ClaferOption preferLargerInstances() {
+        return new ClaferOption(false, basicSymmetryBreaking, basicOptimizations);
     }
 
     public boolean isBasicSymmetryBreaking() {
@@ -62,12 +62,12 @@ public class ClaferOptions {
         return !basicSymmetryBreaking;
     }
 
-    public ClaferOptions basicSymmetryBreaking() {
-        return new ClaferOptions(preferSmallerInstances, true, basicOptimizations);
+    public ClaferOption basicSymmetryBreaking() {
+        return new ClaferOption(preferSmallerInstances, true, basicOptimizations);
     }
 
-    public ClaferOptions fullSymmetryBreaking() {
-        return new ClaferOptions(preferSmallerInstances, false, basicOptimizations);
+    public ClaferOption fullSymmetryBreaking() {
+        return new ClaferOption(preferSmallerInstances, false, basicOptimizations);
     }
 
     public boolean isBasicOptimizations() {
@@ -78,12 +78,12 @@ public class ClaferOptions {
         return !basicOptimizations;
     }
 
-    public ClaferOptions basicOptimizations() {
-        return new ClaferOptions(preferSmallerInstances, basicSymmetryBreaking, true);
+    public ClaferOption basicOptimizations() {
+        return new ClaferOption(preferSmallerInstances, basicSymmetryBreaking, true);
     }
 
-    public ClaferOptions fullOptimizations() {
-        return new ClaferOptions(preferSmallerInstances, basicSymmetryBreaking, false);
+    public ClaferOption fullOptimizations() {
+        return new ClaferOption(preferSmallerInstances, basicSymmetryBreaking, false);
     }
 
     public String toString() {
