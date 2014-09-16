@@ -116,7 +116,7 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         }
         IntVar scoreVar = score.getRight();
         int best = scoreVar.getValue();
-        // TODO: forbid the current solution from happening again.                                                 
+        // TODO: forbid the current solution from happening again.
         solver.getEngine().flush();
         solver.getSearchLoop().reset();
         solver.post(ICF.arithm(scoreVar, "=", best));
