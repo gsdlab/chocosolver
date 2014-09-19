@@ -554,7 +554,7 @@ public abstract class IrRewriter<T>
     @Override
     public IrSetExpr visit(IrJoinRelation ir, T a) {
         IrSetExpr take = rewrite(ir.getTake(), a);
-        IrSetExpr[] children = rewrite(ir.getChildren(), a);
+        IrSetArrayExpr children = rewrite(ir.getChildren(), a);
         return changed(ir.getTake(), take) || changed(ir.getChildren(), children)
                 ? joinRelation(take, children, ir.isInjective())
                 : ir;

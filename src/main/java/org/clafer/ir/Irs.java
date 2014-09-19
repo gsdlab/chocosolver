@@ -877,13 +877,11 @@ public class Irs {
         return strict ? sortStrict(array) : sort(array);
     }
 
-    public static IrBoolExpr sort(IrIntExpr[]  
-        ... strings) {
+    public static IrBoolExpr sort(IrIntExpr[]... strings) {
         return sortStrings(strings, false);
     }
 
-    public static IrBoolExpr sortStrict(IrIntExpr[]  
-        ... strings) {
+    public static IrBoolExpr sortStrict(IrIntExpr[]... strings) {
         return sortStrings(strings, true);
     }
 
@@ -1210,14 +1208,14 @@ public class Irs {
     }
 
     public static IrIntExpr sub(int minuend, IrIntExpr subtrahend) {
-        if(minuend == 0) {
+        if (minuend == 0) {
             return subtrahend;
         }
         return sub(constant(minuend), subtrahend);
     }
 
     public static IrIntExpr sub(IrIntExpr minuend, int subtrahend) {
-        if(subtrahend == 0) {
+        if (subtrahend == 0) {
             return minuend;
         }
         return sub(minuend, constant(subtrahend));
@@ -1293,7 +1291,7 @@ public class Irs {
     }
 
     public static IrIntExpr div(IrIntExpr dividend, int divisor) {
-        if(divisor == 1) {
+        if (divisor == 1) {
             return dividend;
         }
         return div(dividend, constant(divisor));
@@ -1627,18 +1625,16 @@ public class Irs {
      * @param injective
      * @return the join expression take.children
      */
-    public static IrSetExpr joinRelation(IrSetExpr take, IrSetExpr[] children, boolean injective) {
+    public static IrSetExpr joinRelation(IrSetExpr take, IrSetArrayExpr children, boolean injective) {
         if (take.getEnv().isEmpty()) {
             return EmptySet;
         }
-        IrSetExpr[] $children = take.getEnv().getHighBound() + 1 < children.length
-                ? Arrays.copyOf(children, take.getEnv().getHighBound() + 1)
-                : children.clone();
-        for (int i = 0; i < $children.length; i++) {
-            if (!take.getEnv().contains(i)) {
-                $children[i] = EmptySet;
-            }
-        }
+        IrSetArrayExpr $children = subArray(children, 0, take.getEnv().getHighBound() + 1);
+//        for (int i = 0; i < $children.length(); i++) {
+//            if (!take.getEnv().contains(i)) {
+//                $children[i] = EmptySet;
+//            }
+//        }
 
         IrIntExpr[] ints = IrUtil.asInts(children);
         if (ints != null) {
@@ -1650,7 +1646,8 @@ public class Irs {
             int[] array = constant.getValues();
             IrSetExpr[] to = new IrSetExpr[array.length];
             for (int i = 0; i < to.length; i++) {
-                to[i] = $children[array[i]];
+                // TODO optimize
+                to[i] = get($children, array[i]);
             }
             return union(to, injective);
         }
@@ -1659,9 +1656,9 @@ public class Irs {
         TIntIterator iter = take.getEnv().iterator();
         Domain env;
         if (iter.hasNext()) {
-            Domain domain = $children[iter.next()].getEnv();
+            Domain domain = $children.getEnvs()[iter.next()];
             while (iter.hasNext()) {
-                domain = domain.union($children[iter.next()].getEnv());
+                domain = domain.union($children.getEnvs()[iter.next()]);
             }
             env = domain;
         } else {
@@ -1672,9 +1669,9 @@ public class Irs {
         iter = take.getKer().iterator();
         Domain ker;
         if (iter.hasNext()) {
-            Domain domain = $children[iter.next()].getKer();
+            Domain domain = $children.getKers()[iter.next()];
             while (iter.hasNext()) {
-                domain = domain.union($children[iter.next()].getKer());
+                domain = domain.union($children.getKers()[iter.next()]);
             }
             ker = domain;
         } else {
@@ -1693,7 +1690,7 @@ public class Irs {
         iter = takeEnv.iterator();
         while (iter.hasNext()) {
             int val = iter.next();
-            Domain childDomain = $children[val].getCard();
+            Domain childDomain = $children.getCards()[val];
             if (takeKer.contains(val)) {
                 cardLow = injective
                         ? cardLow + childDomain.getLowBound()
@@ -1974,6 +1971,54 @@ public class Irs {
     }
 
     public static IrSetArrayExpr array(IrSetExpr... array) {
+        return new IrSetArrayVar(array);
+    }
+
+    public static IrSetExpr get(IrSetArrayExpr expr, int index) {
+        if (expr instanceof IrSetArrayVar) {
+            IrSetArrayVar var = (IrSetArrayVar) expr;
+            return var.getArray()[index];
+        }
+        return new IrSetGet(expr, index, expr.getEnvs()[index], expr.getKers()[index], expr.getCards()[index]);
+    }
+
+    public static IrSetArrayExpr subArray(IrSetArrayExpr expr, int from, int to) {
+        if (from == 0 && to == expr.length()) {
+            return expr;
+        }
+        IrSetExpr[] array = new IrSetExpr[to - from];
+        for (int i = from; i < to; i++) {
+            array[i - from] = get(expr, i);
+        }
+        return new IrSetArrayVar(array);
+    }
+
+    public static IrSetArrayExpr cons(IrSetExpr left, IrSetArrayExpr right) {
+        IrSetExpr[] array = new IrSetExpr[1 + right.length()];
+        array[0] = left;
+        for (int i = 0; i < right.length(); i++) {
+            array[1 + i] = get(right, i);
+        }
+        return new IrSetArrayVar(array);
+    }
+
+    public static IrSetArrayExpr snoc(IrSetArrayExpr left, IrSetExpr right) {
+        IrSetExpr[] array = new IrSetExpr[left.length() + 1];
+        for (int i = 0; i < left.length(); i++) {
+            array[i] = get(left, i);
+        }
+        array[left.length()] = right;
+        return new IrSetArrayVar(array);
+    }
+
+    public static IrSetArrayExpr concat(IrSetArrayExpr left, IrSetArrayExpr right) {
+        IrSetExpr[] array = new IrSetExpr[left.length() + right.length()];
+        for (int i = 0; i < left.length(); i++) {
+            array[i] = get(left, i);
+        }
+        for (int i = 0; i < right.length(); i++) {
+            array[left.length() + i] = get(right, i);
+        }
         return new IrSetArrayVar(array);
     }
 

@@ -27,7 +27,6 @@ public abstract class IrAbstractSetArray implements IrSetArrayExpr {
     @Override
     public int length() {
         return envDomains.length;
-
     }
 
     @Override

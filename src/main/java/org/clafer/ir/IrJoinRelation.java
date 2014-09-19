@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import org.clafer.domain.Domain;
-import java.util.Arrays;
 import org.clafer.common.Check;
 
 /**
@@ -11,13 +10,13 @@ import org.clafer.common.Check;
 public class IrJoinRelation extends IrAbstractSet {
 
     private final IrSetExpr take;
-    private final IrSetExpr[] children;
+    private final IrSetArrayExpr children;
     private final boolean injective;
 
-    IrJoinRelation(IrSetExpr take, IrSetExpr[] children, Domain env, Domain ker, Domain card, boolean injective) {
+    IrJoinRelation(IrSetExpr take, IrSetArrayExpr children, Domain env, Domain ker, Domain card, boolean injective) {
         super(env, ker, card);
         this.take = Check.notNull(take);
-        this.children = Check.noNulls(children);
+        this.children = Check.notNull(children);
         this.injective = injective;
     }
 
@@ -25,7 +24,7 @@ public class IrJoinRelation extends IrAbstractSet {
         return take;
     }
 
-    public IrSetExpr[] getChildren() {
+    public IrSetArrayExpr getChildren() {
         return children;
     }
 
@@ -42,18 +41,18 @@ public class IrJoinRelation extends IrAbstractSet {
     public boolean equals(Object obj) {
         if (obj instanceof IrJoinRelation) {
             IrJoinRelation other = (IrJoinRelation) obj;
-            return take.equals(other.take) && Arrays.equals(children, other.children) && injective == other.injective && super.equals(other);
+            return take.equals(other.take) && children.equals(other.children) && injective == other.injective;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return take.hashCode() ^ Arrays.hashCode(children) ^ (isInjective() ? 1 : 0);
+        return take.hashCode() ^ children.hashCode() ^ (isInjective() ? 1 : 0);
     }
 
     @Override
     public String toString() {
-        return take + " . " + Arrays.toString(children) + (isInjective() ? " where injective" : "");
+        return take + " . " + children + (isInjective() ? " where injective" : "");
     }
 }

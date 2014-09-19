@@ -53,6 +53,8 @@ import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrPrefix;
 import org.clafer.ir.IrRegister;
 import org.clafer.ir.IrSelectN;
+import org.clafer.ir.IrSetArrayExpr;
+import org.clafer.ir.IrSetArrayVar;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSetUnion;
@@ -77,6 +79,7 @@ import static org.clafer.ir.Irs.*;
 public class Coalescer {
 
     private Coalescer() {
+        System.out.println("joinRelation(singleton(");
     }
 
     public static Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesce(IrModule module) {
@@ -920,13 +923,16 @@ public class Coalescer {
 
         private void propagateJoinRelation(PartialSet left, IrJoinRelation right) {
             if (right.isInjective()) {
+                IrSetArrayExpr children = right.getChildren();
                 if (left.isEnvMask() || left.isCardMask()) {
-                    Domain env = left.getEnv();
-                    Domain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
-                    TIntIterator iter = right.getTake().getKer().iterator();
-                    PartialSet set = new PartialSet(env, null, card);
-                    while (iter.hasNext()) {
-                        propagateSet(set, right.getChildren()[iter.next()]);
+                    if (children instanceof IrSetArrayVar) {
+                        Domain env = left.getEnv();
+                        Domain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
+                        TIntIterator iter = right.getTake().getKer().iterator();
+                        PartialSet set = new PartialSet(env, null, card);
+                        while (iter.hasNext()) {
+                            propagateSet(set, ((IrSetArrayVar) children).getArray()[iter.next()]);
+                        }
                     }
                 }
                 if (left.isKerMask()) {
@@ -937,7 +943,7 @@ public class Coalescer {
                         int index = -1;
                         while (env.hasNext()) {
                             int j = env.next();
-                            if (right.getChildren()[j].getEnv().contains(val)) {
+                            if (children.getEnvs()[j].contains(val)) {
                                 if (index != -1) {
                                     index = -1;
                                     break;
@@ -947,13 +953,14 @@ public class Coalescer {
                         }
                         if (index != -1) {
                             propagateKer(constantDomain(index), right.getTake());
-                            propagateKer(constantDomain(val), right.getChildren()[index]);
+                            if (children instanceof IrSetArrayVar) {
+                                propagateKer(constantDomain(val), ((IrSetArrayVar) children).getArray()[index]);
+                            }
                         }
                     }
                 }
                 if (left.isCardMask()) {
                     IrSetExpr take = right.getTake();
-                    IrSetExpr[] children = right.getChildren();
                     int lb = left.getCard().getLowBound();
                     int ub = left.getCard().getHighBound();
                     int[] envLbs = new int[take.getEnv().size() - take.getKer().size()];
@@ -965,11 +972,11 @@ public class Coalescer {
                     while (iter.hasNext()) {
                         int i = iter.next();
                         if (take.getKer().contains(i)) {
-                            kerMinCard += children[i].getCard().getLowBound();
-                            kerMaxCard += children[i].getCard().getHighBound();
+                            kerMinCard += children.getCards()[i].getLowBound();
+                            kerMaxCard += children.getCards()[i].getHighBound();
                         } else {
-                            envLbs[env] = children[i].getCard().getLowBound();
-                            envUbs[env] = children[i].getCard().getHighBound();
+                            envLbs[env] = children.getCards()[i].getLowBound();
+                            envUbs[env] = children.getCards()[i].getHighBound();
                             env++;
                         }
                     }
@@ -987,13 +994,15 @@ public class Coalescer {
                     if (low > take.getCard().getLowBound() || high < take.getCard().getHighBound()) {
                         propagateCard(boundDomain(low, high), take);
                     }
-                    iter = take.getKer().iterator();
-                    while (iter.hasNext()) {
-                        int ker = iter.next();
-                        propagateCard(boundDomain(
-                                lb - kerMaxCard + children[ker].getCard().getHighBound(),
-                                ub - kerMinCard + children[ker].getCard().getLowBound()),
-                                children[ker]);
+                    if (children instanceof IrSetArrayVar) {
+                        iter = take.getKer().iterator();
+                        while (iter.hasNext()) {
+                            int ker = iter.next();
+                            propagateCard(boundDomain(
+                                    lb - kerMaxCard + children.getCards()[ker].getHighBound(),
+                                    ub - kerMinCard + children.getCards()[ker].getLowBound()),
+                                    ((IrSetArrayVar) children).getArray()[ker]);
+                        }
                     }
                 }
             }
@@ -1035,8 +1044,8 @@ public class Coalescer {
                 int low = Math.max(take.getKer().size(), card.getLowBound());
                 int high = Math.min(take.getEnv().size(),
                         right.hasGlobalCardinality()
-                        ? card.getHighBound() * right.getGlobalCardinality()
-                        : take.getCard().getHighBound());
+                                ? card.getHighBound() * right.getGlobalCardinality()
+                                : take.getCard().getHighBound());
                 if (low > take.getCard().getLowBound() || high < take.getCard().getHighBound()) {
                     propagateCard(boundDomain(low, high), take);
                 }
