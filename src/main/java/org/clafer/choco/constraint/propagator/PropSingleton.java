@@ -3,12 +3,13 @@ package org.clafer.choco.constraint.propagator;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -42,10 +43,10 @@ public class PropSingleton extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isIVar(vIdx)) {
-            return EventType.INT_ALL_MASK();
+            return IntEventType.all();
         }
         assert isSVar(vIdx);
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     @Override
@@ -75,7 +76,7 @@ public class PropSingleton extends Propagator<Variable> {
                 s.instantiateTo(new int[]{i.getValue()}, aCause);
             } else {
                 iD.freeze();
-                iD.forEach(pruneSOnIRem, EventType.REMOVE);
+                iD.forEachRemVal(pruneSOnIRem);
                 iD.unfreeze();
             }
         } else {
@@ -89,7 +90,7 @@ public class PropSingleton extends Propagator<Variable> {
                 s.instantiateTo(new int[]{val}, aCause);
             } else {
                 sD.freeze();
-                sD.forEach(pruneIOnSEnv, EventType.REMOVE_FROM_ENVELOPE);
+                sD.forEach(pruneIOnSEnv, SetEventType.REMOVE_FROM_ENVELOPE);
                 sD.unfreeze();
                 if (i.isInstantiated()) {
                     s.instantiateTo(new int[]{i.getValue()}, aCause);

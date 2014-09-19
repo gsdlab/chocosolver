@@ -4,9 +4,9 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -27,8 +27,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
 
     @Override
     protected int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask
-                + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     /*
@@ -182,7 +181,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
                 forwardPruneIJ(i, j);
                 backwardPruneJK(i, j);
             }
-        }, EventType.ADD_TO_KER);
+        }, SetEventType.ADD_TO_KER);
         relationD[i].forEach(new IntProcedure() {
 
             private static final long serialVersionUID = 1L;
@@ -191,7 +190,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
             public void execute(int k) throws ContradictionException {
                 onRemoveEnv(i, k);
             }
-        }, EventType.REMOVE_FROM_ENVELOPE);
+        }, SetEventType.REMOVE_FROM_ENVELOPE);
         relationD[i].unfreeze();
     }
 

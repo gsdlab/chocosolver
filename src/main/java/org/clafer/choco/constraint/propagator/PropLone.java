@@ -5,7 +5,7 @@ import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.BoolVar;
-import solver.variables.EventType;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -20,7 +20,7 @@ public class PropLone extends Propagator<BoolVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.INSTANTIATE.mask;
+        return IntEventType.instantiation();
     }
 
     private void clearAllBut(int exclude) throws ContradictionException {
@@ -46,7 +46,6 @@ public class PropLone extends Propagator<BoolVar> {
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        assert EventType.isInstantiate(mask);
         if (vars[idxVarInProp].getValue() == 1) {
             clearAllBut(idxVarInProp);
         }

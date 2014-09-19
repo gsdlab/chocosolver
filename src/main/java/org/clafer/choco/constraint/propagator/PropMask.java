@@ -3,9 +3,9 @@ package org.clafer.choco.constraint.propagator;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -49,7 +49,7 @@ public class PropMask extends Propagator<SetVar> {
 
     @Override
     protected int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     @Override
@@ -78,14 +78,14 @@ public class PropMask extends Propagator<SetVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
             setD.freeze();
-            setD.forEach(pickMaskedOnSetKer, EventType.ADD_TO_KER);
-            setD.forEach(pruneMaskedOnSetEnv, EventType.REMOVE_FROM_ENVELOPE);
+            setD.forEach(pickMaskedOnSetKer, SetEventType.ADD_TO_KER);
+            setD.forEach(pruneMaskedOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             setD.unfreeze();
         } else {
             assert isMaskedVar(idxVarInProp);
             maskedD.freeze();
-            maskedD.forEach(pickSetOnMaskedKer, EventType.ADD_TO_KER);
-            maskedD.forEach(pruneSetOnMaskedEnv, EventType.REMOVE_FROM_ENVELOPE);
+            maskedD.forEach(pickSetOnMaskedKer, SetEventType.ADD_TO_KER);
+            maskedD.forEach(pruneSetOnMaskedEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             maskedD.unfreeze();
         }
     }

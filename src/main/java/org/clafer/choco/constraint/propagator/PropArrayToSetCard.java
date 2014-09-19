@@ -6,9 +6,9 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.Variable;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -65,10 +65,10 @@ public class PropArrayToSetCard extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isAVar(vIdx)) {
-            return EventType.INSTANTIATE.mask;
+            return IntEventType.instantiation();
         }
         assert isSCardVar(vIdx);
-        return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+        return IntEventType.boundAndInst();
     }
 
     private int countAdditionalSameRefsAllowed(TIntIntHashMap map) {

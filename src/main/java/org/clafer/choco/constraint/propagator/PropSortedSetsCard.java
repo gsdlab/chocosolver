@@ -4,10 +4,11 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 
 /**
@@ -56,9 +57,9 @@ public class PropSortedSetsCard extends Propagator<Variable> {
     @Override
     protected int getPropagationConditions(int vIdx) {
         if (isCardVar(vIdx)) {
-            return EventType.BOUND.mask | EventType.INSTANTIATE.mask;
+            return IntEventType.all();
         }
-        return EventType.VOID.mask;
+        return SetEventType.VOID.getMask();
     }
 
     @Override

@@ -13,11 +13,12 @@ import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.exception.ContradictionException;
 import solver.propagation.IPropagationEngine;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Var;
 import solver.variables.Variable;
+import solver.variables.events.IEventType;
+import solver.variables.events.PropagatorEventType;
 
 /**
  *
@@ -600,7 +601,7 @@ public class PropUtilTest {
         }
 
         @Override
-        public void delayedPropagation(Propagator propagator, EventType type) throws ContradictionException {
+        public void delayedPropagation(Propagator propagator, PropagatorEventType type) throws ContradictionException {
         }
 
         @Override
@@ -622,7 +623,7 @@ public class PropUtilTest {
         }
 
         @Override
-        public void onVariableUpdate(Variable variable, EventType type, ICause cause) throws ContradictionException {
+        public void onVariableUpdate(Variable variable, IEventType type, ICause cause) throws ContradictionException {
         }
 
         @Override

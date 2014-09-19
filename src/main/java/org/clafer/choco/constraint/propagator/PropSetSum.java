@@ -5,10 +5,11 @@ import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 
 /**
@@ -47,10 +48,10 @@ public class PropSetSum extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+            return SetEventType.all();
         }
         assert isSumVar(vIdx) || isSetCardVar(vIdx);
-        return EventType.INSTANTIATE.mask + EventType.BOUND.mask;
+        return IntEventType.boundAndInst();
     }
 
     private Triple<int[], int[], int[]> findKerSmallestLargest(int n) {

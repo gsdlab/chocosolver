@@ -5,8 +5,8 @@ import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -40,10 +40,10 @@ public class PropLength extends Propagator<IntVar> {
     @Override
     protected int getPropagationConditions(int vIdx) {
         if (isLengthVar(vIdx)) {
-            return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+            return IntEventType.boundAndInst();
         }
         assert isCharVar(vIdx);
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
 
     @Override
@@ -63,11 +63,10 @@ public class PropLength extends Propagator<IntVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isLengthVar(idxVarInProp)) {
-            assert EventType.isInclow(mask) || EventType.isDecupp(mask);
-            if (EventType.isInclow(mask)) {
+            if (IntEventType.isInclow(mask)) {
                 onLengthLB();
             }
-            if (EventType.isDecupp(mask)) {
+            if (IntEventType.isDecupp(mask)) {
                 onLengthUB();
             }
         } else {

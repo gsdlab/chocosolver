@@ -6,8 +6,8 @@ import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 import util.objects.setDataStructures.ISet;
 import util.objects.setDataStructures.SetFactory;
@@ -29,9 +29,8 @@ public class PropCountNotEqual extends Propagator<IntVar> {
         this.value = value;
         this.array = array;
         this.count = count;
-        IEnvironment environment = solver.getEnvironment();
-        this.possibles = SetFactory.makeStoredSet(SetType.BITSET, array.length, environment);
-        this.mandatories = SetFactory.makeStoredSet(SetType.BITSET, array.length, environment);
+        this.possibles = SetFactory.makeStoredSet(SetType.BITSET, array.length, solver);
+        this.mandatories = SetFactory.makeStoredSet(SetType.BITSET, array.length, solver);
     }
 
     boolean isArrayVar(int idx) {
@@ -49,10 +48,10 @@ public class PropCountNotEqual extends Propagator<IntVar> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isCountVar(vIdx)) {
-            return EventType.INSTANTIATE.mask + EventType.BOUND.mask;
+            return IntEventType.boundAndInst();
         }
         assert isArrayVar(vIdx);
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
 
     private void filter() throws ContradictionException {

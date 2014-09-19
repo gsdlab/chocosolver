@@ -4,9 +4,9 @@ import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.BoolVar;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.delta.IIntDeltaMonitor;
+import solver.variables.events.IntEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -46,7 +46,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
     private final IntProcedure pruneXOnYRem = new IntProcedure() {
         @Override
@@ -101,7 +101,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
             }
         } else if (reify.isInstantiatedTo(reifyC)) {
             xD.freeze();
-            xD.forEach(pruneYOnXRem, EventType.REMOVE);
+            xD.forEachRemVal(pruneYOnXRem);
             xD.unfreeze();
         }
     }
@@ -126,7 +126,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
             }
         } else if (reify.isInstantiatedTo(reifyC)) {
             yD.freeze();
-            yD.forEach(pruneXOnYRem, EventType.REMOVE);
+            yD.forEachRemVal(pruneXOnYRem);
             yD.unfreeze();
         }
     }

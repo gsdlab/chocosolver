@@ -7,7 +7,6 @@ import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.Variable;
 import util.ESat;
 import static util.ESat.TRUE;
@@ -45,11 +44,6 @@ public class OrConstraint extends Constraint {
         protected PropOr(Variable[] vars, Constraint[] constraints) {
             super(vars, PropagatorPriority.LINEAR, false);
             this.constraints = constraints;
-        }
-
-        @Override
-        public int getPropagationConditions(int vIdx) {
-            return EventType.ALL_FINE_EVENTS.mask;
         }
 
         @Override

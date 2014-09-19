@@ -3,11 +3,12 @@ package org.clafer.choco.constraint.propagator;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -40,10 +41,10 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isElementVar(vIdx)) {
-            return EventType.INSTANTIATE.mask;
+            return IntEventType.instantiation();
         }
         assert isSetVar(vIdx);
-        return EventType.ADD_TO_KER.mask;
+        return SetEventType.ADD_TO_KER.getMask();
     }
 
     @Override
@@ -68,7 +69,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
         } else {
             assert isSetVar(idxVarInProp);
             setD.freeze();
-            setD.forEach(pruneElementOnSetKer, EventType.ADD_TO_KER);
+            setD.forEach(pruneElementOnSetKer, SetEventType.ADD_TO_KER);
             setD.unfreeze();
             if (element.isInstantiated()) {
                 set.removeFromEnvelope(element.getValue(), aCause);

@@ -4,8 +4,8 @@ import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.BoolVar;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -38,7 +38,7 @@ public class PropReifyEqualXC extends Propagator<IntVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
 
     private void propagateReifyVar() throws ContradictionException {

@@ -4,9 +4,9 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -27,7 +27,8 @@ public class PropTransitive extends Propagator<SetVar> {
 
     @Override
     protected int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask;
+        // TODO ENV
+        return SetEventType.ADD_TO_KER.getMask();
     }
 
     @Override
@@ -86,7 +87,7 @@ public class PropTransitive extends Propagator<SetVar> {
             public void execute(int j) throws ContradictionException {
                 prune(i, j, true);
             }
-        }, EventType.ADD_TO_KER);
+        }, SetEventType.ADD_TO_KER);
         relationD[i].unfreeze();
     }
 

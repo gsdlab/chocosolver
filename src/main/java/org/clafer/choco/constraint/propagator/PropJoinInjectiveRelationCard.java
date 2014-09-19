@@ -4,10 +4,11 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 
 /**
@@ -72,10 +73,10 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isTakeVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+            return SetEventType.all();
         }
         assert isTakeCardVar(vIdx) || isToCardVar(vIdx) || isChildCardVar(vIdx);
-        return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+        return IntEventType.boundAndInst();
     }
 
     @Override

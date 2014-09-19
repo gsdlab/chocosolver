@@ -5,9 +5,9 @@ import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -30,7 +30,7 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     private void checkNotSame() throws ContradictionException {
@@ -71,8 +71,8 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         sD.freeze();
-        sD.forEach(onS1Env, EventType.REMOVE_FROM_ENVELOPE);
-        sD.forEach(onS1Ker, EventType.ADD_TO_KER);
+        sD.forEach(onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
+        sD.forEach(onS1Ker, SetEventType.ADD_TO_KER);
         sD.unfreeze();
         checkNotSame();
     }

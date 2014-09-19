@@ -5,8 +5,8 @@ import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.BoolVar;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -43,10 +43,10 @@ public class PropSelectN extends Propagator<IntVar> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isBoolsVar(vIdx)) {
-            return EventType.INSTANTIATE.mask;
+            return IntEventType.instantiation();
         }
         assert isNVar(vIdx);
-        return EventType.DECUPP.mask + EventType.INCLOW.mask + EventType.INSTANTIATE.mask;
+        return IntEventType.boundAndInst();
     }
 
     @Override
@@ -103,12 +103,12 @@ public class PropSelectN extends Propagator<IntVar> {
             }
         } else {
             assert isNVar(idxVarInProp);
-            if (EventType.isInclow(mask) || EventType.isInstantiate(mask)) {
+            if (IntEventType.isInclow(mask)) {
                 for (int i = 0; i < n.getLB(); i++) {
                     bools[i].setToTrue(aCause);
                 }
             }
-            if (EventType.isDecupp(mask) || EventType.isInstantiate(mask)) {
+            if (IntEventType.isDecupp(mask)) {
                 for (int i = n.getUB(); i < bools.length; i++) {
                     bools[i].setToFalse(aCause);
                 }

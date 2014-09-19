@@ -7,9 +7,9 @@ import memory.structure.IndexedBipartiteSet;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -83,7 +83,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     private void findMate(int toEnv) throws ContradictionException {
@@ -137,15 +137,15 @@ public class PropJoinRelation extends Propagator<SetVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isTakeVar(idxVarInProp)) {
             takeD.freeze();
-            takeD.forEach(pruneToOnTakeEnv, EventType.REMOVE_FROM_ENVELOPE);
-            takeD.forEach(pickToAndPruneChildOnTakeKer, EventType.ADD_TO_KER);
+            takeD.forEach(pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            takeD.forEach(pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
             takeD.unfreeze();
         } else if (isToVar(idxVarInProp)) {
             toD.freeze();
-            toD.forEach(pruneChildOnToEnv, EventType.REMOVE_FROM_ENVELOPE);
-            toD.forEach(pickTakeOnToKer, EventType.ADD_TO_KER);
+            toD.forEach(pruneChildOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            toD.forEach(pickTakeOnToKer, SetEventType.ADD_TO_KER);
             toD.unfreeze();
-            if ((EventType.REMOVE_FROM_ENVELOPE.mask & mask) != 0) {
+            if (SetEventType.isEnvRemoval(mask)) {
                 TIntArrayList removed = null;
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
                     if (!PropUtil.isKerSubsetEnv(children[i], to)) {
@@ -180,9 +180,9 @@ public class PropJoinRelation extends Propagator<SetVar> {
             // idempotence. Otherwise if id is removed from take and val removed
             // from child at the same time is no longer supported, we need to
             // remove val from to as well.
-            childD.forEach(pruneToOnChildEnv, EventType.REMOVE_FROM_ENVELOPE);
+            childD.forEach(pruneToOnChildEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             if (take.kernelContains(id)) {
-                childD.forEach(pickToOnChildKer, EventType.ADD_TO_KER);
+                childD.forEach(pickToOnChildKer, SetEventType.ADD_TO_KER);
             } else if (take.envelopeContains(id)) {
                 IntProcedure pruneTakeOnChildKer = new IntProcedure() {
                     @Override
@@ -198,7 +198,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
                         }
                     }
                 };
-                childD.forEach(pruneTakeOnChildKer, EventType.ADD_TO_KER);
+                childD.forEach(pruneTakeOnChildKer, SetEventType.ADD_TO_KER);
             }
             childD.unfreeze();
         }

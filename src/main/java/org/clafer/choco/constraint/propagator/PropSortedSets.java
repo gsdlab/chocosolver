@@ -4,8 +4,8 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
+import solver.variables.events.SetEventType;
 import util.ESat;
 
 /**
@@ -23,12 +23,12 @@ public class PropSortedSets extends Propagator<SetVar> {
 
     @Override
     protected int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask;
+        return SetEventType.ADD_TO_KER.getMask();
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        // Right now, it don't does a very simple propagation. It does not
+        // Right now, it does a very simple propagation. It does not
         // enforce sorted sets by itself, requires PropSortedSetsCard in conjunction.
         // Can make it better if necessary but might turn out slower.
         for (int i = 0; i < sets.length; i++) {
@@ -46,8 +46,10 @@ public class PropSortedSets extends Propagator<SetVar> {
 
     @Override
     public ESat isEntailed() {
+        boolean completelyInstantiated = true;
         for (int i = 0; i < sets.length; i++) {
             SetVar set = sets[i];
+            completelyInstantiated &= set.isInstantiated();
             int cur = set.getKernelFirst();
             if (cur != SetVar.END) {
                 for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
@@ -59,7 +61,7 @@ public class PropSortedSets extends Propagator<SetVar> {
                 }
             }
         }
-        return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        return completelyInstantiated ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

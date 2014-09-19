@@ -4,12 +4,13 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -62,10 +63,10 @@ public class PropIntChannel extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+            return SetEventType.all();
         }
         assert isIntVar(vIdx);
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
 
     @Override
@@ -113,7 +114,7 @@ public class PropIntChannel extends Propagator<Variable> {
                         }
                     }
                 }
-            }, EventType.ADD_TO_KER);
+            }, SetEventType.ADD_TO_KER);
             setsD[id].forEach(new IntProcedure() {
                 @Override
                 public void execute(int setEnv) throws ContradictionException {
@@ -127,19 +128,19 @@ public class PropIntChannel extends Propagator<Variable> {
                         }
                     }
                 }
-            }, EventType.REMOVE_FROM_ENVELOPE);
+            }, SetEventType.REMOVE_FROM_ENVELOPE);
             setsD[id].unfreeze();
         } else {
             assert isIntVar(idxVarInProp);
             final int id = getIntVarIndex(idxVarInProp);
 
             intsD[id].freeze();
-            intsD[id].forEach(new IntProcedure() {
+            intsD[id].forEachRemVal(new IntProcedure() {
                 @Override
                 public void execute(int intRem) throws ContradictionException {
                     sets[intRem].removeFromEnvelope(id, aCause);
                 }
-            }, EventType.REMOVE);
+            });
             if (ints[id].isInstantiated()) {
                 sets[ints[id].getValue()].addToKernel(id, aCause);
             }

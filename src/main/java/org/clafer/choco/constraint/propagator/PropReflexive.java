@@ -4,8 +4,8 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -18,11 +18,6 @@ public class PropReflexive extends Propagator<SetVar> {
 
     public PropReflexive(SetVar[] relation) {
         super(relation, PropagatorPriority.UNARY, false);
-    }
-
-    @Override
-    protected int getPropagationConditions(int vIdx) {
-        return EventType.VOID.mask;
     }
 
     @Override
