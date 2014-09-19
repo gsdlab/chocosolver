@@ -1630,11 +1630,6 @@ public class Irs {
             return EmptySet;
         }
         IrSetArrayExpr $children = subArray(children, 0, take.getEnv().getHighBound() + 1);
-//        for (int i = 0; i < $children.length(); i++) {
-//            if (!take.getEnv().contains(i)) {
-//                $children[i] = EmptySet;
-//            }
-//        }
 
         IrIntExpr[] ints = IrUtil.asInts(children);
         if (ints != null) {
