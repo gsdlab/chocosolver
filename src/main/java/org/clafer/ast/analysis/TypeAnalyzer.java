@@ -26,7 +26,6 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
-import org.clafer.ast.AstJJoin;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -251,7 +250,7 @@ public class TypeAnalyzer implements Analyzer {
         }
 
         @Override
-        public TypedExpr<AstSetExpr> visit(AstJJoin ast, Void a) {
+        public TypedExpr<AstSetExpr> visit(AstJoin ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
             if (right.getCommonSupertype().arity() == 2) {
@@ -266,27 +265,13 @@ public class TypeAnalyzer implements Analyzer {
                     case 2:
                         AstClafer leftParamType = left.getCommonSupertype().get(0);
                         AstClafer leftReturnType = left.getCommonSupertype().get(1);
-                        // TODO
-                        if (true) {
+                        if (leftReturnType.equals(rightParamType)) {
                             return put(leftParamType, rightReturnType, join(left.getExpr(), right.getExpr()));
                         }
                         break;
                 }
             }
             throw new TypeException("Cannot join " + left.getType() + " . " + right.getType());
-        }
-
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstJoin ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            AstConcreteClafer rightType = ast.getRight();
-            if (rightType.hasParent()) {
-                AstClafer joinType = rightType.getParent();
-                if (isAnyAssignable(left.getType().getUnionType(), joinType)) {
-                    return put(rightType, join(castTo(left, joinType), rightType));
-                }
-            }
-            throw new TypeException("Cannot join " + left.getType() + " . " + rightType);
         }
 
         @Override
@@ -590,7 +575,7 @@ public class TypeAnalyzer implements Analyzer {
 
         @Override
         public TypedExpr<?> visit(AstChildRelation ast, Void a) {
-            AstConcreteClafer child = ast.getChildRelation();
+            AstConcreteClafer child = ast.getChildType();
             if (!child.hasParent()) {
                 throw new TypeException(child + " does not have a parent");
             }

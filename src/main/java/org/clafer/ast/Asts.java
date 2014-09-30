@@ -68,11 +68,11 @@ public class Asts {
     }
 
     public static AstSetExpr join(AstSetExpr left, AstSetExpr right) {
-        return new AstJJoin(left, right);
+        return new AstJoin(left, right);
     }
 
     public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
-        return new AstJoin(left, right);
+        return new AstJoin(left, relation(right));
     }
 
     public static AstSetExpr joinParent(AstSetExpr children) {

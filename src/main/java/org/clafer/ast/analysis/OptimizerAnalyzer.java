@@ -3,6 +3,7 @@ package org.clafer.ast.analysis;
 import java.util.HashMap;
 import java.util.Map;
 import org.clafer.ast.AstBoolExpr;
+import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
@@ -45,40 +46,43 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     @Override
     public AstExpr visit(AstJoin ast, Analysis a) {
-        AstSetExpr left = rewrite(ast.getLeft(), a);
-        AstConcreteClafer right = ast.getRight();
-        if (left instanceof AstThis) {
-            if (a.getScope(a.getCommonSupertype(ast.getLeft())) == 1) {
-                Card childCard = a.getCard(ast.getRight());
-                if (Format.ParentGroup.equals(a.getFormat(right))) {
-                    assert childCard.isExact();
-                    return constant(ast.getRight(), Util.fromTo(0, childCard.getLow()));
-                }
-                return global(ast.getRight());
-            }
-        } else if (left instanceof AstGlobal) {
-            return global(ast.getRight());
-        } else if (left instanceof AstConstant) {
-            Card childCard = a.getCard(ast.getRight());
-            if (Format.ParentGroup.equals(a.getFormat(ast.getRight()))) {
-                AstConstant constant = (AstConstant) left;
-                if (constant.getType().arity() == 1) {
-                    int[] value = constant.getValue()[0];
-                    assert childCard.isExact();
-                    int[] childConstant = new int[value.length * childCard.getLow()];
-                    for (int i = 0; i < constant.getValue().length; i++) {
-                        for (int j = 0; j < childCard.getLow(); j++) {
-                            childConstant[i * childCard.getLow() + j]
-                                    = i * value[i] + j;
-                        }
+        if (ast.getRight() instanceof AstChildRelation) {
+            AstSetExpr left = rewrite(ast.getLeft(), a);
+            AstConcreteClafer right = ((AstChildRelation) ast.getRight()).getChildType();
+            if (left instanceof AstThis) {
+                if (a.getScope(a.getCommonSupertype(ast.getLeft())) == 1) {
+                    Card childCard = a.getCard(right);
+                    if (Format.ParentGroup.equals(a.getFormat(right))) {
+                        assert childCard.isExact();
+                        return constant(right, Util.fromTo(0, childCard.getLow()));
                     }
-                    return constant(ast.getRight(), childConstant);
+                    return global(right);
                 }
+            } else if (left instanceof AstGlobal) {
+                return global(right);
+            } else if (left instanceof AstConstant) {
+                Card childCard = a.getCard(right);
+                if (Format.ParentGroup.equals(a.getFormat(right))) {
+                    AstConstant constant = (AstConstant) left;
+                    if (constant.getType().arity() == 1) {
+                        int[] value = constant.getValue()[0];
+                        assert childCard.isExact();
+                        int[] childConstant = new int[value.length * childCard.getLow()];
+                        for (int i = 0; i < constant.getValue().length; i++) {
+                            for (int j = 0; j < childCard.getLow(); j++) {
+                                childConstant[i * childCard.getLow() + j]
+                                        = i * value[i] + j;
+                            }
+                        }
+                        return constant(right, childConstant);
+                    }
+                }
+                assert childCard.getLow() != a.getScope(right) :
+                        "Didn't run scope analysis before format analysis?";
             }
-            assert childCard.getLow() != a.getScope(ast.getRight()) :
-                    "Didn't run scope analysis before format analysis?";
+            return join(left, ast.getRight());
         }
-        return join(left, ast.getRight());
+        return ast;
     }
 
     @Override
@@ -107,7 +111,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
                 return constant(type, 0);
             }
         }
-        return joinParent(children);
+        return ast;
     }
     // TDODO: rewrite for all (global)
 }

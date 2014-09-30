@@ -1,7 +1,5 @@
 package org.clafer.ast.analysis;
 
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -18,10 +16,6 @@ import org.junit.Test;
  * @author jimmy
  */
 public class PartialIntAnalyzerTest {
-
-    private static TIntSet set(int... values) {
-        return new TIntHashSet(values);
-    }
 
     private Analysis analyze(AstModel model, Scopable scope) {
         return Analysis.analyze(model, scope,

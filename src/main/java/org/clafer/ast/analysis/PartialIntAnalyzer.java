@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
+import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
@@ -80,8 +81,8 @@ public class PartialIntAnalyzer implements Analyzer {
             Scope scope = analysis.getScope();
             Domain unbounded
                     = target instanceof AstIntClafer
-                    ? Domains.boundDomain(scope.getIntLow(), scope.getIntHigh())
-                    : Domains.fromToDomain(0, scope.getScope(target));
+                            ? Domains.boundDomain(scope.getIntLow(), scope.getIntHigh())
+                            : Domains.fromToDomain(0, scope.getScope(target));
             return unbounded.union(Domains.enumDomain(ints));
         }
         return Domains.enumDomain(ints);
@@ -164,7 +165,10 @@ public class PartialIntAnalyzer implements Analyzer {
             return analyze(((AstUpcast) exp).getBase());
         } else if (exp instanceof AstJoin) {
             AstJoin join = ((AstJoin) exp);
-            return cons(join.getRight(), analyze(join.getLeft()));
+            AstSetExpr right = join.getRight();
+            if (right instanceof AstChildRelation) {
+                return cons(((AstChildRelation) right).getChildType(), analyze(join.getLeft()));
+            }
         } else if (exp instanceof AstThis || exp instanceof AstGlobal) {
             return empty();
         }

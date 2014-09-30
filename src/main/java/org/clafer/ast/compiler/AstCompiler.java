@@ -32,7 +32,6 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
-import org.clafer.ast.AstJJoin;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -945,8 +944,11 @@ public class AstCompiler {
         }
 
         @Override
-        public IrExpr visit(AstJJoin ast, Void a) {
+        public IrExpr visit(AstJoin ast, Void a) {
             IrExpr left = compile(ast.getLeft());
+            if (ast.getRight() instanceof AstChildRelation) {
+                return doJoin(left, ((AstChildRelation) ast.getRight()).getChildType());
+            }
             IrExpr right = compile(ast.getRight());
             if (right instanceof IrIntArray) {
                 IrIntExpr[] rightArray = ((IrIntArray) right).getArray();
@@ -1007,28 +1009,37 @@ public class AstCompiler {
                     return array(join);
                 }
             }
-            throw new AstException(left.getClass() + " : " + right.getClass());
-        }
-
-        @Override
-        public IrExpr visit(AstJoin ast, Void a) {
-            return doJoin(compile(ast.getLeft()), ast.getRight());
+            throw new AstException();
         }
 
         private IrExpr doJoin(IrExpr left, AstConcreteClafer right) {
+            // Why empty set? The "take" var can contain unused.
+            IrSetArrayExpr rightArray = snoc(array(siblingSets.get(right)), EmptySet);
             if (left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) left;
                 if (Format.ParentGroup.equals(getFormat(right)) && getCard(right).getLow() == 1) {
                     assert getCard(right).isExact();
                     return $intLeft;
                 }
-                // TODO
-                // Why empty set? The "take" var can contain unused.
-                return joinRelation(singleton($intLeft), snoc(array(siblingSets.get(right)), EmptySet), true);
+                return joinRelation(singleton($intLeft), rightArray, true);
             } else if (left instanceof IrSetExpr) {
                 IrSetExpr $setLeft = (IrSetExpr) left;
-                // Why empty set? The "take" var can contain unused.
-                return joinRelation($setLeft, snoc(array(siblingSets.get(right)), EmptySet), true);
+                return joinRelation($setLeft, rightArray, true);
+            } else if (left instanceof IrIntArray) {
+                IrIntExpr[] leftArray = ((IrIntArray) left).getArray();
+                IrSetExpr[] join = new IrSetExpr[leftArray.length];
+                for (int i = 0; i < join.length; i++) {
+                    // TODO which relations are injective?
+                    join[i] = element(rightArray, leftArray[i]);
+                }
+                return array(join);
+            } else if (left instanceof IrSetArrayExpr) {
+                IrSetArrayExpr leftArray = ((IrSetArrayExpr) left);
+                IrSetExpr[] join = new IrSetExpr[leftArray.length()];
+                for (int i = 0; i < join.length; i++) {
+                    join[i] = joinRelation(get(leftArray, i), rightArray, true);
+                }
+                return array(join);
             }
             throw new AstException();
         }
@@ -1073,12 +1084,19 @@ public class AstCompiler {
             if (derefType.getRef().isUnique()) {
                 if (deref instanceof AstJoin) {
                     AstJoin join = (AstJoin) deref;
-                    IrExpr left = compile(join.getLeft());
-                    $deref = doJoin(left, join.getRight());
+                    if (join.getRight() instanceof AstChildRelation) {
+                        IrExpr left = compile(join.getLeft());
+                        $deref = doJoin(left, ((AstChildRelation) join.getRight()).getChildType());
 
-                    globalCardinality = left instanceof IrSetExpr
-                            ? ((IrSetExpr) left).getCard().getHighBound()
-                            : 1;
+                        globalCardinality = left instanceof IrSetExpr
+                                ? ((IrSetExpr) left).getCard().getHighBound()
+                                : 1;
+                    } else {
+                        $deref = compile(deref);
+                        if (derefType instanceof AstConcreteClafer) {
+                            globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
+                        }
+                    }
                 } else {
                     $deref = compile(deref);
                     if (derefType instanceof AstConcreteClafer) {
@@ -1530,7 +1548,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstChildRelation ast, Void a) {
-            return array(siblingSets.get(ast.getChildRelation()));
+            return array(siblingSets.get(ast.getChildType()));
         }
 
         @Override

@@ -14,7 +14,7 @@ public class AstChildRelation implements AstSetExpr {
         this.childRelation = Check.notNull(childRelation);
     }
 
-    public AstConcreteClafer getChildRelation() {
+    public AstConcreteClafer getChildType() {
         return childRelation;
     }
 
