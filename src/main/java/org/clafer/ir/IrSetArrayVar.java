@@ -14,7 +14,7 @@ public class IrSetArrayVar extends IrAbstractSetArray {
 
     IrSetArrayVar(IrSetExpr[] array) {
         super(getEnvDomains(array), getKerDomains(array), getCardDomains(array));
-        this.array = Check.noNullsNotEmpty(array);
+        this.array = Check.noNulls(array);
     }
 
     private static Domain[] getEnvDomains(IrSetExpr[] array) {
@@ -44,7 +44,7 @@ public class IrSetArrayVar extends IrAbstractSetArray {
     public IrSetExpr[] getArray() {
         return array;
     }
-    
+
     @Override
     public <A, B> B accept(IrSetArrayExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);

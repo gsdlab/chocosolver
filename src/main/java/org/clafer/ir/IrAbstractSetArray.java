@@ -19,9 +19,9 @@ public abstract class IrAbstractSetArray implements IrSetArrayExpr {
         if (envDomains.length != cardDomains.length) {
             throw new IllegalArgumentException();
         }
-        this.envDomains = Check.noNullsNotEmpty(envDomains);
-        this.kerDomains = Check.noNullsNotEmpty(kerDomains);
-        this.cardDomains = Check.noNullsNotEmpty(cardDomains);
+        this.envDomains = Check.noNulls(envDomains);
+        this.kerDomains = Check.noNulls(kerDomains);
+        this.cardDomains = Check.noNulls(cardDomains);
     }
 
     @Override

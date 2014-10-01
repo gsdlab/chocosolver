@@ -6,6 +6,7 @@ import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -544,5 +545,31 @@ public class SimpleConstraintTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertFalse(solver.find());
+    }
+
+    /**
+     * <pre>
+     * A
+     *     B *
+     *         C *
+     * D -> int
+     * [ #(A.B) = D.ref ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNoScopeJoin() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("B");
+        AstConcreteClafer c = b.addChild("C");
+        AstConcreteClafer d = model.addChild("D").refToUnique(IntType).withCard(Mandatory);
+        a.addConstraint(equal(card(join(join($this(), b), c)), joinRef(d)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).setScope(b, 0));
+        while (solver.find()) {
+            assertEquals(0, solver.instance().getTopClafers(d)[0].getRef().getValue());
+        }
+        assertEquals(1, solver.instanceCount());
     }
 }

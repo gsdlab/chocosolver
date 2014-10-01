@@ -22,4 +22,23 @@ public class AstChildRelation implements AstSetExpr {
     public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AstChildRelation) {
+            AstChildRelation other = (AstChildRelation) obj;
+            return childRelation.equals(other.childRelation);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 1311 * childRelation.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return childRelation.toString();
+    }
 }
