@@ -290,6 +290,14 @@ public class IrCompiler {
         return cset(name + "#" + varNum++, env, ker, card);
     }
 
+    private CSetVar[] numCsets(String name, Domain[] envs, Domain[] kers, Domain[] cards) {
+        CSetVar[] sets = new CSetVar[envs.length];
+        for (int i = 0; i < sets.length; i++) {
+            sets[i] = cset(name + "[" + i + "]#" + varNum++, envs[i], kers[i], cards[i]);
+        }
+        return sets;
+    }
+
     private CStringVar numCstring(String name, Domain[] chars, Domain length) {
         return cstring(name + "#" + varNum++, chars, length);
     }
@@ -1653,8 +1661,14 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrTransitiveClosure ir, CSetVar[] a) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        public Object visit(IrTransitiveClosure ir, CSetVar[] reify) {
+            CSetVar[] relation = compile(ir.getRelation());
+            if (reify == null) {
+                CSetVar[] closure = numCsets("TransitiveClosure", ir.getEnvs(), ir.getKers(), ir.getCards());
+                post(Constraints.transitiveClosure(mapSet(relation), mapSet(closure)));
+                return closure;
+            }
+            return Constraints.transitiveClosure(mapSet(relation), mapSet(reify));
         }
     };
 

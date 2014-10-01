@@ -96,7 +96,6 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetArrayExpr;
-import org.clafer.ir.IrSetArrayVar;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringExpr;
@@ -1569,7 +1568,17 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstTransitiveClosure ast, Void a) {
-            throw new Error();
+            IrExpr relation = compile(ast.getRelation());
+            if (relation instanceof IrIntArrayExpr) {
+                Type type = getType(ast.getRelation());
+                AstClafer returnType = type.getCommonSupertype().get(1);
+                return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)));
+            }
+            if (relation instanceof IrSetArrayExpr) {
+                return transitiveClosure((IrSetArrayExpr) relation);
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
         }
     };
 

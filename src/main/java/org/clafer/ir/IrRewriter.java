@@ -673,6 +673,9 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrSetArrayExpr visit(IrTransitiveClosure ir, T a) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        IrSetArrayExpr relation = rewrite(ir.getRelation(), a);
+        return changed(ir.getRelation(), relation)
+                ? transitiveClosure(relation)
+                : ir;
     }
 }

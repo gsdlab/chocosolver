@@ -7,6 +7,8 @@ import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.stack.TIntStack;
+import gnu.trove.stack.array.TIntArrayStack;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1979,7 +1981,7 @@ public class Irs {
             IrIntArrayVar var = (IrIntArrayVar) expr;
             return var.getArray()[index];
         }
-        throw new Error();
+        return new IrElement(expr, constant(index), expr.getDomains()[index]);
     }
 
     public static IrSetExpr get(IrSetArrayExpr expr, int index) {
@@ -1987,7 +1989,7 @@ public class Irs {
             IrSetArrayVar var = (IrSetArrayVar) expr;
             return var.getArray()[index];
         }
-        return new IrSetGet(expr, index, expr.getEnvs()[index], expr.getKers()[index], expr.getCards()[index]);
+        return new IrSetElement(expr, constant(index), expr.getEnvs()[index], expr.getKers()[index], expr.getCards()[index]);
     }
 
     public static IrIntArrayExpr subArray(IrIntArrayExpr expr, int from, int to) {
@@ -2048,6 +2050,54 @@ public class Irs {
             array[left.length() + i] = get(right, i);
         }
         return array(array);
+    }
+
+    public static IrSetArrayExpr filterNotEqual(IrIntArrayExpr expr, int value) {
+        IrSetExpr[] array = new IrSetExpr[expr.length()];
+        for (int i = 0; i < array.length; i++) {
+            IrIntExpr element = get(expr, i);
+            array[i] = ternary(equal(element, value), EmptySet, singleton(element));
+        }
+        return array(array);
+    }
+
+    public static IrSetArrayExpr transitiveClosure(IrSetArrayExpr relation) {
+        int n = relation.length();
+        Domain[] envs = new Domain[n];
+        Domain[] kers = new Domain[n];
+        Domain[] cards = new Domain[n];
+
+        for (int i = 0; i < n; i++) {
+            TIntStack q = new TIntArrayStack(n);
+            q.push(i);
+            TIntSet env = new TIntHashSet(relation.getEnvs()[i].getValues());
+            do {
+                TIntIterator iter = relation.getEnvs()[q.pop()].iterator();
+                while (iter.hasNext()) {
+                    int j = iter.next();
+                    if (env.add(j)) {
+                        q.push(j);
+                    }
+                }
+            } while (q.size() > 0);
+
+            q.push(i);
+            TIntSet ker = new TIntHashSet(relation.getKers()[i].getValues());
+            do {
+                TIntIterator iter = relation.getKers()[q.pop()].iterator();
+                while (iter.hasNext()) {
+                    int j = iter.next();
+                    if (ker.add(j)) {
+                        q.push(j);
+                    }
+                }
+            } while (q.size() > 0);
+
+            envs[i] = enumDomain(env);
+            kers[i] = enumDomain(ker);
+            cards[i] = boundDomain(kers[i].size(), envs[i].size());
+        }
+        return new IrTransitiveClosure(relation, envs, kers, cards);
     }
 
     /**

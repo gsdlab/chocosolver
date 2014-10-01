@@ -471,6 +471,7 @@ public abstract class IrTraverser<T>
 
     @Override
     public Void visit(IrTransitiveClosure ir, T a) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        traverse(ir.getRelation(), a);
+        return null;
     }
 }

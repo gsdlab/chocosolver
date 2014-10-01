@@ -400,7 +400,10 @@ public class Asts {
     }
 
     public static AstSetExpr ref(AstClafer source) {
-        return relation(source.getRef());
+        if (source.hasRef()) {
+            return relation(source.getRef());
+        }
+        throw new AstException(source + " has no reference");
     }
 
     public static AstSetExpr relation(AstRef ref) {

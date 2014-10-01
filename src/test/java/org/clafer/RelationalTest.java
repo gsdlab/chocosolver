@@ -36,7 +36,7 @@ public class RelationalTest {
         model.addConstraint(equal(parent(b), ref(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(18, solver.allInstances().length);
+        assertEquals(10, solver.allInstances().length);
     }
 
     /**
@@ -290,5 +290,24 @@ public class RelationalTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(37, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A -> A *
+     *     [ #(this . (A -> ref)*) = 2 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testTransitiveClosure() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        a.refToUnique(a);
+        a.addConstraint(equal(card(join($this(), transitiveClosure(ref(a)))), 2));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-2).intHigh(2));
+        // Can be reduced to 2 with better symmetry breaking.
+        assertEquals(5, solver.allInstances().length);
     }
 }
