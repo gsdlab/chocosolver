@@ -44,8 +44,6 @@ public abstract class IrAbstractSetArray implements IrSetArrayExpr {
         return cardDomains;
     }
 
-    private IrSetExpr[] array = null;
-
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof IrAbstractSetArray) {

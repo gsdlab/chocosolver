@@ -1,6 +1,5 @@
 package org.clafer.ir;
 
-import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.domain.Domain;
 
@@ -11,11 +10,11 @@ import org.clafer.domain.Domain;
 public class IrCountNotEqual extends IrAbstractInt {
 
     private final int value;
-    private final IrIntExpr[] array;
+    private final IrIntArrayExpr array;
 
-    public IrCountNotEqual(int value, IrIntExpr[] array, Domain domain) {
+    public IrCountNotEqual(int value, IrIntArrayExpr array, Domain domain) {
         super(domain);
-        this.array = Check.noNullsNotEmpty(array);
+        this.array = Check.notNull(array);
         this.value = Check.notNull(value);
     }
 
@@ -23,7 +22,7 @@ public class IrCountNotEqual extends IrAbstractInt {
         return value;
     }
 
-    public IrIntExpr[] getArray() {
+    public IrIntArrayExpr getArray() {
         return array;
     }
 
@@ -36,19 +35,18 @@ public class IrCountNotEqual extends IrAbstractInt {
     public boolean equals(Object obj) {
         if (obj instanceof IrCountNotEqual) {
             IrCountNotEqual other = (IrCountNotEqual) obj;
-            return value == other.value && Arrays.equals(array, other.array)
-                    && super.equals(other);
+            return value == other.value && array.equals(other.array);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return value ^ Arrays.hashCode(array);
+        return value ^ array.hashCode();
     }
 
     @Override
     public String toString() {
-        return "countNotEqual(" + value + " in " + Arrays.toString(array) + ")";
+        return "countNotEqual(" + value + " in " + array + ")";
     }
 }

@@ -37,6 +37,9 @@ import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIfThenElse;
 import org.clafer.ir.IrImplies;
+import org.clafer.ir.IrIntArrayExpr;
+import org.clafer.ir.IrIntArrayExprVisitor;
+import org.clafer.ir.IrIntArrayVar;
 import org.clafer.ir.IrIntChannel;
 import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntExpr;
@@ -203,6 +206,7 @@ public class IrCompiler {
     private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<>();
     private final Map<IrSetExpr, CSetVar> cachedCommonSetSubexpressions = new HashMap<>();
     private final Map<IrStringExpr, CStringVar> cachedCommonStringSubexpressions = new HashMap<>();
+    private final Map<IrIntArrayExpr, IntVar[]> cachedCommonIntArraySubexpressions = new HashMap<>();
     private final Map<IrSetArrayExpr, CSetVar[]> cachedCommonSetArraySubexpressions = new HashMap<>();
 
     private void post(Constraint constraint) {
@@ -708,6 +712,17 @@ public class IrCompiler {
             vars[i] = compile(exprs[i]);
         }
         return vars;
+    }
+
+    private IntVar[] compile(IrIntArrayExpr expr) {
+        IntVar[] ints = cachedCommonIntArraySubexpressions.get(expr);
+        if (ints == null) {
+            ints = (IntVar[]) expr.accept(intArrayExprCompiler, null);
+            if (commonSubexpressions.contains(expr)) {
+                cachedCommonIntArraySubexpressions.put(expr, ints);
+            }
+        }
+        return ints;
     }
 
     private CSetVar[] compile(IrSetArrayExpr expr) {
@@ -1622,15 +1637,23 @@ public class IrCompiler {
         }
     };
 
-    private final IrSetArrayExprVisitor<IrSetVar[], Object> setArrayExprCompiler = new IrSetArrayExprVisitor<IrSetVar[], Object>() {
+    private final IrIntArrayExprVisitor<IntVar[], Object> intArrayExprCompiler = new IrIntArrayExprVisitor<IntVar[], Object>() {
 
         @Override
-        public Object visit(IrSetArrayVar ir, IrSetVar[] a) {
+        public Object visit(IrIntArrayVar ir, IntVar[] a) {
+            return compile(ir.getArray());
+        }
+    };
+
+    private final IrSetArrayExprVisitor<CSetVar[], Object> setArrayExprCompiler = new IrSetArrayExprVisitor<CSetVar[], Object>() {
+
+        @Override
+        public Object visit(IrSetArrayVar ir, CSetVar[] a) {
             return compile(ir.getArray());
         }
 
         @Override
-        public Object visit(IrTransitiveClosure ir, IrSetVar[] a) {
+        public Object visit(IrTransitiveClosure ir, CSetVar[] a) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     };
@@ -1778,16 +1801,14 @@ public class IrCompiler {
         return Constraints.notMember(element, set);
     }
 
-    private static Constraint _lex_chain_less(IntVar[]  
-        ... vars) {
+    private static Constraint _lex_chain_less(IntVar[]... vars) {
         if (vars.length == 2) {
             return ICF.lex_less(vars[0], vars[1]);
         }
         return ICF.lex_chain_less(vars);
     }
 
-    private static Constraint _lex_chain_less_eq(IntVar[]  
-        ... vars) {
+    private static Constraint _lex_chain_less_eq(IntVar[]... vars) {
         if (vars.length == 2) {
             return ICF.lex_less_eq(vars[0], vars[1]);
         }

@@ -37,6 +37,7 @@ import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrFilterString;
 import org.clafer.ir.IrIfOnlyIf;
+import org.clafer.ir.IrIntArrayVar;
 import org.clafer.ir.IrIntChannel;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
@@ -830,7 +831,7 @@ public class Coalescer {
                 TIntIterator iter = element.getIndex().getDomain().iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
-                    if (left.intersects(element.getArray()[val].getDomain())) {
+                    if (left.intersects(element.getArray().getDomains()[val])) {
                         domain.add(val);
                     }
                 }
@@ -1010,31 +1011,37 @@ public class Coalescer {
 
         private void propagateJoinFunction(PartialSet left, IrJoinFunction right) {
             if (left.isEnvMask()) {
-                Domain env = left.getEnv();
-                TIntIterator iter = right.getTake().getKer().iterator();
-                while (iter.hasNext()) {
-                    propagateInt(env, right.getRefs()[iter.next()]);
+                if (right.getRefs() instanceof IrIntArrayVar) {
+                    IrIntExpr[] rightArray = ((IrIntArrayVar) right.getRefs()).getArray();
+                    Domain env = left.getEnv();
+                    TIntIterator iter = right.getTake().getKer().iterator();
+                    while (iter.hasNext()) {
+                        propagateInt(env, rightArray[iter.next()]);
+                    }
                 }
             }
             if (left.isKerMask()) {
-                TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
-                while (iter.hasNext()) {
-                    int val = iter.next();
-                    TIntIterator env = right.getTake().getEnv().iterator();
-                    int index = -1;
-                    while (env.hasNext()) {
-                        int j = env.next();
-                        if (right.getRefs()[j].getDomain().contains(val)) {
-                            if (index != -1) {
-                                index = -1;
-                                break;
+                if (right.getRefs() instanceof IrIntArrayVar) {
+                    IrIntExpr[] rightArray = ((IrIntArrayVar) right.getRefs()).getArray();
+                    TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
+                    while (iter.hasNext()) {
+                        int val = iter.next();
+                        TIntIterator env = right.getTake().getEnv().iterator();
+                        int index = -1;
+                        while (env.hasNext()) {
+                            int j = env.next();
+                            if (right.getRefs().getDomains()[j].contains(val)) {
+                                if (index != -1) {
+                                    index = -1;
+                                    break;
+                                }
+                                index = j;
                             }
-                            index = j;
                         }
-                    }
-                    if (index != -1) {
-                        propagateKer(constantDomain(index), right.getTake());
-                        propagateInt(constantDomain(val), right.getRefs()[index]);
+                        if (index != -1) {
+                            propagateKer(constantDomain(index), right.getTake());
+                            propagateInt(constantDomain(val), rightArray[index]);
+                        }
                     }
                 }
             }

@@ -28,15 +28,35 @@ public class RelationalTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testFunctionEquality() {
+    public void testFunctionEqualityFunction() {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A");
-        AstConcreteClafer b = a.addChild("B").refTo(a);
+        AstConcreteClafer b = a.addChild("B").refToUnique(a);
         model.addConstraint(equal(parent(b), ref(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
         assertEquals(18, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A -> B
+     *     B
+     * [ (A -> ref) = (A -> B) ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testFunctionEqualityRelation() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B");
+        a.refToUnique(b);
+        model.addConstraint(equal(ref(a), relation(b)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
+        assertEquals(1, solver.allInstances().length);
     }
 
     /**
@@ -48,7 +68,7 @@ public class RelationalTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testRelationEquality() {
+    public void testRelationEqualityRelation() {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A");

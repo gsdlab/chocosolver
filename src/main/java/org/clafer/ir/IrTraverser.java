@@ -9,6 +9,7 @@ public abstract class IrTraverser<T>
         implements IrIntExprVisitor<T, Void>,
         IrSetExprVisitor<T, Void>,
         IrStringExprVisitor<T, Void>,
+        IrIntArrayExprVisitor<T, Void>,
         IrSetArrayExprVisitor<T, Void> {
 
     public void traverse(IrModule module, T a) {
@@ -61,6 +62,10 @@ public abstract class IrTraverser<T>
         for (IrStringExpr expr : exprs) {
             traverse(expr, a);
         }
+    }
+
+    public void traverse(IrIntArrayExpr expr, T a) {
+        expr.accept(this, a);
     }
 
     public void traverse(IrSetArrayExpr expr, T a) {
@@ -449,6 +454,12 @@ public abstract class IrTraverser<T>
     public Void visit(IrConcat ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrIntArrayVar ir, T a) {
+        traverse(ir.getArray(), a);
         return null;
     }
 

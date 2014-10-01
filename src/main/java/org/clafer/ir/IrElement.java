@@ -11,16 +11,16 @@ import org.clafer.common.Check;
  */
 public class IrElement extends IrAbstractInt {
 
-    private final IrIntExpr[] array;
+    private final IrIntArrayExpr array;
     private final IrIntExpr index;
 
-    IrElement(IrIntExpr[] array, IrIntExpr index, Domain domain) {
+    IrElement(IrIntArrayExpr array, IrIntExpr index, Domain domain) {
         super(domain);
-        this.array = Check.noNullsNotEmpty(array);
+        this.array = Check.notNull(array);
         this.index = Check.notNull(index);
     }
 
-    public IrIntExpr[] getArray() {
+    public IrIntArrayExpr getArray() {
         return array;
     }
 
@@ -37,18 +37,18 @@ public class IrElement extends IrAbstractInt {
     public boolean equals(Object obj) {
         if (obj instanceof IrElement) {
             IrElement other = (IrElement) obj;
-            return Arrays.equals(array, other.array) && index.equals(other.index);
+            return array.equals(other.array) && index.equals(other.index);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(array) ^ index.hashCode();
+        return array.hashCode() ^ index.hashCode();
     }
 
     @Override
     public String toString() {
-        return Arrays.toString(array) + "[" + index + "]";
+        return array + "[" + index + "]";
     }
 }
