@@ -1191,14 +1191,18 @@ public class AstCompiler {
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
                     return equal(IrUtil.asArray(leftArray), IrUtil.asArray(rightArray));
                 } else if (right instanceof IrSetArrayExpr) {
+                    Type type = getType(ast.getLeft());
+                    AstClafer returnType = type.getCommonSupertype().get(1);
                     IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
-                    return equal(asSets(IrUtil.asArray(leftArray)), IrUtil.asArray(rightArray));
+                    return equal(IrUtil.asArray(filterNotEqual(leftArray, getUninitalizedRef(returnType))), IrUtil.asArray(rightArray));
                 }
             } else if (left instanceof IrSetArrayExpr) {
                 IrSetArrayExpr leftArray = (IrSetArrayExpr) left;
                 if (right instanceof IrIntArrayExpr) {
+                    Type type = getType(ast.getRight());
+                    AstClafer returnType = type.getCommonSupertype().get(1);
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
-                    return equal(IrUtil.asArray(leftArray), asSets(IrUtil.asArray(rightArray)));
+                    return equal(IrUtil.asArray(leftArray), IrUtil.asArray(filterNotEqual(rightArray, getUninitalizedRef(returnType))));
                 } else if (right instanceof IrSetArrayExpr) {
                     IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
                     return equal(IrUtil.asArray(leftArray), IrUtil.asArray(rightArray));

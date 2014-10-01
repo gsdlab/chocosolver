@@ -41,8 +41,8 @@ public class RelationalTest {
 
     /**
      * <pre>
-     * A -> B
-     *     B
+     * A -> B *
+     *     B *
      * [ (A -> ref) = (A -> B) ]
      * </pre>
      */
@@ -56,7 +56,7 @@ public class RelationalTest {
         model.addConstraint(equal(ref(a), relation(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(1, solver.allInstances().length);
+        assertEquals(3, solver.allInstances().length);
     }
 
     /**
