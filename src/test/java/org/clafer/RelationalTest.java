@@ -56,7 +56,7 @@ public class RelationalTest {
         model.addConstraint(equal(ref(a), relation(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
-        assertEquals(3, solver.allInstances().length);
+        assertEquals(4, solver.allInstances().length);
     }
 
     /**
