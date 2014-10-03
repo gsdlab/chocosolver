@@ -2061,6 +2061,30 @@ public class Irs {
         return array(array);
     }
 
+    public static IrSetArrayExpr inverse(IrSetArrayExpr relation, int length) {
+        TIntSet[] envs = new TIntSet[length];
+        TIntSet[] kers = new TIntSet[length];
+        for (int i = 0; i < length; i++) {
+            envs[i] = new TIntHashSet();
+            kers[i] = new TIntHashSet();
+        }
+        for (int i = 0; i < relation.length(); i++) {
+            TIntIterator iter = relation.getEnvs()[i].iterator();
+            while (iter.hasNext()) {
+                envs[iter.next()].add(i);
+            }
+            iter = relation.getKers()[i].iterator();
+            while (iter.hasNext()) {
+                kers[iter.next()].add(i);
+            }
+        }
+        Domain[] cards = new Domain[length];
+        for (int i = 0; i < cards.length; i++) {
+            cards[i] = boundDomain(kers[i].size(), envs[i].size());
+        }
+        return new IrInverse(relation, enumDomains(envs), enumDomains(kers), cards);
+    }
+
     public static IrSetArrayExpr transitiveClosure(IrSetArrayExpr relation) {
         int n = relation.length();
         Domain[] envs = new Domain[n];

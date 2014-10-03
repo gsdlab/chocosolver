@@ -26,6 +26,7 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
+import org.clafer.ast.AstInverse;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -595,6 +596,17 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<?> visit(AstRefRelation ast, Void a) {
             AstRef ref = ast.getRef();
             return put(ref.getSourceType(), ref.getTargetType(), ast);
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstInverse ast, Void a) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            if (relation.getCommonSupertype().arity() == 2) {
+                AstClafer paramType = relation.getCommonSupertype().get(0);
+                AstClafer returnType = relation.getCommonSupertype().get(1);
+                return put(returnType, paramType, inverse(relation.getExpr()));
+            }
+            throw new TypeException(relation + " cannot be inversed");
         }
 
         @Override

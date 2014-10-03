@@ -75,4 +75,12 @@ public class Domains {
                 return new EnumDomain(array);
         }
     }
+
+    public static Domain[] enumDomains(TIntSet... values) {
+        Domain[] domains = new Domain[values.length];
+        for (int i = 0; i < domains.length; i++) {
+            domains[i] = enumDomain(values[i]);
+        }
+        return domains;
+    }
 }

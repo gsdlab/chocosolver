@@ -672,6 +672,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrSetArrayExpr visit(IrInverse ir, T a) {
+        IrSetArrayExpr relation = rewrite(ir.getRelation(), a);
+        return changed(ir.getRelation(), relation)
+                ? inverse(relation, ir.getEnvs().length)
+                : ir;
+    }
+
+    @Override
     public IrSetArrayExpr visit(IrTransitiveClosure ir, T a) {
         IrSetArrayExpr relation = rewrite(ir.getRelation(), a);
         return changed(ir.getRelation(), relation)

@@ -410,6 +410,10 @@ public class Asts {
         return new AstRefRelation(ref);
     }
 
+    public static AstSetExpr inverse(AstSetExpr relation) {
+        return new AstInverse(relation);
+    }
+
     public static AstSetExpr transitiveClosure(AstSetExpr relation) {
         return new AstTransitiveClosure(relation);
     }

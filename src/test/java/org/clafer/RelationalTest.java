@@ -294,6 +294,24 @@ public class RelationalTest {
 
     /**
      * <pre>
+     * A *
+     *     B *
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testInverse() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B");
+        b.addConstraint(equal(joinParent($this()), join($this(), inverse(relation(b)))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+        assertEquals(38, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * A -> A *
      *     [ #(this . (A -> ref)*) = 2 ]
      * </pre>

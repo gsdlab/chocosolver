@@ -73,5 +73,7 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstRefRelation ast, A a);
 
+    public B visit(AstInverse ast, A a);
+
     public B visit(AstTransitiveClosure ast, A a);
 }

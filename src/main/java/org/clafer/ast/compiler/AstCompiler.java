@@ -32,6 +32,7 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
+import org.clafer.ast.AstInverse;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -1568,6 +1569,21 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstRefRelation ast, Void a) {
             return array(refPointers.get(ast.getRef()));
+        }
+
+        @Override
+        public IrExpr visit(AstInverse ast, Void a) {
+            Type type = getType(ast.getRelation());
+            AstClafer returnType = type.getCommonSupertype().get(1);
+            IrExpr relation = compile(ast.getRelation());
+            if (relation instanceof IrIntArrayExpr) {
+                return inverse(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), getScope(returnType));
+            }
+            if (relation instanceof IrSetArrayExpr) {
+                return inverse((IrSetArrayExpr) relation, getScope(returnType));
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
         }
 
         @Override

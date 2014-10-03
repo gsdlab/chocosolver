@@ -470,6 +470,12 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrInverse ir, T a) {
+        traverse(ir.getRelation(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrTransitiveClosure ir, T a) {
         traverse(ir.getRelation(), a);
         return null;

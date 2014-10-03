@@ -45,6 +45,7 @@ import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntVar;
+import org.clafer.ir.IrInverse;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrLength;
@@ -1659,6 +1660,17 @@ public class IrCompiler {
         @Override
         public Object visit(IrSetArrayVar ir, CSetVar[] a) {
             return compile(ir.getArray());
+        }
+
+        @Override
+        public Object visit(IrInverse ir, CSetVar[] reify) {
+            CSetVar[] relation = compile(ir.getRelation());
+            if (reify == null) {
+                CSetVar[] inverse = numCsets("Inverse", ir.getEnvs(), ir.getKers(), ir.getCards());
+                post(SCF.inverse_set(mapSet(relation), mapSet(inverse), 0, 0));
+                return inverse;
+            }
+            return SCF.inverse_set(mapSet(relation), mapSet(reify), 0, 0);
         }
 
         @Override
