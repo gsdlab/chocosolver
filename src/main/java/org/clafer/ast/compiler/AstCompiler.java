@@ -893,6 +893,17 @@ public class AstCompiler {
             return sets;
         }
 
+        private IrSetArrayExpr asRelation(IrExpr expr, ProductType type) {
+            assert type.arity() == 2;
+            if (expr instanceof IrIntArrayExpr) {
+                return filterNotEqual((IrIntArrayExpr) expr, getUninitalizedRef(type.get(1)));
+            } else if (expr instanceof IrSetArrayExpr) {
+                return (IrSetArrayExpr) expr;
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
+
         private IrStringExpr asString(IrExpr expr) {
             if (expr instanceof IrStringExpr) {
                 return ((IrStringExpr) expr);
@@ -1354,9 +1365,21 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstUnion ast, Void a) {
-            return union(
-                    asSet(compile(ast.getLeft())),
-                    asSet(compile(ast.getRight())));
+            IrExpr left = compile(ast.getLeft());
+            IrExpr right = compile(ast.getRight());
+
+            if (getCommonSupertype(ast).arity() == 1) {
+                return union(asSet(left), asSet(right));
+            }
+
+            IrSetExpr[] leftArray = IrUtil.asArray(asRelation(left, getCommonSupertype(ast.getLeft())));
+            IrSetExpr[] rightArray = IrUtil.asArray(asRelation(right, getCommonSupertype(ast.getLeft())));
+            assert leftArray.length == rightArray.length;
+            IrSetExpr[] union = new IrSetExpr[leftArray.length];
+            for (int i = 0; i < union.length; i++) {
+                union[i] = union(leftArray[i], rightArray[i]);
+            }
+            return array(union);
         }
 
         @Override
@@ -1414,15 +1437,38 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstUpcast ast, Void a) {
-            AstSetExpr base = ast.getBase();
-            int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(base).getClaferType());
-
-            IrExpr $base = compile(ast.getBase());
-            if ($base instanceof IrIntExpr) {
-                IrIntExpr intBase = (IrIntExpr) $base;
-                return add(intBase, constant(offset));
+            IrExpr base = compile(ast.getBase());
+            if (base instanceof IrIntExpr) {
+                int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(ast.getBase()).getClaferType());
+                return add((IrIntExpr) base, constant(offset));
+            } else if (base instanceof IrSetExpr) {
+                int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(ast.getBase()).getClaferType());
+                return offset((IrSetExpr) base, offset);
+            } else if (base instanceof IrIntArrayExpr) {
+                int paramOffset = getOffset(ast.getTarget().get(0), getCommonSupertype(ast.getBase()).get(0));
+                int returnOffset = getOffset(ast.getTarget().get(1), getCommonSupertype(ast.getBase()).get(1));
+                int scope = getScope(ast.getTarget().get(0));
+                int uninitializedRef = getUninitalizedRef(ast.getTarget().get(1));
+                IrIntArrayExpr baseArray = (IrIntArrayExpr) base;
+                IrIntExpr[] array = new IrIntExpr[scope];
+                Arrays.fill(array, constant(uninitializedRef));
+                for (int i = 0; i < baseArray.length(); i++) {
+                    array[i + paramOffset] = add(get(baseArray, i), returnOffset);
+                }
+                return array(array);
+            } else if (base instanceof IrSetArrayExpr) {
+                int paramOffset = getOffset(ast.getTarget().get(0), getCommonSupertype(ast.getBase()).get(0));
+                int returnOffset = getOffset(ast.getTarget().get(1), getCommonSupertype(ast.getBase()).get(1));
+                int scope = getScope(ast.getTarget().get(0));
+                IrSetArrayExpr baseArray = (IrSetArrayExpr) base;
+                IrSetExpr[] array = new IrSetExpr[scope];
+                Arrays.fill(array, EmptySet);
+                for (int i = 0; i < baseArray.length(); i++) {
+                    array[i + paramOffset] = offset(get(baseArray, i), returnOffset);
+                }
+                return array(array);
             }
-            return offset((IrSetExpr) $base, offset);
+            throw new AstException();
         }
 
         @Override
@@ -1791,6 +1837,14 @@ public class AstCompiler {
 
     private Domain[] getPartialInts(AstRef ref) {
         return analysis.getPartialInts(ref);
+    }
+
+    private int getOffset(AstClafer sup, AstClafer sub) {
+        if (sup instanceof AstConcreteClafer) {
+            assert sup.equals(sub);
+            return 0;
+        }
+        return getOffset((AstAbstractClafer) sup, sub);
     }
 
     private int getOffset(AstAbstractClafer sup, AstClafer sub) {

@@ -120,6 +120,49 @@ public class RelationalTest {
 
     /**
      * <pre>
+     * A *
+     * B -> A *
+     * C -> A *
+     *
+     * [ #(B -> ref ++ C -> ref) = 4 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testFunctionUnionFunction() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = model.addChild("B").refTo(a);
+        AstConcreteClafer c = model.addChild("C").refTo(a);
+        model.addConstraint(equal(card(union(ref(b), ref(c))), 4));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        assertEquals(36, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A
+     *     B *
+     *     C *
+     * [ #(A -> B ++ A -> C) == 4 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRelationUnionRelation() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("B");
+        AstConcreteClafer c = a.addChild("C");
+        model.addConstraint(equal(card(union(relation(b), relation(c))), 4));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        assertEquals(3, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * Cost -> int
      * [ Cost . (Cost -> int) = 2 ]
      * </pre>
