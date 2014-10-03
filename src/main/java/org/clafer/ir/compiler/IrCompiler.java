@@ -1585,14 +1585,15 @@ public class IrCompiler {
             CSetVar alternative = compile(ir.getAlternative());
             if (reify == null) {
                 CSetVar ternary = numCset("Ternary", ir.getEnv(), ir.getKer(), ir.getCard());
-                post(_ifThenElse(antecedent,
-                        _equal(ternary, consequent),
-                        _equal(ternary, alternative)));
+                post(_implies(antecedent, _equal(ternary, consequent)));
+                post(_implies(antecedent.not(), _equal(ternary, alternative)));
                 return ternary;
             }
-            return _ifThenElse(antecedent,
-                    _equal(reify, consequent),
-                    _equal(reify, alternative));
+            return _arithm(
+                    _implies(antecedent, _equal(reify, consequent)).reif(),
+                    "+",
+                    _implies(antecedent.not(), _equal(reify, alternative)).reif(),
+                    "=", 2);
         }
     };
 
@@ -1678,12 +1679,6 @@ public class IrCompiler {
 
     private static Constraint _ifThenElse(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
         return Constraints.ifThenElse(antecedent, consequent, alternative);
-    }
-
-    private static Constraint _ifThenElse(BoolVar antecedent, Constraint consequent, Constraint alternative) {
-        Constraint thenClause = _implies(antecedent, consequent);
-        Constraint elseClause = _implies(antecedent.not(), alternative);
-        return _arithm(thenClause.reif(), "+", elseClause.reif(), "=", 2);
     }
 
     private static Constraint _sum(IntVar sum, IntVar... vars) {
