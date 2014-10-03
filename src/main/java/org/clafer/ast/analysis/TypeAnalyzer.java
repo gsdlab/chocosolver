@@ -646,7 +646,7 @@ public class TypeAnalyzer implements Analyzer {
         AstClafer[] toProduct = to.getProduct();
         AstClafer[] fromProduct = from.getProduct();
         if (fromProduct.length != toProduct.length) {
-            throw new IllegalArgumentException();
+            return false;
         }
         for (int i = 0; i < fromProduct.length; i++) {
             if (!AstUtil.isAssignable(fromProduct[i], toProduct[i])) {
