@@ -1638,10 +1638,10 @@ public class AstCompiler {
             if (relation instanceof IrIntArrayExpr) {
                 Type type = getType(ast.getRelation());
                 AstClafer returnType = type.getCommonSupertype().get(1);
-                return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)));
+                return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isReflexive());
             }
             if (relation instanceof IrSetArrayExpr) {
-                return transitiveClosure((IrSetArrayExpr) relation);
+                return transitiveClosure((IrSetArrayExpr) relation, ast.isReflexive());
             }
             // Bug.
             throw new AstException("Should not have passed type checking.");

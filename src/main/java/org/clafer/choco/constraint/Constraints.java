@@ -971,6 +971,12 @@ public class Constraints {
         return new Constraint("transitive", new PropReflexive(relation));
     }
 
+    public static Constraint transitiveClosure(SetVar[] relation, SetVar[] closure, boolean reflexive) {
+        return reflexive
+                ? transitiveReflexiveClosure(relation, closure)
+                : transitiveClosure(relation, closure);
+    }
+
     public static Constraint transitiveClosure(SetVar[] relation, SetVar[] closure) {
         if (relation.length != closure.length) {
             throw new IllegalArgumentException();

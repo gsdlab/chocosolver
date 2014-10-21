@@ -2085,7 +2085,7 @@ public class Irs {
         return new IrInverse(relation, enumDomains(envs), enumDomains(kers), cards);
     }
 
-    public static IrSetArrayExpr transitiveClosure(IrSetArrayExpr relation) {
+    public static IrSetArrayExpr transitiveClosure(IrSetArrayExpr relation, boolean reflexive) {
         int n = relation.length();
         Domain[] envs = new Domain[n];
         Domain[] kers = new Domain[n];
@@ -2095,6 +2095,9 @@ public class Irs {
             TIntStack q = new TIntArrayStack(n);
             q.push(i);
             TIntSet env = new TIntHashSet(relation.getEnvs()[i].getValues());
+            if (reflexive) {
+                env.add(i);
+            }
             do {
                 TIntIterator iter = relation.getEnvs()[q.pop()].iterator();
                 while (iter.hasNext()) {
@@ -2107,6 +2110,9 @@ public class Irs {
 
             q.push(i);
             TIntSet ker = new TIntHashSet(relation.getKers()[i].getValues());
+            if (reflexive) {
+                ker.add(i);
+            }
             do {
                 TIntIterator iter = relation.getKers()[q.pop()].iterator();
                 while (iter.hasNext()) {
@@ -2121,7 +2127,7 @@ public class Irs {
             kers[i] = enumDomain(ker);
             cards[i] = boundDomain(kers[i].size(), envs[i].size());
         }
-        return new IrTransitiveClosure(relation, envs, kers, cards);
+        return new IrTransitiveClosure(relation, reflexive, envs, kers, cards);
     }
 
     /**

@@ -414,7 +414,15 @@ public class Asts {
         return new AstInverse(relation);
     }
 
+    public static AstSetExpr transitiveClosure(AstSetExpr relation, boolean reflexive) {
+        return new AstTransitiveClosure(relation, reflexive);
+    }
+
     public static AstSetExpr transitiveClosure(AstSetExpr relation) {
-        return new AstTransitiveClosure(relation);
+        return transitiveClosure(relation, false);
+    }
+
+    public static AstSetExpr transitiveReflexiveClosure(AstSetExpr relation) {
+        return transitiveClosure(relation, true);
     }
 }

@@ -1678,10 +1678,10 @@ public class IrCompiler {
             CSetVar[] relation = compile(ir.getRelation());
             if (reify == null) {
                 CSetVar[] closure = numCsets("TransitiveClosure", ir.getEnvs(), ir.getKers(), ir.getCards());
-                post(Constraints.transitiveClosure(mapSet(relation), mapSet(closure)));
+                post(Constraints.transitiveClosure(mapSet(relation), mapSet(closure), ir.isReflexive()));
                 return closure;
             }
-            return Constraints.transitiveClosure(mapSet(relation), mapSet(reify));
+            return Constraints.transitiveClosure(mapSet(relation), mapSet(reify), ir.isReflexive());
         }
     };
 

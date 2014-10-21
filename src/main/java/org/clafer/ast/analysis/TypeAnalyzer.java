@@ -614,7 +614,7 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
             if (relation.getCommonSupertype().arity() == 2) {
                 if (relation.getCommonSupertype().get(0).equals(relation.getCommonSupertype().get(1))) {
-                    return put(relation.getType(), transitiveClosure(relation.getExpr()));
+                    return put(relation.getType(), transitiveClosure(relation.getExpr(), ast.isReflexive()));
                 }
             }
             throw new TypeException(relation + " cannot be transitively closed");

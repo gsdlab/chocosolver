@@ -683,7 +683,7 @@ public abstract class IrRewriter<T>
     public IrSetArrayExpr visit(IrTransitiveClosure ir, T a) {
         IrSetArrayExpr relation = rewrite(ir.getRelation(), a);
         return changed(ir.getRelation(), relation)
-                ? transitiveClosure(relation)
+                ? transitiveClosure(relation, ir.isReflexive())
                 : ir;
     }
 }

@@ -9,14 +9,20 @@ import org.clafer.domain.Domain;
 public class IrTransitiveClosure extends IrAbstractSetArray {
 
     private final IrSetArrayExpr relation;
+    private final boolean reflexive;
 
-    public IrTransitiveClosure(IrSetArrayExpr relation, Domain[] envDomains, Domain[] kerDomains, Domain[] cardDomains) {
+    public IrTransitiveClosure(IrSetArrayExpr relation, boolean reflexive, Domain[] envDomains, Domain[] kerDomains, Domain[] cardDomains) {
         super(envDomains, kerDomains, cardDomains);
         this.relation = relation;
+        this.reflexive = reflexive;
     }
 
     public IrSetArrayExpr getRelation() {
         return relation;
+    }
+
+    public boolean isReflexive() {
+        return reflexive;
     }
 
     @Override
@@ -28,18 +34,18 @@ public class IrTransitiveClosure extends IrAbstractSetArray {
     public boolean equals(Object obj) {
         if (obj instanceof IrTransitiveClosure) {
             IrTransitiveClosure other = (IrTransitiveClosure) obj;
-            return relation.equals(other.relation);
+            return relation.equals(other.relation) && reflexive == other.reflexive;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return 51 * relation.hashCode();
+        return 51 * relation.hashCode() ^ (reflexive ? 16 : 0);
     }
 
     @Override
     public String toString() {
-        return "transitiveClosure(" + relation + ")";
+        return reflexive ? "transitiveReflexiveClosure(" + relation + ")" : "transitiveClosure(" + relation + ")";
     }
 }
