@@ -5,7 +5,7 @@
 
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.7-SNAPSHOT</version>
+    <version>0.3.7</version>
     <packaging>jar</packaging>
 
     <name>chocosolver</name>
@@ -48,6 +48,7 @@
             <url>http://www.emn.fr/z-info/choco-repo/mvn/repository/</url>
         </repository>
     </repositories>
+
     
     <build>
         <plugins>
