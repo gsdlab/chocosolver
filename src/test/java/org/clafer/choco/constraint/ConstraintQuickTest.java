@@ -131,6 +131,10 @@ public class ConstraintQuickTest extends Suite {
         void evaluate(boolean positive) throws Throwable {
             Solver solver = new Solver();
             Object[] args = (Object[]) parameters.invokeExplosively(target, solver);
+            int expectedNumberOfSolutions = positive
+                    ? parameters.getAnnotation(Input.class).solutions()
+                    : TestReflection.countSolutions(args) - parameters.getAnnotation(Input.class).solutions();
+
             int count = 0;
             Constraint constraint = (Constraint) testMethod.invokeExplosively(target, args);
             solver.post(positive ? constraint : constraint.getOpposite());
@@ -144,14 +148,8 @@ public class ConstraintQuickTest extends Suite {
                     count++;
                 } while (solver.nextSolution());
             }
-            if (positive) {
-                assertEquals("Wrong number of solutions.",
-                        parameters.getAnnotation(Input.class).solutions(), count);
-            } else {
-                assertEquals("Wrong number of negative solutions.",
-                        TestReflection.countSolutions(args) - parameters.getAnnotation(Input.class).solutions(),
-                        count);
-            }
+            assertEquals(positive ? "Wrong number of solutions." : "Wrong number of negative solutions.",
+                    expectedNumberOfSolutions, count);
         }
     }
 

@@ -1815,7 +1815,7 @@ public class IrCompiler {
     }
 
     private static Constraint _member(IntVar element, SetVar set) {
-        return SCF.member(element, set);
+        return Constraints.member(element, set);
     }
 
     private static Constraint _not_member(IntVar element, SetVar set) {

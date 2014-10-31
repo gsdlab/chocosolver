@@ -330,6 +330,17 @@ public class Constraints {
     }
 
     /**
+     * A constraint enforcing {@code element ∈ set}.
+     *
+     * @param element the element
+     * @param set the set
+     * @return constraint {@code element ∈ set}.
+     */
+    public static Constraint member(IntVar element, SetVar set) {
+        return new SetMember(element, set);
+    }
+
+    /**
      * A constraint enforcing {@code element ∉ set}.
      *
      * @param element the element
@@ -337,7 +348,7 @@ public class Constraints {
      * @return constraint {@code element ∉ set}.
      */
     public static Constraint notMember(IntVar element, SetVar set) {
-        return new Constraint("notMember", new PropIntNotMemberSet(element, set));
+        return new SetNotMember(element, set);
     }
 
     /**

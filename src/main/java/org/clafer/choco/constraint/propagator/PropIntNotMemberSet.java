@@ -19,9 +19,9 @@ import util.procedure.IntProcedure;
  */
 public class PropIntNotMemberSet extends Propagator<Variable> {
 
-    private IntVar element;
-    private SetVar set;
-    private ISetDeltaMonitor setD;
+    private final IntVar element;
+    private final SetVar set;
+    private final ISetDeltaMonitor setD;
 
     public PropIntNotMemberSet(IntVar element, SetVar set) {
         super(new Variable[]{element, set}, PropagatorPriority.BINARY, true);

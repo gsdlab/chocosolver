@@ -571,4 +571,29 @@ public class SimpleConstraintTest {
         }
         assertEquals(1, solver.instanceCount());
     }
+
+    /**
+     * <pre>
+     * abstract A
+     *     B -> int
+     *     [ this.B.ref = 0 || this.B.ref = 1 ]
+     * X : A
+     * Y : A
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testOrPartialInt() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer x = model.addChild("X").extending(a).withCard(Mandatory);
+        AstConcreteClafer y = model.addChild("Y").extending(a).withCard(Mandatory);
+        a.addConstraint(or(
+                equal(joinRef(join($this(), b)), 0),
+                equal(joinRef(join($this(), b)), 1)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(4, solver.allInstances().length);
+    }
 }
