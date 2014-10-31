@@ -34,6 +34,8 @@ import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
 import solver.Solver;
+import solver.search.limits.FailCounter;
+import solver.search.loop.monitors.SMF;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.AbstractStrategy;
@@ -162,6 +164,13 @@ public class ClaferCompiler {
         }
     }
 
+    private static void restartPolicy(Solver solver, ClaferOption options) {
+        switch (options.getStrategy()) {
+            case Random:
+                SMF.luby(solver, 16, 16, new FailCounter(16), Integer.MAX_VALUE);
+        }
+    }
+
     private static Maybe<AbstractStrategy<?>> firstFailInDomainMax(IntVar[] vars) {
         if (vars.length == 0) {
             return Maybe.nothing();
@@ -193,6 +202,7 @@ public class ClaferCompiler {
             set(solver,
                     setStrategy(getSetVars(in, solution), options),
                     intStrategy(getIntVars(in, solution), options));
+            restartPolicy(solver, options);
             return new ClaferSolver(solver, solution, options.getStrategy() == ClaferSearchStrategy.Random);
         } catch (UnsatisfiableException e) {
             return new ClaferSolver();
@@ -229,6 +239,7 @@ public class ClaferCompiler {
                     setStrategy(getSetVars(in, solution), options),
                     //                firstFailInDomainMax(objectiveVars),
                     intStrategy(getIntVars(in, solution), options));
+            restartPolicy(solver, options);
             return maximizes.length == 1
                     ? new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0])
                     : new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars);
@@ -255,6 +266,7 @@ public class ClaferCompiler {
                 firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
                 setStrategy(getSetVars(in, solution), options),
                 intStrategy(getIntVars(in, solution), options));
+        restartPolicy(solver, options);
         return new ClaferUnsat(solver, solution);
     }
 
