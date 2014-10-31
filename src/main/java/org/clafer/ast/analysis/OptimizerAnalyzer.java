@@ -18,7 +18,6 @@ import org.clafer.ast.AstThis;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.Card;
 import org.clafer.ast.ProductType;
-import org.clafer.common.Util;
 import org.clafer.objective.Objective;
 
 /**
@@ -49,16 +48,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         if (ast.getRight() instanceof AstChildRelation) {
             AstSetExpr left = rewrite(ast.getLeft(), a);
             AstConcreteClafer right = ((AstChildRelation) ast.getRight()).getChildType();
-            if (left instanceof AstThis) {
-                if (a.getScope(a.getCommonSupertype(ast.getLeft())) == 1) {
-                    Card childCard = a.getCard(right);
-                    if (Format.ParentGroup.equals(a.getFormat(right))) {
-                        assert childCard.isExact();
-                        return constant(right, Util.fromTo(0, childCard.getLow()));
-                    }
-                    return global(right);
-                }
-            } else if (left instanceof AstGlobal) {
+            if (left instanceof AstGlobal) {
                 return global(right);
             } else if (left instanceof AstConstant) {
                 Card childCard = a.getCard(right);

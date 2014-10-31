@@ -6,7 +6,6 @@ import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
-import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -52,7 +51,7 @@ public class SimpleConstraintTest {
         person.addConstraint(equal(card(join(join($this(), hand), finger)), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-        assertEquals(6, solver.allInstances().length);
+        assertEquals(3, solver.allInstances().length);
     }
 
     /**
