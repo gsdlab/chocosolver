@@ -4,6 +4,7 @@ import gnu.trove.TIntCollection;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
+import java.util.Collection;
 
 /**
  *
@@ -82,5 +83,13 @@ public class Domains {
             domains[i] = enumDomain(values[i]);
         }
         return domains;
+    }
+
+    public static Domain union(Collection<Domain> domains) {
+        Domain union = EmptyDomain;
+        for (Domain domain : domains) {
+            union = union.union(domain);
+        }
+        return union;
     }
 }
