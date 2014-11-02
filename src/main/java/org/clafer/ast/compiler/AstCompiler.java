@@ -206,6 +206,47 @@ public class AstCompiler {
         return clafers;
     }
 
+    private static boolean isThis(AstSetExpr expr) {
+        if (expr instanceof AstThis) {
+            return true;
+        }
+        if (expr instanceof AstDowncast) {
+            AstDowncast cast = (AstDowncast) expr;
+            return isThis(cast.getBase());
+        }
+        if (expr instanceof AstUpcast) {
+            AstUpcast cast = (AstUpcast) expr;
+            return isThis(cast.getBase());
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the constraint can always be enforced regardless if the
+     * attached Clafer exists or not.
+     *
+     * @param expr
+     * @return {@code false} if {@code expr} can always be enforced,
+     * {@code true} otherwise or unknown
+     */
+    private static boolean isConditional(AstBoolExpr expr) {
+        // this not in ___
+        if (expr instanceof AstMembership) {
+            AstMembership membership = (AstMembership) expr;
+            switch (membership.getOp()) {
+                case NotIn:
+                    return !isThis(membership.getMember());
+            }
+        } else if (expr instanceof AstSetTest) {
+            AstSetTest membership = (AstSetTest) expr;
+            switch (membership.getOp()) {
+                case NotEqual:
+                    return !isThis(membership.getLeft()) && !isThis(membership.getRight());
+            }
+        }
+        return true;
+    }
+
     private AstSolutionMap compile() {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
@@ -232,20 +273,27 @@ public class AstCompiler {
         Map<AstConstraint, IrBoolVar> softVars = new HashMap<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
+            AstBoolExpr expr = analysis.getExpr(constraint);
             int scope = getScope(clafer);
             if (analysis.isHard(constraint)) {
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    IrBoolExpr thisConstraint = expressionCompiler.compile(analysis.getExpr(constraint));
-                    module.addConstraint(implies(memberships.get(clafer)[j], thisConstraint));
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
+                    IrBoolExpr conditionalConstraint = isConditional(expr)
+                            ? implies(memberships.get(clafer)[j], thisConstraint)
+                            : thisConstraint;
+                    module.addConstraint(conditionalConstraint);
                 }
             } else {
                 IrBoolVar softVar = bool(constraint.toString());
                 softVars.put(constraint, softVar);
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    IrBoolExpr thisConstraint = expressionCompiler.compile(analysis.getExpr(constraint));
-                    module.addConstraint(ifOnlyIf(softVar, implies(memberships.get(clafer)[j], thisConstraint)));
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
+                    IrBoolExpr conditionalConstraint = isConditional(expr)
+                            ? implies(memberships.get(clafer)[j], thisConstraint)
+                            : thisConstraint;
+                    module.addConstraint(ifOnlyIf(softVar, conditionalConstraint));
                 }
                 module.addVariable(softVar);
             }
