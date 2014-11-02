@@ -3,7 +3,7 @@ package org.clafer.ast;
 import org.clafer.common.Check;
 
 /**
- * 
+ *
  * @author jimmy
  */
 public class AstSetTest implements AstBoolExpr {
@@ -48,6 +48,17 @@ public class AstSetTest implements AstBoolExpr {
 
         private Op(String syntax) {
             this.syntax = syntax;
+        }
+
+        public Op negate() {
+            switch (this) {
+                case Equal:
+                    return NotEqual;
+                case NotEqual:
+                    return Equal;
+                default:
+                    throw new IllegalStateException();
+            }
         }
 
         public String getSyntax() {

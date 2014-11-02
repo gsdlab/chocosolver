@@ -5,6 +5,7 @@ import java.util.Map;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
@@ -13,7 +14,10 @@ import org.clafer.ast.AstExprRewriter;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
+import org.clafer.ast.AstMembership;
+import org.clafer.ast.AstNot;
 import org.clafer.ast.AstSetExpr;
+import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstThis;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.Card;
@@ -104,4 +108,23 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         return ast;
     }
     // TDODO: rewrite for all (global)
+
+    @Override
+    public AstExpr visit(AstNot ast, Analysis a) {
+        AstBoolExpr expr = ast.getExpr();
+        if (expr instanceof AstNot) {
+            AstNot not = (AstNot) expr;
+            return not.getExpr();
+        } else if (expr instanceof AstSetTest) {
+            AstSetTest test = (AstSetTest) expr;
+            return test(test.getLeft(), test.getOp().negate(), test.getRight());
+        } else if (expr instanceof AstCompare) {
+            AstCompare compare = (AstCompare) expr;
+            return compare(compare.getLeft(), compare.getOp().negate(), compare.getRight());
+        } else if (expr instanceof AstMembership) {
+            AstMembership membership = (AstMembership) expr;
+            return membership(membership.getMember(), membership.getOp().negate(), membership.getSet());
+        }
+        return ast;
+    }
 }

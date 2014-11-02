@@ -39,7 +39,7 @@ public class AstCompare implements AstBoolExpr {
     public String toString() {
         return left + " " + op.getSyntax() + " " + right;
     }
-    
+
     public static enum Op {
 
         LessThan("<"),
@@ -50,6 +50,21 @@ public class AstCompare implements AstBoolExpr {
 
         private Op(String syntax) {
             this.syntax = syntax;
+        }
+
+        public Op negate() {
+            switch (this) {
+                case LessThan:
+                    return GreaterThanEqual;
+                case LessThanEqual:
+                    return GreaterThan;
+                case GreaterThan:
+                    return LessThanEqual;
+                case GreaterThanEqual:
+                    return LessThan;
+                default:
+                    throw new IllegalStateException();
+            }
         }
 
         public String getSyntax() {

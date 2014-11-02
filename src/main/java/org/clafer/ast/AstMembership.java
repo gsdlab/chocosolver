@@ -37,7 +37,7 @@ public class AstMembership implements AstBoolExpr {
 
     @Override
     public String toString() {
-        return member + " in " + set;
+        return member + " " + op + " " + set;
     }
 
     public static enum Op {
@@ -48,6 +48,17 @@ public class AstMembership implements AstBoolExpr {
 
         private Op(String syntax) {
             this.syntax = syntax;
+        }
+
+        public Op negate() {
+            switch (this) {
+                case In:
+                    return NotIn;
+                case NotIn:
+                    return In;
+                default:
+                    throw new IllegalStateException();
+            }
         }
 
         public String getSyntax() {
