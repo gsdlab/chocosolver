@@ -31,15 +31,26 @@ public class PropSortedSets extends Propagator<SetVar> {
         // Right now, it does a very simple propagation. It does not
         // enforce sorted sets by itself, requires PropSortedSetsCard in conjunction.
         // Can make it better if necessary but might turn out slower.
+        int min = Integer.MIN_VALUE;
         for (int i = 0; i < sets.length; i++) {
             SetVar set = sets[i];
-            int cur = set.getKernelFirst();
-            if (cur != SetVar.END) {
-                for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
-                    for (int j = cur + 1; j < next; j++) {
-                        set.addToKernel(j, aCause);
-                    }
+            for (int j = set.getEnvelopeFirst(); j != SetVar.END && j <= min; j = set.getEnvelopeNext()) {
+                set.removeFromEnvelope(j, aCause);
+            }
+            for (int j = set.getKernelFirst(); j != SetVar.END; j = set.getKernelNext()) {
+                min = j;
+            }
+        }
+        int max = Integer.MAX_VALUE;
+        for (int i = sets.length - 1; i >= 0; i--) {
+            SetVar set = sets[i];
+            for (int j = set.getEnvelopeFirst(); j != SetVar.END; j = set.getEnvelopeNext()) {
+                if (j >= max) {
+                    set.removeFromEnvelope(j, aCause);
                 }
+            }
+            if (set.getKernelSize() > 0) {
+                max = set.getKernelFirst();
             }
         }
     }

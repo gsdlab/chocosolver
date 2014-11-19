@@ -9,11 +9,11 @@ import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
+import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
-import org.clafer.choco.constraint.propagator.PropIntNotMemberSet;
 import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
@@ -403,9 +403,15 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
 
-        return new Constraint("sortedSets",
-                new PropSortedSets(sets),
-                new PropSortedSetsCard(sets, setCards));
+        @SuppressWarnings("unchecked")
+        Propagator<? extends Variable>[] propagators = new Propagator[sets.length + 2];
+        for (int i = 0; i < sets.length; i++) {
+            propagators[i] = new PropContinuous(sets[i], setCards[i]);
+        }
+        propagators[sets.length] = new PropSortedSets(sets);
+        propagators[sets.length + 1] = new PropSortedSetsCard(sets, setCards);
+
+        return new Constraint("sortedSets", propagators);
     }
 
     /**

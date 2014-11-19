@@ -59,7 +59,23 @@ public class PropSortedSetsCard extends Propagator<Variable> {
         if (isCardVar(vIdx)) {
             return IntEventType.all();
         }
-        return SetEventType.VOID.getMask();
+        return SetEventType.all();
+    }
+
+    public int maxKer(SetVar set) {
+        int max = SetVar.END;
+        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+            max = i;
+        }
+        return max;
+    }
+
+    public int maxEnv(SetVar set) {
+        int max = SetVar.END;
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            max = i;
+        }
+        return max;
     }
 
     @Override
@@ -83,6 +99,51 @@ public class PropSortedSetsCard extends Propagator<Variable> {
             low = newLow;
             high = newHigh;
         }
+
+        boolean changed;
+        int boundary = 0;
+        boolean hasBoundary;
+        do {
+            changed = false;
+            hasBoundary = false;
+            for (int i = sets.length - 1; i >= 0; i--) {
+                SetVar set = sets[i];
+                if (hasBoundary) {
+                    int lb = cards[i].getLB();
+                    for (int j = 1; j <= lb; j++) {
+                        set.addToKernel(boundary - j, aCause);
+                    }
+                }
+                if (cards[i].getUB() > 0) {
+                    hasBoundary = false;
+                }
+                if (set.getKernelSize() > 0) {
+                    boundary = set.getKernelFirst();
+                    if (boundary == set.getEnvelopeFirst()) {
+                        hasBoundary = true;
+                    }
+                }
+            }
+            hasBoundary = false;
+            for (int i = 0; i < sets.length; i++) {
+                SetVar set = sets[i];
+                if (hasBoundary) {
+                    int lb = cards[i].getLB();
+                    for (int j = 1; j <= lb; j++) {
+                        changed |= set.addToKernel(boundary + j, aCause);
+                    }
+                }
+                if (cards[i].getUB() > 0) {
+                    hasBoundary = false;
+                }
+                if (set.getKernelSize() > 0) {
+                    boundary = maxKer(set);
+                    if (boundary == maxEnv(set)) {
+                        hasBoundary = true;
+                    }
+                }
+            }
+        } while (changed);
     }
 
     @Override
