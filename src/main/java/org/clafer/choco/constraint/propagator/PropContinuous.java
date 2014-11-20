@@ -66,16 +66,15 @@ public class PropContinuous extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        int cur = set.getKernelFirst();
-        if (cur != SetVar.END) {
+        if (set.getKernelSize() > 0) {
+            int cur = set.getKernelFirst();
+            assert cur != SetVar.END;
             for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
                 for (int j = cur + 1; j < next; j++) {
                     set.addToKernel(j, aCause);
                 }
                 cur = next;
             }
-        }
-        if (set.getKernelSize() > 0) {
             if (!set.isInstantiated()) {
                 int min = set.getKernelFirst();
 
@@ -109,11 +108,23 @@ public class PropContinuous extends Propagator<Variable> {
             int prev = set.getEnvelopeFirst();
             int i;
             int max = 0;
+            int[] region = card.getLB() >= 2 ? new int[card.getLB() - 1] : null;
             do {
+                if (region != null) {
+                    region[0] = prev;
+                }
                 int size = 1;
                 for (i = set.getEnvelopeNext(); i != SetVar.END && prev + 1 == i; i = set.getEnvelopeNext()) {
                     prev = i;
+                    if (region != null && size < region.length) {
+                        region[size] = prev;
+                    }
                     size++;
+                }
+                if (region != null && size <= region.length) {
+                    for (int z = 0; z < size; z++) {
+                        set.removeFromEnvelope(region[z], aCause);
+                    }
                 }
                 prev = i;
                 max = Math.max(max, size);
