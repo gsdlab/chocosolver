@@ -4,7 +4,10 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
+import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.Variable;
+import solver.variables.events.IntEventType;
 import solver.variables.events.SetEventType;
 import util.ESat;
 
@@ -12,18 +15,46 @@ import util.ESat;
  *
  * @author jimmy
  */
-public class PropSortedSets extends Propagator<SetVar> {
+public class PropSortedSets extends Propagator<Variable> {
 
     private final SetVar[] sets;
+    private final IntVar[] cards;
 
-    public PropSortedSets(SetVar[] sets) {
-        super(sets, PropagatorPriority.LINEAR, false);
+    public PropSortedSets(SetVar[] sets, IntVar[] cards) {
+        super(buildArray(sets, cards), PropagatorPriority.LINEAR, false);
         this.sets = sets;
+        this.cards = cards;
+    }
+
+    private static Variable[] buildArray(SetVar[] sets, IntVar[] cards) {
+        Variable[] array = new Variable[sets.length + cards.length];
+        System.arraycopy(sets, 0, array, 0, sets.length);
+        System.arraycopy(cards, 0, array, sets.length, cards.length);
+        return array;
+    }
+
+    private boolean isSetVar(int idx) {
+        return idx < sets.length;
+    }
+
+    private int getSetVarIndex(int idx) {
+        return idx;
+    }
+
+    private boolean isCardVar(int idx) {
+        return idx >= sets.length;
+    }
+
+    private int getCardVarIndex(int idx) {
+        return idx - sets.length;
     }
 
     @Override
     protected int getPropagationConditions(int vIdx) {
-        return SetEventType.ADD_TO_KER.getMask();
+        if (isCardVar(vIdx)) {
+            return IntEventType.all();
+        }
+        return SetEventType.all();
     }
 
     @Override
@@ -34,16 +65,29 @@ public class PropSortedSets extends Propagator<SetVar> {
         int min = Integer.MIN_VALUE;
         for (int i = 0; i < sets.length; i++) {
             SetVar set = sets[i];
+            IntVar card = cards[i];
             for (int j = set.getEnvelopeFirst(); j != SetVar.END && j <= min; j = set.getEnvelopeNext()) {
                 set.removeFromEnvelope(j, aCause);
             }
             for (int j = set.getKernelFirst(); j != SetVar.END; j = set.getKernelNext()) {
                 min = j;
             }
+            if (card.getLB() > 0) {
+                int lim = card.getLB() - 1;
+                if (lim < 0 || lim >= set.getEnvelopeSize()) {
+                    contradiction(card, "too small or large");
+                }
+                int j = set.getEnvelopeFirst();
+                for (int k = 0; k < lim; k++) {
+                    j = set.getEnvelopeNext();
+                }
+                min = Math.max(min, j);
+            }
         }
         int max = Integer.MAX_VALUE;
         for (int i = sets.length - 1; i >= 0; i--) {
             SetVar set = sets[i];
+            IntVar card = cards[i];
             for (int j = set.getEnvelopeFirst(); j != SetVar.END; j = set.getEnvelopeNext()) {
                 if (j >= max) {
                     set.removeFromEnvelope(j, aCause);
@@ -51,6 +95,17 @@ public class PropSortedSets extends Propagator<SetVar> {
             }
             if (set.getKernelSize() > 0) {
                 max = set.getKernelFirst();
+            }
+            if (card.getLB() > 0) {
+                int lim = set.getEnvelopeSize() - card.getLB();
+                if (lim < 0 || lim >= set.getEnvelopeSize()) {
+                    contradiction(card, "too small or large");
+                }
+                int j = set.getEnvelopeFirst();
+                for (int k = 0; k < lim; k++) {
+                    j = set.getEnvelopeNext();
+                }
+                max = Math.min(max, j);
             }
         }
     }

@@ -1,11 +1,15 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
+import org.clafer.choco.constraint.Constraints;
+import solver.Solver;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
+import solver.constraints.set.SCF;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
+import solver.variables.VF;
 import solver.variables.Variable;
 import solver.variables.events.IntEventType;
 import solver.variables.events.SetEventType;
@@ -108,13 +112,14 @@ public class PropSortedSetsCard extends Propagator<Variable> {
             hasBoundary = false;
             for (int i = sets.length - 1; i >= 0; i--) {
                 SetVar set = sets[i];
+                IntVar card = cards[i];
                 if (hasBoundary) {
                     int lb = cards[i].getLB();
                     for (int j = 1; j <= lb; j++) {
                         set.addToKernel(boundary - j, aCause);
                     }
                 }
-                if (cards[i].getUB() > 0) {
+                if (card.getUB() > 0) {
                     hasBoundary = false;
                 }
                 if (set.getKernelSize() > 0) {

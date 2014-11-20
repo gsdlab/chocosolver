@@ -408,7 +408,7 @@ public class Constraints {
         for (int i = 0; i < sets.length; i++) {
             propagators[i] = new PropContinuous(sets[i], setCards[i]);
         }
-        propagators[sets.length] = new PropSortedSets(sets);
+        propagators[sets.length] = new PropSortedSets(sets, setCards);
         propagators[sets.length + 1] = new PropSortedSetsCard(sets, setCards);
 
         return new Constraint("sortedSets", propagators);
