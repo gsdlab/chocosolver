@@ -25,6 +25,7 @@ import org.clafer.choco.constraint.propagator.PropMask;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropReflexive;
+import org.clafer.choco.constraint.propagator.PropReifyEqualXY;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
@@ -252,6 +253,10 @@ public class Constraints {
      */
     public static Constraint reifyEqual(BoolVar reify, IntVar v1, IntVar v2) {
         return new ReifyEqualXY(reify, true, v1, v2);
+    }
+
+    public static Constraint reifyEqual(IntVar reify, int value, IntVar v1, IntVar v2) {
+        return new Constraint("reifyIntEqual", new PropReifyEqualXY(reify, value, v1, v2));
     }
 
     /**

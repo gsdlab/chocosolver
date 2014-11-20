@@ -17,15 +17,19 @@ import util.procedure.IntProcedure;
  */
 public class PropReifyEqualXY extends Propagator<IntVar> {
 
-    private final BoolVar reify;
+    private final IntVar reify;
     private final int reifyC;
     private final IntVar x, y;
     private final IIntDeltaMonitor xD, yD;
 
     public PropReifyEqualXY(BoolVar reify, boolean reifyC, IntVar x, IntVar y) {
+        this(reify, reifyC ? 1 : 0, x, y);
+    }
+
+    public PropReifyEqualXY(IntVar reify, int reifyC, IntVar x, IntVar y) {
         super(new IntVar[]{reify, x, y}, PropagatorPriority.BINARY, true);
         this.reify = reify;
-        this.reifyC = reifyC ? 1 : 0;
+        this.reifyC = reifyC;
         this.x = x;
         this.xD = x.monitorDelta(aCause);
         this.y = y;
