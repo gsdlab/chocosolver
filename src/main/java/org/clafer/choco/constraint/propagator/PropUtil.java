@@ -97,6 +97,66 @@ public class PropUtil {
         return iterate;
     }
 
+    public static int getEnv(SetVar set, int index) {
+        int env = set.getEnvelopeFirst();
+        for (int i = 0; i < index && env != SetVar.END; i++) {
+            env = set.getEnvelopeNext();
+        }
+        return env;
+    }
+
+    /**
+     * Returns the largest element in the set's envelope. Returns
+     * {@link SetVar#END} if the envelope is empty.
+     *
+     * @param set the set variable
+     * @return the largest element in the set's envelope
+     */
+    public static int maxEnv(SetVar set) {
+        int max = SetVar.END;
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            max = i;
+        }
+        return max;
+    }
+
+    /**
+     * Returns the largest element in the set's kernel. Returns
+     * {@link SetVar#END} if the kernel is empty.
+     *
+     * @param set the set variable
+     * @return the largest element in the set's kernel
+     */
+    public static int maxKer(SetVar set) {
+        int max = SetVar.END;
+        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+            max = i;
+        }
+        return max;
+    }
+
+    /**
+     * Returns the smallest element in the set's envelope. Returns
+     * {@link SetVar#END} if the envelope is empty.
+     *
+     * @param set the set variable
+     * @return the smallest element in the set's envelope
+     */
+    public static int minEnv(SetVar set) {
+        return set.getEnvelopeFirst();
+    }
+
+    /**
+     * Returns the smallest element in the set's kernel. Returns
+     * {@link SetVar#END} if the kernel is empty.
+     *
+     * @param set the set variable
+     * @return the smallest element in the set's kernel
+     */
+    public static int minKer(SetVar set) {
+        return set.getKernelFirst();
+    }
+
     /**
      * Checks if at least one of the integer's domain contains a value.
      *

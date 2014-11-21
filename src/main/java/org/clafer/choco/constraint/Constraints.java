@@ -29,6 +29,8 @@ import org.clafer.choco.constraint.propagator.PropReifyEqualXY;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
+import org.clafer.choco.constraint.propagator.PropSetMax;
+import org.clafer.choco.constraint.propagator.PropSetMin;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
 import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
@@ -776,6 +778,14 @@ public class Constraints {
                 disjoint
                         ? sumEq(operandCards, unionCard)
                         : new PropSetUnionCard(operandCards, unionCard));
+    }
+
+    public static Constraint max(SetVar set, IntVar setCard, IntVar max) {
+        return new Constraint("max", new PropSetMax(set, setCard, max));
+    }
+
+    public static Constraint min(SetVar set, IntVar setCard, IntVar min) {
+        return new Constraint("min", new PropSetMin(set, setCard, min));
     }
 
     public static Constraint element(IntVar index, SetVar[] array, IntVar[] arrayCards, SetVar value, IntVar valueCard) {
