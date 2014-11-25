@@ -82,6 +82,15 @@ public class ConstraintQuickTest extends Suite {
         throw new AssertionError("Failed negative check for arguments " + Arrays.deepToString(args));
     }
 
+    Solver newSolver(FrameworkMethod testMethod, boolean positive) {
+        Solver solver = new Solver();
+        ArcConsistent arc = testMethod.getAnnotation(ArcConsistent.class);
+        if (arc != null && (positive || arc.opposite())) {
+            solver.plugMonitor(new ArcConsistentCheck(solver));
+        }
+        return solver;
+    }
+
     public static Object[] $(Object arg1) {
         return new Object[]{arg1};
     }
@@ -124,12 +133,17 @@ public class ConstraintQuickTest extends Suite {
 
         @Override
         public void evaluate() throws Throwable {
-            evaluate(true);
-            evaluate(false);
+            for (int i = 0; i < 10; i++) {
+                evaluate(true);
+            }
+            for (int i = 0; i < 10; i++) {
+                evaluate(false);
+            }
         }
 
         void evaluate(boolean positive) throws Throwable {
-            Solver solver = new Solver();
+            Solver solver = newSolver(testMethod, positive);
+
             Object[] args = (Object[]) parameters.invokeExplosively(target, solver);
             int expectedNumberOfSolutions = positive
                     ? parameters.getAnnotation(Input.class).solutions()
@@ -206,7 +220,7 @@ public class ConstraintQuickTest extends Suite {
         }
 
         void evaluate(boolean positive) throws Throwable {
-            Solver solver = new Solver();
+            Solver solver = newSolver(testMethod, positive);
 
             Class<?>[] parameters = testMethod.getMethod().getParameterTypes();
             Annotation[][] annotations = testMethod.getMethod().getParameterAnnotations();
