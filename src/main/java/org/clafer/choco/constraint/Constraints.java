@@ -15,6 +15,7 @@ import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
+import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
 import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
@@ -364,6 +365,10 @@ public class Constraints {
      */
     public static Constraint member(IntVar element, SetVar set) {
         return new SetMember(element, set);
+    }
+
+    public static Constraint memberNonempty(IntVar element, SetVar set, IntVar setCard) {
+        return new Constraint("memberNonempty", new PropIntMemberNonemptySet(element, set, setCard));
     }
 
     /**
