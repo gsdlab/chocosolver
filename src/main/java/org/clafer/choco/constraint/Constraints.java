@@ -11,6 +11,7 @@ import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
+import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
@@ -334,6 +335,24 @@ public class Constraints {
      */
     public static Constraint notEqual(SetVar set, int[] constant) {
         return new Constraint("notEqual", new PropSetNotEqualC(set, constant));
+    }
+
+    public static Constraint equalArcConsistent(final IntVar x, final IntVar y, final IntVar z) {
+        return new Constraint("equalArcConsistent", new PropEqualXY_Z(x, y, z)) {
+            @Override
+            public Constraint makeOpposite() {
+                return notEqualArcConsistent(x, y, z);
+            }
+        };
+    }
+
+    public static Constraint notEqualArcConsistent(final IntVar x, final IntVar y, final IntVar z) {
+        return new Constraint("notEqualArcConsistent", new PropNotEqualXY_Z(x, y, z)) {
+            @Override
+            public Constraint makeOpposite() {
+                return equalArcConsistent(x, y, z);
+            }
+        };
     }
 
     /**
