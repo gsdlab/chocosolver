@@ -2,6 +2,7 @@ package solver.variables;
 
 import java.util.Arrays;
 import org.clafer.choco.constraint.Constraints;
+import org.clafer.common.Util;
 import solver.Solver;
 
 /**
@@ -43,6 +44,10 @@ public class Var extends solver.variables.VariableFactory {
         return as;
     }
 
+    public static CSetVar constant(int[] value, Solver solver) {
+        return new CSetVar(VF.fixed(Arrays.toString(value), value, solver), VF.fixed(value.length, solver));
+    }
+
     public static CSetVar cset(String name, int[] env, Solver solver) {
         SetVar setVar = set(name, env, solver);
         IntVar cardVar = enumerated("|" + name + "|", 0, setVar.getEnvelopeSize(), solver);
@@ -53,6 +58,10 @@ public class Var extends solver.variables.VariableFactory {
         SetVar setVar = set(name, minEnv, maxEnv, solver);
         IntVar cardVar = enumerated("|" + name + "|", 0, setVar.getEnvelopeSize(), solver);
         return new CSetVar(setVar, cardVar);
+    }
+
+    public static CSetVar cset(String name, int[] env, int[] ker, Solver solver) {
+        return cset(name, env, ker, Util.range(ker.length, env.length), solver);
     }
 
     public static CSetVar cset(String name, int[] env, int[] ker, int[] card, Solver solver) {
