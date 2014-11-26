@@ -1,19 +1,11 @@
 package org.clafer.choco.constraint.propagator;
 
-import java.lang.reflect.Field;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.constraints.ICF;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
-import solver.constraints.set.PropIntMemberSet;
-import solver.constraints.set.SCF;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VF;
 import solver.variables.Variable;
-import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -114,26 +106,4 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
         }
         return setCard.getUB() <= 0 ? ESat.TRUE : ESat.UNDEFINED;
     }
-
-public static void main(String[] args) throws Exception {
-    Solver solver = new Solver();
-    SetVar s = VF.set("s", 0, 2, solver);
-    IntVar i = VF.enumerated("i", 0, 2, solver);
-
-    Field w1 = PropIntMemberSet.class.getDeclaredField("watchLit1");
-    w1.setAccessible(true);
-    Field w2 = PropIntMemberSet.class.getDeclaredField("watchLit2");
-    w2.setAccessible(true);
-
-    Constraint c = SCF.member(i, s);
-    solver.post(c);
-    solver.propagate();
-    System.out.println(s + " : " + i);
-    System.out.println("watch1=" + w1.get(c.getPropagator(0)) + ", watch2=" + w2.get(c.getPropagator(0)));
-
-    solver.post(ICF.arithm(i, "!=", 1));
-    solver.propagate();
-    System.out.println(s + " : " + i);
-    System.out.println("watch1=" + w1.get(c.getPropagator(0)) + ", watch2=" + w2.get(c.getPropagator(0)));
-}
 }
