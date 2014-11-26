@@ -1,14 +1,10 @@
 package org.clafer.choco.constraint.propagator;
 
-import solver.Solver;
-import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
-import solver.constraints.set.SCF;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
-import solver.variables.VF;
 import solver.variables.Variable;
 import solver.variables.events.IntEventType;
 import solver.variables.events.SetEventType;
@@ -132,20 +128,6 @@ public class PropContinuous extends Propagator<Variable> {
 
             card.updateUpperBound(max, aCause);
         }
-    }
-
-    public static void main(String[] args) throws ContradictionException {
-        Solver s = new Solver();
-
-        SetVar sv = VF.set("s", new int[]{0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15}, new int[]{}, s);
-        IntVar card = VF.enumerated("|s|", 0, sv.getEnvelopeSize(), s);
-        s.post(SCF.cardinality(sv, card));
-        s.post(new Constraint("Continuous", new PropContinuous(sv, card)));
-
-        s.propagate();
-
-        System.out.println(sv);
-        System.out.println(card);
     }
 
     @Override

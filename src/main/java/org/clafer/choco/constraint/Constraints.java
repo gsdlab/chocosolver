@@ -10,6 +10,7 @@ import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
+import org.clafer.choco.constraint.propagator.PropContinuousUnion;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
@@ -31,6 +32,7 @@ import org.clafer.choco.constraint.propagator.PropReflexive;
 import org.clafer.choco.constraint.propagator.PropReifyEqualXY;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
+import org.clafer.choco.constraint.propagator.PropSetBounded;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetLowBound;
 import org.clafer.choco.constraint.propagator.PropSetStrictHighBound;
@@ -41,8 +43,6 @@ import org.clafer.choco.constraint.propagator.PropSetSum;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSingleton;
-import org.clafer.choco.constraint.propagator.PropSortedSets;
-import org.clafer.choco.constraint.propagator.PropSortedSetsCard;
 import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.collection.Maybe;
@@ -152,6 +152,12 @@ public class Constraints {
                 }
                 return new PropSumEq(Util.cons(VF.fixed(constant, sum.getSolver()), filtered), sum);
         }
+    }
+
+    private static IntVar enumerated(String name, int lb, int ub, Solver solver) {
+        return lb == ub
+                ? VF.fixed(lb, solver)
+                : VF.enumerated(name, lb, ub, solver);
     }
 
     /**
@@ -436,16 +442,37 @@ public class Constraints {
         if (sets.length != setCards.length) {
             throw new IllegalArgumentException();
         }
-
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator[sets.length + 2];
+        Solver solver = sets[0].getSolver();
+        int lb = 0;
+        int ub = 0;
         for (int i = 0; i < sets.length; i++) {
-            propagators[i] = new PropContinuous(sets[i], setCards[i]);
+            ub += setCards[i].getUB();
         }
-        propagators[sets.length] = new PropSortedSets(sets, setCards);
-        propagators[sets.length + 1] = new PropSortedSetsCard(sets, setCards);
 
-        return new Constraint("sortedSets", propagators);
+        List<Propagator<?>> propagators = new ArrayList<>();
+
+        IntVar[] boundary = new IntVar[sets.length + 1];
+        boundary[0] = VF.zero(solver);
+        for (int i = 0; i < sets.length; i++) {
+            if (boundary[i].isInstantiatedTo(0)) {
+                boundary[i + 1] = setCards[i];
+            } else if (setCards[i].isInstantiatedTo(0)) {
+                boundary[i + 1] = boundary[i];
+            } else {
+                boundary[i + 1] = enumerated(sets[i].getName() + "@Hb", lb, ub, solver);
+                solver.post(equalArcConsistent(boundary[i], setCards[i], boundary[i + 1]));
+            }
+            propagators.add(new PropSetLowBound(sets[i], boundary[i]));
+            propagators.add(new PropIntMemberNonemptySet(boundary[i], sets[i], setCards[i]));
+            propagators.add(new PropSetStrictHighBound(sets[i], boundary[i + 1]));
+            propagators.add(new PropSetBounded(boundary[i], boundary[i + 1], sets[i]));
+        }
+        for (int i = 0; i < sets.length; i++) {
+            propagators.add(new PropContinuous(sets[i], setCards[i]));
+        }
+        propagators.add(new PropContinuousUnion(sets, boundary[boundary.length - 1]));
+
+        return new Constraint("sortedSets", propagators.toArray(new Propagator[propagators.size()]));
     }
 
     /**
