@@ -34,7 +34,7 @@ public class SetMinTest {
          *     set <- powerset [-4..3]
          *     guard $ length set <= 2
          *     min <- [-4..4]
-         *     guard $ null set || min == head set
+         *     guard $ null set || min == minimum set
          *     return (set, min)
          */
         return $(cset("set", env(-4, -3, -2, -1, 0, 1, 2, 3), ker(), card(0, 1, 2), solver),
@@ -49,7 +49,7 @@ public class SetMinTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar set, IntVar max) {
-        return Constraints.min(set.getSet(), set.getCard(), max);
+    public Constraint setup(CSetVar set, IntVar min) {
+        return Constraints.min(set.getSet(), set.getCard(), min);
     }
 }

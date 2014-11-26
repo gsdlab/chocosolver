@@ -32,9 +32,9 @@ public class SetMaxTest {
          * solutions = do
          *     set <- powerset [-4..3]
          *     guard $ length set <= 2
-         *     min <- [-4..4]
-         *     guard $ null set || min == head set
-         *     return (set, min)
+         *     max <- [-4..4]
+         *     guard $ null set || max == maximum set
+         *     return (set, max)
          */
         return $(cset("set", env(-4, -3, -2, -1, 0, 1, 2, 3), ker(), card(0, 1, 2), solver),
                 enumerated("max", -4, 4, solver));
