@@ -24,6 +24,7 @@ import org.clafer.choco.constraint.propagator.PropLength;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropMask;
+import org.clafer.choco.constraint.propagator.PropNotEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropReflexive;
@@ -31,6 +32,8 @@ import org.clafer.choco.constraint.propagator.PropReifyEqualXY;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
+import org.clafer.choco.constraint.propagator.PropSetLowBound;
+import org.clafer.choco.constraint.propagator.PropSetStrictHighBound;
 import org.clafer.choco.constraint.propagator.PropSetMax;
 import org.clafer.choco.constraint.propagator.PropSetMin;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
@@ -808,8 +811,16 @@ public class Constraints {
         return new Constraint("max", new PropSetMax(set, setCard, max));
     }
 
+    public static Constraint stritctHighBound(SetVar set, IntVar bound) {
+        return new Constraint("strictHighBound", new PropSetStrictHighBound(set, bound));
+    }
+
     public static Constraint min(SetVar set, IntVar setCard, IntVar min) {
         return new Constraint("min", new PropSetMin(set, setCard, min));
+    }
+
+    public static Constraint lowBound(SetVar set, IntVar bound) {
+        return new Constraint("lowBound", new PropSetLowBound(set, bound));
     }
 
     public static Constraint element(IntVar index, SetVar[] array, IntVar[] arrayCards, SetVar value, IntVar valueCard) {
