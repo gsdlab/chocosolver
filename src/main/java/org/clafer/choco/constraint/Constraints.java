@@ -12,6 +12,7 @@ import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropContinuousUnion;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
+import org.clafer.choco.constraint.propagator.PropElement;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
@@ -368,6 +369,10 @@ public class Constraints {
                 return equalArcConsistent(x, y, z);
             }
         };
+    }
+
+    public static Constraint element(IntVar value, IntVar[] array, IntVar index, int offset) {
+        return new Constraint("element", new PropElement(value, array, index, offset));
     }
 
     /**
@@ -860,8 +865,8 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
         return new Constraint("element",
-                new PropElement(index, array, 0, value),
-                new PropElement(index, array, 0, value),
+                new solver.constraints.set.PropElement(index, array, 0, value),
+                new solver.constraints.set.PropElement(index, array, 0, value),
                 new PropElementV_fast(valueCard, arrayCards, index, 0, true),
                 new PropElementV_fast(valueCard, arrayCards, index, 0, true));
     }
