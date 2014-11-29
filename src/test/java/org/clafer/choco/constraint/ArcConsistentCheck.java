@@ -46,7 +46,7 @@ public class ArcConsistentCheck implements IMonitorDownBranch, IMonitorContradic
     @Override
     public void onContradiction(ContradictionException cex) {
         if (lastDecision.length() > 0) {
-            throw new Error("Not arc consistent: " + "\n" + lastDecision + "\n"+ cex);
+            throw new Error("Not arc consistent: " + "\n" + lastDecision + "\n" + cex);
         }
     }
 }

@@ -39,6 +39,7 @@ public class LengthTest {
         }
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(IntVar[] chars, IntVar length) {
         return Constraints.length(chars, length);

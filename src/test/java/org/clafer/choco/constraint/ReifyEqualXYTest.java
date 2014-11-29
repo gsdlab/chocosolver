@@ -29,6 +29,7 @@ public class ReifyEqualXYTest {
         assertEquals(reify, v1 == v2);
     }
 
+    @ArcConsistent(opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(BoolVar reify, IntVar v1, IntVar v2) {
         return Constraints.reifyEqual(reify, v1, v2);

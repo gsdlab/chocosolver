@@ -240,8 +240,13 @@ public class Constraints {
      * @return constraint
      * {@code antecedent => consequent && !antecedent => alternative}
      */
-    public static Constraint ifThenElse(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
-        return new Constraint("ifThenElse", new PropIfThenElse(antecedent, consequent, alternative));
+    public static Constraint ifThenElse(final BoolVar antecedent, final BoolVar consequent, final BoolVar alternative) {
+        return new Constraint("ifThenElse", new PropIfThenElse(antecedent, consequent, alternative)) {
+            @Override
+            public Constraint makeOpposite() {
+                return ifThenElse(antecedent, consequent.not(), alternative.not());
+            }
+        };
     }
 
     /**

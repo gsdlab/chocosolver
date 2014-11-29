@@ -117,6 +117,7 @@ public class JoinFunctionTest {
         }
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(@Positive CSetVar take, IntVar[] refs, CSetVar to, int globalCardinality) {
         return globalCardinality > 0

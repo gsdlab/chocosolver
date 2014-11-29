@@ -52,6 +52,7 @@ public class FilterStringTest {
         }
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(CSetVar set, int offset, IntVar[] string, IntVar[] result) {
         return Constraints.filterString(set.getSet(), set.getCard(), offset, string, result);
