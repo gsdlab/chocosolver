@@ -16,13 +16,18 @@ import util.ESat;
 public class PropLength extends Propagator<IntVar> {
 
     private final IntVar[] chars;
-
     private final IntVar length;
+    private final int terminator;
 
     public PropLength(IntVar[] chars, IntVar length) {
+        this(chars, length, 0);
+    }
+
+    public PropLength(IntVar[] chars, IntVar length, int terminator) {
         super(Util.cons(length, chars), PropagatorPriority.LINEAR, true);
         this.chars = chars;
         this.length = length;
+        this.terminator = terminator;
     }
 
     private boolean isLengthVar(int idx) {
@@ -83,23 +88,23 @@ public class PropLength extends Propagator<IntVar> {
 
     private void onLengthLB() throws ContradictionException {
         for (int i = 0; i < length.getLB(); i++) {
-            chars[i].removeValue(0, aCause);
+            chars[i].removeValue(terminator, aCause);
         }
     }
 
     private void onLengthUB() throws ContradictionException {
         for (int i = length.getUB(); i < chars.length; i++) {
-            chars[i].instantiateTo(0, aCause);
+            chars[i].instantiateTo(terminator, aCause);
         }
     }
 
     private boolean onCharRemove(int i) throws ContradictionException {
-        return !chars[i].contains(0)
+        return !chars[i].contains(terminator)
                 && length.updateLowerBound(i + 1, aCause);
     }
 
     private boolean onCharInstantiate(int i) throws ContradictionException {
-        return chars[i].isInstantiatedTo(0)
+        return chars[i].isInstantiatedTo(terminator)
                 && length.updateUpperBound(i, aCause);
     }
 
@@ -109,12 +114,12 @@ public class PropLength extends Propagator<IntVar> {
             return ESat.FALSE;
         }
         for (int i = 0; i < length.getLB(); i++) {
-            if (chars[i].isInstantiatedTo(0)) {
+            if (chars[i].isInstantiatedTo(terminator)) {
                 return ESat.FALSE;
             }
         }
         for (int i = length.getUB(); i < chars.length; i++) {
-            if (!chars[i].contains(0)) {
+            if (!chars[i].contains(terminator)) {
                 return ESat.FALSE;
             }
         }
