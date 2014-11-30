@@ -1,11 +1,15 @@
 package org.clafer.choco.constraint.propagator;
 
+import gnu.trove.map.hash.TIntIntHashMap;
 import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.IntVar;
+import solver.variables.delta.IIntDeltaMonitor;
+import solver.variables.events.IntEventType;
 import util.ESat;
+import util.procedure.IntProcedure;
 
 /**
  *
@@ -15,15 +19,24 @@ public class PropElement extends Propagator<IntVar> {
 
     private final IntVar value;
     private final IntVar[] array;
+    private final IIntDeltaMonitor[] arrayD;
     private final IntVar index;
     private final int offset;
+    // Maps from an index in the array to an integer in value.
+    private final TIntIntHashMap arraySupports;
+    // Maps from an integer in value to an index in array.
+    private final TIntIntHashMap valueSupports;
 
     public PropElement(IntVar value, IntVar[] array, IntVar index, int offset) {
-        super(buildArray(value, array, index), PropagatorPriority.LINEAR, false);
+        super(buildArray(value, array, index), PropagatorPriority.LINEAR, true);
         this.value = value;
         this.array = array;
+        this.arrayD = PropUtil.monitorDeltas(array, aCause);
         this.index = index;
         this.offset = offset;
+
+        this.arraySupports = new TIntIntHashMap(array.length);
+        this.valueSupports = new TIntIntHashMap(value.getDomainSize());
     }
 
     private static IntVar[] buildArray(IntVar value, IntVar[] array, IntVar index) {
@@ -34,10 +47,49 @@ public class PropElement extends Propagator<IntVar> {
         return variables;
     }
 
+    private boolean isValueVar(int idx) {
+        return idx == 0;
+    }
+
+    private boolean isIndexVar(int idx) {
+        return idx == 1;
+    }
+
+    private boolean isArrayVar(int idx) {
+        return idx >= 2;
+    }
+
+    private int getArrayVarIndex(int idx) {
+        return idx - 2;
+    }
+
+    @Override
+    protected int getPropagationConditions(int vIdx) {
+        return IntEventType.all();
+    }
+
+    private boolean supportForArray(int index) {
+        int support = arraySupports.get(index);
+        if (value.contains(support) && array[index].contains(support)) {
+            return true;
+        }
+        int i = PropUtil.getDomIntersectDom(value, array[index]);
+        if (i == Integer.MAX_VALUE) {
+            return false;
+        }
+        arraySupports.put(index, i);
+        return true;
+    }
+
     private boolean supportForValue(int value) {
+        int support = valueSupports.get(value);
+        if (index.contains(support) && array[support].contains(value)) {
+            return true;
+        }
         int ub = index.getUB();
         for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
             if (array[i + offset].contains(value)) {
+                valueSupports.put(value, i + offset);
                 return true;
             }
         }
@@ -51,7 +103,7 @@ public class PropElement extends Propagator<IntVar> {
 
         int ub = index.getUB();
         for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
-            if (!PropUtil.isDomIntersectDom(value, array[i + offset])) {
+            if (!supportForArray(i + offset)) {
                 index.removeValue(i, aCause);
             }
         }
@@ -59,6 +111,49 @@ public class PropElement extends Propagator<IntVar> {
         for (int i = value.getLB(); i <= ub; i = value.nextValue(i)) {
             if (!supportForValue(i)) {
                 value.removeValue(i, aCause);
+            }
+        }
+        if (index.isInstantiated()) {
+            PropUtil.domSubsetDom(array[index.getValue() + offset], value, aCause);
+            if (value.isInstantiated()) {
+                setPassive();
+            }
+        }
+    }
+
+    @Override
+    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
+        if (isValueVar(idxVarInProp)) {
+            int ub = index.getUB();
+            for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
+                if (!supportForArray(i + offset)) {
+                    index.removeValue(i, aCause);
+                }
+            }
+        } else if (isIndexVar(idxVarInProp)) {
+            int ub = value.getUB();
+            for (int i = value.getLB(); i <= ub; i = value.nextValue(i)) {
+                if (!supportForValue(i)) {
+                    value.removeValue(i, aCause);
+                }
+            }
+        } else {
+            assert isArrayVar(idxVarInProp);
+            int i = getArrayVarIndex(idxVarInProp);
+            if (index.contains(i - offset)) {
+                if (!supportForArray(i)) {
+                    index.removeValue(i, aCause);
+                }
+                arrayD[i].freeze();
+                arrayD[i].forEachRemVal(new IntProcedure() {
+                    @Override
+                    public void execute(int rem) throws ContradictionException {
+                        if (!supportForValue(rem)) {
+                            value.removeValue(rem, aCause);
+                        }
+                    }
+                });
+                arrayD[i].unfreeze();
             }
         }
         if (index.isInstantiated()) {

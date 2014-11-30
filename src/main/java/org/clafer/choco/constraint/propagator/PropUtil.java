@@ -218,31 +218,26 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isDomIntersectDom(IntVar i1, IntVar i2) {
-        int s1 = i1.getDomainSize();
-        int s2 = i2.getDomainSize();
-        IntVar small = i1;
-        IntVar large = i2;
-        int s = s1;
-        if (s1 > s2) {
-            small = i2;
-            large = i1;
-            s = s2;
-        }
-        if (s == 1) {
-            return large.contains(small.getLB());
-        }
-        int lb = small.getLB();
-        int largeLb = large.getLB();
-        if (largeLb > lb) {
-            lb = small.nextValue(largeLb - 1);
-        }
-        int ub = Math.min(small.getUB(), large.getUB());
-        for (int i = lb; i <= ub; i = small.nextValue(i)) {
-            if (large.contains(i)) {
-                return true;
+        return getDomIntersectDom(i1, i2) != Integer.MAX_VALUE;
+    }
+
+    public static int getDomIntersectDom(IntVar i1, IntVar i2) {
+        int v1 = i1.getLB();
+        int v2 = i2.getLB();
+        boolean smaller = v1 < v2;
+        while (v1 != Integer.MAX_VALUE && v2 != Integer.MAX_VALUE) {
+            if (v1 == v2) {
+                return v1;
+            }
+            if (smaller) {
+                v1 = i1.nextValue(v2 - 1);
+                smaller = false;
+            } else {
+                v2 = i2.nextValue(v1 - 1);
+                smaller = true;
             }
         }
-        return false;
+        return Integer.MAX_VALUE;
     }
 
     /**
