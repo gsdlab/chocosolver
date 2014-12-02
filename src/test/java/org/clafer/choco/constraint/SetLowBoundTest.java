@@ -1,18 +1,16 @@
 package org.clafer.choco.constraint;
 
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
-import static org.junit.Assert.assertTrue;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import solver.Solver;
 import solver.constraints.Constraint;
-import solver.variables.CSetVar;
 import solver.variables.IntVar;
-import static solver.variables.Var.card;
-import static solver.variables.Var.cset;
-import static solver.variables.Var.env;
-import static solver.variables.Var.ker;
-import static solver.variables.VariableFactory.enumerated;
+import solver.variables.SetVar;
+import static solver.variables.Var.*;
 
 /**
  *
@@ -21,7 +19,7 @@ import static solver.variables.VariableFactory.enumerated;
 @RunWith(ConstraintQuickTest.class)
 public class SetLowBoundTest {
 
-    @ConstraintQuickTest.Input(solutions = 129)
+    @Input(solutions = 511)
     public Object testSumSet(Solver solver) {
         /*
          * import Control.Monad
@@ -30,24 +28,24 @@ public class SetLowBoundTest {
          *
          * solutions = do
          *     set <- powerset [-4..3]
-         *     guard $ length set <= 2
          *     bound <- [-4..4]
          *     guard $ all (>= bound) set
          *     return (set, bound)
          */
-        return $(cset("set", env(-4, -3, -2, -1, 0, 1, 2, 3), ker(), card(0, 1, 2), solver),
+        return $(set("set", env(-4, -3, -2, -1, 0, 1, 2, 3), ker(), solver),
                 enumerated("bound", -4, 4, solver));
     }
 
-    @ConstraintQuickTest.Check
+    @Check
     public void check(int[] set, int bound) {
         if (set.length > 0) {
             assertTrue(set[0] >= bound);
         }
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar set, IntVar bound) {
-        return Constraints.lowBound(set.getSet(), bound);
+    public Constraint setup(SetVar set, IntVar bound) {
+        return Constraints.lowBound(set, bound);
     }
 }
