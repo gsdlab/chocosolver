@@ -225,7 +225,7 @@ public class PropUtil {
         int v1 = i1.getLB();
         int v2 = i2.getLB();
         boolean smaller = v1 < v2;
-        while (v1 != Integer.MAX_VALUE && v2 != Integer.MAX_VALUE) {
+        do {
             if (v1 == v2) {
                 return v1;
             }
@@ -236,7 +236,7 @@ public class PropUtil {
                 v2 = i2.nextValue(v1 - 1);
                 smaller = true;
             }
-        }
+        } while (v1 != Integer.MAX_VALUE && v2 != Integer.MAX_VALUE);
         return Integer.MAX_VALUE;
     }
 
