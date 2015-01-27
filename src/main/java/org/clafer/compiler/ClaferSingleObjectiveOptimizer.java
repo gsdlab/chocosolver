@@ -6,18 +6,18 @@ import java.util.List;
 import org.clafer.collection.Either;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
-import solver.ResolutionPolicy;
-import solver.Solver;
-import solver.constraints.ICF;
-import solver.exception.ContradictionException;
-import solver.objective.ObjectiveManager;
-import solver.propagation.NoPropagationEngine;
-import solver.propagation.hardcoded.SevenQueuesPropagatorEngine;
-import solver.search.loop.monitors.IMonitorSolution;
-import solver.search.solution.Solution;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import solver.variables.Variable;
+import org.chocosolver.solver.ResolutionPolicy;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.objective.ObjectiveManager;
+import org.chocosolver.solver.propagation.NoPropagationEngine;
+import org.chocosolver.solver.propagation.hardcoded.SevenQueuesPropagatorEngine;
+import org.chocosolver.solver.search.loop.monitors.IMonitorSolution;
+import org.chocosolver.solver.search.solution.Solution;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.Variable;
 
 /**
  *

@@ -33,14 +33,14 @@ import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
-import solver.Solver;
-import solver.search.limits.FailCounter;
-import solver.search.loop.monitors.SMF;
-import solver.search.strategy.IntStrategyFactory;
-import solver.search.strategy.SetStrategyFactory;
-import solver.search.strategy.strategy.AbstractStrategy;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.search.limits.FailCounter;
+import org.chocosolver.solver.search.loop.monitors.SMF;
+import org.chocosolver.solver.search.strategy.IntStrategyFactory;
+import org.chocosolver.solver.search.strategy.SetStrategyFactory;
+import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  * Compiles from AST -> Choco
@@ -145,7 +145,7 @@ public class ClaferCompiler {
                 Random rand = new Random();
                 return Maybe.<AbstractStrategy<?>>just(new RandomSetDecisionStrategy(
                         vars,
-                        new solver.search.strategy.selectors.variables.Random<SetVar>(System.nanoTime()),
+                        new org.chocosolver.solver.search.strategy.selectors.variables.Random<SetVar>(System.nanoTime()),
                         new RandomSetValueSelector(rand), rand));
             default:
                 throw new IllegalStateException("Unknown strategy: " + options.getStrategy());

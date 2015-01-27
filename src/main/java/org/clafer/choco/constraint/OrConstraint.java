@@ -3,14 +3,14 @@ package org.clafer.choco.constraint;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import solver.constraints.Constraint;
-import solver.constraints.Propagator;
-import solver.constraints.PropagatorPriority;
-import solver.exception.ContradictionException;
-import solver.variables.Variable;
-import util.ESat;
-import static util.ESat.TRUE;
-import static util.ESat.UNDEFINED;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.constraints.PropagatorPriority;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.variables.Variable;
+import org.chocosolver.util.ESat;
+import static org.chocosolver.util.ESat.TRUE;
+import static org.chocosolver.util.ESat.UNDEFINED;
 
 /**
  * Boolean or. The difference between this constraint and the one provided by

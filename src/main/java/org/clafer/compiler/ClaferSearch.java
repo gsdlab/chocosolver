@@ -1,7 +1,7 @@
 package org.clafer.compiler;
 
 import org.clafer.instance.InstanceModel;
-import solver.Solver;
+import org.chocosolver.solver.Solver;
 
 /**
  * Search for instances.

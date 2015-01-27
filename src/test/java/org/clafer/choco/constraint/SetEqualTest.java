@@ -1,13 +1,13 @@
 package org.clafer.choco.constraint;
 
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *

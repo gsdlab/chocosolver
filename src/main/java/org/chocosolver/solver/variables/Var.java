@@ -1,15 +1,18 @@
-package solver.variables;
+package org.chocosolver.solver.variables;
 
 import java.util.Arrays;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.common.Util;
-import solver.Solver;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.VariableFactory;
 
 /**
  *
  * @author jimmy
  */
-public class Var extends solver.variables.VariableFactory {
+public class Var extends VariableFactory {
 
     public static int[] dom(int... doms) {
         return doms;

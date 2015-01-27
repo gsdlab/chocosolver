@@ -1,8 +1,8 @@
 package org.clafer.choco.search;
 
 import java.util.Random;
-import solver.search.strategy.selectors.SetValueSelector;
-import solver.variables.SetVar;
+import org.chocosolver.solver.search.strategy.selectors.SetValueSelector;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  *

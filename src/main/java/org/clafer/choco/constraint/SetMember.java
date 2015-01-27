@@ -1,9 +1,9 @@
 package org.clafer.choco.constraint;
 
-import solver.constraints.Constraint;
-import solver.constraints.set.PropIntMemberSet;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.set.PropIntEnumMemberSet;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  *
@@ -15,7 +15,7 @@ public class SetMember extends Constraint {
     private final SetVar set;
 
     public SetMember(IntVar integer, SetVar set) {
-        super("SetMember", new PropIntMemberSet(set, integer));
+        super("SetMember", new PropIntEnumMemberSet(set, integer));
         this.integer = integer;
         this.set = set;
     }

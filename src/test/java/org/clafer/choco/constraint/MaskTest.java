@@ -2,14 +2,14 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -23,9 +23,9 @@ public class MaskTest {
         /*
          * import Control.Monad
          * import Data.List
-         *         
+         *
          * powerset = filterM (const [True, False])
-         *         
+         *
          * solutions = do
          *     set <- powerset [1..6]
          *     masked <- powerset [0..3]

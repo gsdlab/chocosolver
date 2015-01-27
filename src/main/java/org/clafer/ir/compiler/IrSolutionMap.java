@@ -9,9 +9,9 @@ import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  * Maps IR non-constant variables to their translated Choco variables. IR

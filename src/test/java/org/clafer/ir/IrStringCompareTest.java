@@ -6,8 +6,8 @@ import static org.clafer.ir.Irs.*;
 import org.clafer.test.NonEmpty;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.constraints.Constraint;
-import solver.variables.CStringVar;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.CStringVar;
 
 /**
  *

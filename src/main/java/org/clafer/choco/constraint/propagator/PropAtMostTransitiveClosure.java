@@ -11,11 +11,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.clafer.collection.Counter;
-import solver.constraints.Propagator;
-import solver.constraints.PropagatorPriority;
-import solver.exception.ContradictionException;
-import solver.variables.SetVar;
-import util.ESat;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.constraints.PropagatorPriority;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.util.ESat;
 
 /**
  *
