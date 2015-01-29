@@ -4,13 +4,13 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.test.Positive;
-import solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *

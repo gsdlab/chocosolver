@@ -4,10 +4,10 @@ import org.clafer.ir.IrQuickTest.Solution;
 import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.constraints.Constraint;
-import solver.constraints.set.SCF;
-import solver.variables.BoolVar;
-import solver.variables.SetVar;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.set.SCF;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  *

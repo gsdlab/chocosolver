@@ -12,7 +12,7 @@ import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropContinuousUnion;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
-import org.clafer.choco.constraint.propagator.PropElement;
+//import org.clafer.choco.constraint.propagator.PropElement;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
@@ -48,27 +48,27 @@ import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.constraints.ICF;
-import solver.constraints.Propagator;
-import solver.constraints.binary.PropEqualXY_C;
-import solver.constraints.binary.PropEqualX_Y;
-import solver.constraints.binary.PropEqualX_YC;
-import solver.constraints.binary.PropGreaterOrEqualX_Y;
-import solver.constraints.nary.element.PropElementV_fast;
-import solver.constraints.nary.sum.PropSumEq;
-import solver.constraints.set.PropElement;
-import solver.constraints.set.PropIntersection;
-import solver.constraints.set.PropSubsetEq;
-import solver.constraints.unary.PropEqualXC;
-import solver.constraints.unary.PropGreaterOrEqualXC;
-import solver.constraints.unary.PropLessOrEqualXC;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import solver.variables.VF;
-import solver.variables.Variable;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
+import org.chocosolver.solver.constraints.binary.PropEqualX_Y;
+import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
+import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
+import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
+import org.chocosolver.solver.constraints.nary.sum.PropSumEq;
+import org.chocosolver.solver.constraints.set.PropElement;
+import org.chocosolver.solver.constraints.set.PropIntersection;
+import org.chocosolver.solver.constraints.set.PropSubsetEq;
+import org.chocosolver.solver.constraints.unary.PropEqualXC;
+import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
+import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.VF;
+import org.chocosolver.solver.variables.Variable;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -372,7 +372,7 @@ public class Constraints {
     }
 
     public static Constraint element(IntVar value, IntVar[] array, IntVar index, int offset) {
-        return new Constraint("element", new PropElement(value, array, index, offset));
+        return new Constraint("element", new org.clafer.choco.constraint.propagator.PropElement(value, array, index, offset));
     }
 
     /**
@@ -427,7 +427,7 @@ public class Constraints {
      * @return constraint {@code x ∈ sets[i] <=> ints[x] = i}
      */
     public static Constraint intChannel(SetVar[] sets, IntVar[] ints) {
-        /* 
+        /*
          * TODO: Take cardinalities of the sets into account?
          * For example if card(sets[0]) <= 3, then if at least 3 of the integers
          * are instantiated to 0, then remove 0 from the domains of the other integers.
@@ -865,8 +865,8 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
         return new Constraint("element",
-                new solver.constraints.set.PropElement(index, array, 0, value),
-                new solver.constraints.set.PropElement(index, array, 0, value),
+                new org.chocosolver.solver.constraints.set.PropElement(index, array, 0, value),
+                new org.chocosolver.solver.constraints.set.PropElement(index, array, 0, value),
                 new PropElementV_fast(valueCard, arrayCards, index, 0, true),
                 new PropElementV_fast(valueCard, arrayCards, index, 0, true));
     }

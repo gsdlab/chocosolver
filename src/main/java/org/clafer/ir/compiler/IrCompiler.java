@@ -100,17 +100,17 @@ import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
 import org.clafer.ir.analysis.LinearEquationOptimizer;
 import org.clafer.ir.analysis.Optimizer;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.constraints.ICF;
-import solver.constraints.Operator;
-import solver.constraints.set.SCF;
-import solver.variables.BoolVar;
-import solver.variables.CSetVar;
-import solver.variables.CStringVar;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.constraints.Operator;
+import org.chocosolver.solver.constraints.set.SCF;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CStringVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  * Compile from IR to Choco.

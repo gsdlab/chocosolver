@@ -1,7 +1,7 @@
 package org.clafer.test;
 
-import solver.variables.CSetVar;
-import solver.variables.CStringVar;
+import org.chocosolver.solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CStringVar;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.lang.annotation.Annotation;
@@ -17,10 +17,10 @@ import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.compiler.IrSolutionMap;
-import solver.Solver;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  *

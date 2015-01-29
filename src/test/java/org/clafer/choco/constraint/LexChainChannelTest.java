@@ -9,10 +9,10 @@ import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.variables.IntVar;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -25,7 +25,7 @@ public class LexChainChannelTest {
     public Object testLexChainChannel(Solver solver) {
         /*
          * import Control.Monad
-         * 
+         *
          * solutions = do
          *     string0 <- sequence $ replicate 2 [0..2]
          *     string1 <- sequence $ replicate 2 [0..2]
@@ -33,13 +33,13 @@ public class LexChainChannelTest {
          *     int0 <- [0..2]
          *     int1 <- [0..2]
          *     int2 <- [0..2]
-         * 
+         *
          *     guard $ sort (nub [int0, int1, int2]) `isPrefixOf` [0,1,2]
-         * 
+         *
          *     guard $ compare string0 string1 == compare int0 int1
          *     guard $ compare string0 string2 == compare int0 int2
          *     guard $ compare string1 string2 == compare int1 int2
-         *     
+         *
          *     return (string0, string1, string2, int0, int1, int2)
          */
         IntVar[][] strings = new IntVar[3][];

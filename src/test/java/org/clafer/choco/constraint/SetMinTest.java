@@ -6,15 +6,15 @@ import org.clafer.choco.constraint.ConstraintQuickTest.Input;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.variables.CSetVar;
-import solver.variables.IntVar;
-import static solver.variables.Var.card;
-import static solver.variables.Var.cset;
-import static solver.variables.Var.env;
-import static solver.variables.Var.ker;
-import static solver.variables.VariableFactory.enumerated;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.CSetVar;
+import org.chocosolver.solver.variables.IntVar;
+import static org.chocosolver.solver.variables.Var.card;
+import static org.chocosolver.solver.variables.Var.cset;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
+import static org.chocosolver.solver.variables.VariableFactory.enumerated;
 
 /**
  *

@@ -1,15 +1,15 @@
 package org.clafer.choco.search;
 
 import java.util.Random;
-import solver.exception.ContradictionException;
-import solver.search.strategy.assignments.DecisionOperator;
-import solver.search.strategy.decision.Decision;
-import solver.search.strategy.decision.fast.FastDecisionSet;
-import solver.search.strategy.selectors.SetValueSelector;
-import solver.search.strategy.selectors.VariableSelector;
-import solver.search.strategy.strategy.AbstractStrategy;
-import solver.variables.SetVar;
-import util.PoolManager;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.search.strategy.assignments.DecisionOperator;
+import org.chocosolver.solver.search.strategy.decision.Decision;
+import org.chocosolver.solver.search.strategy.decision.fast.FastDecisionSet;
+import org.chocosolver.solver.search.strategy.selectors.SetValueSelector;
+import org.chocosolver.solver.search.strategy.selectors.VariableSelector;
+import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.util.PoolManager;
 
 /**
  *

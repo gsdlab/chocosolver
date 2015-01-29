@@ -2,14 +2,14 @@ package org.clafer.choco.constraint;
 
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.common.Util;
-import solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.variables.IntVar;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -22,9 +22,9 @@ public class SetSumTest {
     public Object testSumSet(Solver solver) {
         /*
          * import Control.Monad
-         *        
+         *
          * powerset = filterM (const [True, False])
-         *        
+         *
          * solutions = do
          *     set <- powerset [-4..3]
          *     guard $ length set <= 2
@@ -40,16 +40,16 @@ public class SetSumTest {
     public Object testSumNonPositiveSet(Solver solver) {
         /*
          * import Control.Monad
-         *        
+         *
          * powerset = filterM (const [True, False])
-         *        
+         *
          * solutions = do
          *     set <- powerset [-5..0]
          *     guard $ length set <= 4
          *     setSum <- [-4..2]
          *     guard $ sum set == setSum
          *     return set
-         *    
+         *
          */
         return $(cset("set", env(-5, -4, -3, -2, -1, 0), ker(), card(0, 1, 2, 3, 4), solver),
                 enumerated("sum", -4, 2, solver));

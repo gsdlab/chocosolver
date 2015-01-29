@@ -5,13 +5,13 @@
 
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.7</version>
+    <version>0.3.8</version>
     <packaging>jar</packaging>
 
     <name>chocosolver</name>
     <url>http://github.com/gsdlab/chocosolver</url>
     <description>A backend for Clafer based on the Choco 3 constraint programming library.</description>
-    
+
     <developers>
         <developer>
             <name>Jimmy Liang</name>
@@ -25,9 +25,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>choco</groupId>
+            <groupId>org.choco-solver</groupId>
             <artifactId>choco-solver</artifactId>
-            <version>3.2.3-SNAPSHOT</version>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.mozilla</groupId>
@@ -47,15 +47,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
-    <repositories>
-        <repository>
-            <id>choco.repos</id>
-            <url>http://www.emn.fr/z-info/choco-repo/mvn/repository/</url>
-        </repository>
-    </repositories>
 
-    
     <build>
         <plugins>
             <plugin>

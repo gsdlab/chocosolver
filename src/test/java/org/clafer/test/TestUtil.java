@@ -1,7 +1,7 @@
 package org.clafer.test;
 
-import solver.variables.CSetVar;
-import solver.variables.CStringVar;
+import org.chocosolver.solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CStringVar;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
@@ -16,20 +16,20 @@ import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
 import static org.clafer.ir.Irs.*;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.constraints.Propagator;
-import solver.search.strategy.ISF;
-import solver.search.strategy.SetStrategyFactory;
-import solver.search.strategy.selectors.SetValueSelector;
-import solver.search.strategy.strategy.AbstractStrategy;
-import solver.search.strategy.strategy.SetStrategy;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import solver.variables.Var;
-import solver.variables.Variable;
-import util.ESat;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.search.strategy.ISF;
+import org.chocosolver.solver.search.strategy.SetStrategyFactory;
+import org.chocosolver.solver.search.strategy.selectors.SetValueSelector;
+import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
+import org.chocosolver.solver.search.strategy.strategy.SetStrategy;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.Var;
+import org.chocosolver.solver.variables.Variable;
+import org.chocosolver.util.ESat;
 
 /**
  *
@@ -87,7 +87,7 @@ public class TestUtil {
 
     private static SetStrategy randomSearch(SetVar[] vars) {
         return SetStrategyFactory.custom(
-                new solver.search.strategy.selectors.variables.Random<SetVar>(rand.nextLong()),
+                new org.chocosolver.solver.search.strategy.selectors.variables.Random<SetVar>(rand.nextLong()),
                 new RandomSetValueSelector(), randBool(), vars);
     }
 

@@ -1,16 +1,16 @@
 package org.clafer.choco.constraint;
 
 import org.clafer.test.TestUtil;
-import solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.Solver;
-import solver.constraints.ICF;
-import solver.constraints.LCF;
-import solver.constraints.set.SCF;
-import solver.variables.IntVar;
-import solver.variables.SetVar;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.constraints.LCF;
+import org.chocosolver.solver.constraints.set.SCF;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
