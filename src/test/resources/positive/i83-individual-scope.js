@@ -1,10 +1,12 @@
-defaultScope(4);
+scope({c0_d:2, c0_e:2, c0_f:2, c0_g:4});
+defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_a = Clafer("c1_a").withCard(0, 1);
-c2_b = Clafer("c2_b").withCard(1, 1);
-c3_c = Clafer("c3_c").withCard(1);
-c4_d = Clafer("c4_d").withCard(2);
-c5_e = c4_d.addChild("c5_e").withCard(0, 1);
-c6_f = c4_d.addChild("c6_f").withCard(1, 1);
-c7_g = c4_d.addChild("c7_g").withCard(2);
+c0_a = Clafer("c0_a").withCard(0, 1);
+c0_b = Clafer("c0_b").withCard(1, 1);
+c0_c = Clafer("c0_c").withCard(1);
+c0_d = Clafer("c0_d").withCard(2);
+c0_e = c0_d.addChild("c0_e").withCard(0, 1);
+c0_f = c0_d.addChild("c0_f").withCard(1, 1);
+c0_g = c0_d.addChild("c0_g").withCard(2);

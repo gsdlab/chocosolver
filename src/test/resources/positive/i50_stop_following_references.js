@@ -1,15 +1,16 @@
 defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_A = Abstract("c1_A");
-c2_b = c1_A.addChild("c2_b").withCard(0, 1);
-c3_A1 = Clafer("c3_A1").withCard(1, 1).extending(c1_A);
-c6_C = Clafer("c6_C").withCard(1, 1);
-c7_b = c6_C.addChild("c7_b").withCard(0, 1);
-c12_a = c6_C.addChild("c12_a").withCard(1, 1);
-c15_d = c12_a.addChild("c15_d").withCard(1, 1);
-c16_b = c15_d.addChild("c16_b").withCard(0, 1);
-c12_a.refToUnique(c1_A);
-c3_A1.addConstraint(none(join($this(), c2_b)));
-c6_C.addConstraint(some(join(global(c6_C), c7_b)));
-c12_a.addConstraint(some(join(join($this(), c15_d), c16_b)));
+c0_A = Abstract("c0_A");
+c0_b = c0_A.addChild("c0_b").withCard(0, 1);
+c0_A1 = Clafer("c0_A1").withCard(1, 1).extending(c0_A);
+c0_C = Clafer("c0_C").withCard(1, 1);
+c1_b = c0_C.addChild("c1_b").withCard(0, 1);
+c0_a = c0_C.addChild("c0_a").withCard(1, 1);
+c0_d = c0_a.addChild("c0_d").withCard(1, 1);
+c2_b = c0_d.addChild("c2_b").withCard(0, 1);
+c0_a.refTo(c0_A);
+c0_A1.addConstraint(none(join($this(), c0_b)));
+c0_C.addConstraint(some(join(global(c0_C), c1_b)));
+c0_a.addConstraint(some(join(join($this(), c0_d), c2_b)));

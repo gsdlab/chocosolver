@@ -1,9 +1,10 @@
 defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_A = Clafer("c1_A").withCard(1, 1);
-c2_B = c1_A.addChild("c2_B");
-c3_C = c2_B.addChild("c3_C").withCard(0, 1);
-c2_B.refTo(Int);
-c1_A.addConstraint(all([decl([b = local("b")], join($this(), c2_B))], some(join(b, c3_C))));
-c1_A.addConstraint(all([decl([b = local("b")], join($this(), c2_B))], equal(add(joinRef(b), constant(1)), constant(2))));
+c0_A = Clafer("c0_A").withCard(1, 1);
+c0_B = c0_A.addChild("c0_B");
+c0_C = c0_B.addChild("c0_C").withCard(0, 1);
+c0_B.refToUnique(Int);
+c0_A.addConstraint(all([decl([b = local("b")], join($this(), c0_B))], some(join(b, c0_C))));
+c0_A.addConstraint(all([decl([b = local("b")], join($this(), c0_B))], equal(add(joinRef(b), constant(1)), constant(2))));

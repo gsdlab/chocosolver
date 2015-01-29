@@ -1,14 +1,16 @@
-defaultScope(3);
+scope({c0_Age:3, c0_Member:3, c0_Person:3});
+defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_Person = Abstract("c1_Person");
-c2_Age = c1_Person.addChild("c2_Age").withCard(1, 1);
-c3_Team = Clafer("c3_Team").withCard(1, 1);
-c4_Contractor = c3_Team.addChild("c4_Contractor").withCard(1, 1).extending(c1_Person);
-c5_since = c4_Contractor.addChild("c5_since").withCard(1, 1);
-c15_Member = c3_Team.addChild("c15_Member").withCard(2);
-c25_Alice = Clafer("c25_Alice").withCard(1, 1).extending(c1_Person);
-c26_Bob = Clafer("c26_Bob").withCard(1, 1).extending(c1_Person);
-c2_Age.refTo(Int);
-c5_since.refToUnique(Int);
-c15_Member.refToUnique(c1_Person);
+c0_Person = Abstract("c0_Person");
+c0_Age = c0_Person.addChild("c0_Age").withCard(1, 1);
+c0_Team = Clafer("c0_Team").withCard(1, 1);
+c0_Contractor = c0_Team.addChild("c0_Contractor").withCard(1, 1).extending(c0_Person);
+c0_since = c0_Contractor.addChild("c0_since").withCard(1, 1);
+c0_Member = c0_Team.addChild("c0_Member").withCard(2);
+c0_Alice = Clafer("c0_Alice").withCard(1, 1).extending(c0_Person);
+c0_Bob = Clafer("c0_Bob").withCard(1, 1).extending(c0_Person);
+c0_Age.refTo(Int);
+c0_since.refTo(Int);
+c0_Member.refToUnique(c0_Person);
