@@ -9,7 +9,7 @@ Contributors
 ------------
 
 * [Jimmy Liang](http://gsd.uwaterloo.ca/jliang), MSc. Candidate. Main developer.
-* [Michal Antkiewicz](http://gsd.uwaterloo.ca/mantkiew), Research Engineer. Release Management.
+* [Michal Antkiewicz](http://gsd.uwaterloo.ca/mantkiew), Research Engineer. Release Management, testing.
 
 Getting Clafer Tools
 --------------------
@@ -25,8 +25,8 @@ Binary distributions of the release 0.3.8 of Clafer Tools for Windows, Mac, and 
 
 Prerequisites
 -------------
-* [Choco 3](https://github.com/chocoteam/choco3) v3.2.2-SNAPSHOT
-* [Java 7+](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+* [Choco 3](https://github.com/chocoteam/choco3) v3.3.0
+* [Java 8+](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Maven 3](http://maven.apache.org/) - Required for building the project.
 
 Optional
@@ -73,7 +73,7 @@ Installation
     xor Status
         Ok
         Bad
-    Time ->> integer
+    Time -> integer
         [this > 2]
 ```
 Below is an example of using the API to build the model above. [AstModel](http://gsdlab.github.io/chocosolver/org/clafer/ast/AstModel.html) represents the implicit "root" of the model. Every Clafer in the model nests below it.
@@ -160,7 +160,7 @@ Floats ?
 [!Duck]
 [Witch]
 ```
-The model is overconstraint and has no solutions. The solver can help here as well.
+The model is overconstrained and has no solutions. The solver can help here as well.
 ```java
 AstModel model = newModel();
 model.addChild("Mob").withCard(0, 1);
@@ -235,7 +235,7 @@ Possible Future Work?
 ---------------------
 * API for choosing branching strategy. Two reasons. The advantage of constraint programming is the ability to tune the solver to the specific problem. Choosing the right branching strategy can make a world of difference. Secondly, it allows the user to control the order of instances generated. For example, the user would like to see instances where Feature A is present and Feature B is absent before any other instances. This can be done by choosing the branching strategy.
 * Transitive closure, inverse 
-* Strings, reals.
+* Reals
 
 Need help?
 ==========
@@ -248,5 +248,5 @@ Need help?
   * Try a live instance of [ClaferMooVisualizer](http://t3-necsis.cs.uwaterloo.ca:8092)
 * Take a look at (incomplete) [Clafer by examples wiki](https://github.com/gsdlab/clafer/wiki)
 * Browse example models in the [test suite](https://github.com/gsdlab/clafer/tree/master/test/positive) and [MOO examples](https://github.com/gsdlab/clafer/tree/master/spl_configurator/dataset)
-* Post questions, report bugs, suggest improvements [GSD Lab Bug Tracker](http://gsd.uwaterloo.ca:8888/questions/). Tag your entries with `chocosolver` (so that we know what they are related to) and with `jimmy-liang` or `michal` (so that Jimmy or Michał gets a notification).
+* Post questions, report bugs, suggest improvements [Bug Tracker](https://github.com/gsdlab/chocosolver/issues). 
 * Did not find a solution? First try increasing the scope/integer range/max string length/char range. If still no solutions, try computing the Unsat-Core to find the overconstraint.
