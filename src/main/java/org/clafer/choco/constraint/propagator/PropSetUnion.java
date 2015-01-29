@@ -5,9 +5,9 @@ import solver.ICause;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -46,7 +46,7 @@ public class PropSetUnion extends Propagator<SetVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     private void findMate(int unionEnv) throws ContradictionException {
@@ -105,14 +105,14 @@ public class PropSetUnion extends Propagator<SetVar> {
         if (isSetVar(idxVarInProp)) {
             int id = getSetVarIndex(idxVarInProp);
             setsD[id].freeze();
-            setsD[id].forEach(pruneUnionOnSetEnv, EventType.REMOVE_FROM_ENVELOPE);
-            setsD[id].forEach(pickUnionOnSetKer, EventType.ADD_TO_KER);
+            setsD[id].forEach(pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            setsD[id].forEach(pickUnionOnSetKer, SetEventType.ADD_TO_KER);
             setsD[id].unfreeze();
         } else {
             assert isUnionVar(idxVarInProp);
             unionD.freeze();
-            unionD.forEach(pruneSetOnUnionEnv, EventType.REMOVE_FROM_ENVELOPE);
-            unionD.forEach(pickSetOnUnionKer, EventType.ADD_TO_KER);
+            unionD.forEach(pruneSetOnUnionEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            unionD.forEach(pickSetOnUnionKer, SetEventType.ADD_TO_KER);
             unionD.unfreeze();
         }
     }

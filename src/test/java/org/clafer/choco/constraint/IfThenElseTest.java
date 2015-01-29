@@ -28,6 +28,7 @@ public class IfThenElseTest {
         assertTrue(antecedent ? consequent : alternative);
     }
 
+    @ArcConsistent(opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
         return Constraints.ifThenElse(antecedent, consequent, alternative);

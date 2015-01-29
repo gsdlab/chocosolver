@@ -64,6 +64,11 @@ public class IrUtil {
         return domain.size() == 1 ? domain.getLowBound() : null;
     }
 
+    public static Integer getConstant(IrIntArrayExpr is, int index) {
+        Domain domain = is.getDomains()[index];
+        return domain.size() == 1 ? domain.getLowBound() : null;
+    }
+
     public static int[] getConstant(IrIntExpr[] is) {
         if (is.length == 0) {
             return new int[0];
@@ -146,6 +151,16 @@ public class IrUtil {
         return null;
     }
 
+    public static IrIntExpr[] asInts(IrSetArrayExpr sets) {
+        if (sets.length() == 0) {
+            return new IrIntExpr[0];
+        }
+        if (sets instanceof IrSetArrayVar) {
+            return asInts(((IrSetArrayVar) sets).getArray());
+        }
+        return null;
+    }
+
     public static IrIntExpr[] asInts(IrSetExpr[] sets) {
         if (sets.length == 0) {
             return new IrIntExpr[0];
@@ -164,6 +179,28 @@ public class IrUtil {
             ints[i] = asInt;
         }
         return ints;
+    }
+
+    public static IrIntExpr[] asArray(IrIntArrayExpr array) {
+        if (array instanceof IrIntArrayVar) {
+            return ((IrIntArrayVar) array).getArray();
+        }
+        IrIntExpr[] asArray = new IrIntExpr[array.length()];
+        for (int i = 0; i < asArray.length; i++) {
+            asArray[i] = Irs.get(array, i);
+        }
+        return asArray;
+    }
+
+    public static IrSetExpr[] asArray(IrSetArrayExpr array) {
+        if (array instanceof IrSetArrayVar) {
+            return ((IrSetArrayVar) array).getArray();
+        }
+        IrSetExpr[] asArray = new IrSetExpr[array.length()];
+        for (int i = 0; i < asArray.length; i++) {
+            asArray[i] = Irs.get(array, i);
+        }
+        return asArray;
     }
 
     public static IrStringExpr asConstant(IrStringExpr s) {

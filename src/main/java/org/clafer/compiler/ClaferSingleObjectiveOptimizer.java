@@ -116,7 +116,7 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         }
         IntVar scoreVar = score.getRight();
         int best = scoreVar.getValue();
-        // TODO: forbid the current solution from happening again.                                                 
+        // TODO: forbid the current solution from happening again.
         solver.getEngine().flush();
         solver.getSearchLoop().reset();
         solver.post(ICF.arithm(scoreVar, "=", best));
@@ -134,7 +134,7 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         }
         for (SetVar var : solutionMap.getIrSolution().getSetVars()) {
             if ((var.getTypeAndKind() & Variable.CSTE) == 0) {
-                if (!Arrays.equals(var.getValue(), firstSolution.getSetVal(var))) {
+                if (!Arrays.equals(var.getValues(), firstSolution.getSetVal(var))) {
                     return false;
                 }
             }

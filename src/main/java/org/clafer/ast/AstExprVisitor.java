@@ -66,4 +66,14 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstPrefix ast, A a);
 
     public B visit(AstSuffix ast, A a);
+
+    public B visit(AstChildRelation ast, A a);
+
+    public B visit(AstParentRelation ast, A a);
+
+    public B visit(AstRefRelation ast, A a);
+
+    public B visit(AstInverse ast, A a);
+
+    public B visit(AstTransitiveClosure ast, A a);
 }

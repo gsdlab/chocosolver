@@ -48,6 +48,7 @@ public class SortedSetTest {
         }
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(@NonEmpty CSetVar[] sets) {
         return Constraints.sortedSets(mapSet(sets), mapCard(sets));

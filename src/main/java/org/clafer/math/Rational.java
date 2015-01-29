@@ -166,6 +166,14 @@ public class Rational implements Comparable<Rational> {
                 denominator * divisor.numerator);
     }
 
+    public Rational max(Rational m) {
+        return numerator * m.denominator > m.numerator * denominator ? this : m;
+    }
+
+    public Rational min(Rational m) {
+        return numerator * m.denominator < m.numerator * denominator ? this : m;
+    }
+
     @Override
     public int compareTo(Rational o) {
         return Long.compare(numerator * o.denominator, o.numerator * denominator);

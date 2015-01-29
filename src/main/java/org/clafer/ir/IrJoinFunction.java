@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import org.clafer.domain.Domain;
-import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 
@@ -12,13 +11,13 @@ import org.clafer.common.Util;
 public class IrJoinFunction extends IrAbstractSet {
 
     private final IrSetExpr take;
-    private final IrIntExpr[] refs;
+    private final IrIntArrayExpr refs;
     private final Integer globalCardinality;
 
-    IrJoinFunction(IrSetExpr take, IrIntExpr[] refs, Domain env, Domain ker, Domain card, Integer globalCardinality) {
+    IrJoinFunction(IrSetExpr take, IrIntArrayExpr refs, Domain env, Domain ker, Domain card, Integer globalCardinality) {
         super(env, ker, card);
         this.take = Check.notNull(take);
-        this.refs = Check.noNullsNotEmpty(refs);
+        this.refs = Check.notNull(refs);
         this.globalCardinality = globalCardinality;
     }
 
@@ -26,7 +25,7 @@ public class IrJoinFunction extends IrAbstractSet {
         return take;
     }
 
-    public IrIntExpr[] getRefs() {
+    public IrIntArrayExpr getRefs() {
         return refs;
     }
 
@@ -47,19 +46,18 @@ public class IrJoinFunction extends IrAbstractSet {
     public boolean equals(Object obj) {
         if (obj instanceof IrJoinFunction) {
             IrJoinFunction other = (IrJoinFunction) obj;
-            return take.equals(other.take) && Arrays.equals(refs, other.refs) && Util.equals(globalCardinality, other.globalCardinality) && super.equals(other);
+            return take.equals(other.take) && refs.equals(other.refs) && Util.equals(globalCardinality, other.globalCardinality) && super.equals(other);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return take.hashCode() ^ Arrays.hashCode(refs) ^ Util.hashCode(globalCardinality);
+        return take.hashCode() ^ refs.hashCode() ^ Util.hashCode(globalCardinality);
     }
 
     @Override
     public String toString() {
-        return take + " . " + Arrays.toString(refs)
-                + (hasGlobalCardinality() ? " with global cardinality " + getGlobalCardinality() : "");
+        return take + " . " + refs + (hasGlobalCardinality() ? " with global cardinality " + getGlobalCardinality() : "");
     }
 }

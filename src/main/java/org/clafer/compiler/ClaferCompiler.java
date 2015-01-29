@@ -2,6 +2,7 @@ package org.clafer.compiler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
@@ -13,6 +14,8 @@ import org.clafer.ast.AstUtil;
 import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
+import org.clafer.choco.search.RandomSetDecisionStrategy;
+import org.clafer.choco.search.RandomSetValueSelector;
 import org.clafer.collection.Either;
 import org.clafer.collection.Maybe;
 import org.clafer.common.UnsatisfiableException;
@@ -31,6 +34,8 @@ import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
 import solver.Solver;
+import solver.search.limits.FailCounter;
+import solver.search.loop.monitors.SMF;
 import solver.search.strategy.IntStrategyFactory;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.strategy.AbstractStrategy;
@@ -127,14 +132,43 @@ public class ClaferCompiler {
         }
     }
 
-    private static Maybe<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOptions options) {
+    private static Maybe<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOption options) {
         if (vars.length == 0) {
             return Maybe.nothing();
         }
-        if (options.isPreferSmallerInstances()) {
-            return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.remove_first(vars));
+        switch (options.getStrategy()) {
+            case PreferSmallerInstances:
+                return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.remove_first(vars));
+            case PreferLargerInstances:
+                return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.force_first(vars));
+            case Random:
+                Random rand = new Random();
+                return Maybe.<AbstractStrategy<?>>just(new RandomSetDecisionStrategy(
+                        vars,
+                        new solver.search.strategy.selectors.variables.Random<SetVar>(System.nanoTime()),
+                        new RandomSetValueSelector(rand), rand));
+            default:
+                throw new IllegalStateException("Unknown strategy: " + options.getStrategy());
         }
-        return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.force_first(vars));
+    }
+
+    private static Maybe<AbstractStrategy<?>> intStrategy(IntVar[] vars, ClaferOption options) {
+        if (vars.length == 0) {
+            return Maybe.nothing();
+        }
+        switch (options.getStrategy()) {
+            case Random:
+                return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.random_value(vars, System.nanoTime()));
+            default:
+                return firstFailInDomainMin(vars);
+        }
+    }
+
+    private static void restartPolicy(Solver solver, ClaferOption options) {
+        switch (options.getStrategy()) {
+            case Random:
+                SMF.luby(solver, 16, 16, new FailCounter(16), Integer.MAX_VALUE);
+        }
     }
 
     private static Maybe<AbstractStrategy<?>> firstFailInDomainMax(IntVar[] vars) {
@@ -152,10 +186,10 @@ public class ClaferCompiler {
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
-        return compile(in, scope, ClaferOptions.Default);
+        return compile(in, scope, ClaferOption.Default);
     }
 
-    public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOptions options) {
+    public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOption options) {
         try {
             Solver solver = new Solver();
             IrModule module = new IrModule();
@@ -167,18 +201,19 @@ public class ClaferCompiler {
 
             set(solver,
                     setStrategy(getSetVars(in, solution), options),
-                    firstFailInDomainMin(getIntVars(in, solution)));
-            return new ClaferSolver(solver, solution);
+                    intStrategy(getIntVars(in, solution), options));
+            restartPolicy(solver, options);
+            return new ClaferSolver(solver, solution, options.getStrategy() == ClaferSearchStrategy.Random);
         } catch (UnsatisfiableException e) {
             return new ClaferSolver();
         }
     }
 
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective... objectives) {
-        return compile(in, scope, objectives, ClaferOptions.Default);
+        return compile(in, scope, objectives, ClaferOption.Default);
     }
 
-    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOptions options) {
+    public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOption options) {
         try {
             Solver solver = new Solver();
             IrModule module = new IrModule();
@@ -203,7 +238,8 @@ public class ClaferCompiler {
             set(solver,
                     setStrategy(getSetVars(in, solution), options),
                     //                firstFailInDomainMax(objectiveVars),
-                    firstFailInDomainMin(getIntVars(in, solution)));
+                    intStrategy(getIntVars(in, solution), options));
+            restartPolicy(solver, options);
             return maximizes.length == 1
                     ? new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0])
                     : new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars);
@@ -213,10 +249,10 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope) {
-        return compileUnsat(in, scope.toScope(), ClaferOptions.Default);
+        return compileUnsat(in, scope.toScope(), ClaferOption.Default);
     }
 
-    public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOptions options) {
+    public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOption options) {
         Solver solver = new Solver();
         IrModule module = new IrModule();
 
@@ -229,7 +265,8 @@ public class ClaferCompiler {
         set(solver,
                 firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
                 setStrategy(getSetVars(in, solution), options),
-                firstFailInDomainMin(getIntVars(in, solution)));
+                intStrategy(getIntVars(in, solution), options));
+        restartPolicy(solver, options);
         return new ClaferUnsat(solver, solution);
     }
 

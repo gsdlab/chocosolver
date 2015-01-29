@@ -51,7 +51,7 @@ public class SimpleConstraintTest {
         person.addConstraint(equal(card(join(join($this(), hand), finger)), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-        assertEquals(6, solver.allInstances().length);
+        assertEquals(3, solver.allInstances().length);
     }
 
     /**
@@ -544,5 +544,56 @@ public class SimpleConstraintTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertFalse(solver.find());
+    }
+
+    /**
+     * <pre>
+     * A
+     *     B *
+     *         C *
+     * D -> int
+     * [ #(A.B) = D.ref ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNoScopeJoin() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("B");
+        AstConcreteClafer c = b.addChild("C");
+        AstConcreteClafer d = model.addChild("D").refToUnique(IntType).withCard(Mandatory);
+        a.addConstraint(equal(card(join(join($this(), b), c)), joinRef(d)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).setScope(b, 0));
+        while (solver.find()) {
+            assertEquals(0, solver.instance().getTopClafers(d)[0].getRef().getValue());
+        }
+        assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     *     B -> int
+     *     [ this.B.ref = 0 || this.B.ref = 1 ]
+     * X : A
+     * Y : A
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testOrPartialInt() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer x = model.addChild("X").extending(a).withCard(Mandatory);
+        AstConcreteClafer y = model.addChild("Y").extending(a).withCard(Mandatory);
+        a.addConstraint(or(
+                equal(joinRef(join($this(), b)), 0),
+                equal(joinRef(join($this(), b)), 1)));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(4, solver.allInstances().length);
     }
 }

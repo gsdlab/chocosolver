@@ -8,10 +8,9 @@ import org.clafer.common.Check;
  */
 public class AstJoin implements AstSetExpr {
 
-    private final AstSetExpr left;
-    private final AstConcreteClafer right;
+    private final AstSetExpr left, right;
 
-    AstJoin(AstSetExpr left, AstConcreteClafer right) {
+    AstJoin(AstSetExpr left, AstSetExpr right) {
         this.left = Check.notNull(left);
         this.right = Check.notNull(right);
     }
@@ -20,7 +19,7 @@ public class AstJoin implements AstSetExpr {
         return left;
     }
 
-    public AstConcreteClafer getRight() {
+    public AstSetExpr getRight() {
         return right;
     }
 

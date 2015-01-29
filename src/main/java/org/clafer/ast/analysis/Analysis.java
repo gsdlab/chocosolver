@@ -1,5 +1,6 @@
 package org.clafer.ast.analysis;
 
+import org.clafer.ast.ProductType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -152,6 +153,14 @@ public class Analysis {
 
     public int getScope(AstClafer clafer) {
         return getScope().getScope(clafer);
+    }
+
+    public int getScope(ProductType clafer) {
+        int product = 1;
+        for (AstClafer type : clafer.getProduct()) {
+            product *= getScope(type);
+        }
+        return product;
     }
 
     public Scope getScope() {
@@ -476,8 +485,8 @@ public class Analysis {
         return notNull(expr.toString(), "Type", getTypeMap().get(expr));
     }
 
-    public AstClafer getCommonSupertype(AstExpr expr) {
-        return notNull(expr.toString(), "Type", getTypeMap().get(expr)).getCommonSuperType();
+    public ProductType getCommonSupertype(AstExpr expr) {
+        return notNull(expr.toString(), "Type", getTypeMap().get(expr)).getCommonSupertype();
     }
 
     public Map<AstExpr, Type> getTypeMap() {

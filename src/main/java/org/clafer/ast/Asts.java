@@ -56,6 +56,10 @@ public class Asts {
     }
 
     public static AstConstant constant(AstClafer type, int... value) {
+        return new AstConstant(new ProductType(type), value);
+    }
+
+    public static AstConstant constant(ProductType type, int... value) {
         return new AstConstant(type, value);
     }
 
@@ -63,8 +67,12 @@ public class Asts {
         return new AstStringConstant(value);
     }
 
-    public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
+    public static AstSetExpr join(AstSetExpr left, AstSetExpr right) {
         return new AstJoin(left, right);
+    }
+
+    public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
+        return new AstJoin(left, relation(right));
     }
 
     public static AstSetExpr joinParent(AstSetExpr children) {
@@ -242,7 +250,7 @@ public class Asts {
      * @param target the casted type
      * @return {@code base} downcasted to type {@code target}
      */
-    public static AstSetExpr downcast(AstSetExpr base, AstClafer target) {
+    public static AstSetExpr downcast(AstSetExpr base, ProductType target) {
         return new AstDowncast(base, target);
     }
 
@@ -255,7 +263,7 @@ public class Asts {
      * @param target the casted type
      * @return {@code base} upcasted to type {@code target}
      */
-    public static AstSetExpr upcast(AstSetExpr base, AstAbstractClafer target) {
+    public static AstSetExpr upcast(AstSetExpr base, ProductType target) {
         return new AstUpcast(base, target);
     }
 
@@ -381,5 +389,40 @@ public class Asts {
 
     public static AstBoolExpr suffix(AstSetExpr suffix, AstSetExpr word) {
         return new AstSuffix(suffix, word);
+    }
+
+    public static AstSetExpr relation(AstConcreteClafer child) {
+        return new AstChildRelation(child);
+    }
+
+    public static AstSetExpr parent(AstConcreteClafer child) {
+        return new AstParentRelation(child);
+    }
+
+    public static AstSetExpr ref(AstClafer source) {
+        if (source.hasRef()) {
+            return relation(source.getRef());
+        }
+        throw new AstException(source + " has no reference");
+    }
+
+    public static AstSetExpr relation(AstRef ref) {
+        return new AstRefRelation(ref);
+    }
+
+    public static AstSetExpr inverse(AstSetExpr relation) {
+        return new AstInverse(relation);
+    }
+
+    public static AstSetExpr transitiveClosure(AstSetExpr relation, boolean reflexive) {
+        return new AstTransitiveClosure(relation, reflexive);
+    }
+
+    public static AstSetExpr transitiveClosure(AstSetExpr relation) {
+        return transitiveClosure(relation, false);
+    }
+
+    public static AstSetExpr transitiveReflexiveClosure(AstSetExpr relation) {
+        return transitiveClosure(relation, true);
     }
 }

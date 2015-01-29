@@ -1,54 +1,106 @@
 package org.clafer.ast.analysis;
 
+import org.clafer.ast.ProductType;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstUtil;
 
 /**
+ * Sum type.
  *
  * @author jimmy
  */
-public class Type {
+public class Type implements Iterable<ProductType> {
 
-    private final Set<AstClafer> unionType;
-    private final AstClafer commonSuperType;
+    private final Set<ProductType> unionType;
+    private final ProductType commonSupertype;
 
     public Type(Set<AstClafer> unionType, AstClafer commonSupertype) {
         if (unionType.isEmpty()) {
             throw new IllegalArgumentException();
         }
-        this.unionType = unionType;
-        this.commonSuperType = commonSupertype;
+        this.unionType = new LinkedHashSet<>(unionType.size());
+        for (AstClafer type : unionType) {
+            this.unionType.add(new ProductType(type));
+        }
+        this.commonSupertype = new ProductType(commonSupertype);
     }
 
-    public Type(Set<AstClafer> unionType) {
+    public Type(ProductType productType) {
+        this(Collections.singleton(productType));
+    }
+
+    public Type(Set<ProductType> unionType) {
         if (unionType.isEmpty()) {
             throw new IllegalArgumentException();
         }
         this.unionType = unionType;
-        this.commonSuperType = AstUtil.getLowestCommonSupertype(unionType);
+        this.commonSupertype = ProductType.getLowestCommonSupertype(unionType);
     }
 
-    public Set<AstClafer> getUnionType() {
+    public Type(Set<ProductType> unionType, ProductType commonSupertype) {
+        if (unionType.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        this.unionType = unionType;
+        this.commonSupertype = commonSupertype;
+    }
+
+    public int arity() {
+        return unionType.size();
+    }
+
+    public Set<ProductType> getUnionType() {
         return unionType;
     }
 
-    public AstClafer getCommonSuperType() {
-        return commonSuperType;
+    public ProductType getCommonSupertype() {
+        return commonSupertype;
     }
 
     public boolean isBasicType() {
         return unionType.size() == 1;
     }
 
-    public AstClafer getBasicType() {
+    public ProductType getBasicType() {
         assert isBasicType();
         return unionType.iterator().next();
     }
 
     public static Type basicType(AstClafer type) {
-        return new Type(Collections.singleton(type));
+        return new Type(Collections.singleton(new ProductType(type)));
+    }
+
+    public boolean isClaferType() {
+        return unionType.size() == 1 && unionType.iterator().next().arity() == 1;
+    }
+
+    public AstClafer getClaferType() {
+        assert isClaferType() : this + " is not a Clafer type";
+        return unionType.iterator().next().getProduct()[0];
+    }
+
+    public boolean isPrimitive() {
+        return unionType.size() == 1 && unionType.iterator().next().isPrimitive();
+    }
+
+    public boolean isBool() {
+        return unionType.size() == 1 && unionType.iterator().next().isBool();
+    }
+
+    public boolean isInt() {
+        return unionType.size() == 1 && unionType.iterator().next().isInt();
+    }
+
+    public boolean isString() {
+        return unionType.size() == 1 && unionType.iterator().next().isString();
+    }
+
+    @Override
+    public Iterator<ProductType> iterator() {
+        return unionType.iterator();
     }
 
     @Override
@@ -67,6 +119,6 @@ public class Type {
 
     @Override
     public String toString() {
-        return unionType.size() == 1 ? commonSuperType.toString() : unionType.toString();
+        return unionType.size() == 1 ? commonSupertype.toString() : unionType.toString();
     }
 }

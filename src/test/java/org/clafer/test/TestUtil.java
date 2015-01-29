@@ -23,7 +23,7 @@ import solver.search.strategy.ISF;
 import solver.search.strategy.SetStrategyFactory;
 import solver.search.strategy.selectors.SetValueSelector;
 import solver.search.strategy.strategy.AbstractStrategy;
-import solver.search.strategy.strategy.SetSearchStrategy;
+import solver.search.strategy.strategy.SetStrategy;
 import solver.variables.BoolVar;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
@@ -85,8 +85,8 @@ public class TestUtil {
         return ISF.random_value(vars, rand.nextLong());
     }
 
-    private static SetSearchStrategy randomSearch(SetVar[] vars) {
-        return SetStrategyFactory.generic(
+    private static SetStrategy randomSearch(SetVar[] vars) {
+        return SetStrategyFactory.custom(
                 new solver.search.strategy.selectors.variables.Random<SetVar>(rand.nextLong()),
                 new RandomSetValueSelector(), randBool(), vars);
     }

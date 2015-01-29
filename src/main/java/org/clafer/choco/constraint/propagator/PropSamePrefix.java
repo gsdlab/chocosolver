@@ -4,8 +4,8 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -56,10 +56,10 @@ public class PropSamePrefix extends Propagator<IntVar> {
     @Override
     protected int getPropagationConditions(int vIdx) {
         if (isLengthVar(vIdx)) {
-            return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+            return IntEventType.boundAndInst();
         }
         assert isString1Var(vIdx) || isString2Var(vIdx);
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
 
     private boolean neq(int i) {

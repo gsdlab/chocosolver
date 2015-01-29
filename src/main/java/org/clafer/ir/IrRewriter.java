@@ -11,7 +11,9 @@ import static org.clafer.ir.Irs.*;
 public abstract class IrRewriter<T>
         implements IrIntExprVisitor<T, IrIntExpr>,
         IrSetExprVisitor<T, IrSetExpr>,
-        IrStringExprVisitor<T, IrStringExpr> {
+        IrStringExprVisitor<T, IrStringExpr>,
+        IrIntArrayExprVisitor<T, IrIntArrayExpr>,
+        IrSetArrayExprVisitor<T, IrSetArrayExpr> {
 
     protected static <T> boolean changed(T t1, T t2) {
         if (t1 == t2) {
@@ -131,6 +133,14 @@ public abstract class IrRewriter<T>
         return rewritten;
     }
 
+    public IrIntArrayExpr rewrite(IrIntArrayExpr expr, T t) {
+        return expr.accept(this, t);
+    }
+
+    public IrSetArrayExpr rewrite(IrSetArrayExpr expr, T t) {
+        return expr.accept(this, t);
+    }
+
     @Override
     public IrIntExpr visit(IrRegister ir, T a) {
         IrVar variable = ir.getVariable();
@@ -199,8 +209,8 @@ public abstract class IrRewriter<T>
         IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
         return changed(ir.getAntecedent(), antecedent)
                 || changed(ir.getConsequent(), consequent)
-                ? implies(antecedent, consequent)
-                : ir;
+                        ? implies(antecedent, consequent)
+                        : ir;
     }
 
     @Override
@@ -209,8 +219,8 @@ public abstract class IrRewriter<T>
         IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
         return changed(ir.getAntecedent(), antecedent)
                 || changed(ir.getConsequent(), consequent)
-                ? notImplies(antecedent, consequent)
-                : ir;
+                        ? notImplies(antecedent, consequent)
+                        : ir;
     }
 
     @Override
@@ -221,8 +231,8 @@ public abstract class IrRewriter<T>
         return changed(ir.getAntecedent(), antecedent)
                 || changed(ir.getConsequent(), consequent)
                 || changed(ir.getAlternative(), alternative)
-                ? ifThenElse(antecedent, consequent, alternative)
-                : ir;
+                        ? ifThenElse(antecedent, consequent, alternative)
+                        : ir;
     }
 
     @Override
@@ -389,8 +399,8 @@ public abstract class IrRewriter<T>
         return changed(ir.getSet(), set)
                 || changed(ir.getString(), string)
                 || changed(ir.getResult(), result)
-                ? filterString(set, ir.getOffset(), string, result)
-                : ir;
+                        ? filterString(set, ir.getOffset(), string, result)
+                        : ir;
     }
 
     @Override
@@ -399,8 +409,8 @@ public abstract class IrRewriter<T>
         IrStringExpr word = rewrite(ir.getWord(), a);
         return changed(ir.getPrefix(), prefix)
                 || changed(ir.getWord(), word)
-                ? prefix(prefix, word)
-                : ir;
+                        ? prefix(prefix, word)
+                        : ir;
     }
 
     @Override
@@ -409,8 +419,8 @@ public abstract class IrRewriter<T>
         IrStringExpr word = rewrite(ir.getWord(), a);
         return changed(ir.getSuffix(), suffix)
                 || changed(ir.getWord(), word)
-                ? suffix(suffix, word)
-                : ir;
+                        ? suffix(suffix, word)
+                        : ir;
     }
 
     @Override
@@ -462,7 +472,7 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrIntExpr visit(IrElement ir, T a) {
-        IrIntExpr[] array = rewrite(ir.getArray(), a);
+        IrIntArrayExpr array = rewrite(ir.getArray(), a);
         IrIntExpr index = rewrite(ir.getIndex(), a);
         return changed(ir.getArray(), array) || changed(ir.getIndex(), index)
                 ? element(array, index)
@@ -474,6 +484,14 @@ public abstract class IrRewriter<T>
         IrIntExpr[] array = rewrite(ir.getArray(), a);
         return changed(ir.getArray(), array)
                 ? count(ir.getValue(), array)
+                : ir;
+    }
+
+    @Override
+    public IrIntExpr visit(IrCountNotEqual ir, T a) {
+        IrIntArrayExpr array = rewrite(ir.getArray(), a);
+        return changed(ir.getArray(), array)
+                ? countNotEqual(ir.getValue(), array)
                 : ir;
     }
 
@@ -493,8 +511,8 @@ public abstract class IrRewriter<T>
         return changed(ir.getAntecedent(), antecedent)
                 || changed(ir.getConsequent(), consequent)
                 || changed(ir.getAlternative(), alternative)
-                ? ternary(antecedent, consequent, alternative)
-                : ir;
+                        ? ternary(antecedent, consequent, alternative)
+                        : ir;
     }
 
     @Override
@@ -530,9 +548,18 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrSetExpr visit(IrSetElement ir, T a) {
+        IrSetArrayExpr array = rewrite(ir.getArray(), a);
+        IrIntExpr index = rewrite(ir.getIndex(), a);
+        return changed(ir.getArray(), array) || changed(ir.getIndex(), index)
+                ? element(array, index)
+                : ir;
+    }
+
+    @Override
     public IrSetExpr visit(IrJoinRelation ir, T a) {
         IrSetExpr take = rewrite(ir.getTake(), a);
-        IrSetExpr[] children = rewrite(ir.getChildren(), a);
+        IrSetArrayExpr children = rewrite(ir.getChildren(), a);
         return changed(ir.getTake(), take) || changed(ir.getChildren(), children)
                 ? joinRelation(take, children, ir.isInjective())
                 : ir;
@@ -541,7 +568,7 @@ public abstract class IrRewriter<T>
     @Override
     public IrSetExpr visit(IrJoinFunction ir, T a) {
         IrSetExpr take = rewrite(ir.getTake(), a);
-        IrIntExpr[] refs = rewrite(ir.getRefs(), a);
+        IrIntArrayExpr refs = rewrite(ir.getRefs(), a);
         return changed(ir.getTake(), take) || changed(ir.getRefs(), refs)
                 ? joinFunction(take, refs, ir.getGlobalCardinality())
                 : ir;
@@ -596,8 +623,8 @@ public abstract class IrRewriter<T>
         return changed(ir.getAntecedent(), antecedent)
                 || changed(ir.getConsequent(), consequent)
                 || changed(ir.getAlternative(), alternative)
-                ? ternary(antecedent, consequent, alternative)
-                : ir;
+                        ? ternary(antecedent, consequent, alternative)
+                        : ir;
     }
 
     @Override
@@ -606,8 +633,8 @@ public abstract class IrRewriter<T>
         IrIntVar length = (IrIntVar) rewrite(ir.getLengthVar(), a);
         return changed(ir.getCharVars(), chars)
                 || changed(ir.getLengthVar(), length)
-                ? string(ir.getName(), chars, length)
-                : ir;
+                        ? string(ir.getName(), chars, length)
+                        : ir;
     }
 
     @Override
@@ -625,6 +652,38 @@ public abstract class IrRewriter<T>
         IrIntExpr index = rewrite(ir.getIndex(), a);
         return changed(ir.getArray(), array) || changed(ir.getIndex(), index)
                 ? element(array, index)
+                : ir;
+    }
+
+    @Override
+    public IrIntArrayExpr visit(IrIntArrayVar ir, T a) {
+        IrIntExpr[] array = rewrite(ir.getArray(), a);
+        return changed(ir.getArray(), array)
+                ? array(array)
+                : ir;
+    }
+
+    @Override
+    public IrSetArrayExpr visit(IrSetArrayVar ir, T a) {
+        IrSetExpr[] array = rewrite(ir.getArray(), a);
+        return changed(ir.getArray(), array)
+                ? array(array)
+                : ir;
+    }
+
+    @Override
+    public IrSetArrayExpr visit(IrInverse ir, T a) {
+        IrSetArrayExpr relation = rewrite(ir.getRelation(), a);
+        return changed(ir.getRelation(), relation)
+                ? inverse(relation, ir.getEnvs().length)
+                : ir;
+    }
+
+    @Override
+    public IrSetArrayExpr visit(IrTransitiveClosure ir, T a) {
+        IrSetArrayExpr relation = rewrite(ir.getRelation(), a);
+        return changed(ir.getRelation(), relation)
+                ? transitiveClosure(relation, ir.isReflexive())
                 : ir;
     }
 }

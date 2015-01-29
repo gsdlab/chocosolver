@@ -4,12 +4,13 @@ import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -58,10 +59,10 @@ public class PropArrayToSet extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isAVar(vIdx)) {
-            return EventType.INT_ALL_MASK();
+            return IntEventType.all();
         }
         assert isSVar(vIdx);
-        return EventType.REMOVE_FROM_ENVELOPE.mask + EventType.ADD_TO_KER.mask;
+        return SetEventType.all();
     }
 
     private boolean findMate(int sEnv) throws ContradictionException {
@@ -117,18 +118,18 @@ public class PropArrayToSet extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSVar(idxVarInProp)) {
             sD.freeze();
-            sD.forEach(pruneAOnSEnv, EventType.REMOVE_FROM_ENVELOPE);
-            sD.forEach(pickAOnSEnv, EventType.ADD_TO_KER);
+            sD.forEach(pruneAOnSEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            sD.forEach(pickAOnSKer, SetEventType.ADD_TO_KER);
             sD.unfreeze();
         } else {
             assert isAVar(idxVarInProp);
 
             int id = getAVarIndex(idxVarInProp);
-            if (EventType.isRemove(mask)
-                    || (EventType.isInclow(mask) && as[id].getLB() > s.getEnvelopeFirst())
-                    || EventType.isDecupp(mask)) {
+            if (IntEventType.isRemove(mask)
+                    || (IntEventType.isInclow(mask) && as[id].getLB() > s.getEnvelopeFirst())
+                    || IntEventType.isDecupp(mask)) {
                 asD[id].freeze();
-                asD[id].forEach(pruneSOnARem, EventType.REMOVE);
+                asD[id].forEachRemVal(pruneSOnARem);
                 asD[id].unfreeze();
             }
             if (as[id].isInstantiated()) {
@@ -146,7 +147,7 @@ public class PropArrayToSet extends Propagator<Variable> {
             }
         }
     };
-    private final IntProcedure pickAOnSEnv = new IntProcedure() {
+    private final IntProcedure pickAOnSKer = new IntProcedure() {
         @Override
         public void execute(int sKer) throws ContradictionException {
             if (findMate(sKer)) {

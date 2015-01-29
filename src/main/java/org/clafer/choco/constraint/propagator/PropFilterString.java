@@ -4,10 +4,11 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 
 /**
@@ -18,6 +19,8 @@ import util.ESat;
  * @author jimmy
  */
 public class PropFilterString extends Propagator<Variable> {
+
+    private static final long serialVersionUID = 1L;
 
     private final SetVar set;
     private final IntVar setCard;
@@ -81,12 +84,12 @@ public class PropFilterString extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+            return SetEventType.all();
         }
         if (isSetCardVar(vIdx)) {
-            return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+            return IntEventType.boundAndInst();
         }
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
 
     private boolean subset(IntVar sub, IntVar[] sups, int from, int to) throws ContradictionException {
@@ -210,11 +213,6 @@ public class PropFilterString extends Propagator<Variable> {
                 }
             }
         } while (changed);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

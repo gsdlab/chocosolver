@@ -6,10 +6,11 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 
 /**
@@ -17,6 +18,8 @@ import util.ESat;
  * @author jimmy
  */
 public class PropJoinFunctionCard extends Propagator<Variable> {
+
+    private static final long serialVersionUID = 1L;
 
     private final SetVar take;
     private final IntVar takeCard;
@@ -83,13 +86,13 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isTakeVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+            return SetEventType.all();
         }
         if (isRefVar(vIdx)) {
-            return EventType.INSTANTIATE.mask;
+            return IntEventType.instantiation();
         }
         assert isTakeCardVar(vIdx) || isToCardVar(vIdx);
-        return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+        return IntEventType.boundAndInst();
     }
 
     private int countAdditionalSameRefsAllowed(TIntIntHashMap map) {
@@ -211,7 +214,6 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                 cardChanged |= takeCard.updateLowerBound(toCard.getLB(), aCause);
             } while (cardChanged);
 
-
             if (maxUninstantiated != 0) {
                 if (instCard == toCard.getUB()) {
                     // The rest must be duplicates.
@@ -239,11 +241,6 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                 }
             }
         } while (changed);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

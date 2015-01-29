@@ -5,8 +5,8 @@ import org.clafer.common.Util;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -51,7 +51,7 @@ public class PropSetUnionCard extends Propagator<IntVar> {
 
     @Override
     protected int getPropagationConditions(int vIdx) {
-        return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+        return IntEventType.boundAndInst();
     }
 
     @Override

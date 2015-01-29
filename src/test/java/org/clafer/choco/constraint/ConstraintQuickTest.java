@@ -82,6 +82,15 @@ public class ConstraintQuickTest extends Suite {
         throw new AssertionError("Failed negative check for arguments " + Arrays.deepToString(args));
     }
 
+    Solver newSolver(FrameworkMethod testMethod, boolean positive) {
+        Solver solver = new Solver();
+        ArcConsistent arc = testMethod.getAnnotation(ArcConsistent.class);
+        if (arc != null && (positive || arc.opposite())) {
+            solver.plugMonitor(new ArcConsistentCheck(solver));
+        }
+        return solver;
+    }
+
     public static Object[] $(Object arg1) {
         return new Object[]{arg1};
     }
@@ -124,13 +133,22 @@ public class ConstraintQuickTest extends Suite {
 
         @Override
         public void evaluate() throws Throwable {
-            evaluate(true);
-            evaluate(false);
+            for (int i = 0; i < 10; i++) {
+                evaluate(true);
+            }
+            for (int i = 0; i < 10; i++) {
+                evaluate(false);
+            }
         }
 
         void evaluate(boolean positive) throws Throwable {
-            Solver solver = new Solver();
+            Solver solver = newSolver(testMethod, positive);
+
             Object[] args = (Object[]) parameters.invokeExplosively(target, solver);
+            int expectedNumberOfSolutions = positive
+                    ? parameters.getAnnotation(Input.class).solutions()
+                    : TestReflection.countSolutions(args) - parameters.getAnnotation(Input.class).solutions();
+
             int count = 0;
             Constraint constraint = (Constraint) testMethod.invokeExplosively(target, args);
             solver.post(positive ? constraint : constraint.getOpposite());
@@ -144,14 +162,8 @@ public class ConstraintQuickTest extends Suite {
                     count++;
                 } while (solver.nextSolution());
             }
-            if (positive) {
-                assertEquals("Wrong number of solutions.",
-                        parameters.getAnnotation(Input.class).solutions(), count);
-            } else {
-                assertEquals("Wrong number of negative solutions.",
-                        TestReflection.countSolutions(args) - parameters.getAnnotation(Input.class).solutions(),
-                        count);
-            }
+            assertEquals(positive ? "Wrong number of solutions." : "Wrong number of negative solutions.",
+                    expectedNumberOfSolutions, count);
         }
     }
 
@@ -208,7 +220,7 @@ public class ConstraintQuickTest extends Suite {
         }
 
         void evaluate(boolean positive) throws Throwable {
-            Solver solver = new Solver();
+            Solver solver = newSolver(testMethod, positive);
 
             Class<?>[] parameters = testMethod.getMethod().getParameterTypes();
             Annotation[][] annotations = testMethod.getMethod().getParameterAnnotations();

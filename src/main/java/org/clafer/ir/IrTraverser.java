@@ -8,7 +8,9 @@ package org.clafer.ir;
 public abstract class IrTraverser<T>
         implements IrIntExprVisitor<T, Void>,
         IrSetExprVisitor<T, Void>,
-        IrStringExprVisitor<T, Void> {
+        IrStringExprVisitor<T, Void>,
+        IrIntArrayExprVisitor<T, Void>,
+        IrSetArrayExprVisitor<T, Void> {
 
     public void traverse(IrModule module, T a) {
         for (IrBoolExpr constraint : module.getConstraints()) {
@@ -60,6 +62,14 @@ public abstract class IrTraverser<T>
         for (IrStringExpr expr : exprs) {
             traverse(expr, a);
         }
+    }
+
+    public void traverse(IrIntArrayExpr expr, T a) {
+        expr.accept(this, a);
+    }
+
+    public void traverse(IrSetArrayExpr expr, T a) {
+        expr.accept(this, a);
     }
 
     @Override
@@ -326,6 +336,12 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrCountNotEqual ir, T a) {
+        traverse(ir.getArray(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrSetSum ir, T a) {
         traverse(ir.getSet(), a);
         return null;
@@ -359,6 +375,13 @@ public abstract class IrTraverser<T>
     @Override
     public Void visit(IrArrayToSet ir, T a) {
         traverse(ir.getArray(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrSetElement ir, T a) {
+        traverse(ir.getArray(), a);
+        traverse(ir.getIndex(), a);
         return null;
     }
 
@@ -431,6 +454,30 @@ public abstract class IrTraverser<T>
     public Void visit(IrConcat ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrIntArrayVar ir, T a) {
+        traverse(ir.getArray(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrSetArrayVar ir, T a) {
+        traverse(ir.getArray(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrInverse ir, T a) {
+        traverse(ir.getRelation(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrTransitiveClosure ir, T a) {
+        traverse(ir.getRelation(), a);
         return null;
     }
 }

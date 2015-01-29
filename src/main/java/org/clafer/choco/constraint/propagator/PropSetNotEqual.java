@@ -3,9 +3,9 @@ package org.clafer.choco.constraint.propagator;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -38,7 +38,7 @@ public class PropSetNotEqual extends Propagator<SetVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     private void checkNotSame() throws ContradictionException {
@@ -81,14 +81,14 @@ public class PropSetNotEqual extends Propagator<SetVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isS1Var(idxVarInProp)) {
             s1D.freeze();
-            s1D.forEach(onS1Env, EventType.REMOVE_FROM_ENVELOPE);
-            s1D.forEach(onS1Ker, EventType.ADD_TO_KER);
+            s1D.forEach(onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
+            s1D.forEach(onS1Ker, SetEventType.ADD_TO_KER);
             s1D.unfreeze();
         } else {
             assert isS2Var(idxVarInProp);
             s2D.freeze();
-            s2D.forEach(onS2Env, EventType.REMOVE_FROM_ENVELOPE);
-            s2D.forEach(onS2Ker, EventType.ADD_TO_KER);
+            s2D.forEach(onS2Env, SetEventType.REMOVE_FROM_ENVELOPE);
+            s2D.forEach(onS2Ker, SetEventType.ADD_TO_KER);
             s2D.unfreeze();
         }
         checkNotSame();

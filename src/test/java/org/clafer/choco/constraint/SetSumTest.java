@@ -20,7 +20,8 @@ public class SetSumTest {
 
     @Input(solutions = 32)
     public Object testSumSet(Solver solver) {
-        /*import Control.Monad
+        /*
+         * import Control.Monad
          *        
          * powerset = filterM (const [True, False])
          *        
@@ -37,7 +38,8 @@ public class SetSumTest {
 
     @Input(solutions = 14)
     public Object testSumNonPositiveSet(Solver solver) {
-        /*import Control.Monad
+        /*
+         * import Control.Monad
          *        
          * powerset = filterM (const [True, False])
          *        

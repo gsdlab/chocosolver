@@ -4,9 +4,9 @@ import org.clafer.common.Check;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.SetVar;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -31,7 +31,7 @@ public class PropSetDifference extends Propagator<SetVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        return SetEventType.all();
     }
 
     @Override
@@ -63,22 +63,22 @@ public class PropSetDifference extends Propagator<SetVar> {
             case 0:
                 // minuend
                 minuendD.freeze();
-                minuendD.forEach(pruneDifferenceOnMinuendEnv, EventType.REMOVE_FROM_ENVELOPE);
-                minuendD.forEach(pickDifferenceOnMinuendKer, EventType.ADD_TO_KER);
+                minuendD.forEach(pruneDifferenceOnMinuendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                minuendD.forEach(pickDifferenceOnMinuendKer, SetEventType.ADD_TO_KER);
                 minuendD.unfreeze();
                 break;
             case 1:
                 // subtrahend
                 subtrahendD.freeze();
-                subtrahendD.forEach(pickMinuendPickDiffrenceOnSubtrahendEnv, EventType.REMOVE_FROM_ENVELOPE);
-                subtrahendD.forEach(pruneDifferenceOnSubtrahendKer, EventType.ADD_TO_KER);
+                subtrahendD.forEach(pickMinuendPickDiffrenceOnSubtrahendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                subtrahendD.forEach(pruneDifferenceOnSubtrahendKer, SetEventType.ADD_TO_KER);
                 subtrahendD.unfreeze();
                 break;
             case 2:
                 // difference
                 differenceD.freeze();
-                differenceD.forEach(pruneMinuendOnDifferenceEnv, EventType.REMOVE_FROM_ENVELOPE);
-                differenceD.forEach(pickMinuendPruneSubtrahendOnDifferenceKer, EventType.ADD_TO_KER);
+                differenceD.forEach(pruneMinuendOnDifferenceEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                differenceD.forEach(pickMinuendPruneSubtrahendOnDifferenceKer, SetEventType.ADD_TO_KER);
                 differenceD.unfreeze();
                 break;
         }

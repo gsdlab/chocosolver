@@ -4,9 +4,9 @@ import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
 import solver.variables.BoolVar;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.delta.IIntDeltaMonitor;
+import solver.variables.events.IntEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -17,15 +17,19 @@ import util.procedure.IntProcedure;
  */
 public class PropReifyEqualXY extends Propagator<IntVar> {
 
-    private final BoolVar reify;
+    private final IntVar reify;
     private final int reifyC;
     private final IntVar x, y;
     private final IIntDeltaMonitor xD, yD;
 
     public PropReifyEqualXY(BoolVar reify, boolean reifyC, IntVar x, IntVar y) {
+        this(reify, reifyC ? 1 : 0, x, y);
+    }
+
+    public PropReifyEqualXY(IntVar reify, int reifyC, IntVar x, IntVar y) {
         super(new IntVar[]{reify, x, y}, PropagatorPriority.BINARY, true);
         this.reify = reify;
-        this.reifyC = reifyC ? 1 : 0;
+        this.reifyC = reifyC;
         this.x = x;
         this.xD = x.monitorDelta(aCause);
         this.y = y;
@@ -46,7 +50,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
     private final IntProcedure pruneXOnYRem = new IntProcedure() {
         @Override
@@ -101,7 +105,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
             }
         } else if (reify.isInstantiatedTo(reifyC)) {
             xD.freeze();
-            xD.forEach(pruneYOnXRem, EventType.REMOVE);
+            xD.forEachRemVal(pruneYOnXRem);
             xD.unfreeze();
         }
     }
@@ -126,7 +130,7 @@ public class PropReifyEqualXY extends Propagator<IntVar> {
             }
         } else if (reify.isInstantiatedTo(reifyC)) {
             yD.freeze();
-            yD.forEach(pruneXOnYRem, EventType.REMOVE);
+            yD.forEachRemVal(pruneXOnYRem);
             yD.unfreeze();
         }
     }

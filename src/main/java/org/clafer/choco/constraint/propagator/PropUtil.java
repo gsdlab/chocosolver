@@ -97,6 +97,66 @@ public class PropUtil {
         return iterate;
     }
 
+    public static int getEnv(SetVar set, int index) {
+        int env = set.getEnvelopeFirst();
+        for (int i = 0; i < index && env != SetVar.END; i++) {
+            env = set.getEnvelopeNext();
+        }
+        return env;
+    }
+
+    /**
+     * Returns the largest element in the set's envelope. Returns
+     * {@link SetVar#END} if the envelope is empty.
+     *
+     * @param set the set variable
+     * @return the largest element in the set's envelope
+     */
+    public static int maxEnv(SetVar set) {
+        int max = SetVar.END;
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            max = i;
+        }
+        return max;
+    }
+
+    /**
+     * Returns the largest element in the set's kernel. Returns
+     * {@link SetVar#END} if the kernel is empty.
+     *
+     * @param set the set variable
+     * @return the largest element in the set's kernel
+     */
+    public static int maxKer(SetVar set) {
+        int max = SetVar.END;
+        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+            max = i;
+        }
+        return max;
+    }
+
+    /**
+     * Returns the smallest element in the set's envelope. Returns
+     * {@link SetVar#END} if the envelope is empty.
+     *
+     * @param set the set variable
+     * @return the smallest element in the set's envelope
+     */
+    public static int minEnv(SetVar set) {
+        return set.getEnvelopeFirst();
+    }
+
+    /**
+     * Returns the smallest element in the set's kernel. Returns
+     * {@link SetVar#END} if the kernel is empty.
+     *
+     * @param set the set variable
+     * @return the smallest element in the set's kernel
+     */
+    public static int minKer(SetVar set) {
+        return set.getKernelFirst();
+    }
+
     /**
      * Checks if at least one of the integer's domain contains a value.
      *
@@ -158,31 +218,26 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isDomIntersectDom(IntVar i1, IntVar i2) {
-        int s1 = i1.getDomainSize();
-        int s2 = i2.getDomainSize();
-        IntVar small = i1;
-        IntVar large = i2;
-        int s = s1;
-        if (s1 > s2) {
-            small = i2;
-            large = i1;
-            s = s2;
-        }
-        if (s == 1) {
-            return large.contains(small.getLB());
-        }
-        int lb = small.getLB();
-        int largeLb = large.getLB();
-        if (largeLb > lb) {
-            lb = small.nextValue(largeLb - 1);
-        }
-        int ub = Math.min(small.getUB(), large.getUB());
-        for (int i = lb; i <= ub; i = small.nextValue(i)) {
-            if (large.contains(i)) {
-                return true;
+        return getDomIntersectDom(i1, i2) != Integer.MAX_VALUE;
+    }
+
+    public static int getDomIntersectDom(IntVar i1, IntVar i2) {
+        int v1 = i1.getLB();
+        int v2 = i2.getLB();
+        boolean smaller = v1 < v2;
+        do {
+            if (v1 == v2) {
+                return v1;
             }
-        }
-        return false;
+            if (smaller) {
+                v1 = i1.nextValue(v2 - 1);
+                smaller = false;
+            } else {
+                v2 = i2.nextValue(v1 - 1);
+                smaller = true;
+            }
+        } while (v1 != Integer.MAX_VALUE && v2 != Integer.MAX_VALUE);
+        return Integer.MAX_VALUE;
     }
 
     /**
@@ -504,7 +559,6 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isKerSubsetKer(SetVar sub, SetVar sup) {
-
         for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
             if (!sup.kernelContains(i)) {
                 return false;

@@ -8,12 +8,13 @@ import org.clafer.collection.MutableBoolean;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
 import solver.variables.delta.IIntDeltaMonitor;
 import solver.variables.delta.ISetDeltaMonitor;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 import util.procedure.IntProcedure;
 
@@ -88,14 +89,11 @@ public class PropJoinFunction extends Propagator<Variable> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        if (isTakeVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
-        }
-        if (isToVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+        if (isTakeVar(vIdx) || isToVar(vIdx)) {
+            return SetEventType.all();
         }
         assert isRefVar(vIdx);
-        return EventType.INT_ALL_MASK();
+        return IntEventType.all();
     }
 
     private boolean findMate(int toEnv) throws ContradictionException {
@@ -158,15 +156,15 @@ public class PropJoinFunction extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isTakeVar(idxVarInProp)) {
             takeD.freeze();
-            takeD.forEach(pruneToOnTakeEnv, EventType.REMOVE_FROM_ENVELOPE);
-            takeD.forEach(pickToAndPruneChildOnTakeKer, EventType.ADD_TO_KER);
+            takeD.forEach(pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            takeD.forEach(pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
             takeD.unfreeze();
         } else if (isToVar(idxVarInProp)) {
             toD.freeze();
-            toD.forEach(pruneRefOnToEnv, EventType.REMOVE_FROM_ENVELOPE);
-            toD.forEach(pickTakeOnToKer, EventType.ADD_TO_KER);
+            toD.forEach(pruneRefOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            toD.forEach(pickTakeOnToKer, SetEventType.ADD_TO_KER);
             toD.unfreeze();
-            if ((EventType.REMOVE_FROM_ENVELOPE.mask & mask) != 0) {
+            if (SetEventType.isEnvRemoval(mask)) {
                 TIntArrayList removed = null;
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
                     if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
@@ -214,10 +212,10 @@ public class PropJoinFunction extends Propagator<Variable> {
                     }
                 }
             };
-            refD.forEach(pruneToOnRefRem, EventType.REMOVE);
+            refD.forEachRemVal(pruneToOnRefRem);
             refD.unfreeze();
             IntVar ref = refs[id];
-            if (EventType.isRemove(mask)) {
+            if (IntEventType.isRemove(mask)) {
                 if (!PropUtil.isDomIntersectEnv(ref, to)) {
                     take.removeFromEnvelope(id, aCause);
                     dontCare.remove(id);

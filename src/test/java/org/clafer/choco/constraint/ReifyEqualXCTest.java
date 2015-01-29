@@ -29,6 +29,7 @@ public class ReifyEqualXCTest {
         assertEquals(reify, v == c);
     }
 
+    @ArcConsistent(opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(BoolVar reify, IntVar v, int c) {
         return Constraints.reifyEqual(reify, v, c);

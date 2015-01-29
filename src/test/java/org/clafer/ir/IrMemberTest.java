@@ -1,11 +1,11 @@
 package org.clafer.ir;
 
+import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrQuickTest.Solution;
 import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import solver.constraints.Constraint;
-import solver.constraints.set.SCF;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 
@@ -23,6 +23,6 @@ public class IrMemberTest {
 
     @Solution
     public Constraint setup(IntVar element, SetVar set) {
-        return SCF.member(element, set);
+        return Constraints.member(element, set);
     }
 }

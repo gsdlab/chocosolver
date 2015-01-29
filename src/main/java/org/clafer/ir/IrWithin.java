@@ -34,9 +34,6 @@ public class IrWithin extends IrAbstractBool {
     @Override
     public IrBoolExpr negate() {
         Domain inverse = value.getDomain().difference(range);
-        if (inverse == null) {
-            return Irs.False;
-        }
         return new IrWithin(value, inverse, getDomain().invert());
     }
 

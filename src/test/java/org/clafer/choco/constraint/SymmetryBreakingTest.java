@@ -54,12 +54,12 @@ public class SymmetryBreakingTest {
         solver.post(Constraints.intChannel(new SetVar[]{cheese0.getSet(), cheese1.getSet(), cheese2.getSet(), unusedCheese}, cheeseParent));
         solver.post(ICF.arithm(cheeseParent[0], "<=", cheeseParent[1]));
         solver.post(ICF.arithm(cheeseParent[1], "<=", cheeseParent[2]));
-        solver.post(LCF.ifThen(SCF.member(fixed(0, solver), food.getSet()).getOpposite(),
-                ICF.arithm(cheese0.getCard(), "=", 0)));
-        solver.post(LCF.ifThen(SCF.member(fixed(1, solver), food.getSet()).getOpposite(),
-                ICF.arithm(cheese1.getCard(), "=", 0)));
-        solver.post(LCF.ifThen(SCF.member(fixed(2, solver), food.getSet()).getOpposite(),
-                ICF.arithm(cheese2.getCard(), "=", 0)));
+        LCF.ifThen(SCF.member(fixed(0, solver), food.getSet()).getOpposite(),
+                ICF.arithm(cheese0.getCard(), "=", 0));
+        LCF.ifThen(SCF.member(fixed(1, solver), food.getSet()).getOpposite(),
+                ICF.arithm(cheese1.getCard(), "=", 0));
+        LCF.ifThen(SCF.member(fixed(2, solver), food.getSet()).getOpposite(),
+                ICF.arithm(cheese2.getCard(), "=", 0));
 
         IntVar[] cheeseWeight = enumeratedArray("cheeseweight", 3, 0, 0, solver);
         IntVar[] cheese0Index = enumeratedArray("cheese0index", 3, -1, 2, solver);
@@ -72,12 +72,12 @@ public class SymmetryBreakingTest {
         IntVar[] foodWeight = enumeratedArray("foodweight", 3, 0, 2, solver);
         solver.post(Constraints.lexChainChannel(new IntVar[][]{cheese0Index, cheese1Index, cheese2Index}, foodWeight));
 
-        solver.post(LCF.ifThen(ICF.arithm(foodParent[0], "=", foodParent[1]),
-                ICF.arithm(foodWeight[0], ">=", foodWeight[1])));
-        solver.post(LCF.ifThen(ICF.arithm(foodParent[0], "=", foodParent[2]),
-                ICF.arithm(foodWeight[0], ">=", foodWeight[2])));
-        solver.post(LCF.ifThen(ICF.arithm(foodParent[1], "=", foodParent[2]),
-                ICF.arithm(foodWeight[1], ">=", foodWeight[2])));
+        LCF.ifThen(ICF.arithm(foodParent[0], "=", foodParent[1]),
+                ICF.arithm(foodWeight[0], ">=", foodWeight[1]));
+        LCF.ifThen(ICF.arithm(foodParent[0], "=", foodParent[2]),
+                ICF.arithm(foodWeight[0], ">=", foodWeight[2]));
+        LCF.ifThen(ICF.arithm(foodParent[1], "=", foodParent[2]),
+                ICF.arithm(foodWeight[1], ">=", foodWeight[2]));
 
         IntVar[] food0Index = enumeratedArray("food0index", 3, -1, 2, solver);
         IntVar[] food1Index = enumeratedArray("food2index", 3, -1, 2, solver);

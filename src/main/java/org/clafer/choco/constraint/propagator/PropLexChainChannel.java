@@ -4,8 +4,8 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -17,6 +17,8 @@ import util.ESat;
  * @author jimmy
  */
 public class PropLexChainChannel extends Propagator<IntVar> {
+
+    private static final long serialVersionUID = 1L;
 
     private final IntVar[][] strings;
     private final IntVar[] ints;
@@ -44,7 +46,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+        return IntEventType.boundAndInst();
     }
 
     private static Ordering compareString(IntVar[] a, IntVar[] b) {
@@ -272,51 +274,56 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     // Idempotent.
     private boolean propagateStrings() throws ContradictionException {
-        int eqs = 0;
-        boolean[] notSmallest = new boolean[strings.length];
-        boolean[] lessThanEqual = new boolean[strings.length];
         boolean changed = false;
-        for (int i = 0; i < strings.length; i++) {
-            boolean equivalenceClass = false;
-            for (int j = i + 1; j < strings.length; j++) {
-                Ordering ord = compareString(strings[i], strings[j]);
-                switch (ord) {
-                    case EQ:
-                        changed |= equal(ints[i], ints[j]);
-                        equivalenceClass = true;
-                        break;
-                    case LE:
-                        changed |= lessThanEqual(ints[i], ints[j]);
-                        lessThanEqual[i] = true;
-                        notSmallest[j] = true;
-                        break;
-                    case LT:
-                        changed |= lessThan(ints[i], ints[j]);
-                        notSmallest[j] = true;
-                        break;
-                    case GE:
-                        changed |= lessThanEqual(ints[j], ints[i]);
-                        lessThanEqual[j] = true;
-                        notSmallest[i] = true;
-                        break;
-                    case GT:
-                        changed |= lessThan(ints[j], ints[i]);
-                        notSmallest[i] = true;
-                        break;
-                    case UNKNOWN:
-                        notSmallest[i] = true;
-                        notSmallest[j] = true;
-                        break;
+        boolean repeat;
+        do {
+            repeat = false;
+            int eqs = 0;
+            boolean[] notSmallest = new boolean[strings.length];
+            boolean[] lessThanEqual = new boolean[strings.length];
+            for (int i = 0; i < strings.length; i++) {
+                boolean equivalenceClass = false;
+                for (int j = i + 1; j < strings.length; j++) {
+                    Ordering ord = compareString(strings[i], strings[j]);
+                    switch (ord) {
+                        case EQ:
+                            repeat |= equal(ints[i], ints[j]);
+                            equivalenceClass = true;
+                            break;
+                        case LE:
+                            repeat |= lessThanEqual(ints[i], ints[j]);
+                            lessThanEqual[i] = true;
+                            notSmallest[j] = true;
+                            break;
+                        case LT:
+                            repeat |= lessThan(ints[i], ints[j]);
+                            notSmallest[j] = true;
+                            break;
+                        case GE:
+                            repeat |= lessThanEqual(ints[j], ints[i]);
+                            lessThanEqual[j] = true;
+                            notSmallest[i] = true;
+                            break;
+                        case GT:
+                            repeat |= lessThan(ints[j], ints[i]);
+                            notSmallest[i] = true;
+                            break;
+                        case UNKNOWN:
+                            notSmallest[i] = true;
+                            notSmallest[j] = true;
+                            break;
+                    }
+                }
+                if (equivalenceClass) {
+                    eqs++;
                 }
             }
-            if (equivalenceClass) {
-                eqs++;
+            repeat |= propagateSmallest(notSmallest, notSmallest, lessThanEqual, 0);
+            for (int i = 0; i < ints.length; i++) {
+                repeat |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
             }
-        }
-        changed |= propagateSmallest(notSmallest, notSmallest, lessThanEqual, 0);
-        for (int i = 0; i < ints.length; i++) {
-            changed |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
-        }
+            changed |= repeat;
+        } while (repeat);
         return changed;
     }
 
@@ -356,11 +363,6 @@ public class PropLexChainChannel extends Propagator<IntVar> {
     public void propagate(int evtmask) throws ContradictionException {
         propagateStrings();
         while (propagateInts() && propagateStrings());
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

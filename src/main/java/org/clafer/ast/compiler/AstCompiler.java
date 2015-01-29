@@ -15,6 +15,7 @@ import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
+import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcat;
@@ -31,6 +32,7 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
+import org.clafer.ast.AstInverse;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
@@ -40,10 +42,12 @@ import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
+import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
+import org.clafer.ast.AstRefRelation;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstStringClafer;
@@ -52,11 +56,13 @@ import org.clafer.ast.AstSuffix;
 import org.clafer.ast.AstSum;
 import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
+import org.clafer.ast.AstTransitiveClosure;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
 import org.clafer.ast.JoinSetWithStringException;
+import org.clafer.ast.ProductType;
 import org.clafer.ast.analysis.AbstractOffsetAnalyzer;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.Analyzer;
@@ -86,9 +92,11 @@ import org.clafer.ir.IrBoolVar;
 import org.clafer.domain.Domain;
 import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrExpr;
+import org.clafer.ir.IrIntArrayExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrSetArrayExpr;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringExpr;
@@ -198,6 +206,47 @@ public class AstCompiler {
         return clafers;
     }
 
+    private static boolean isThis(AstSetExpr expr) {
+        if (expr instanceof AstThis) {
+            return true;
+        }
+        if (expr instanceof AstDowncast) {
+            AstDowncast cast = (AstDowncast) expr;
+            return isThis(cast.getBase());
+        }
+        if (expr instanceof AstUpcast) {
+            AstUpcast cast = (AstUpcast) expr;
+            return isThis(cast.getBase());
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the constraint can always be enforced regardless if the
+     * attached Clafer exists or not.
+     *
+     * @param expr
+     * @return {@code false} if {@code expr} can always be enforced,
+     * {@code true} otherwise or unknown
+     */
+    private static boolean isConditional(AstBoolExpr expr) {
+        // this not in ___
+        if (expr instanceof AstMembership) {
+            AstMembership membership = (AstMembership) expr;
+            switch (membership.getOp()) {
+                case NotIn:
+                    return !isThis(membership.getMember());
+            }
+        } else if (expr instanceof AstSetTest) {
+            AstSetTest membership = (AstSetTest) expr;
+            switch (membership.getOp()) {
+                case NotEqual:
+                    return !isThis(membership.getLeft()) && !isThis(membership.getRight());
+            }
+        }
+        return true;
+    }
+
     private AstSolutionMap compile() {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
@@ -224,20 +273,27 @@ public class AstCompiler {
         Map<AstConstraint, IrBoolVar> softVars = new HashMap<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
+            AstBoolExpr expr = analysis.getExpr(constraint);
             int scope = getScope(clafer);
             if (analysis.isHard(constraint)) {
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    IrBoolExpr thisConstraint = expressionCompiler.compile(analysis.getExpr(constraint));
-                    module.addConstraint(implies(memberships.get(clafer)[j], thisConstraint));
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
+                    IrBoolExpr conditionalConstraint = isConditional(expr)
+                            ? implies(memberships.get(clafer)[j], thisConstraint)
+                            : thisConstraint;
+                    module.addConstraint(conditionalConstraint);
                 }
             } else {
                 IrBoolVar softVar = bool(constraint.toString());
                 softVars.put(constraint, softVar);
                 for (int j = 0; j < scope; j++) {
                     ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
-                    IrBoolExpr thisConstraint = expressionCompiler.compile(analysis.getExpr(constraint));
-                    module.addConstraint(ifOnlyIf(softVar, implies(memberships.get(clafer)[j], thisConstraint)));
+                    IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
+                    IrBoolExpr conditionalConstraint = isConditional(expr)
+                            ? implies(memberships.get(clafer)[j], thisConstraint)
+                            : thisConstraint;
+                    module.addConstraint(ifOnlyIf(softVar, conditionalConstraint));
                 }
                 module.addVariable(softVar);
             }
@@ -481,11 +537,11 @@ public class AstCompiler {
                         // a weight, need to offset it so that it always positive.
                         childIndex.add(
                                 breakableRefIds[i]
-                                // The id of the target is the weight.
-                                ? minus(refPointers.get(ref)[i + refOffset])
-                                // If analysis says that this id does not need breaking
-                                // then give it a constant weight. Any constant is fine.
-                                : Zero);
+                                        // The id of the target is the weight.
+                                        ? minus(refPointers.get(ref)[i + refOffset])
+                                        // If analysis says that this id does not need breaking
+                                        // then give it a constant weight. Any constant is fine.
+                                        : Zero);
                     }
                 }
                 if (analysis.isInheritedBreakableTarget(clafer)) {
@@ -507,7 +563,7 @@ public class AstCompiler {
             for (int i = 0; i < weight.length; i++) {
                 weight[i]
                         = childIndices[i].length == 0 ? Zero
-                        : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
+                                : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             if (getScope(clafer.getParent()) > 1) {
                 symmetries.add(new LexChainChannel(childIndices, weight));
@@ -576,8 +632,8 @@ public class AstCompiler {
                     }
                     IrIntExpr size
                             = ref.getTargetType() instanceof AstIntClafer
-                            ? constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1)
-                            : card(sets.get(ref.getTargetType()));
+                                    ? constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1)
+                                    : card(sets.get(ref.getTargetType()));
                     for (IrSetExpr sibling : siblingSet) {
                         module.addConstraint(lessThanEqual(card(sibling), size));
                     }
@@ -885,6 +941,17 @@ public class AstCompiler {
             return sets;
         }
 
+        private IrSetArrayExpr asRelation(IrExpr expr, ProductType type) {
+            assert type.arity() == 2;
+            if (expr instanceof IrIntArrayExpr) {
+                return filterNotEqual((IrIntArrayExpr) expr, getUninitalizedRef(type.get(1)));
+            } else if (expr instanceof IrSetArrayExpr) {
+                return (IrSetArrayExpr) expr;
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
+
         private IrStringExpr asString(IrExpr expr) {
             if (expr instanceof IrStringExpr) {
                 return ((IrStringExpr) expr);
@@ -922,11 +989,12 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstConstant ast, Void a) {
-            int[] value = ast.getValue();
+            int[][] value = ast.getValue();
             if (value.length == 1) {
-                return constant(value[0]);
+                int[] set = value[0];
+                return set.length == 1 ? constant(set[0]) : constant(set);
             }
-            return constant(value);
+            throw new UnsupportedOperationException("TODO");
         }
 
         @Override
@@ -936,29 +1004,108 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoin ast, Void a) {
-            return doJoin(compile(ast.getLeft()), ast.getRight());
+            IrExpr left = compile(ast.getLeft());
+            if (ast.getRight() instanceof AstChildRelation) {
+                return doJoin(left, ((AstChildRelation) ast.getRight()).getChildType());
+            }
+            IrExpr right = compile(ast.getRight());
+            if (right instanceof IrIntArrayExpr) {
+                IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
+                if (left instanceof IrIntExpr) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
+                    // Why uninitialized? The left expression can contain unused.
+                    return element(snoc(rightArray, uninitialized), (IrIntExpr) left);
+                } else if (left instanceof IrSetExpr) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getClaferType()));
+                    // Why uninitialized? The left expression can contain unused.
+                    return joinFunction((IrSetExpr) left, snoc(rightArray, uninitialized), null);
+                } else if (left instanceof IrIntArrayExpr) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getCommonSupertype().get(1)));
+                    // Why uninitialized? The left expression can contain unused.
+                    IrIntArrayExpr leftArray = (IrIntArrayExpr) left;
+                    rightArray = snoc(rightArray, uninitialized);
+                    IrIntExpr[] join = new IrIntExpr[leftArray.length()];
+                    for (int i = 0; i < join.length; i++) {
+                        join[i] = element(rightArray, get(leftArray, i));
+                    }
+                    return array(join);
+                } else if (left instanceof IrSetArrayExpr) {
+                    IrIntExpr uninitialized = constant(getUninitalizedRef(getType(ast).getCommonSupertype().get(1)));
+                    // Why uninitialized? The left expression can contain unused.
+                    IrSetArrayExpr leftArray = (IrSetArrayExpr) left;
+                    rightArray = snoc(rightArray, uninitialized);
+                    IrSetExpr[] join = new IrSetExpr[leftArray.length()];
+                    for (int i = 0; i < join.length; i++) {
+                        // TODO global cardinality?
+                        join[i] = joinFunction(get(leftArray, i), rightArray, null);
+                    }
+                    return array(join);
+                }
+            } else if (right instanceof IrSetArrayExpr) {
+                // Why empty set? The left expression can contain unused.
+                IrSetArrayExpr rightArray = snoc((IrSetArrayExpr) right, EmptySet);
+                if (left instanceof IrIntExpr) {
+                    // TODO which relations are injective?
+                    return element(rightArray, (IrIntExpr) left);
+                } else if (left instanceof IrSetExpr) {
+                    // TODO which relations are injective?
+                    return joinRelation((IrSetExpr) left, rightArray, false);
+                } else if (left instanceof IrIntArrayExpr) {
+                    IrIntArrayExpr leftArray = (IrIntArrayExpr) left;
+                    IrSetExpr[] join = new IrSetExpr[leftArray.length()];
+                    for (int i = 0; i < join.length; i++) {
+                        // TODO which relations are injective?
+                        join[i] = element(rightArray, get(leftArray, i));
+                    }
+                    return array(join);
+                } else if (left instanceof IrSetArrayExpr) {
+                    IrSetArrayExpr leftArray = ((IrSetArrayExpr) left);
+                    IrSetExpr[] join = new IrSetExpr[leftArray.length()];
+                    for (int i = 0; i < join.length; i++) {
+                        // TODO which relations are injective?
+                        join[i] = joinRelation(get(leftArray, i), rightArray, false);
+                    }
+                    return array(join);
+                }
+            }
+            throw new AstException();
         }
 
         private IrExpr doJoin(IrExpr left, AstConcreteClafer right) {
+            // Why empty set? The "take" var can contain unused.
+            IrSetArrayExpr rightArray = snoc(array(siblingSets.get(right)), EmptySet);
             if (left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) left;
                 if (Format.ParentGroup.equals(getFormat(right)) && getCard(right).getLow() == 1) {
                     assert getCard(right).isExact();
                     return $intLeft;
                 }
-                // Why empty set? The "take" var can contain unused.
-                return joinRelation(singleton($intLeft), Util.snoc(siblingSets.get(right), EmptySet), true);
+                return joinRelation(singleton($intLeft), rightArray, true);
             } else if (left instanceof IrSetExpr) {
                 IrSetExpr $setLeft = (IrSetExpr) left;
-                // Why empty set? The "take" var can contain unused.
-                return joinRelation($setLeft, Util.snoc(siblingSets.get(right), EmptySet), true);
+                return joinRelation($setLeft, rightArray, true);
+            } else if (left instanceof IrIntArrayExpr) {
+                IrIntArrayExpr leftArray = (IrIntArrayExpr) left;
+                IrSetExpr[] join = new IrSetExpr[leftArray.length()];
+                for (int i = 0; i < join.length; i++) {
+                    // TODO which relations are injective?
+                    join[i] = element(rightArray, get(leftArray, i));
+                }
+                return array(join);
+            } else if (left instanceof IrSetArrayExpr) {
+                IrSetArrayExpr leftArray = ((IrSetArrayExpr) left);
+                IrSetExpr[] join = new IrSetExpr[leftArray.length()];
+                for (int i = 0; i < join.length; i++) {
+                    join[i] = joinRelation(get(leftArray, i), rightArray, true);
+                }
+                return array(join);
             }
             throw new AstException();
         }
 
         @Override
         public IrExpr visit(AstJoinParent ast, Void a) {
-            AstConcreteClafer childrenType = (AstConcreteClafer) getCommonSupertype(ast.getChildren());
+            AstConcreteClafer childrenType = (AstConcreteClafer) getCommonSupertype(ast.getChildren()).getClaferType();
 
             IrExpr children = compile(ast.getChildren());
             if (children instanceof IrIntExpr) {
@@ -981,7 +1128,7 @@ public class AstCompiler {
                 if (setChildren.getEnv().getHighBound() >= parents.length) {
                     parents = Util.snoc(parents, constant(parents.length));
                 }
-                return joinFunction(setChildren, parentPointers.get(childrenType), null);
+                return joinFunction(setChildren, array(parentPointers.get(childrenType)), null);
             }
             throw new AstException();
         }
@@ -989,19 +1136,26 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstJoinRef ast, Void a) {
             AstSetExpr deref = ast.getDeref();
-            AstClafer derefType = getCommonSupertype(deref);
+            AstClafer derefType = getCommonSupertype(deref).getClaferType();
 
             Integer globalCardinality = null;
             IrExpr $deref;
             if (derefType.getRef().isUnique()) {
                 if (deref instanceof AstJoin) {
                     AstJoin join = (AstJoin) deref;
-                    IrExpr left = compile(join.getLeft());
-                    $deref = doJoin(left, join.getRight());
+                    if (join.getRight() instanceof AstChildRelation) {
+                        IrExpr left = compile(join.getLeft());
+                        $deref = doJoin(left, ((AstChildRelation) join.getRight()).getChildType());
 
-                    globalCardinality = left instanceof IrSetExpr
-                            ? ((IrSetExpr) left).getCard().getHighBound()
-                            : 1;
+                        globalCardinality = left instanceof IrSetExpr
+                                ? ((IrSetExpr) left).getCard().getHighBound()
+                                : 1;
+                    } else {
+                        $deref = compile(deref);
+                        if (derefType instanceof AstConcreteClafer) {
+                            globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
+                        }
+                    }
                 } else {
                     $deref = compile(deref);
                     if (derefType instanceof AstConcreteClafer) {
@@ -1038,8 +1192,20 @@ public class AstCompiler {
             IrExpr set = compile(ast.getSet());
             if (set instanceof IrIntExpr) {
                 return One;
+            } else if (set instanceof IrSetExpr) {
+                return card((IrSetExpr) set);
+            } else if (set instanceof IrIntArrayExpr) {
+                IrIntArrayExpr array = (IrIntArrayExpr) set;
+                Type type = getType(ast.getSet());
+                assert type.getCommonSupertype().arity() == 2;
+                return countNotEqual(getUninitalizedRef(type.getCommonSupertype().get(1)), array);
             }
-            return card((IrSetExpr) set);
+            IrSetArrayExpr array = ((IrSetArrayExpr) set);
+            IrIntExpr[] cards = new IrIntExpr[array.length()];
+            for (int i = 0; i < cards.length; i++) {
+                cards[i] = card(get(array, i));
+            }
+            return add(cards);
         }
 
         @Override
@@ -1076,6 +1242,30 @@ public class AstCompiler {
                         return equal(stringLeft, stringRight);
                     case NotEqual:
                         return notEqual(stringLeft, stringRight);
+                }
+            }
+
+            if (left instanceof IrIntArrayExpr) {
+                IrIntArrayExpr leftArray = (IrIntArrayExpr) left;
+                if (right instanceof IrIntArrayExpr) {
+                    IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
+                    return equal(IrUtil.asArray(leftArray), IrUtil.asArray(rightArray));
+                } else if (right instanceof IrSetArrayExpr) {
+                    Type type = getType(ast.getLeft());
+                    AstClafer returnType = type.getCommonSupertype().get(1);
+                    IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
+                    return equal(IrUtil.asArray(filterNotEqual(leftArray, getUninitalizedRef(returnType))), IrUtil.asArray(rightArray));
+                }
+            } else if (left instanceof IrSetArrayExpr) {
+                IrSetArrayExpr leftArray = (IrSetArrayExpr) left;
+                if (right instanceof IrIntArrayExpr) {
+                    Type type = getType(ast.getRight());
+                    AstClafer returnType = type.getCommonSupertype().get(1);
+                    IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
+                    return equal(IrUtil.asArray(leftArray), IrUtil.asArray(filterNotEqual(rightArray, getUninitalizedRef(returnType))));
+                } else if (right instanceof IrSetArrayExpr) {
+                    IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
+                    return equal(IrUtil.asArray(leftArray), IrUtil.asArray(rightArray));
                 }
             }
 
@@ -1135,7 +1325,7 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstSum ast, Void a) {
             AstSetExpr set = ast.getSet();
-            AstClafer setType = getCommonSupertype(set);
+            AstClafer setType = getCommonSupertype(set).getClaferType();
             assert setType.hasRef();
             IrIntVar[] refs = refPointers.get(setType.getRef());
 
@@ -1223,9 +1413,21 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstUnion ast, Void a) {
-            return union(
-                    asSet(compile(ast.getLeft())),
-                    asSet(compile(ast.getRight())));
+            IrExpr left = compile(ast.getLeft());
+            IrExpr right = compile(ast.getRight());
+
+            if (getCommonSupertype(ast).arity() == 1) {
+                return union(asSet(left), asSet(right));
+            }
+
+            IrSetExpr[] leftArray = IrUtil.asArray(asRelation(left, getCommonSupertype(ast.getLeft())));
+            IrSetExpr[] rightArray = IrUtil.asArray(asRelation(right, getCommonSupertype(ast.getLeft())));
+            assert leftArray.length == rightArray.length;
+            IrSetExpr[] union = new IrSetExpr[leftArray.length];
+            for (int i = 0; i < union.length; i++) {
+                union[i] = union(leftArray[i], rightArray[i]);
+            }
+            return array(union);
         }
 
         @Override
@@ -1271,27 +1473,50 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstDowncast ast, Void a) {
             AstSetExpr base = ast.getBase();
-            int offset = getOffset((AstAbstractClafer) getCommonSupertype(base), ast.getTarget());
+            int offset = getOffset((AstAbstractClafer) getCommonSupertype(base).getClaferType(), ast.getTarget().getClaferType());
 
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
                 return sub(intBase, constant(offset));
             }
-            return mask((IrSetExpr) $base, offset, offset + getScope(ast.getTarget()));
+            return mask((IrSetExpr) $base, offset, offset + getScope(ast.getTarget().getClaferType()));
         }
 
         @Override
         public IrExpr visit(AstUpcast ast, Void a) {
-            AstSetExpr base = ast.getBase();
-            int offset = getOffset(ast.getTarget(), getCommonSupertype(base));
-
-            IrExpr $base = compile(ast.getBase());
-            if ($base instanceof IrIntExpr) {
-                IrIntExpr intBase = (IrIntExpr) $base;
-                return add(intBase, constant(offset));
+            IrExpr base = compile(ast.getBase());
+            if (base instanceof IrIntExpr) {
+                int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(ast.getBase()).getClaferType());
+                return add((IrIntExpr) base, constant(offset));
+            } else if (base instanceof IrSetExpr) {
+                int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(ast.getBase()).getClaferType());
+                return offset((IrSetExpr) base, offset);
+            } else if (base instanceof IrIntArrayExpr) {
+                int paramOffset = getOffset(ast.getTarget().get(0), getCommonSupertype(ast.getBase()).get(0));
+                int returnOffset = getOffset(ast.getTarget().get(1), getCommonSupertype(ast.getBase()).get(1));
+                int scope = getScope(ast.getTarget().get(0));
+                int uninitializedRef = getUninitalizedRef(ast.getTarget().get(1));
+                IrIntArrayExpr baseArray = (IrIntArrayExpr) base;
+                IrIntExpr[] array = new IrIntExpr[scope];
+                Arrays.fill(array, constant(uninitializedRef));
+                for (int i = 0; i < baseArray.length(); i++) {
+                    array[i + paramOffset] = add(get(baseArray, i), returnOffset);
+                }
+                return array(array);
+            } else if (base instanceof IrSetArrayExpr) {
+                int paramOffset = getOffset(ast.getTarget().get(0), getCommonSupertype(ast.getBase()).get(0));
+                int returnOffset = getOffset(ast.getTarget().get(1), getCommonSupertype(ast.getBase()).get(1));
+                int scope = getScope(ast.getTarget().get(0));
+                IrSetArrayExpr baseArray = (IrSetArrayExpr) base;
+                IrSetExpr[] array = new IrSetExpr[scope];
+                Arrays.fill(array, EmptySet);
+                for (int i = 0; i < baseArray.length(); i++) {
+                    array[i + paramOffset] = offset(get(baseArray, i), returnOffset);
+                }
+                return array(array);
             }
-            return offset((IrSetExpr) $base, offset);
+            throw new AstException();
         }
 
         @Override
@@ -1327,7 +1552,7 @@ public class AstCompiler {
                 for (int i = env.getLowBound(); i <= env.getHighBound(); i++) {
                     members[i] = new Pair<IrIntExpr, IrBoolExpr>(constant(i),
                             ker.contains(i) ? True
-                            : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
+                                    : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
                 }
                 module.addConstraint(boolChannel(Pair.mapSnd(members), setBody));
                 if (decl.isDisjoint() && members.length < decl.getLocals().length) {
@@ -1424,6 +1649,51 @@ public class AstCompiler {
             return suffix(asString(compile(ast.getSuffix())),
                     asString(compile(ast.getWord())));
         }
+
+        @Override
+        public IrExpr visit(AstChildRelation ast, Void a) {
+            return array(siblingSets.get(ast.getChildType()));
+        }
+
+        @Override
+        public IrExpr visit(AstParentRelation ast, Void a) {
+            return array(parentPointers.get(ast.getParentRelation()));
+        }
+
+        @Override
+        public IrExpr visit(AstRefRelation ast, Void a) {
+            return array(refPointers.get(ast.getRef()));
+        }
+
+        @Override
+        public IrExpr visit(AstInverse ast, Void a) {
+            Type type = getType(ast.getRelation());
+            AstClafer returnType = type.getCommonSupertype().get(1);
+            IrExpr relation = compile(ast.getRelation());
+            if (relation instanceof IrIntArrayExpr) {
+                return inverse(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), getScope(returnType));
+            }
+            if (relation instanceof IrSetArrayExpr) {
+                return inverse((IrSetArrayExpr) relation, getScope(returnType));
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
+
+        @Override
+        public IrExpr visit(AstTransitiveClosure ast, Void a) {
+            IrExpr relation = compile(ast.getRelation());
+            if (relation instanceof IrIntArrayExpr) {
+                Type type = getType(ast.getRelation());
+                AstClafer returnType = type.getCommonSupertype().get(1);
+                return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isReflexive());
+            }
+            if (relation instanceof IrSetArrayExpr) {
+                return transitiveClosure((IrSetArrayExpr) relation, ast.isReflexive());
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
     };
 
     /*
@@ -1496,8 +1766,8 @@ public class AstCompiler {
             int[] possibleParents = solution.getPossibleParents(i);
             pointers[i] = enumInt(clafer.getName() + "@Parent#" + i,
                     solution.hasClafer(i) || known
-                    ? possibleParents
-                    : Util.snoc(possibleParents, getScope(clafer.getParent())));
+                            ? possibleParents
+                            : Util.snoc(possibleParents, getScope(clafer.getParent())));
         }
         return pointers;
     }
@@ -1617,6 +1887,14 @@ public class AstCompiler {
         return analysis.getPartialInts(ref);
     }
 
+    private int getOffset(AstClafer sup, AstClafer sub) {
+        if (sup instanceof AstConcreteClafer) {
+            assert sup.equals(sub);
+            return 0;
+        }
+        return getOffset((AstAbstractClafer) sup, sub);
+    }
+
     private int getOffset(AstAbstractClafer sup, AstClafer sub) {
         int offset = 0;
         for (AstClafer cur = sub; !sup.equals(cur); cur = cur.getSuperClafer()) {
@@ -1640,7 +1918,7 @@ public class AstCompiler {
         return analysis.getType(expr);
     }
 
-    private AstClafer getCommonSupertype(AstExpr expr) {
+    private ProductType getCommonSupertype(AstExpr expr) {
         return analysis.getCommonSupertype(expr);
     }
 

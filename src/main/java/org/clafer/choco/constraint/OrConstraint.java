@@ -7,7 +7,6 @@ import solver.constraints.Constraint;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.Variable;
 import util.ESat;
 import static util.ESat.TRUE;
@@ -43,13 +42,8 @@ public class OrConstraint extends Constraint {
         private final Constraint[] constraints;
 
         protected PropOr(Variable[] vars, Constraint[] constraints) {
-            super(vars, PropagatorPriority.LINEAR, true);
+            super(vars, PropagatorPriority.LINEAR, false);
             this.constraints = constraints;
-        }
-
-        @Override
-        public int getPropagationConditions(int vIdx) {
-            return EventType.ALL_FINE_EVENTS.mask;
         }
 
         @Override
@@ -68,11 +62,6 @@ public class OrConstraint extends Constraint {
             if (allFalse) {
                 contradiction(vars[0], "All unsat.");
             }
-        }
-
-        @Override
-        public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-            forcePropagate(EventType.CUSTOM_PROPAGATION);
         }
 
         @Override

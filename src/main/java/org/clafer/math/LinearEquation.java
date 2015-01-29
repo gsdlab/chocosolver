@@ -1,6 +1,7 @@
 package org.clafer.math;
 
 import org.clafer.common.Check;
+import org.clafer.common.Util;
 import org.clafer.domain.BoolDomain;
 
 /**
@@ -97,6 +98,15 @@ public class LinearEquation {
                 newLeft.sub(newLeft.getConstant()),
                 op,
                 right.sub(newLeft.getConstant()));
+    }
+
+    public LinearEquation normalize() {
+        long denominator = right.getDenominator();
+        for (Rational coefficient : left.getCoefficients()) {
+            denominator = Util.lcm(denominator, coefficient.getDenominator());
+        }
+        assert denominator > 0;
+        return new LinearEquation(left.mul(denominator), op, right.mul(denominator));
     }
 
     public BoolDomain isEntailed() {

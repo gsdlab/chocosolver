@@ -4,10 +4,11 @@ import java.util.Arrays;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
 import solver.variables.SetVar;
 import solver.variables.Variable;
+import solver.variables.events.IntEventType;
+import solver.variables.events.SetEventType;
 import util.ESat;
 
 /**
@@ -15,6 +16,8 @@ import util.ESat;
  * @author jimmy
  */
 public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
+
+    private static final long serialVersionUID = 1L;
 
     private final SetVar take;
     private final IntVar takeCard;
@@ -70,10 +73,10 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isTakeVar(vIdx)) {
-            return EventType.ADD_TO_KER.mask + EventType.REMOVE_FROM_ENVELOPE.mask;
+            return SetEventType.all();
         }
         assert isTakeCardVar(vIdx) || isToCardVar(vIdx) || isChildCardVar(vIdx);
-        return EventType.BOUND.mask + EventType.INSTANTIATE.mask;
+        return IntEventType.boundAndInst();
     }
 
     @Override
@@ -160,11 +163,6 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             kerMaxCard += envUbs[i];
         }
         takeCard.updateLowerBound(envUbs.length - 1 - i + take.getKernelSize(), aCause);
-    }
-
-    @Override
-    public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        forcePropagate(EventType.FULL_PROPAGATION);
     }
 
     @Override

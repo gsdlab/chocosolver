@@ -14,8 +14,9 @@ import org.clafer.ast.Asts;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
-import org.clafer.compiler.ClaferOptions;
+import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearch;
+import org.clafer.compiler.ClaferSearchStrategy;
 import org.clafer.compiler.ClaferUnsat;
 import org.clafer.instance.InstanceModel;
 import org.clafer.objective.Objective;
@@ -332,15 +333,20 @@ public class JavascriptShell {
 
     public static class Options implements Messagable {
 
-        private ClaferOptions options = ClaferOptions.Default;
+        private ClaferOption options = ClaferOption.Default;
 
         public String preferSmallerInstances() {
-            options = options.preferSmallerInstances();
+            options = options.setStrategy(ClaferSearchStrategy.PreferSmallerInstances);
             return "Updated options.";
         }
 
         public String preferLargerInstances() {
-            options = options.preferLargerInstances();
+            options = options.setStrategy(ClaferSearchStrategy.PreferLargerInstances);
+            return "Updated options.";
+        }
+
+        public String random() {
+            options = options.setStrategy(ClaferSearchStrategy.Random);
             return "Updated options.";
         }
 
@@ -375,8 +381,9 @@ public class JavascriptShell {
         @Override
         public String toMessage() {
             return "(*) marks the current setting\n"
-                    + star(options.isPreferSmallerInstances()) + "options.preferSmallerInstances() bias the search towards smaller instances\n"
-                    + star(options.isPreferLargerInstances()) + "options.preferLargerInstances()  bias the search towards larger instances\n"
+                    + star(options.getStrategy() == ClaferSearchStrategy.PreferSmallerInstances) + "options.preferSmallerInstances() bias the search towards smaller instances\n"
+                    + star(options.getStrategy() == ClaferSearchStrategy.PreferLargerInstances) + "options.preferLargerInstances()  bias the search towards larger instances\n"
+                    + star(options.getStrategy() == ClaferSearchStrategy.Random) + "options.random()                 search for instances randomly\n"
                     + star(options.isBasicSymmetryBreaking()) + "options.basicSymmetryBreaking()  basic symmetry breaking\n"
                     + star(options.isFullSymmetryBreaking()) + "options.fullSymmetryBreaking()   full symmetry breaking\n"
                     + star(options.isBasicOptimizations()) + "options.basicOptimizations()     basic optimizations\n"

@@ -5,8 +5,8 @@ import memory.IStateInt;
 import solver.constraints.Propagator;
 import solver.constraints.PropagatorPriority;
 import solver.exception.ContradictionException;
-import solver.variables.EventType;
 import solver.variables.IntVar;
+import solver.variables.events.IntEventType;
 import util.ESat;
 
 /**
@@ -35,7 +35,7 @@ public class PropAcyclic extends Propagator<IntVar> {
 
     @Override
     protected int getPropagationConditions(int vIdx) {
-        return EventType.INSTANTIATE.mask;
+        return IntEventType.instantiation();
     }
 
     private int getLeader(int node) {

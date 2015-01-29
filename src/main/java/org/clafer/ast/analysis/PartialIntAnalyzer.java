@@ -2,12 +2,16 @@ package org.clafer.ast.analysis;
 
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
+import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
@@ -27,7 +31,6 @@ import static org.clafer.collection.FList.*;
 import org.clafer.collection.Pair;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
-import org.clafer.ir.IrUtil;
 import org.clafer.scope.Scope;
 
 /**
@@ -40,18 +43,20 @@ public class PartialIntAnalyzer implements Analyzer {
     public Analysis analyze(Analysis analysis) {
         Map<AstRef, Domain[]> partialInts = new HashMap<>();
 
-        List<Pair<FList<AstConcreteClafer>, Integer>> assignments = new ArrayList<>();
+        List<Pair<FList<AstConcreteClafer>, Domain>> assignments = new ArrayList<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
             if (analysis.isSoft(constraint)) {
                 continue;
             }
             try {
-                Pair<FList<AstConcreteClafer>, Integer> assignment = analyze(analysis.getExpr(constraint));
-                FList<AstConcreteClafer> path = assignment.getFst();
-                Integer value = assignment.getSnd();
-                for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
-                    assignments.add(new Pair<>(snoc(path, concreteClafer), value));
+                Map<FList<AstConcreteClafer>, Domain> assignment = analyze(analysis.getExpr(constraint));
+                for (Entry<FList<AstConcreteClafer>, Domain> entry : assignment.entrySet()) {
+                    FList<AstConcreteClafer> path = entry.getKey();
+                    Domain value = entry.getValue();
+                    for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
+                        assignments.add(new Pair<>(snoc(path, concreteClafer), value));
+                    }
                 }
             } catch (NotAssignmentException e) {
                 // Only analyze assignments
@@ -61,11 +66,11 @@ public class PartialIntAnalyzer implements Analyzer {
         for (AstClafer clafer : analysis.getClafers()) {
             if (clafer.hasRef()) {
                 int scope = analysis.getScope(clafer);
-                Domain[] ints = new Domain[scope];
+                Domain[] domains = new Domain[scope];
                 for (int i = 0; i < scope; i++) {
-                    ints[i] = partialInts(i, clafer.getRef(), automata, analysis);
+                    domains[i] = partialInts(i, clafer.getRef(), automata, analysis);
                 }
-                partialInts.put(clafer.getRef(), ints);
+                partialInts.put(clafer.getRef(), domains);
             }
         }
         return analysis.setPartialIntsMap(partialInts);
@@ -74,29 +79,29 @@ public class PartialIntAnalyzer implements Analyzer {
     private static Domain partialInts(
             final int id, final AstRef ref, final AssignmentAutomata automata,
             final Analysis analysis) {
-        TIntHashSet ints = new TIntHashSet();
+        List<Domain> domains = new ArrayList<>();
         AstClafer source = ref.getSourceType();
         AstClafer target = ref.getTargetType();
-        if (!partialInts(new int[]{id}, source, automata, analysis, ints)) {
+        if (!partialInts(new int[]{id}, source, automata, analysis, domains)) {
             Scope scope = analysis.getScope();
             Domain unbounded
                     = target instanceof AstIntClafer
-                    ? Domains.boundDomain(scope.getIntLow(), scope.getIntHigh())
-                    : Domains.fromToDomain(0, scope.getScope(target));
-            return unbounded.union(Domains.enumDomain(ints));
+                            ? Domains.boundDomain(scope.getIntLow(), scope.getIntHigh())
+                            : Domains.fromToDomain(0, scope.getScope(target));
+            return unbounded.union(Domains.union(domains));
         }
-        return Domains.enumDomain(ints);
+        return Domains.union(domains);
     }
 
     private static boolean partialInts(
             final int[] ids, final AstClafer clafer, final AssignmentAutomata automata,
             final Analysis analysis,
-            final TIntHashSet ints) {
+            final List<Domain> domains) {
         if (clafer instanceof AstConcreteClafer) {
             AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
             final Automata transition = automata.transition(concreteClafer);
             if (transition instanceof FinalAutomata) {
-                ints.add(((FinalAutomata) transition).getValue());
+                domains.add(((FinalAutomata) transition).getValue());
                 return true;
             }
             if (transition instanceof AssignmentAutomata) {
@@ -107,7 +112,7 @@ public class PartialIntAnalyzer implements Analyzer {
                     parentIds.addAll(analysis.getPartialSolution(clafer).getPossibleParents(id));
                 }
                 return partialInts(parentIds.toArray(), concreteClafer.getParent(),
-                        next, analysis, ints);
+                        next, analysis, domains);
             }
             return false;
         }
@@ -124,15 +129,15 @@ public class PartialIntAnalyzer implements Analyzer {
         }
         boolean covered = true;
         for (Entry<AstConcreteClafer, TIntHashSet> entry : parentIdsMap.entrySet()) {
-            covered &= partialInts(entry.getValue().toArray(), entry.getKey(), automata, analysis, ints);
+            covered &= partialInts(entry.getValue().toArray(), entry.getKey(), automata, analysis, domains);
         }
         return covered;
     }
 
-    private static Pair< FList<AstConcreteClafer>, Integer> analyze(
-            AstBoolExpr exp) throws NotAssignmentException {
-        if (exp instanceof AstSetTest) {
-            AstSetTest compare = (AstSetTest) exp;
+    private static Map<FList<AstConcreteClafer>, Domain> analyze(
+            AstBoolExpr expr) throws NotAssignmentException {
+        if (expr instanceof AstSetTest) {
+            AstSetTest compare = (AstSetTest) expr;
             if (AstSetTest.Op.Equal.equals(compare.getOp())) {
                 if (compare.getLeft() instanceof AstJoinRef && compare.getRight() instanceof AstConstant) {
                     return analyzeEqual((AstJoinRef) compare.getLeft(), (AstConstant) compare.getRight());
@@ -141,15 +146,32 @@ public class PartialIntAnalyzer implements Analyzer {
                     return analyzeEqual((AstJoinRef) compare.getRight(), (AstConstant) compare.getLeft());
                 }
             }
+        } else if (expr instanceof AstBoolArithm) {
+            AstBoolArithm arithm = (AstBoolArithm) expr;
+            switch (arithm.getOp()) {
+                case Or:
+                    Map<FList<AstConcreteClafer>, Domain> map = new HashMap<>();
+                    for (AstBoolExpr operand : arithm.getOperands()) {
+                        Map<FList<AstConcreteClafer>, Domain> operandMap = analyze(operand);
+                        for (Entry<FList<AstConcreteClafer>, Domain> entry : operandMap.entrySet()) {
+                            Domain domain = map.get(entry.getKey());
+                            domain = domain == null ? entry.getValue() : domain.union(entry.getValue());
+                            map.put(entry.getKey(), domain);
+                        }
+                    }
+                    return map;
+            }
         }
         throw new NotAssignmentException();
     }
 
-    private static Pair<FList<AstConcreteClafer>, Integer> analyzeEqual(
+    private static Map<FList<AstConcreteClafer>, Domain> analyzeEqual(
             AstJoinRef exp, AstConstant constant) throws NotAssignmentException {
-        int[] value = constant.getValue();
-        if (value.length == 1) {
-            return new Pair<>(analyze(exp), value[0]);
+        if (constant.getType().arity() == 1) {
+            int[] value = constant.getValue()[0];
+            if (value.length == 1) {
+                return Collections.singletonMap(analyze(exp), Domains.constantDomain(value[0]));
+            }
         }
         throw new NotAssignmentException();
     }
@@ -163,7 +185,10 @@ public class PartialIntAnalyzer implements Analyzer {
             return analyze(((AstUpcast) exp).getBase());
         } else if (exp instanceof AstJoin) {
             AstJoin join = ((AstJoin) exp);
-            return cons(join.getRight(), analyze(join.getLeft()));
+            AstSetExpr right = join.getRight();
+            if (right instanceof AstChildRelation) {
+                return cons(((AstChildRelation) right).getChildType(), analyze(join.getLeft()));
+            }
         } else if (exp instanceof AstThis || exp instanceof AstGlobal) {
             return empty();
         }
@@ -175,21 +200,21 @@ public class PartialIntAnalyzer implements Analyzer {
 
     private static class AssignmentAutomata implements Automata {
 
-        private final List<Pair<FList<AstConcreteClafer>, Integer>> assignments;
+        private final List<Pair<FList<AstConcreteClafer>, Domain>> assignments;
 
-        AssignmentAutomata(List<Pair<FList<AstConcreteClafer>, Integer>> assignments) {
+        AssignmentAutomata(List<Pair<FList<AstConcreteClafer>, Domain>> assignments) {
             this.assignments = assignments;
         }
 
         public Automata transition(AstConcreteClafer symbol) {
-            List<Pair<FList<AstConcreteClafer>, Integer>> next = new ArrayList<>();
+            List<Pair<FList<AstConcreteClafer>, Domain>> next = new ArrayList<>();
 
-            for (Pair<FList<AstConcreteClafer>, Integer> assignment : assignments) {
+            for (Pair<FList<AstConcreteClafer>, Domain> assignment : assignments) {
                 FList<AstConcreteClafer> path = assignment.getFst();
-                Integer value = assignment.getSnd();
+                Domain value = assignment.getSnd();
                 if (symbol.equals(path.getHead())) {
                     if (path.getTail().isEmpty()) {
-                        return new FinalAutomata(value.intValue());
+                        return new FinalAutomata(value);
                     }
                     next.add(new Pair<>(path.getTail(), value));
                 }
@@ -200,13 +225,13 @@ public class PartialIntAnalyzer implements Analyzer {
 
     private static class FinalAutomata implements Automata {
 
-        private final int value;
+        private final Domain value;
 
-        FinalAutomata(int value) {
+        FinalAutomata(Domain value) {
             this.value = value;
         }
 
-        int getValue() {
+        Domain getValue() {
             return value;
         }
     }
