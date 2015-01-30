@@ -1,8 +1,10 @@
+scope({c0_Path:2, c0_isDir:2});
 defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_Path = Abstract("c1_Path");
-c2_p = c1_Path.addChild("c2_p").withCard(0, 1).extending(c1_Path);
-c3_isDir = c1_Path.addChild("c3_isDir").withCard(0, 1);
-c13_pth = c1_Path.addChild("c13_pth").withCard(1, 1).extending(c1_Path);
-c1_Path.addConstraint(and(some(join($this(), c3_isDir)), some(join($this(), c2_p))));
+c0_Path = Abstract("c0_Path");
+c0_p = c0_Path.addChild("c0_p").withCard(0, 1).extending(c0_Path);
+c0_isDir = c0_Path.addChild("c0_isDir").withCard(0, 1);
+c0_pth = Clafer("c0_pth").withCard(1, 1).extending(c0_Path);
+c0_Path.addConstraint(implies(some(join($this(), c0_isDir)), some(join($this(), c0_p))));

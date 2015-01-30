@@ -1,12 +1,12 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import solver.constraints.Propagator;
-import solver.constraints.PropagatorPriority;
-import solver.exception.ContradictionException;
-import solver.variables.SetVar;
-import solver.variables.events.IntEventType;
-import util.ESat;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.constraints.PropagatorPriority;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.events.IntEventType;
+import org.chocosolver.util.ESat;
 
 /**
  *

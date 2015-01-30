@@ -1,10 +1,10 @@
 package org.clafer.choco.constraint;
 
-import solver.Solver;
-import solver.exception.ContradictionException;
-import solver.search.loop.monitors.IMonitorContradiction;
-import solver.search.loop.monitors.IMonitorDownBranch;
-import solver.variables.Variable;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.search.loop.monitors.IMonitorContradiction;
+import org.chocosolver.solver.search.loop.monitors.IMonitorDownBranch;
+import org.chocosolver.solver.variables.Variable;
 
 /**
  *

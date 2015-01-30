@@ -5,10 +5,10 @@ import static org.clafer.ir.Irs.*;
 import org.clafer.test.NonEmpty;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.constraints.Constraint;
-import solver.constraints.ICF;
-import solver.constraints.LCF;
-import solver.variables.IntVar;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.constraints.LCF;
+import org.chocosolver.solver.variables.IntVar;
 
 /**
  *

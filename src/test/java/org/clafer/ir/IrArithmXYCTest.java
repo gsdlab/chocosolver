@@ -9,14 +9,14 @@ import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.constraints.ICF;
-import solver.variables.IntVar;
-import solver.variables.Variable;
-import solver.variables.impl.FixedBoolVarImpl;
-import solver.variables.impl.FixedIntVarImpl;
-import solver.variables.view.IntView;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.Variable;
+import org.chocosolver.solver.variables.impl.FixedBoolVarImpl;
+import org.chocosolver.solver.variables.impl.FixedIntVarImpl;
+import org.chocosolver.solver.variables.view.IntView;
 
 /**
  *

@@ -6,10 +6,10 @@ import org.clafer.test.NonEmpty;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.variables.BoolVar;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.BoolVar;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *

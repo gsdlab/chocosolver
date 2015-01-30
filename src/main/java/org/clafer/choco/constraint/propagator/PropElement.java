@@ -2,14 +2,14 @@ package org.clafer.choco.constraint.propagator;
 
 import gnu.trove.map.hash.TIntIntHashMap;
 import java.util.Arrays;
-import solver.constraints.Propagator;
-import solver.constraints.PropagatorPriority;
-import solver.exception.ContradictionException;
-import solver.variables.IntVar;
-import solver.variables.delta.IIntDeltaMonitor;
-import solver.variables.events.IntEventType;
-import util.ESat;
-import util.procedure.IntProcedure;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.constraints.PropagatorPriority;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
+import org.chocosolver.solver.variables.events.IntEventType;
+import org.chocosolver.util.ESat;
+import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  *

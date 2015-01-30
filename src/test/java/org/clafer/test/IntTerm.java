@@ -4,8 +4,8 @@ import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.clafer.test.TestUtil.toVar;
-import solver.Solver;
-import solver.variables.IntVar;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.variables.IntVar;
 
 /**
  *

@@ -6,14 +6,14 @@ import gnu.trove.set.hash.TIntHashSet;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.common.Util;
 import org.clafer.test.Positive;
-import solver.variables.CSetVar;
+import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.Solver;
-import solver.constraints.Constraint;
-import solver.variables.IntVar;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -72,7 +72,7 @@ public class JoinFunctionTest {
          *
          * powerset = filterM (const [True, False])
          *
-         * is2Unique = all ((<= 2) . length) . group . sort 
+         * is2Unique = all ((<= 2) . length) . group . sort
          *
          * solutions = do
          *     from <- powerset [0..2]

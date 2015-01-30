@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import util.iterators.IntIterator;
+import org.chocosolver.util.iterators.IntIterator;
 
 /**
  * Various static utility functions.

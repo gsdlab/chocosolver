@@ -3,8 +3,8 @@ package org.clafer.test;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.compiler.IrSolutionMap;
-import solver.Solver;
-import solver.variables.IntVar;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.variables.IntVar;
 
 /**
  *

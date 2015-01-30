@@ -12,12 +12,12 @@ import org.clafer.collection.Pair;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.clafer.ir.IrBoolVar;
-import solver.ResolutionPolicy;
-import solver.Solver;
-import solver.constraints.ICF;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import util.ESat;
+import org.chocosolver.solver.ResolutionPolicy;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.util.ESat;
 
 /**
  * Either call {@link #minUnsat()} xor {@link #unsatCore()} at most once. If you

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
-import solver.Solver;
+import org.chocosolver.solver.Solver;
 
 /**
  *

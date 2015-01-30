@@ -7,10 +7,10 @@ import org.clafer.test.Positive;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import solver.constraints.Constraint;
-import solver.variables.CStringVar;
-import solver.variables.IntVar;
-import static solver.variables.Var.*;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.CStringVar;
+import org.chocosolver.solver.variables.IntVar;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *

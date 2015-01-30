@@ -1,13 +1,13 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import solver.constraints.Propagator;
-import solver.constraints.PropagatorPriority;
-import solver.exception.ContradictionException;
-import solver.variables.BoolVar;
-import solver.variables.IntVar;
-import solver.variables.events.IntEventType;
-import util.ESat;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.constraints.PropagatorPriority;
+import org.chocosolver.solver.exception.ContradictionException;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.events.IntEventType;
+import org.chocosolver.util.ESat;
 
 /**
  * The first n booleans are the true, the rest are false.

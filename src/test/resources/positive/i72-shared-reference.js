@@ -1,13 +1,15 @@
-defaultScope(4);
+scope({c0_Person:2, c0_WaitingLine:2, c0_participants:4});
+defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_Person = Abstract("c1_Person");
-c4_WaitingLine = Abstract("c4_WaitingLine");
-c2_JohnDoe = Clafer("c2_JohnDoe").withCard(1, 1).extending(c1_Person);
-c3_MaryJane = Clafer("c3_MaryJane").withCard(1, 1).extending(c1_Person);
-c5_participants = c4_WaitingLine.addChild("c5_participants");
-c15_BusLine = Clafer("c15_BusLine").withCard(1, 1).extending(c4_WaitingLine);
-c23_JohnAndMaryLine = Clafer("c23_JohnAndMaryLine").withCard(1, 1).extending(c4_WaitingLine);
-c5_participants.refToUnique(c1_Person);
-c15_BusLine.addConstraint(and($in(global(c2_JohnDoe), joinRef(join($this(), c5_participants))), $in(global(c3_MaryJane), joinRef(join($this(), c5_participants)))));
-c23_JohnAndMaryLine.addConstraint(equal(joinRef(join($this(), c5_participants)), union(global(c2_JohnDoe), global(c3_MaryJane))));
+c0_Person = Abstract("c0_Person");
+c0_WaitingLine = Abstract("c0_WaitingLine");
+c0_JohnDoe = Clafer("c0_JohnDoe").withCard(1, 1).extending(c0_Person);
+c0_MaryJane = Clafer("c0_MaryJane").withCard(1, 1).extending(c0_Person);
+c0_participants = c0_WaitingLine.addChild("c0_participants");
+c0_BusLine = Clafer("c0_BusLine").withCard(1, 1).extending(c0_WaitingLine);
+c0_JohnAndMaryLine = Clafer("c0_JohnAndMaryLine").withCard(1, 1).extending(c0_WaitingLine);
+c0_participants.refToUnique(c0_Person);
+c0_BusLine.addConstraint(and($in(global(c0_JohnDoe), joinRef(join($this(), c0_participants))), $in(global(c0_MaryJane), joinRef(join($this(), c0_participants)))));
+c0_JohnAndMaryLine.addConstraint(equal(joinRef(join($this(), c0_participants)), union(global(c0_JohnDoe), global(c0_MaryJane))));

@@ -8,11 +8,11 @@ javadoc:
 jacoco:
 	mvn org.jacoco:jacoco-maven-plugin:prepare-agent test org.jacoco:jacoco-maven-plugin:report
 	@echo "Developer note: firefox target/site/jacoco/index.html"
-	
+
 clean:
 	mvn clean
 
-install:  
+install:
 	mkdir -p $(to)
 	cp -f README.md $(to)/chocosolver-README.md
-	cp -f target/chocosolver-0.3.7-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f target/chocosolver-0.3.8-jar-with-dependencies.jar $(to)/chocosolver.jar

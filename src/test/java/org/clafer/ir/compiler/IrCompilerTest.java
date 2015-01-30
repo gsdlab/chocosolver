@@ -7,9 +7,9 @@ import org.clafer.ir.IrSetVar;
 import static org.clafer.ir.Irs.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import solver.Solver;
-import solver.search.strategy.SetStrategyFactory;
-import solver.variables.SetVar;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.search.strategy.SetStrategyFactory;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  *

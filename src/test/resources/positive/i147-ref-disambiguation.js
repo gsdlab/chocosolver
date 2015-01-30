@@ -1,7 +1,8 @@
 defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_a = Clafer("c1_a").withCard(0, 1);
-c2_b = c1_a.addChild("c2_b").withCard(0, 1);
-c1_a.refToUnique(Int);
-c2_b.addConstraint(equal(joinRef(joinParent($this())), constant(4)));
+c0_a = Clafer("c0_a").withCard(0, 1);
+c0_b = c0_a.addChild("c0_b").withCard(0, 1);
+c0_a.refTo(Int);
+c0_b.addConstraint(equal(joinRef(joinParent($this())), constant(4)));

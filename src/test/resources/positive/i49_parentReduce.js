@@ -1,9 +1,10 @@
 defaultScope(1);
 intRange(-8, 7);
+stringLength(16);
 
-c1_claferA = Clafer("c1_claferA").withCard(1, 1);
-c2_claferB = c1_claferA.addChild("c2_claferB").withCard(1, 1);
-c5_claferC = c2_claferB.addChild("c5_claferC").withCard(1, 1);
-c2_claferB.addConstraint(some(joinParent($this())));
-c5_claferC.addConstraint(some(joinParent($this())));
-c5_claferC.addConstraint(some(join(joinParent($this()), c5_claferC)));
+c0_claferA = Clafer("c0_claferA").withCard(1, 1);
+c0_claferB = c0_claferA.addChild("c0_claferB").withCard(1, 1);
+c0_claferC = c0_claferB.addChild("c0_claferC").withCard(1, 1);
+c0_claferB.addConstraint(some(joinParent($this())));
+c0_claferC.addConstraint(some(joinParent($this())));
+c0_claferC.addConstraint(some(join(joinParent($this()), c0_claferC)));
