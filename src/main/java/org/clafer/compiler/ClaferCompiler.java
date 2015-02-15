@@ -36,6 +36,7 @@ import org.clafer.scope.Scopable;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.limits.FailCounter;
 import org.chocosolver.solver.search.loop.monitors.SMF;
+import org.chocosolver.solver.search.strategy.ISF;
 import org.chocosolver.solver.search.strategy.IntStrategyFactory;
 import org.chocosolver.solver.search.strategy.SetStrategyFactory;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
@@ -129,6 +130,10 @@ public class ClaferCompiler {
         AbstractStrategy<?>[] strats = Maybe.filterJust(strategies);
         if (strats.length > 0) {
             solver.set(strats);
+        } else {
+            // Give the solver a dummy strategy for trivial problems so the underlying Choco
+            // framework does not warn of no search strategy.
+            solver.set(ISF.lexico_LB(solver.ZERO));
         }
     }
 
