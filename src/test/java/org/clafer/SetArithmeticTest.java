@@ -51,7 +51,7 @@ public class SetArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
-        model.addConstraint(equal(joinRef(join(diff(global(feature), global(firewall)), cost)), constant(1)));
+        model.addConstraint(equal(joinRef(join(diff(global(feature), global(firewall)), cost)), 1));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
         assertEquals(18, solver.allInstances().length);
@@ -74,7 +74,7 @@ public class SetArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer free = model.addChild("Free").refToUnique(feature).withCard(1, 2);
-        model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), constant(0)));
+        model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), 0));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
         assertEquals(5, solver.allInstances().length);
@@ -97,7 +97,7 @@ public class SetArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").extending(feature).withCard(1, 2);
-        model.addConstraint(equal(joinRef(join(union(global(backup), global(firewall)), cost)), constant(4)));
+        model.addConstraint(equal(joinRef(join(union(global(backup), global(firewall)), cost)), 4));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(4, solver.allInstances().length);
@@ -116,7 +116,7 @@ public class SetArithmeticTest {
 
         AstConcreteClafer backup = model.addChild("Backup").withCard(1, 2);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(1, 2);
-        model.addConstraint(equal(card(union(global(backup), global(firewall))), constant(3)));
+        model.addConstraint(equal(card(union(global(backup), global(firewall))), 3));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(2, solver.allInstances().length);
@@ -559,7 +559,7 @@ public class SetArithmeticTest {
 
         AstConcreteClafer a = model.addChild("A");
         AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(3, 3);
-        a.addConstraint(equal(sum(join($this(), b)), constant(2)));
+        a.addConstraint(equal(sum(join($this(), b)), 2));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(a, 2).setScope(b, 0));
         assertEquals(1, solver.allInstances().length);
@@ -578,7 +578,7 @@ public class SetArithmeticTest {
 
         AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
         AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(Mandatory);
-        a.addConstraint(equal(sum(join($this(), b)), constant(2)));
+        a.addConstraint(equal(sum(join($this(), b)), 2));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);
@@ -597,9 +597,66 @@ public class SetArithmeticTest {
 
         AstConcreteClafer a = model.addChild("A").withCard(1, 2);
         AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(2, 2);
-        a.addConstraint(equal(sum(join($this(), b)), constant(2)));
+        a.addConstraint(equal(sum(join($this(), b)), 2));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
         assertEquals(5, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A *
+     *     B -> int 3
+     *     [ product B = 8 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testProductEmptySet() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(3, 3);
+        a.addConstraint(equal(product(join($this(), b)), 8));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(a, 2).setScope(b, 0));
+        assertEquals(1, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A
+     *     B -> int
+     *     [ product B = 8 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testProductSingleton() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(Mandatory);
+        a.addConstraint(equal(sum(join($this(), b)), 8));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(1, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 1..2
+     *     B -> int 2..3
+     *     [ product B = 8 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testProductSet() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 2);
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(2, 3);
+        a.addConstraint(equal(product(join($this(), b)), 8));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(6).intLow(-8).intHigh(8));
+        assertEquals(54, solver.allInstances().length);
     }
 }

@@ -37,6 +37,7 @@ import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
+import org.clafer.ast.AstProduct;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstRefRelation;
@@ -403,6 +404,34 @@ public class TypeAnalyzer implements Analyzer {
                     throw new TypeException("Cannot sum(" + set.getType() + ")");
                 default:
                     throw new TypeException("Ambiguous sum(" + set.getType() + ")");
+            }
+        }
+
+        @Override
+        public TypedExpr<AstSetExpr> visit(AstProduct ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+
+            Set<AstRef> refs = new HashSet<>();
+            for (ProductType product : set.getType()) {
+                if (!product.isClaferType()) {
+                    throw new TypeException("Cannot product(" + set.getType() + ")");
+                }
+                AstRef ref = AstUtil.getInheritedRef(product.getClaferType());
+                if (ref != null) {
+                    refs.add(ref);
+                }
+            }
+            switch (refs.size()) {
+                case 0:
+                    throw new TypeException("Cannot product(" + set.getType() + ")");
+                case 1:
+                    AstRef ref = refs.iterator().next();
+                    if (ref.getTargetType() instanceof AstIntClafer) {
+                        return put(ref.getTargetType(), product(castTo(set, ref.getSourceType())));
+                    }
+                    throw new TypeException("Cannot product(" + set.getType() + ")");
+                default:
+                    throw new TypeException("Ambiguous product(" + set.getType() + ")");
             }
         }
 

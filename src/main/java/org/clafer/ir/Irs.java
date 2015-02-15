@@ -1253,7 +1253,7 @@ public class Irs {
         return mul(multiplicand, constant(multiplier));
     }
 
-    public static IrIntExpr mul(IrIntExpr multiplicand, IrIntExpr multiplier) {
+    private static IrIntExpr mulTwo(IrIntExpr multiplicand, IrIntExpr multiplier) {
         Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
         Integer multiplierConstant = IrUtil.getConstant(multiplier);
         if (multiplicandConstant != null) {
@@ -1286,6 +1286,21 @@ public class Irs {
         int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         return new IrMul(multiplicand, multiplier, boundDomain(min, max));
+    }
+
+    public static IrIntExpr mul(Collection<? extends IrIntExpr> multiplicands) {
+        return mul(multiplicands.toArray(new IrIntExpr[multiplicands.size()]));
+    }
+
+    public static IrIntExpr mul(IrIntExpr... multiplicands) {
+        if (multiplicands.length == 0) {
+            return One;
+        }
+        IrIntExpr product = multiplicands[0];
+        for (int i = 1; i < multiplicands.length; i++) {
+            product = mulTwo(product, multiplicands[i]);
+        }
+        return product;
     }
 
     public static IrIntExpr div(int dividend, IrIntExpr divisor) {

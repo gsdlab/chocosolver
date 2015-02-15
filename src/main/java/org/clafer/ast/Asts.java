@@ -182,6 +182,10 @@ public class Asts {
         return new AstSum(set);
     }
 
+    public static AstSetExpr product(AstSetExpr set) {
+        return new AstProduct(set);
+    }
+
     public static AstBoolExpr arithm(AstBoolArithm.Op op, AstBoolExpr... operands) {
         if (operands.length == 1) {
             return operands[0];
