@@ -1,10 +1,10 @@
 package org.clafer.choco.constraint;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -222,13 +222,13 @@ public class ConstraintQuickTest extends Suite {
         void evaluate(boolean positive) throws Throwable {
             Solver solver = newSolver(testMethod, positive);
 
-            Class<?>[] parameters = testMethod.getMethod().getParameterTypes();
-            Annotation[][] annotations = testMethod.getMethod().getParameterAnnotations();
+            Parameter[] parameters = testMethod.getMethod().getParameters();
             Object[] args = new Object[parameters.length];
             for (int i = 0; i < args.length; i++) {
                 args[i] = TestReflection.randVar(
-                        annotations[i],
-                        parameters[i],
+                        parameters[i].getName(),
+                        parameters[i].getAnnotations(),
+                        parameters[i].getType(),
                         solver);
             }
             try {

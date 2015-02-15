@@ -201,19 +201,19 @@ public class TestUtil {
         }
     }
 
-    public static IrIntVar randIrIntVar(int low, int high) {
+    public static IrIntVar randIrIntVar(String name, int low, int high) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
-        return domainInt("Int" + varCount++, randNonEmptyDomain(low, high));
+        return domainInt(name, randNonEmptyDomain(low, high));
     }
 
     public static IrIntVar randIrIntVar() {
-        return randIrIntVar(-4, 4);
+        return randIrIntVar("Int", -4, 4);
     }
 
     public static IrIntVar randPositiveIrIntVar() {
-        return randIrIntVar(0, 4);
+        return randIrIntVar("Int", 0, 4);
     }
 
     public static IrSetVar randIrSetVar(int low, int high) {
@@ -238,26 +238,26 @@ public class TestUtil {
 
     public static IrStringVar randIrStringVar() {
         String name = "String" + varCount++;
-        IrIntVar length = randIrIntVar(0, 4);
+        IrIntVar length = randIrIntVar("Int", 0, 4);
         IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
         for (int i = 0; i < chars.length; i++) {
             Domain domain = randNonEmptyDomain('a', 'c');
             chars[i] = domainInt(name + "[" + i + "]",
                     i < length.getDomain().getLowBound()
-                    ? domain : domain.insert(0));
+                            ? domain : domain.insert(0));
         }
         return string(name, chars, length);
     }
 
     public static IrStringVar randNonEmptyIrStringVar() {
         String name = "String" + varCount++;
-        IrIntVar length = randIrIntVar(1, 4);
+        IrIntVar length = randIrIntVar("Int", 1, 4);
         IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
         for (int i = 0; i < chars.length; i++) {
             Domain domain = randNonEmptyDomain('a', 'c');
             chars[i] = domainInt(name + "[" + i + "]",
                     i < length.getDomain().getLowBound()
-                    ? domain : domain.insert(0));
+                            ? domain : domain.insert(0));
         }
         return string(name, chars, length);
     }
@@ -282,8 +282,12 @@ public class TestUtil {
                 : Var.enumerated(var.getName(), domain.getValues(), solver);
     }
 
+    public static SetVar toVarNoCard(IrSetVar var, Solver solver) {
+        return Var.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
+    }
+
     public static CSetVar toVar(IrSetVar var, Solver solver) {
-        SetVar setVar = Var.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
+        SetVar setVar = toVarNoCard(var, solver);
         IntVar cardVar = Var.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
         return new CSetVar(setVar, cardVar);
     }
@@ -302,11 +306,11 @@ public class TestUtil {
         return toVar(randIrBoolVar(), solver);
     }
 
-    public static IntVar randIntVar(int low, int high, Solver solver) {
+    public static IntVar randIntVar(String name, int low, int high, Solver solver) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
-        return toVar(randIrIntVar(low, high), solver);
+        return toVar(randIrIntVar(name, low, high), solver);
     }
 
     public static IntVar randIntVar(Solver solver) {
@@ -317,18 +321,33 @@ public class TestUtil {
         return toVar(randPositiveIrIntVar(), solver);
     }
 
-    public static CSetVar randSetVar(int low, int high, Solver solver) {
+    public static SetVar randSetVar(int low, int high, Solver solver) {
+        if (low > high) {
+            throw new IllegalArgumentException();
+        }
+        return toVarNoCard(randIrSetVar(low, high), solver);
+    }
+
+    public static SetVar randSetVar(Solver solver) {
+        return toVarNoCard(randIrSetVar(), solver);
+    }
+
+    public static SetVar randPositiveSetVar(Solver solver) {
+        return toVarNoCard(randPositiveIrSetVar(), solver);
+    }
+
+    public static CSetVar randCSetVar(int low, int high, Solver solver) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
         return toVar(randIrSetVar(low, high), solver);
     }
 
-    public static CSetVar randSetVar(Solver solver) {
+    public static CSetVar randCSetVar(Solver solver) {
         return toVar(randIrSetVar(), solver);
     }
 
-    public static CSetVar randPositiveSetVar(Solver solver) {
+    public static CSetVar randPositiveCSetVar(Solver solver) {
         return toVar(randPositiveIrSetVar(), solver);
     }
 

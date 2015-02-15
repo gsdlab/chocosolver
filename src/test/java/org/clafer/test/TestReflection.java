@@ -6,7 +6,6 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import static org.clafer.test.TestUtil.*;
 import org.clafer.ir.IrBoolVar;
@@ -103,7 +102,7 @@ public class TestReflection {
             module.addVariable(var);
             return var;
         } else if (IrIntVar.class.equals(type)) {
-            IrVar var = randIrIntVar(low, high);
+            IrVar var = randIrIntVar("Int", low, high);
             module.addVariable(var);
             return var;
         } else if (IrSetVar.class.equals(type)) {
@@ -150,21 +149,21 @@ public class TestReflection {
         throw new IllegalStateException("Unexpected type " + type);
     }
 
-    public static Object randVar(Annotation[] annotations, Class<?> type, Solver solver) {
-        return randVar(annotations, type, solver, null);
+    public static Object randVar(String name, Annotation[] annotations, Class<?> type, Solver solver) {
+        return randVar(name, annotations, type, solver, null);
     }
 
-    private static Object randVar(Annotation[] annotations, Class<?> type, Solver solver, Integer sameLength) {
+    private static Object randVar(String name, Annotation[] annotations, Class<?> type, Solver solver, Integer sameLength) {
         int low = hasAnnotation(Positive.class, annotations) ? 0 : -4;
         int high = 4;
         if (BoolVar.class.equals(type)) {
             return randBoolVar(solver);
         } else if (IntVar.class.equals(type)) {
-            return randIntVar(low, high, solver);
+            return randIntVar(name, low, high, solver);
         } else if (SetVar.class.equals(type)) {
-            return randSetVar(low, high, solver).getSet();
-        } else if (CSetVar.class.equals(type)) {
             return randSetVar(low, high, solver);
+        } else if (CSetVar.class.equals(type)) {
+            return randCSetVar(low, high, solver);
         } else if (CStringVar.class.equals(type)) {
             return hasAnnotation(NonEmpty.class, annotations)
                     ? randNonEmptyStringVar(solver)
@@ -188,7 +187,7 @@ public class TestReflection {
             }
             Object array = Array.newInstance(type.getComponentType(), length);
             for (int i = 0; i < length; i++) {
-                Array.set(array, i, randVar(annotations, type.getComponentType(), solver, recurSameLength));
+                Array.set(array, i, randVar(name + "[" + i + "]", annotations, type.getComponentType(), solver, recurSameLength));
             }
             return array;
         }
