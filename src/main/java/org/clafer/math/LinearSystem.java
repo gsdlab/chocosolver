@@ -254,20 +254,22 @@ public class LinearSystem {
         return new LinearSystem(newEquations);
     }
 
-    private void removeEquation(LinearEquation equation,
+    private void removeEquation(Set<LinearEquation> equations,
             Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences,
             Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurrences) {
-        LinearFunction left = equation.getLeft();
-        Rational[] coefficients = left.getCoefficients();
-        Variable[] variables = left.getVariables();
-        for (int i = 0; i < coefficients.length; i++) {
-            assert !coefficients[i].isZero();
-            Map<Variable, TObjectIntMap<LinearEquation>> map
-                    = coefficients[i].isPositive() ? positiveOccurrences : negativeOccurrences;
-            TObjectIntMap<LinearEquation> references = map.get(variables[i]);
-            assert references != null;
-            if (references.adjustOrPutValue(equation, -1, 0) == 0) {
-                references.remove(variables[i]);
+        for (LinearEquation equation : equations) {
+            LinearFunction left = equation.getLeft();
+            Rational[] coefficients = left.getCoefficients();
+            Variable[] variables = left.getVariables();
+            for (int i = 0; i < coefficients.length; i++) {
+                assert !coefficients[i].isZero();
+                Map<Variable, TObjectIntMap<LinearEquation>> map
+                        = coefficients[i].isPositive() ? positiveOccurrences : negativeOccurrences;
+                TObjectIntMap<LinearEquation> references = map.get(variables[i]);
+                assert references != null;
+                if (references.adjustOrPutValue(equation, -1, 0) == 0) {
+                    references.remove(variables[i]);
+                }
             }
         }
     }
@@ -276,7 +278,6 @@ public class LinearSystem {
             LinearEquation equation,
             Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences,
             Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurrences) {
-
         LinearFunction left = equation.getLeft();
         Rational[] coefficients = left.getCoefficients();
         Variable[] variables = left.getVariables();
@@ -293,9 +294,15 @@ public class LinearSystem {
         }
     }
 
+    private static <T> HashSet<T> singletonHashSet(T t) {
+        HashSet<T> set = new HashSet<>();
+        set.add(t);
+        return set;
+    }
+
     private boolean cost(LinearEquation equation,
-            Map<Variable, Pair<LinearEquation, Rational>> bestLowBound,
-            Map<Variable, Pair<LinearEquation, Rational>> bestHighBound,
+            Map<Variable, Pair<Set<LinearEquation>, Rational>> bestLowBound,
+            Map<Variable, Pair<Set<LinearEquation>, Rational>> bestHighBound,
             Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences,
             Map<Variable, TObjectIntMap<LinearEquation>> negativeOccurrences) {
         LinearFunction left = equation.getLeft();
@@ -313,25 +320,35 @@ public class LinearSystem {
             assert !ai.isZero();
             if (ai.isPositive()) {
                 Rational hb = right.sub(low.sub(ai.mul(vi.getLowBound()))).div(ai);
-                Pair<LinearEquation, Rational> best = bestHighBound.get(vi);
+                Pair<Set<LinearEquation>, Rational> best = bestHighBound.get(vi);
                 if (best == null || best.getSnd().compareTo(hb) > 0) {
-                    bestHighBound.put(vi, new Pair<>(equation, hb));
+                    bestHighBound.put(vi, new Pair<>(singletonHashSet(equation), hb));
                     if (best != null) {
                         removeEquation(best.getFst(), positiveOccurrences, negativeOccurrences);
                     }
                     addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
+                } else if (best.getSnd().compareTo(hb) == 0) {
+                    if (best.getFst().add(equation)) {
+                        addEquation(equation, positiveOccurrences, negativeOccurrences);
+                        changed = true;
+                    }
                 }
             } else {
                 Rational lb = right.sub(low.sub(ai.mul(vi.getHighBound()))).div(ai);
-                Pair<LinearEquation, Rational> best = bestLowBound.get(vi);
+                Pair<Set<LinearEquation>, Rational> best = bestLowBound.get(vi);
                 if (best == null || best.getSnd().compareTo(lb) < 0) {
-                    bestLowBound.put(vi, new Pair<>(equation, lb));
+                    bestLowBound.put(vi, new Pair<>(singletonHashSet(equation), lb));
                     if (best != null) {
                         removeEquation(best.getFst(), positiveOccurrences, negativeOccurrences);
                     }
                     addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
+                } else if (best.getSnd().compareTo(lb) == 0) {
+                    if (best.getFst().add(equation)) {
+                        addEquation(equation, positiveOccurrences, negativeOccurrences);
+                        changed = true;
+                    }
                 }
             }
         }
@@ -350,9 +367,9 @@ public class LinearSystem {
             return this;
         }
         // bestLowBound[v] returns the constraint that gives the highest low bound for v
-        Map<Variable, Pair<LinearEquation, Rational>> bestLowBound = new HashMap<>();
+        Map<Variable, Pair<Set<LinearEquation>, Rational>> bestLowBound = new HashMap<>();
         // bestLowBound[v] returns the constraint that gives the lowest high bound for v
-        Map<Variable, Pair<LinearEquation, Rational>> bestHighBound = new HashMap<>();
+        Map<Variable, Pair<Set<LinearEquation>, Rational>> bestHighBound = new HashMap<>();
         // positiveOccurrences[v] returns the equations where v has a positive coefficient.
         // Each equation may occur multiple times, treated like a reference count.
         Map<Variable, TObjectIntMap<LinearEquation>> positiveOccurrences = new HashMap<>();
@@ -448,12 +465,12 @@ public class LinearSystem {
         } while (changed);
 
         Set<LinearEquation> newEquations = new LinkedHashSet<>(
-                bestLowBound.size() + bestHighBound.size() );
-        for (Pair<LinearEquation, ?> b : bestLowBound.values()) {
-            newEquations.add(b.getFst());
+                bestLowBound.size() + bestHighBound.size());
+        for (Pair<Set<LinearEquation>, ?> b : bestLowBound.values()) {
+            newEquations.addAll(b.getFst());
         }
-        for (Pair<LinearEquation, ?> b : bestHighBound.values()) {
-            newEquations.add(b.getFst());
+        for (Pair<Set<LinearEquation>, ?> b : bestHighBound.values()) {
+            newEquations.addAll(b.getFst());
         }
         return new LinearSystem(newEquations);
     }

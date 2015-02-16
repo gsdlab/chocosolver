@@ -18,30 +18,28 @@ public class LinearEquation {
     }
 
     public LinearEquation(LinearFunction left, Op op, Rational right) {
+        this(left, op, right, true);
+    }
+
+    public LinearEquation(LinearFunction left, Op op, long right, boolean scale) {
+        this(left, op, new Rational(right), scale);
+    }
+
+    public LinearEquation(LinearFunction left, Op op, Rational right, boolean scale) {
         Check.notNull(left);
         Check.notNull(op);
         Check.notNull(right);
         if (left.hasConstant()) {
             throw new IllegalArgumentException();
         }
-        if (Op.Equal.equals(op) && mostlyNegative(left.getCoefficients())) {
-            this.left = left.minus();
-            this.right = right.minus();
-        } else {
+        if (!scale || right.isZero()) {
             this.left = left;
             this.right = right;
+        } else {
+            this.left = left.div(right.abs());
+            this.right = right.div(right.abs());
         }
         this.op = op;
-    }
-
-    private static boolean mostlyNegative(Rational[] is) {
-        int negative = 0;
-        for (Rational i : is) {
-            if (i.isNegative()) {
-                negative++;
-            }
-        }
-        return negative * 2 > is.length;
     }
 
     public static LinearEquation equal(LinearFunctionable left, LinearFunctionable right) {
