@@ -178,6 +178,6 @@ public class PropElement extends Propagator<IntVar> {
 
     @Override
     public String toString() {
-        return "Element {" + Arrays.toString(array) + "}[" + index + "] = " + value;
+        return "Element {" + Arrays.toString(array) + "}[" + index + " + " + offset + "] = " + value;
     }
 }
