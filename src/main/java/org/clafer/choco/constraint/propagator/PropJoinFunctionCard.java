@@ -201,8 +201,8 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                 maxUninstantiated = takeCard.getUB() - kerSize + kerUninstantiated;
                 minCard = instCard
                         + (hasGlobalCardinality()
-                        ? divRoundUp(Math.max(0, minUninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
-                        : 0);
+                                ? divRoundUp(Math.max(0, minUninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
+                                : 0);
                 maxCard = instCard + maxUninstantiated;
 
                 toCard.updateLowerBound(minCard, aCause);
@@ -248,6 +248,9 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
         TIntIntHashMap map = new TIntIntHashMap();
         int gc = hasGlobalCardinality() ? getGlobalCardinality() : Integer.MAX_VALUE;
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+            if (i < 0 || i >= refs.length) {
+                return ESat.FALSE;
+            }
             IntVar ref = refs[i];
             if (ref.isInstantiated()) {
                 if (map.adjustOrPutValue(ref.getValue(), 1, 1) > gc) {
@@ -271,8 +274,8 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
         }
         int minCard = instCard
                 + (hasGlobalCardinality()
-                ? divRoundUp(Math.max(0, minUninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
-                : 0);
+                        ? divRoundUp(Math.max(0, minUninstantiated - countAdditionalSameRefsAllowed(map)), getGlobalCardinality())
+                        : 0);
         int maxCard = instCard + maxUninstantiated;
 
         if (toCard.getUB() < minCard) {
