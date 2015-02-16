@@ -20,6 +20,7 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.util.ESat;
 
 /**
@@ -239,8 +240,15 @@ public class ConstraintQuickTest extends Suite {
                 TestUtil.randomizeStrategy(solver);
                 ESat entailed = TestUtil.isEntailed(constraint);
                 if (ESat.FALSE.equals(entailed)) {
+                    String initial = null;
+                    for (Propagator<?> propagator : constraint.getPropagators()) {
+                        if (ESat.FALSE.equals(propagator.isEntailed())) {
+                            initial = propagator.toString();
+                        }
+                    }
                     if (solver.findSolution()) {
-                        fail("Did not expect a solution, found " + constraint);
+                        fail("Did not expect a solution for " + initial + ", found " + constraint);
+
                     }
                 } else if (solver.findSolution()) {
                     int solutions = 1;
@@ -252,7 +260,7 @@ public class ConstraintQuickTest extends Suite {
                         }
                     } while (solver.nextSolution() && solutions++ < 10);
                 } else if (ESat.TRUE.equals(entailed)) {
-                    fail("Expected at least one solution, " + constraint);
+                    fail("Expected at least one solution for " + constraint);
                 }
             } catch (AssumptionViolatedException e) {
                 // Continue
