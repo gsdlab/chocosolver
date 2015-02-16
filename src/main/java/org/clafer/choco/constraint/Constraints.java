@@ -4,6 +4,7 @@ import org.clafer.choco.constraint.propagator.PropTransitive;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
@@ -12,7 +13,6 @@ import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropContinuousUnion;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
-//import org.clafer.choco.constraint.propagator.PropElement;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
@@ -46,7 +46,6 @@ import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
-import org.clafer.collection.Maybe;
 import org.clafer.common.Util;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
@@ -58,7 +57,6 @@ import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
 import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
 import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
 import org.chocosolver.solver.constraints.nary.sum.PropSumEq;
-import org.chocosolver.solver.constraints.set.PropElement;
 import org.chocosolver.solver.constraints.set.PropIntersection;
 import org.chocosolver.solver.constraints.set.PropSubsetEq;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
@@ -84,24 +82,24 @@ public class Constraints {
     private Constraints() {
     }
 
-    private static Maybe<Propagator<IntVar>> eq(IntVar l, IntVar r) {
+    private static Optional<Propagator<IntVar>> eq(IntVar l, IntVar r) {
         if (l.isInstantiated()) {
             if (r.isInstantiatedTo(l.getValue())) {
-                return Maybe.nothing();
+                return Optional.empty();
             }
-            return Maybe.<Propagator<IntVar>>just(new PropEqualXC(r, l.getValue()));
+            return Optional.of(new PropEqualXC(r, l.getValue()));
         }
         if (r.isInstantiated()) {
-            return Maybe.<Propagator<IntVar>>just(new PropEqualXC(l, r.getValue()));
+            return Optional.of(new PropEqualXC(l, r.getValue()));
         }
-        return Maybe.<Propagator<IntVar>>just(new PropEqualX_Y(l, r));
+        return Optional.of(new PropEqualX_Y(l, r));
     }
 
-    private static Maybe<Propagator<IntVar>> eq(IntVar l, int r) {
+    private static Optional<Propagator<IntVar>> eq(IntVar l, int r) {
         if (l.isInstantiatedTo(r)) {
-            return Maybe.nothing();
+            return Optional.empty();
         }
-        return Maybe.<Propagator<IntVar>>just(new PropEqualXC(l, r));
+        return Optional.of(new PropEqualXC(l, r));
     }
 
     private static Propagator<IntVar> lessThanEq(IntVar l, IntVar g) {
@@ -910,18 +908,17 @@ public class Constraints {
     public static Constraint equal(
             IntVar[] chars1, IntVar length1,
             IntVar[] chars2, IntVar length2) {
-        List<Maybe<Propagator<IntVar>>> maybePropagators = new ArrayList<>();
-        maybePropagators.add(eq(length1, length2));
+        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        eq(length1, length2).ifPresent(propagators::add);
         for (int i = 0; i < Math.min(chars1.length, chars2.length); i++) {
-            maybePropagators.add(eq(chars1[i], chars2[i]));
+            eq(chars1[i], chars2[i]).ifPresent(propagators::add);
         }
         for (int i = Math.min(chars1.length, chars2.length); i < chars1.length; i++) {
-            maybePropagators.add(eq(chars1[i], 0));
+            eq(chars1[i], 0).ifPresent(propagators::add);
         }
         for (int i = Math.min(chars1.length, chars2.length); i < chars2.length; i++) {
-            maybePropagators.add(eq(chars2[i], 0));
+            eq(chars2[i], 0).ifPresent(propagators::add);
         }
-        List<Propagator<IntVar>> propagators = Maybe.filterJust(maybePropagators);
         if (propagators.isEmpty()) {
             return length1.getSolver().TRUE;
         }
