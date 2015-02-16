@@ -178,7 +178,7 @@ public class RelationalTest {
         while (solver.find()) {
             InstanceModel instance = solver.instance();
             for (InstanceClafer c : instance.getTopClafers(cost)) {
-                assert c.getRef().getValue().equals(2);
+                assertEquals(2, c.getRef());
             }
         }
         assertEquals(1, solver.instanceCount());
@@ -208,7 +208,6 @@ public class RelationalTest {
      * Cost ->> int *
      * [ Cost . (Cost -> int) = 2 ]
      * </pre>
-     * </pre>
      */
     @Test(timeout = 60000)
     public void testSetJoinFunction() {
@@ -221,7 +220,7 @@ public class RelationalTest {
         while (solver.find()) {
             InstanceModel instance = solver.instance();
             for (InstanceClafer c : instance.getTopClafers(cost)) {
-                assert c.getRef().getValue().equals(2);
+                assertEquals(2, c.getRef());
             }
         }
         assertEquals(3, solver.instanceCount());
@@ -265,11 +264,11 @@ public class RelationalTest {
         while (solver.find()) {
             InstanceModel instance = solver.instance();
             Set<Pair<Integer, Integer>> tuples = new HashSet<>();
-            InstanceClafer[] fs = instance.getTopClafers(feature);
             for (InstanceClafer p : instance.getTopClafers(product)) {
-                tuples.add(new Pair<>(p.getId(), (Integer) fs[(Integer) p.getRef().getValue()].getRef().getValue()));
+                InstanceClafer f = (InstanceClafer) p.getRef();
+                tuples.add(new Pair<>(p.getId(), (Integer) f.getRef()));
             }
-            assert tuples.size() == 2;
+            assertEquals(2, tuples.size());
         }
         assertEquals(45, solver.instanceCount());
     }

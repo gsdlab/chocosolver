@@ -99,7 +99,7 @@ public class StringTest {
         InstanceModel instance = solver.instance();
         InstanceClafer[] as = instance.getTopClafers(a);
         assertEquals(1, as.length);
-        assertEquals("abc", as[0].getRef().getValue());
+        assertEquals("abc", as[0].getRef());
         assertFalse(solver.find());
     }
 
@@ -149,10 +149,10 @@ public class StringTest {
         while (solver.find()) {
             InstanceModel instance = solver.instance();
             for (InstanceClafer B : instance.getTopClafers(b)) {
-                assertEquals("b", B.getRef().getValue());
+                assertEquals("b", B.getRef());
             }
             for (InstanceClafer C : instance.getTopClafers(c)) {
-                assertEquals("c", C.getRef().getValue());
+                assertEquals("c", C.getRef());
             }
         }
         assertEquals(4, solver.instanceCount());
@@ -210,8 +210,8 @@ public class StringTest {
             InstanceModel instance = solver.instance();
             for (InstanceClafer A : instance.getTopClafers(a)) {
                 for (InstanceClafer B : instance.getTopClafers(b)) {
-                    assertEquals(A.getRef().getValue().toString().length(),
-                            B.getRef().getValue().toString().length() + 1);
+                    assertEquals(A.getRef().toString().length(),
+                            B.getRef().toString().length() + 1);
                 }
             }
             count++;
@@ -257,8 +257,7 @@ public class StringTest {
             for (InstanceClafer A : instance.getTopClafers(a)) {
                 for (InstanceClafer B : instance.getTopClafers(b)) {
                     for (InstanceClafer C : instance.getTopClafers(c)) {
-                        assertEquals(C.getRef().getValue(),
-                                A.getRef().getValue().toString() + B.getRef().getValue());
+                        assertEquals(C.getRef(), A.getRef().toString() + B.getRef());
                     }
                 }
             }
@@ -300,8 +299,7 @@ public class StringTest {
             InstanceModel instance = solver.instance();
             for (InstanceClafer A : instance.getTopClafers(a)) {
                 for (InstanceClafer B : instance.getTopClafers(b)) {
-                    assertThat((String) B.getRef().getValue(),
-                            startsWith((String) A.getRef().getValue()));
+                    assertThat((String) B.getRef(), startsWith((String) A.getRef()));
                 }
             }
             count++;
@@ -342,8 +340,7 @@ public class StringTest {
             InstanceModel instance = solver.instance();
             for (InstanceClafer A : instance.getTopClafers(a)) {
                 for (InstanceClafer B : instance.getTopClafers(b)) {
-                    assertThat((String) B.getRef().getValue(),
-                            endsWith((String) A.getRef().getValue()));
+                    assertThat((String) B.getRef(), endsWith((String) A.getRef()));
                 }
             }
             count++;

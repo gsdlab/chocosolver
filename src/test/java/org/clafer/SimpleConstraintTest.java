@@ -567,7 +567,7 @@ public class SimpleConstraintTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).setScope(b, 0));
         while (solver.find()) {
-            assertEquals(0, solver.instance().getTopClafers(d)[0].getRef().getValue());
+            assertEquals(0, solver.instance().getTopClafer(d).getRef());
         }
         assertEquals(1, solver.instanceCount());
     }

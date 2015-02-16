@@ -1,19 +1,18 @@
 package org.clafer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
-import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -39,6 +38,15 @@ public class TransitiveTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(4, solver.allInstances().length);
+    }
+
+    private Set<InstanceClafer> getChildrenRecurisve(InstanceClafer parent, AstConcreteClafer childType) {
+        Set<InstanceClafer> children = new HashSet<>();
+        children.add(parent);
+        for (InstanceClafer child : parent.getChildren(childType)) {
+            children.addAll(getChildrenRecurisve((InstanceClafer) child.getRef(), childType));
+        }
+        return children;
     }
 
     /**
@@ -69,15 +77,9 @@ public class TransitiveTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         while (solver.find()) {
             InstanceModel instance = solver.instance();
-            List<Pair<AstClafer, Integer>> descendantNames = new ArrayList<>();
-            for (InstanceClafer a : instance.getTopClafers(alice)) {
-                InstanceClafer cur = a;
-                descendantNames.add(new Pair<>(cur.getType(), cur.getId()));
-            }
+            Set<InstanceClafer> ac = getChildrenRecurisve(instance.getTopClafer(alice), child);
             for (InstanceClafer ad : instance.getTopClafers(aliceDescendant)) {
-                System.out.println(ad);
-                System.out.println("  " + ad.getRef());
-                System.out.println("    " + ad.getRef().getValue());
+                assertTrue(ac.contains((InstanceClafer) ad.getRef()));
             }
         }
         assertEquals(36, solver.instanceCount());

@@ -39,7 +39,7 @@ public class ArithmeticTest {
             InstanceModel instance = solver.instance();
             for (InstanceClafer f : instance.getTopClafers(feature)) {
                 for (InstanceClafer c : f.getChildren(cost)) {
-                    assertEquals(2, c.getRef().getValue());
+                    assertEquals(2, c.getRef());
                 }
             }
             count++;
@@ -222,10 +222,10 @@ public class ArithmeticTest {
             for (InstanceClafer ai : solver.instance().getTopClafers(a)) {
                 int sum = 0;
                 for (InstanceClafer bi : ai.getChildren(b)) {
-                    sum += (int) bi.getRef().getValue();
+                    sum += (int) bi.getRef();
                 }
                 for (InstanceClafer ti : ai.getChildren(total)) {
-                    assertEquals(sum, ti.getRef().getValue());
+                    assertEquals(sum, ti.getRef());
                 }
             }
             count++;
@@ -279,10 +279,10 @@ public class ArithmeticTest {
             for (InstanceClafer ai : solver.instance().getTopClafers(a)) {
                 int product = 1;
                 for (InstanceClafer bi : ai.getChildren(b)) {
-                    product *= (int) bi.getRef().getValue();
+                    product *= (int) bi.getRef();
                 }
                 for (InstanceClafer ti : ai.getChildren(total)) {
-                    assertEquals(product, ti.getRef().getValue());
+                    assertEquals(product, ti.getRef());
                 }
             }
             count++;
@@ -325,7 +325,7 @@ public class ArithmeticTest {
         int count = 0;
         while (solver.find()) {
             for (InstanceClafer tc : solver.instance().getTopClafers(totalCost)) {
-                assertEquals(13, tc.getRef().getValue());
+                assertEquals(13, tc.getRef());
             }
             count++;
         }
