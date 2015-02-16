@@ -22,7 +22,7 @@ public class ElementTest {
     @Input(solutions = 128)
     public Object testElement(Solver solver) {
         return $(enumerated("value", 0, 3, solver), enumeratedArray("array", 3, 0, 3, solver),
-                enumerated("index", 0, 1, solver), 0);
+                enumerated("index", -1, 0, solver), 1);
     }
 
     @Check
