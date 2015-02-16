@@ -326,11 +326,7 @@ public class AstCompiler {
                  * inherits A. Let F be a mapping every B to its ancestor A.
                  * Enforce that F is an acyclic function.
                  */
-                List<AstClafer> types = new ArrayList<>();
-                for (AstClafer clafer : component) {
-                    types.add(clafer);
-                }
-                AstAbstractClafer unionType = (AstAbstractClafer) AstUtil.getLowestCommonSupertype(types);
+                AstAbstractClafer unionType = (AstAbstractClafer) AstUtil.getLowestCommonSupertype(component);
                 IrIntExpr[] edges = new IrIntExpr[getScope(unionType)];
                 IrIntExpr uninitialized = constant(edges.length);
                 Arrays.fill(edges, uninitialized);
@@ -1132,7 +1128,7 @@ public class AstCompiler {
                 if (setChildren.getEnv().getHighBound() >= parents.length) {
                     parents = Util.snoc(parents, constant(parents.length));
                 }
-                return joinFunction(setChildren, array(parentPointers.get(childrenType)), null);
+                return joinFunction(setChildren, parents, null);
             }
             throw new AstException();
         }
