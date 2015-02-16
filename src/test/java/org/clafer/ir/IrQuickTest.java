@@ -135,7 +135,7 @@ public class IrQuickTest extends Suite {
                     constraint = positive ? constraint : constraint.getOpposite();
                     solver.post(constraint);
 
-                    if (solver.findSolution()) {
+                    if (randomizeStrategy(solver).findSolution()) {
                         do {
                             Object solution = TestReflection.value(args);
                             if (!solutions.remove(solution)) {
