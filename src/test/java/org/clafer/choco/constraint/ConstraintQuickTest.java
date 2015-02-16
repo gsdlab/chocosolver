@@ -12,7 +12,6 @@ import org.clafer.test.TestReflection;
 import org.clafer.test.TestUtil;
 import static org.junit.Assert.*;
 import org.junit.internal.AssumptionViolatedException;
-import org.junit.runner.Runner;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
@@ -33,7 +32,7 @@ public class ConstraintQuickTest extends Suite {
     private final List<FrameworkMethod> checkMethods;
 
     public ConstraintQuickTest(Class<?> klass) throws Throwable {
-        super(klass, new ArrayList<Runner>());
+        super(klass, new ArrayList<>());
         this.parametersMethods = getTestClass().getAnnotatedMethods(Input.class);
         for (FrameworkMethod parameterMethod : parametersMethods) {
             if (!parameterMethod.isPublic()) {
