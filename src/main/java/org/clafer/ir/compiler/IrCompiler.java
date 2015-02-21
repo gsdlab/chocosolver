@@ -111,6 +111,7 @@ import org.chocosolver.solver.variables.CStringVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
+import org.clafer.ir.IrSetMax;
 
 /**
  * Compile from IR to Choco.
@@ -1246,6 +1247,17 @@ public class IrCompiler {
                 return count;
             }
             return Constraints.countNotEqual(ir.getValue(), array, reify);
+        }
+
+        @Override
+        public Object visit(IrSetMax ir, IntVar reify) {
+            CSetVar set = compile(ir.getSet());
+            if (reify == null) {
+                IntVar max = numIntVar("SetMax", ir.getDomain());
+                post(Constraints.max(set.getSet(), set.getCard(), max, ir.getDefaultValue()));
+                return max;
+            }
+            return Constraints.max(set.getSet(), set.getCard(), reify, ir.getDefaultValue());
         }
 
         @Override

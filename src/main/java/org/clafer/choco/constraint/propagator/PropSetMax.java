@@ -26,11 +26,11 @@ public class PropSetMax extends Propagator<Variable> {
     private final IntVar setCard;
     private final IntVar max;
 
-    public PropSetMax(SetVar set, IntVar setCard, IntVar min) {
-        super(new Variable[]{set, setCard, min}, PropagatorPriority.UNARY, false);
+    public PropSetMax(SetVar set, IntVar setCard, IntVar max) {
+        super(new Variable[]{set, setCard, max}, PropagatorPriority.UNARY, false);
         this.set = set;
         this.setCard = setCard;
-        this.max = min;
+        this.max = max;
     }
 
     private boolean isSetVar(int idx) {

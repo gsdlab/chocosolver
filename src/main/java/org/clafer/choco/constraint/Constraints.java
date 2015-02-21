@@ -67,6 +67,7 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.VF;
 import org.chocosolver.solver.variables.Variable;
+import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -844,6 +845,14 @@ public class Constraints {
 
     public static Constraint max(SetVar set, IntVar setCard, IntVar max) {
         return new Constraint("max", new PropSetMax(set, setCard, max));
+    }
+
+    public static Constraint max(SetVar set, IntVar setCard, IntVar max, int d) {
+        if (setCard.getLB() > 0) {
+            return max(set, setCard, max);
+        }
+        return new Constraint("max", new PropSetMax(set, setCard, max),
+                new PropReifyEqualXC(setCard, 0, max, d));
     }
 
     public static Constraint stritctHighBound(SetVar set, IntVar bound) {

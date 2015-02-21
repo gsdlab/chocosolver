@@ -342,6 +342,12 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrSetMax ir, T a) {
+        traverse(ir.getSet(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrSetSum ir, T a) {
         traverse(ir.getSet(), a);
         return null;

@@ -15,15 +15,19 @@ import org.chocosolver.util.ESat;
  */
 public class PropReifyEqualXC extends Propagator<IntVar> {
 
-    private final BoolVar reify;
+    private final IntVar reify;
     private final int reifyC;
     private final IntVar x;
     private final int c;
 
     public PropReifyEqualXC(BoolVar reify, boolean reifyC, IntVar x, int c) {
+        this(reify, reifyC ? 1 : 0, x, c);
+    }
+
+    public PropReifyEqualXC(IntVar reify, int reifyC, IntVar x, int c) {
         super(new IntVar[]{reify, x}, PropagatorPriority.UNARY, true);
         this.reify = reify;
-        this.reifyC = reifyC ? 1 : 0;
+        this.reifyC = reifyC;
         this.x = x;
         this.c = c;
     }
