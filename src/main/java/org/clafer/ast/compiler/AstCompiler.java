@@ -1179,6 +1179,10 @@ public class AstCompiler {
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
                 if (ref.getTargetType() instanceof AstStringClafer) {
+                    if ($setDeref.getCard().getHighBound() == 1) {
+                        IrStringExpr[] refs = Util.snoc(refStrings.get(ref), EmptyString);
+                        return element(refs, max($setDeref, refs.length - 1));
+                    }
                     throw new JoinSetWithStringException(ast, $setDeref.getCard());
                 }
                 // Why zero? The "take" var can contain unused.

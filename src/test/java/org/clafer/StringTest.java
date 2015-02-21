@@ -160,7 +160,7 @@ public class StringTest {
 
     /**
      * <pre>
-     * A -> string 0..1
+     * A -> string 0..2
      * [ A.ref = "abc" ]
      * </pre>
      */
@@ -168,10 +168,10 @@ public class StringTest {
     public void testJoinSetWithString() {
         AstModel model = newModel();
 
-        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(0, 1);
+        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(0, 2);
         model.addConstraint(equal(joinRef(global(a)), constant("abc")));
 
-        ClaferCompiler.compile(model, Scope.setScope(a, 1)
+        ClaferCompiler.compile(model, Scope.setScope(a, 2)
                 .stringLength(5).charLow('a').charHigh('c'));
     }
 
@@ -346,5 +346,30 @@ public class StringTest {
             count++;
         }
         assertEquals(142, count);
+    }
+
+    /**
+     * <pre>
+     * A -> string ?
+     * [ A.ref = "test" ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testOptional() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Optional);
+        model.addConstraint(equal(joinRef(a), constant("test")));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
+        int count = 0;
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer A : instance.getTopClafers(a)) {
+                assertEquals("test", A.getRef());
+            }
+            count++;
+        }
+        assertEquals(1, count);
     }
 }
