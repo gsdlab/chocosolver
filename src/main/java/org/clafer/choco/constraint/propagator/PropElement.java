@@ -83,7 +83,7 @@ public class PropElement extends Propagator<IntVar> {
 
     private boolean supportForValue(int value) {
         int support = valueSupports.get(value);
-        if (index.contains(support) && array[support].contains(value)) {
+        if (index.contains(support - offset) && array[support].contains(value)) {
             return true;
         }
         int ub = index.getUB();
@@ -142,7 +142,7 @@ public class PropElement extends Propagator<IntVar> {
             int i = getArrayVarIndex(idxVarInProp);
             if (index.contains(i - offset)) {
                 if (!supportForArray(i)) {
-                    index.removeValue(i, aCause);
+                    index.removeValue(i - offset, aCause);
                 }
                 arrayD[i].freeze();
                 arrayD[i].forEachRemVal(new IntProcedure() {
@@ -178,6 +178,6 @@ public class PropElement extends Propagator<IntVar> {
 
     @Override
     public String toString() {
-        return "Element {" + Arrays.toString(array) + "}[" + index + "] = " + value;
+        return "Element {" + Arrays.toString(array) + "}[" + index + " + " + offset + "] = " + value;
     }
 }

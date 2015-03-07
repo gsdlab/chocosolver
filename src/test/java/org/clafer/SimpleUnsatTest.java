@@ -108,10 +108,9 @@ public class SimpleUnsatTest {
         assertEquals(1, unsatInstance.getFst().size());
         assertEquals(c4, unsatInstance.getFst().iterator().next());
         assertEquals(1, unsatInstance.getSnd().getTopClafers().length);
-        assertEquals(a, unsatInstance.getSnd().getTopClafers()[0].getType());
-        assertEquals(0, unsatInstance.getSnd().getTopClafers()[0].getId());
-        assertEquals(IntType, unsatInstance.getSnd().getTopClafers()[0].getRef().getType());
-        assertEquals(2, unsatInstance.getSnd().getTopClafers()[0].getRef().getValue());
+        assertEquals(a, unsatInstance.getSnd().getTopClafer(a).getType());
+        assertEquals(0, unsatInstance.getSnd().getTopClafer(a).getId());
+        assertEquals(2, unsatInstance.getSnd().getTopClafer(a).getRef());
 
         assertEquals(set(c1, c2, c3, c4),
                 ClaferCompiler.compileUnsat(model, Scope.defaultScope(1)).unsatCore());

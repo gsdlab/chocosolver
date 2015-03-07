@@ -48,6 +48,7 @@ function and(a1, a2) {
     return Asts.and([a1, a2]);
 }
 var sum = Asts.sum;
+var product = Asts.product;
 function ifOnlyIf(i1, i2) {
     return Asts.ifOnlyIf([i1, i2]);
 }

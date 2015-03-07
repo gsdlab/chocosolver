@@ -1253,7 +1253,7 @@ public class Irs {
         return mul(multiplicand, constant(multiplier));
     }
 
-    public static IrIntExpr mul(IrIntExpr multiplicand, IrIntExpr multiplier) {
+    private static IrIntExpr mulTwo(IrIntExpr multiplicand, IrIntExpr multiplier) {
         Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
         Integer multiplierConstant = IrUtil.getConstant(multiplier);
         if (multiplicandConstant != null) {
@@ -1286,6 +1286,21 @@ public class Irs {
         int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
         return new IrMul(multiplicand, multiplier, boundDomain(min, max));
+    }
+
+    public static IrIntExpr mul(Collection<? extends IrIntExpr> multiplicands) {
+        return mul(multiplicands.toArray(new IrIntExpr[multiplicands.size()]));
+    }
+
+    public static IrIntExpr mul(IrIntExpr... multiplicands) {
+        if (multiplicands.length == 0) {
+            return One;
+        }
+        IrIntExpr product = multiplicands[0];
+        for (int i = 1; i < multiplicands.length; i++) {
+            product = mulTwo(product, multiplicands[i]);
+        }
+        return product;
     }
 
     public static IrIntExpr div(int dividend, IrIntExpr divisor) {
@@ -1395,6 +1410,15 @@ public class Irs {
                                 boundDomain(0, filter.size())),
                         count);
         }
+    }
+
+    public static IrIntExpr max(IrSetExpr set, int defaultValue) {
+        Domain domain = set.getEnv();
+        if (!set.getKer().isEmpty()) {
+            domain = domain.boundLow(set.getKer().getHighBound());
+        }
+        return new IrSetMax(set, defaultValue, set.getCard().getLowBound() > 0
+                ? domain : domain.insert(defaultValue));
     }
 
     public static IrIntExpr sum(IrSetExpr set) {

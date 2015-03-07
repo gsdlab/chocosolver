@@ -44,6 +44,7 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
+import org.clafer.ast.AstProduct;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
 import org.clafer.ast.AstRef;
@@ -80,6 +81,7 @@ import org.clafer.ast.analysis.Type;
 import org.clafer.ast.analysis.TypeAnalyzer;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Either;
+import org.clafer.collection.Monoid;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
@@ -104,6 +106,8 @@ import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import static org.clafer.ir.Irs.*;
+import org.clafer.ir.Product;
+import org.clafer.ir.Sum;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 
@@ -322,11 +326,7 @@ public class AstCompiler {
                  * inherits A. Let F be a mapping every B to its ancestor A.
                  * Enforce that F is an acyclic function.
                  */
-                List<AstClafer> types = new ArrayList<>();
-                for (AstClafer clafer : component) {
-                    types.add(clafer);
-                }
-                AstAbstractClafer unionType = (AstAbstractClafer) AstUtil.getLowestCommonSupertype(types);
+                AstAbstractClafer unionType = (AstAbstractClafer) AstUtil.getLowestCommonSupertype(component);
                 IrIntExpr[] edges = new IrIntExpr[getScope(unionType)];
                 IrIntExpr uninitialized = constant(edges.length);
                 Arrays.fill(edges, uninitialized);
@@ -867,7 +867,7 @@ public class AstCompiler {
     private final Map<AstRef, IrStringVar[]> refStrings = new HashMap<>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<>();
     private int countCount = 0;
-    private int sumCount = 0;
+    private int concatRefsCount = 0;
     private int localCount = 0;
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
@@ -1128,7 +1128,7 @@ public class AstCompiler {
                 if (setChildren.getEnv().getHighBound() >= parents.length) {
                     parents = Util.snoc(parents, constant(parents.length));
                 }
-                return joinFunction(setChildren, array(parentPointers.get(childrenType)), null);
+                return joinFunction(setChildren, parents, null);
             }
             throw new AstException();
         }
@@ -1179,6 +1179,10 @@ public class AstCompiler {
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
                 if (ref.getTargetType() instanceof AstStringClafer) {
+                    if ($setDeref.getCard().getHighBound() == 1) {
+                        IrStringExpr[] refs = Util.snoc(refStrings.get(ref), EmptyString);
+                        return element(refs, max($setDeref, refs.length - 1));
+                    }
                     throw new JoinSetWithStringException(ast, $setDeref.getCard());
                 }
                 // Why zero? The "take" var can contain unused.
@@ -1322,14 +1326,12 @@ public class AstCompiler {
             }
         }
 
-        @Override
-        public IrExpr visit(AstSum ast, Void a) {
-            AstSetExpr set = ast.getSet();
+        private IrIntExpr concatRefs(AstSetExpr set, Monoid<IrIntExpr> monoid) {
             AstClafer setType = getCommonSupertype(set).getClaferType();
             assert setType.hasRef();
             IrIntVar[] refs = refPointers.get(setType.getRef());
-
-            int count = sumCount++;
+            String name = monoid.getClass().getSimpleName();
+            int count = concatRefsCount++;
 
             IrBoolExpr[] members;
             if (set instanceof AstGlobal) {
@@ -1342,12 +1344,12 @@ public class AstCompiler {
                 }
                 IrSetExpr setSet = (IrSetExpr) $set;
                 if (setSet.getEnv().isEmpty()) {
-                    return Zero;
+                    return monoid.empty();
                 }
                 assert setSet.getEnv().getLowBound() >= 0;
                 members = new IrBoolExpr[setSet.getEnv().getHighBound() + 1];
                 for (int i = 0; i < members.length; i++) {
-                    members[i] = bool("SumMember" + count + "@" + i);
+                    members[i] = bool(name + "Member" + count + "@" + i);
                 }
                 module.addConstraint(boolChannel(members, setSet));
             }
@@ -1357,13 +1359,23 @@ public class AstCompiler {
             for (int i = 0; i < members.length; i++) {
                 Domain domain = refs[i].getDomain();
                 int uninitializedRef = getUninitalizedRef(setType.getRef().getTargetType());
-                // Score's use 0 as the uninitialized value.
-                domain = domain.remove(uninitializedRef).insert(0);
-                score[i] = domainInt("Score" + count + "@" + i, domain);
+                IrIntExpr identity = monoid.empty();
+                domain = domain.remove(uninitializedRef).union(identity.getDomain());
+                score[i] = domainInt(name + count + "@" + i, domain);
                 module.addConstraint(ifThenElse(members[i],
-                        equal(score[i], refs[i]), equal(score[i], 0)));
+                        equal(score[i], refs[i]), equal(score[i], identity)));
             }
-            return add(score);
+            return monoid.concat(score);
+        }
+
+        @Override
+        public IrExpr visit(AstSum ast, Void a) {
+            return concatRefs(ast.getSet(), Sum.Singleton);
+        }
+
+        @Override
+        public IrExpr visit(AstProduct ast, Void a) {
+            return concatRefs(ast.getSet(), Product.Singleton);
         }
 
         @Override

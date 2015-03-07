@@ -54,12 +54,12 @@ public class TypingConstraintTest {
             InstanceModel instance = solver.instance();
             for (InstanceClafer Ci : instance.getTopClafers(C)) {
                 for (InstanceClafer bi : Ci.getChildren(b)) {
-                    assertEquals(1, bi.getRef().getValue());
+                    assertEquals(1, bi.getRef());
                 }
             }
             for (InstanceClafer Di : instance.getTopClafers(D)) {
                 for (InstanceClafer bi : Di.getChildren(b)) {
-                    assertEquals(1, bi.getRef().getValue());
+                    assertEquals(1, bi.getRef());
                 }
             }
             count++;
@@ -102,7 +102,7 @@ public class TypingConstraintTest {
         while (solver.find()) {
             for (InstanceClafer Di : solver.instance().getTopClafers(D)) {
                 for (InstanceClafer di : Di.getChildren(d)) {
-                    assertEquals(1, di.getRef().getValue());
+                    assertEquals(1, di.getRef());
                 }
             }
             count++;
@@ -145,12 +145,12 @@ public class TypingConstraintTest {
         while (solver.find()) {
             for (InstanceClafer Ci : solver.instance().getTopClafers(C)) {
                 for (InstanceClafer ai : Ci.getChildren(a)) {
-                    assertEquals(1, ai.getRef().getValue());
+                    assertEquals(1, ai.getRef());
                 }
             }
             for (InstanceClafer Di : solver.instance().getTopClafers(D)) {
                 for (InstanceClafer ai : Di.getChildren(a)) {
-                    assertEquals(1, ai.getRef().getValue());
+                    assertEquals(1, ai.getRef());
                 }
             }
             count++;
@@ -186,10 +186,10 @@ public class TypingConstraintTest {
         int count = 0;
         while (solver.find()) {
             for (InstanceClafer Ci : solver.instance().getTopClafers(c)) {
-                assertEquals(1, Ci.getRef().getValue());
+                assertEquals(1, Ci.getRef());
             }
             for (InstanceClafer Di : solver.instance().getTopClafers(d)) {
-                assertEquals(1, Di.getRef().getValue());
+                assertEquals(1, Di.getRef());
             }
             count++;
         }
@@ -222,7 +222,7 @@ public class TypingConstraintTest {
         int count = 0;
         while (solver.find()) {
             for (InstanceClafer Ci : solver.instance().getTopClafers(c)) {
-                assertEquals(1, Ci.getRef().getValue());
+                assertEquals(1, Ci.getRef());
             }
             count++;
         }
@@ -257,10 +257,10 @@ public class TypingConstraintTest {
         int count = 0;
         while (solver.find()) {
             for (InstanceClafer Ci : solver.instance().getTopClafers(c)) {
-                assertEquals(1, Ci.getRef().getValue());
+                assertEquals(1, Ci.getRef());
             }
             for (InstanceClafer Di : solver.instance().getTopClafers(d)) {
-                assertEquals(1, Di.getRef().getValue());
+                assertEquals(1, Di.getRef());
             }
             count++;
         }

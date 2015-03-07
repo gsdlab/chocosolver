@@ -1,10 +1,10 @@
 package org.clafer.choco.constraint;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +12,6 @@ import org.clafer.test.TestReflection;
 import org.clafer.test.TestUtil;
 import static org.junit.Assert.*;
 import org.junit.internal.AssumptionViolatedException;
-import org.junit.runner.Runner;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
@@ -20,6 +19,7 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.util.ESat;
 
 /**
@@ -32,7 +32,7 @@ public class ConstraintQuickTest extends Suite {
     private final List<FrameworkMethod> checkMethods;
 
     public ConstraintQuickTest(Class<?> klass) throws Throwable {
-        super(klass, new ArrayList<Runner>());
+        super(klass, new ArrayList<>());
         this.parametersMethods = getTestClass().getAnnotatedMethods(Input.class);
         for (FrameworkMethod parameterMethod : parametersMethods) {
             if (!parameterMethod.isPublic()) {
@@ -222,13 +222,13 @@ public class ConstraintQuickTest extends Suite {
         void evaluate(boolean positive) throws Throwable {
             Solver solver = newSolver(testMethod, positive);
 
-            Class<?>[] parameters = testMethod.getMethod().getParameterTypes();
-            Annotation[][] annotations = testMethod.getMethod().getParameterAnnotations();
+            Parameter[] parameters = testMethod.getMethod().getParameters();
             Object[] args = new Object[parameters.length];
             for (int i = 0; i < args.length; i++) {
                 args[i] = TestReflection.randVar(
-                        annotations[i],
-                        parameters[i],
+                        parameters[i].getName(),
+                        parameters[i].getAnnotations(),
+                        parameters[i].getType(),
                         solver);
             }
             try {
@@ -239,8 +239,15 @@ public class ConstraintQuickTest extends Suite {
                 TestUtil.randomizeStrategy(solver);
                 ESat entailed = TestUtil.isEntailed(constraint);
                 if (ESat.FALSE.equals(entailed)) {
+                    String initial = null;
+                    for (Propagator<?> propagator : constraint.getPropagators()) {
+                        if (ESat.FALSE.equals(propagator.isEntailed())) {
+                            initial = propagator.toString();
+                        }
+                    }
                     if (solver.findSolution()) {
-                        fail("Did not expect a solution, found " + constraint);
+                        fail("Did not expect a solution for " + initial + ", found " + constraint);
+
                     }
                 } else if (solver.findSolution()) {
                     int solutions = 1;
@@ -252,7 +259,7 @@ public class ConstraintQuickTest extends Suite {
                         }
                     } while (solver.nextSolution() && solutions++ < 10);
                 } else if (ESat.TRUE.equals(entailed)) {
-                    fail("Expected at least one solution, " + constraint);
+                    fail("Expected at least one solution for " + constraint);
                 }
             } catch (AssumptionViolatedException e) {
                 // Continue

@@ -496,6 +496,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrSetMax ir, T a) {
+        IrSetExpr set = rewrite(ir.getSet(), a);
+        return changed(ir.getSet(), set)
+                ? max(set, ir.getDefaultValue())
+                : ir;
+    }
+
+    @Override
     public IrIntExpr visit(IrSetSum ir, T a) {
         IrSetExpr set = rewrite(ir.getSet(), a);
         return changed(ir.getSet(), set)

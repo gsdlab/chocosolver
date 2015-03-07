@@ -129,7 +129,7 @@ public class LinearEquationOptimizer {
         }
         if (max.ceil() * lcm < 50000 && min.floor() * lcm > -50000) {
             return new LinearEquation[]{
-                new LinearEquation(equation.getLeft().mul(lcm), equation.getOp(), equation.getRight().mul(lcm))
+                new LinearEquation(equation.getLeft().mul(lcm), equation.getOp(), equation.getRight().mul(lcm), false)
             };
         }
         long multiplier = Math.min(Math.abs(50000 / max.ceil()), Math.abs(50000 / min.floor()));
@@ -160,8 +160,8 @@ public class LinearEquationOptimizer {
         switch (equation.getOp()) {
             case Equal:
                 return new LinearEquation[]{
-                    new LinearEquation(lte, Op.LessThanEqual, lR.ceil()),
-                    new LinearEquation(gte, Op.LessThanEqual, -gR.floor())};
+                    new LinearEquation(lte, Op.LessThanEqual, lR.ceil(), false),
+                    new LinearEquation(gte, Op.LessThanEqual, -gR.floor(), false)};
             case LessThanEqual:
                 return new LinearEquation[]{new LinearEquation(lte, Op.LessThanEqual, lR.ceil())};
             default:

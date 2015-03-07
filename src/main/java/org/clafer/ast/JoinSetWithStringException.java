@@ -11,10 +11,10 @@ public class JoinSetWithStringException extends AstException {
     public JoinSetWithStringException(AstSetExpr expr, Domain card) {
         super("Cannot join a non-singleton set with strings. For example:\n"
                 + "\n"
-                + "    A -> string 0..1\n"
+                + "    A -> string 1..2\n"
                 + "    [ A.ref = \"abc\" ]\n"
                 + "\n"
-                + "The expression \"A\" evaluates to a set of size 0 or 1. The join is forbidden.\n"
+                + "The expression \"A\" evaluates to a set of size 1 or 2. The join is forbidden.\n"
                 + "\n"
                 + "    A -> string 1..1\n"
                 + "    [ A.ref = \"abc\" ]\n"

@@ -39,7 +39,7 @@ public class ArithmeticTest {
             InstanceModel instance = solver.instance();
             for (InstanceClafer f : instance.getTopClafers(feature)) {
                 for (InstanceClafer c : f.getChildren(cost)) {
-                    assertEquals(2, c.getRef().getValue());
+                    assertEquals(2, c.getRef());
                 }
             }
             count++;
@@ -197,11 +197,11 @@ public class ArithmeticTest {
         /*
          * import Control.Monad
          * import Data.List
-         *       
+         *
          * solutions = genAs 2 ++ genAs 3
-         *  
+         *
          * genAs n = nub $ map sort $ replicateM n genA
-         *  
+         *
          * genA = do
          *     b1 <- [-2..2]
          *     b2 <- [b1..2]
@@ -222,15 +222,73 @@ public class ArithmeticTest {
             for (InstanceClafer ai : solver.instance().getTopClafers(a)) {
                 int sum = 0;
                 for (InstanceClafer bi : ai.getChildren(b)) {
-                    sum += (int) bi.getRef().getValue();
+                    sum += (int) bi.getRef();
                 }
                 for (InstanceClafer ti : ai.getChildren(total)) {
-                    assertEquals(sum, ti.getRef().getValue());
+                    assertEquals(sum, ti.getRef());
                 }
             }
             count++;
         }
         assertEquals(352, count);
+    }
+
+    /**
+     * <pre>
+     * A 2
+     *     B ->> Int 2..3
+     *     total -> int
+     *     [this.total.ref = product(this.B)]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testProduct() {
+        /*
+         * import Control.Monad
+         * import Data.List
+         * 
+         * solutions = genAs 2 ++ genAs 3
+         *
+         * genAs n = nub $ map sort $ replicateM n genA2B ++ replicateM n genA3B
+         *
+         * genA2B = do
+         *     b1 <- [-2..2]
+         *     b2 <- [b1..2]
+         *     totalCost <- [-2..2]
+         *     guard $ b1 * b2 == totalCost
+         *     return ([b1, b2], totalCost)
+         *
+         * genA3B = do
+         *     b1 <- [-2..2]
+         *     b2 <- [b1..2]
+         *     b3 <- [b2..2]
+         *     totalCost <- [-2..2]
+         *     guard $ b1 * b2 * b3 == totalCost
+         *     return ([b1, b2, b3], totalCost)
+         */
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(2, 3);
+        AstConcreteClafer b = a.addChild("B").refTo(IntType).withCard(2, 3);
+        AstConcreteClafer total = a.addChild("total").refToUnique(IntType).withCard(Mandatory);
+        a.addConstraint(equal(joinRef(join($this(), total)), product(join($this(), b))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(9).intLow(-2).intHigh(2));
+        int count = 0;
+        while (solver.find()) {
+            for (InstanceClafer ai : solver.instance().getTopClafers(a)) {
+                int product = 1;
+                for (InstanceClafer bi : ai.getChildren(b)) {
+                    product *= (int) bi.getRef();
+                }
+                for (InstanceClafer ti : ai.getChildren(total)) {
+                    assertEquals(product, ti.getRef());
+                }
+            }
+            count++;
+        }
+        // TODO: should be 3692 with perfect symmetry breaking
+        assertEquals(9842, count);
     }
 
     /**
@@ -267,7 +325,7 @@ public class ArithmeticTest {
         int count = 0;
         while (solver.find()) {
             for (InstanceClafer tc : solver.instance().getTopClafers(totalCost)) {
-                assertEquals(13, tc.getRef().getValue());
+                assertEquals(13, tc.getRef());
             }
             count++;
         }

@@ -69,7 +69,7 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
     @Override
     public ESat isEntailed() {
         for (SetVar var : relation) {
-            for (int i = var.getEnvelopeFirst(); i != SetVar.END; i = var.getEnvelopeNext()) {
+            for (int i = var.getKernelFirst(); i != SetVar.END; i = var.getKernelNext()) {
                 if (i < 0 || i >= relation.length) {
                     return ESat.FALSE;
                 }
@@ -110,10 +110,12 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
                 assert maximalClosure[val] == null;
                 maximalClosure[val] = reachable;
                 for (int i = var.getEnvelopeFirst(); i != SetVar.END; i = var.getEnvelopeNext()) {
-                    reachable.add(i);
-                    TIntSet reach = maximalClosure[i];
-                    if (reach != null) {
-                        reachable.addAll(reach);
+                    if (i >= 0 && i < relation.length) {
+                        reachable.add(i);
+                        TIntSet reach = maximalClosure[i];
+                        if (reach != null) {
+                            reachable.addAll(reach);
+                        }
                     }
                 }
             }
@@ -145,12 +147,14 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
 
         SetVar var = relation[vertex];
         for (int neighbour = var.getEnvelopeFirst(); neighbour != SetVar.END; neighbour = var.getEnvelopeNext()) {
-            Index neighbourIndex = vertexIndices.get(neighbour);
-            if (neighbourIndex == null) {
-                neighbourIndex = strongConnect(relation, neighbour, counter, vertexIndices, S, components);
-                vertexIndex.setLowIndexMin(neighbourIndex.getLowIndex());
-            } else if (S.contains(neighbour)) {
-                vertexIndex.setLowIndexMin(neighbourIndex.getIndex());
+            if (neighbour >= 0 && neighbour < relation.length) {
+                Index neighbourIndex = vertexIndices.get(neighbour);
+                if (neighbourIndex == null) {
+                    neighbourIndex = strongConnect(relation, neighbour, counter, vertexIndices, S, components);
+                    vertexIndex.setLowIndexMin(neighbourIndex.getLowIndex());
+                } else if (S.contains(neighbour)) {
+                    vertexIndex.setLowIndexMin(neighbourIndex.getIndex());
+                }
             }
         }
 

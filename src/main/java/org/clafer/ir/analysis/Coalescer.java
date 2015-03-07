@@ -80,7 +80,6 @@ import static org.clafer.ir.Irs.*;
 public class Coalescer {
 
     private Coalescer() {
-        System.out.println("joinRelation(singleton(");
     }
 
     public static Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesce(IrModule module) {

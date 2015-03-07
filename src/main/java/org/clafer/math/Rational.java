@@ -69,7 +69,7 @@ public class Rational implements Comparable<Rational> {
     }
 
     public boolean isNegative() {
-        return numerator > 0;
+        return numerator < 0;
     }
 
     public long ceil() {

@@ -1,7 +1,9 @@
 package org.clafer.compiler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
@@ -17,7 +19,6 @@ import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.choco.search.RandomSetDecisionStrategy;
 import org.clafer.choco.search.RandomSetValueSelector;
 import org.clafer.collection.Either;
-import org.clafer.collection.Maybe;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.graph.GraphUtil;
@@ -36,6 +37,7 @@ import org.clafer.scope.Scopable;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.limits.FailCounter;
 import org.chocosolver.solver.search.loop.monitors.SMF;
+import org.chocosolver.solver.search.strategy.ISF;
 import org.chocosolver.solver.search.strategy.IntStrategyFactory;
 import org.chocosolver.solver.search.strategy.SetStrategyFactory;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
@@ -125,40 +127,51 @@ public class ClaferCompiler {
     }
 
     @SafeVarargs
-    private static void set(Solver solver, Maybe<AbstractStrategy<?>>... strategies) {
-        AbstractStrategy<?>[] strats = Maybe.filterJust(strategies);
+    private static void set(Solver solver, Optional<AbstractStrategy<?>>... strategies) {
+        AbstractStrategy<?>[] strats = new AbstractStrategy<?>[strategies.length];
+        int j = 0;
+        for (Optional<AbstractStrategy<?>> strategy : strategies) {
+            if (strategy.isPresent()) {
+                strats[j++] = strategy.get();
+            }
+        }
+        strats = Arrays.copyOf(strats, j);
         if (strats.length > 0) {
             solver.set(strats);
+        } else {
+            // Give the solver a dummy strategy for trivial problems so the underlying Choco
+            // framework does not warn of no search strategy.
+            solver.set(ISF.lexico_LB(solver.ZERO));
         }
     }
 
-    private static Maybe<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOption options) {
+    private static Optional<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOption options) {
         if (vars.length == 0) {
-            return Maybe.nothing();
+            return Optional.empty();
         }
         switch (options.getStrategy()) {
             case PreferSmallerInstances:
-                return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.remove_first(vars));
+                return Optional.of(SetStrategyFactory.remove_first(vars));
             case PreferLargerInstances:
-                return Maybe.<AbstractStrategy<?>>just(SetStrategyFactory.force_first(vars));
+                return Optional.of(SetStrategyFactory.force_first(vars));
             case Random:
                 Random rand = new Random();
-                return Maybe.<AbstractStrategy<?>>just(new RandomSetDecisionStrategy(
+                return Optional.of(new RandomSetDecisionStrategy(
                         vars,
-                        new org.chocosolver.solver.search.strategy.selectors.variables.Random<SetVar>(System.nanoTime()),
+                        new org.chocosolver.solver.search.strategy.selectors.variables.Random<>(System.nanoTime()),
                         new RandomSetValueSelector(rand), rand));
             default:
                 throw new IllegalStateException("Unknown strategy: " + options.getStrategy());
         }
     }
 
-    private static Maybe<AbstractStrategy<?>> intStrategy(IntVar[] vars, ClaferOption options) {
+    private static Optional<AbstractStrategy<?>> intStrategy(IntVar[] vars, ClaferOption options) {
         if (vars.length == 0) {
-            return Maybe.nothing();
+            return Optional.empty();
         }
         switch (options.getStrategy()) {
             case Random:
-                return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.random_value(vars, System.nanoTime()));
+                return Optional.of(IntStrategyFactory.random_value(vars, System.nanoTime()));
             default:
                 return firstFailInDomainMin(vars);
         }
@@ -171,18 +184,18 @@ public class ClaferCompiler {
         }
     }
 
-    private static Maybe<AbstractStrategy<?>> firstFailInDomainMax(IntVar[] vars) {
+    private static Optional<AbstractStrategy<?>> firstFailInDomainMax(IntVar[] vars) {
         if (vars.length == 0) {
-            return Maybe.nothing();
+            return Optional.empty();
         }
-        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.minDom_UB(vars));
+        return Optional.of(IntStrategyFactory.minDom_UB(vars));
     }
 
-    private static Maybe<AbstractStrategy<?>> firstFailInDomainMin(IntVar[] vars) {
+    private static Optional<AbstractStrategy<?>> firstFailInDomainMin(IntVar[] vars) {
         if (vars.length == 0) {
-            return Maybe.nothing();
+            return Optional.empty();
         }
-        return Maybe.<AbstractStrategy<?>>just(IntStrategyFactory.minDom_LB(vars));
+        return Optional.of(IntStrategyFactory.minDom_LB(vars));
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {

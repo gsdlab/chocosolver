@@ -15,10 +15,10 @@ public class InstanceClafer {
 
     private final AstClafer type;
     private final int id;
-    private final InstanceRef ref;
+    private final Object ref;
     private final InstanceClafer[] children;
 
-    public InstanceClafer(AstClafer type, int id, InstanceRef ref, InstanceClafer... children) {
+    public InstanceClafer(AstClafer type, int id, Object ref, InstanceClafer... children) {
         this.type = Check.notNull(type);
         this.id = id;
         this.ref = ref;
@@ -37,7 +37,7 @@ public class InstanceClafer {
         return ref != null;
     }
 
-    public InstanceRef getRef() {
+    public Object getRef() {
         return ref;
     }
 
@@ -48,11 +48,11 @@ public class InstanceClafer {
     public InstanceClafer[] getChildren() {
         return children;
     }
-    
+
     public InstanceClafer[] getChildren(AstConcreteClafer type) {
         List<InstanceClafer> typedChildren = new ArrayList<>();
-        for(InstanceClafer child : children) {
-            if(type.equals(child.getType())) {
+        for (InstanceClafer child : children) {
+            if (type.equals(child.getType())) {
                 typedChildren.add(child);
             }
         }
@@ -79,9 +79,15 @@ public class InstanceClafer {
     }
 
     private void print(String indent, Appendable out) throws IOException {
-        out.append(indent).append(type.getName()).append("#").append(Integer.toString(id));
-        if(hasRef()) {
-            out.append(" = ").append(ref.toString());
+        out.append(indent).append(getType().getName()).append('#').append(Integer.toString(getId()));
+        if (hasRef()) {
+            out.append(" = ");
+            if (getRef() instanceof InstanceClafer) {
+                InstanceClafer refClafer = (InstanceClafer) getRef();
+                out.append(refClafer.getType().getName()).append('#').append(Integer.toString(refClafer.getId()));
+            } else {
+                out.append(getRef().toString());
+            }
         }
         out.append('\n');
         for (InstanceClafer child : getChildren()) {

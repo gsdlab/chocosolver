@@ -1,4 +1,4 @@
-scope({c0_Author:2, c0_Person:2, c0_authors:2, c0_books:2, c0_dob:2, c0_name:2, c0_page:2});
+scope({c0_Author:2, c0_Person:2, c0_authors:2, c0_books:2, c0_dob:2, c0_name:2, c0_page:4});
 defaultScope(1);
 intRange(-8, 7);
 stringLength(16);
