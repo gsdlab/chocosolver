@@ -11,6 +11,7 @@ import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.Asts;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
+import org.clafer.scope.ScopeBuilder;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.Scriptable;
 
@@ -20,15 +21,14 @@ import org.mozilla.javascript.Scriptable;
  */
 public class JavascriptContext {
 
-    private final Map<String, Integer> scope = new HashMap<>();
-    private final List<Objective> objectives = new ArrayList<>(0);
-    private int defaultScope = 1;
-    private int intLow = -16;
-    private int intHigh = 16;
-    private int stringLength = 10;
-    private char charLow = 0x20;
-    private char charHigh = 0x7e;
     private final AstModel model = Asts.newModel();
+    private final Map<String, Integer> scope = new HashMap<>();
+    private final ScopeBuilder scopeBuilder = Scope.builder();
+    private final List<Objective> objectives = new ArrayList<>(0);
+
+    public AstModel getModel() {
+        return model;
+    }
 
     public void setScope(Map<String, Number> scope) {
         for (Entry<String, Number> entry : scope.entrySet()) {
@@ -38,33 +38,23 @@ public class JavascriptContext {
     }
 
     public void setDefaultScope(int defaultScope) {
-        if (defaultScope < 1) {
-            throw new IllegalArgumentException();
-        }
-        this.defaultScope = defaultScope;
+        scopeBuilder.defaultScope(defaultScope);
     }
 
     public void setIntRange(int intLow, int intHigh) {
-        if (intLow > intHigh) {
-            throw new IllegalArgumentException();
-        }
-        this.intLow = intLow;
-        this.intHigh = intHigh;
+        scopeBuilder.intLow(intLow).intHigh(intHigh);
+    }
+
+    public void setMulRange(int mulLow, int mulHigh) {
+        scopeBuilder.mulLow(mulLow).mulHigh(mulHigh);
     }
 
     public void setStringLength(int stringLength) {
-        if (stringLength < 0) {
-            throw new IllegalArgumentException();
-        }
-        this.stringLength = stringLength;
+        scopeBuilder.stringLength(stringLength);
     }
 
     public void setCharRange(char charLow, char charHigh) {
-        if (charLow > charHigh) {
-            throw new IllegalArgumentException();
-        }
-        this.charLow = charLow;
-        this.charHigh = charHigh;
+        scopeBuilder.charLow(charLow).charHigh(charHigh);
     }
 
     public Scope getScope(Scriptable engine) {
@@ -84,10 +74,9 @@ public class JavascriptContext {
                 throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\", "
                         + ".");
             }
-            resolvedScope.put(clafer, entry.getValue());
+            scopeBuilder.setScope(clafer, entry.getValue());
         }
-        return new Scope(resolvedScope, defaultScope, intLow, intHigh,
-                stringLength, charLow, charHigh);
+        return scopeBuilder.toScope();
     }
 
     public void addMaximizeObjective(AstSetExpr expr) {
@@ -100,9 +89,5 @@ public class JavascriptContext {
 
     public Objective[] getObjectives() {
         return objectives.toArray(new Objective[objectives.size()]);
-    }
-
-    public AstModel getModel() {
-        return model;
     }
 }

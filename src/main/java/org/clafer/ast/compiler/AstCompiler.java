@@ -92,6 +92,7 @@ import org.clafer.graph.Vertex;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntArrayExpr;
@@ -110,6 +111,7 @@ import org.clafer.ir.Product;
 import org.clafer.ir.Sum;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
+import org.clafer.scope.ScopeBuilder;
 
 /**
  * Compile from AST to IR.
@@ -1310,11 +1312,7 @@ public class AstCompiler {
                 case Sub:
                     return sub(operands);
                 case Mul:
-                    IrIntExpr product = operands[0];
-                    for (int i = 1; i < operands.length; i++) {
-                        product = mul(product, operands[i]);
-                    }
-                    return product;
+                    return mul(operands, getMulRange());
                 case Div:
                     IrIntExpr quotient = operands[0];
                     for (int i = 1; i < operands.length; i++) {
@@ -1375,7 +1373,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstProduct ast, Void a) {
-            return concatRefs(ast.getSet(), Product.Singleton);
+            return concatRefs(ast.getSet(), new Product(getMulRange()));
         }
 
         @Override
@@ -1543,7 +1541,7 @@ public class AstCompiler {
                 @SuppressWarnings("unchecked")
                 Triple<AstLocal, IrIntExpr, IrBoolExpr>[] labeledPermutation = new Triple[decl.getLocals().length];
                 for (int i = 0; i < labeledPermutation.length; i++) {
-                    labeledPermutation[i] = new Triple<AstLocal, IrIntExpr, IrBoolExpr>(
+                    labeledPermutation[i] = new Triple<>(
                             decl.getLocals()[i], intBody, True);
                 }
                 @SuppressWarnings("unchecked")
@@ -1559,10 +1557,10 @@ public class AstCompiler {
                 @SuppressWarnings("unchecked")
                 Pair<IrIntExpr, IrBoolExpr>[] members = new Pair[env.getHighBound() + 1];
                 for (int i = 0; i < env.getLowBound(); i++) {
-                    members[i] = new Pair<IrIntExpr, IrBoolExpr>(constant(i), False);
+                    members[i] = new Pair<>(constant(i), False);
                 }
                 for (int i = env.getLowBound(); i <= env.getHighBound(); i++) {
-                    members[i] = new Pair<IrIntExpr, IrBoolExpr>(constant(i),
+                    members[i] = new Pair<>(constant(i),
                             ker.contains(i) ? True
                                     : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
                 }
@@ -1881,6 +1879,16 @@ public class AstCompiler {
 
     private int getScope(AstClafer clafer) {
         return analysis.getScope().getScope(clafer);
+    }
+
+    private Domain getIntRange() {
+        Scope scope = analysis.getScope();
+        return Domains.boundDomain(scope.getIntLow(), scope.getIntHigh());
+    }
+
+    private Domain getMulRange() {
+        Scope scope = analysis.getScope();
+        return Domains.boundDomain(scope.getMulLow(), scope.getMulHigh());
     }
 
     private Format getFormat(AstClafer clafer) {

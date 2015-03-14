@@ -457,7 +457,7 @@ public abstract class IrRewriter<T>
         IrIntExpr multiplicand = rewrite(ir.getMultiplicand(), a);
         IrIntExpr multiplier = rewrite(ir.getMultiplier(), a);
         return changed(ir.getMultiplicand(), multiplicand) || changed(ir.getMultiplier(), multiplier)
-                ? mul(multiplicand, multiplier)
+                ? mul(multiplicand, multiplier, ir.getIntRange())
                 : ir;
     }
 

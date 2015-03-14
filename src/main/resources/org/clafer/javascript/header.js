@@ -3,6 +3,7 @@ importClass(Packages.org.clafer.ast.Asts);
 var scope = rc.setScope.bind(rc);
 var defaultScope = rc.setDefaultScope.bind(rc);
 var intRange = rc.setIntRange.bind(rc);
+var mulRange = rc.setMulRange.bind(rc);
 var stringLength = rc.setStringLength.bind(rc);
 var charRange = rc.setCharRange.bind(rc);
 var Clafer = rc.getModel().addChild.bind(rc.getModel());

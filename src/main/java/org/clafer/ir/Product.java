@@ -1,6 +1,8 @@
 package org.clafer.ir;
 
 import org.clafer.collection.Monoid;
+import org.clafer.common.Check;
+import org.clafer.domain.Domain;
 import static org.clafer.ir.Irs.One;
 import static org.clafer.ir.Irs.mul;
 
@@ -10,9 +12,10 @@ import static org.clafer.ir.Irs.mul;
  */
 public class Product implements Monoid<IrIntExpr> {
 
-    public static final Product Singleton = new Product();
+    private final Domain intRange;
 
-    private Product() {
+    public Product(Domain intRange) {
+        this.intRange = Check.notNull(intRange);
     }
 
     @Override
@@ -22,11 +25,11 @@ public class Product implements Monoid<IrIntExpr> {
 
     @Override
     public IrIntExpr append(IrIntExpr a, IrIntExpr b) {
-        return mul(a, b);
+        return mul(a, b, intRange);
     }
 
     @Override
     public IrIntExpr concat(IrIntExpr... ts) {
-        return mul(ts);
+        return mul(ts, intRange);
     }
 }

@@ -78,6 +78,7 @@ public class Scope implements Scopable {
     private final Map<AstClafer, Integer> scopes;
     private final int defaultScope;
     private final int intLow, intHigh;
+    private final int mulLow, mulHigh;
     private final int stringLength;
     private final char charLow, charHigh;
 
@@ -89,12 +90,16 @@ public class Scope implements Scopable {
      * @param defaultScope the scope for unspecified Clafers
      * @param intLow the lowest (inclusive) integer used for solving
      * @param intHigh the highest (inclusive) integer used for solving
+     * @param mulLow the lowest (inclusive) integer used for solving
+     * multiplication
+     * @param mulHigh the highest (inclusive) integer used for solving
+     * multiplication
      * @param stringLength the longest (inclusive) string used for solving
      * @param charLow the lowest (inclusive) character used for solving
      * @param charHigh the highest (inclusive) character used for solving
      */
     public Scope(Map<AstClafer, Integer> scopes, int defaultScope, int intLow, int intHigh,
-            int stringLength, char charLow, char charHigh) {
+            int mulLow, int mulHigh, int stringLength, char charLow, char charHigh) {
         if (defaultScope <= 0) {
             throw new IllegalArgumentException("Default scope must be positive");
         }
@@ -106,6 +111,9 @@ public class Scope implements Scopable {
         if (intLow > intHigh) {
             throw new IllegalArgumentException("intLow(" + intLow + ") > intHigh(" + intHigh + ")");
         }
+        if (mulLow > mulHigh) {
+            throw new IllegalArgumentException("mulLow(" + mulLow + ") > mulHigh(" + mulHigh + ")");
+        }
         if (stringLength < 0) {
             throw new IllegalArgumentException("stringLength cannot be negative");
         }
@@ -116,6 +124,8 @@ public class Scope implements Scopable {
         this.defaultScope = defaultScope;
         this.intLow = intLow;
         this.intHigh = intHigh;
+        this.mulLow = mulLow;
+        this.mulHigh = mulHigh;
         this.stringLength = stringLength;
         this.charLow = charLow;
         this.charHigh = charHigh;
@@ -168,6 +178,24 @@ public class Scope implements Scopable {
      */
     public int getIntHigh() {
         return intHigh;
+    }
+
+    /**
+     * Returns the lowest (inclusive) integer used for solving multiplication.
+     *
+     * @return the lowest integer
+     */
+    public int getMulLow() {
+        return mulLow;
+    }
+
+    /**
+     * Returns the highest (inclusive) integer used for solving multiplication.
+     *
+     * @return the highest integer
+     */
+    public int getMulHigh() {
+        return mulHigh;
     }
 
     /**
@@ -294,7 +322,7 @@ public class Scope implements Scopable {
      */
     public ScopeBuilder toBuilder() {
         return new ScopeBuilder(scopes, defaultScope, intLow, intHigh,
-                stringLength, charLow, charHigh);
+                mulLow, mulHigh, stringLength, charLow, charHigh);
     }
 
     /**

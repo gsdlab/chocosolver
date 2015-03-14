@@ -635,7 +635,7 @@ public class SetArithmeticTest {
 
         AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
         AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(Mandatory);
-        a.addConstraint(equal(sum(join($this(), b)), 8));
+        a.addConstraint(equal(product(join($this(), b)), 8));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);
@@ -657,6 +657,25 @@ public class SetArithmeticTest {
         a.addConstraint(equal(product(join($this(), b)), 8));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(6).intLow(-8).intHigh(8));
+        assertEquals(54, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 1..2
+     *     B -> int 2..3
+     *     [ product B = 8 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testProductSetLargeIntRange() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 2);
+        AstConcreteClafer b = a.addChild("B").refToUnique(IntType).withCard(2, 3);
+        a.addConstraint(equal(product(join($this(), b)), 8));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(6).intLow(-20000).intHigh(20000));
         assertEquals(54, solver.allInstances().length);
     }
 }
