@@ -111,6 +111,7 @@ import org.chocosolver.solver.variables.CStringVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
+import org.clafer.ir.IrMod;
 import org.clafer.ir.IrSetMax;
 
 /**
@@ -1218,6 +1219,18 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrMod ir, IntVar reify) {
+            IrIntExpr dividend = ir.getDividend();
+            IrIntExpr divisor = ir.getDivisor();
+            if (reify == null) {
+                IntVar remainder = numIntVar("Mod", ir.getDomain());
+                post(_mod(compile(dividend), compile(divisor), remainder));
+                return remainder;
+            }
+            return _mod(compile(dividend), compile(divisor), reify);
+        }
+
+        @Override
         public Object visit(IrElement ir, IntVar reify) {
             if (reify == null) {
                 IntVar element = numIntVar("Element", ir.getDomain());
@@ -1741,6 +1754,13 @@ public class IrCompiler {
             divisor.getSolver().post(_arithm(divisor, "!=", 0));
         }
         return ICF.eucl_div(dividend, divisor, quotient);
+    }
+
+    private static Constraint _mod(IntVar dividend, IntVar divisor, IntVar remainder) {
+        if (divisor.contains(0)) {
+            divisor.getSolver().post(_arithm(divisor, "!=", 0));
+        }
+        return ICF.mod(dividend, divisor, remainder);
     }
 
     private static Constraint _arithm(IntVar var1, String op1, IntVar var2, String op2, int cste) {

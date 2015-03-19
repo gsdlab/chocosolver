@@ -40,6 +40,7 @@ import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
+import org.clafer.ast.AstMod;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstParentRelation;
@@ -1322,6 +1323,11 @@ public class AstCompiler {
                 default:
                     throw new AstException();
             }
+        }
+
+        @Override
+        public IrExpr visit(AstMod ast, Void a) {
+            return mod(asInt(compile(ast.getDividend())), asInt(compile(ast.getDivisor())));
         }
 
         private IrIntExpr concatRefs(AstSetExpr set, Monoid<IrIntExpr> monoid) {

@@ -35,6 +35,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstArithm ast, A a);
 
+    public B visit(AstMod ast, A a);
+
     public B visit(AstSum ast, A a);
 
     public B visit(AstProduct ast, A a);

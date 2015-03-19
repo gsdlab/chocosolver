@@ -471,6 +471,15 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntExpr visit(IrMod ir, T a) {
+        IrIntExpr dividend = rewrite(ir.getDividend(), a);
+        IrIntExpr divisor = rewrite(ir.getDivisor(), a);
+        return changed(ir.getDividend(), dividend) || changed(ir.getDivisor(), divisor)
+                ? mod(dividend, divisor)
+                : ir;
+    }
+
+    @Override
     public IrIntExpr visit(IrElement ir, T a) {
         IrIntArrayExpr array = rewrite(ir.getArray(), a);
         IrIntExpr index = rewrite(ir.getIndex(), a);

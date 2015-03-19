@@ -6,7 +6,7 @@ import static org.clafer.ir.Irs.add;
 
 /**
  *
- * @author jliang
+ * @author jimmy
  */
 public class Sum implements Monoid<IrIntExpr> {
 

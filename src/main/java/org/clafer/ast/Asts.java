@@ -178,6 +178,10 @@ public class Asts {
         return arithm(AstArithm.Op.Div, divisors);
     }
 
+    public static AstSetExpr mod(AstSetExpr dividend, AstSetExpr divisor) {
+        return new AstMod(dividend, divisor);
+    }
+
     public static AstSetExpr sum(AstSetExpr set) {
         return new AstSum(set);
     }

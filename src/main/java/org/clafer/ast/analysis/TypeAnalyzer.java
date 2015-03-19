@@ -34,6 +34,7 @@ import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstMinus;
+import org.clafer.ast.AstMod;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
@@ -377,6 +378,16 @@ public class TypeAnalyzer implements Analyzer {
                 }
             }
             return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstMod ast, Void a) {
+            TypedExpr<AstSetExpr> dividend = typeCheck(ast.getDividend());
+            TypedExpr<AstSetExpr> divisor = typeCheck(ast.getDivisor());
+            if (dividend.getType().isInt() && divisor.getType().isInt()) {
+                return put(IntType, mod(dividend.getExpr(), divisor.getExpr()));
+            }
+            throw new TypeException("Cannot " + dividend.getType() + " % " + divisor.getType());
         }
 
         @Override

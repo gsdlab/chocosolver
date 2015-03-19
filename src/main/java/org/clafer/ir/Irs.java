@@ -1342,13 +1342,30 @@ public class Irs {
         if (dividendConstant != null && divisorConstant != null) {
             return constant(dividendConstant / divisorConstant);
         }
-        int low1 = dividend.getDomain().getLowBound();
-        int high1 = dividend.getDomain().getHighBound();
-        int low2 = divisor.getDomain().getLowBound();
-        int high2 = divisor.getDomain().getHighBound();
-        int min = Util.min(low1, -low1, high1, -high1);
-        int max = Util.max(low1, -low1, high1, -high1);
+        int low = dividend.getDomain().getLowBound();
+        int high = dividend.getDomain().getHighBound();
+        int min = Util.min(low, -low, high, -high);
+        int max = Util.max(low, -low, high, -high);
         return new IrDiv(dividend, divisor, boundDomain(min, max));
+    }
+
+    public static IrIntExpr mod(IrIntExpr dividend, IrIntExpr divisor) {
+        Integer dividendConstant = IrUtil.getConstant(dividend);
+        Integer divisorConstant = IrUtil.getConstant(divisor);
+        if (dividendConstant != null && dividendConstant == 0) {
+            return dividend;
+        }
+        if (divisorConstant != null && divisorConstant == 1) {
+            return dividend;
+        }
+        if (dividendConstant != null && divisorConstant != null) {
+            return constant(dividendConstant / divisorConstant);
+        }
+        int low = divisor.getDomain().getLowBound();
+        int high = divisor.getDomain().getHighBound();
+        int min = Math.min(-Math.abs(low), -Math.abs(high));
+        int max = Math.max(Math.abs(low), Math.abs(high));
+        return new IrMod(dividend, divisor, boundDomain(min, max));
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {
