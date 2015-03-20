@@ -90,11 +90,11 @@ public class TestReflection {
         }
     }
 
-    public static Object randIrVar(Annotation[] annotations, Class<?> type, IrModule module) {
-        return randIrVar(annotations, type, module, null);
+    public static Object randIrVar(String name, Annotation[] annotations, Class<?> type, IrModule module) {
+        return randIrVar(name, annotations, type, module, null);
     }
 
-    public static Object randIrVar(Annotation[] annotations, Class<?> type, IrModule module, Integer sameLength) {
+    public static Object randIrVar(String name, Annotation[] annotations, Class<?> type, IrModule module, Integer sameLength) {
         int low = hasAnnotation(Positive.class, annotations) ? 0 : -4;
         int high = 4;
         if (IrBoolVar.class.equals(type)) {
@@ -102,7 +102,7 @@ public class TestReflection {
             module.addVariable(var);
             return var;
         } else if (IrIntVar.class.equals(type)) {
-            IrVar var = randIrIntVar("Int", low, high);
+            IrVar var = randIrIntVar(name, low, high);
             module.addVariable(var);
             return var;
         } else if (IrSetVar.class.equals(type)) {
@@ -134,15 +134,15 @@ public class TestReflection {
         } else if (type.isArray()) {
             int length
                     = sameLength == null
-                    ? hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3)
-                    : sameLength;
+                            ? hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3)
+                            : sameLength;
             Integer recurSameLength = null;
             if (hasAnnotation(SameLength.class, annotations)) {
                 recurSameLength = hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3);
             }
             Object array = Array.newInstance(type.getComponentType(), length);
             for (int i = 0; i < length; i++) {
-                Array.set(array, i, randIrVar(annotations, type.getComponentType(), module, recurSameLength));
+                Array.set(array, i, randIrVar(name + "[" + i + "]", annotations, type.getComponentType(), module, recurSameLength));
             }
             return array;
         }
@@ -179,8 +179,8 @@ public class TestReflection {
         } else if (type.isArray()) {
             int length
                     = sameLength == null
-                    ? hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3)
-                    : sameLength;
+                            ? hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3)
+                            : sameLength;
             Integer recurSameLength = null;
             if (hasAnnotation(SameLength.class, annotations)) {
                 recurSameLength = hasAnnotation(NonEmpty.class, annotations) ? randInt(1, 3) : randInt(0, 3);
