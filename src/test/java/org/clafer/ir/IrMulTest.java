@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.IntVar;
+import org.clafer.domain.Domains;
 
 /**
  *
@@ -17,7 +18,7 @@ public class IrMulTest {
 
     @Test(timeout = 60000)
     public IrBoolExpr setup(IrIntVar multiplicand, IrIntVar multiplier, IrIntVar product) {
-        return equal(mul(multiplicand, multiplier), product);
+        return equal(mul(multiplicand, multiplier, Domains.Unbounded), product);
     }
 
     @Solution

@@ -47,7 +47,7 @@ public class ScopeAnalyzerTest {
 
         Analysis analysis = new ScopeAnalyzer().analyze(
                 new Analysis(model,
-                        new Scope(scope, 2, -16, 16, 10, Character.MIN_VALUE, Character.MAX_VALUE)
+                        new Scope(scope, 2, -16, 16, -16, 16, 10, Character.MIN_VALUE, Character.MAX_VALUE)
                 ).setGlobalCardMap(globalCards));
 
         assertEquals(5, analysis.getScope(object)); // scope(parrot) + scope(robin)

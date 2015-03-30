@@ -1239,21 +1239,37 @@ public class Irs {
         return add(flip);
     }
 
-    public static IrIntExpr mul(int multiplicand, IrIntExpr multiplier) {
+    public static IrIntExpr mul(int multiplicand, IrIntExpr multiplier, Domain intRange) {
         if (multiplicand == 1) {
             return multiplier;
         }
-        return mul(constant(multiplicand), multiplier);
+        return mul(constant(multiplicand), multiplier, intRange);
     }
 
-    public static IrIntExpr mul(IrIntExpr multiplicand, int multiplier) {
+    public static IrIntExpr mul(IrIntExpr multiplicand, int multiplier, Domain intRange) {
         if (multiplier == 1) {
             return multiplicand;
         }
-        return mul(multiplicand, constant(multiplier));
+        return mul(multiplicand, constant(multiplier), intRange);
     }
 
-    private static IrIntExpr mulTwo(IrIntExpr multiplicand, IrIntExpr multiplier) {
+    private static int mulTwo(int a, int b) {
+        long ma = a;
+        long mb = b;
+        long mul = ma * mb;
+        if (mul > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        } else if (mul < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        return (int) mul;
+    }
+
+    public static IrIntExpr mul(Collection<? extends IrIntExpr> multiplicands, Domain intRange) {
+        return mul(multiplicands.toArray(new IrIntExpr[multiplicands.size()]), intRange);
+    }
+
+    public static IrIntExpr mul(IrIntExpr multiplicand, IrIntExpr multiplier, Domain intRange) {
         Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
         Integer multiplierConstant = IrUtil.getConstant(multiplier);
         if (multiplicandConstant != null) {
@@ -1283,22 +1299,22 @@ public class Irs {
         int high1 = multiplicand.getDomain().getHighBound();
         int low2 = multiplier.getDomain().getLowBound();
         int high2 = multiplier.getDomain().getHighBound();
-        int min = Util.min(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
-        int max = Util.max(low1 * low2, low1 * high2, high1 * low2, high1 * high2);
-        return new IrMul(multiplicand, multiplier, boundDomain(min, max));
+        int ll = mulTwo(low1, low2);
+        int lh = mulTwo(low1, high2);
+        int hl = mulTwo(high1, low2);
+        int hh = mulTwo(high1, high2);
+        int min = Util.min(ll, lh, hl, hh);
+        int max = Util.max(ll, lh, hl, hh);
+        return new IrMul(multiplicand, multiplier, intRange, intRange.boundBetween(min, max));
     }
 
-    public static IrIntExpr mul(Collection<? extends IrIntExpr> multiplicands) {
-        return mul(multiplicands.toArray(new IrIntExpr[multiplicands.size()]));
-    }
-
-    public static IrIntExpr mul(IrIntExpr... multiplicands) {
+    public static IrIntExpr mul(IrIntExpr[] multiplicands, Domain intRange) {
         if (multiplicands.length == 0) {
             return One;
         }
         IrIntExpr product = multiplicands[0];
         for (int i = 1; i < multiplicands.length; i++) {
-            product = mulTwo(product, multiplicands[i]);
+            product = mul(product, multiplicands[i], intRange);
         }
         return product;
     }
@@ -1326,13 +1342,30 @@ public class Irs {
         if (dividendConstant != null && divisorConstant != null) {
             return constant(dividendConstant / divisorConstant);
         }
-        int low1 = dividend.getDomain().getLowBound();
-        int high1 = dividend.getDomain().getHighBound();
-        int low2 = divisor.getDomain().getLowBound();
-        int high2 = divisor.getDomain().getHighBound();
-        int min = Util.min(low1, -low1, high1, -high1);
-        int max = Util.max(low1, -low1, high1, -high1);
+        int low = dividend.getDomain().getLowBound();
+        int high = dividend.getDomain().getHighBound();
+        int min = Util.min(low, -low, high, -high);
+        int max = Util.max(low, -low, high, -high);
         return new IrDiv(dividend, divisor, boundDomain(min, max));
+    }
+
+    public static IrIntExpr mod(IrIntExpr dividend, IrIntExpr divisor) {
+        Integer dividendConstant = IrUtil.getConstant(dividend);
+        Integer divisorConstant = IrUtil.getConstant(divisor);
+        if (dividendConstant != null && dividendConstant == 0) {
+            return dividend;
+        }
+        if (divisorConstant != null && divisorConstant == 1) {
+            return dividend;
+        }
+        if (dividendConstant != null && divisorConstant != null) {
+            return constant(dividendConstant / divisorConstant);
+        }
+        int low = divisor.getDomain().getLowBound();
+        int high = divisor.getDomain().getHighBound();
+        int min = Math.min(-Math.abs(low), -Math.abs(high));
+        int max = Math.max(Math.abs(low), Math.abs(high));
+        return new IrMod(dividend, divisor, boundDomain(min, max));
     }
 
     public static IrIntExpr element(IrIntExpr[] array, IrIntExpr index) {

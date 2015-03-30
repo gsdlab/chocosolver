@@ -457,7 +457,7 @@ public abstract class IrRewriter<T>
         IrIntExpr multiplicand = rewrite(ir.getMultiplicand(), a);
         IrIntExpr multiplier = rewrite(ir.getMultiplier(), a);
         return changed(ir.getMultiplicand(), multiplicand) || changed(ir.getMultiplier(), multiplier)
-                ? mul(multiplicand, multiplier)
+                ? mul(multiplicand, multiplier, ir.getIntRange())
                 : ir;
     }
 
@@ -467,6 +467,15 @@ public abstract class IrRewriter<T>
         IrIntExpr divisor = rewrite(ir.getDivisor(), a);
         return changed(ir.getDividend(), dividend) || changed(ir.getDivisor(), divisor)
                 ? div(dividend, divisor)
+                : ir;
+    }
+
+    @Override
+    public IrIntExpr visit(IrMod ir, T a) {
+        IrIntExpr dividend = rewrite(ir.getDividend(), a);
+        IrIntExpr divisor = rewrite(ir.getDivisor(), a);
+        return changed(ir.getDividend(), dividend) || changed(ir.getDivisor(), divisor)
+                ? mod(dividend, divisor)
                 : ir;
     }
 

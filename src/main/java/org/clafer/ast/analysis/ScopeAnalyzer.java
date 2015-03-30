@@ -44,6 +44,8 @@ public class ScopeAnalyzer implements Analyzer {
                 scope.getDefaultScope(),
                 scope.getIntLow(),
                 scope.getIntHigh(),
+                scope.getMulLow(),
+                scope.getMulHigh(),
                 scope.getStringLength(),
                 scope.getCharLow(),
                 scope.getCharHigh()));

@@ -323,6 +323,13 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrMod ir, T a) {
+        traverse(ir.getDividend(), a);
+        traverse(ir.getDivisor(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrElement ir, T a) {
         traverse(ir.getArray(), a);
         traverse(ir.getIndex(), a);

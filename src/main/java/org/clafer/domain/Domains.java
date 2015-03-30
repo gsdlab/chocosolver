@@ -19,6 +19,7 @@ public class Domains {
     public static final Domain ZeroDomain = FalseDomain;
     public static final Domain OneDomain = TrueDomain;
     public static final Domain ZeroOneDomain = TrueFalseDomain;
+    public static final Domain Unbounded = boundDomain(Integer.MIN_VALUE, Integer.MAX_VALUE);
 
     public static BoolDomain domain(boolean value) {
         return value ? TrueDomain : FalseDomain;

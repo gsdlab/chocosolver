@@ -29,10 +29,11 @@ public class LinearProgramTest {
         m.addConstraint(equal(
                 add(mul(101, joinRef(a)), mul(99, joinRef(b)), mul(199, joinRef(c)), mul(-100, joinRef(d))),
                 302));
-        ClaferOptimizer s = ClaferCompiler.compile(m, Scope.defaultScope(1).intLow(0).intHigh(4),
+        ClaferOptimizer s = ClaferCompiler.compile(m,
+                Scope.defaultScope(1).intLow(0).intHigh(4).mulLow(-200).mulHigh(200),
                 Objective.minimize(joinRef(d)));
         assertTrue(s.find());
-        assertEquals(2, s.optimalValues()[0]);
+        assertArrayEquals(new int[]{2}, s.optimalValues());
     }
 
     @Test(timeout = 60000)
@@ -44,10 +45,11 @@ public class LinearProgramTest {
         m.addConstraint(equal(
                 add(mul(12345, joinRef(a)), mul(23456, joinRef(b)), mul(-54321, joinRef(c))),
                 40737));
-        ClaferOptimizer s = ClaferCompiler.compile(m, Scope.defaultScope(1).intLow(0).intHigh(4),
+        ClaferOptimizer s = ClaferCompiler.compile(m,
+                Scope.defaultScope(1).intLow(0).intHigh(4).mulLow(-250000).mulHigh(250000),
                 Objective.minimize(joinRef(c)));
         assertTrue(s.find());
-        assertEquals(1, s.optimalValues()[0]);
+        assertArrayEquals(new int[]{1}, s.optimalValues());
     }
 
     @Test(timeout = 60000)
@@ -80,6 +82,6 @@ public class LinearProgramTest {
         ClaferOptimizer s = ClaferCompiler.compile(m, Scope.defaultScope(1).intLow(-32).intHigh(32),
                 Objective.minimize(joinRef(z)));
         assertTrue(s.find());
-        assertEquals(24, s.optimalValues()[0]);
+        assertArrayEquals(new int[]{24}, s.optimalValues());
     }
 }

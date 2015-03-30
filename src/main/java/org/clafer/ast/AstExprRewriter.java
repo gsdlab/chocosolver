@@ -99,6 +99,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstMod ast, T a) {
+        return mod(rewrite(ast.getDividend(), a), rewrite(ast.getDivisor(), a));
+    }
+
+    @Override
     public AstExpr visit(AstSum ast, T a) {
         return sum(rewrite(ast.getSet(), a));
     }

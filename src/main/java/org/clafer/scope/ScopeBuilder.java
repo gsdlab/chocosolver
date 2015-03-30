@@ -20,16 +20,20 @@ public class ScopeBuilder implements Scopable {
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
+    private Integer mulLow;
+    private Integer mulHigh;
     private int stringLength = 10;
     private char charLow = 0x20;
     private char charHigh = 0x7e;
 
     ScopeBuilder(Map<AstClafer, Integer> scope, int defaultScope, int intLow, int intHigh,
-            int stringLength, char charLow, char charHigh) {
+            Integer mulLow, Integer mulHigh, int stringLength, char charLow, char charHigh) {
         this.scope = new HashMap<>(scope);
         this.defaultScope = defaultScope;
         this.intLow = intLow;
         this.intHigh = intHigh;
+        this.mulLow = mulLow;
+        this.mulHigh = mulHigh;
         this.stringLength = stringLength;
         this.charLow = charLow;
         this.charHigh = charHigh;
@@ -86,8 +90,7 @@ public class ScopeBuilder implements Scopable {
      * @return this builder
      */
     public ScopeBuilder adjustDefaultScope(int adjust) {
-        defaultScope += adjust;
-        return this;
+        return defaultScope(defaultScope + adjust);
     }
 
     /**
@@ -110,8 +113,7 @@ public class ScopeBuilder implements Scopable {
      * @return this builder
      */
     public ScopeBuilder adjustIntLow(int adjust) {
-        intLow += adjust;
-        return this;
+        return intLow(intLow + adjust);
     }
 
     /**
@@ -134,7 +136,16 @@ public class ScopeBuilder implements Scopable {
      * @return this builder
      */
     public ScopeBuilder adjustIntHigh(int adjust) {
-        intHigh += adjust;
+        return intHigh(intHigh + adjust);
+    }
+
+    public ScopeBuilder mulLow(int mulLow) {
+        this.mulLow = mulLow;
+        return this;
+    }
+
+    public ScopeBuilder mulHigh(int mulHigh) {
+        this.mulHigh = mulHigh;
         return this;
     }
 
@@ -220,6 +231,8 @@ public class ScopeBuilder implements Scopable {
     @Override
     public Scope toScope() {
         return new Scope(scope, defaultScope, intLow, intHigh,
+                mulLow == null ? Math.min(-16, intLow) : mulLow,
+                mulHigh == null ? Math.max(16, intHigh) : mulHigh,
                 stringLength, charLow, charHigh);
     }
 }

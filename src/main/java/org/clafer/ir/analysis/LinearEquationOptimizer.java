@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCompare;
@@ -182,7 +183,7 @@ public class LinearEquationOptimizer {
             IrIntExpr[] addends = new IrIntExpr[cs.length];
             for (int j = 0; j < addends.length; j++) {
                 assert cs[j].isWhole();
-                addends[j] = mul((int) cs[j].getNumerator(), map.get(vs[j]));
+                addends[j] = mul((int) cs[j].getNumerator(), map.get(vs[j]), Domains.Unbounded);
             }
             assert right.isWhole();
             switch (round.getOp()) {
