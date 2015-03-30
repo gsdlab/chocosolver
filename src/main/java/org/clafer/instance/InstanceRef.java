@@ -29,6 +29,6 @@ public class InstanceRef {
     public String toString() {
         return type.isPrimitive()
                 ? value.toString()
-                : type.getName() + "#" + value;
+                : type.getName() + "$" + value;
     }
 }

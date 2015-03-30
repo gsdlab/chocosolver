@@ -79,12 +79,12 @@ public class InstanceClafer {
     }
 
     private void print(String indent, Appendable out) throws IOException {
-        out.append(indent).append(getType().getName()).append('#').append(Integer.toString(getId()));
+        out.append(indent).append(getType().getName()).append('$').append(Integer.toString(getId()));
         if (hasRef()) {
             out.append(" = ");
             if (getRef() instanceof InstanceClafer) {
                 InstanceClafer refClafer = (InstanceClafer) getRef();
-                out.append(refClafer.getType().getName()).append('#').append(Integer.toString(refClafer.getId()));
+                out.append(refClafer.getType().getName()).append('$').append(Integer.toString(refClafer.getId()));
             } else {
                 out.append(getRef().toString());
             }
