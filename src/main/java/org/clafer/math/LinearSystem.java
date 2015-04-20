@@ -88,27 +88,25 @@ public class LinearSystem {
             variableIds.put(variable, id++);
         }
         int slack = 0;
-        Rational[][] rows = new Rational[equations.length][id];
+        MatrixBuilder matrix = new MatrixBuilder(equations.length, id);
         Rational[] column = new Rational[equations.length];
 
-        for (int i = 0; i < rows.length; i++) {
+        for (int i = 0; i < matrix.numberOfRows(); i++) {
             LinearEquation equation = equations[i];
-            Rational[] row = rows[i];
-            Arrays.fill(row, Rational.Zero);
             if (equation.getOp().equals(Op.LessThanEqual)) {
-                row[slack++] = Rational.One;
+                matrix.set(i, slack++, Rational.One);
             }
             LinearFunction function = equation.getLeft();
             for (int j = 0; j < function.getCoefficients().length; j++) {
                 Rational coeffient = function.getCoefficients()[j];
                 int variable = variableIds.get(function.getVariables()[j]);
-                assert row[variable].isZero();
-                row[variable] = coeffient;
+                assert matrix.get(i, variable).isZero();
+                matrix.set(i, variable, coeffient);
             }
             column[i] = equation.getRight();
         }
 
-        Matrix a = new Matrix(rows);
+        Matrix a = matrix.toMatrix();
         Matrix b = new Matrix(column);
         Matrix p = a.addColumns(Matrix.identity(a.numberOfRows())).gaussJordanElimination()
                 .subColumns(a.numberOfColumns());
