@@ -7,6 +7,8 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -298,6 +300,10 @@ public class LinearSystem {
         return set;
     }
 
+    private int tieBreaker(LinearEquation eq1, LinearEquation eq2) {
+        return eq1.getVariables().length - eq2.getVariables().length;
+    }
+
     private boolean cost(LinearEquation equation,
             Map<Variable, Pair<Set<LinearEquation>, Rational>> bestLowBound,
             Map<Variable, Pair<Set<LinearEquation>, Rational>> bestHighBound,
@@ -465,10 +471,10 @@ public class LinearSystem {
         Set<LinearEquation> newEquations = new LinkedHashSet<>(
                 bestLowBound.size() + bestHighBound.size());
         for (Pair<Set<LinearEquation>, ?> b : bestLowBound.values()) {
-            newEquations.addAll(b.getFst());
+            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
         }
         for (Pair<Set<LinearEquation>, ?> b : bestHighBound.values()) {
-            newEquations.addAll(b.getFst());
+            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
         }
         return new LinearSystem(newEquations);
     }
