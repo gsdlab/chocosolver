@@ -1,7 +1,7 @@
 chocosolver
 ===========
 
-v0.3.9
+v0.3.10
 
 A backend for [Clafer](http://clafer.org) using the Choco 3.3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
 
@@ -10,13 +10,15 @@ Contributors
 
 * [Jimmy Liang](http://gsd.uwaterloo.ca/jliang), MSc. Candidate. Main developer.
 * [Michal Antkiewicz](http://gsd.uwaterloo.ca/mantkiew), Research Engineer. Release Management, testing.
+* [Alexandr Murashkin](http://gsd.uwaterloo.ca/amurashk). Stress testing.
+* [Jordan Ross](http://gsd.uwaterloo.ca/j25ross). Stress testing.
 
 Getting Clafer Tools
 --------------------
 
 ### Installation from binaries
 
-Binary distributions of the release 0.3.9 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions). 
+Binary distributions of the release 0.3.10 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions).
 
 1. download the binaries and unpack `<target directory>` of your choice
 2. add the `<target directory>` to your system path so that the executables can be found
@@ -25,20 +27,29 @@ Binary distributions of the release 0.3.9 of Clafer Tools for Windows, Mac, and 
 
 Prerequisites
 -------------
-* [Choco 3](https://github.com/chocoteam/choco3) v3.3.0
+* [Choco 3](https://github.com/chocoteam/choco3) v3.3.1-SNAPSHOT
 * [Java 8+](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Maven 3](http://maven.apache.org/) - Required for building the project.
 
 Optional
 --------
-* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below). v0.3.9.
+* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below). v0.3.10.
 
 Follow the installation instructions in the [README.md](https://github.com/gsdlab/clafer#clafer).
 
 Installation
 ------------
 
+Install Choco3 development snapshot:
+
+```bash
+git clone https://github.com/chocoteam/choco3.git -b develop
+cd choco3
+mvn install -DskipTests
+```
+
 Install the API and CLI.
+
 ```bash
 git clone https://github.com/gsdlab/chocosolver.git
 cd chocosolver
@@ -51,15 +62,15 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.9</version>
+    <version>0.3.10</version>
 </dependency>
 ```
-The CLI is installed to target/chocosolver-0.3.9-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.9-jar-with-dependencies.jar mymodel.js".
+The CLI is installed to target/chocosolver-0.3.10-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.10-jar-with-dependencies.jar mymodel.js".
 
 ### Important: Branches must correspond
 
-All related projects are following the *simultaneous release model*. 
-The branch `master` contains releases, whereas the branch `develop` contains code under development. 
+All related projects are following the *simultaneous release model*.
+The branch `master` contains releases, whereas the branch `develop` contains code under development.
 When building the tools, the branches should match.
 Releases from branches 'master` are guaranteed to work well together.
 Development versions from branches `develop` should work well together but this might not always be the case.
@@ -83,7 +94,7 @@ import static org.clafer.ast.Asts.*;
 
 public static void main(String[] args) {
     AstModel model = newModel();
-    
+
     AstConcreteClafer installation = model.addChild("Installation").withCard(Mandatory);
         // withCard(Mandatory) and withCard(1, 1) is the same. Pick the one you find more readable.
         AstConcreteClafer status = installation.addChild("Status").withCard(1, 1).withGroupCard(1, 1);
@@ -109,7 +120,7 @@ import org.clafer.scope.*;
 
 public static void main(String[] args) {
     ...
-    ClaferSolver solver = ClaferCompiler.compile(model, 
+    ClaferSolver solver = ClaferCompiler.compile(model,
         Scope.set(installation, 1).set(status, 1).set(ok, 1).set(bad, 1).set(time, 1)
         // Set the scope of every Clafer to 1. The code above could be replaced with
         // "Scope.defaultScope(1)".
@@ -128,16 +139,16 @@ Finding Optimal Instances
 -------------------------
 Optimizing on a single objective is supported. Suppose we wanted to optimize on the expression "sum time".
 ```java
-ClaferOptimizer solver = ClaferCompiler.compile(model, 
-    Scope.defaultScope(1).intLow(-16).intHigh(16), 
+ClaferOptimizer solver = ClaferCompiler.compile(model,
+    Scope.defaultScope(1).intLow(-16).intHigh(16),
     Objective.maximize(sum(global(time))));
 while (solver.find)) {
     // The instances where time is maximal.
     System.out.println(solver.instance());
 }
 
-solver = ClaferCompiler.compile(model, 
-    Scope.defaultScope(1).intLow(-16).intHigh(16), 
+solver = ClaferCompiler.compile(model,
+    Scope.defaultScope(1).intLow(-16).intHigh(16),
     Objective.minimize(sum(global(time))));
 while (solver.find()) {
     // The instances where time is minimal.
@@ -234,7 +245,7 @@ For this backend, the constraint is always unsatisfiable. For the Alloy backend,
 Possible Future Work?
 ---------------------
 * API for choosing branching strategy. Two reasons. The advantage of constraint programming is the ability to tune the solver to the specific problem. Choosing the right branching strategy can make a world of difference. Secondly, it allows the user to control the order of instances generated. For example, the user would like to see instances where Feature A is present and Feature B is absent before any other instances. This can be done by choosing the branching strategy.
-* Transitive closure, inverse 
+* Transitive closure, inverse
 * Reals
 
 Need help?
