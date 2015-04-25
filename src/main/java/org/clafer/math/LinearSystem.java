@@ -7,6 +7,8 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -88,27 +90,25 @@ public class LinearSystem {
             variableIds.put(variable, id++);
         }
         int slack = 0;
-        Rational[][] rows = new Rational[equations.length][id];
+        MatrixBuilder matrix = new MatrixBuilder(equations.length, id);
         Rational[] column = new Rational[equations.length];
 
-        for (int i = 0; i < rows.length; i++) {
+        for (int i = 0; i < matrix.numberOfRows(); i++) {
             LinearEquation equation = equations[i];
-            Rational[] row = rows[i];
-            Arrays.fill(row, Rational.Zero);
             if (equation.getOp().equals(Op.LessThanEqual)) {
-                row[slack++] = Rational.One;
+                matrix.set(i, slack++, Rational.One);
             }
             LinearFunction function = equation.getLeft();
             for (int j = 0; j < function.getCoefficients().length; j++) {
                 Rational coeffient = function.getCoefficients()[j];
                 int variable = variableIds.get(function.getVariables()[j]);
-                assert row[variable].isZero();
-                row[variable] = coeffient;
+                assert matrix.get(i, variable).isZero();
+                matrix.set(i, variable, coeffient);
             }
             column[i] = equation.getRight();
         }
 
-        Matrix a = new Matrix(rows);
+        Matrix a = matrix.toMatrix();
         Matrix b = new Matrix(column);
         Matrix p = a.addColumns(Matrix.identity(a.numberOfRows())).gaussJordanElimination()
                 .subColumns(a.numberOfColumns());
@@ -300,6 +300,10 @@ public class LinearSystem {
         return set;
     }
 
+    private int tieBreaker(LinearEquation eq1, LinearEquation eq2) {
+        return eq1.getVariables().length - eq2.getVariables().length;
+    }
+
     private boolean cost(LinearEquation equation,
             Map<Variable, Pair<Set<LinearEquation>, Rational>> bestLowBound,
             Map<Variable, Pair<Set<LinearEquation>, Rational>> bestHighBound,
@@ -467,10 +471,10 @@ public class LinearSystem {
         Set<LinearEquation> newEquations = new LinkedHashSet<>(
                 bestLowBound.size() + bestHighBound.size());
         for (Pair<Set<LinearEquation>, ?> b : bestLowBound.values()) {
-            newEquations.addAll(b.getFst());
+            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
         }
         for (Pair<Set<LinearEquation>, ?> b : bestHighBound.values()) {
-            newEquations.addAll(b.getFst());
+            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
         }
         return new LinearSystem(newEquations);
     }

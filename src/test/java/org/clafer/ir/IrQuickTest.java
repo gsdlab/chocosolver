@@ -5,6 +5,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -36,7 +37,7 @@ public class IrQuickTest extends Suite {
     private final List<FrameworkMethod> checkMethods;
 
     public IrQuickTest(Class<?> klass) throws Throwable {
-        super(klass, new ArrayList<Runner>());
+        super(klass, new ArrayList<>());
         this.solutionMethods = getTestClass().getAnnotatedMethods(Solution.class);
         for (FrameworkMethod solutionMethod : solutionMethods) {
             if (!solutionMethod.isPublic()) {
@@ -88,13 +89,13 @@ public class IrQuickTest extends Suite {
         void evaluate(boolean positive) throws Throwable {
             IrModule module = new IrModule();
 
-            Class<?>[] irParameters = testMethod.getMethod().getParameterTypes();
-            Annotation[][] irAnnotations = testMethod.getMethod().getParameterAnnotations();
+            Parameter[] irParameters = testMethod.getMethod().getParameters();
             Object[] irArgs = new Object[irParameters.length];
             for (int i = 0; i < irArgs.length; i++) {
                 irArgs[i] = TestReflection.randIrVar(
-                        irAnnotations[i],
-                        irParameters[i],
+                        irParameters[i].getName(),
+                        irParameters[i].getAnnotations(),
+                        irParameters[i].getType(),
                         module);
             }
             try {
@@ -110,11 +111,11 @@ public class IrQuickTest extends Suite {
                         checkMethod.invokeExplosively(target, irSolver);
                     }
 
-                        if (randomizeStrategy(irSolver).findSolution()) {
-                            do {
-                                solutions.add(TestReflection.value(irSolutionMap, irArgs));
-                            } while (irSolver.nextSolution());
-                        }
+                    if (randomizeStrategy(irSolver).findSolution()) {
+                        do {
+                            solutions.add(TestReflection.value(irSolutionMap, irArgs));
+                        } while (irSolver.nextSolution());
+                    }
                 } catch (UnsatisfiableException e) {
                     // Do nothing.
                 }

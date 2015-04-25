@@ -22,6 +22,6 @@ public class IrAddTest {
 
     @Solution
     public Constraint setup(IntVar[] is, IntVar sum) {
-        return ICF.sum(is, sum);
+        return is.length > 0 ? ICF.sum(is, sum) : ICF.arithm(sum, "=", 0);
     }
 }

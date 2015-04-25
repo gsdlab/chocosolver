@@ -633,13 +633,5 @@ public class PropUtilTest {
         @Override
         public void desactivatePropagator(Propagator propagator) {
         }
-
-        @Override
-        public void dynamicAddition(Constraint c, boolean cut) {
-        }
-
-        @Override
-        public void dynamicDeletion(Constraint c) {
-        }
     }
 }

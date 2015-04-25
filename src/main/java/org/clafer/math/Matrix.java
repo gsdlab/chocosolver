@@ -1,7 +1,6 @@
 package org.clafer.math;
 
 import gnu.trove.TCollections;
-import gnu.trove.function.TObjectFunction;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -43,7 +42,7 @@ public class Matrix {
         }
     }
 
-    private Matrix(TIntObjectHashMap<Rational>[] data, int columns) {
+    Matrix(TIntObjectHashMap<Rational>[] data, int columns) {
         for (TIntObjectHashMap<Rational> d : data) {
             for (Rational o : d.valueCollection()) {
                 if (o.isZero()) {
@@ -105,6 +104,11 @@ public class Matrix {
 
     public int numberOfColumns() {
         return numberOfColumns;
+    }
+
+    public Rational get(int row, int column) {
+        Rational value = rows[row].get(column);
+        return value == null ? Rational.Zero : value;
     }
 
     public boolean isSquare() {
@@ -274,19 +278,13 @@ public class Matrix {
                 TIntObjectHashMap<Rational> rowR = matrix[r];
                 final Rational divisor = rowR.get(lead);
                 assert divisor != null;
-                rowR.transformValues(new TObjectFunction<Rational, Rational>() {
-
-                    @Override
-                    public Rational execute(Rational value) {
-                        return value.div(divisor);
-                    }
-                });
+                rowR.transformValues(value -> value.div(divisor));
             }
+            TIntObjectHashMap<Rational> rowR = matrix[r];
             for (i = 0; i < rowCount; i++) {
                 if (i != r) {
                     // Subtract M[i, lead] multiplied by row r from row I
                     TIntObjectHashMap<Rational> rowI = matrix[i];
-                    TIntObjectHashMap<Rational> rowR = matrix[r];
                     Rational multiplier = rowI.get(lead);
                     if (multiplier != null) {
                         TIntObjectIterator<Rational> iter = rowR.iterator();
@@ -322,7 +320,7 @@ public class Matrix {
 
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(rows);
+        return Arrays.deepHashCode(rows) ^ numberOfColumns;
     }
 
     @Override

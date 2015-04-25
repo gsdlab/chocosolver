@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.clafer.collection.DisjointSets;
+import org.clafer.collection.Either;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
@@ -216,17 +218,28 @@ public class LinearEquationOptimizer {
         if (equations.size() > 0) {
             Map<Variable, IrIntVar> inverse = Util.inverse(map);
 
-            LinearSystem system = new LinearSystem(equations);
-            for (LinearEquation equation : system
-                    .equalityElimination()
-                    .fourierMotzkinElimination()
-                    .strengthenInequalities()
-                    .gaussJordanElimination()
-                    .addEquations(equations)
-                    .dominantElimination()
-                    .getEquations()) {
-                for (IrBoolExpr constraint : boolExpr(equation, inverse)) {
-                    constraints.add(constraint);
+            DisjointSets<Either<LinearEquation, Variable>> ds = new DisjointSets<>();
+            for (LinearEquation equation : equations) {
+                Either<LinearEquation, Variable> left = Either.left(equation);
+                for (Variable variable : equation.getVariables()) {
+                    Either<LinearEquation, Variable> right = Either.right(variable);
+                    ds.union(left, right);
+                }
+            }
+            for (Set<Either<LinearEquation, Variable>> component : ds.connectedComponents()) {
+                Set<LinearEquation> componentEquation = Either.filterLeft(component);
+                LinearSystem system = new LinearSystem(componentEquation);
+                for (LinearEquation equation : system
+                        .equalityElimination()
+                        .fourierMotzkinElimination()
+                        .strengthenInequalities()
+                        .gaussJordanElimination()
+                        .addEquations(componentEquation)
+                        .dominantElimination()
+                        .getEquations()) {
+                    for (IrBoolExpr constraint : boolExpr(equation, inverse)) {
+                        constraints.add(constraint);
+                    }
                 }
             }
             return new IrModule().addConstraints(constraints);

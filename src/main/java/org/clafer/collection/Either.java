@@ -2,7 +2,9 @@ package org.clafer.collection;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.clafer.common.Check;
 
 /**
@@ -32,6 +34,16 @@ public abstract class Either<A, B> {
 
     public static <A, B> List<A> filterLeft(List<Either<A, B>> eithers) {
         List<A> lefts = new ArrayList<>();
+        for (Either<A, B> either : eithers) {
+            if (either.isLeft()) {
+                lefts.add(either.getLeft());
+            }
+        }
+        return lefts;
+    }
+
+    public static <A, B> Set<A> filterLeft(Set<Either<A, B>> eithers) {
+        Set<A> lefts = new HashSet<>();
         for (Either<A, B> either : eithers) {
             if (either.isLeft()) {
                 lefts.add(either.getLeft());
