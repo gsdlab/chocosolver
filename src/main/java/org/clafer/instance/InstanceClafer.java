@@ -93,7 +93,7 @@ public class InstanceClafer {
         }
         out.append('\n');
         for (InstanceClafer child : getChildren()) {
-            child.print(indent + "    ", out);
+            child.print(indent + "  ", out);
         }
     }
 
