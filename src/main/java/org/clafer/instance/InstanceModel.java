@@ -2,6 +2,7 @@ package org.clafer.instance;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.common.Check;
@@ -62,6 +63,20 @@ public class InstanceModel {
         for (InstanceClafer top : topClafers) {
             top.print(out);
         }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof InstanceModel) {
+            InstanceModel other = (InstanceModel) obj;
+            return Arrays.equals(topClafers, other.topClafers);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(topClafers);
     }
 
     @Override

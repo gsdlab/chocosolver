@@ -10,6 +10,7 @@ import org.clafer.ast.analysis.InsufficientScopeException;
 import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
@@ -640,7 +641,7 @@ public class SimpleStructureTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testRefToAbstractToString() {
+    public void testRefToAbstract() {
         AstModel model = newModel();
 
         AstAbstractClafer a = model.addAbstract("A");
@@ -650,16 +651,31 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
 
-        Set<String> actual = new HashSet<>();
+        Set<InstanceModel> actual = new HashSet<>();
         for (InstanceModel instance : solver.allInstances()) {
-            actual.add(instance.toString());
+            actual.add(instance);
         }
-        Set<String> expected = new HashSet<>();
-        expected.add("B#0\nB#1\nC#0\nC#1\nD#0 = B#0\n");
-        expected.add("B#0\nB#1\nC#0\nC#1\nD#0 = B#1\n");
-        expected.add("B#0\nB#1\nC#0\nC#1\nD#0 = C#0\n");
-        expected.add("B#0\nB#1\nC#0\nC#1\nD#0 = C#1\n");
-        assertEquals(expected, actual);
+        InstanceClafer b0 = new InstanceClafer(b, 0, null);
+        InstanceClafer b1 = new InstanceClafer(b, 1, null);
+        InstanceClafer c0 = new InstanceClafer(c, 0, null);
+        InstanceClafer c1 = new InstanceClafer(c, 1, null);
+        {
+            InstanceClafer d0 = new InstanceClafer(d, 0, b0);
+            assertTrue(actual.contains(new InstanceModel(b0, b1, c0, c1, d0)));
+        }
+        {
+            InstanceClafer d0 = new InstanceClafer(d, 0, b1);
+            assertTrue(actual.contains(new InstanceModel(b0, b1, c0, c1, d0)));
+        }
+        {
+            InstanceClafer d0 = new InstanceClafer(d, 0, c0);
+            assertTrue(actual.contains(new InstanceModel(b0, b1, c0, c1, d0)));
+        }
+        {
+            InstanceClafer d0 = new InstanceClafer(d, 0, c1);
+            assertTrue(actual.contains(new InstanceModel(b0, b1, c0, c1, d0)));
+        }
+        assertEquals(4, actual.size());
     }
 
     /**

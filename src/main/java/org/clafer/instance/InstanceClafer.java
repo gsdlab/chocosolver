@@ -2,7 +2,9 @@ package org.clafer.instance;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.common.Check;
@@ -93,6 +95,21 @@ public class InstanceClafer {
         for (InstanceClafer child : getChildren()) {
             child.print(indent + "    ", out);
         }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof InstanceClafer) {
+            InstanceClafer other = (InstanceClafer) obj;
+            return type.equals(other.type) && id == other.id
+                    && Objects.equals(ref, other.ref) && Arrays.equals(children, other.children);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return type.hashCode() ^ id ^ Objects.hashCode(ref) ^ Arrays.hashCode(children);
     }
 
     @Override

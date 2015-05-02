@@ -15,7 +15,6 @@ public class InstanceModelTest {
 
     @Test
     public void testToString() {
-
         AstModel model = newModel();
         AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
@@ -24,6 +23,6 @@ public class InstanceModelTest {
         InstanceClafer featureInstance = new InstanceClafer(feature, 0, null, costInstance);
         InstanceModel modelInstance = new InstanceModel(featureInstance);
 
-        assertEquals("Feature#0\n    Cost#0 = 3\n", modelInstance.toString());
+        assertEquals("Feature$0\n    Cost$0 = 3\n", modelInstance.toString());
     }
 }
