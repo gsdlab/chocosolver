@@ -60,11 +60,24 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
             return false;
         }
         more &= count == 0 ? solveFirst() : solveNext();
+        if (solver.hasReachedLimit()) {
+            more = false;
+            if (count == 0 && firstSolution.hasBeenFound()) {
+                InstanceModel bestInstance = solutionMap.getInstance(firstSolution);
+                int bestObjectiveValue = score.isLeft()
+                        ? score.getLeft()
+                        : firstSolution.getIntVal(score.getRight());
+                throw new ReachedLimitBestKnownException(
+                        bestInstance,
+                        new int[]{bestObjectiveValue});
+            }
+            throw new ReachedLimitException();
+        }
         if (more) {
             if (count == 0) {
                 optimalValue = score.isLeft()
                         ? score.getLeft()
-                        : score.getRight().getValue();
+                        : firstSolution.getIntVal(score.getRight());
             }
             count++;
         }
@@ -98,16 +111,7 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
             solver.set(new SevenQueuesPropagatorEngine(solver));
         }
         solver.getSearchLoop().launch(false);
-        if (!firstSolution.hasBeenFound()) {
-            return false;
-        }
-        try {
-            firstSolution.restore();
-        } catch (ContradictionException e) {
-            // Should never happen because the solution should not be contradictory.
-            throw new IllegalStateException(e);
-        }
-        return true;
+        return firstSolution.hasBeenFound() && !solver.hasReachedLimit();
     }
 
     private boolean solveNext() {
@@ -115,8 +119,7 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
             return solver.nextSolution();
         }
         IntVar scoreVar = score.getRight();
-        int best = scoreVar.getValue();
-        // TODO: forbid the current solution from happening again.
+        int best = firstSolution.getIntVal(scoreVar);
         solver.getEngine().flush();
         solver.getSearchLoop().reset();
         solver.post(ICF.arithm(scoreVar, "=", best));
@@ -146,6 +149,9 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
     public InstanceModel instance() {
         if (count == 0 || !more) {
             throw new IllegalStateException("No instances. Did you forget to call find?");
+        }
+        if (count == 1) {
+            return solutionMap.getInstance(firstSolution);
         }
         return solutionMap.getInstance();
     }

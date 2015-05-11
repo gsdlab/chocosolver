@@ -51,6 +51,10 @@ public class ClaferSolver implements ClaferSearch {
         } else {
             more &= count == 0 ? solver.findSolution() : solver.nextSolution();
         }
+        if (solver.hasReachedLimit()) {
+            more = false;
+            throw new ReachedLimitException();
+        }
         if (more) {
             count++;
         }

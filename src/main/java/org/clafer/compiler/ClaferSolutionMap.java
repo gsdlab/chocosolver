@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.chocosolver.solver.search.solution.Solution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -33,6 +34,14 @@ public class ClaferSolutionMap {
     }
 
     public InstanceModel getInstance() {
+        return getInstance(irSolution);
+    }
+
+    public InstanceModel getInstance(Solution solution) {
+        return getInstance(irSolution.fromSolution(solution));
+    }
+
+    private InstanceModel getInstance(IrSolutionMap irSolution) {
         Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap = new HashMap<>();
         List<InstanceClafer> topInstances = new ArrayList<>();
         for (AstConcreteClafer child : astSolution.getModel().getChildren()) {
@@ -40,23 +49,23 @@ public class ClaferSolutionMap {
             IrSetVar topSetIrVar = astSolution.getSiblingVars(child)[0];
             int[] topIds = irSolution.getValue(topSetIrVar);
             for (int topId : topIds) {
-                topInstances.add(getInstanceClafer(child, topId, referenceMap));
+                topInstances.add(getInstanceClafer(child, topId, referenceMap, irSolution));
             }
         }
         return new InstanceModel(topInstances.toArray(new InstanceClafer[topInstances.size()]));
     }
 
     private InstanceClafer getInstanceClafer(AstConcreteClafer clafer, int id,
-            final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap) {
-        InstanceClafer instanceClafer = getInstanceClaferImpl(clafer, id, referenceMap);
+            final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap, IrSolutionMap irSolution) {
+        InstanceClafer instanceClafer = getInstanceClaferImpl(clafer, id, referenceMap, irSolution);
         referenceMap.put(new Pair<>(clafer, id), instanceClafer);
         return instanceClafer;
     }
 
     private InstanceClafer getInstanceClaferImpl(AstConcreteClafer clafer, int id,
-            final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap) {
+            final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap, IrSolutionMap irSolution) {
         List<InstanceClafer> children = new ArrayList<>();
-        Pair<AstClafer, Object> ref = getInstanceClaferImpl(clafer, id, children, referenceMap);
+        Pair<AstClafer, Object> ref = getInstanceClaferImpl(clafer, id, children, referenceMap, irSolution);
         InstanceClafer[] childrenArray = children.toArray(new InstanceClafer[children.size()]);
         if (ref == null) {
             return new InstanceClafer(clafer, id, null, childrenArray);
@@ -83,12 +92,12 @@ public class ClaferSolutionMap {
     }
 
     private Pair<AstClafer, Object> getInstanceClaferImpl(AstClafer clafer, int id, List<InstanceClafer> children,
-            final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap) {
+            final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap, IrSolutionMap irSolution) {
         for (AstConcreteClafer child : clafer.getChildren()) {
             IrSetVar childSetIrVar = astSolution.getSiblingVars(child)[id];
             int[] childIds = irSolution.getValue(childSetIrVar);
             for (int childId : childIds) {
-                children.add(getInstanceClafer(child, childId, referenceMap));
+                children.add(getInstanceClafer(child, childId, referenceMap, irSolution));
             }
         }
         Pair<AstClafer, Object> ref = null;
@@ -112,7 +121,7 @@ public class ClaferSolutionMap {
         } else if (clafer.hasSuperClafer()) {
             ref = getInstanceClaferImpl(clafer.getSuperClafer(),
                     id + astSolution.getAnalysis().getOffsets(clafer.getSuperClafer()).getOffset(clafer),
-                    children, referenceMap);
+                    children, referenceMap, irSolution);
         }
         return ref;
     }
