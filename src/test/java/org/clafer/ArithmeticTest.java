@@ -273,7 +273,7 @@ public class ArithmeticTest {
         AstConcreteClafer total = a.addChild("total").refToUnique(IntType).withCard(Mandatory);
         a.addConstraint(equal(joinRef(join($this(), total)), product(join($this(), b))));
 
-        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(9).intLow(-2).intHigh(2));
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(9).intLow(-2).intHigh(2).mulLow(-4).mulHigh(4));
         int count = 0;
         while (solver.find()) {
             for (InstanceClafer ai : solver.instance().getTopClafers(a)) {
