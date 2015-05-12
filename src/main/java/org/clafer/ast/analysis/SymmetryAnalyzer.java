@@ -9,11 +9,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
+import org.clafer.ast.Card;
 import org.clafer.collection.ChainedComparator;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
@@ -105,52 +108,19 @@ public class SymmetryAnalyzer implements Analyzer {
                 refs.add(clafer.getRef());
             }
         }
-
+        Function<AstConcreteClafer, Card> getCard = analysis::getCard;
+        Function<AstRef, AstClafer> getSourceType = AstRef::getSourceType;
+        Function<AstRef, AstClafer> getTargetType = AstRef::getTargetType;
+        getSourceType.andThen(AstUtil::getConcreteSubs).andThen(map(getCard.andThen(Card::getHigh))).andThen(
+                SymmetryAnalyzer::maxOrZero);
         Collections.sort(refs, Collections.reverseOrder(new ChainedComparator<>(
-                new ConcreteClaferComparator<AstRef>() {
-
-                    @Override
-                    AstClafer map(AstRef t) {
-                        return t.getSourceType();
-                    }
-
-                    @Override
-                    int score(AstConcreteClafer clafer) {
-                        return analysis.getCard(clafer).getHigh();
-                    }
-                },
-                new ConcreteClaferComparator<AstRef>() {
-
-                    @Override
-                    AstClafer map(AstRef t) {
-                        return t.getSourceType();
-                    }
-
-                    @Override
-                    int score(AstConcreteClafer clafer) {
-                        return analysis.getCard(clafer).getLow();
-                    }
-                },
-                new Comparator<AstRef>() {
-
-                    @Override
-                    public int compare(AstRef o1, AstRef o2) {
-                        return Integer.compare(
-                                analysis.getScope(o1.getSourceType()),
-                                analysis.getScope(o2.getSourceType()));
-                    }
-                },
-                new Comparator<AstRef>() {
-
-                    @Override
-                    public int compare(AstRef o1, AstRef o2) {
-                        return Integer.compare(
-                                analysis.getScope(o1.getTargetType()),
-                                analysis.getScope(o2.getTargetType()));
-                    }
-                }
+                Comparator.comparing(getSourceType.andThen(AstUtil::getConcreteSubs)
+                        .andThen(map(getCard.andThen(Card::getHigh))).andThen(SymmetryAnalyzer::maxOrZero)),
+                Comparator.comparing(getSourceType.andThen(AstUtil::getConcreteSubs)
+                        .andThen(map(getCard.andThen(Card::getLow))).andThen(SymmetryAnalyzer::maxOrZero)),
+                Comparator.comparing(getSourceType.andThen(analysis::getScope)),
+                Comparator.comparing(getTargetType.andThen(analysis::getScope))
         )));
-
         Map<AstRef, int[]> breakableRefsMap = new HashMap<>();
         Map<AstClafer, AstRef[]> breakableTargetsMap = new HashMap<>();
         for (AstRef ref : refs) {
@@ -164,7 +134,7 @@ public class SymmetryAnalyzer implements Analyzer {
                 for (int i = 0; i < scope; i++) {
                     Pair<AstConcreteClafer, Integer> concreteId = analysis.getConcreteId(ref.getSourceType(), i);
                     AstConcreteClafer concreteClafer = concreteId.getFst();
-                    int id = concreteId.getSnd().intValue();
+                    int id = concreteId.getSnd();
 
                     if (analysis.getCard(concreteClafer).getHigh() == 1) {
                         /*
@@ -239,26 +209,11 @@ public class SymmetryAnalyzer implements Analyzer {
         return true;
     }
 
-    private static abstract class ConcreteClaferComparator<T> implements Comparator<T> {
+    private static int maxOrZero(List<Integer> integers) {
+        return integers.isEmpty() ? 0 : Collections.max(integers);
+    }
 
-        @Override
-        public int compare(T o1, T o2) {
-            return Integer.compare(score(map(o1)), score(map(o2)));
-        }
-
-        abstract AstClafer map(T t);
-
-        int score(AstClafer clafer) {
-            if (clafer instanceof AstConcreteClafer) {
-                return score((AstConcreteClafer) clafer);
-            }
-            int maxScore = 0;
-            for (AstClafer sub : ((AstAbstractClafer) clafer).getSubs()) {
-                maxScore = Math.max(maxScore, score(sub));
-            }
-            return maxScore;
-        }
-
-        abstract int score(AstConcreteClafer clafer);
+    private static <T, R> Function<List<T>, List<R>> map(Function<T, R> func) {
+        return l -> l.stream().map(func).collect(Collectors.toList());
     }
 }

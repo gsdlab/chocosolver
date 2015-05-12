@@ -41,17 +41,11 @@ public class ArrayIterator<T> implements Iterator<T> {
         this.to = to;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean hasNext() {
         return index < to;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public T next() {
         return array[index++];

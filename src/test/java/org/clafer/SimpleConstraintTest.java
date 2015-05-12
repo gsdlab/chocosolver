@@ -27,7 +27,7 @@ public class SimpleConstraintTest {
         AstModel model = newModel();
 
         AstConcreteClafer age = model.addChild("Age").withCard(2, 2).refTo(IntType);
-        model.addConstraint(equal(joinRef(global(age)), constant(3)));
+        model.addConstraint(equal(joinRef(age), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);
@@ -283,7 +283,7 @@ public class SimpleConstraintTest {
         AstAbstractClafer feature = model.addAbstract("Feature").refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").withCard(2, 3).extending(feature);
         AstConcreteClafer firewall = model.addChild("Firewall").withCard(0, 1).extending(feature);
-        model.addConstraint(equal(joinRef(global(backup)), constant(3)));
+        model.addConstraint(equal(joinRef(backup), constant(3)));
         firewall.addConstraint(equal(joinRef($this()), constant(5)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
@@ -428,8 +428,8 @@ public class SimpleConstraintTest {
 
         AstConcreteClafer a = model.addChild("A").refToUnique(IntType).withCard(3, 4);
         AstConcreteClafer b = model.addChild("B").refToUnique(IntType).withCard(3, 4);
-        model.addConstraint(equal(joinRef(global(a)), joinRef(global(b))));
-        model.addConstraint(greaterThan(joinRef(global(a)), constant(5000)));
+        model.addConstraint(equal(joinRef(a), joinRef(b)));
+        model.addConstraint(greaterThan(joinRef(a), constant(5000)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(10000));
         assertTrue(solver.find());

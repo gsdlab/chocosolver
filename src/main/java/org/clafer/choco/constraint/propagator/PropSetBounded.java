@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.chocosolver.memory.IStateInt;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;

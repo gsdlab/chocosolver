@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 
 /**
  * An empty iterator.
- * 
+ *
  * @author jimmy
  */
 public class EmptyIntIterator implements TIntIterator {
@@ -17,20 +17,18 @@ public class EmptyIntIterator implements TIntIterator {
 
     /**
      * An iterator that is always empty.
-     * 
+     *
      * @return the empty iterator singleton
      */
     public static EmptyIntIterator getIterator() {
         return iterator;
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return false;
     }
 
-    /** {@inheritDoc} */
     @Override
     public int next() {
         throw new NoSuchElementException();
@@ -38,7 +36,7 @@ public class EmptyIntIterator implements TIntIterator {
 
     /**
      * Not supported.
-     * 
+     *
      * @throws UnsupportedOperationException if invoked
      */
     @Override

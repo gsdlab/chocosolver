@@ -58,9 +58,6 @@ public class KeyGraph<V> implements Graph<V> {
         toV.addNeighbour(fromV);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Collection<Vertex<V>> getVertices() {
         return vertices.values();

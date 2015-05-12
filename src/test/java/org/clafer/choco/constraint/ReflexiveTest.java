@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint;
 
-import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
 import org.clafer.choco.constraint.ConstraintQuickTest.Check;

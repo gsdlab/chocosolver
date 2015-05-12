@@ -4,7 +4,7 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 /**
  *
- * @author jliang
+ * @author jimmy
  */
 public class MatrixBuilder {
 

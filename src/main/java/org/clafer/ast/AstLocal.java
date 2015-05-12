@@ -16,41 +16,26 @@ public class AstLocal implements AstSetExpr, AstVar {
         this.name = Check.notNull(name);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getName() {
         return name;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(Object obj) {
         return this == obj;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return name.hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return name;

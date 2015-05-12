@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.clafer.common.Check;
 
 /**
@@ -90,5 +91,9 @@ public abstract class Either<A, B> {
                 ? array
                 : (B[]) Array.newInstance(array.getClass().getComponentType(), rights.size());
         return rights.toArray(to);
+    }
+
+    public static <A, B> Stream<B> filterRight(Stream<Either<A, B>> eithers) {
+        return eithers.filter(Either::isRight).map(Either::getRight);
     }
 }

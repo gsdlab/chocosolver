@@ -47,17 +47,11 @@ public class ReverseArrayIntIterator implements TIntIterator {
         this.from = from;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean hasNext() {
         return index > from;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int next() {
         return array[--index];

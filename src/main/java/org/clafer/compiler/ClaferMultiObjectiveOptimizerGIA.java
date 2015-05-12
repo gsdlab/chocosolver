@@ -79,9 +79,7 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
 
     private void popAll() {
         assert solver.getSearchLoop().getCurrentDepth() == 0;
-        for (Constraint constraint : stack) {
-            solver.unpost(constraint);
-        }
+        stack.forEach(solver::unpost);
         stack.clear();
     }
 

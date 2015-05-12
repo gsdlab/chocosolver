@@ -9,6 +9,7 @@ import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
 import static org.chocosolver.solver.variables.Var.*;
+import org.junit.Ignore;
 
 /**
  *
@@ -52,6 +53,7 @@ public class FilterStringTest {
         }
     }
 
+    @Ignore
     @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(CSetVar set, int offset, IntVar[] string, IntVar[] result) {

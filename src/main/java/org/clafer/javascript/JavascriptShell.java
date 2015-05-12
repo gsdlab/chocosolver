@@ -273,9 +273,7 @@ public class JavascriptShell {
         if (args.length > 0) {
             try {
                 System.out.println(context.load(args[0]));
-            } catch (IOException e) {
-                System.out.println("Error: " + getOriginalMessage(e));
-            } catch (RhinoException e) {
+            } catch (IOException | RhinoException e) {
                 System.out.println("Error: " + getOriginalMessage(e));
             }
         } else {
@@ -375,9 +373,6 @@ public class JavascriptShell {
             return bool ? " * " : "   ";
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public String toMessage() {
             return "(*) marks the current setting\n"

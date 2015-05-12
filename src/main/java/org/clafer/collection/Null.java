@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- *
+ * @param <E> the type of the elements
  * @author jimmy
  */
 class Null<E> extends FList<E> {

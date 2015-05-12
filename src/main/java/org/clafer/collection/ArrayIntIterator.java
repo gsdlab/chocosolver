@@ -46,17 +46,11 @@ public class ArrayIntIterator implements TIntIterator {
         this.to = to;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean hasNext() {
         return index < to;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int next() {
         return array[index++];

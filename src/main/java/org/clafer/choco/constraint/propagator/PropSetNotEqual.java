@@ -18,7 +18,7 @@ import org.chocosolver.util.procedure.IntProcedure;
 public class PropSetNotEqual extends Propagator<SetVar> {
 
     private final SetVar s1, s2;
-    private ISetDeltaMonitor s1D, s2D;
+    private final ISetDeltaMonitor s1D, s2D;
 
     public PropSetNotEqual(SetVar s1, SetVar s2) {
         super(new SetVar[]{s1, s2}, PropagatorPriority.LINEAR, true);

@@ -1,6 +1,7 @@
 package org.clafer.compiler;
 
 /**
+ * Search for optimal instances.
  *
  * @author jimmy
  */

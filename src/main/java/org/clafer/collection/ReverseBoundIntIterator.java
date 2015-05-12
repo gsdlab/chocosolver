@@ -4,7 +4,7 @@ import gnu.trove.iterator.TIntIterator;
 
 /**
  * An iterator over an interval in decreasing order.
- * 
+ *
  * @author jimmy
  */
 public class ReverseBoundIntIterator implements TIntIterator {
@@ -24,17 +24,11 @@ public class ReverseBoundIntIterator implements TIntIterator {
         this.low = low;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean hasNext() {
         return index >= low;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int next() {
         return index--;

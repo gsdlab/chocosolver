@@ -14,8 +14,8 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
 
 /**
- * This class provides various methods of loading models and scopes via the
- * Javascript API.
+ * This class provides various methods of loading models, scopes, and objectives
+ * via the Javascript API.
  *
  * @author jimmy
  */

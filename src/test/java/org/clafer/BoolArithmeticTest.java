@@ -41,7 +41,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), and(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(26, solver.allInstances().length);
@@ -73,7 +73,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), not(and(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2))))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(49, solver.allInstances().length);
@@ -105,7 +105,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), ifOnlyIf(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(42, solver.allInstances().length);
@@ -137,7 +137,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), not(ifOnlyIf(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2))))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(33, solver.allInstances().length);
@@ -172,7 +172,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), implies(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(46, solver.allInstances().length);
@@ -207,7 +207,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), not(implies(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2))))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(29, solver.allInstances().length);
@@ -239,7 +239,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), or(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(34, solver.allInstances().length);
@@ -271,7 +271,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), not(or(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2))))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(41, solver.allInstances().length);
@@ -303,7 +303,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), xor(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(33, solver.allInstances().length);
@@ -335,7 +335,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(implies(some(c), not(xor(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2))))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(42, solver.allInstances().length);
@@ -367,8 +367,8 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(ifThenElse(some(c),
-                equal(joinRef(global(a)), constant(1)),
-                equal(joinRef(global(b)), constant(2))));
+                equal(joinRef(a), constant(1)),
+                equal(joinRef(b), constant(2))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(10, solver.allInstances().length);
@@ -400,8 +400,8 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(not(ifThenElse(some(c),
-                equal(joinRef(global(a)), constant(1)),
-                equal(joinRef(global(b)), constant(2)))));
+                equal(joinRef(a), constant(1)),
+                equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(40, solver.allInstances().length);
@@ -436,7 +436,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(not(implies(some(c), implies(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2))))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(4, solver.allInstances().length);
@@ -471,7 +471,7 @@ public class BoolArithmeticTest {
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
         model.addConstraint(not(not(implies(some(c), implies(
-                equal(joinRef(global(a)), constant(1)), equal(joinRef(global(b)), constant(2)))))));
+                equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
         assertEquals(46, solver.allInstances().length);

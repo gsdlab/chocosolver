@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 
 /**
  * Iterate over a single value.
- * 
+ *
  * @author jimmy
  */
 public class SingleIntIterator implements TIntIterator {
@@ -15,20 +15,18 @@ public class SingleIntIterator implements TIntIterator {
 
     /**
      * Iterate over a single value.
-     * 
+     *
      * @param value the single value
      */
     public SingleIntIterator(int value) {
         this.value = value;
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return hasNext;
     }
 
-    /** {@inheritDoc} */
     @Override
     public int next() {
         if (hasNext) {
@@ -40,7 +38,7 @@ public class SingleIntIterator implements TIntIterator {
 
     /**
      * Not supported.
-     * 
+     *
      * @throws UnsupportedOperationException if invoked
      */
     @Override

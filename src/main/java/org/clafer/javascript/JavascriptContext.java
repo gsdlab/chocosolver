@@ -58,7 +58,6 @@ public class JavascriptContext {
     }
 
     public Scope getScope(Scriptable engine) {
-        Map<AstClafer, Integer> resolvedScope = new HashMap<>();
         for (Entry<String, Integer> entry : scope.entrySet()) {
             String key = entry.getKey();
             Object value = engine.get(key, engine);
@@ -71,8 +70,7 @@ public class JavascriptContext {
             }
             AstClafer clafer = (AstClafer) object.unwrap();
             if (clafer == null) {
-                throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\", "
-                        + ".");
+                throw new IllegalStateException("Cannot set scope for unknown Clafer \"" + key + "\"");
             }
             scopeBuilder.setScope(clafer, entry.getValue());
         }

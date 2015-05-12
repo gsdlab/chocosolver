@@ -1,8 +1,6 @@
 package org.chocosolver.solver.variables;
 
 import org.chocosolver.solver.constraints.set.SCF;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
 
 /**
  *

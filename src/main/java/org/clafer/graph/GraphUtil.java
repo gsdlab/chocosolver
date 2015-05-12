@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 import org.clafer.collection.Counter;
 
 /**
@@ -71,11 +72,7 @@ public class GraphUtil {
         for (Vertex<V> vertex : start) {
             findPath(vertex, graph, visited);
         }
-        Set<V> reachable = new HashSet<>(visited.size());
-        for (Vertex<V> visit : visited) {
-            reachable.add(visit.getData());
-        }
-        return reachable;
+        return visited.stream().map(Vertex<V>::getData).collect(Collectors.toSet());
     }
 
     /**

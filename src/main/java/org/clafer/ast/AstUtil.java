@@ -95,14 +95,7 @@ public class AstUtil {
      */
     public static List<AstAbstractClafer> getAbstractClafersInSubOrder(AstModel model) {
         List<AstAbstractClafer> clafers = new ArrayList<>(model.getAbstracts());
-        Collections.sort(clafers, new Comparator<AstAbstractClafer>() {
-            @Override
-            public int compare(AstAbstractClafer o1, AstAbstractClafer o2) {
-                int depth1 = AstUtil.getSuperHierarchy(o1).size();
-                int depth2 = AstUtil.getSuperHierarchy(o2).size();
-                return depth1 > depth2 ? -1 : (depth1 == depth2 ? 0 : 1);
-            }
-        });
+        Collections.sort(clafers, Comparator.comparing(a -> AstUtil.getSuperHierarchy(a).size()));
         return clafers;
     }
 

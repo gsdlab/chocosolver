@@ -342,7 +342,7 @@ public class Analysis {
         int curId = id;
         while (sup.hasSuperClafer()) {
             Pair<AstAbstractClafer, Integer> superId = getSuperId(sup, curId);
-            superIds.add(new Pair<AstClafer, Integer>(superId));
+            superIds.add(new Pair<>(superId));
             sup = superId.getFst();
             curId = superId.getSnd().intValue();
         }

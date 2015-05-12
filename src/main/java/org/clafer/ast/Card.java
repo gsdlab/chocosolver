@@ -132,9 +132,6 @@ public class Card implements Serializable {
         return new Card(low * factor.low);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Card) {
@@ -144,17 +141,11 @@ public class Card implements Serializable {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return low ^ high;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         if (!hasHigh()) {

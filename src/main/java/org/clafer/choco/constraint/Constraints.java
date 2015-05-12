@@ -454,8 +454,8 @@ public class Constraints {
         Solver solver = sets[0].getSolver();
         int lb = 0;
         int ub = 0;
-        for (int i = 0; i < sets.length; i++) {
-            ub += setCards[i].getUB();
+        for (IntVar setCard : setCards) {
+            ub += setCard.getUB();
         }
 
         List<Propagator<?>> propagators = new ArrayList<>();

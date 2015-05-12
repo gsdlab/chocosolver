@@ -5,11 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
@@ -180,9 +181,7 @@ public class AstCompiler {
         KeyGraph<AstClafer> dependency = new KeyGraph<>();
         for (AstAbstractClafer abstractClafer : abstractClafers) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            for (AstClafer sub : abstractClafer.getSubs()) {
-                node.addNeighbour(dependency.getVertex(sub));
-            }
+            abstractClafer.getSubs().stream().map(dependency::getVertex).forEach(node::addNeighbour);
         }
         for (AstConcreteClafer concreteClafer : concreteClafers) {
             Vertex<AstClafer> node = dependency.getVertex(concreteClafer);
@@ -310,15 +309,9 @@ public class AstCompiler {
         IrIntVar sumSoftVars = domainInt("SumSoftVar", softSum.getDomain());
         module.addConstraint(equal(sumSoftVars, softSum));
 
-        for (IrSetVar[] childSet : siblingSets.values()) {
-            module.addVariables(childSet);
-        }
-        for (IrIntVar[] refs : refPointers.values()) {
-            module.addVariables(refs);
-        }
-        for (IrStringVar[] refs : refStrings.values()) {
-            module.addVariables(refs);
-        }
+        siblingSets.values().forEach(module::addVariables);
+        refPointers.values().forEach(module::addVariables);
+        refStrings.values().forEach(module::addVariables);
 
         for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {
             if (component.size() > 1) {
@@ -402,20 +395,11 @@ public class AstCompiler {
             }
         }
         Set<IrVar> variables = module.getVariables();
-        Set<Vertex<Either<IrExpr, IrBoolExpr>>> start = new HashSet<>();
-        for (IrVar variable : variables) {
-            Vertex<Either<IrExpr, IrBoolExpr>> vertex
-                    = dependencies.getVertexIfPresent(Either.<IrExpr, IrBoolExpr>left(variable));
-            if (vertex != null) {
-                start.add(vertex);
-            }
-        }
+        Set<Vertex<Either<IrExpr, IrBoolExpr>>> start
+                = variables.stream().map(Either::<IrExpr, IrBoolExpr>left).map(dependencies::getVertexIfPresent)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
         Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
-        for (Either<IrExpr, IrBoolExpr> reachable : reachables) {
-            if (reachable.isRight()) {
-                module.addConstraint(reachable.getRight());
-            }
-        }
+        Either.filterRight(reachables.stream()).forEach(module::addConstraint);
 
         return new AstSolutionMap(analysis.getModel(), siblingSets,
                 refPointers, refStrings,
@@ -497,7 +481,7 @@ public class AstCompiler {
 
         Pair<AstRef, Integer> refPair = analysis.getInheritedRefId(clafer);
         AstRef ref = refPair == null ? null : refPair.getFst();
-        int refOffset = refPair == null ? 0 : refPair.getSnd().intValue();
+        int refOffset = refPair == null ? 0 : refPair.getSnd();
 
         int scope = getScope(clafer);
         IrBoolExpr[] members = memberships.get(clafer);

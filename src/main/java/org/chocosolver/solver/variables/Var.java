@@ -4,9 +4,6 @@ import java.util.Arrays;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.common.Util;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
-import org.chocosolver.solver.variables.VariableFactory;
 
 /**
  *

@@ -46,30 +46,21 @@ public class Vertex<V> {
      * @param neighbour a new neighbour of this vertex
      * @return this vertex
      */
-    public Vertex addNeighbour(Vertex<V> neighbour) {
+    public Vertex<V> addNeighbour(Vertex<V> neighbour) {
         neighbours.add(neighbour);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(Object obj) {
         return this == obj;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return data.hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return data.toString();

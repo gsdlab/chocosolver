@@ -1,7 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import org.chocosolver.memory.IEnvironment;
 import org.clafer.common.Util;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;

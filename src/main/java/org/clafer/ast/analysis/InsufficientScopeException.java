@@ -3,7 +3,6 @@ package org.clafer.ast.analysis;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.clafer.ast.AstAbstractClafer;
@@ -12,7 +11,6 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstUtil;
 import org.clafer.collection.Pair;
-import org.clafer.common.Util;
 
 /**
  *
