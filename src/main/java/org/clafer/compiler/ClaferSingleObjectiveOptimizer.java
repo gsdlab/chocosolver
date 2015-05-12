@@ -9,7 +9,6 @@ import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.ResolutionPolicy;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.objective.ObjectiveManager;
 import org.chocosolver.solver.propagation.NoPropagationEngine;
 import org.chocosolver.solver.propagation.hardcoded.SevenQueuesPropagatorEngine;
@@ -109,6 +108,9 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         });
         if (solver.getEngine() == NoPropagationEngine.SINGLETON) {
             solver.set(new SevenQueuesPropagatorEngine(solver));
+        }
+        if(!solver.getEngine().isInitialized()){
+            solver.getEngine().initialize();
         }
         solver.getSearchLoop().launch(false);
         return firstSolution.hasBeenFound() && !solver.hasReachedLimit();
