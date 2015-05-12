@@ -358,4 +358,42 @@ public class TypeAnalyzerTest {
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> A
+     * [ A = product B ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testProductNonInteger() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("b").refToUnique(a).withCard(Mandatory);
+        model.addConstraint(equal(global(a), product(global(b))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> int
+     * C -> int
+     * [ C.ref = product (A ++ B) ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testProductDifferentTypes() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("b").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("c").refToUnique(IntType).withCard(Mandatory);
+        model.addConstraint(equal(joinRef(c), product(union(global(a), global(b)))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
 }
