@@ -1547,6 +1547,9 @@ public class AstCompiler {
                 IrSetExpr setBody = (IrSetExpr) body;
                 Domain env = setBody.getEnv();
                 Domain ker = setBody.getKer();
+                if (env.isEmpty()) {
+                    return new Triple[][]{};
+                }
                 // TODO: need a different strategy otherwise
                 assert env.getLowBound() >= 0;
                 @SuppressWarnings("unchecked")
