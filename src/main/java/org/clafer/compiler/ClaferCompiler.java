@@ -43,6 +43,7 @@ import org.chocosolver.solver.search.strategy.SetStrategyFactory;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
+import org.clafer.common.Check;
 
 /**
  * Compiles from AST -> Choco
@@ -227,6 +228,7 @@ public class ClaferCompiler {
     }
 
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOption options) {
+        Check.noNullsNotEmpty(objectives);
         try {
             Solver solver = new Solver();
             IrModule module = new IrModule();
