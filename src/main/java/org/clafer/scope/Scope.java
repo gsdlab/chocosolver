@@ -78,7 +78,7 @@ public class Scope implements Scopable {
     private final Map<AstClafer, Integer> scopes;
     private final int defaultScope;
     private final int intLow, intHigh;
-    private final int mulLow, mulHigh;
+    private final Integer mulLow, mulHigh;
     private final int stringLength;
     private final char charLow, charHigh;
 
@@ -91,15 +91,15 @@ public class Scope implements Scopable {
      * @param intLow the lowest (inclusive) integer used for solving
      * @param intHigh the highest (inclusive) integer used for solving
      * @param mulLow the lowest (inclusive) integer used for solving
-     * multiplication
+     * multiplication or null to use {@code intLow}
      * @param mulHigh the highest (inclusive) integer used for solving
-     * multiplication
+     * multiplication or null to use {@code intHigh}
      * @param stringLength the longest (inclusive) string used for solving
      * @param charLow the lowest (inclusive) character used for solving
      * @param charHigh the highest (inclusive) character used for solving
      */
     public Scope(Map<AstClafer, Integer> scopes, int defaultScope, int intLow, int intHigh,
-            int mulLow, int mulHigh, int stringLength, char charLow, char charHigh) {
+            Integer mulLow, Integer mulHigh, int stringLength, char charLow, char charHigh) {
         if (defaultScope <= 0) {
             throw new IllegalArgumentException("Default scope must be positive");
         }
@@ -111,8 +111,9 @@ public class Scope implements Scopable {
         if (intLow > intHigh) {
             throw new IllegalArgumentException("intLow(" + intLow + ") > intHigh(" + intHigh + ")");
         }
-        if (mulLow > mulHigh) {
-            throw new IllegalArgumentException("mulLow(" + mulLow + ") > mulHigh(" + mulHigh + ")");
+        if ((mulLow == null ? intLow : mulLow) > (mulHigh == null ? intHigh : mulHigh)) {
+            throw new IllegalArgumentException(
+                    "mulLow(" + (mulLow == null ? intLow : mulLow) + ") > mulHigh(" + (mulHigh == null ? intHigh : mulHigh) + ")");
         }
         if (stringLength < 0) {
             throw new IllegalArgumentException("stringLength cannot be negative");
@@ -186,7 +187,7 @@ public class Scope implements Scopable {
      * @return the lowest integer
      */
     public int getMulLow() {
-        return mulLow;
+        return mulLow == null ? intLow : mulLow;
     }
 
     /**
@@ -195,7 +196,7 @@ public class Scope implements Scopable {
      * @return the highest integer
      */
     public int getMulHigh() {
-        return mulHigh;
+        return mulHigh == null ? intHigh : mulHigh;
     }
 
     /**

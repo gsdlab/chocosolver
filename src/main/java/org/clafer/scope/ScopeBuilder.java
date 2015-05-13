@@ -231,8 +231,6 @@ public class ScopeBuilder implements Scopable {
     @Override
     public Scope toScope() {
         return new Scope(scope, defaultScope, intLow, intHigh,
-                mulLow == null ? Math.min(-16, intLow) : mulLow,
-                mulHigh == null ? Math.max(16, intHigh) : mulHigh,
-                stringLength, charLow, charHigh);
+                mulLow, mulHigh, stringLength, charLow, charHigh);
     }
 }

@@ -15,6 +15,9 @@ import org.clafer.ir.IrBoolVar;
 import org.chocosolver.solver.ResolutionPolicy;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.search.loop.monitors.IMonitorSolution;
+import org.chocosolver.solver.search.loop.monitors.SMF;
+import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
@@ -49,6 +52,11 @@ public class ClaferUnsat {
         this.score = solutionMap.getIrSolution().getVar(solutionMap.getAstSolution().getSumSoftVar());
     }
 
+    public ClaferUnsat limitTime(long ms) {
+        SMF.limitTime(getInternalSolver(), ms);
+        return this;
+    }
+
     public Solver getInternalSolver() {
         return solver;
     }
@@ -62,17 +70,27 @@ public class ClaferUnsat {
      * unknown
      */
     public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
-        if (ESat.TRUE.equals(maximize())) {
+        Solution lastSolution = new Solution();
+        IMonitorSolution monitor = () -> lastSolution.record(solver);
+        solver.plugMonitor(monitor);
+        maximize();
+        if (lastSolution.hasBeenFound()) {
             Set<AstConstraint> unsat = new HashSet<>();
             for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
                 Either<Boolean, BoolVar> var = softVar.getSnd();
                 if (var.isLeft()
-                        ? !var.getLeft().booleanValue()
-                        : var.getRight().isInstantiatedTo(0)) {
+                        ? !var.getLeft()
+                        : lastSolution.getIntVal(var.getRight()) == 0) {
                     unsat.add(softVar.getFst());
                 }
             }
+            if (solver.hasReachedLimit()) {
+                throw new ReachedLimitBestKnownUnsatException(unsat, solutionMap.getInstance(lastSolution));
+            }
             return new Pair<>(unsat, solutionMap.getInstance());
+        }
+        if (solver.hasReachedLimit()) {
+            throw new ReachedLimitException();
         }
         return null;
     }
@@ -86,32 +104,36 @@ public class ClaferUnsat {
      */
     public Set<AstConstraint> unsatCore() {
         Set<AstConstraint> unsat = new HashSet<>();
-        switch (maximize()) {
-            case TRUE:
-                boolean changed;
-                do {
-                    changed = false;
-                    List<BoolVar> minUnsat = new ArrayList<>();
-                    for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
-                        Either<Boolean, BoolVar> var = softVar.getSnd();
-                        if (var.isLeft()
-                                ? !var.getLeft().booleanValue()
-                                : var.getRight().isInstantiatedTo(0)) {
-                            changed |= unsat.add(softVar.getFst());
-                            if (var.isRight()) {
-                                minUnsat.add(var.getRight());
-                            }
+        if (ESat.TRUE.equals(maximize())) {
+            boolean changed;
+            do {
+                if (solver.hasReachedLimit()) {
+                    throw new ReachedLimitException();
+                }
+                changed = false;
+                List<BoolVar> minUnsat = new ArrayList<>();
+                for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
+                    Either<Boolean, BoolVar> var = softVar.getSnd();
+                    if (var.isLeft()
+                            ? !var.getLeft()
+                            : var.getRight().isInstantiatedTo(0)) {
+                        changed |= unsat.add(softVar.getFst());
+                        if (var.isRight()) {
+                            minUnsat.add(var.getRight());
                         }
                     }
-                    solver.getSearchLoop().reset();
-                    for (BoolVar var : minUnsat) {
-                        solver.post(ICF.arithm(var, "=", 1));
-                    }
-                } while (changed && ESat.TRUE.equals(maximize()));
-                return unsat;
-            default:
-                return null;
+                }
+                solver.getSearchLoop().reset();
+                for (BoolVar var : minUnsat) {
+                    solver.post(ICF.arithm(var, "=", 1));
+                }
+            } while (changed && ESat.TRUE.equals(maximize()));
+            return unsat;
         }
+        if (solver.hasReachedLimit()) {
+            throw new ReachedLimitException();
+        }
+        return null;
     }
 
     private ESat maximize() {

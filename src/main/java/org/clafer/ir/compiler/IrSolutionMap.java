@@ -1,6 +1,7 @@
 package org.clafer.ir.compiler;
 
 import java.util.Map;
+import org.chocosolver.solver.search.solution.Solution;
 import org.clafer.collection.Either;
 import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
@@ -52,6 +53,29 @@ public class IrSolutionMap {
         return Either.right((BoolVar) intVars.get(boolVar));
     }
 
+    protected int getIntVal(IntVar var) {
+        return var.getValue();
+    }
+
+    protected int[] getSetVal(SetVar var) {
+        return var.getValues();
+    }
+
+    public IrSolutionMap fromSolution(final Solution solution) {
+        return new IrSolutionMap(coalescedIntVars, intVars, coalescedSetVars, setVars) {
+
+            @Override
+            protected int getIntVal(IntVar var) {
+                return solution.getIntVal(var);
+            }
+
+            @Override
+            protected int[] getSetVal(SetVar var) {
+                return solution.getSetVal(var);
+            }
+        };
+    }
+
     public Either<Boolean, BoolVar>[] getVars(IrBoolVar... vars) {
         @SuppressWarnings("unchecked")
         Either<Boolean, BoolVar>[] bvars = (Either<Boolean, BoolVar>[]) new Either<?, ?>[vars.length];
@@ -65,7 +89,7 @@ public class IrSolutionMap {
         Either<Boolean, BoolVar> boolVar = getVar(var);
         return boolVar.isLeft()
                 ? boolVar.getLeft()
-                : boolVar.getRight().getValue() != 0;
+                : getIntVal(boolVar.getRight()) != 0;
     }
 
     public boolean[] getValues(IrBoolVar... vars) {
@@ -107,7 +131,7 @@ public class IrSolutionMap {
         Either<Integer, IntVar> intVar = getVar(var);
         return intVar.isLeft()
                 ? intVar.getLeft()
-                : intVar.getRight().getValue();
+                : getIntVal(intVar.getRight());
     }
 
     public int[] getValues(IrIntVar... vars) {
@@ -146,7 +170,7 @@ public class IrSolutionMap {
         Either<int[], SetVar> setVar = getVar(var);
         return setVar.isLeft()
                 ? setVar.getLeft()
-                : setVar.getRight().getValues();
+                : getSetVal(setVar.getRight());
     }
 
     public int[][] getValues(IrSetVar... vars) {

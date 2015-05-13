@@ -1,7 +1,7 @@
 chocosolver
 ===========
 
-v0.3.10
+v0.3.10.1
 
 A backend for [Clafer](http://clafer.org) using the Choco 3.3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
 
@@ -27,7 +27,7 @@ Binary distributions of the release 0.3.10 of Clafer Tools for Windows, Mac, and
 
 Prerequisites
 -------------
-* [Choco 3](https://github.com/chocoteam/choco3) v3.3.1-SNAPSHOT
+* [Choco 3](https://github.com/chocoteam/choco3) v3.3.2-SNAPSHOT
 * [Java 8+](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Maven 3](http://maven.apache.org/) - Required for building the project.
 
@@ -62,10 +62,10 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.10</version>
+    <version>0.3.10.1</version>
 </dependency>
 ```
-The CLI is installed to target/chocosolver-0.3.10-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.10-jar-with-dependencies.jar mymodel.js".
+The CLI is installed to target/chocosolver-0.3.10.1-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.10.1-jar-with-dependencies.jar mymodel.js".
 
 ### Important: Branches must correspond
 
