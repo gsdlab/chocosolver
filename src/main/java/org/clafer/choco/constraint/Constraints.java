@@ -30,7 +30,6 @@ import org.clafer.choco.constraint.propagator.PropNotEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropReflexive;
-import org.clafer.choco.constraint.propagator.PropReifyEqualXY;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetBounded;
@@ -67,7 +66,6 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.VF;
 import org.chocosolver.solver.variables.Variable;
-import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -247,58 +245,6 @@ public class Constraints {
                 return ifThenElse(antecedent, consequent.not(), alternative.not());
             }
         };
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (variable = constant)}.
-     *
-     * @param reify the reified constraint
-     * @param variable the variable
-     * @param constant the constant
-     * @return constraint {@code reify <=> (variable = constant)}
-     */
-    public static Constraint reifyEqual(BoolVar reify, IntVar variable, int constant) {
-        return new ReifyEqualXC(reify, true, variable, constant);
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (v1 = v2)}.
-     *
-     * @param reify the reified constraint
-     * @param v1 the first variable
-     * @param v2 the second variable
-     * @return constraint {@code reify <=> (v1 = v2)}
-     */
-    public static Constraint reifyEqual(BoolVar reify, IntVar v1, IntVar v2) {
-        return new ReifyEqualXY(reify, true, v1, v2);
-    }
-
-    public static Constraint reifyEqual(IntVar reify, int value, IntVar v1, IntVar v2) {
-        return new Constraint("reifyIntEqual", new PropReifyEqualXY(reify, value, v1, v2));
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (variable ≠ constant)}.
-     *
-     * @param reify the reified constraint
-     * @param variable the variable
-     * @param constant the constant
-     * @return constraint {@code reify <=> (variable ≠ constant)}
-     */
-    public static Constraint reifyNotEqual(BoolVar reify, IntVar variable, int constant) {
-        return new ReifyEqualXC(reify, false, variable, constant);
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (v1 ≠ v2)}.
-     *
-     * @param reify the reified constraint
-     * @param v1 the first variable
-     * @param v2 the second variable
-     * @return constraint {@code reify <=> (v1 ≠ v2)}
-     */
-    public static Constraint reifyNotEqual(BoolVar reify, IntVar v1, IntVar v2) {
-        return new ReifyEqualXY(reify, false, v1, v2);
     }
 
     /**
@@ -851,8 +797,11 @@ public class Constraints {
         if (setCard.getLB() > 0) {
             return max(set, setCard, max);
         }
-        return new Constraint("max", new PropSetMax(set, setCard, max),
-                new PropReifyEqualXC(setCard, 0, max, d));
+        // TODO optimize
+        return ifThenElse(
+                ICF.arithm(setCard, "=", 0).reif(),
+                ICF.arithm(max, "=", 0).reif(),
+                max(set, setCard, max).reif());
     }
 
     public static Constraint stritctHighBound(SetVar set, IntVar bound) {

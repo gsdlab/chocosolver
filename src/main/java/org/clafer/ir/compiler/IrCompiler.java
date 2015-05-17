@@ -408,7 +408,8 @@ public class IrCompiler {
                 : expr.accept(intExprCompiler, value);
         if (result instanceof IntVar) {
             // The compliation failed to reify, explicitly reify now.
-            return _reify_equal(reify, value, (IntVar) result);
+            Constraint eq = _arithm(value, "=", (IntVar) result);
+            return _arithm(reify, "=", eq.reif());
         }
         return _arithm(((Constraint) result).reif(), "=", reify);
     }
@@ -419,7 +420,8 @@ public class IrCompiler {
                 : expr.accept(intExprCompiler, value);
         if (result instanceof IntVar) {
             // The compliation failed to reify, explicitly reify now.
-            return _reify_not_equal(reify, value, (IntVar) result);
+            Constraint notEq = _arithm(value, "!=", (IntVar) result);
+            return _arithm(reify, "=", notEq.reif());
         }
         return _arithm(((Constraint) result).reif(), "!=", reify);
     }
@@ -1291,18 +1293,14 @@ public class IrCompiler {
             IntVar alternative = compile(ir.getAlternative());
             if (reify == null) {
                 IntVar ternary = numIntVar("Ternary", ir.getDomain());
-                BoolVar reifyConsequent = numBoolVar("ReifyEqual");
-                BoolVar reifyAlternative = numBoolVar("ReifyEqual");
-                post(_reify_equal(reifyConsequent, consequent, ternary));
-                post(_reify_equal(reifyAlternative, alternative, ternary));
-                post(_ifThenElse(antecedent, reifyConsequent, reifyAlternative));
+                post(_ifThenElse(antecedent,
+                        _arithm(ternary, "=", consequent),
+                        _arithm(ternary, "=", alternative)));
                 return ternary;
             }
-            BoolVar reifyConsequent = numBoolVar("ReifyEqual");
-            BoolVar reifyAlternative = numBoolVar("ReifyEqual");
-            post(_reify_equal(reifyConsequent, consequent, reify));
-            post(_reify_equal(reifyAlternative, alternative, reify));
-            return _ifThenElse(antecedent, reifyConsequent, reifyAlternative);
+            return _ifThenElse(antecedent,
+                    _arithm(reify, "=", consequent),
+                    _arithm(reify, "=", alternative));
         }
 
         @Override
@@ -1718,6 +1716,10 @@ public class IrCompiler {
         return Constraints.ifThenElse(antecedent, consequent, alternative);
     }
 
+    private static Constraint _ifThenElse(BoolVar antecedent, Constraint consequent, Constraint alternative) {
+        return _ifThenElse(antecedent, consequent.reif(), alternative.reif());
+    }
+
     private static Constraint _sum(IntVar sum, IntVar... vars) {
         for (IntVar var : vars) {
             if (!(var instanceof BoolVar)) {
@@ -1788,32 +1790,6 @@ public class IrCompiler {
 
     private static Constraint _arithm(IntVar var1, String op, int c) {
         return ICF.arithm(var1, op, c);
-    }
-
-    private Constraint _reify_equal(BoolVar reify, IntVar var1, IntVar var2) {
-        if (var1.isInstantiated()) {
-            if (var2.isInstantiated()) {
-                return _arithm(reify, "=", var1.getValue() == var2.getValue() ? 1 : 0);
-            }
-            return Constraints.reifyEqual(reify, var2, var1.getValue());
-        } else if (var2.isInstantiated()) {
-            return Constraints.reifyEqual(reify, var1, var2.getValue());
-        } else {
-            return Constraints.reifyEqual(reify, var1, var2);
-        }
-    }
-
-    private Constraint _reify_not_equal(BoolVar reify, IntVar var1, IntVar var2) {
-        if (var1.isInstantiated()) {
-            if (var2.isInstantiated()) {
-                return _arithm(reify, "=", var1.getValue() != var2.getValue() ? 1 : 0);
-            }
-            return Constraints.reifyNotEqual(reify, var2, var1.getValue());
-        } else if (var2.isInstantiated()) {
-            return Constraints.reifyNotEqual(reify, var1, var2.getValue());
-        } else {
-            return Constraints.reifyNotEqual(reify, var1, var2);
-        }
     }
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
