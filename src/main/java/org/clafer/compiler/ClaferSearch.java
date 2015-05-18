@@ -1,5 +1,7 @@
 package org.clafer.compiler;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.loop.monitors.SMF;
@@ -34,7 +36,13 @@ public interface ClaferSearch {
      * @return all the remaining instances
      * @throws ReachedLimitException if resource limit reached
      */
-    public InstanceModel[] allInstances() throws ReachedLimitException;
+    public default InstanceModel[] allInstances() throws ReachedLimitException {
+        List<InstanceModel> instances = new ArrayList<>();
+        while (find()) {
+            instances.add(instance());
+        }
+        return instances.toArray(new InstanceModel[instances.size()]);
+    }
 
     /**
      * Return the number of instances found so far.

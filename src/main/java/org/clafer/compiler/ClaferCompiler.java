@@ -256,8 +256,8 @@ public class ClaferCompiler {
                     intStrategy(getIntVars(in, solution), options));
             restartPolicy(solver, options);
             return maximizes.length == 1
-                    ? new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0])
-                    : new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars);
+                    ? new EquivalentParetoSolver(new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0]))
+                    : new EquivalentParetoSolver(new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars));
         } catch (UnsatisfiableException e) {
             return new ClaferUnsatOptimizer();
         }

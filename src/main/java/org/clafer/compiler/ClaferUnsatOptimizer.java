@@ -32,11 +32,6 @@ public class ClaferUnsatOptimizer implements ClaferOptimizer {
     }
 
     @Override
-    public InstanceModel[] allInstances() {
-        return new InstanceModel[0];
-    }
-
-    @Override
     public int instanceCount() {
         return 0;
     }

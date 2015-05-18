@@ -3,7 +3,6 @@ package org.clafer.compiler;
 import java.util.ArrayList;
 import java.util.List;
 import org.clafer.collection.Either;
-import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
@@ -18,26 +17,20 @@ import org.chocosolver.solver.variables.IntVar;
  *
  * @author jimmy
  */
-public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
+public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimizer {
 
-    private final Solver solver;
-    private final ClaferSolutionMap solutionMap;
-    private final boolean[] maximizes;
-    private final Either<Integer, IntVar>[] scores;
     private int count = 0;
     private boolean more = true;
     private final int[] optimalValues;
     // GIA
+    private Solution solution = null;
     private final List<Constraint> stack = new ArrayList<>();
     private final IntVar[] bounds;
     private final Constraint dominate;
 
     ClaferMultiObjectiveOptimizerGIA(Solver solver, ClaferSolutionMap solutionMap,
             boolean[] maximize, Either<Integer, IntVar>[] scores) {
-        this.solver = Check.notNull(solver);
-        this.solutionMap = Check.notNull(solutionMap);
-        this.maximizes = maximize;
-        this.scores = Check.noNullsNotEmpty(scores);
+        super(solver, solutionMap, maximize, scores);
         this.optimalValues = new int[scores.length];
         this.bounds = new IntVar[scores.length];
 
@@ -83,39 +76,32 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
         stack.clear();
     }
 
-    public ClaferSolutionMap getSolutionMap() {
-        return solutionMap;
-    }
-
     @Override
     public boolean find() {
         if (!more) {
             return false;
         }
-        Solution progress = null;
-        more &= count == 0 ? solveFirst(progress = new Solution()) : solveNext();
+        solution = new Solution();
+        more &= count == 0 ? solveFirst() : solveNext();
         if (solver.hasReachedLimit()) {
             more = false;
-            if (progress != null && progress.hasBeenFound()) {
-                InstanceModel bestInstance = solutionMap.getInstance(progress);
+            if (solution.hasBeenFound()) {
+                InstanceModel bestInstance = solutionMap.getInstance(solution);
                 int[] bestObjectiveValue = new int[scores.length];
                 for (int i = 0; i < bestObjectiveValue.length; i++) {
                     bestObjectiveValue[i] = scores[i].isLeft()
                             ? scores[i].getLeft()
-                            : progress.getIntVal(scores[i].getRight());
+                            : solution.getIntVal(scores[i].getRight());
                 }
                 throw new ReachedLimitBestKnownException(bestInstance, bestObjectiveValue);
-
             }
             throw new ReachedLimitException();
         }
         if (more) {
-            if (count == 0) {
-                for (int i = 0; i < optimalValues.length; i++) {
-                    optimalValues[i] = scores[i].isLeft()
-                            ? scores[i].getLeft()
-                            : scores[i].getRight().getValue();
-                }
+            for (int i = 0; i < optimalValues.length; i++) {
+                optimalValues[i] = scores[i].isLeft()
+                        ? scores[i].getLeft()
+                        : solution.getIntVal(scores[i].getRight());
             }
             count++;
         }
@@ -126,7 +112,7 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
      * Implementation of multiple objective optimization based on discussion here:
      * https://github.com/chocoteam/choco3/issues/188.
      */
-    private boolean solveFirst(Solution progress) {
+    private boolean solveFirst() {
         assert stack.isEmpty();
 
         if (!solver.findSolution()) {
@@ -137,9 +123,7 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
 
         int[] best = new int[scores.length];
         do {
-            if (progress != null) {
-                progress.record(solver);
-            }
+            solution.record(solver);
             for (int i = 0; i < best.length; i++) {
                 best[i] = scores[i].isLeft() ? scores[i].getLeft() : scores[i].getRight().getValue();
             }
@@ -153,37 +137,18 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
         if (solver.hasReachedLimit()) {
             return false;
         }
-
         popAll();
-
         for (int i = 0; i < bounds.length; i++) {
-            optimalValues[i] = best[i];
             if (bounds[i] != null) {
-                push(ICF.arithm(bounds[i], "=", best[i]));
-                push(ICF.arithm(scores[i].getRight(), "=", best[i]));
+                push(ICF.arithm(bounds[i], "=", scores[i].getRight()));
             }
         }
 
-        solver.getEngine().flush();
-        solver.getSearchLoop().reset();
-
-        if (!solver.findSolution()) {
-            assert solver.hasReachedLimit() : "A solution is known to exist";
-        }
-
-        return !solver.hasReachedLimit();
+        return true;
     }
 
     private boolean solveNext() {
-        if (solver.nextSolution()) {
-            return true;
-        }
-        if (solver.hasReachedLimit()) {
-            return false;
-        }
-
         popAll();
-
         solver.getEngine().flush();
         solver.getSearchLoop().reset();
 
@@ -194,8 +159,7 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
             }
         }
         solver.post(or(strictlyBetter, solver));
-
-        return solveFirst(null);
+        return solveFirst();
     }
 
     @Override
@@ -203,7 +167,12 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
         if (count == 0 || !more) {
             throw new IllegalStateException("No instances. Did you forget to call find?");
         }
-        return solutionMap.getInstance();
+        return solutionMap.getInstance(solution);
+    }
+
+    @Override
+    public Solution solution() {
+        return solution;
     }
 
     @Override
@@ -212,15 +181,6 @@ public class ClaferMultiObjectiveOptimizerGIA implements ClaferOptimizer {
             throw new IllegalStateException("No instances. Did you forget to call find?");
         }
         return optimalValues.clone();
-    }
-
-    @Override
-    public InstanceModel[] allInstances() {
-        List<InstanceModel> instances = new ArrayList<>();
-        while (find()) {
-            instances.add(instance());
-        }
-        return instances.toArray(new InstanceModel[instances.size()]);
     }
 
     @Override

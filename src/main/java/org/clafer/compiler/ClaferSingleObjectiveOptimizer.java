@@ -1,33 +1,22 @@
 package org.clafer.compiler;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.clafer.collection.Either;
-import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.ResolutionPolicy;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.objective.ObjectiveManager;
 import org.chocosolver.solver.propagation.NoPropagationEngine;
 import org.chocosolver.solver.propagation.hardcoded.SevenQueuesPropagatorEngine;
 import org.chocosolver.solver.search.loop.monitors.IMonitorSolution;
 import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
-import org.chocosolver.solver.variables.Variable;
 
 /**
  *
  * @author jimmy
  */
-public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
+public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer {
 
-    private final Solver solver;
-    private final ClaferSolutionMap solutionMap;
-    private final boolean maximize;
-    private final Either<Integer, IntVar> score;
     private int count = 0;
     private boolean more = true;
     private int optimalValue;
@@ -35,37 +24,30 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
 
     ClaferSingleObjectiveOptimizer(Solver solver, ClaferSolutionMap solutionMap,
             boolean maximize, Either<Integer, IntVar> score) {
-        this.solver = Check.notNull(solver);
-        this.solutionMap = Check.notNull(solutionMap);
-        this.maximize = maximize;
-        this.score = Check.notNull(score);
-    }
-
-    public ClaferSolutionMap getSolutionMap() {
-        return solutionMap;
+        super(solver, solutionMap, new boolean[]{maximize}, new Either[]{score});
     }
 
     public boolean isMaximize() {
-        return maximize;
+        return maximizes[0];
     }
 
     public boolean isMinimize() {
-        return !maximize;
+        return !isMaximize();
     }
 
     @Override
     public boolean find() {
-        if (!more) {
+        if (!more || count == 1) {
+            more = false;
             return false;
         }
-        more &= count == 0 ? solveFirst() : solveNext();
+        more &= solveFirst();
         if (solver.hasReachedLimit()) {
-            more = false;
-            if (count == 0 && firstSolution.hasBeenFound()) {
+            if (firstSolution.hasBeenFound()) {
                 InstanceModel bestInstance = solutionMap.getInstance(firstSolution);
-                int bestObjectiveValue = score.isLeft()
-                        ? score.getLeft()
-                        : firstSolution.getIntVal(score.getRight());
+                int bestObjectiveValue = scores[0].isLeft()
+                        ? scores[0].getLeft()
+                        : firstSolution.getIntVal(scores[0].getRight());
                 throw new ReachedLimitBestKnownException(
                         bestInstance,
                         new int[]{bestObjectiveValue});
@@ -73,11 +55,9 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
             throw new ReachedLimitException();
         }
         if (more) {
-            if (count == 0) {
-                optimalValue = score.isLeft()
-                        ? score.getLeft()
-                        : firstSolution.getIntVal(score.getRight());
-            }
+            optimalValue = scores[0].isLeft()
+                    ? scores[0].getLeft()
+                    : firstSolution.getIntVal(scores[0].getRight());
             count++;
         }
         return more;
@@ -88,13 +68,13 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
      * https://github.com/chocoteam/choco3/issues/121.
      */
     private boolean solveFirst() {
-        if (score.isLeft()) {
+        if (scores[0].isLeft()) {
             return solver.findSolution();
         }
-        IntVar scoreVar = score.getRight();
+        IntVar scoreVar = scores[0].getRight();
         solver.set(new ObjectiveManager(
                 scoreVar,
-                maximize ? ResolutionPolicy.MAXIMIZE : ResolutionPolicy.MINIMIZE,
+                isMaximize() ? ResolutionPolicy.MAXIMIZE : ResolutionPolicy.MINIMIZE,
                 true));
         solver.getSearchLoop().plugSearchMonitor(new IMonitorSolution() {
             private static final long serialVersionUID = 1L;
@@ -109,42 +89,11 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         if (solver.getEngine() == NoPropagationEngine.SINGLETON) {
             solver.set(new SevenQueuesPropagatorEngine(solver));
         }
-        if(!solver.getEngine().isInitialized()){
+        if (!solver.getEngine().isInitialized()) {
             solver.getEngine().initialize();
         }
         solver.getSearchLoop().launch(false);
         return firstSolution.hasBeenFound() && !solver.hasReachedLimit();
-    }
-
-    private boolean solveNext() {
-        if (score.isLeft() || count > 1) {
-            return solver.nextSolution();
-        }
-        IntVar scoreVar = score.getRight();
-        int best = firstSolution.getIntVal(scoreVar);
-        solver.getEngine().flush();
-        solver.getSearchLoop().reset();
-        solver.post(ICF.arithm(scoreVar, "=", best));
-        boolean next = solver.findSolution();
-        return next && duplicateSolution() ? solver.nextSolution() : next;
-    }
-
-    private boolean duplicateSolution() {
-        for (IntVar var : solutionMap.getIrSolution().getIntVars()) {
-            if ((var.getTypeAndKind() & Variable.CSTE) == 0) {
-                if (var.getValue() != firstSolution.getIntVal(var)) {
-                    return false;
-                }
-            }
-        }
-        for (SetVar var : solutionMap.getIrSolution().getSetVars()) {
-            if ((var.getTypeAndKind() & Variable.CSTE) == 0) {
-                if (!Arrays.equals(var.getValues(), firstSolution.getSetVal(var))) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     @Override
@@ -152,10 +101,15 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
         if (count == 0 || !more) {
             throw new IllegalStateException("No instances. Did you forget to call find?");
         }
-        if (count == 1) {
-            return solutionMap.getInstance(firstSolution);
+        return solutionMap.getInstance(firstSolution);
+    }
+
+    @Override
+    public Solution solution() {
+        if (count == 0 || !more) {
+            throw new IllegalStateException("No instances. Did you forget to call find?");
         }
-        return solutionMap.getInstance();
+        return firstSolution;
     }
 
     @Override
@@ -164,15 +118,6 @@ public class ClaferSingleObjectiveOptimizer implements ClaferOptimizer {
             throw new IllegalStateException("No instances. Did you forget to call find?");
         }
         return new int[]{optimalValue};
-    }
-
-    @Override
-    public InstanceModel[] allInstances() {
-        List<InstanceModel> instances = new ArrayList<>();
-        while (find()) {
-            instances.add(instance());
-        }
-        return instances.toArray(new InstanceModel[instances.size()]);
     }
 
     @Override
