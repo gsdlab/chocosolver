@@ -29,8 +29,8 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
     private final Constraint dominate;
 
     ClaferMultiObjectiveOptimizerGIA(Solver solver, ClaferSolutionMap solutionMap,
-            boolean[] maximize, Either<Integer, IntVar>[] scores) {
-        super(solver, solutionMap, maximize, scores);
+            boolean[] maximizes, Either<Integer, IntVar>[] scores) {
+        super(solver, solutionMap, maximizes, scores);
         this.optimalValues = new int[scores.length];
         this.bounds = new IntVar[scores.length];
 
