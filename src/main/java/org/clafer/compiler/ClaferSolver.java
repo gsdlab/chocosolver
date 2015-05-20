@@ -38,7 +38,7 @@ public class ClaferSolver implements ClaferSearch {
     }
 
     @Override
-    public boolean find() {
+    public boolean find() throws ReachedLimitException {
         if (!more) {
             return false;
         }

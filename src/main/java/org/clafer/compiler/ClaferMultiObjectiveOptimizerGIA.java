@@ -77,7 +77,7 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
     }
 
     @Override
-    public boolean find() {
+    public boolean find() throws ReachedLimitException {
         if (!more) {
             return false;
         }

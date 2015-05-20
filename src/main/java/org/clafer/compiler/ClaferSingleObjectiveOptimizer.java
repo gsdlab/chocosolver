@@ -36,7 +36,7 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
     }
 
     @Override
-    public boolean find() {
+    public boolean find() throws ReachedLimitException {
         if (!more || count == 1) {
             more = false;
             return false;

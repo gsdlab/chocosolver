@@ -2,14 +2,12 @@ package org.clafer.compiler;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.chocosolver.solver.ResolutionPolicy;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.constraints.LCF;
 import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.VF;
 import org.clafer.collection.Either;
 import org.clafer.instance.InstanceModel;
 
@@ -42,7 +40,7 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
     }
 
     @Override
-    public boolean find() {
+    public boolean find() throws ReachedLimitException {
         if (solutions == null) {
             solutions = new ArrayList<>();
             List<Constraint> stack = new ArrayList<>();
@@ -69,6 +67,25 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
                 } while (solver.nextSolution());
             }
             stack.forEach(solver::unpost);
+            if (solver.hasReachedLimit()) {
+                if (solutions.isEmpty()) {
+                    throw new ReachedLimitException();
+                }
+                InstanceModel[] instances = new InstanceModel[solutions.size()];
+                int[][] optimalValues = new int[solutions.size()][];
+                int i = 0;
+                for (Solution solution : solutions) {
+                    instances[i] = solutionMap.getInstance(solution);
+                    optimalValues[i] = new int[scores.length];
+                    for (int j = 0; j < scores.length; j++) {
+                        optimalValues[i][j] = scores[j].isLeft()
+                                ? scores[j].getLeft()
+                                : solution.getIntVal(scores[j].getRight());
+                    }
+                    i++;
+                }
+                throw new ReachedLimitBestKnownException(instances, optimalValues);
+            }
         }
         return count++ < solutions.size();
     }
@@ -107,22 +124,5 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
     @Override
     public Solver getInternalSolver() {
         return solver;
-    }
-
-    public static void main(String[] args) {
-        Solver s = new Solver();
-        IntVar i = VF.enumerated("i", -5, 5, s);
-
-        s.findOptimalSolution(ResolutionPolicy.MAXIMIZE, i);
-        System.out.println("Optimization problem: " + i);
-
-        s.getEngine().flush();
-        s.getSearchLoop().reset();
-
-        if (s.findSolution()) {
-            do {
-                System.out.println("Satisfaction problem: " + i);
-            } while (s.nextSolution());
-        }
     }
 }
