@@ -246,18 +246,35 @@ public class ClaferCompiler {
             Either<Integer, IntVar>[] objectiveVars = irSolution.getVars(objectiveIrVars);
 
             boolean[] maximizes = new boolean[objectives.length];
-            for (int i = 0; i < maximizes.length; i++) {
-                maximizes[i] = objectives[i].isMaximize();
+            IntVar[] scores = new IntVar[objectives.length];
+            int variableScores = 0;
+            Integer[] fixedScores = new Integer[objectives.length];
+            for (int i = 0; i < objectives.length; i++) {
+                if (objectiveVars[i].isLeft()) {
+                    fixedScores[i] = objectiveVars[i].getLeft();
+                } else {
+                    maximizes[variableScores] = objectives[i].isMaximize();
+                    scores[variableScores] = objectiveVars[i].getRight();
+                    variableScores++;
+                }
             }
+            maximizes = Arrays.copyOf(maximizes, variableScores);
+            scores = Arrays.copyOf(scores, variableScores);
 
             set(solver,
                     setStrategy(getSetVars(in, solution), options),
                     //                firstFailInDomainMax(objectiveVars),
                     intStrategy(getIntVars(in, solution), options));
             restartPolicy(solver, options);
-            return maximizes.length == 1
-                    ? new EquivalentParetoSolver(new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0]))
-                    : new EquivalentParetoSolver(new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars));
+            ClaferOptimizer optimizer = maximizes.length == 0
+                    ? new ClaferNoObjectiveOptimizer(new ClaferSolver(solver, solution))
+                    : maximizes.length == 1
+                            ? new EquivalentParetoSolver(new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], scores[0]))
+                            : new EquivalentParetoSolver(new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, scores));
+
+            return variableScores < fixedScores.length
+                    ? new PartiallyKnownOptimizer(optimizer, fixedScores)
+                    : optimizer;
         } catch (UnsatisfiableException e) {
             return new ClaferNoObjectiveOptimizer(new ClaferSolver());
         }

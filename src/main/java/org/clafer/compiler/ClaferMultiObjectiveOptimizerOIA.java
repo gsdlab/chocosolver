@@ -8,7 +8,6 @@ import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.constraints.LCF;
 import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
-import org.clafer.collection.Either;
 import org.clafer.instance.InstanceModel;
 
 /**
@@ -21,19 +20,17 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
     private int count = 0;
 
     ClaferMultiObjectiveOptimizerOIA(Solver solver, ClaferSolutionMap solutionMap,
-            boolean[] maximizes, Either<Integer, IntVar>[] scores) {
+            boolean[] maximizes, IntVar[] scores) {
         super(solver, solutionMap, maximizes, scores);
     }
 
     private boolean dominates(Solution a, Solution b) {
         // Assumes a and b are not equivalent.
         for (int i = 0; i < scores.length; i++) {
-            if (scores[i].isRight()) {
-                if (maximizes[i] && a.getIntVal(scores[i].getRight()) < b.getIntVal(scores[i].getRight())) {
-                    return false;
-                } else if (!maximizes[i] && a.getIntVal(scores[i].getRight()) > b.getIntVal(scores[i].getRight())) {
-                    return false;
-                }
+            if (maximizes[i] && a.getIntVal(scores[i]) < b.getIntVal(scores[i])) {
+                return false;
+            } else if (!maximizes[i] && a.getIntVal(scores[i]) > b.getIntVal(scores[i])) {
+                return false;
             }
         }
         return true;
@@ -52,12 +49,10 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
                     solutions.add(solution);
                     List<Constraint> better = new ArrayList<>(scores.length);
                     for (int i = 0; i < scores.length; i++) {
-                        if (scores[i].isRight()) {
-                            better.add(ICF.arithm(
-                                    scores[i].getRight(),
-                                    maximizes[i] ? ">" : "<",
-                                    scores[i].getRight().getValue()));
-                        }
+                        better.add(ICF.arithm(
+                                scores[i],
+                                maximizes[i] ? ">" : "<",
+                                scores[i].getValue()));
                     }
                     if (!better.isEmpty()) {
                         Constraint betterConstraint = LCF.or(better.toArray(new Constraint[better.size()]));
@@ -78,9 +73,7 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
                     instances[i] = solutionMap.getInstance(solution);
                     optimalValues[i] = new int[scores.length];
                     for (int j = 0; j < scores.length; j++) {
-                        optimalValues[i][j] = scores[j].isLeft()
-                                ? scores[j].getLeft()
-                                : solution.getIntVal(scores[j].getRight());
+                        optimalValues[i][j] = solution.getIntVal(scores[j]);
                     }
                     i++;
                 }
@@ -111,7 +104,7 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
         Solution solution = solution();
         int[] optimalValues = new int[scores.length];
         for (int i = 0; i < optimalValues.length; i++) {
-            optimalValues[i] = scores[i].isLeft() ? scores[i].getLeft() : solution.getIntVal(scores[i].getRight());
+            optimalValues[i] = solution.getIntVal(scores[i]);
         }
         return optimalValues;
     }

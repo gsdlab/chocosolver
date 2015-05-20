@@ -8,7 +8,6 @@ import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
-import org.clafer.collection.Either;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 
@@ -48,16 +47,12 @@ public class EquivalentParetoSolver implements ClaferOptimizer {
             if (paretoCount == 1) {
                 solver.getEngine().flush();
                 solver.getSearchLoop().reset();
-                Either<Integer, IntVar>[] scores = optimizer.getScores();
+                IntVar[] scores = optimizer.getScores();
                 int[] paretoPoint = optimizer.optimalValues();
                 equivalentConstraint = new Constraint[paretoPoint.length];
                 for (int i = 0; i < scores.length; i++) {
-                    if (scores[i].isRight()) {
-                        equivalentConstraint[i] = ICF.arithm(scores[i].getRight(), "=", paretoPoint[i]);
-                        solver.post(equivalentConstraint[i]);
-                    } else {
-                        assert scores[i].getLeft().intValue() == paretoPoint[i];
-                    }
+                    equivalentConstraint[i] = ICF.arithm(scores[i], "=", paretoPoint[i]);
+                    solver.post(equivalentConstraint[i]);
                 }
             }
             boolean next = paretoCount == 1 ? solver.findSolution() : solver.nextSolution();

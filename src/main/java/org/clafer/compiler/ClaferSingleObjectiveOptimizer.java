@@ -1,6 +1,5 @@
 package org.clafer.compiler;
 
-import org.clafer.collection.Either;
 import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.ResolutionPolicy;
 import org.chocosolver.solver.Solver;
@@ -23,8 +22,8 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
     private final Solution firstSolution = new Solution();
 
     ClaferSingleObjectiveOptimizer(Solver solver, ClaferSolutionMap solutionMap,
-            boolean maximize, Either<Integer, IntVar> score) {
-        super(solver, solutionMap, new boolean[]{maximize}, new Either[]{score});
+            boolean maximize, IntVar score) {
+        super(solver, solutionMap, new boolean[]{maximize}, new IntVar[]{score});
     }
 
     public boolean isMaximize() {
@@ -45,9 +44,7 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
         if (solver.hasReachedLimit()) {
             if (firstSolution.hasBeenFound()) {
                 InstanceModel bestInstance = solutionMap.getInstance(firstSolution);
-                int bestObjectiveValue = scores[0].isLeft()
-                        ? scores[0].getLeft()
-                        : firstSolution.getIntVal(scores[0].getRight());
+                int bestObjectiveValue = firstSolution.getIntVal(scores[0]);
                 throw new ReachedLimitBestKnownException(
                         bestInstance,
                         new int[]{bestObjectiveValue});
@@ -55,9 +52,7 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
             throw new ReachedLimitException();
         }
         if (more) {
-            optimalValue = scores[0].isLeft()
-                    ? scores[0].getLeft()
-                    : firstSolution.getIntVal(scores[0].getRight());
+            optimalValue = firstSolution.getIntVal(scores[0]);
             count++;
         }
         return more;
@@ -68,10 +63,7 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
      * https://github.com/chocoteam/choco3/issues/121.
      */
     private boolean solveFirst() {
-        if (scores[0].isLeft()) {
-            return solver.findSolution();
-        }
-        IntVar scoreVar = scores[0].getRight();
+        IntVar scoreVar = scores[0];
         solver.set(new ObjectiveManager(
                 scoreVar,
                 isMaximize() ? ResolutionPolicy.MAXIMIZE : ResolutionPolicy.MINIMIZE,
