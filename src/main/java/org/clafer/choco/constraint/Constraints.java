@@ -1,51 +1,15 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.choco.constraint.propagator.PropTransitive;
+
+import org.chocosolver.solver.variables.*;
+import org.chocosolver.util.objects.setDataStructures.SetType;
+import org.clafer.choco.constraint.propagator.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import org.clafer.choco.constraint.propagator.PropAcyclic;
-import org.clafer.choco.constraint.propagator.PropAnd;
-import org.clafer.choco.constraint.propagator.PropArrayToSet;
-import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
-import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
-import org.clafer.choco.constraint.propagator.PropContinuous;
-import org.clafer.choco.constraint.propagator.PropContinuousUnion;
-import org.clafer.choco.constraint.propagator.PropCountNotEqual;
-import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
-import org.clafer.choco.constraint.propagator.PropFilterString;
-import org.clafer.choco.constraint.propagator.PropIfThenElse;
-import org.clafer.choco.constraint.propagator.PropIntChannel;
-import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
-import org.clafer.choco.constraint.propagator.PropJoinFunction;
-import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
-import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
-import org.clafer.choco.constraint.propagator.PropJoinRelation;
-import org.clafer.choco.constraint.propagator.PropLength;
-import org.clafer.choco.constraint.propagator.PropLexChainChannel;
-import org.clafer.choco.constraint.propagator.PropLone;
-import org.clafer.choco.constraint.propagator.PropMask;
-import org.clafer.choco.constraint.propagator.PropNotEqualXY_Z;
-import org.clafer.choco.constraint.propagator.PropOne;
-import org.clafer.choco.constraint.propagator.PropOr;
-import org.clafer.choco.constraint.propagator.PropReflexive;
-import org.clafer.choco.constraint.propagator.PropReifyEqualXY;
-import org.clafer.choco.constraint.propagator.PropSamePrefix;
-import org.clafer.choco.constraint.propagator.PropSelectN;
-import org.clafer.choco.constraint.propagator.PropSetBounded;
-import org.clafer.choco.constraint.propagator.PropSetDifference;
-import org.clafer.choco.constraint.propagator.PropSetLowBound;
-import org.clafer.choco.constraint.propagator.PropSetStrictHighBound;
-import org.clafer.choco.constraint.propagator.PropSetMax;
-import org.clafer.choco.constraint.propagator.PropSetMin;
-import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
-import org.clafer.choco.constraint.propagator.PropSetSum;
-import org.clafer.choco.constraint.propagator.PropSetUnion;
-import org.clafer.choco.constraint.propagator.PropSetUnionCard;
-import org.clafer.choco.constraint.propagator.PropSingleton;
-import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
-import org.clafer.choco.constraint.propagator.PropUnreachable;
+
 import org.clafer.common.Util;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
@@ -62,12 +26,9 @@ import org.chocosolver.solver.constraints.set.PropSubsetEq;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
 import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
 import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
-import org.chocosolver.solver.variables.BoolVar;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
-import org.chocosolver.solver.variables.VF;
-import org.chocosolver.solver.variables.Variable;
-import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
+import org.clafer.domain.Domain;
+import org.clafer.ir.IrSetArrayExpr;
+import org.clafer.ir.IrSetVar;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -523,6 +484,71 @@ public class Constraints {
      */
     public static Constraint acyclic(IntVar... edges) {
         return new Constraint("acyclic", new PropAcyclic(edges));
+    }
+
+    public static Constraint connected(SetVar nodes, SetVar[] relation, boolean directed) {
+        @SuppressWarnings("unchecked")
+        Propagator<SetVar>[] propagators
+                = (Propagator<SetVar>[]) new Propagator<?>[1];
+        propagators[0] = new PropConnected(nodes, relation, directed);
+        return new Constraint("connected", propagators);
+        /*
+        int n = -1;
+        for(Domain d : relation.getEnvs()){
+            for(int i : d.getValues()){
+                if(i > n)
+                    n = i;
+            }
+        }
+        n += 1;
+        UndirectedGraph GLB = new UndirectedGraph(s, n, SetType.BITSET, false);
+        UndirectedGraph GUB = new UndirectedGraph(s, n, SetType.BITSET, false);
+
+        for(int i = 0; i < relation.length(); i++) {
+            if (relation.getKers()[i].getValues().length > 0) {
+                GLB.addNode(i);
+            }
+            if (relation.getEnvs()[i].getValues().length > 0) {
+                GUB.addNode(i);
+            }
+        }
+
+        for(int i = 0; i < relation.length(); i++){
+            if(relation.getKers()[i].getValues().length > 0){
+                for (int j : relation.getKers()[i].getValues()){
+                    GLB.addEdge(i, j);
+                }
+            }
+            if(relation.getEnvs()[i].getValues().length > 0) {
+                for (int j : relation.getEnvs()[i].getValues()){
+                    GUB.addEdge(i, j);
+                }
+            }
+        }
+
+        IUndirectedGraphVar g = GraphVarFactory.undirected_graph_var("G", GLB, GUB, s);
+        return GCF.connected(g);
+        */
+    }
+
+    public static Constraint directedConnected(SetVar[] relation, SetVar[] closure) {
+        if (relation.length != closure.length) {
+            throw new IllegalArgumentException();
+        }
+        //TODO
+        System.exit(1);
+
+        @SuppressWarnings("unchecked")
+        Propagator<SetVar>[] propagators
+                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 4];
+        for (int i = 0; i < relation.length; i++) {
+            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+        }
+        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, true);
+        propagators[relation.length + 1] = new PropReflexive(closure);
+        propagators[relation.length + 2] = new PropTransitive(closure);
+        propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
+        return new Constraint("connectedDirected", propagators);
     }
 
     /**
@@ -1119,4 +1145,6 @@ public class Constraints {
         propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
         return new Constraint("transitiveReflexive", propagators);
     }
+
+
 }

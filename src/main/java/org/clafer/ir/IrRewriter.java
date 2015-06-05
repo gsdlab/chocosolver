@@ -703,4 +703,13 @@ public abstract class IrRewriter<T>
                 ? transitiveClosure(relation, ir.isReflexive())
                 : ir;
     }
+
+    @Override
+    public IrIntExpr visit(IrConnected ir, T a) {
+        IrSetArrayExpr edges = rewrite(ir.getRelation(), a);
+        IrSetVar nodes = (IrSetVar)rewrite(ir.getNodes(), a);
+        return changed(ir.getRelation(), edges)
+                ? connected(nodes, edges, ir.isDirected())
+                : ir;
+    }
 }

@@ -433,4 +433,16 @@ public class Asts {
     public static AstSetExpr transitiveReflexiveClosure(AstSetExpr relation) {
         return transitiveClosure(relation, true);
     }
+
+    public static AstBoolExpr connected(AstSetExpr nodes, AstSetExpr relation, boolean directed) {
+        return new AstConnected(nodes, relation, directed);
+    }
+
+    public static AstBoolExpr connected(AstSetExpr nodes, AstSetExpr relation) {
+        return new AstConnected(nodes, relation, false);
+    }
+
+    public static AstBoolExpr connectedDirected(AstSetExpr nodes, AstSetExpr relation) {
+        return new AstConnected(nodes, relation, true);
+    }
 }

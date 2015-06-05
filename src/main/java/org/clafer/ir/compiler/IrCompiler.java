@@ -13,88 +13,9 @@ import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
-import org.clafer.ir.IrAcyclic;
-import org.clafer.ir.IrAdd;
-import org.clafer.ir.IrAllDifferent;
-import org.clafer.ir.IrAnd;
-import org.clafer.ir.IrArrayToSet;
-import org.clafer.ir.IrBoolChannel;
+import org.clafer.ir.*;
 import org.clafer.domain.BoolDomain;
-import org.clafer.ir.IrBoolExpr;
-import org.clafer.ir.IrBoolExprVisitor;
-import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrCard;
-import org.clafer.ir.IrCompare;
-import org.clafer.ir.IrConcat;
-import org.clafer.ir.IrCount;
-import org.clafer.ir.IrDiv;
 import org.clafer.domain.Domain;
-import org.clafer.ir.IrCountNotEqual;
-import org.clafer.ir.IrElement;
-import org.clafer.ir.IrStringElement;
-import org.clafer.ir.IrExpr;
-import org.clafer.ir.IrFilterString;
-import org.clafer.ir.IrIfOnlyIf;
-import org.clafer.ir.IrIfThenElse;
-import org.clafer.ir.IrImplies;
-import org.clafer.ir.IrIntArrayExpr;
-import org.clafer.ir.IrIntArrayExprVisitor;
-import org.clafer.ir.IrIntArrayVar;
-import org.clafer.ir.IrIntChannel;
-import org.clafer.ir.IrIntConstant;
-import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrIntExprVisitor;
-import org.clafer.ir.IrIntVar;
-import org.clafer.ir.IrInverse;
-import org.clafer.ir.IrJoinFunction;
-import org.clafer.ir.IrJoinRelation;
-import org.clafer.ir.IrLength;
-import org.clafer.ir.IrLone;
-import org.clafer.ir.IrMask;
-import org.clafer.ir.IrMember;
-import org.clafer.ir.IrMinus;
-import org.clafer.ir.IrModule;
-import org.clafer.ir.IrMul;
-import org.clafer.ir.IrNot;
-import org.clafer.ir.IrNotImplies;
-import org.clafer.ir.IrNotMember;
-import org.clafer.ir.IrOffset;
-import org.clafer.ir.IrOne;
-import org.clafer.ir.IrOr;
-import org.clafer.ir.IrPrefix;
-import org.clafer.ir.IrRegister;
-import org.clafer.ir.IrSelectN;
-import org.clafer.ir.IrSetArrayExpr;
-import org.clafer.ir.IrSetArrayExprVisitor;
-import org.clafer.ir.IrSetArrayVar;
-import org.clafer.ir.IrSetDifference;
-import org.clafer.ir.IrSetElement;
-import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrSetExprVisitor;
-import org.clafer.ir.IrSetIntersection;
-import org.clafer.ir.IrSetSum;
-import org.clafer.ir.IrSetTernary;
-import org.clafer.ir.IrSetEquality;
-import org.clafer.ir.IrSetUnion;
-import org.clafer.ir.IrSetVar;
-import org.clafer.ir.IrSingleton;
-import org.clafer.ir.IrSortSets;
-import org.clafer.ir.IrSortStrings;
-import org.clafer.ir.IrSortStringsChannel;
-import org.clafer.ir.IrStringCompare;
-import org.clafer.ir.IrStringExpr;
-import org.clafer.ir.IrStringExprVisitor;
-import org.clafer.ir.IrStringVar;
-import org.clafer.ir.IrSubsetEq;
-import org.clafer.ir.IrSuffix;
-import org.clafer.ir.IrTernary;
-import org.clafer.ir.IrTransitiveClosure;
-import org.clafer.ir.IrUnreachable;
-import org.clafer.ir.IrUtil;
-import org.clafer.ir.IrVar;
-import org.clafer.ir.IrWithin;
-import org.clafer.ir.IrXor;
-import org.clafer.ir.Irs;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
@@ -111,8 +32,6 @@ import org.chocosolver.solver.variables.CStringVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
-import org.clafer.ir.IrMod;
-import org.clafer.ir.IrSetMax;
 
 /**
  * Compile from IR to Choco.
@@ -141,7 +60,6 @@ public class IrCompiler {
 
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(module);
-
         Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
         Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
         if (coalesceVariables) {
@@ -748,7 +666,6 @@ public class IrCompiler {
     }
 
     private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
-
         @Override
         public Object visit(IrRegister ir, BoolArg a) {
             IrVar variable = ir.getVariable();
@@ -1052,6 +969,13 @@ public class IrCompiler {
         public Object visit(IrAcyclic ir, BoolArg a) {
             IntVar[] edges = compile(ir.getEdges());
             return Constraints.acyclic(edges);
+        }
+
+        @Override
+        public Object visit(IrConnected ir, BoolArg  a) {
+            CSetVar[] relation = compile(ir.getRelation());
+            CSetVar nodes = compile(ir.getNodes());
+            return Constraints.connected(mapSet(nodes)[0], mapSet(relation), ir.isDirected());
         }
 
         @Override
@@ -1455,6 +1379,11 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrConnected ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
         public Object visit(IrUnreachable ir, IntVar a) {
             return compileBool(ir, a);
         }
@@ -1708,6 +1637,8 @@ public class IrCompiler {
             }
             return Constraints.transitiveClosure(mapSet(relation), mapSet(reify), ir.isReflexive());
         }
+
+
     };
 
     private static Constraint _implies(BoolVar antecedent, Constraint consequent) {

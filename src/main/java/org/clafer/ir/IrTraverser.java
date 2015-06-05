@@ -493,4 +493,10 @@ public abstract class IrTraverser<T>
         traverse(ir.getRelation(), a);
         return null;
     }
+
+    @Override
+    public Void visit(IrConnected ir, T a) {
+        traverse(ir.getRelation(), a);
+        return null;
+    }
 }

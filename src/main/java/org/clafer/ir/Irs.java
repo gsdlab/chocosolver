@@ -1011,11 +1011,18 @@ public class Irs {
         return new IrAcyclic(edges, TrueFalseDomain);
     }
 
+
     public static IrBoolExpr unreachable(IrIntExpr[] edges, int from, int to) {
         return new IrUnreachable(edges, from, to, TrueFalseDomain);
     }
 
-    public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
+
+    public static IrBoolExpr connected(IrSetVar nodes, IrSetArrayExpr relation, boolean directed) {
+        return new IrConnected(nodes, relation, directed, TrueFalseDomain);
+    }
+
+
+        public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
         if (set.getEnv().isEmpty()) {
             return filterString(set, 0, new IrIntExpr[0], result);
         }
@@ -2186,6 +2193,8 @@ public class Irs {
         }
         return new IrTransitiveClosure(relation, reflexive, envs, kers, cards);
     }
+
+
 
     /**
      *******************

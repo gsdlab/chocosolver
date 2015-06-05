@@ -2,6 +2,7 @@ package org.clafer;
 
 import java.util.HashSet;
 import java.util.Set;
+
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -84,4 +85,6 @@ public class TransitiveTest {
         }
         assertEquals(36, solver.instanceCount());
     }
+
+
 }

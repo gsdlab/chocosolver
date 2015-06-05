@@ -21,6 +21,7 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstConnected;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
@@ -1698,6 +1699,24 @@ public class AstCompiler {
             }
             if (relation instanceof IrSetArrayExpr) {
                 return transitiveClosure((IrSetArrayExpr) relation, ast.isReflexive());
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
+
+        @Override
+        public IrExpr visit(AstConnected ast, Void a) {
+            IrExpr nodes = compile(ast.getNodes());
+            IrExpr relation = compile(ast.getRelation());
+            if (relation instanceof IrIntArrayExpr) {
+                Type type = getType(ast.getRelation());
+                AstClafer returnType = type.getCommonSupertype().get(1);
+                //TODO fix
+                return connected((IrSetVar) nodes, (IrSetArrayExpr) relation, ast.isDirected());
+                //return connected(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isDirected());
+            }
+            if (relation instanceof IrSetArrayExpr){
+                return connected((IrSetVar) nodes, (IrSetArrayExpr) relation, ast.isDirected());
             }
             // Bug.
             throw new AstException("Should not have passed type checking.");
