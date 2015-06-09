@@ -19,7 +19,7 @@ import java.util.*;
 
 /**
  *
- * @author jimmy
+ * @author ed
  */
 public class PropConnected extends Propagator<SetVar> {
 

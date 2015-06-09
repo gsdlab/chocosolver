@@ -1,7 +1,17 @@
 package org.clafer.choco.constraint;
 
 
+import org.chocosolver.solver.constraints.set.PropAllEqual;
+import org.chocosolver.solver.constraints.set.SCF;
+import org.chocosolver.solver.cstrs.GCF;
+import org.chocosolver.solver.cstrs.connectivity.*;
+import org.chocosolver.solver.cstrs.connectivity.PropConnected;
+import org.chocosolver.solver.search.GraphStrategyFactory;
+import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
+import org.chocosolver.solver.search.strategy.strategy.StrategiesSequencer;
 import org.chocosolver.solver.variables.*;
+import org.chocosolver.util.objects.graphs.DirectedGraph;
+import org.chocosolver.util.objects.graphs.UndirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.clafer.choco.constraint.propagator.*;
 
@@ -486,69 +496,133 @@ public class Constraints {
         return new Constraint("acyclic", new PropAcyclic(edges));
     }
 
+    /*
     public static Constraint connected(SetVar nodes, SetVar[] relation, boolean directed) {
         @SuppressWarnings("unchecked")
         Propagator<SetVar>[] propagators
                 = (Propagator<SetVar>[]) new Propagator<?>[1];
         propagators[0] = new PropConnected(nodes, relation, directed);
         return new Constraint("connected", propagators);
-        /*
-        int n = -1;
-        for(Domain d : relation.getEnvs()){
-            for(int i : d.getValues()){
-                if(i > n)
-                    n = i;
-            }
-        }
-        n += 1;
-        UndirectedGraph GLB = new UndirectedGraph(s, n, SetType.BITSET, false);
-        UndirectedGraph GUB = new UndirectedGraph(s, n, SetType.BITSET, false);
+    }
+    */
 
-        for(int i = 0; i < relation.length(); i++) {
-            if (relation.getKers()[i].getValues().length > 0) {
-                GLB.addNode(i);
-            }
-            if (relation.getEnvs()[i].getValues().length > 0) {
-                GUB.addNode(i);
-            }
-        }
+    public static Constraint connected(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
+        int nodes_upper = nodes.getEnvelopeSize();
+        int nodes_lower = nodes.getKernelSize();
+        boolean fixed_nodes = (nodes_upper == nodes_lower);
 
-        for(int i = 0; i < relation.length(); i++){
-            if(relation.getKers()[i].getValues().length > 0){
-                for (int j : relation.getKers()[i].getValues()){
-                    GLB.addEdge(i, j);
-                }
-            }
-            if(relation.getEnvs()[i].getValues().length > 0) {
-                for (int j : relation.getEnvs()[i].getValues()){
-                    GUB.addEdge(i, j);
-                }
-            }
+        UndirectedGraph GLB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
+        UndirectedGraph GUB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
+
+        //add nodes
+        if(!fixed_nodes){
+            for(int n = nodes.getKernelFirst(); n != SetVar.END; n = nodes.getKernelNext())
+                GLB.addNode(n);
+            for(int n = nodes.getEnvelopeFirst(); n != SetVar.END; n = nodes.getEnvelopeNext())
+                GUB.addNode(n);
+        }
+        //add edges
+        for(int i = 0; i < edges.length; i++){
+            SetVar edge = edges[i];
+            for(int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext())
+                if(i < nodes_upper && n < nodes_upper)
+                    GLB.addEdge(i, n);
+            for(int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext())
+                if(i < nodes_upper && n < nodes_upper)
+                    GUB.addEdge(i,n);
         }
 
         IUndirectedGraphVar g = GraphVarFactory.undirected_graph_var("G", GLB, GUB, s);
-        return GCF.connected(g);
-        */
+        s.set(GraphStrategyFactory.lexico(g));
+        // TODO add channelling for edges and strategy and refactor?
+        // not sure how to refactor out solver since GVF requires it.
+        Propagator[] props = new Propagator[edges.length + 2];
+
+        //slight complication since i'm relating an undirected graph with 'directed' clafer refs.
+        //i.e. I am not currently requiring symmetry in the clafer model.
+        SetVar[] neighbors = GVF.neigh_set_array(g);
+        //edge channeling
+        for(int i = 0; i < edges.length; i++){
+            props[i] = new PropSubsetEq(edges[i], neighbors[i]);
+        }
+
+
+        props[edges.length] = new PropConnected(g); //connectivity
+        props[edges.length + 1] = new PropAllEqual(new SetVar[]{GVF.nodes_set(g), nodes}); //node channeling
+        return new Constraint("connected", props);
+
+        //return GCF.connected(g);
+
     }
 
-    public static Constraint directedConnected(SetVar[] relation, SetVar[] closure) {
-        if (relation.length != closure.length) {
-            throw new IllegalArgumentException();
-        }
-        //TODO
-        System.exit(1);
 
-        @SuppressWarnings("unchecked")
-        Propagator<SetVar>[] propagators
-                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 4];
-        for (int i = 0; i < relation.length; i++) {
-            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+    public static int getN(SetVar nodes, SetVar[] edges){
+        int N = -1;
+        for(int n = nodes.getEnvelopeFirst(); n != SetVar.END; n = nodes.getEnvelopeNext()){
+            if(n > N)
+                N = n;
         }
-        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, true);
-        propagators[relation.length + 1] = new PropReflexive(closure);
-        propagators[relation.length + 2] = new PropTransitive(closure);
-        propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
-        return new Constraint("connectedDirected", propagators);
+        for(SetVar edge : edges){
+            for(int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext()){
+                if(n > N)
+                    N = n;
+            }
+        }
+        //since we're zero-based
+        return N + 1;
+    }
+
+    static int graph_count = 0;
+    public static Constraint connected_directed(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
+        //very crude implementation because graphs require nodes from 0..N; need to find N.
+        int N = getN(nodes, edges);
+
+        int nodes_upper = nodes.getEnvelopeSize();
+        int nodes_lower = nodes.getKernelSize();
+
+        //TODO pull out graph construction if more constraints will be supported
+        DirectedGraph GLB = new DirectedGraph(s, N, SetType.BITSET, true);
+        DirectedGraph GUB = new DirectedGraph(s, N, SetType.BITSET, true);
+
+        //add edges, some are obviously spurious (i.e. between two edges that can't exist,
+        //but I think channelling will take care of that.
+        for(int i = 0; i < edges.length; i++){
+            SetVar edge = edges[i];
+            for(int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext())
+                if(nodes.envelopeContains(i) && nodes.envelopeContains(n))
+                    GLB.addArc(i, n);
+            for(int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext())
+                if(nodes.envelopeContains(i) && nodes.envelopeContains(n))
+                    GUB.addArc(i, n);
+        }
+
+        IDirectedGraphVar g = GraphVarFactory.directed_graph_var("Graph" + graph_count, GLB, GUB, s);
+        graph_count++;
+        //TODO get strategies out of here...
+        AbstractStrategy strat = s.getStrategy();
+
+        if(strat != null){
+            AbstractStrategy[] strats = new AbstractStrategy[]{strat, GraphStrategyFactory.lexico(g)};
+            s.set(strats);
+        }
+        else
+            s.set(GraphStrategyFactory.lexico(g));
+        // TODO add channelling for edges and strategy and refactor?
+        // not sure how to refactor out solver since GVF requires it.
+        Propagator[] props = new Propagator[edges.length + 2];
+
+        //slight complication since i'm relating an undirected graph with 'directed' clafer refs.
+        //i.e. I am not currently requiring symmetry in the clafer model.
+        SetVar[] neighbors = GVF.succ_set_array(g);
+        //edge channeling
+        for(int i = 0; i < edges.length; i++){
+            props[i] = new PropAllEqual(new SetVar[]{edges[i], neighbors[i]});
+        }
+
+        SetVar v = GVF.nodes_set(g);
+        props[edges.length] = new PropNbSCC(g, VF.fixed(1, g.getSolver())); //connectivity
+        props[edges.length + 1] = new PropAllEqual(new SetVar[]{GVF.nodes_set(g), nodes}); //node channeling
+        return new Constraint("connected", props);
     }
 
     /**

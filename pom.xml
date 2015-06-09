@@ -30,6 +30,13 @@
             <version>3.3.2-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>org.choco-solver</groupId>
+            <artifactId>choco-graph</artifactId>
+            <version>3.3.1-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/choco-graph-3.3.1-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>org.mozilla</groupId>
             <artifactId>rhino</artifactId>
             <version>1.7R4</version>

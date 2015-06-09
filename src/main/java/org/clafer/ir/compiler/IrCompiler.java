@@ -975,7 +975,13 @@ public class IrCompiler {
         public Object visit(IrConnected ir, BoolArg  a) {
             CSetVar[] relation = compile(ir.getRelation());
             CSetVar nodes = compile(ir.getNodes());
-            return Constraints.connected(mapSet(nodes)[0], mapSet(relation), ir.isDirected());
+
+
+            //return Constraints.connected(mapSet(nodes)[0], mapSet(relation), ir.isDirected());
+            if(ir.isDirected())
+                return Constraints.connected_directed(solver, mapSet(nodes)[0], mapSet(relation), ir.isDirected());
+            else
+                return Constraints.connected(solver, mapSet(nodes)[0], mapSet(relation), ir.isDirected());
         }
 
         @Override
