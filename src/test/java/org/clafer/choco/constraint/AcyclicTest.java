@@ -39,12 +39,12 @@ public class AcyclicTest {
 
     @Input(solutions = 0)
     public Object testTrivialCyclic(Solver solver) {
-        return $(new IntVar[]{solver.ZERO});
+        return $(new IntVar[]{solver.ZERO()});
     }
 
     @Input(solutions = 1)
     public Object testTrivialAcyclic(Solver solver) {
-        return $(new IntVar[]{solver.ONE});
+        return $(new IntVar[]{solver.ONE()});
     }
 
     @Check

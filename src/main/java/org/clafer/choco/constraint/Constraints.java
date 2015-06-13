@@ -878,7 +878,7 @@ public class Constraints {
             eq(chars2[i], 0).ifPresent(propagators::add);
         }
         if (propagators.isEmpty()) {
-            return length1.getSolver().TRUE;
+            return length1.getSolver().TRUE();
         }
         return new Constraint("arrayEqual",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
@@ -896,22 +896,22 @@ public class Constraints {
     public static Constraint lessThan(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
         return ICF.lex_less(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO));
+                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
+                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
     }
 
     public static Constraint lessThanEqual(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
         return ICF.lex_less_eq(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO));
+                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
+                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
     }
 
     private static IntVar[] charsAt(Solver solver, IntVar[][] strings, int index) {
         IntVar[] charsAt = new IntVar[strings.length];
         for (int i = 0; i < charsAt.length; i++) {
             charsAt[i] = index < strings[i].length
-                    ? strings[i][index] : solver.ZERO;
+                    ? strings[i][index] : solver.ZERO();
         }
         return charsAt;
     }
@@ -948,7 +948,7 @@ public class Constraints {
             IntVar[] prefix, IntVar prefixLength,
             IntVar[] word, IntVar wordLength) {
         if (prefixLength.getLB() > wordLength.getUB()) {
-            return prefixLength.getSolver().FALSE;
+            return prefixLength.getSolver().FALSE();
         }
         return new Constraint("Prefix",
                 lessThanEq(prefixLength, wordLength),
@@ -960,7 +960,7 @@ public class Constraints {
             IntVar[] word, IntVar wordLength) {
         Solver solver = suffixLength.getSolver();
         if (suffixLength.getLB() > wordLength.getUB()) {
-            return solver.FALSE;
+            return solver.FALSE();
         }
         IntVar prefixLength = VF.enumerated("SuffixVar" + varNum++,
                 Math.min(wordLength.getLB() - suffixLength.getUB(), 0),
@@ -970,7 +970,7 @@ public class Constraints {
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(lessThanEq(suffixLength, wordLength));
         for (int i = 0; i < suffix.length; i++) {
-            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, suffixLength.getSolver().ZERO);
+            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, suffixLength.getSolver().ZERO());
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -990,13 +990,13 @@ public class Constraints {
             IntVar[] right, IntVar rightLength,
             IntVar[] concat, IntVar concatLength) {
         if (leftLength.getLB() + rightLength.getLB() > concatLength.getUB()) {
-            return leftLength.getSolver().FALSE;
+            return leftLength.getSolver().FALSE();
         }
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(sumEq(new IntVar[]{leftLength, rightLength}, concatLength));
         propagators.add(new PropSamePrefix(leftLength, left, concat));
         for (int i = 0; i < right.length; i++) {
-            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getSolver().ZERO);
+            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getSolver().ZERO());
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then

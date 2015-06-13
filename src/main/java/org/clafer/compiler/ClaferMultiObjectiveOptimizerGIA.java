@@ -55,7 +55,7 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
 
     private static Constraint or(List<Constraint> constraints, Solver solver) {
         return constraints.isEmpty()
-                ? solver.FALSE
+                ? solver.FALSE()
                 : LCF.or(constraints.toArray(new Constraint[constraints.size()]));
     }
 
