@@ -85,8 +85,10 @@ public class ReachedLimitTest {
             fail("Expected timeout.");
         } catch (ReachedLimitBestKnownException rle) {
             assertTrue(System.currentTimeMillis() - start >= 1000);
-            assertEquals(1, rle.getObjectiveValues().length);
-            assertTrue(rle.getObjectiveValues()[0] > 0);
+            while (rle.find()) {
+                assertEquals(1, rle.optimalValues().length);
+                assertTrue(rle.optimalValues()[0] > 0);
+            }
         }
     }
 
@@ -136,8 +138,10 @@ public class ReachedLimitTest {
             solver.find();
             fail("Expected timeout.");
         } catch (ReachedLimitBestKnownException rle) {
-            assertTrue(System.currentTimeMillis() - start >= 1000);
-            assertEquals(2, rle.getObjectiveValues().length);
+            while (rle.find()) {
+                assertTrue(System.currentTimeMillis() - start >= 1000);
+                assertEquals(2, rle.optimalValues().length);
+            }
         }
     }
 

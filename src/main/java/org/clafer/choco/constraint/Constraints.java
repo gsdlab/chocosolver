@@ -19,7 +19,49 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+<<<<<<< HEAD
 
+=======
+import org.clafer.choco.constraint.propagator.PropAcyclic;
+import org.clafer.choco.constraint.propagator.PropAnd;
+import org.clafer.choco.constraint.propagator.PropArrayToSet;
+import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
+import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
+import org.clafer.choco.constraint.propagator.PropContinuous;
+import org.clafer.choco.constraint.propagator.PropContinuousUnion;
+import org.clafer.choco.constraint.propagator.PropCountNotEqual;
+import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
+import org.clafer.choco.constraint.propagator.PropFilterString;
+import org.clafer.choco.constraint.propagator.PropIfThenElse;
+import org.clafer.choco.constraint.propagator.PropIntChannel;
+import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
+import org.clafer.choco.constraint.propagator.PropJoinFunction;
+import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
+import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
+import org.clafer.choco.constraint.propagator.PropJoinRelation;
+import org.clafer.choco.constraint.propagator.PropLength;
+import org.clafer.choco.constraint.propagator.PropLexChainChannel;
+import org.clafer.choco.constraint.propagator.PropLone;
+import org.clafer.choco.constraint.propagator.PropMask;
+import org.clafer.choco.constraint.propagator.PropNotEqualXY_Z;
+import org.clafer.choco.constraint.propagator.PropOne;
+import org.clafer.choco.constraint.propagator.PropOr;
+import org.clafer.choco.constraint.propagator.PropReflexive;
+import org.clafer.choco.constraint.propagator.PropSamePrefix;
+import org.clafer.choco.constraint.propagator.PropSelectN;
+import org.clafer.choco.constraint.propagator.PropSetBounded;
+import org.clafer.choco.constraint.propagator.PropSetDifference;
+import org.clafer.choco.constraint.propagator.PropSetLowBound;
+import org.clafer.choco.constraint.propagator.PropSetStrictHighBound;
+import org.clafer.choco.constraint.propagator.PropSetMax;
+import org.clafer.choco.constraint.propagator.PropSetMin;
+import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
+import org.clafer.choco.constraint.propagator.PropSetSum;
+import org.clafer.choco.constraint.propagator.PropSetUnion;
+import org.clafer.choco.constraint.propagator.PropSetUnionCard;
+import org.clafer.choco.constraint.propagator.PropSingleton;
+import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
+import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.common.Util;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
@@ -39,6 +81,11 @@ import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
 import org.clafer.domain.Domain;
 import org.clafer.ir.IrSetArrayExpr;
 import org.clafer.ir.IrSetVar;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.VF;
+import org.chocosolver.solver.variables.Variable;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -218,58 +265,6 @@ public class Constraints {
                 return ifThenElse(antecedent, consequent.not(), alternative.not());
             }
         };
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (variable = constant)}.
-     *
-     * @param reify the reified constraint
-     * @param variable the variable
-     * @param constant the constant
-     * @return constraint {@code reify <=> (variable = constant)}
-     */
-    public static Constraint reifyEqual(BoolVar reify, IntVar variable, int constant) {
-        return new ReifyEqualXC(reify, true, variable, constant);
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (v1 = v2)}.
-     *
-     * @param reify the reified constraint
-     * @param v1 the first variable
-     * @param v2 the second variable
-     * @return constraint {@code reify <=> (v1 = v2)}
-     */
-    public static Constraint reifyEqual(BoolVar reify, IntVar v1, IntVar v2) {
-        return new ReifyEqualXY(reify, true, v1, v2);
-    }
-
-    public static Constraint reifyEqual(IntVar reify, int value, IntVar v1, IntVar v2) {
-        return new Constraint("reifyIntEqual", new PropReifyEqualXY(reify, value, v1, v2));
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (variable ≠ constant)}.
-     *
-     * @param reify the reified constraint
-     * @param variable the variable
-     * @param constant the constant
-     * @return constraint {@code reify <=> (variable ≠ constant)}
-     */
-    public static Constraint reifyNotEqual(BoolVar reify, IntVar variable, int constant) {
-        return new ReifyEqualXC(reify, false, variable, constant);
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (v1 ≠ v2)}.
-     *
-     * @param reify the reified constraint
-     * @param v1 the first variable
-     * @param v2 the second variable
-     * @return constraint {@code reify <=> (v1 ≠ v2)}
-     */
-    public static Constraint reifyNotEqual(BoolVar reify, IntVar v1, IntVar v2) {
-        return new ReifyEqualXY(reify, false, v1, v2);
     }
 
     /**
@@ -951,8 +946,11 @@ public class Constraints {
         if (setCard.getLB() > 0) {
             return max(set, setCard, max);
         }
-        return new Constraint("max", new PropSetMax(set, setCard, max),
-                new PropReifyEqualXC(setCard, 0, max, d));
+        // TODO optimize
+        return ifThenElse(
+                ICF.arithm(setCard, "=", 0).reif(),
+                ICF.arithm(max, "=", 0).reif(),
+                max(set, setCard, max).reif());
     }
 
     public static Constraint stritctHighBound(SetVar set, IntVar bound) {

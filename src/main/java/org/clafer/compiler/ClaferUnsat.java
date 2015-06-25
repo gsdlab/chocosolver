@@ -69,7 +69,7 @@ public class ClaferUnsat {
      * @return the Min-Unsat and the corresponding near-miss example or null if
      * unknown
      */
-    public Pair<Set<AstConstraint>, InstanceModel> minUnsat() {
+    public Pair<Set<AstConstraint>, InstanceModel> minUnsat() throws ReachedLimitException {
         Solution lastSolution = new Solution();
         IMonitorSolution monitor = () -> lastSolution.record(solver);
         solver.plugMonitor(monitor);
@@ -102,7 +102,7 @@ public class ClaferUnsat {
      *
      * @return the Unsat-Core or null if unknown
      */
-    public Set<AstConstraint> unsatCore() {
+    public Set<AstConstraint> unsatCore() throws ReachedLimitException {
         Set<AstConstraint> unsat = new HashSet<>();
         if (ESat.TRUE.equals(maximize())) {
             boolean changed;

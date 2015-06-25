@@ -5,8 +5,9 @@ import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
@@ -44,7 +45,14 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(26, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertEquals(1, instance.getTopClafer(a).getRef());
+                assertEquals(2, instance.getTopClafer(b).getRef());
+            }
+        }
+        assertEquals(26, solver.instanceCount());
     }
 
     /**
@@ -76,7 +84,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(49, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertFalse(instance.getTopClafer(a).getRef().equals(1) && instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(49, solver.instanceCount());
     }
 
     /**
@@ -108,7 +122,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(42, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertEquals(instance.getTopClafer(a).getRef().equals(1), instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(42, solver.instanceCount());
     }
 
     /**
@@ -140,7 +160,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(33, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertNotEquals(instance.getTopClafer(a).getRef().equals(1), instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(33, solver.instanceCount());
     }
 
     /**
@@ -175,7 +201,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(46, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertTrue(!instance.getTopClafer(a).getRef().equals(1) || instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(46, solver.instanceCount());
     }
 
     /**
@@ -210,7 +242,14 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(29, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertTrue(instance.getTopClafer(a).getRef().equals(1));
+                assertFalse(instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(29, solver.instanceCount());
     }
 
     /**
@@ -242,7 +281,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(34, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertTrue(instance.getTopClafer(a).getRef().equals(1) || instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(34, solver.instanceCount());
     }
 
     /**
@@ -274,7 +319,14 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(41, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertFalse(instance.getTopClafer(a).getRef().equals(1));
+                assertFalse(instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(41, solver.instanceCount());
     }
 
     /**
@@ -306,7 +358,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(33, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertNotEquals(instance.getTopClafer(a).getRef().equals(1), instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(33, solver.instanceCount());
     }
 
     /**
@@ -338,7 +396,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(42, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertEquals(instance.getTopClafer(a).getRef().equals(1), instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(42, solver.instanceCount());
     }
 
     /**
@@ -371,7 +435,15 @@ public class BoolArithmeticTest {
                 equal(joinRef(b), constant(2))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(10, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertTrue(instance.getTopClafer(a).getRef().equals(1));
+            } else {
+                assertTrue(instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(10, solver.instanceCount());
     }
 
     /**
@@ -404,7 +476,15 @@ public class BoolArithmeticTest {
                 equal(joinRef(b), constant(2)))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(40, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertFalse(instance.getTopClafer(a).getRef().equals(1));
+            } else {
+                assertFalse(instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(40, solver.instanceCount());
     }
 
     /**
@@ -439,7 +519,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(4, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            assertTrue(instance.getTopClafers(c).length > 0);
+            assertTrue(instance.getTopClafer(a).getRef().equals(1));
+            assertFalse(instance.getTopClafer(b).getRef().equals(2));
+        }
+        assertEquals(4, solver.instanceCount());
     }
 
     /**
@@ -474,7 +560,13 @@ public class BoolArithmeticTest {
                 equal(joinRef(a), constant(1)), equal(joinRef(b), constant(2)))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
-        assertEquals(46, solver.allInstances().length);
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            if (instance.getTopClafers(c).length > 0) {
+                assertTrue(!instance.getTopClafer(a).getRef().equals(1) || instance.getTopClafer(b).getRef().equals(2));
+            }
+        }
+        assertEquals(46, solver.instanceCount());
     }
 
     /**
@@ -499,10 +591,8 @@ public class BoolArithmeticTest {
         AstConcreteClafer e = model.addChild("E").withCard(0, 1);
         model.addConstraint(
                 and(
-                //
-                xor(some(e), and(ifOnlyIf(some(a), some(b)), or(some(a), some(c), some(d)), implies(some(b), some(c)))),
-                //
-                or(some(d), xor(ifOnlyIf(some(a), some(d)), implies(implies(some(b), some(c)), some(e))))));
+                        xor(some(e), and(ifOnlyIf(some(a), some(b)), or(some(a), some(c), some(d)), implies(some(b), some(c)))),
+                        or(some(d), xor(ifOnlyIf(some(a), some(d)), implies(implies(some(b), some(c)), some(e))))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(12, solver.allInstances().length);

@@ -10,10 +10,14 @@ import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstStringConstant;
+import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
+import org.clafer.javascript.Javascript;
+import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 import org.junit.Test;
 
@@ -181,7 +185,7 @@ public class ConnectedTest {
         while (solver.find()) {
             count++;
             // Print the solution in a format similar to ClaferIG.
-            System.out.println("=========== " + count + " ===========");
+            System.out.println("=========== " + count + " ============");
             System.out.println(solver.instance());
         }
 
@@ -211,6 +215,75 @@ public class ConnectedTest {
 
     }
 
+
+
+    @Test(timeout = 600000)
+    public void testWiring() {
+        AstModel model = null;
+        Triple<AstModel, Scope, Objective[]> triple = null;
+        try {
+            triple = Javascript.readModel(
+                    "scope({c0_Edge:3, c0_Location:4, c0_length:3, c0_location:6, c0_possibleEdge:3, c0_takenEdge:3});\n" +
+                            "defaultScope(1);\n" +
+                            "intRange(-8, 7);\n" +
+                            "stringLength(16);\n" +
+                            "\n" +
+                            "c0_Location = Abstract(\"c0_Location\");\n" +
+                            "c0_Edge = Abstract(\"c0_Edge\");\n" +
+                            "c0_Wire = Abstract(\"c0_Wire\");\n" +
+                            "c0_location = c0_Edge.addChild(\"c0_location\").withCard(2, 2);\n" +
+                            "c0_length = c0_Edge.addChild(\"c0_length\").withCard(1, 1);\n" +
+                            "c0_possibleEdge = c0_Wire.addChild(\"c0_possibleEdge\");\n" +
+                            "c0_takenEdge = c0_Wire.addChild(\"c0_takenEdge\");\n" +
+                            "c0_SimpleGraph = Clafer(\"c0_SimpleGraph\").withCard(1, 1);\n" +
+                            "c0_l1 = c0_SimpleGraph.addChild(\"c0_l1\").withCard(1, 1).extending(c0_Location);\n" +
+                            "c0_l2 = c0_SimpleGraph.addChild(\"c0_l2\").withCard(1, 1).extending(c0_Location);\n" +
+                            "c0_l3 = c0_SimpleGraph.addChild(\"c0_l3\").withCard(1, 1).extending(c0_Location);\n" +
+                            "c0_l4 = c0_SimpleGraph.addChild(\"c0_l4\").withCard(1, 1).extending(c0_Location);\n" +
+                            "c0_e1 = c0_SimpleGraph.addChild(\"c0_e1\").withCard(1, 1).extending(c0_Edge);\n" +
+                            "c0_e2 = c0_SimpleGraph.addChild(\"c0_e2\").withCard(1, 1).extending(c0_Edge);\n" +
+                            "c0_e3 = c0_SimpleGraph.addChild(\"c0_e3\").withCard(1, 1).extending(c0_Edge);\n" +
+                            "c0_w1 = Clafer(\"c0_w1\").withCard(1, 1).extending(c0_Wire);\n" +
+                            "c0_location.refToUnique(c0_Location);\n" +
+                            "c0_length.refToUnique(Int);\n" +
+                            "c0_possibleEdge.refToUnique(c0_Edge);\n" +
+                            "c0_takenEdge.refToUnique(c0_Edge);\n" +
+                            "c0_Wire.addConstraint($in(joinRef(join($this(), c0_takenEdge)), joinRef(join($this(), c0_possibleEdge))));\n" +
+                            "c0_e1.addConstraint(equal(joinRef(join($this(), c0_location)), union(join(joinParent($this()), c0_l1), join(joinParent($this()), c0_l2))));\n" +
+                            "c0_e1.addConstraint(equal(joinRef(join($this(), c0_length)), constant(1)));\n" +
+                            "c0_e2.addConstraint(equal(joinRef(join($this(), c0_location)), union(join(joinParent($this()), c0_l2), join(joinParent($this()), c0_l3))));\n" +
+                            "c0_e2.addConstraint(equal(joinRef(join($this(), c0_length)), constant(1)));\n" +
+                            "c0_e3.addConstraint(equal(joinRef(join($this(), c0_location)), union(join(joinParent($this()), c0_l2), join(joinParent($this()), c0_l4))));\n" +
+                            "c0_e3.addConstraint(equal(joinRef(join($this(), c0_length)), constant(2)));\n" +
+                            "c0_w1.addConstraint(equal(joinRef(join($this(), c0_possibleEdge)), union(union(join(global(c0_SimpleGraph), c0_e1), join(global(c0_SimpleGraph), c0_e2)), join(global(c0_SimpleGraph), c0_e3))));\n"
+            );
+        }
+        catch(Exception e){}
+    /*
+        AstAbstractClafer Location = model.addAbstract("Location");
+        AstAbstractClafer Edge = model.addAbstract("Edge");
+        AstConcreteClafer location = Edge.addChild("location").withCard(2,2);
+        AstConcreteClafer length = Edge.addChild("length").withCard(1,1);
+
+        AstAbstractClafer Wire = model.addAbstract("Wire");
+        AstConcreteClafer possibleEdge = Wire.addChild("possibleEdge");
+        AstConcreteClafer takenEdge = Wire.addChild("takenEdge");
+*/
+        model = triple.getFst();
+        Scope scope = triple.getSnd();
+        ClaferSolver solver = ClaferCompiler.compile(model, scope);
+
+        int count = 0;
+        while (solver.find()) {
+            count++;
+            // Print the solution in a format similar to ClaferIG.
+            System.out.println("=========== " + count + " ===========");
+            System.out.println(solver.instance());
+        }
+
+        assertEquals(6, count);
+
+    }
 
 
 
