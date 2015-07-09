@@ -51,6 +51,6 @@ public class AstConnected implements AstBoolExpr {
 
     @Override
     public String toString() {
-        return relation + (directed ? "**" : "*");
+        return "connected(" + nodes + ", " + relation + ")" + (directed ? "**" : "*");
     }
 }

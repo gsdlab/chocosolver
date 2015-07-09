@@ -707,7 +707,7 @@ public abstract class IrRewriter<T>
     @Override
     public IrIntExpr visit(IrConnected ir, T a) {
         IrSetArrayExpr edges = rewrite(ir.getRelation(), a);
-        IrSetVar nodes = (IrSetVar)rewrite(ir.getNodes(), a);
+        IrSetExpr nodes = (IrSetExpr)rewrite(ir.getNodes(), a);
         return changed(ir.getRelation(), edges)
                 ? connected(nodes, edges, ir.isDirected())
                 : ir;

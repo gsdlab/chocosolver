@@ -87,3 +87,4 @@ var length = Asts.length;
 var concat = Asts.concat;
 var prefix = Asts.prefix;
 var suffix = Asts.suffix;
+var connected = Asts.connected;

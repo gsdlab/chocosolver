@@ -10,10 +10,10 @@ import org.clafer.domain.Domain;
 public class IrConnected extends IrAbstractBool {
 
     private final IrSetArrayExpr relation;
-    private final IrSetVar nodes;
+    private final IrSetExpr nodes;
     private final boolean directed;
 
-    public IrConnected(IrSetVar nodes, IrSetArrayExpr relation, boolean directed, BoolDomain domain) {
+    public IrConnected(IrSetExpr nodes, IrSetArrayExpr relation, boolean directed, BoolDomain domain) {
         super(domain);
         this.relation = relation;
         this.nodes = nodes;
@@ -24,7 +24,7 @@ public class IrConnected extends IrAbstractBool {
         return relation;
     }
 
-    public IrSetVar getNodes() {
+    public IrSetExpr getNodes() {
         return nodes;
     }
 

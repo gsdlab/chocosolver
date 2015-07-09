@@ -664,9 +664,10 @@ public class TypeAnalyzer implements Analyzer {
         @Override
         public TypedExpr<?> visit(AstConnected ast, Void a) {
             TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            TypedExpr<AstSetExpr> nodes = typeCheck(ast.getNodes());
             if (relation.getCommonSupertype().arity() == 2) {
                 if (relation.getCommonSupertype().get(0).equals(relation.getCommonSupertype().get(1))) {
-                    return put(BoolType, connected(ast.getNodes(), relation.getExpr(), ast.isDirected()));
+                    return put(BoolType, connected(nodes.getExpr(), relation.getExpr(), ast.isDirected()));
                 }
             }
             throw new TypeException(relation + " cannot be checked for connectivity");

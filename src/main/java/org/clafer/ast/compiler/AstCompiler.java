@@ -1026,7 +1026,8 @@ public class AstCompiler {
                     IrSetExpr[] join = new IrSetExpr[leftArray.length()];
                     for (int i = 0; i < join.length; i++) {
                         // TODO global cardinality?
-                        join[i] = joinFunction(get(leftArray, i), rightArray, null);
+                        join[i] = mask(joinFunction(get(leftArray, i), rightArray, null), 0, getScope(getCommonSupertype(ast.getRight()).get(1)));
+
                     }
                     return array(join);
                 }
@@ -1716,7 +1717,7 @@ public class AstCompiler {
                 //return connected(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isDirected());
             }
             if (relation instanceof IrSetArrayExpr){
-                return connected((IrSetVar) nodes, (IrSetArrayExpr) relation, ast.isDirected());
+                return connected((IrSetExpr) nodes, (IrSetArrayExpr) relation, ast.isDirected());
             }
             // Bug.
             throw new AstException("Should not have passed type checking.");
