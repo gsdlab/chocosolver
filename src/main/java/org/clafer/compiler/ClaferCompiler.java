@@ -138,18 +138,7 @@ public class ClaferCompiler {
         }
         strats = Arrays.copyOf(strats, j);
         if (strats.length > 0) {
-            //TODO Check with Jimmy
-            AbstractStrategy as = solver.getStrategy();
-            if(as != null){
-                //graph constraints
-                AbstractStrategy<?>[] strats2 = new AbstractStrategy<?>[strats.length+1];
-                for(int i = 0; i < strats.length; i++)
-                    strats2[i] = strats[i];
-                strats2[strats.length] = as;
-                solver.set(strats2);
-            }
-            else
-                solver.set(strats);
+            solver.set(strats);
         } else {
             // Give the solver a dummy strategy for trivial problems so the underlying Choco
             // framework does not warn of no search strategy.
