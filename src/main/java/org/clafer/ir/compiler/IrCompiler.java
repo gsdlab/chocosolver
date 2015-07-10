@@ -974,7 +974,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrConnected ir, BoolArg  a) {
+        public Object visit(IrConnected ir, BoolArg a) {
             CSetVar[] relation = compile(ir.getRelation());
             CSetVar nodes = compile(ir.getNodes());
             //TODO handle directed graph in the future
@@ -1636,8 +1636,6 @@ public class IrCompiler {
             }
             return Constraints.transitiveClosure(mapSet(relation), mapSet(reify), ir.isReflexive());
         }
-
-
     };
 
     private static Constraint _implies(BoolVar antecedent, Constraint consequent) {

@@ -1026,7 +1026,7 @@ public class AstCompiler {
                     IrSetExpr[] join = new IrSetExpr[leftArray.length()];
                     for (int i = 0; i < join.length; i++) {
                         // TODO global cardinality?
-                        join[i] = mask(joinFunction(get(leftArray, i), rightArray, null), 0, getScope(getCommonSupertype(ast.getRight()).get(1)));
+                        join[i] = joinFunction(get(leftArray, i), rightArray, null);
 
                     }
                     return array(join);
@@ -1713,9 +1713,9 @@ public class AstCompiler {
                 Type type = getType(ast.getRelation());
                 AstClafer returnType = type.getCommonSupertype().get(1);
                 //TODO fix
-		return connected((IrSetVar) nodes, asRelation(relation, getCommonSupertype(ast.getRelation())), ast.isDirected());
-	    }
-            if (relation instanceof IrSetArrayExpr){
+                return connected((IrSetVar) nodes, asRelation(relation, getCommonSupertype(ast.getRelation())), ast.isDirected());
+            }
+            if (relation instanceof IrSetArrayExpr) {
                 return connected((IrSetExpr) nodes, (IrSetArrayExpr) relation, ast.isDirected());
             }
             // Bug.

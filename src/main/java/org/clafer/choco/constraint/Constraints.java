@@ -1,17 +1,7 @@
 package org.clafer.choco.constraint;
 
-
-import org.chocosolver.solver.constraints.set.PropAllEqual;
-import org.chocosolver.solver.constraints.set.SCF;
 import org.chocosolver.solver.cstrs.GCF;
-import org.chocosolver.solver.cstrs.GraphConstraintFactory;
-import org.chocosolver.solver.cstrs.connectivity.*;
-import org.chocosolver.solver.cstrs.connectivity.PropConnected;
-import org.chocosolver.solver.search.GraphStrategyFactory;
-import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
-import org.chocosolver.solver.search.strategy.strategy.StrategiesSequencer;
 import org.chocosolver.solver.variables.*;
-import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.graphs.UndirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.clafer.choco.constraint.propagator.*;
@@ -76,9 +66,6 @@ import org.chocosolver.solver.constraints.set.PropSubsetEq;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
 import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
 import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
-import org.clafer.domain.Domain;
-import org.clafer.ir.IrSetArrayExpr;
-import org.clafer.ir.IrSetVar;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
@@ -489,7 +476,6 @@ public class Constraints {
         return new Constraint("acyclic", new PropAcyclic(edges));
     }
 
-
     public static Constraint connected(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
         int nodes_upper = nodes.getEnvelopeSize();
         int nodes_lower = nodes.getKernelSize();
@@ -499,22 +485,26 @@ public class Constraints {
         UndirectedGraph GUB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
 
         //add nodes
-        if(!fixed_nodes){
-            for(int n = nodes.getKernelFirst(); n != SetVar.END; n = nodes.getKernelNext())
+        if (!fixed_nodes) {
+            for (int n = nodes.getKernelFirst(); n != SetVar.END; n = nodes.getKernelNext()) {
                 GLB.addNode(n);
-            for(int n = nodes.getEnvelopeFirst(); n != SetVar.END; n = nodes.getEnvelopeNext())
+            }
+            for (int n = nodes.getEnvelopeFirst(); n != SetVar.END; n = nodes.getEnvelopeNext()) {
                 GUB.addNode(n);
+            }
         }
         //add edges
-        for(int i = 0; i < edges.length; i++){
+        for (int i = 0; i < edges.length; i++) {
             SetVar edge = edges[i];
-            for(int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext())
+            for (int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext()) {
                 GLB.addEdge(i, n);
-            for(int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext())
-                GUB.addEdge(i,n);
+            }
+            for (int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext()) {
+                GUB.addEdge(i, n);
+            }
         }
 
-        IUndirectedGraphVar g = GraphVarFactory.undirected_graph_var("G", GLB, GUB, s);
+        IUndirectedGraphVar g = GraphVarFactory.undirected_graph_var("ConnectedVar" + varNum++, GLB, GUB, s);
         s.post(GCF.nodes_channeling(g, nodes));
         s.post(GCF.neighbors_channeling(g, edges));
 
@@ -1118,6 +1108,4 @@ public class Constraints {
         propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
         return new Constraint("transitiveReflexive", propagators);
     }
-
-
 }

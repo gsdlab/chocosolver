@@ -370,4 +370,16 @@ public class RelationalTest {
         // Can be reduced to 2 with better symmetry breaking.
         assertEquals(5, solver.allInstances().length);
     }
+
+    @Test(timeout = 60000)
+    public void testConnected() throws Exception {
+        AstModel m = newModel();
+        AstConcreteClafer node = m.addChild("Node");
+        AstConcreteClafer edge = m.addChild("Edge");
+        AstConcreteClafer loc = edge.addChild("loc").withCard(2, 2).refToUnique(node);
+        m.addConstraint(connected(global(node), join(inverse(join(relation(loc), ref(loc))), join(relation(loc), ref(loc)))));
+
+        ClaferSolver solver = ClaferCompiler.compile(m, Scope.defaultScope(4));
+        assertEquals(4, solver.allInstances().length);
+    }
 }

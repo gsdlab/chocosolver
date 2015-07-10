@@ -1011,18 +1011,15 @@ public class Irs {
         return new IrAcyclic(edges, TrueFalseDomain);
     }
 
-
     public static IrBoolExpr unreachable(IrIntExpr[] edges, int from, int to) {
         return new IrUnreachable(edges, from, to, TrueFalseDomain);
     }
-
 
     public static IrBoolExpr connected(IrSetExpr nodes, IrSetArrayExpr relation, boolean directed) {
         return new IrConnected(nodes, relation, directed, TrueFalseDomain);
     }
 
-
-        public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
+    public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
         if (set.getEnv().isEmpty()) {
             return filterString(set, 0, new IrIntExpr[0], result);
         }
@@ -1757,8 +1754,8 @@ public class Irs {
                         ? cardLow + childDomain.getLowBound()
                         : Math.max(cardLow, childDomain.getLowBound());
                 cardHigh = cardHigh + childDomain.getHighBound(); //injective
-                        //? cardHigh + childDomain.getHighBound()
-                        //: //Math.max(cardHigh, childDomain.getHighBound());
+                //? cardHigh + childDomain.getHighBound()
+                //: //Math.max(cardHigh, childDomain.getHighBound());
             } else {
                 childrenLowCards[index] = childDomain.getLowBound();
                 childrenHighCards[index] = childDomain.getHighBound();
@@ -2125,7 +2122,7 @@ public class Irs {
         }
         return array(array);
     }
-    
+
     public static IrSetArrayExpr inverse(IrSetArrayExpr relation, int length) {
         TIntSet[] envs = new TIntSet[length];
         TIntSet[] kers = new TIntSet[length];
@@ -2194,8 +2191,6 @@ public class Irs {
         }
         return new IrTransitiveClosure(relation, reflexive, envs, kers, cards);
     }
-
-
 
     /**
      *******************

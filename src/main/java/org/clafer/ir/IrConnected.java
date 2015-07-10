@@ -57,14 +57,14 @@ public class IrConnected extends IrAbstractBool {
     public boolean equals(Object obj) {
         if (obj instanceof IrConnected) {
             IrConnected other = (IrConnected) obj;
-            return nodes.equals(other.nodes) relation.equals(other.relation) && directed == other.directed;
+            return nodes.equals(other.nodes) && relation.equals(other.relation) && directed == other.directed;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return 117 * nodes.hashCode() * relation.hashCode() ^ (directed ? 16 : 0);//51
+        return 117 * nodes.hashCode() ^ relation.hashCode() ^ (directed ? 16 : 0);
     }
 
     @Override
