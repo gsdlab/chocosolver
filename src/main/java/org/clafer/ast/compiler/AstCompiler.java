@@ -1713,9 +1713,8 @@ public class AstCompiler {
                 Type type = getType(ast.getRelation());
                 AstClafer returnType = type.getCommonSupertype().get(1);
                 //TODO fix
-                return connected((IrSetVar) nodes, (IrSetArrayExpr) relation, ast.isDirected());
-                //return connected(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isDirected());
-            }
+		return connected((IrSetVar) nodes, asRelation(relation, getCommonSupertype(ast.getRelation())), ast.isDirected());
+	    }
             if (relation instanceof IrSetArrayExpr){
                 return connected((IrSetExpr) nodes, (IrSetArrayExpr) relation, ast.isDirected());
             }
