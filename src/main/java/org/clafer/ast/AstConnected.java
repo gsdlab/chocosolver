@@ -39,14 +39,14 @@ public class AstConnected implements AstBoolExpr {
     public boolean equals(Object obj) {
         if (obj instanceof AstConnected) {
             AstConnected other = (AstConnected) obj;
-            return relation.equals(other.relation) && directed == other.directed;
+            return nodes.equals(other.nodes) && relation.equals(other.relation) && directed == other.directed;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return 83 * relation.hashCode() ^ (directed ? 8 : 0);
+        return 83 * nodes.hashCode() ^ relation.hashCode() ^ (directed ? 8 : 0);
     }
 
     @Override
