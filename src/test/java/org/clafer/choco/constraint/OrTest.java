@@ -30,12 +30,12 @@ public class OrTest {
 
     @Input(solutions = 2)
     public static Object testTautology(Solver solver) {
-        return $(new BoolVar[]{solver.ONE, solver.ZERO, bool("bool", solver)});
+        return $(new BoolVar[]{solver.ONE(), solver.ZERO(), bool("bool", solver)});
     }
 
     @Input(solutions = 0)
     public static Object testFalseTautology(Solver solver) {
-        return $(new BoolVar[]{solver.ZERO, solver.ZERO});
+        return $(new BoolVar[]{solver.ZERO(), solver.ZERO()});
     }
 
     @Check

@@ -81,7 +81,7 @@ public class IrCompiler {
 
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             Constraint c = compileAsConstraint(constraint);
-            if (c.equals(solver.TRUE)) {
+            if (c.equals(solver.TRUE())) {
                 assert constraint instanceof IrRegister;
             } else {
                 post(c);
@@ -131,7 +131,7 @@ public class IrCompiler {
     private final Map<IrSetArrayExpr, CSetVar[]> cachedCommonSetArraySubexpressions = new HashMap<>();
 
     private void post(Constraint constraint) {
-        assert (!solver.TRUE.equals(constraint));
+        assert (!solver.TRUE().equals(constraint));
         solver.post(constraint);
     }
 
@@ -680,7 +680,7 @@ public class IrCompiler {
             } else {
                 compile((IrStringVar) variable);
             }
-            return solver.TRUE;
+            return solver.TRUE();
         }
 
         @Override
@@ -722,7 +722,7 @@ public class IrCompiler {
             IrBoolExpr[] operands = ir.getOperands();
             switch (operands.length) {
                 case 1:
-                    return solver.TRUE;
+                    return solver.TRUE();
                 case 2:
                     return compileArithm(operands[0], Arithm.ADD, operands[1], Rel.LE, 1);
                 default:

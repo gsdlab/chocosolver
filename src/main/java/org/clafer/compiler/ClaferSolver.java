@@ -18,7 +18,7 @@ public class ClaferSolver implements ClaferSearch {
 
     ClaferSolver() {
         this.solver = new Solver();
-        this.solver.post(solver.FALSE);
+        this.solver.post(solver.FALSE());
         this.solutionMap = null;
         this.restartAfterEachSolution = false;
     }

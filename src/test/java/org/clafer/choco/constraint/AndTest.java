@@ -30,12 +30,12 @@ public class AndTest {
 
     @Input(solutions = 1)
     public Object testTautology(Solver solver) {
-        return $(new BoolVar[]{solver.ONE, solver.ONE});
+        return $(new BoolVar[]{solver.ONE(), solver.ONE()});
     }
 
     @Input(solutions = 0)
     public Object testFalseTautology(Solver solver) {
-        return $(new BoolVar[]{solver.ZERO, bool("bool", solver)});
+        return $(new BoolVar[]{solver.ZERO(), bool("bool", solver)});
     }
 
     @Check

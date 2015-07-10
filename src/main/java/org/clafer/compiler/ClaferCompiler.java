@@ -142,7 +142,7 @@ public class ClaferCompiler {
         } else {
             // Give the solver a dummy strategy for trivial problems so the underlying Choco
             // framework does not warn of no search strategy.
-            solver.set(ISF.lexico_LB(solver.ZERO));
+            solver.set(ISF.lexico_LB(solver.ZERO()));
         }
     }
 
