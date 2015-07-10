@@ -15,63 +15,13 @@ import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Triple;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
-import org.clafer.ir.IllegalIntException;
-import org.clafer.ir.IllegalSetException;
-import org.clafer.ir.IllegalStringException;
-import org.clafer.ir.IrAdd;
-import org.clafer.ir.IrAllDifferent;
-import org.clafer.ir.IrArrayToSet;
-import org.clafer.ir.IrBoolChannel;
+import org.clafer.ir.*;
 import org.clafer.domain.BoolDomain;
 import static org.clafer.domain.BoolDomain.FalseDomain;
 import static org.clafer.domain.BoolDomain.TrueDomain;
-import org.clafer.ir.IrBoolExpr;
-import org.clafer.ir.IrBoolExprVisitorAdapter;
-import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrCard;
-import org.clafer.ir.IrCompare;
-import org.clafer.ir.IrConcat;
-import org.clafer.ir.IrConstant;
+
 import org.clafer.domain.Domain;
 import static org.clafer.domain.Domains.*;
-import org.clafer.ir.IrElement;
-import org.clafer.ir.IrFilterString;
-import org.clafer.ir.IrIfOnlyIf;
-import org.clafer.ir.IrIntArrayVar;
-import org.clafer.ir.IrIntChannel;
-import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrIntVar;
-import org.clafer.ir.IrJoinFunction;
-import org.clafer.ir.IrJoinRelation;
-import org.clafer.ir.IrLength;
-import org.clafer.ir.IrMember;
-import org.clafer.ir.IrMinus;
-import org.clafer.ir.IrModule;
-import org.clafer.ir.IrNot;
-import org.clafer.ir.IrNotImplies;
-import org.clafer.ir.IrNotMember;
-import org.clafer.ir.IrOffset;
-import org.clafer.ir.IrPrefix;
-import org.clafer.ir.IrRegister;
-import org.clafer.ir.IrSelectN;
-import org.clafer.ir.IrSetArrayExpr;
-import org.clafer.ir.IrSetArrayVar;
-import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrSetEquality;
-import org.clafer.ir.IrSetUnion;
-import org.clafer.ir.IrSetVar;
-import org.clafer.ir.IrSingleton;
-import org.clafer.ir.IrSortSets;
-import org.clafer.ir.IrSortStrings;
-import org.clafer.ir.IrSortStringsChannel;
-import org.clafer.ir.IrStringCompare;
-import org.clafer.ir.IrStringExpr;
-import org.clafer.ir.IrStringVar;
-import org.clafer.ir.IrSubsetEq;
-import org.clafer.ir.IrSuffix;
-import org.clafer.ir.IrUtil;
-import org.clafer.ir.IrVar;
-import org.clafer.ir.IrWithin;
 import static org.clafer.ir.Irs.*;
 
 /**
@@ -668,6 +618,12 @@ public class Coalescer {
         @Override
         public Void visit(IrSuffix ir, Void a) {
             propagateSuffix(ir.getSuffix(), ir.getWord());
+            return null;
+        }
+
+        @Override
+        public Void visit(IrConnected ir, Void aVoid) {
+            //System.exit(1);
             return null;
         }
 

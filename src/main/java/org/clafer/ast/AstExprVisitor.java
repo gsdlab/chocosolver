@@ -80,4 +80,6 @@ public interface AstExprVisitor<A, B> {
     public B visit(AstInverse ast, A a);
 
     public B visit(AstTransitiveClosure ast, A a);
+
+    public B visit(AstConnected ast, A a);
 }

@@ -15,6 +15,7 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstConnected;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
@@ -658,6 +659,18 @@ public class TypeAnalyzer implements Analyzer {
                 }
             }
             throw new TypeException(relation + " cannot be transitively closed");
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstConnected ast, Void a) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            TypedExpr<AstSetExpr> nodes = typeCheck(ast.getNodes());
+            if (relation.getCommonSupertype().arity() == 2) {
+                if (relation.getCommonSupertype().get(0).equals(relation.getCommonSupertype().get(1))) {
+                    return put(BoolType, connected(nodes.getExpr(), relation.getExpr(), ast.isDirected()));
+                }
+            }
+            throw new TypeException(relation + " cannot be checked for connectivity");
         }
     }
 

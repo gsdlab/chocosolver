@@ -70,4 +70,6 @@ public interface IrBoolExprVisitor<A, B> {
     public B visit(IrPrefix ir, A a);
 
     public B visit(IrSuffix ir, A a);
+
+    public B visit(IrConnected ir, A a);
 }

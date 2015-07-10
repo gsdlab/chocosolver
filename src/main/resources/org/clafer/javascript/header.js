@@ -93,3 +93,4 @@ var ref = Asts.ref;
 var inverse = Asts.inverse;
 var transitiveClosure = Asts.transitiveClosure;
 var transitiveReflexiveClosure = Asts.transitiveReflexiveClosure;
+var connected = Asts.connected;

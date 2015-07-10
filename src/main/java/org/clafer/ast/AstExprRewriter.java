@@ -221,4 +221,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     public AstExpr visit(AstTransitiveClosure ast, T a) {
         return transitiveClosure(rewrite(ast.getRelation(), a), ast.isReflexive());
     }
+
+    @Override
+    public AstExpr visit(AstConnected ast, T a) {
+        AstSetExpr e = rewrite(ast.getRelation(), a);
+        AstSetExpr n = rewrite(ast.getNodes(), a);
+        return connected(n, e, ast.isDirected());
+    }
 }
