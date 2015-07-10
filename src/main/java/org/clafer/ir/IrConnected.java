@@ -64,11 +64,12 @@ public class IrConnected extends IrAbstractBool {
 
     @Override
     public int hashCode() {
-        return 117 * relation.hashCode() ^ (directed ? 16 : 0);//51
+        return 117 * nodes.hashCode() * relation.hashCode() ^ (directed ? 16 : 0);//51
     }
 
     @Override
     public String toString() {
-        return directed ? "connectedDirected(" + relation + ")" : "connected(" + relation + ")";
+        return directed ? "connectedDirected(" + nodes + " : " + relation + ")"
+                : "connected(" + nodes + " : " + relation + ")";
     }
 }
