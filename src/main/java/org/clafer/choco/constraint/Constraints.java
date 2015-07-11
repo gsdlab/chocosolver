@@ -605,17 +605,6 @@ public class Constraints {
      *******************
      */
     /**
-     * A constraint enforcing {@code {ivar} = svar}.
-     *
-     * @param ivar the integer
-     * @param svar the singleton set
-     * @return constraint {@code {ivar} = svar}
-     */
-    public static Constraint singleton(IntVar ivar, SetVar svar) {
-        return new Constraint("singleton", new PropSingleton(ivar, svar));
-    }
-
-    /**
      * A constraint enforcing {@code {ivar} = svar} and {@code svarCard = 1}.
      * Does not enforce that {@code svarCard = |svarCard|} because of how the
      * compilation works, it is already enforced elsewhere.
@@ -626,6 +615,10 @@ public class Constraints {
      * @return constraint {@code {ivar} = svar}
      */
     public static Constraint singleton(IntVar ivar, SetVar svar, IntVar svarCard) {
+        if (svarCard.isInstantiatedTo(1)) {
+            return new Constraint("singleton",
+                    new PropSingleton(ivar, svar));
+        }
         return new Constraint("singleton",
                 new PropSingleton(ivar, svar),
                 new PropEqualXC(svarCard, 1));

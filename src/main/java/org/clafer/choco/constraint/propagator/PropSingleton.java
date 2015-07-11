@@ -57,15 +57,12 @@ public class PropSingleton extends Propagator<Variable> {
             int val = s.getKernelFirst();
             i.instantiateTo(val, aCause);
             s.instantiateTo(new int[]{val}, aCause);
-        }
-        PropUtil.domSubsetEnv(i, s, aCause);
-        PropUtil.envSubsetDom(s, i, aCause);
-        if (i.isInstantiated()) {
-            s.instantiateTo(new int[]{i.getValue()}, aCause);
-        } else if (s.getEnvelopeSize() == 1) {
-            int val = s.getEnvelopeFirst();
-            i.instantiateTo(val, aCause);
-            s.instantiateTo(new int[]{val}, aCause);
+        } else {
+            PropUtil.domSubsetEnv(i, s, aCause);
+            PropUtil.envSubsetDom(s, i, aCause);
+            if (i.isInstantiated()) {
+                s.instantiateTo(new int[]{i.getValue()}, aCause);
+            }
         }
     }
 
@@ -76,7 +73,7 @@ public class PropSingleton extends Propagator<Variable> {
                 s.instantiateTo(new int[]{i.getValue()}, aCause);
             } else {
                 iD.freeze();
-                iD.forEachRemVal(pruneSOnIRem);
+                iD.forEachRemVal((IntProcedure) rem -> s.removeFromEnvelope(rem, aCause));
                 iD.unfreeze();
             }
         } else {
@@ -90,7 +87,7 @@ public class PropSingleton extends Propagator<Variable> {
                 s.instantiateTo(new int[]{val}, aCause);
             } else {
                 sD.freeze();
-                sD.forEach(pruneIOnSEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                sD.forEach((IntProcedure) env -> i.removeValue(env, aCause), SetEventType.REMOVE_FROM_ENVELOPE);
                 sD.unfreeze();
                 if (i.isInstantiated()) {
                     s.instantiateTo(new int[]{i.getValue()}, aCause);
@@ -98,18 +95,6 @@ public class PropSingleton extends Propagator<Variable> {
             }
         }
     }
-    private final IntProcedure pruneSOnIRem = new IntProcedure() {
-        @Override
-        public void execute(int i) throws ContradictionException {
-            s.removeFromEnvelope(i, aCause);
-        }
-    };
-    private final IntProcedure pruneIOnSEnv = new IntProcedure() {
-        @Override
-        public void execute(int sEnv) throws ContradictionException {
-            i.removeValue(sEnv, aCause);
-        }
-    };
 
     @Override
     public ESat isEntailed() {

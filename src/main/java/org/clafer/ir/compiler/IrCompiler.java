@@ -1413,7 +1413,7 @@ public class IrCompiler {
             IntVar value = compile(ir.getValue());
             if (reify == null) {
                 SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
-                post(Constraints.singleton(value, singleton));
+                post(Constraints.singleton(value, singleton, one(solver)));
                 return new CSetVar(singleton, one(solver));
             }
             return Constraints.singleton(value, reify.getSet(), reify.getCard());

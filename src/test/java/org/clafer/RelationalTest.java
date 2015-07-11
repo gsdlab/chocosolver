@@ -168,7 +168,7 @@ public class RelationalTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testSingeletonJoinFunction() {
+    public void testSingletonJoinFunction() {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").refTo(IntType).withCard(Mandatory);
@@ -192,7 +192,7 @@ public class RelationalTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testSingeletonJoinRelation() {
+    public void testSingletonJoinRelation() {
         AstModel model = newModel();
 
         AstConcreteClafer product = model.addChild("Product").withCard(Mandatory);
