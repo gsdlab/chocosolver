@@ -1888,6 +1888,37 @@ public class AstCompiler {
      * Convenience functions.
      ************************
      */
+    /**
+     * Some references use an extra value for uninitialized. For example:
+     *
+     * <pre>
+     * A 2
+     * B -> A *
+     * </pre>
+     *
+     * The references of B are encoded using integers with domain {0,1,2}, where
+     * the values 0 and 1 correspond to A$0 and A$1. The value 2 is used for Bs
+     * that are absent. Consider the following instance:
+     *
+     * <pre>
+     * A$0
+     * A$1
+     * B$0 -> A$1
+     * B$1 -> A$0
+     * </pre>
+     *
+     * If the {@code scope(B) = 3}, then the references of B are represented as
+     * the following:
+     *
+     * <pre>
+     * B$0ref = 1
+     * B$1ref = 0
+     * B$2ref = 2
+     * </pre>
+     *
+     * @param clafer to Clafer referred to
+     * @return the integer value for uninitialized.
+     */
     private int getUninitalizedRef(AstClafer clafer) {
         return clafer instanceof AstIntClafer
                 ? analysis.getScope().getIntHigh() + 1
