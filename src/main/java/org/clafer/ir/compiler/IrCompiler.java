@@ -1420,6 +1420,18 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrSingletonFilter ir, CSetVar reify) {
+            IntVar value = compile(ir.getValue());
+            int filter = ir.getFilter();
+            if (reify == null) {
+                CSetVar singleton = numCset("SingletonFilter", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(Constraints.singletonFilter(value, singleton.getSet(), singleton.getCard(), filter));
+                return singleton;
+            }
+            return Constraints.singletonFilter(value, reify.getSet(), reify.getCard(), filter);
+        }
+
+        @Override
         public Object visit(IrArrayToSet ir, CSetVar reify) {
             IntVar[] array = compile(ir.getArray());
             if (reify == null) {

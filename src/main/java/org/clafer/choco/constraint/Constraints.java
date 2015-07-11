@@ -71,6 +71,7 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.VF;
 import org.chocosolver.solver.variables.Variable;
+import org.clafer.choco.constraint.propagator.PropSingletonFilter;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -622,6 +623,24 @@ public class Constraints {
         return new Constraint("singleton",
                 new PropSingleton(ivar, svar),
                 new PropEqualXC(svarCard, 1));
+    }
+
+    /**
+     * A constraint enforcing
+     * {@code if ivar = filter then {} = svar else {ivar} = svar} and
+     * {@code svarCard = 1}. Does not enforce that {@code svarCard = |svarCard|}
+     * because of how the compilation works, it is already enforced elsewhere.
+     *
+     * @param ivar the integer
+     * @param svar the singleton set
+     * @param svarCard the cardinality of {@code svar}
+     * @return constraint
+     * {@code if ivar = filter then {} = svar else {ivar} = svar}
+     */
+    public static Constraint singletonFilter(IntVar ivar, SetVar svar, IntVar svarCard, int filter) {
+        return new Constraint("singletonFilter",
+                new PropSingletonFilter(ivar, svar, filter),
+                new PropEqualX_Y(svarCard, ICF.arithm(ivar, "!=", filter).reif()));
     }
 
     /**

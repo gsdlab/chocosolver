@@ -13,6 +13,8 @@ public interface IrSetExprVisitor<A, B> {
 
     public B visit(IrSingleton ir, A a);
 
+    public B visit(IrSingletonFilter ir, A a);
+
     public B visit(IrArrayToSet ir, A a);
 
     public B visit(IrSetElement ir, A a);

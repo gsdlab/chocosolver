@@ -1597,6 +1597,17 @@ public class Irs {
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
 
+    public static IrSetExpr singletonFilter(IrIntExpr value, int filter) {
+        if (!value.getDomain().contains(filter)) {
+            return singleton(value);
+        }
+        Integer constant = IrUtil.getConstant(value);
+        if (constant != null) {
+            return constant.equals(filter) ? EmptySet : constant(new int[]{constant});
+        }
+        return new IrSingletonFilter(value, filter, value.getDomain().remove(filter), EmptyDomain, ZeroOneDomain);
+    }
+
     public static IrSetExpr arrayToSet(IrIntExpr[] array, Integer globalCardinality) {
         switch (array.length) {
             case 0:
@@ -2113,7 +2124,7 @@ public class Irs {
         IrSetExpr[] array = new IrSetExpr[expr.length()];
         for (int i = 0; i < array.length; i++) {
             IrIntExpr element = get(expr, i);
-            array[i] = ternary(equal(element, value), EmptySet, singleton(element));
+            array[i] = singletonFilter(element, value);
         }
         return array(array);
     }

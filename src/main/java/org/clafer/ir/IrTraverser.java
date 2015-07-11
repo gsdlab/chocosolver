@@ -386,6 +386,12 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrSingletonFilter ir, T a) {
+        traverse(ir.getValue(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrArrayToSet ir, T a) {
         traverse(ir.getArray(), a);
         return null;

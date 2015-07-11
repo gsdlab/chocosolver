@@ -557,6 +557,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrSetExpr visit(IrSingletonFilter ir, T a) {
+        IrIntExpr value = rewrite(ir.getValue(), a);
+        return changed(ir.getValue(), value)
+                ? singletonFilter(value, ir.getFilter())
+                : ir;
+    }
+
+    @Override
     public IrSetExpr visit(IrArrayToSet ir, T a) {
         IrIntExpr[] array = rewrite(ir.getArray(), a);
         return changed(ir.getArray(), array)
