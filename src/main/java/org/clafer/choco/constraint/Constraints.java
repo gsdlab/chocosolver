@@ -477,9 +477,8 @@ public class Constraints {
     }
 
     public static Constraint connected(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
-        int nodes_upper = nodes.getEnvelopeSize();
-        int nodes_lower = nodes.getKernelSize();
-        boolean fixed_nodes = (nodes_upper == nodes_lower);
+        int nodes_upper = PropUtil.maxEnv(nodes) + 1;
+        boolean fixed_nodes = nodes.isInstantiated();
 
         UndirectedGraph GLB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
         UndirectedGraph GUB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
@@ -497,10 +496,14 @@ public class Constraints {
         for (int i = 0; i < edges.length; i++) {
             SetVar edge = edges[i];
             for (int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext()) {
-                GLB.addEdge(i, n);
+                if (n < nodes_upper) {
+                    GLB.addEdge(i, n);
+                }
             }
             for (int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext()) {
-                GUB.addEdge(i, n);
+                if (n < nodes_upper) {
+                    GUB.addEdge(i, n);
+                }
             }
         }
 
