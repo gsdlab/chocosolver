@@ -776,4 +776,20 @@ public class SimpleStructureTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(5));
         assertEquals(243, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * A ->> A *
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testSelfReference() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        a.refTo(a);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(5, solver.allInstances().length);
+    }
 }
