@@ -23,9 +23,9 @@ import org.chocosolver.util.procedure.IntProcedure;
 public class PropIntChannel extends Propagator<Variable> {
 
     private final SetVar[] sets;
-    private ISetDeltaMonitor[] setsD;
+    private final ISetDeltaMonitor[] setsD;
     private final IntVar[] ints;
-    private IIntDeltaMonitor[] intsD;
+    private final IIntDeltaMonitor[] intsD;
 
     public PropIntChannel(SetVar[] sets, IntVar[] ints) {
         super(buildArray(sets, ints), PropagatorPriority.LINEAR, true);

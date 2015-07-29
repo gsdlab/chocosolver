@@ -6,6 +6,7 @@ import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ir.IrQuickTest.Solution;
 import static org.clafer.ir.Irs.*;
 import static org.junit.Assume.assumeFalse;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -16,6 +17,7 @@ import org.junit.runner.RunWith;
 @RunWith(IrQuickTest.class)
 public class IrModTest {
 
+    @Ignore
     @Test(timeout = 60000)
     public IrBoolExpr setup(IrIntVar dividend, IrIntVar divisor, IrIntVar remainder) {
         assumeFalse(divisor.getDomain().contains(0));

@@ -100,7 +100,7 @@ public class TypeAnalyzerTest {
 
         AstConcreteClafer a = model.addChild("A").withCard(Mandatory);
         AstConcreteClafer b = model.addChild("B").withCard(Mandatory).refToUnique(IntType);
-        model.addConstraint(equal(card(union(global(a), joinRef(global(b)))), constant(2)));
+        model.addConstraint(equal(card(union(global(a), joinRef(b))), constant(2)));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }
@@ -160,7 +160,7 @@ public class TypeAnalyzerTest {
 
         AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
         AstConcreteClafer b = a.addChild("b").withCard(Optional);
-        model.addConstraint(some(join(joinRef(global(a)), b)));
+        model.addConstraint(some(join(joinRef(a), b)));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }
@@ -194,7 +194,7 @@ public class TypeAnalyzerTest {
 
         AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
         AstConcreteClafer b = a.addChild("b").withCard(Optional);
-        model.addConstraint(some(joinParent(joinRef(global(a)))));
+        model.addConstraint(some(joinParent(joinRef(a))));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }
@@ -230,7 +230,7 @@ public class TypeAnalyzerTest {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
-        model.addConstraint(some(joinRef(global(a))));
+        model.addConstraint(some(joinRef(a)));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }
@@ -246,7 +246,7 @@ public class TypeAnalyzerTest {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("a").withCard(Mandatory).refToUnique(IntType);
-        model.addConstraint(some(joinRef(joinRef(global(a)))));
+        model.addConstraint(some(joinRef(joinRef(a))));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }
@@ -316,7 +316,7 @@ public class TypeAnalyzerTest {
 
         AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
         AstConcreteClafer b = model.addChild("b").withCard(Mandatory);
-        model.addConstraint(equal(constant(3), add(joinRef(global(a)), global(b))));
+        model.addConstraint(equal(constant(3), add(joinRef(a), global(b))));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }
@@ -355,6 +355,44 @@ public class TypeAnalyzerTest {
         AstConcreteClafer b = model.addChild("b").refToUnique(IntType).withCard(Mandatory);
         AstConcreteClafer c = model.addChild("c").refToUnique(IntType).withCard(Mandatory);
         model.addConstraint(equal(joinRef(c), sum(union(global(a), global(b)))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> A
+     * [ A = product B ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testProductNonInteger() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("b").refToUnique(a).withCard(Mandatory);
+        model.addConstraint(equal(global(a), product(global(b))));
+
+        Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> int
+     * C -> int
+     * [ C.ref = product (A ++ B) ]
+     * </pre>
+     */
+    @Test(expected = TypeException.class)
+    public void testProductDifferentTypes() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("a").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("b").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("c").refToUnique(IntType).withCard(Mandatory);
+        model.addConstraint(equal(joinRef(c), product(union(global(a), global(b)))));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }

@@ -17,26 +17,17 @@ public class AstAbstractClafer extends AstClafer {
         super(name, claferClafer);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstAbstractClafer withGroupCard(Card groupCard) {
         super.withGroupCard(groupCard);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstAbstractClafer withGroupCard(int low) {
         return withGroupCard(new Card(low));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstAbstractClafer withGroupCard(int low, int high) {
         return withGroupCard(new Card(low, high));
@@ -59,36 +50,24 @@ public class AstAbstractClafer extends AstClafer {
         this.subs.remove(sub);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstAbstractClafer extending(AstAbstractClafer superClafer) {
         super.extending(superClafer);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstAbstractClafer refTo(AstClafer targetType) {
         super.refTo(targetType);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstAbstractClafer refToUnique(AstClafer targetType) {
         super.refToUnique(targetType);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return "abstract " + getName();

@@ -51,6 +51,8 @@ public class InstanceModel {
 
     /**
      * Print solution to stdout.
+     *
+     * @throws IOException an IO error occurred
      */
     public void print() throws IOException {
         print(System.out);
@@ -58,6 +60,9 @@ public class InstanceModel {
 
     /**
      * Print solution.
+     *
+     * @param out the stream to print to
+     * @throws IOException an IO error occurred
      */
     public void print(Appendable out) throws IOException {
         for (InstanceClafer top : topClafers) {

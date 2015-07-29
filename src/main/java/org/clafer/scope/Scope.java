@@ -17,21 +17,21 @@ import org.clafer.common.Check;
  * </p>
  * <p>
  * The scope is built through the constructor or {@link ScopeBuilder}, whichever
- * is mort convenient.
+ * is more convenient.
  * </p>
  * <p>
  * Example 1:
  * <pre>
- * Map&lt;AstClafer, Integer&gt; map = new HashMap&lt;AstClafer, Integer&gt();
+ * Map&lt;AstClafer, Integer&gt; map = new HashMap&lt;&gt();
  * map.put(claferA, 3);
  * map.put(claferB, 2);
- * Scope scope = new Scope(map, 3, -16, 16);
+ * Scope scope = new Scope(map, 3, -16, 16, null, null, 10, (char) 0x20, (char) 0x7e);
  * </pre>
  * </p>
  * <p>
  * Example 2:
  * <pre>
- * Scope scope = Scope.set(claferA, 3).set(claferB).defaultScope(3).intLow(-16).intHigh(16).toScope();
+ * Scope scope = Scope.setScope(claferA, 3).setScope(claferB, 2).defaultScope(3).intLow(-16).intHigh(16).toScope();
  * </pre>
  * </p>
  * <p>
@@ -41,7 +41,7 @@ import org.clafer.common.Check;
  * <p>
  * What is scope? Because of the expressiveness of Clafer, reasoning is too
  * difficult in general. The scope is a limitation of the solver so that
- * reasoning feasible.
+ * reasoning is feasible.
  * <p>
  * Example 1:
  * <pre>
@@ -54,20 +54,19 @@ import org.clafer.common.Check;
  * <p>
  * Example 2:
  * <pre>
- * A *
- * B *
- * C *
+ * A 2..*
+ * B 2..*
+ * C 2..*
  * [#A * #A * #A + #B * #B * #B = #C * #C * #C]
  * </pre>
  * </p>
  * Both examples are attempting to prove/disprove Fermat's last theorem for k=3,
  * although this easily generalizes for any k. Unfortunately this is too
  * difficult, so the solver only attempts to prove/disprove upto a certain
- * scope. In example 1, a scope of
- * {@code Scope.intLow(-16).intHigh(16).toScope()} would only attempt the proof
- * for integers between negative and positive 16. In example 2, a scope of
- * {@code Scope.defaultScope(16).toScope()} would only attempt the proof for
- * integers between 0 and positive 16 (the example uses encodes integers using
+ * scope. In example 1, a scope of {@code Scope.intLow(2).intHigh(16).toScope()}
+ * would only attempt the proof for integers between 2 and 16. In example 2, a
+ * scope of {@code Scope.defaultScope(16).toScope()} would also only attempt the
+ * proof for integers between 2 and 16 (the example uses encodes integers using
  * cardinality).
  *
  * @author jimmy
@@ -151,7 +150,7 @@ public class Scope implements Scopable {
      */
     public int getScope(AstClafer clafer) {
         Integer scope = scopes.get(Check.notNull(clafer));
-        return scope == null ? defaultScope : scope.intValue();
+        return scope == null ? defaultScope : scope;
     }
 
     /**
@@ -278,6 +277,26 @@ public class Scope implements Scopable {
     }
 
     /**
+     * Equivalent to {@code builder().mulLow(mulLow)}.
+     *
+     * @param mulLow the lowest integer for multiplication
+     * @return a new builder
+     */
+    public static ScopeBuilder mulLow(int mulLow) {
+        return builder().mulLow(mulLow);
+    }
+
+    /**
+     * Equivalent to {@code builder().mulHigh(mulHigh)}.
+     *
+     * @param mulHigh the highest integer for multiplication
+     * @return a new builder
+     */
+    public static ScopeBuilder mulHigh(int mulHigh) {
+        return builder().mulHigh(mulHigh);
+    }
+
+    /**
      * Equivalent to {@code builder().stringLength(stringLength)}.
      *
      * @param stringLength the longest string
@@ -307,9 +326,6 @@ public class Scope implements Scopable {
         return builder().charHigh(charHigh);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Scope toScope() {
         return this;
@@ -326,9 +342,6 @@ public class Scope implements Scopable {
                 mulLow, mulHigh, stringLength, charLow, charHigh);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder().append('{');

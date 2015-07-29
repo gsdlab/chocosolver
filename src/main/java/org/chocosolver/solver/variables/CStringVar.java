@@ -2,8 +2,6 @@ package org.chocosolver.solver.variables;
 
 import java.util.Arrays;
 import org.clafer.choco.constraint.Constraints;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
 
 /**
  *

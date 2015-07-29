@@ -12,6 +12,7 @@ import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -117,8 +118,8 @@ public class StringTest {
 
         AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Optional);
         AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
-        a.addConstraint(equal(joinRef($this()), joinRef(global(b))));
-        model.addConstraint(equal(joinRef(global(b)), constant("abc")));
+        a.addConstraint(equal(joinRef($this()), joinRef(b)));
+        model.addConstraint(equal(joinRef(b), constant("abc")));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
                 .stringLength(5).charLow('a').charHigh('c'));
@@ -169,10 +170,32 @@ public class StringTest {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(0, 2);
-        model.addConstraint(equal(joinRef(global(a)), constant("abc")));
+        model.addConstraint(equal(joinRef(a), constant("abc")));
 
         ClaferCompiler.compile(model, Scope.setScope(a, 2)
                 .stringLength(5).charLow('a').charHigh('c'));
+    }
+
+    /**
+     * <pre>
+     * A -> string ?
+     * B -> string
+     * [ A.ref = B.ref ]
+     * [ no A ]
+     * </pre>
+     */
+    @Ignore("Should find no instances if we allow for empty string sets. B.ref cannot be the set of empty string.")
+    @Test(timeout = 60000)
+    public void testJoinEmptySetWithString() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Optional);
+        AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
+        model.addConstraint(equal(joinRef(a), joinRef(b)));
+        model.addConstraint(none(a));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
+        assertFalse(solver.find());
     }
 
     /**
@@ -199,8 +222,8 @@ public class StringTest {
         AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
         AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
         model.addConstraint(equal(
-                length(joinRef(global(a))),
-                add(length(joinRef(global(b))), constant(1))
+                length(joinRef(a)),
+                add(length(joinRef(b)), constant(1))
         ));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
@@ -247,7 +270,7 @@ public class StringTest {
         AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
         AstConcreteClafer c = model.addChild("C").refToUnique(StringType).withCard(Mandatory);
         b.addConstraint(equal(joinRef($this()), constant("abc")));
-        c.addConstraint(equal(joinRef($this()), concat(joinRef(global(a)), joinRef(global(b)))));
+        c.addConstraint(equal(joinRef($this()), concat(joinRef(a), joinRef(b))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
                 .stringLength(5).charLow('a').charHigh('c'));
@@ -290,7 +313,7 @@ public class StringTest {
 
         AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
         AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
-        model.addConstraint(prefix(joinRef(global(a)), joinRef(global(b))));
+        model.addConstraint(prefix(joinRef(a), joinRef(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
                 .stringLength(3).charLow('a').charHigh('c'));
@@ -331,7 +354,7 @@ public class StringTest {
 
         AstConcreteClafer a = model.addChild("A").refToUnique(StringType).withCard(Mandatory);
         AstConcreteClafer b = model.addChild("B").refToUnique(StringType).withCard(Mandatory);
-        model.addConstraint(suffix(joinRef(global(a)), joinRef(global(b))));
+        model.addConstraint(suffix(joinRef(a), joinRef(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1)
                 .stringLength(3).charLow('a').charHigh('c'));

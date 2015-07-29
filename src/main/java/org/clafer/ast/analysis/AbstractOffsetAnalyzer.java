@@ -2,7 +2,6 @@ package org.clafer.ast.analysis;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,15 +29,12 @@ public class AbstractOffsetAnalyzer implements Analyzer {
              * This optimization is to put more "stable" Clafers near the
              * beginning, to reduce the number of backtracking for LowGroups.
              */
-            Collections.sort(subs, new Comparator<AstClafer>() {
-                @Override
-                public int compare(AstClafer o1, AstClafer o2) {
-                    Card card1 = analysis.getGlobalCard(o1);
-                    Card card2 = analysis.getGlobalCard(o2);
-                    double ratio1 = ((double) card1.getLow() + 1) / ((double) card1.getHigh() + 1);
-                    double ratio2 = ((double) card2.getLow() + 1) / ((double) card2.getHigh() + 1);
-                    return -Double.compare(ratio1, ratio2);
-                }
+            Collections.sort(subs, (AstClafer o1, AstClafer o2) -> {
+                Card card1 = analysis.getGlobalCard(o1);
+                Card card2 = analysis.getGlobalCard(o2);
+                double ratio1 = ((double) card1.getLow() + 1) / ((double) card1.getHigh() + 1);
+                double ratio2 = ((double) card2.getLow() + 1) / ((double) card2.getHigh() + 1);
+                return -Double.compare(ratio1, ratio2);
             });
             for (AstClafer sub : subs) {
                 offsets.put(sub, offset);

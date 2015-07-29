@@ -74,7 +74,7 @@ public class SetArithmeticTest {
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
         AstConcreteClafer backup = model.addChild("Backup").extending(feature).withCard(1, 2);
         AstConcreteClafer free = model.addChild("Free").refToUnique(feature).withCard(1, 2);
-        model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(global(free))), cost)), 0));
+        model.addConstraint(equal(joinRef(join(inter(global(backup), joinRef(free)), cost)), 0));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
         assertEquals(5, solver.allInstances().length);
@@ -176,7 +176,7 @@ public class SetArithmeticTest {
 
         AstConcreteClafer backup = model.addChild("Backup").withCard(1, 2);
         AstConcreteClafer feature = model.addChild("Feature").withCard(3, 4).refTo(backup);
-        model.addConstraint(equal(joinRef(global(feature)), global(backup)));
+        model.addConstraint(equal(joinRef(feature), global(backup)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(5, solver.allInstances().length);
@@ -299,7 +299,7 @@ public class SetArithmeticTest {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refToUnique(IntType);
-        model.addConstraint(in(constant(2), joinRef(global(cost))));
+        model.addConstraint(in(constant(2), joinRef(cost)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(10, solver.allInstances().length);
@@ -338,7 +338,7 @@ public class SetArithmeticTest {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refToUnique(IntType);
-        model.addConstraint(notIn(constant(2), joinRef(global(cost))));
+        model.addConstraint(notIn(constant(2), joinRef(cost)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(10, solver.allInstances().length);
@@ -355,7 +355,7 @@ public class SetArithmeticTest {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
-        model.addConstraint(in(joinRef(global(cost)), constant(2)));
+        model.addConstraint(in(joinRef(cost), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(2, solver.allInstances().length);
@@ -392,7 +392,7 @@ public class SetArithmeticTest {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
-        model.addConstraint(notIn(joinRef(global(cost)), constant(2)));
+        model.addConstraint(notIn(joinRef(cost), constant(2)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-2).intHigh(2));
         assertEquals(48, solver.allInstances().length);
@@ -433,7 +433,7 @@ public class SetArithmeticTest {
 
         AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
         AstConcreteClafer payment = model.addChild("Payment").withCard(2, 3).refTo(IntType);
-        model.addConstraint(in(joinRef(global(cost)), joinRef(global(payment))));
+        model.addConstraint(in(joinRef(cost), joinRef(payment)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
         assertEquals(91, solver.allInstances().length);
@@ -465,7 +465,7 @@ public class SetArithmeticTest {
 
         AstConcreteClafer cost = model.addChild("Cost").withCard(2, 3).refTo(IntType);
         AstConcreteClafer payment = model.addChild("Payment").withCard(2, 3).refTo(IntType);
-        model.addConstraint(notIn(joinRef(global(cost)), joinRef(global(payment))));
+        model.addConstraint(notIn(joinRef(cost), joinRef(payment)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
         assertEquals(165, solver.allInstances().length);
@@ -488,7 +488,7 @@ public class SetArithmeticTest {
         AstConcreteClafer debt = model.addChild("Debt").withCard(3, 3).extending(cost);
         AstConcreteClafer credit = model.addChild("Credit").withCard(Mandatory).extending(cost);
         AstConcreteClafer payment = model.addChild("Payment").refTo(cost).withCard(Mandatory);
-        model.addConstraint(in(joinRef(global(payment)), global(debt)));
+        model.addConstraint(in(joinRef(payment), global(debt)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
         // Should be 1 with stronger symmetry breaking.
@@ -512,7 +512,7 @@ public class SetArithmeticTest {
         AstConcreteClafer debt = model.addChild("Debt").withCard(3, 3).extending(cost);
         AstConcreteClafer credit = model.addChild("Credit").withCard(Mandatory).extending(cost);
         AstConcreteClafer payment = model.addChild("Payment").refTo(cost).withCard(Mandatory);
-        model.addConstraint(notIn(joinRef(global(payment)), global(debt)));
+        model.addConstraint(notIn(joinRef(payment), global(debt)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-1).intHigh(1));
         assertEquals(1, solver.allInstances().length);

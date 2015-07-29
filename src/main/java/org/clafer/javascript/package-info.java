@@ -1,7 +1,8 @@
 /**
  * This package provides classes for building Clafer models and invoking the
  * solver via Javascript. The Rhino engine is the only supported Javascript
- * engine. It should come supplied in most Java 6+ installations.
+ * engine. Use {@link Javascript#readModel(java.io.File)} to read a Javascript
+ * file, most likely outputted by the Clafer compiler.
  *
  * @author jimmy
  */

@@ -7,9 +7,10 @@ import org.clafer.ast.AstClafer;
 /**
  * Builder pattern for scopes. Use {@link Scope#builder()},
  * {@link Scope#setScope(org.clafer.ast.AstClafer, int)}, {@link Scope#defaultScope(int)},
- * {@link Scope#intLow}, or {@link Scope#intHigh} to construct the builder. The
- * default scope and lowest and highest integers will be given a default if not
- * set explicitly.
+ * {@link Scope#intLow(int)}, {@link Scope#intHigh(int)}, {@link Scope#mulLow(int)},
+ * {@link Scope#mulHigh(int)}, {@link Scope#stringLength(int)}, {@link Scope#charLow(char)},
+ * or {@link Scope#charHigh(char)} to construct the builder. Will provide
+ * defaults for the parameters that are not explicitly specified.
  *
  * @author jimmy
  * @see Scope
@@ -20,8 +21,8 @@ public class ScopeBuilder implements Scopable {
     private int defaultScope = 1;
     private int intLow = -16;
     private int intHigh = 16;
-    private Integer mulLow;
-    private Integer mulHigh;
+    private Integer mulLow = null;
+    private Integer mulHigh = null;
     private int stringLength = 10;
     private char charLow = 0x20;
     private char charHigh = 0x7e;
@@ -67,7 +68,7 @@ public class ScopeBuilder implements Scopable {
      */
     public ScopeBuilder adjustScope(AstClafer clafer, int adjust) {
         Integer oldScope = scope.get(clafer);
-        scope.put(clafer, adjust + (oldScope == null ? defaultScope : oldScope.intValue()));
+        scope.put(clafer, adjust + (oldScope == null ? defaultScope : oldScope));
         return this;
     }
 
@@ -139,11 +140,27 @@ public class ScopeBuilder implements Scopable {
         return intHigh(intHigh + adjust);
     }
 
+    /**
+     * Set the lowest (inclusive) integer used for solving multiplication. If
+     * the lowest integer is already set, then the new lowest integer overrides
+     * the previous one.
+     *
+     * @param mulLow the lowest integer
+     * @return this builder
+     */
     public ScopeBuilder mulLow(int mulLow) {
         this.mulLow = mulLow;
         return this;
     }
 
+    /**
+     * Set the highest (inclusive) integer used for solving multiplication. If
+     * the highest integer is already set, then the new highest integer
+     * overrides the previous one.
+     *
+     * @param mulHigh the highest integer
+     * @return this builder
+     */
     public ScopeBuilder mulHigh(int mulHigh) {
         this.mulHigh = mulHigh;
         return this;

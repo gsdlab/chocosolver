@@ -1,7 +1,5 @@
 package org.clafer.compiler;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.Solver;
@@ -20,7 +18,7 @@ public class ClaferSolver implements ClaferSearch {
 
     ClaferSolver() {
         this.solver = new Solver();
-        this.solver.post(solver.FALSE);
+        this.solver.post(solver.FALSE());
         this.solutionMap = null;
         this.restartAfterEachSolution = false;
     }
@@ -40,7 +38,7 @@ public class ClaferSolver implements ClaferSearch {
     }
 
     @Override
-    public boolean find() {
+    public boolean find() throws ReachedLimitException {
         if (!more) {
             return false;
         }
@@ -67,15 +65,6 @@ public class ClaferSolver implements ClaferSearch {
             throw new IllegalStateException("No instances. Did you forget to call find?");
         }
         return solutionMap.getInstance();
-    }
-
-    @Override
-    public InstanceModel[] allInstances() {
-        List<InstanceModel> instances = new ArrayList<>();
-        while (find()) {
-            instances.add(instance());
-        }
-        return instances.toArray(new InstanceModel[instances.size()]);
     }
 
     @Override

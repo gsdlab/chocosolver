@@ -4,7 +4,7 @@ import gnu.trove.iterator.TIntIterator;
 
 /**
  * An iterator over an interval in increasing order.
- * 
+ *
  * @author jimmy
  */
 public class BoundIntIterator implements TIntIterator {
@@ -15,7 +15,7 @@ public class BoundIntIterator implements TIntIterator {
     /**
      * Iterate in increasing order starting from low (inclusive) and ending in
      * high (inclusive).
-     * 
+     *
      * @param low the lowest value
      * @param high the highest value
      */
@@ -24,13 +24,11 @@ public class BoundIntIterator implements TIntIterator {
         this.high = high;
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return index <= high;
     }
 
-    /** {@inheritDoc} */
     @Override
     public int next() {
         return index++;
@@ -38,7 +36,7 @@ public class BoundIntIterator implements TIntIterator {
 
     /**
      * Not supported.
-     * 
+     *
      * @throws UnsupportedOperationException if invoked
      */
     @Override

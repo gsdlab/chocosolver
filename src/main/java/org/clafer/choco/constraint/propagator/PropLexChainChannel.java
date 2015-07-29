@@ -319,8 +319,8 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 }
             }
             repeat |= propagateSmallest(notSmallest, notSmallest, lessThanEqual, 0);
-            for (int i = 0; i < ints.length; i++) {
-                repeat |= ints[i].updateUpperBound(ints.length - 1 - eqs, aCause);
+            for (IntVar var : ints) {
+                repeat |= var.updateUpperBound(ints.length - 1 - eqs, aCause);
             }
             changed |= repeat;
         } while (repeat);

@@ -126,7 +126,7 @@ public class GlobalCardAnalyzer implements Analyzer {
         Card globalCard = parentGlobalCard.mult(getCard(clafer, analysis, globalCardMap));
         int scope = analysis.getScope(clafer);
         if (scope < globalCard.getLow()) {
-            insufficientScopes.add(new Pair<AstClafer, Integer>(clafer, globalCard.getLow()));
+            insufficientScopes.add(new Pair<>(clafer, globalCard.getLow()));
             globalCard = new Card(0, scope);
         } else {
             globalCard = new Card(

@@ -7,7 +7,6 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCompare;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrVar;
 import org.clafer.ir.Irs;
 
 /**

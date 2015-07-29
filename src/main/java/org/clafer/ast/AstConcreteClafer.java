@@ -84,52 +84,34 @@ public class AstConcreteClafer extends AstClafer {
         return withCard(new Card(low, high));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstConcreteClafer withGroupCard(Card groupCard) {
         super.withGroupCard(groupCard);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstConcreteClafer withGroupCard(int low) {
         return withGroupCard(new Card(low));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstConcreteClafer withGroupCard(int low, int high) {
         return withGroupCard(new Card(low, high));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstConcreteClafer extending(AstAbstractClafer superClafer) {
         super.extending(superClafer);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstConcreteClafer refTo(AstClafer targetType) {
         super.refTo(targetType);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AstConcreteClafer refToUnique(AstClafer targetType) {
         super.refToUnique(targetType);

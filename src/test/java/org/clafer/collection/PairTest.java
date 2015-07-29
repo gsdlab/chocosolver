@@ -66,13 +66,7 @@ public class PairTest {
         map.put(2, 6);
         map.put(3, 9);
         Pair<Integer, Integer>[] pairs = Pair.toPairs(map);
-        Arrays.sort(pairs, new Comparator<Pair<Integer, Integer>>() {
-
-            @Override
-            public int compare(Pair<Integer, Integer> o1, Pair<Integer, Integer> o2) {
-                return Integer.compare(o1.getFst(), o2.getFst());
-            }
-        });
+        Arrays.sort(pairs, Comparator.comparing(Pair::getFst));
         assertArrayEquals(
                 pairs(pair(1, 3), pair(2, 6), pair(3, 9)),
                 pairs);

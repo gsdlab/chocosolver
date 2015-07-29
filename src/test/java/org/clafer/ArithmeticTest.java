@@ -140,7 +140,7 @@ public class ArithmeticTest {
 
         AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
-        model.addConstraint(equal(mul(joinRef(global(a)), joinRef(global(b))), constant(12)));
+        model.addConstraint(equal(mul(joinRef(a), joinRef(b)), constant(12)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(12, solver.allInstances().length);
@@ -159,7 +159,7 @@ public class ArithmeticTest {
 
         AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
-        model.addConstraint(equal(div(constant(12), joinRef(global(a))), joinRef(global(b))));
+        model.addConstraint(equal(div(constant(12), joinRef(a)), joinRef(b)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(32, solver.allInstances().length);
@@ -178,7 +178,7 @@ public class ArithmeticTest {
 
         AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
         AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
-        model.addConstraint(equal(joinRef(global(a)), minus(joinRef(global(b)))));
+        model.addConstraint(equal(joinRef(a), minus(joinRef(b))));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-3).intHigh(3));
         assertEquals(7, solver.allInstances().length);

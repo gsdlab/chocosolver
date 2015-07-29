@@ -4,7 +4,10 @@ import org.clafer.ast.AstSetExpr;
 import org.clafer.common.Check;
 
 /**
- * One objective.
+ * One objective. Use either
+ * {@link Objective#maximize(org.clafer.ast.AstSetExpr)} or
+ * {@link Objective#minimize(org.clafer.ast.AstSetExpr)} to construct a new
+ * objective.
  *
  * @author jimmy
  */
@@ -17,7 +20,7 @@ public class Objective {
     private final boolean maximize;
     private final AstSetExpr expr;
 
-    Objective(boolean maximize, AstSetExpr expr) {
+    private Objective(boolean maximize, AstSetExpr expr) {
         this.maximize = maximize;
         this.expr = Check.notNull(expr);
     }

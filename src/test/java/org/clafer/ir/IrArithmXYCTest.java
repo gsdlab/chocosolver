@@ -4,7 +4,6 @@ import org.clafer.ir.IrQuickTest.Check;
 import org.clafer.ir.IrQuickTest.Solution;
 import static org.clafer.ir.Irs.*;
 import org.clafer.test.Term;
-import static org.clafer.test.TestUtil.*;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;

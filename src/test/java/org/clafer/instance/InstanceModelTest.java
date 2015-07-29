@@ -19,7 +19,7 @@ public class InstanceModelTest {
         AstConcreteClafer feature = model.addChild("Feature").withCard(1, 1);
         AstConcreteClafer cost = feature.addChild("Cost").withCard(1, 1).refTo(IntType);
 
-        InstanceClafer costInstance = new InstanceClafer(cost, 0, new InstanceRef(IntType, 3));
+        InstanceClafer costInstance = new InstanceClafer(cost, 0, 3);
         InstanceClafer featureInstance = new InstanceClafer(feature, 0, null, costInstance);
         InstanceModel modelInstance = new InstanceModel(featureInstance);
 

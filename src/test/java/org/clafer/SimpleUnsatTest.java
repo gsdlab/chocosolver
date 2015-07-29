@@ -97,7 +97,7 @@ public class SimpleUnsatTest {
         AstConcreteClafer a = model.addChild("A").withCard(0, 1).refTo(IntType);
         AstConcreteClafer b = model.addChild("B").withCard(0, 1);
         AstConcreteClafer c = model.addChild("C").withCard(0, 1);
-        AstConstraint c1 = model.addConstraint(equal(joinRef(global(a)), constant(2)));
+        AstConstraint c1 = model.addConstraint(equal(joinRef(a), constant(2)));
         AstConstraint c2 = model.addConstraint(and(some(a), none(b)));
         AstConstraint c3 = model.addConstraint(and(some(a), none(c)));
         AstConstraint c4 = model.addConstraint(none(a));

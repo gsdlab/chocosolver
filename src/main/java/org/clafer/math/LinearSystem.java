@@ -84,7 +84,7 @@ public class LinearSystem {
         TObjectIntMap<Variable> variableIds = new TObjectIntHashMap<>();
         int id = numSlack;
         Variable[] variableOrder = variables.toArray(new Variable[variables.size()]);
-        Arrays.sort(variableOrder, VariableNameComparator.Singleton);
+        Arrays.sort(variableOrder, Comparator.comparing(Variable::getName));
 
         for (Variable variable : variableOrder) {
             variableIds.put(variable, id++);

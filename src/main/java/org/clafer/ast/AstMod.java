@@ -1,8 +1,6 @@
 package org.clafer.ast;
 
-import java.util.Arrays;
 import org.clafer.common.Check;
-import org.clafer.common.Util;
 
 /**
  *

@@ -30,7 +30,6 @@ import org.clafer.choco.constraint.propagator.PropNotEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropReflexive;
-import org.clafer.choco.constraint.propagator.PropReifyEqualXY;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetBounded;
@@ -67,7 +66,6 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.VF;
 import org.chocosolver.solver.variables.Variable;
-import org.clafer.choco.constraint.propagator.PropReifyEqualXC;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -250,58 +248,6 @@ public class Constraints {
     }
 
     /**
-     * A constraint enforcing {@code reify <=> (variable = constant)}.
-     *
-     * @param reify the reified constraint
-     * @param variable the variable
-     * @param constant the constant
-     * @return constraint {@code reify <=> (variable = constant)}
-     */
-    public static Constraint reifyEqual(BoolVar reify, IntVar variable, int constant) {
-        return new ReifyEqualXC(reify, true, variable, constant);
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (v1 = v2)}.
-     *
-     * @param reify the reified constraint
-     * @param v1 the first variable
-     * @param v2 the second variable
-     * @return constraint {@code reify <=> (v1 = v2)}
-     */
-    public static Constraint reifyEqual(BoolVar reify, IntVar v1, IntVar v2) {
-        return new ReifyEqualXY(reify, true, v1, v2);
-    }
-
-    public static Constraint reifyEqual(IntVar reify, int value, IntVar v1, IntVar v2) {
-        return new Constraint("reifyIntEqual", new PropReifyEqualXY(reify, value, v1, v2));
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (variable ≠ constant)}.
-     *
-     * @param reify the reified constraint
-     * @param variable the variable
-     * @param constant the constant
-     * @return constraint {@code reify <=> (variable ≠ constant)}
-     */
-    public static Constraint reifyNotEqual(BoolVar reify, IntVar variable, int constant) {
-        return new ReifyEqualXC(reify, false, variable, constant);
-    }
-
-    /**
-     * A constraint enforcing {@code reify <=> (v1 ≠ v2)}.
-     *
-     * @param reify the reified constraint
-     * @param v1 the first variable
-     * @param v2 the second variable
-     * @return constraint {@code reify <=> (v1 ≠ v2)}
-     */
-    public static Constraint reifyNotEqual(BoolVar reify, IntVar v1, IntVar v2) {
-        return new ReifyEqualXY(reify, false, v1, v2);
-    }
-
-    /**
      * A constraint enforcing {@code count = (Σ_i array[i] != value)}.
      *
      * @param value the value
@@ -454,8 +400,8 @@ public class Constraints {
         Solver solver = sets[0].getSolver();
         int lb = 0;
         int ub = 0;
-        for (int i = 0; i < sets.length; i++) {
-            ub += setCards[i].getUB();
+        for (IntVar setCard : setCards) {
+            ub += setCard.getUB();
         }
 
         List<Propagator<?>> propagators = new ArrayList<>();
@@ -851,8 +797,11 @@ public class Constraints {
         if (setCard.getLB() > 0) {
             return max(set, setCard, max);
         }
-        return new Constraint("max", new PropSetMax(set, setCard, max),
-                new PropReifyEqualXC(setCard, 0, max, d));
+        // TODO optimize
+        return ifThenElse(
+                ICF.arithm(setCard, "=", 0).reif(),
+                ICF.arithm(max, "=", 0).reif(),
+                max(set, setCard, max).reif());
     }
 
     public static Constraint stritctHighBound(SetVar set, IntVar bound) {
@@ -929,7 +878,7 @@ public class Constraints {
             eq(chars2[i], 0).ifPresent(propagators::add);
         }
         if (propagators.isEmpty()) {
-            return length1.getSolver().TRUE;
+            return length1.getSolver().TRUE();
         }
         return new Constraint("arrayEqual",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
@@ -947,22 +896,22 @@ public class Constraints {
     public static Constraint lessThan(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
         return ICF.lex_less(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO));
+                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
+                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
     }
 
     public static Constraint lessThanEqual(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
         return ICF.lex_less_eq(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO));
+                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
+                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
     }
 
     private static IntVar[] charsAt(Solver solver, IntVar[][] strings, int index) {
         IntVar[] charsAt = new IntVar[strings.length];
         for (int i = 0; i < charsAt.length; i++) {
             charsAt[i] = index < strings[i].length
-                    ? strings[i][index] : solver.ZERO;
+                    ? strings[i][index] : solver.ZERO();
         }
         return charsAt;
     }
@@ -999,7 +948,7 @@ public class Constraints {
             IntVar[] prefix, IntVar prefixLength,
             IntVar[] word, IntVar wordLength) {
         if (prefixLength.getLB() > wordLength.getUB()) {
-            return prefixLength.getSolver().FALSE;
+            return prefixLength.getSolver().FALSE();
         }
         return new Constraint("Prefix",
                 lessThanEq(prefixLength, wordLength),
@@ -1011,7 +960,7 @@ public class Constraints {
             IntVar[] word, IntVar wordLength) {
         Solver solver = suffixLength.getSolver();
         if (suffixLength.getLB() > wordLength.getUB()) {
-            return solver.FALSE;
+            return solver.FALSE();
         }
         IntVar prefixLength = VF.enumerated("SuffixVar" + varNum++,
                 Math.min(wordLength.getLB() - suffixLength.getUB(), 0),
@@ -1021,7 +970,7 @@ public class Constraints {
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(lessThanEq(suffixLength, wordLength));
         for (int i = 0; i < suffix.length; i++) {
-            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, suffixLength.getSolver().ZERO);
+            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, suffixLength.getSolver().ZERO());
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -1041,13 +990,13 @@ public class Constraints {
             IntVar[] right, IntVar rightLength,
             IntVar[] concat, IntVar concatLength) {
         if (leftLength.getLB() + rightLength.getLB() > concatLength.getUB()) {
-            return leftLength.getSolver().FALSE;
+            return leftLength.getSolver().FALSE();
         }
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(sumEq(new IntVar[]{leftLength, rightLength}, concatLength));
         propagators.add(new PropSamePrefix(leftLength, left, concat));
         for (int i = 0; i < right.length; i++) {
-            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getSolver().ZERO);
+            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getSolver().ZERO());
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then

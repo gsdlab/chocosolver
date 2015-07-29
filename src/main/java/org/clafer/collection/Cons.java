@@ -6,7 +6,7 @@ import java.util.List;
 import org.clafer.common.Check;
 
 /**
- *
+ * @param <E> the type of the elements
  * @author jimmy
  */
 public class Cons<E> extends FList<E> {

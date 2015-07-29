@@ -43,6 +43,7 @@ import org.chocosolver.solver.search.strategy.SetStrategyFactory;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
+import org.clafer.common.Check;
 
 /**
  * Compiles from AST -> Choco
@@ -141,7 +142,7 @@ public class ClaferCompiler {
         } else {
             // Give the solver a dummy strategy for trivial problems so the underlying Choco
             // framework does not warn of no search strategy.
-            solver.set(ISF.lexico_LB(solver.ZERO));
+            solver.set(ISF.lexico_LB(solver.ZERO()));
         }
     }
 
@@ -227,6 +228,7 @@ public class ClaferCompiler {
     }
 
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOption options) {
+        Check.noNullsNotEmpty(objectives);
         try {
             Solver solver = new Solver();
             IrModule module = new IrModule();
@@ -244,20 +246,37 @@ public class ClaferCompiler {
             Either<Integer, IntVar>[] objectiveVars = irSolution.getVars(objectiveIrVars);
 
             boolean[] maximizes = new boolean[objectives.length];
-            for (int i = 0; i < maximizes.length; i++) {
-                maximizes[i] = objectives[i].isMaximize();
+            IntVar[] scores = new IntVar[objectives.length];
+            int variableScores = 0;
+            Integer[] fixedScores = new Integer[objectives.length];
+            for (int i = 0; i < objectives.length; i++) {
+                if (objectiveVars[i].isLeft()) {
+                    fixedScores[i] = objectiveVars[i].getLeft();
+                } else {
+                    maximizes[variableScores] = objectives[i].isMaximize();
+                    scores[variableScores] = objectiveVars[i].getRight();
+                    variableScores++;
+                }
             }
+            maximizes = Arrays.copyOf(maximizes, variableScores);
+            scores = Arrays.copyOf(scores, variableScores);
 
             set(solver,
                     setStrategy(getSetVars(in, solution), options),
                     //                firstFailInDomainMax(objectiveVars),
                     intStrategy(getIntVars(in, solution), options));
             restartPolicy(solver, options);
-            return maximizes.length == 1
-                    ? new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], objectiveVars[0])
-                    : new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, objectiveVars);
+            ClaferOptimizer optimizer = maximizes.length == 0
+                    ? new ClaferNoObjectiveOptimizer(new ClaferSolver(solver, solution))
+                    : maximizes.length == 1
+                            ? new EquivalentParetoSolver(new ClaferSingleObjectiveOptimizer(solver, solution, maximizes[0], scores[0]))
+                            : new EquivalentParetoSolver(new ClaferMultiObjectiveOptimizerGIA(solver, solution, maximizes, scores));
+
+            return variableScores < fixedScores.length
+                    ? new PartiallyKnownOptimizer(optimizer, fixedScores)
+                    : optimizer;
         } catch (UnsatisfiableException e) {
-            return new ClaferUnsatOptimizer();
+            return new ClaferNoObjectiveOptimizer(new ClaferSolver());
         }
     }
 

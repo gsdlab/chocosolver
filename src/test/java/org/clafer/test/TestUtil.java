@@ -87,7 +87,7 @@ public class TestUtil {
 
     private static SetStrategy randomSearch(SetVar[] vars) {
         return SetStrategyFactory.custom(
-                new org.chocosolver.solver.search.strategy.selectors.variables.Random<SetVar>(rand.nextLong()),
+                new org.chocosolver.solver.search.strategy.selectors.variables.Random<>(rand.nextLong()),
                 new RandomSetValueSelector(), randBool(), vars);
     }
 

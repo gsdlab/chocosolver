@@ -1,6 +1,5 @@
 package org.clafer.ir;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -18,7 +17,6 @@ import org.clafer.test.TestReflection;
 import static org.clafer.test.TestUtil.*;
 import static org.junit.Assert.*;
 import org.junit.internal.AssumptionViolatedException;
-import org.junit.runner.Runner;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;

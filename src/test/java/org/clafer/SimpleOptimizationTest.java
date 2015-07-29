@@ -32,7 +32,7 @@ public class SimpleOptimizationTest {
         a.addConstraint(equal(joinRef($this()), constant(2)));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(3),
-                Objective.maximize(joinRef(global(a))));
+                Objective.maximize(joinRef(a)));
         int count = 0;
         while (solver.find()) {
             assertArrayEquals(new int[]{2}, solver.optimalValues());
@@ -57,7 +57,7 @@ public class SimpleOptimizationTest {
         a.addConstraint(equal(joinRef($this()), constant(2)));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(3),
-                Objective.minimize(joinRef(global(a))));
+                Objective.minimize(joinRef(a)));
         int count = 0;
         while (solver.find()) {
             assertArrayEquals(new int[]{2}, solver.optimalValues());
@@ -82,7 +82,7 @@ public class SimpleOptimizationTest {
         AstConcreteClafer b = model.addChild("B").withCard(Optional);
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.intLow(-4).intHigh(4),
-                Objective.maximize(joinRef(global(a))));
+                Objective.maximize(joinRef(a)));
         int count = 0;
         while (solver.find()) {
             assertArrayEquals(new int[]{4}, solver.optimalValues());
@@ -107,7 +107,7 @@ public class SimpleOptimizationTest {
         AstConcreteClafer b = model.addChild("B").withCard(Optional);
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.intLow(-4).intHigh(4),
-                Objective.minimize(joinRef(global(a))));
+                Objective.minimize(joinRef(a)));
         int count = 0;
         while (solver.find()) {
             assertArrayEquals(new int[]{-4}, solver.optimalValues());
@@ -132,7 +132,7 @@ public class SimpleOptimizationTest {
         model.addConstraint(equal(card(global(a)), constant(0)));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.intLow(-4).intHigh(4),
-                Objective.maximize(joinRef(global(a))));
+                Objective.maximize(joinRef(a)));
         assertEquals(0, solver.allInstances().length);
     }
 
@@ -152,7 +152,7 @@ public class SimpleOptimizationTest {
         model.addConstraint(equal(card(global(a)), constant(0)));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.intLow(-4).intHigh(4),
-                Objective.minimize(joinRef(global(a))));
+                Objective.minimize(joinRef(a)));
         assertEquals(0, solver.allInstances().length);
     }
 }
