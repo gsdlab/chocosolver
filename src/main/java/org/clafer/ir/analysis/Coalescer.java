@@ -477,26 +477,27 @@ public class Coalescer {
 
         @Override
         public Void visit(IrSortSets ir, Void a) {
-            IrSetExpr[] sets = ir.getSets();
-            int low = 0;
-            int high = 0;
-            for (IrSetExpr set : sets) {
-                Domain card = set.getCard();
-                int newLow = low + card.getLowBound();
-                int newHigh = high + card.getHighBound();
-                failIf(low >= newHigh);
-                Domain env = boundDomain(low, newHigh - 1);
-                Domain ker = set.getKer();
-                if (!ker.isEmpty() && !ker.isBounded()) {
-                    ker = boundDomain(ker.getLowBound(), ker.getHighBound());
-                }
-                if (high < newLow) {
-                    ker = ker.union(boundDomain(high, newLow - 1));
-                }
-                propagateSet(new PartialSet(env, ker, null), set);
-                low = newLow;
-                high = newHigh;
-            }
+            // TODO
+//            IrSetExpr[] sets = ir.getSets();
+//            int low = 0;
+//            int high = 0;
+//            for (IrSetExpr set : sets) {
+//                Domain card = set.getCard();
+//                int newLow = low + card.getLowBound();
+//                int newHigh = high + card.getHighBound();
+//                failIf(low >= newHigh);
+//                Domain env = boundDomain(low, newHigh - 1);
+//                Domain ker = set.getKer();
+//                if (!ker.isEmpty() && !ker.isBounded()) {
+//                    ker = boundDomain(ker.getLowBound(), ker.getHighBound());
+//                }
+//                if (high < newLow) {
+//                    ker = ker.union(boundDomain(high, newLow - 1));
+//                }
+//                propagateSet(new PartialSet(env, ker, null), set);
+//                low = newLow;
+//                high = newHigh;
+//            }
             return null;
         }
 

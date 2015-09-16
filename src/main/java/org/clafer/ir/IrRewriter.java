@@ -344,8 +344,9 @@ public abstract class IrRewriter<T>
     @Override
     public IrBoolExpr visit(IrSortSets ir, T a) {
         IrSetExpr[] sets = rewrite(ir.getSets(), a);
-        return changed(ir.getSets(), sets)
-                ? sort(sets)
+        IrIntExpr[] bounds = rewrite(ir.getBounds(), a);
+        return changed(ir.getSets(), sets) || changed(ir.getBounds(), bounds)
+                ? sort(sets, bounds)
                 : ir;
     }
 

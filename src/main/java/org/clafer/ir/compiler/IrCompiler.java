@@ -937,7 +937,8 @@ public class IrCompiler {
         @Override
         public Object visit(IrSortSets ir, BoolArg a) {
             CSetVar[] sets = compile(ir.getSets());
-            return Constraints.sortedSets(mapSet(sets), mapCard(sets));
+            IntVar[] bounds = compile(ir.getBounds());
+            return Constraints.sortedSets(mapSet(sets), mapCard(sets), bounds);
         }
 
         @Override

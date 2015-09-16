@@ -793,47 +793,48 @@ public class Irs {
         return and(sort);
     }
 
-    public static IrBoolExpr sort(IrSetExpr... sets) {
-        List<IrSetExpr> filter = new ArrayList<>(sets.length);
-        boolean fixedCard = true;
-        for (IrSetExpr set : sets) {
-            if (!set.getEnv().isEmpty()) {
-                filter.add(set);
-                fixedCard = fixedCard && set.getCard().size() == 1;
-            }
-        }
-        if (filter.isEmpty()) {
-            return True;
-        }
-        if (filter.size() == 1) {
-            Domain env = filter.get(0).getEnv();
-            Domain ker = filter.get(0).getKer();
-            if (env.getLowBound() == 0) {
-                int i;
-                for (i = 0; i < env.getHighBound(); i++) {
-                    if (!ker.contains(i)) {
-                        break;
-                    }
-                }
-                if (i == env.getHighBound()) {
-                    // env = [0,1,...,n]
-                    // ker = [0,1,...,n] or [0,1,...,n-1]
-                    return True;
-                }
-            }
-        }
-        if (fixedCard) {
-            List<IrBoolExpr> ands = new ArrayList<>();
-            int i = 0;
-            for (IrSetExpr set : filter) {
-                assert set.getCard().size() == 1;
-                int card = set.getCard().getLowBound();
-                ands.add(equal(set, constant(Util.fromTo(i, i + card))));
-                i += card;
-            }
-            return and(ands);
-        }
-        return new IrSortSets(filter.toArray(new IrSetExpr[filter.size()]), TrueFalseDomain);
+    public static IrBoolExpr sort(IrSetExpr[] sets, IrIntExpr[] bounds) {
+//        List<IrSetExpr> filter = new ArrayList<>(sets.length);
+//        boolean fixedCard = true;
+//        for (IrSetExpr set : sets) {
+//            if (!set.getEnv().isEmpty()) {
+//                filter.add(set);
+//                fixedCard = fixedCard && set.getCard().size() == 1;
+//            }
+//        }
+//        if (filter.isEmpty()) {
+//            return True;
+//        }
+//        if (filter.size() == 1) {
+//            Domain env = filter.get(0).getEnv();
+//            Domain ker = filter.get(0).getKer();
+//            if (env.getLowBound() == 0) {
+//                int i;
+//                for (i = 0; i < env.getHighBound(); i++) {
+//                    if (!ker.contains(i)) {
+//                        break;
+//                    }
+//                }
+//                if (i == env.getHighBound()) {
+//                    // env = [0,1,...,n]
+//                    // ker = [0,1,...,n] or [0,1,...,n-1]
+//                    return True;
+//                }
+//            }
+//        }
+//        if (fixedCard) {
+//            List<IrBoolExpr> ands = new ArrayList<>();
+//            int i = 0;
+//            for (IrSetExpr set : filter) {
+//                assert set.getCard().size() == 1;
+//                int card = set.getCard().getLowBound();
+//                ands.add(equal(set, constant(Util.fromTo(i, i + card))));
+//                i += card;
+//            }
+//            return and(ands);
+//        }
+        // TODO optimize
+        return new IrSortSets(sets, bounds, TrueFalseDomain);
     }
 
     private static IrBoolExpr sortStrings(IrIntExpr[][] strings, boolean strict) {

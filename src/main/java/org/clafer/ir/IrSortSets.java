@@ -11,14 +11,23 @@ import org.clafer.common.Check;
 public class IrSortSets extends IrAbstractBool {
 
     private final IrSetExpr[] sets;
+    private final IrIntExpr[] bounds;
 
-    public IrSortSets(IrSetExpr[] sets, BoolDomain domain) {
+    public IrSortSets(IrSetExpr[] sets, IrIntExpr[] bounds, BoolDomain domain) {
         super(domain);
+        if (sets.length != bounds.length) {
+            throw new IllegalArgumentException();
+        }
         this.sets = Check.noNullsNotEmpty(sets);
+        this.bounds = Check.noNullsNotEmpty(bounds);
     }
 
     public IrSetExpr[] getSets() {
         return sets;
+    }
+
+    public IrIntExpr[] getBounds() {
+        return bounds;
     }
 
     @Override
@@ -45,13 +54,13 @@ public class IrSortSets extends IrAbstractBool {
     public boolean equals(Object obj) {
         if (obj instanceof IrSortSets) {
             IrSortSets other = (IrSortSets) obj;
-            return Arrays.deepEquals(sets, other.sets);
+            return Arrays.equals(sets, other.sets) && Arrays.equals(bounds, other.bounds);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(sets);
+        return Arrays.deepHashCode(sets) ^ Arrays.deepHashCode(bounds);
     }
 }
