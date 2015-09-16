@@ -43,25 +43,25 @@ public class PropCountNotEqual extends Propagator<IntVar> {
     boolean isCountVar(int idx) {
         return idx == array.length;
     }
-
-    @Override
-    public int getPropagationConditions(int vIdx) {
-        if (isCountVar(vIdx)) {
-            return IntEventType.boundAndInst();
-        }
-        assert isArrayVar(vIdx);
-        return IntEventType.all();
-    }
+//  TODO: Sept16
+//    @Override
+//    public int getPropagationConditions(int vIdx) {
+//        if (isCountVar(vIdx)) {
+//            return IntEventType.boundAndInst();
+//        }
+//        assert isArrayVar(vIdx);
+//        return IntEventType.all();
+//    }
 
     private void filter() throws ContradictionException {
-        count.updateLowerBound(mandatories.getSize(), aCause);
-        count.updateUpperBound(mandatories.getSize() + possibles.getSize(), aCause);
+        count.updateLowerBound(mandatories.getSize(), this);
+        count.updateUpperBound(mandatories.getSize() + possibles.getSize(), this);
         if (count.isInstantiated()) {
             int nb = count.getValue();
             if (possibles.getSize() + mandatories.getSize() == nb) {
                 for (int j = possibles.getFirstElement(); j >= 0; j = possibles.getNextElement()) {
                     // vars[j] might be a bounded variabled
-                    if (vars[j].removeValue(value, aCause)) {
+                    if (vars[j].removeValue(value, this)) {
                         possibles.remove(j);
                     }
                 }
@@ -70,7 +70,7 @@ public class PropCountNotEqual extends Propagator<IntVar> {
                 }
             } else if (mandatories.getSize() == nb) {
                 for (int j = possibles.getFirstElement(); j >= 0; j = possibles.getNextElement()) {
-                    vars[j].instantiateTo(value, aCause);
+                    vars[j].instantiateTo(value, this);
                 }
                 setPassive();
             }

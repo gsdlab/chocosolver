@@ -50,7 +50,7 @@ public class PropSetUnionCard extends Propagator<IntVar> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return IntEventType.boundAndInst();
     }
 
@@ -65,14 +65,14 @@ public class PropSetUnionCard extends Propagator<IntVar> {
                 min = Math.max(min, setCard.getLB());
                 max += setCard.getUB();
             }
-            unionCard.updateLowerBound(min, aCause);
-            unionCard.updateUpperBound(max, aCause);
+            unionCard.updateLowerBound(min, this);
+            unionCard.updateUpperBound(max, this);
             int lb = unionCard.getLB();
             int ub = unionCard.getUB();
 
             for (IntVar setCard : setCards) {
-                changed |= setCard.updateUpperBound(ub, aCause);
-                changed |= setCard.updateLowerBound(lb - max + setCard.getUB(), aCause);
+                changed |= setCard.updateUpperBound(ub, this);
+                changed |= setCard.updateLowerBound(lb - max + setCard.getUB(), this);
             }
         } while (changed);
     }

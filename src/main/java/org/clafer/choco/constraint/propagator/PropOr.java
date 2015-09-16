@@ -41,7 +41,7 @@ public class PropOr extends Propagator<BoolVar> {
         }
         // Every variable if false except for last.
         if (count == 1) {
-            last.setToTrue(aCause);
+            last.setToTrue(this);
         }
         if (count == 0) {
             contradiction(vars[0], "All false.");

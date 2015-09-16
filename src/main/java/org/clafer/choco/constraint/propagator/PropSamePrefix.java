@@ -53,15 +53,6 @@ public class PropSamePrefix extends Propagator<IntVar> {
         return idx - string1.length - 1;
     }
 
-    @Override
-    protected int getPropagationConditions(int vIdx) {
-        if (isLengthVar(vIdx)) {
-            return IntEventType.boundAndInst();
-        }
-        assert isString1Var(vIdx) || isString2Var(vIdx);
-        return IntEventType.all();
-    }
-
     private boolean neq(int i) {
         return (string1[i].isInstantiated() && !string2[i].contains(string1[i].getValue()))
                 || (string2[i].isInstantiated() && !string1[i].contains(string2[i].getValue()));
@@ -69,14 +60,14 @@ public class PropSamePrefix extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        length.updateUpperBound(Math.min(string1.length, string2.length), aCause);
+        length.updateUpperBound(Math.min(string1.length, string2.length), this);
         for (int i = 0; i < length.getLB(); i++) {
-            PropUtil.domSubsetDom(string1[i], string2[i], aCause);
-            PropUtil.domSubsetDom(string2[i], string1[i], aCause);
+            PropUtil.domSubsetDom(string1[i], string2[i], this);
+            PropUtil.domSubsetDom(string2[i], string1[i], this);
         }
         for (int i = length.getLB(); i < length.getUB(); i++) {
             if (neq(i)) {
-                length.updateUpperBound(i, aCause);
+                length.updateUpperBound(i, this);
                 break;
             }
         }
@@ -86,25 +77,25 @@ public class PropSamePrefix extends Propagator<IntVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isLengthVar(idxVarInProp)) {
             for (int i = 0; i < length.getLB(); i++) {
-                PropUtil.domSubsetDom(string1[i], string2[i], aCause);
-                PropUtil.domSubsetDom(string2[i], string1[i], aCause);
+                PropUtil.domSubsetDom(string1[i], string2[i], this);
+                PropUtil.domSubsetDom(string2[i], string1[i], this);
             }
         } else if (isString1Var(idxVarInProp)) {
             int id = getString1VarIndex(idxVarInProp);
             if (id < length.getLB()) {
-                PropUtil.domSubsetDom(string2[id], string1[id], aCause);
+                PropUtil.domSubsetDom(string2[id], string1[id], this);
             }
             if (id < length.getUB() && neq(id)) {
-                length.updateUpperBound(id, aCause);
+                length.updateUpperBound(id, this);
             }
         } else {
             assert isString2Var(idxVarInProp);
             int id = getString2VarIndex(idxVarInProp);
             if (id < length.getLB()) {
-                PropUtil.domSubsetDom(string1[id], string2[id], aCause);
+                PropUtil.domSubsetDom(string1[id], string2[id], this);
             }
             if (id < length.getUB() && neq(id)) {
-                length.updateUpperBound(id, aCause);
+                length.updateUpperBound(id, this);
             }
         }
     }

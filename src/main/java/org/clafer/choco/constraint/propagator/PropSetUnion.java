@@ -26,9 +26,9 @@ public class PropSetUnion extends Propagator<SetVar> {
     public PropSetUnion(SetVar[] sets, SetVar union) {
         super(Util.cons(union, sets), PropagatorPriority.LINEAR, true);
         this.sets = sets;
-        this.setsD = PropUtil.monitorDeltas(sets, aCause);
+        this.setsD = PropUtil.monitorDeltas(sets, this);
         this.union = union;
-        this.unionD = union.monitorDelta(aCause);
+        this.unionD = union.monitorDelta(this);
     }
 
     private boolean isSetVar(int idx) {
@@ -64,10 +64,10 @@ public class PropSetUnion extends Propagator<SetVar> {
         }
         if (mate == -1) {
             // No mates.
-            union.removeFromEnvelope(unionEnv, aCause);
+            union.removeFromEnvelope(unionEnv, this);
         } else if (mate != -2 && inKer) {
             // One mate.
-            sets[mate].addToKernel(unionEnv, aCause);
+            sets[mate].addToKernel(unionEnv, this);
         }
     }
 
@@ -91,10 +91,10 @@ public class PropSetUnion extends Propagator<SetVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (SetVar set : sets) {
-            PropUtil.envSubsetEnv(set, union, aCause);
-            PropUtil.kerSubsetKer(set, union, aCause);
+            PropUtil.envSubsetEnv(set, union, this);
+            PropUtil.kerSubsetKer(set, union, this);
         }
-        envSubsetEnvs(union, sets, aCause);
+        envSubsetEnvs(union, sets, this);
         for (int i = union.getEnvelopeFirst(); i != SetVar.END; i = union.getEnvelopeNext()) {
             findMate(i);
         }
@@ -125,14 +125,14 @@ public class PropSetUnion extends Propagator<SetVar> {
     private final IntProcedure pickUnionOnSetKer = new IntProcedure() {
         @Override
         public void execute(int setKer) throws ContradictionException {
-            union.addToKernel(setKer, aCause);
+            union.addToKernel(setKer, PropSetUnion.this);
         }
     };
     private final IntProcedure pruneSetOnUnionEnv = new IntProcedure() {
         @Override
         public void execute(int unionEnv) throws ContradictionException {
             for (SetVar set : sets) {
-                set.removeFromEnvelope(unionEnv, aCause);
+                set.removeFromEnvelope(unionEnv, PropSetUnion.this);
             }
         }
     };

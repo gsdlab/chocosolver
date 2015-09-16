@@ -23,9 +23,9 @@ public class PropSetNotEqual extends Propagator<SetVar> {
     public PropSetNotEqual(SetVar s1, SetVar s2) {
         super(new SetVar[]{s1, s2}, PropagatorPriority.LINEAR, true);
         this.s1 = s1;
-        this.s1D = s1.monitorDelta(aCause);
+        this.s1D = s1.monitorDelta(this);
         this.s2 = s2;
-        this.s2D = s2.monitorDelta(aCause);
+        this.s2D = s2.monitorDelta(this);
     }
 
     private boolean isS1Var(int idx) {

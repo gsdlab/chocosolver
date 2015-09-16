@@ -48,7 +48,7 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
         for (SetVar var : relation) {
             for (int i = var.getEnvelopeFirst(); i != SetVar.END; i = var.getEnvelopeNext()) {
                 if (i < 0 || i >= relation.length) {
-                    var.removeFromEnvelope(i, aCause);
+                    var.removeFromEnvelope(i, this);
                 }
             }
         }
@@ -60,7 +60,7 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
             TIntSet reachable = maximalClosure[i];
             for (int k = var.getEnvelopeFirst(); k != SetVar.END; k = var.getEnvelopeNext()) {
                 if ((!reflexive || i != k) && !reachable.contains(k)) {
-                    var.removeFromEnvelope(k, aCause);
+                    var.removeFromEnvelope(k, this);
                 }
             }
         }

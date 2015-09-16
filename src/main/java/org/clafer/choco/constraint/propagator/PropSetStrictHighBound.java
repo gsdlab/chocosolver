@@ -26,7 +26,7 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
     public PropSetStrictHighBound(SetVar set, IntVar bound) {
         super(new Variable[]{set, bound}, PropagatorPriority.UNARY, true);
         this.set = set;
-        this.setD = set.monitorDelta(aCause);
+        this.setD = set.monitorDelta(this);
         this.bound = bound;
     }
 
@@ -39,7 +39,7 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
             return SetEventType.ADD_TO_KER.getMask();
         }
@@ -53,7 +53,7 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
         boolean smallerThanLb = true;
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (i >= ub) {
-                set.removeFromEnvelope(i, aCause);
+                set.removeFromEnvelope(i, this);
             } else if (i >= lb) {
                 smallerThanLb = false;
             }
@@ -67,7 +67,7 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         if (set.getKernelSize() > 0) {
-            bound.updateLowerBound(PropUtil.maxKer(set) + 1, aCause);
+            bound.updateLowerBound(PropUtil.maxKer(set) + 1, this);
         }
         boundEnv();
     }
@@ -76,21 +76,13 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
             setD.freeze();
-            setD.forEach(pruneBound, SetEventType.ADD_TO_KER);
+            setD.forEach(ker -> bound.updateLowerBound(ker + 1, this), SetEventType.ADD_TO_KER);
             setD.unfreeze();
         } else {
             assert isBoundVar(idxVarInProp);
             boundEnv();
         }
     }
-
-    private final IntProcedure pruneBound = new IntProcedure() {
-
-        @Override
-        public void execute(int ker) throws ContradictionException {
-            bound.updateLowerBound(ker + 1, aCause);
-        }
-    };
 
     @Override
     public ESat isEntailed() {

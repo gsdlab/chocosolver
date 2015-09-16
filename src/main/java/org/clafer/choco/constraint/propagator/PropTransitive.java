@@ -22,11 +22,11 @@ public class PropTransitive extends Propagator<SetVar> {
 
     public PropTransitive(SetVar[] relation) {
         super(relation, PropagatorPriority.LINEAR, true);
-        this.relationD = PropUtil.monitorDeltas(relation, aCause);
+        this.relationD = PropUtil.monitorDeltas(relation, this);
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         // TODO ENV
         return SetEventType.ADD_TO_KER.getMask();
     }
@@ -37,18 +37,18 @@ public class PropTransitive extends Propagator<SetVar> {
             SetVar var = vars[i];
             for (int j = var.getEnvelopeFirst(); j != SetVar.END; j = var.getEnvelopeNext()) {
                 if (j < 0 || j >= vars.length) {
-                    var.removeFromEnvelope(j, aCause);
+                    var.removeFromEnvelope(j, this);
                 }
             }
             for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
                 if (i != j) {
-                    PropUtil.kerSubsetKer(vars[j], var, aCause);
+                    PropUtil.kerSubsetKer(vars[j], var, this);
                 }
             }
             for (int j = 0; j < i; j++) {
                 assert i != j;
                 if (vars[j].kernelContains(i)) {
-                    PropUtil.kerSubsetKer(var, vars[j], aCause);
+                    PropUtil.kerSubsetKer(var, vars[j], this);
                 }
             }
         }
@@ -64,10 +64,10 @@ public class PropTransitive extends Propagator<SetVar> {
     private void prune(int i, int j, boolean first) throws ContradictionException {
         assert vars[i].kernelContains(j);
         if (i != j) {
-            if (PropUtil.kerSubsetKer(vars[j], vars[i], aCause) || first) {
+            if (PropUtil.kerSubsetKer(vars[j], vars[i], this) || first) {
                 for (int k = 0; k < vars.length; k++) {
                     if (i != k && vars[k].kernelContains(i)) {
-                        if (vars[k].addToKernel(j, aCause)) {
+                        if (vars[k].addToKernel(j, this)) {
                             prune(k, j, false);
                         }
                     }

@@ -22,11 +22,11 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
 
     public PropTransitiveUnreachable(SetVar[] relation) {
         super(relation, PropagatorPriority.LINEAR, true);
-        this.relationD = PropUtil.monitorDeltas(relation, aCause);
+        this.relationD = PropUtil.monitorDeltas(relation, this);
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return SetEventType.all();
     }
 
@@ -42,7 +42,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
             if (i != j) {
                 for (int k = vars[j].getEnvelopeFirst(); k != SetVar.END; k = vars[j].getEnvelopeNext()) {
-                    if (!var.envelopeContains(k) && vars[j].removeFromEnvelope(k, aCause)) {
+                    if (!var.envelopeContains(k) && vars[j].removeFromEnvelope(k, this)) {
                         onRemoveEnv(j, k);
                     }
                 }
@@ -62,7 +62,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         assert var.kernelContains(j);
         for (int k = vars[j].getEnvelopeFirst(); k != SetVar.END; k = vars[j].getEnvelopeNext()) {
             if (!var.envelopeContains(k)) {
-                vars[j].removeFromEnvelope(k, aCause);
+                vars[j].removeFromEnvelope(k, this);
                 onRemoveEnv(j, k);
             }
         }
@@ -79,7 +79,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         SetVar var = vars[i];
         assert !var.envelopeContains(k);
         for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
-            if (i != j && vars[j].removeFromEnvelope(k, aCause)) {
+            if (i != j && vars[j].removeFromEnvelope(k, this)) {
                 onRemoveEnv(j, k);
             }
         }
@@ -108,7 +108,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
             int i = noBackPointers[ii];
             for (int jj = 0; jj < bs; jj++) {
                 int j = backPointers[jj];
-                if (vars[i].removeFromEnvelope(j, aCause)) {
+                if (vars[i].removeFromEnvelope(j, this)) {
                     onRemoveEnv(i, j);
                 }
             }
@@ -125,7 +125,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
     private void backwardPruneJK(int j, int k) throws ContradictionException {
         assert vars[j].kernelContains(k);
         for (int i = 0; i < vars.length; i++) {
-            if (i != j && !vars[i].envelopeContains(k) && vars[i].removeFromEnvelope(j, aCause)) {
+            if (i != j && !vars[i].envelopeContains(k) && vars[i].removeFromEnvelope(j, this)) {
                 onRemoveEnv(i, j);
             }
         }
@@ -142,7 +142,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         SetVar var = vars[i];
         assert !var.envelopeContains(k);
         for (int j = 0; j < vars.length; j++) {
-            if (i != j && vars[j].kernelContains(k) && var.removeFromEnvelope(j, aCause)) {
+            if (i != j && vars[j].kernelContains(k) && var.removeFromEnvelope(j, this)) {
                 onRemoveEnv(i, j);
             }
         }
@@ -159,7 +159,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         for (SetVar var : vars) {
             for (int j = var.getEnvelopeFirst(); j != SetVar.END; j = var.getEnvelopeNext()) {
                 if (j < 0 || j >= vars.length) {
-                    var.removeFromEnvelope(j, aCause);
+                    var.removeFromEnvelope(j, this);
                 }
             }
         }

@@ -26,7 +26,7 @@ public class PropLone extends Propagator<BoolVar> {
     private void clearAllBut(int exclude) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
             if (i != exclude) {
-                vars[i].setToFalse(aCause);
+                vars[i].setToFalse(this);
             }
         }
     }

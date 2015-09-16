@@ -22,7 +22,7 @@ public class PropReflexive extends Propagator<SetVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
-            vars[i].addToKernel(i, aCause);
+            vars[i].addToKernel(i, this);
         }
         setPassive();
     }

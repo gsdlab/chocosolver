@@ -68,19 +68,19 @@ public class PropNotEqualXY_Z extends Propagator<IntVar> {
             int xub = x.getUB();
             for (int i = x.getLB(); i <= xub; i = x.nextValue(i)) {
                 if (!supportForX(i)) {
-                    x.removeValue(i, aCause);
+                    x.removeValue(i, this);
                 }
             }
             int yub = y.getUB();
             for (int i = y.getLB(); i <= yub; i = y.nextValue(i)) {
                 if (!supportForY(i)) {
-                    changed |= y.removeValue(i, aCause);
+                    changed |= y.removeValue(i, this);
                 }
             }
             int zub = z.getUB();
             for (int i = z.getLB(); i <= zub; i = z.nextValue(i)) {
                 if (!supportForZ(i)) {
-                    changed |= z.removeValue(i, aCause);
+                    changed |= z.removeValue(i, this);
                 }
             }
         } while (changed);

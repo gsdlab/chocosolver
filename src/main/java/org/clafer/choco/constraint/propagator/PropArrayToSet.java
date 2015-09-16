@@ -31,9 +31,9 @@ public class PropArrayToSet extends Propagator<Variable> {
             throw new IllegalArgumentException();
         }
         this.as = as;
-        this.asD = PropUtil.monitorDeltas(as, aCause);
+        this.asD = PropUtil.monitorDeltas(as, this);
         this.s = s;
-        this.sD = s.monitorDelta(aCause);
+        this.sD = s.monitorDelta(this);
     }
 
     private static Variable[] buildArray(IntVar[] as, SetVar s) {
@@ -81,10 +81,10 @@ public class PropArrayToSet extends Propagator<Variable> {
         }
         if (mate == -1) {
             // No mates.
-            s.removeFromEnvelope(sEnv, aCause);
+            s.removeFromEnvelope(sEnv, this);
         } else if (mate != -2 && inKer) {
             // One mate.
-            return as[mate].instantiateTo(sEnv, aCause);
+            return as[mate].instantiateTo(sEnv, this);
         }
         return false;
     }
@@ -102,14 +102,14 @@ public class PropArrayToSet extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         // Prune as
         for (IntVar a : as) {
-            PropUtil.domSubsetEnv(a, s, aCause);
+            PropUtil.domSubsetEnv(a, s, this);
         }
         // Prune s
         findMates();
         // Pick s
         for (IntVar a : as) {
             if (a.isInstantiated()) {
-                s.addToKernel(a.getValue(), aCause);
+                s.addToKernel(a.getValue(), this);
             }
         }
     }
@@ -118,8 +118,18 @@ public class PropArrayToSet extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSVar(idxVarInProp)) {
             sD.freeze();
-            sD.forEach(pruneAOnSEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            sD.forEach(pickAOnSKer, SetEventType.ADD_TO_KER);
+            sD.forEach(sEnv -> {
+                for (IntVar a : as) {
+                    if (a.removeValue(sEnv, this) && a.isInstantiated()) {
+                        s.addToKernel(a.getValue(), this);
+                    }
+                }
+            }, SetEventType.REMOVE_FROM_ENVELOPE);
+            sD.forEach(sKer -> {
+                if (findMate(sKer)) {
+                    findMates();
+                }
+            }, SetEventType.ADD_TO_KER);
             sD.unfreeze();
         } else {
             assert isAVar(idxVarInProp);
@@ -129,42 +139,20 @@ public class PropArrayToSet extends Propagator<Variable> {
                     || (IntEventType.isInclow(mask) && as[id].getLB() > s.getEnvelopeFirst())
                     || IntEventType.isDecupp(mask)) {
                 asD[id].freeze();
-                asD[id].forEachRemVal(pruneSOnARem);
+                asD[id].forEachRemVal((IntProcedure) aRem -> {
+                    if (s.envelopeContains(aRem)) {
+                        if (findMate(aRem)) {
+                            findMates();
+                        }
+                    }
+                });
                 asD[id].unfreeze();
             }
             if (as[id].isInstantiated()) {
-                s.addToKernel(as[id].getValue(), aCause);
+                s.addToKernel(as[id].getValue(), this);
             }
         }
     }
-    private final IntProcedure pruneAOnSEnv = new IntProcedure() {
-        @Override
-        public void execute(int sEnv) throws ContradictionException {
-            for (IntVar a : as) {
-                if (a.removeValue(sEnv, aCause) && a.isInstantiated()) {
-                    s.addToKernel(a.getValue(), aCause);
-                }
-            }
-        }
-    };
-    private final IntProcedure pickAOnSKer = new IntProcedure() {
-        @Override
-        public void execute(int sKer) throws ContradictionException {
-            if (findMate(sKer)) {
-                findMates();
-            }
-        }
-    };
-    private final IntProcedure pruneSOnARem = new IntProcedure() {
-        @Override
-        public void execute(int aRem) throws ContradictionException {
-            if (s.envelopeContains(aRem)) {
-                if (findMate(aRem)) {
-                    findMates();
-                }
-            }
-        }
-    };
 
     @Override
     public ESat isEntailed() {

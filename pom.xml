@@ -29,11 +29,11 @@
             <artifactId>choco-solver</artifactId>
             <version>3.3.2-SNAPSHOT</version>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>org.choco-solver</groupId>
             <artifactId>choco-graph</artifactId>
             <version>3.3.1-SNAPSHOT</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.mozilla</groupId>
             <artifactId>rhino</artifactId>

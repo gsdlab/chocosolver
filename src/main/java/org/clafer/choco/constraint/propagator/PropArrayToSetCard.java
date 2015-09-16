@@ -125,12 +125,12 @@ public class PropArrayToSetCard extends Propagator<Variable> {
             if (count == gc) {
                 for (int j = 0; j < explored; j++) {
                     IntVar b = as[j];
-                    if (!b.isInstantiatedTo(value) && b.removeValue(value, aCause)) {
+                    if (!b.isInstantiatedTo(value) && b.removeValue(value, this)) {
                         constrainGlobalCardinality(j, explored, map);
                     }
                 }
                 for (int j = explored + 1; j < as.length; j++) {
-                    as[j].removeValue(value, aCause);
+                    as[j].removeValue(value, this);
                 }
             } else if (count > gc) {
                 contradiction(a, "Above global cardinality");
@@ -164,8 +164,8 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                     : 0));
             int maxCard = instCard + uninstantiated;
 
-            sCard.updateLowerBound(minCard, aCause);
-            sCard.updateUpperBound(maxCard, aCause);
+            sCard.updateLowerBound(minCard, this);
+            sCard.updateUpperBound(maxCard, this);
 
             if (uninstantiated != 0) {
                 if (instCard == sCard.getUB()) {
@@ -173,7 +173,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                     for (IntVar a : as) {
                         assert !a.isInstantiated() || map.contains(a.getValue());
                         if (!a.isInstantiated()) {
-                            changed |= PropUtil.domSubsetSet(a, map.keySet(), aCause) && a.isInstantiated();
+                            changed |= PropUtil.domSubsetSet(a, map.keySet(), this) && a.isInstantiated();
                         }
                     }
                 }
@@ -184,7 +184,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                             TIntIntIterator iter = map.iterator();
                             for (int i = map.size(); i-- > 0;) {
                                 iter.advance();
-                                changed |= a.removeValue(iter.key(), aCause) && a.isInstantiated();
+                                changed |= a.removeValue(iter.key(), this) && a.isInstantiated();
                             }
                             assert !iter.hasNext();
                         }

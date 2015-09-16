@@ -402,6 +402,35 @@ public class AstCompiler {
         Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
         Either.filterRight(reachables.stream()).forEach(module::addConstraint);
 
+//        KeyGraph<Either<IrExpr, IrBoolExpr>> dependencies = new KeyGraph<>();
+//        for (Symmetry symmetry : symmetries) {
+//            IrBoolExpr constraint = symmetry.getConstraint();
+//            Vertex<Either<IrExpr, IrBoolExpr>> constraintNode
+//                    = dependencies.getVertex(Either.<IrExpr, IrBoolExpr>right(constraint));
+//            for (IrExpr output : symmetry.getOutput()) {
+//                dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(output))
+//                        .addNeighbour(constraintNode);
+//            }
+//            for (IrExpr input : symmetry.getInput()) {
+//                constraintNode.addNeighbour(
+//                        dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(input)));
+//            }
+//        }
+//        Set<IrVar> variables = module.getVariables();
+//        Set<Vertex<Either<IrExpr, IrBoolExpr>>> start = new HashSet<>();
+//        for (IrVar variable : variables) {
+//            Vertex<Either<IrExpr, IrBoolExpr>> vertex
+//                    = dependencies.getVertexIfPresent(Either.<IrExpr, IrBoolExpr>left(variable));
+//            if (vertex != null) {
+//                start.add(vertex);
+//            }
+//        }
+//        Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
+//        for (Either<IrExpr, IrBoolExpr> reachable : reachables) {
+//            if (reachable.isRight()) {
+//                module.addConstraint(reachable.getRight());
+//            }
+//        }
         return new AstSolutionMap(analysis.getModel(), siblingSets,
                 refPointers, refStrings,
                 softVars, sumSoftVars,
@@ -555,9 +584,11 @@ public class AstCompiler {
                                 : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             if (getScope(clafer.getParent()) > 1) {
-                symmetries.add(new LexChainChannel(childIndices, weight));
+//                symmetries.add(new LexChainChannel(childIndices, weight));
+                module.addConstraint(sortChannel(childIndices, weight));
                 for (int i = 0; i < siblingSet.length; i++) {
-                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
+                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
+//                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
                 }
             }
             if (getCard(clafer).getHigh() > 1) {
@@ -574,9 +605,17 @@ public class AstCompiler {
                         // two weights to be the same. Enforce a strict order.
                         module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
                                 sortStrict(childIndices[i + 1], childIndices[i])));
+                        if (getScope(clafer.getParent()) > 1) {
+                            module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
+                                    lessThan(weight[i + 1], weight[i])));
+                        }
                     } else {
                         module.addConstraint(implies(equal(parents[i], parents[i + 1]),
                                 sort(childIndices[i + 1], childIndices[i])));
+                        if (getScope(clafer.getParent()) > 1) {
+                            module.addConstraint(implies(equal(parents[i], parents[i + 1]),
+                                    lessThanEqual(weight[i + 1], weight[i])));
+                        }
                     }
                 }
             }
@@ -707,7 +746,14 @@ public class AstCompiler {
 
         if (fullSymmetryBreaking) {
             module.addConstraint(selectN(members, card(set)));
-            module.addConstraint(sort(childSet));
+            IrIntExpr[] bounds = new IrIntExpr[childSet.length];
+//            bounds[0] = card(childSet[0]);
+            for (int i = 0; i < bounds.length; i++) {
+//            for (int i = 1; i < bounds.length - 1; i++) {
+                bounds[i] = boundInt("bounds" + clafer.getName() + "#" + i, 0, members.length);
+            }
+//            bounds[bounds.length-1] = card(set);
+            module.addConstraint(sort(childSet, bounds));
         }
 
         for (int i = 0; i < parentMembership.length; i++) {

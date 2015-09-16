@@ -75,13 +75,13 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
         return globalCardinality.intValue();
     }
 
-    @Override
-    public boolean advise(int idxVarInProp, int mask) {
-        if (isRefVar(idxVarInProp)) {
-            return take.envelopeContains(getRefVarIndex(idxVarInProp));
-        }
-        return super.advise(idxVarInProp, mask);
-    }
+//    @Override
+//    public boolean advise(int idxVarInProp, int mask) {
+//        if (isRefVar(idxVarInProp)) {
+//            return take.envelopeContains(getRefVarIndex(idxVarInProp));
+//        }
+//        return super.advise(idxVarInProp, mask);
+//    }
 
     @Override
     public int getPropagationConditions(int vIdx) {
@@ -150,12 +150,12 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             if (count == gc) {
                 for (int j = 0; j < explored; j++) {
                     IntVar b = refs[ker[j]];
-                    if (!b.isInstantiatedTo(value) && b.removeValue(value, aCause)) {
+                    if (!b.isInstantiatedTo(value) && b.removeValue(value, this)) {
                         constrainGlobalCardinality(ker, j, explored, map);
                     }
                 }
                 for (int j = explored + 1; j < ker.length; j++) {
-                    refs[ker[j]].removeValue(value, aCause);
+                    refs[ker[j]].removeValue(value, this);
                 }
             } else if (count > gc) {
                 contradiction(a, "Above global cardinality");
@@ -172,8 +172,8 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        takeCard.updateLowerBound(take.getKernelSize(), aCause);
-        takeCard.updateUpperBound(take.getEnvelopeSize(), aCause);
+        takeCard.updateLowerBound(take.getKernelSize(), this);
+        takeCard.updateUpperBound(take.getEnvelopeSize(), this);
         boolean changed;
         do {
             changed = false;
@@ -205,13 +205,13 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                                 : 0);
                 maxCard = instCard + maxUninstantiated;
 
-                toCard.updateLowerBound(minCard, aCause);
-                toCard.updateUpperBound(maxCard, aCause);
+                toCard.updateLowerBound(minCard, this);
+                toCard.updateUpperBound(maxCard, this);
 
                 if (hasGlobalCardinality()) {
-                    cardChanged |= takeCard.updateUpperBound(toCard.getUB() * getGlobalCardinality(), aCause);
+                    cardChanged |= takeCard.updateUpperBound(toCard.getUB() * getGlobalCardinality(), this);
                 }
-                cardChanged |= takeCard.updateLowerBound(toCard.getLB(), aCause);
+                cardChanged |= takeCard.updateLowerBound(toCard.getLB(), this);
             } while (cardChanged);
 
             if (maxUninstantiated != 0) {
@@ -221,7 +221,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                         IntVar ref = refs[i];
                         assert !ref.isInstantiated() || map.contains(ref.getValue());
                         if (!ref.isInstantiated()) {
-                            changed |= PropUtil.domSubsetSet(ref, map.keySet(), aCause) && ref.isInstantiated();
+                            changed |= PropUtil.domSubsetSet(ref, map.keySet(), this) && ref.isInstantiated();
                         }
                     }
                 }
@@ -233,7 +233,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                             TIntIntIterator iter = map.iterator();
                             for (int j = map.size(); j-- > 0;) {
                                 iter.advance();
-                                changed |= ref.removeValue(iter.key(), aCause) && ref.isInstantiated();
+                                changed |= ref.removeValue(iter.key(), this) && ref.isInstantiated();
                             }
                             assert !iter.hasNext();
                         }

@@ -67,8 +67,8 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
     private void watchFilter() throws ContradictionException {
         if (updateWatches()) {
             if (watch1 != SetVar.END && watch2 == SetVar.END) {
-                set.addToKernel(watch1, aCause);
-                element.instantiateTo(watch1, aCause);
+                set.addToKernel(watch1, this);
+                element.instantiateTo(watch1, this);
                 setPassive();
             } else if (watch1 == SetVar.END) {
                 contradiction(element, "");
@@ -79,16 +79,16 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         if (setCard.getLB() > 0) {
-            PropUtil.domSubsetEnv(element, set, aCause);
+            PropUtil.domSubsetEnv(element, set, this);
             if (element.isInstantiated()) {
-                set.addToKernel(element.getValue(), aCause);
+                set.addToKernel(element.getValue(), this);
                 setPassive();
             } else {
                 watchFilter();
             }
         } else {
             if (updateWatches() && watch1 == SetVar.END) {
-                setCard.instantiateTo(0, aCause);
+                setCard.instantiateTo(0, this);
             }
         }
     }

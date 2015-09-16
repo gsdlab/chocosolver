@@ -10,7 +10,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  * Missing from the library.
@@ -27,7 +26,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
         super(new Variable[]{element, set}, PropagatorPriority.BINARY, true);
         this.element = element;
         this.set = set;
-        this.setD = set.monitorDelta(aCause);
+        this.setD = set.monitorDelta(this);
     }
 
     private boolean isElementVar(int idx) {
@@ -50,10 +49,10 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            element.removeValue(i, aCause);
+            element.removeValue(i, this);
         }
         if (element.isInstantiated()) {
-            set.removeFromEnvelope(element.getValue(), aCause);
+            set.removeFromEnvelope(element.getValue(), this);
             setPassive();
         } else if (set.isInstantiated()) {
             setPassive();
@@ -64,28 +63,21 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isElementVar(idxVarInProp)) {
             assert element.isInstantiated();
-            set.removeFromEnvelope(element.getValue(), aCause);
+            set.removeFromEnvelope(element.getValue(), this);
             setPassive();
         } else {
             assert isSetVar(idxVarInProp);
             setD.freeze();
-            setD.forEach(pruneElementOnSetKer, SetEventType.ADD_TO_KER);
+            setD.forEach(setKer -> element.removeValue(setKer, this), SetEventType.ADD_TO_KER);
             setD.unfreeze();
             if (element.isInstantiated()) {
-                set.removeFromEnvelope(element.getValue(), aCause);
+                set.removeFromEnvelope(element.getValue(), this);
                 setPassive();
             } else if (set.isInstantiated()) {
                 setPassive();
             }
         }
     }
-    private final IntProcedure pruneElementOnSetKer = new IntProcedure() {
-
-        @Override
-        public void execute(int setKer) throws ContradictionException {
-            element.removeValue(setKer, aCause);
-        }
-    };
 
     @Override
     public ESat isEntailed() {
