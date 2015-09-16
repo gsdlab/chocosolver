@@ -168,7 +168,7 @@ public class RelationalTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testSingeletonJoinFunction() {
+    public void testSingletonJoinFunction() {
         AstModel model = newModel();
 
         AstConcreteClafer cost = model.addChild("Cost").refTo(IntType).withCard(Mandatory);
@@ -192,7 +192,7 @@ public class RelationalTest {
      * </pre>
      */
     @Test(timeout = 60000)
-    public void testSingeletonJoinRelation() {
+    public void testSingletonJoinRelation() {
         AstModel model = newModel();
 
         AstConcreteClafer product = model.addChild("Product").withCard(Mandatory);
@@ -297,7 +297,7 @@ public class RelationalTest {
     /**
      * <pre>
      * A *
-     *     B ->> int
+     *     B ->> int *
      * [ #((A -> B) . (B -> int)) = 3 ]
      * </pre>
      */
@@ -336,6 +336,40 @@ public class RelationalTest {
 
     /**
      * <pre>
+     * A ?
+     *     B -> C 0..2
+     * C 0..2
+     *     D 0..2
+     * [ #((A -> B) . (B -> ref) . (C -> D)) = 3 ]
+     * </pre>
+     */
+    @Test(timeout = 600000000)
+    public void testRelationJoinFunctionJoinRelation() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Optional);
+        AstConcreteClafer b = a.addChild("B").withCard(0, 2);
+        AstConcreteClafer c = model.addChild("C").withCard(0, 2);
+        AstConcreteClafer d = c.addChild("D").withCard(0, 2);
+        b.refTo(c);
+        model.addConstraint(equal(card(join(relation(b), join(ref(b), relation(d)))), 3));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        assertTrue(solver.find());
+        InstanceModel instance = solver.instance();
+        assertEquals(1, instance.getTopClafers(a).length);
+        InstanceClafer[] B = instance.getTopClafer(a).getChildren(b);
+        assertEquals(2, B.length);
+        assertNotEquals(B[0].getRef(), B[1].getRef());
+        InstanceClafer[] C = instance.getTopClafers(c);
+        assertEquals(2, C.length);
+        assertEquals(2, C[0].getChildren(d).length);
+        assertEquals(1, C[1].getChildren(d).length);
+        assertFalse(solver.find());
+    }
+
+    /**
+     * <pre>
      * A *
      *     B *
      * </pre>
@@ -350,6 +384,27 @@ public class RelationalTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
         assertEquals(38, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 2
+     *     B ->> B +
+     * [ #((A -> B) . ~(B -> ref)) = 2 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testInverseJoinInverse() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(2, 2);
+        AstConcreteClafer b = a.addChild("B").withCard(1);
+        b.refTo(b);
+        model.addConstraint(equal(card(join(inverse(ref(b)), inverse(relation(b)))), 2));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        // Can be reduced with better symmetry breaking.
+        assertEquals(8, solver.allInstances().length);
     }
 
     /**
@@ -369,5 +424,59 @@ public class RelationalTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).intLow(-2).intHigh(2));
         // Can be reduced to 2 with better symmetry breaking.
         assertEquals(5, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A 2
+     *     B ->> B 2
+     * [ #((A -> B) . (B -> ref)*) = 2 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRelationJoinTransitiveClosure() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(2, 2);
+        AstConcreteClafer b = a.addChild("B").withCard(2, 2);
+        b.refTo(b);
+        model.addConstraint(equal(card(join(relation(b), transitiveClosure(ref(b)))), 2));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+        // Can be reduced to 2 with better symmetry breaking.
+        assertEquals(3, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A +
+     *     B ->> B 2
+     * [ #((A -> B) . (B -> ref)*) = 2 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testVariableRelationJoinTransitiveClosure() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(2);
+        AstConcreteClafer b = a.addChild("B").withCard(2, 2);
+        b.refTo(b);
+        model.addConstraint(equal(card(join(relation(b), transitiveClosure(ref(b)))), 2));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+        // Can be reduced to 2 with better symmetry breaking.
+        assertEquals(3, solver.allInstances().length);
+    }
+
+    @Test(timeout = 60000)
+    public void testConnected() throws Exception {
+        AstModel m = newModel();
+        AstConcreteClafer node = m.addChild("Node");
+        AstConcreteClafer edge = m.addChild("Edge");
+        AstConcreteClafer loc = edge.addChild("loc").withCard(2, 2).refToUnique(node);
+        m.addConstraint(connected(global(node), join(inverse(join(relation(loc), ref(loc))), join(relation(loc), ref(loc)))));
+
+        ClaferSolver solver = ClaferCompiler.compile(m, Scope.defaultScope(4));
+        assertEquals(4, solver.allInstances().length);
     }
 }

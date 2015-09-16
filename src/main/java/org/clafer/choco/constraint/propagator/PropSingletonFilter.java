@@ -14,22 +14,25 @@ import org.chocosolver.util.ESat;
 import org.chocosolver.util.procedure.IntProcedure;
 
 /**
+ * if i = filter then s = {} else s = {i}
  *
  * @author jimmy
  */
-public class PropSingleton extends Propagator<Variable> {
+public class PropSingletonFilter extends Propagator<Variable> {
 
     private final IntVar i;
     private final IIntDeltaMonitor iD;
     private final SetVar s;
     private final ISetDeltaMonitor sD;
+    private final int filter;
 
-    public PropSingleton(IntVar ivar, SetVar svar) {
+    public PropSingletonFilter(IntVar ivar, SetVar svar, int filter) {
         super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY, true);
         this.i = ivar;
         this.iD = i.monitorDelta(aCause);
         this.s = svar;
         this.sD = s.monitorDelta(aCause);
+        this.filter = filter;
     }
 
     private boolean isIVar(int idx) {
@@ -51,6 +54,7 @@ public class PropSingleton extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        s.removeFromEnvelope(filter, aCause);
         if (s.getKernelSize() > 1) {
             contradiction(s, "Singleton cannot have more than 1 element");
         } else if (s.getKernelSize() == 1) {
@@ -58,10 +62,16 @@ public class PropSingleton extends Propagator<Variable> {
             i.instantiateTo(val, aCause);
             s.instantiateTo(new int[]{val}, aCause);
         } else {
-            PropUtil.domSubsetEnv(i, s, aCause);
+            int ub = i.getUB();
+            for (int val = i.getLB(); val <= ub; val = i.nextValue(val)) {
+                if (val != filter && !s.envelopeContains(val)) {
+                    i.removeValue(val, aCause);
+                }
+            }
             PropUtil.envSubsetDom(s, i, aCause);
             if (i.isInstantiated()) {
-                s.instantiateTo(new int[]{i.getValue()}, aCause);
+                int val = i.getValue();
+                s.instantiateTo(val == filter ? new int[]{} : new int[]{val}, aCause);
             }
         }
     }
@@ -70,7 +80,8 @@ public class PropSingleton extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isIVar(idxVarInProp)) {
             if (i.isInstantiated()) {
-                s.instantiateTo(new int[]{i.getValue()}, aCause);
+                int val = i.getValue();
+                s.instantiateTo(val == filter ? new int[]{} : new int[]{val}, aCause);
             } else {
                 iD.freeze();
                 iD.forEachRemVal((IntProcedure) rem -> s.removeFromEnvelope(rem, aCause));
@@ -87,10 +98,16 @@ public class PropSingleton extends Propagator<Variable> {
                 s.instantiateTo(new int[]{val}, aCause);
             } else {
                 sD.freeze();
-                sD.forEach((IntProcedure) env -> i.removeValue(env, aCause), SetEventType.REMOVE_FROM_ENVELOPE);
+                sD.forEach((IntProcedure) env -> {
+                    if (env != filter) {
+                        i.removeValue(env, aCause);
+                    }
+                }, SetEventType.REMOVE_FROM_ENVELOPE
+                );
                 sD.unfreeze();
                 if (i.isInstantiated()) {
-                    s.instantiateTo(new int[]{i.getValue()}, aCause);
+                    int val = i.getValue();
+                    s.instantiateTo(val == filter ? new int[]{} : new int[]{val}, aCause);
                 }
             }
         }
@@ -101,10 +118,17 @@ public class PropSingleton extends Propagator<Variable> {
         if (s.getKernelSize() > 1) {
             return ESat.FALSE;
         }
-        if (s.getEnvelopeSize() < 1) {
-            return ESat.FALSE;
-        }
-        if (PropUtil.isDomIntersectEnv(i, s)) {
+        if (i.contains(filter)) {
+            if (i.isInstantiated()) {
+                if (s.getEnvelopeSize() == 0) {
+                    return ESat.TRUE;
+                }
+                if (s.getKernelSize() > 0) {
+                    return ESat.FALSE;
+                }
+            }
+            return ESat.UNDEFINED;
+        } else if (PropUtil.isDomIntersectEnv(i, s)) {
             return i.isInstantiated() && s.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
         }
         return ESat.FALSE;
@@ -112,6 +136,6 @@ public class PropSingleton extends Propagator<Variable> {
 
     @Override
     public String toString() {
-        return "singleton({" + i + "} = " + s + ")";
+        return "singletonFilter" + filter + "({" + i + "} = " + s + ")";
     }
 }

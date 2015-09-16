@@ -1,17 +1,7 @@
 package org.clafer.choco.constraint;
 
-
-import org.chocosolver.solver.constraints.set.PropAllEqual;
-import org.chocosolver.solver.constraints.set.SCF;
 import org.chocosolver.solver.cstrs.GCF;
-import org.chocosolver.solver.cstrs.GraphConstraintFactory;
-import org.chocosolver.solver.cstrs.connectivity.*;
-import org.chocosolver.solver.cstrs.connectivity.PropConnected;
-import org.chocosolver.solver.search.GraphStrategyFactory;
-import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
-import org.chocosolver.solver.search.strategy.strategy.StrategiesSequencer;
 import org.chocosolver.solver.variables.*;
-import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.graphs.UndirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.clafer.choco.constraint.propagator.*;
@@ -76,14 +66,12 @@ import org.chocosolver.solver.constraints.set.PropSubsetEq;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
 import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
 import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
-import org.clafer.domain.Domain;
-import org.clafer.ir.IrSetArrayExpr;
-import org.clafer.ir.IrSetVar;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.VF;
 import org.chocosolver.solver.variables.Variable;
+import org.clafer.choco.constraint.propagator.PropSingletonFilter;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -489,32 +477,38 @@ public class Constraints {
         return new Constraint("acyclic", new PropAcyclic(edges));
     }
 
-
     public static Constraint connected(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
-        int nodes_upper = nodes.getEnvelopeSize();
-        int nodes_lower = nodes.getKernelSize();
-        boolean fixed_nodes = (nodes_upper == nodes_lower);
+        int nodes_upper = PropUtil.maxEnv(nodes) + 1;
+        boolean fixed_nodes = nodes.isInstantiated();
 
         UndirectedGraph GLB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
         UndirectedGraph GUB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
 
         //add nodes
-        if(!fixed_nodes){
-            for(int n = nodes.getKernelFirst(); n != SetVar.END; n = nodes.getKernelNext())
+        if (!fixed_nodes) {
+            for (int n = nodes.getKernelFirst(); n != SetVar.END; n = nodes.getKernelNext()) {
                 GLB.addNode(n);
-            for(int n = nodes.getEnvelopeFirst(); n != SetVar.END; n = nodes.getEnvelopeNext())
+            }
+            for (int n = nodes.getEnvelopeFirst(); n != SetVar.END; n = nodes.getEnvelopeNext()) {
                 GUB.addNode(n);
+            }
         }
         //add edges
-        for(int i = 0; i < edges.length; i++){
+        for (int i = 0; i < edges.length; i++) {
             SetVar edge = edges[i];
-            for(int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext())
-                GLB.addEdge(i, n);
-            for(int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext())
-                GUB.addEdge(i,n);
+            for (int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext()) {
+                if (n < nodes_upper) {
+                    GLB.addEdge(i, n);
+                }
+            }
+            for (int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext()) {
+                if (n < nodes_upper) {
+                    GUB.addEdge(i, n);
+                }
+            }
         }
 
-        IUndirectedGraphVar g = GraphVarFactory.undirected_graph_var("G", GLB, GUB, s);
+        IUndirectedGraphVar g = GraphVarFactory.undirected_graph_var("ConnectedVar" + varNum++, GLB, GUB, s);
         s.post(GCF.nodes_channeling(g, nodes));
         s.post(GCF.neighbors_channeling(g, edges));
 
@@ -612,17 +606,6 @@ public class Constraints {
      *******************
      */
     /**
-     * A constraint enforcing {@code {ivar} = svar}.
-     *
-     * @param ivar the integer
-     * @param svar the singleton set
-     * @return constraint {@code {ivar} = svar}
-     */
-    public static Constraint singleton(IntVar ivar, SetVar svar) {
-        return new Constraint("singleton", new PropSingleton(ivar, svar));
-    }
-
-    /**
      * A constraint enforcing {@code {ivar} = svar} and {@code svarCard = 1}.
      * Does not enforce that {@code svarCard = |svarCard|} because of how the
      * compilation works, it is already enforced elsewhere.
@@ -633,9 +616,31 @@ public class Constraints {
      * @return constraint {@code {ivar} = svar}
      */
     public static Constraint singleton(IntVar ivar, SetVar svar, IntVar svarCard) {
+        if (svarCard.isInstantiatedTo(1)) {
+            return new Constraint("singleton",
+                    new PropSingleton(ivar, svar));
+        }
         return new Constraint("singleton",
                 new PropSingleton(ivar, svar),
                 new PropEqualXC(svarCard, 1));
+    }
+
+    /**
+     * A constraint enforcing
+     * {@code if ivar = filter then {} = svar else {ivar} = svar} and
+     * {@code svarCard = 1}. Does not enforce that {@code svarCard = |svarCard|}
+     * because of how the compilation works, it is already enforced elsewhere.
+     *
+     * @param ivar the integer
+     * @param svar the singleton set
+     * @param svarCard the cardinality of {@code svar}
+     * @return constraint
+     * {@code if ivar = filter then {} = svar else {ivar} = svar}
+     */
+    public static Constraint singletonFilter(IntVar ivar, SetVar svar, IntVar svarCard, int filter) {
+        return new Constraint("singletonFilter",
+                new PropSingletonFilter(ivar, svar, filter),
+                new PropEqualX_Y(svarCard, ICF.arithm(ivar, "!=", filter).reif()));
     }
 
     /**
@@ -1118,6 +1123,4 @@ public class Constraints {
         propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
         return new Constraint("transitiveReflexive", propagators);
     }
-
-
 }

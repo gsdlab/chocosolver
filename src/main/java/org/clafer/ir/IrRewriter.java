@@ -558,6 +558,14 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrSetExpr visit(IrSingletonFilter ir, T a) {
+        IrIntExpr value = rewrite(ir.getValue(), a);
+        return changed(ir.getValue(), value)
+                ? singletonFilter(value, ir.getFilter())
+                : ir;
+    }
+
+    @Override
     public IrSetExpr visit(IrArrayToSet ir, T a) {
         IrIntExpr[] array = rewrite(ir.getArray(), a);
         return changed(ir.getArray(), array)
@@ -707,9 +715,9 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrIntExpr visit(IrConnected ir, T a) {
+        IrSetExpr nodes = rewrite(ir.getNodes(), a);
         IrSetArrayExpr edges = rewrite(ir.getRelation(), a);
-        IrSetExpr nodes = (IrSetExpr)rewrite(ir.getNodes(), a);
-        return changed(ir.getRelation(), edges) || changed(ir.getNodes(), nodes)
+        return changed(ir.getNodes(), nodes) || changed(ir.getRelation(), edges)
                 ? connected(nodes, edges, ir.isDirected())
                 : ir;
     }

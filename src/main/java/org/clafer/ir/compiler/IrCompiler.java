@@ -975,7 +975,7 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrConnected ir, BoolArg  a) {
+        public Object visit(IrConnected ir, BoolArg a) {
             CSetVar[] relation = compile(ir.getRelation());
             CSetVar nodes = compile(ir.getNodes());
             //TODO handle directed graph in the future
@@ -1414,10 +1414,22 @@ public class IrCompiler {
             IntVar value = compile(ir.getValue());
             if (reify == null) {
                 SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
-                post(Constraints.singleton(value, singleton));
+                post(Constraints.singleton(value, singleton, one(solver)));
                 return new CSetVar(singleton, one(solver));
             }
             return Constraints.singleton(value, reify.getSet(), reify.getCard());
+        }
+
+        @Override
+        public Object visit(IrSingletonFilter ir, CSetVar reify) {
+            IntVar value = compile(ir.getValue());
+            int filter = ir.getFilter();
+            if (reify == null) {
+                CSetVar singleton = numCset("SingletonFilter", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(Constraints.singletonFilter(value, singleton.getSet(), singleton.getCard(), filter));
+                return singleton;
+            }
+            return Constraints.singletonFilter(value, reify.getSet(), reify.getCard(), filter);
         }
 
         @Override
@@ -1637,8 +1649,6 @@ public class IrCompiler {
             }
             return Constraints.transitiveClosure(mapSet(relation), mapSet(reify), ir.isReflexive());
         }
-
-
     };
 
     private static Constraint _implies(BoolVar antecedent, Constraint consequent) {

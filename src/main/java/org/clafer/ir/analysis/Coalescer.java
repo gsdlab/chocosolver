@@ -624,7 +624,6 @@ public class Coalescer {
 
         @Override
         public Void visit(IrConnected ir, Void aVoid) {
-            //System.exit(1);
             return null;
         }
 

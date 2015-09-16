@@ -41,11 +41,21 @@ public class PropJoinRelation extends Propagator<SetVar> {
         super(buildArray(take, to, children), PropagatorPriority.QUADRATIC, true);
         this.take = take;
         this.takeD = take.monitorDelta(aCause);
-        this.dontCare = new IndexedBipartiteSet(take.getSolver().getEnvironment(), PropUtil.iterateEnv(take));
+        this.dontCare = new IndexedBipartiteSet(take.getSolver().getEnvironment(), iterateNonNegativeEnv(take));
         this.children = children;
         this.childrenD = PropUtil.monitorDeltas(children, aCause);
         this.to = to;
         this.toD = to.monitorDelta(aCause);
+    }
+
+    private static int[] iterateNonNegativeEnv(SetVar set) {
+        TIntArrayList iterate = new TIntArrayList(set.getEnvelopeSize());
+        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            if (i >= 0) {
+                iterate.add(i);
+            }
+        }
+        return iterate.toArray();
     }
 
     private static SetVar[] buildArray(SetVar take, SetVar to, SetVar[] children) {

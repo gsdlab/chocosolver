@@ -15,10 +15,10 @@ import static org.chocosolver.solver.variables.Var.*;
  * @author jimmy
  */
 @RunWith(ConstraintQuickTest.class)
-public class SingletonTest {
+public class SingletonFilterTest {
 
     @Input(solutions = 5)
-    public Object testSingleton(Solver solver) {
+    public Object testSingletonFilter(Solver solver) {
         /*
          * import Control.Monad
          *
@@ -31,17 +31,18 @@ public class SingletonTest {
          *     return (i, s)
          */
         return $(enumerated("i", -3, 2, solver),
-                cset("s", -2, 3, solver));
+                cset("s", -2, 3, solver),
+                2);
     }
 
     @Check
-    public void check(int i, int[] s) {
-        assertArrayEquals(new int[]{i}, s);
+    public void check(int i, int[] s, int filter) {
+        assertArrayEquals(i == filter ? new int[]{} : new int[]{i}, s);
     }
 
     @ArcConsistent
     @Test(timeout = 60000)
-    public Constraint setup(IntVar i, CSetVar s) {
-        return Constraints.singleton(i, s.getSet(), s.getCard());
+    public Constraint setup(IntVar i, CSetVar s, int filter) {
+        return Constraints.singletonFilter(i, s.getSet(), s.getCard(), filter);
     }
 }

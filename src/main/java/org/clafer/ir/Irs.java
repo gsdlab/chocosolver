@@ -1012,18 +1012,15 @@ public class Irs {
         return new IrAcyclic(edges, TrueFalseDomain);
     }
 
-
     public static IrBoolExpr unreachable(IrIntExpr[] edges, int from, int to) {
         return new IrUnreachable(edges, from, to, TrueFalseDomain);
     }
-
 
     public static IrBoolExpr connected(IrSetExpr nodes, IrSetArrayExpr relation, boolean directed) {
         return new IrConnected(nodes, relation, directed, TrueFalseDomain);
     }
 
-
-        public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
+    public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
         if (set.getEnv().isEmpty()) {
             return filterString(set, 0, new IrIntExpr[0], result);
         }
@@ -1601,6 +1598,17 @@ public class Irs {
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
 
+    public static IrSetExpr singletonFilter(IrIntExpr value, int filter) {
+        if (!value.getDomain().contains(filter)) {
+            return singleton(value);
+        }
+        Integer constant = IrUtil.getConstant(value);
+        if (constant != null) {
+            return constant.equals(filter) ? EmptySet : constant(new int[]{constant});
+        }
+        return new IrSingletonFilter(value, filter, value.getDomain().remove(filter), EmptyDomain, ZeroOneDomain);
+    }
+
     public static IrSetExpr arrayToSet(IrIntExpr[] array, Integer globalCardinality) {
         switch (array.length) {
             case 0:
@@ -1757,9 +1765,7 @@ public class Irs {
                 cardLow = injective
                         ? cardLow + childDomain.getLowBound()
                         : Math.max(cardLow, childDomain.getLowBound());
-                cardHigh = cardHigh + childDomain.getHighBound(); //injective
-                        //? cardHigh + childDomain.getHighBound()
-                        //: //Math.max(cardHigh, childDomain.getHighBound());
+                cardHigh += childDomain.getHighBound();
             } else {
                 childrenLowCards[index] = childDomain.getLowBound();
                 childrenHighCards[index] = childDomain.getHighBound();
@@ -1778,9 +1784,6 @@ public class Irs {
                     : Math.max(cardLow, childrenLowCards[i]);
         }
         for (int i = 0; i < takeCard.getHighBound() - takeKer.size(); i++) {
-            //cardHigh = injective
-            //        ? cardHigh + childrenHighCards[childrenHighCards.length - 1 - i]
-            //        : Math.max(cardHigh, childrenHighCards[childrenHighCards.length - 1 - i]);
             cardHigh += childrenHighCards[childrenHighCards.length - 1 - i];
         }
         cardLow = Math.max(cardLow, ker.size());
@@ -2122,11 +2125,11 @@ public class Irs {
         IrSetExpr[] array = new IrSetExpr[expr.length()];
         for (int i = 0; i < array.length; i++) {
             IrIntExpr element = get(expr, i);
-            array[i] = ternary(equal(element, value), EmptySet, singleton(element));
+            array[i] = singletonFilter(element, value);
         }
         return array(array);
     }
-    
+
     public static IrSetArrayExpr inverse(IrSetArrayExpr relation, int length) {
         TIntSet[] envs = new TIntSet[length];
         TIntSet[] kers = new TIntSet[length];
@@ -2137,11 +2140,17 @@ public class Irs {
         for (int i = 0; i < relation.length(); i++) {
             TIntIterator iter = relation.getEnvs()[i].iterator();
             while (iter.hasNext()) {
-                envs[iter.next()].add(i);
+                int val = iter.next();
+                if (val < envs.length) {
+                    envs[val].add(i);
+                }
             }
             iter = relation.getKers()[i].iterator();
             while (iter.hasNext()) {
-                kers[iter.next()].add(i);
+                int val = iter.next();
+                if (val < kers.length) {
+                    kers[val].add(i);
+                }
             }
         }
         Domain[] cards = new Domain[length];
@@ -2195,8 +2204,6 @@ public class Irs {
         }
         return new IrTransitiveClosure(relation, reflexive, envs, kers, cards);
     }
-
-
 
     /**
      *******************
