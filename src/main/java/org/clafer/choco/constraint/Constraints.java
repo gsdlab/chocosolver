@@ -879,6 +879,17 @@ public class Constraints {
         return new Constraint("min", new PropSetMin(set, setCard, min));
     }
 
+    public static Constraint min(SetVar set, IntVar setCard, IntVar min, int d) {
+        if (setCard.getLB() > 0) {
+            return min(set, setCard, min);
+        }
+        return new Constraint("min",
+                new PropGreaterOrEqualX_Y(new IntVar[]{
+                    ICF.arithm(min, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                }),
+                new PropSetMin(set, setCard, min));
+    }
+
     public static Constraint lowBound(SetVar set, IntVar bound) {
         return new Constraint("lowBound", new PropSetLowBound(set, bound));
     }
