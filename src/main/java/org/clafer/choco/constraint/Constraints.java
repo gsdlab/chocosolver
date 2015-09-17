@@ -29,7 +29,6 @@ import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
-import org.clafer.choco.constraint.propagator.PropContinuousUnion;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
@@ -417,11 +416,6 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
         Solver solver = sets[0].getSolver();
-        int lb = 0;
-        int ub = 0;
-        for (IntVar setCard : setCards) {
-            ub += setCard.getUB();
-        }
 
         List<Propagator<?>> propagators = new ArrayList<>();
 
@@ -447,7 +441,6 @@ public class Constraints {
         for (int i = 0; i < sets.length; i++) {
             propagators.add(new PropContinuous(sets[i], setCards[i]));
         }
-        propagators.add(new PropContinuousUnion(sets, boundary[boundary.length - 1]));
 
         return new Constraint("sortedSets", propagators.toArray(new Propagator[propagators.size()]));
     }
