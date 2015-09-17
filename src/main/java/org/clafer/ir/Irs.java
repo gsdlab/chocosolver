@@ -1426,6 +1426,15 @@ public class Irs {
                 ? domain : domain.insert(defaultValue));
     }
 
+    public static IrIntExpr min(IrSetExpr set, int defaultValue) {
+        Domain domain = set.getEnv();
+        if (!set.getKer().isEmpty()) {
+            domain = domain.boundHigh(set.getKer().getLowBound());
+        }
+        return new IrSetMin(set, defaultValue, set.getCard().getLowBound() > 0
+                ? domain : domain.insert(defaultValue));
+    }
+
     public static IrIntExpr sum(IrSetExpr set) {
         int sum = Util.sum(set.getKer().iterator());
         int count = set.getKer().size();

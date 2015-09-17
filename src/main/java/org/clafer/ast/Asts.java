@@ -99,6 +99,14 @@ public class Asts {
         return new AstCard(set);
     }
 
+    public static AstSetExpr max(AstSetExpr set) {
+        return new AstMax(set);
+    }
+
+    public static AstSetExpr min(AstSetExpr set) {
+        return new AstMin(set);
+    }
+
     public static AstBoolExpr test(AstSetExpr left, AstSetTest.Op op, AstSetExpr right) {
         return new AstSetTest(left, op, right);
     }

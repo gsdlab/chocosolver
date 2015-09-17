@@ -33,7 +33,9 @@ import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
+import org.clafer.ast.AstMax;
 import org.clafer.ast.AstMembership;
+import org.clafer.ast.AstMin;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstMod;
 import org.clafer.ast.AstNot;
@@ -341,6 +343,24 @@ public class TypeAnalyzer implements Analyzer {
                 throw new TypeException("Cannot |" + set.getType() + "|");
             }
             return put(IntType, card(set.getExpr()));
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstMax ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            if (set.getType().isInt()) {
+                return put(IntType, max(set.getExpr()));
+            }
+            throw new TypeException("Cannot max " + set.getType() + "|");
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstMin ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            if (set.getType().isInt()) {
+                return put(IntType, min(set.getExpr()));
+            }
+            throw new TypeException("Cannot min " + set.getType() + "|");
         }
 
         @Override

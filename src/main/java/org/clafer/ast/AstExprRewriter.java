@@ -84,6 +84,16 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstMax ast, T a) {
+        return max(rewrite(ast.getSet(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstMin ast, T a) {
+        return min(rewrite(ast.getSet(), a));
+    }
+
+    @Override
     public AstExpr visit(AstSetTest ast, T a) {
         return test(rewrite(ast.getLeft(), a), ast.getOp(), rewrite(ast.getRight(), a));
     }

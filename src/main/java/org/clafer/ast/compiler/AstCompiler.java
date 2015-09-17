@@ -40,7 +40,9 @@ import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
+import org.clafer.ast.AstMax;
 import org.clafer.ast.AstMembership;
+import org.clafer.ast.AstMin;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstMod;
 import org.clafer.ast.AstModel;
@@ -1246,6 +1248,24 @@ public class AstCompiler {
                 cards[i] = card(get(array, i));
             }
             return add(cards);
+        }
+
+        @Override
+        public IrExpr visit(AstMax ast, Void a) {
+            IrExpr set = compile(ast.getSet());
+            if (set instanceof IrIntExpr) {
+                return set;
+            }
+            return max((IrSetExpr) set, 0);
+        }
+
+        @Override
+        public IrExpr visit(AstMin ast, Void a) {
+            IrExpr set = compile(ast.getSet());
+            if (set instanceof IrIntExpr) {
+                return set;
+            }
+            return min((IrSetExpr) set, 0);
         }
 
         @Override

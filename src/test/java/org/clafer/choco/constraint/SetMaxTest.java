@@ -14,6 +14,7 @@ import static org.chocosolver.solver.variables.Var.cset;
 import static org.chocosolver.solver.variables.Var.env;
 import static org.chocosolver.solver.variables.Var.ker;
 import static org.chocosolver.solver.variables.VariableFactory.enumerated;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 
 /**
  *
@@ -40,7 +41,7 @@ public class SetMaxTest {
                 enumerated("max", -4, 4, solver), 0);
     }
 
-    @ConstraintQuickTest.Check
+    @Check
     public void check(int[] set, int max, int d) {
         if (set.length > 0) {
             assertEquals(set[set.length - 1], max);

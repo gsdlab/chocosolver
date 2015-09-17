@@ -1202,6 +1202,17 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrSetMin ir, IntVar reify) {
+            CSetVar set = compile(ir.getSet());
+            if (reify == null) {
+                IntVar min = numIntVar("SetMin", ir.getDomain());
+                post(Constraints.min(set.getSet(), set.getCard(), min, ir.getDefaultValue()));
+                return min;
+            }
+            return Constraints.min(set.getSet(), set.getCard(), reify, ir.getDefaultValue());
+        }
+
+        @Override
         public Object visit(IrSetSum ir, IntVar reify) {
             CSetVar set = compile(ir.getSet());
             if (reify == null) {

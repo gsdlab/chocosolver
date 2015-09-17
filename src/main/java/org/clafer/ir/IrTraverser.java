@@ -354,6 +354,11 @@ public abstract class IrTraverser<T>
         return null;
     }
 
+    public Void visit(IrSetMin ir, T a) {
+        traverse(ir.getSet(), a);
+        return null;
+    }
+
     @Override
     public Void visit(IrSetSum ir, T a) {
         traverse(ir.getSet(), a);
