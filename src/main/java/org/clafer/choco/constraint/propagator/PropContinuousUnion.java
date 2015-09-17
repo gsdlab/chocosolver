@@ -110,7 +110,9 @@ public class PropContinuousUnion extends Propagator<Variable> {
             maxKer = Math.max(maxKer, PropUtil.maxKer(sets[i]));
         }
         totalCard.updateUpperBound(maxEnv == SetVar.END ? 0 : maxEnv + 1, this);
-        totalCard.updateLowerBound(maxKer == SetVar.END ? 0 : maxKer + 1, this);
+        if (totalCard.getLB() > 0) {
+            totalCard.updateLowerBound(maxKer == SetVar.END ? 0 : maxKer + 1, this);
+        }
         int ub = totalCard.getUB();
         for (int i = 0; i < ub; i++) {
             if (!support(i)) {
@@ -161,7 +163,7 @@ public class PropContinuousUnion extends Propagator<Variable> {
         @Override
         public void execute(int env) throws ContradictionException {
             int maxEnv = PropUtil.maxEnv(sets[sets.length - 1]);
-            for (int i = sets.length - 2; i >= 0 && sets[i + 1].getKernelSize() == 0; i--) {
+            for (int i = sets.length - 2; i >= 0; i--) {
                 maxEnv = Math.max(maxEnv, PropUtil.maxEnv(sets[i]));
             }
             totalCard.updateUpperBound(maxEnv == SetVar.END ? 0 : maxEnv + 1, PropContinuousUnion.this);
@@ -223,7 +225,7 @@ public class PropContinuousUnion extends Propagator<Variable> {
                     support = true;
                 }
             }
-            allRealized |= realized;
+            allRealized &= realized;
             if (!support) {
                 return ESat.FALSE;
             }
