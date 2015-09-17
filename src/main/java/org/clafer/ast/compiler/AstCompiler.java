@@ -404,35 +404,6 @@ public class AstCompiler {
         Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
         Either.filterRight(reachables.stream()).forEach(module::addConstraint);
 
-//        KeyGraph<Either<IrExpr, IrBoolExpr>> dependencies = new KeyGraph<>();
-//        for (Symmetry symmetry : symmetries) {
-//            IrBoolExpr constraint = symmetry.getConstraint();
-//            Vertex<Either<IrExpr, IrBoolExpr>> constraintNode
-//                    = dependencies.getVertex(Either.<IrExpr, IrBoolExpr>right(constraint));
-//            for (IrExpr output : symmetry.getOutput()) {
-//                dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(output))
-//                        .addNeighbour(constraintNode);
-//            }
-//            for (IrExpr input : symmetry.getInput()) {
-//                constraintNode.addNeighbour(
-//                        dependencies.getVertex(Either.<IrExpr, IrBoolExpr>left(input)));
-//            }
-//        }
-//        Set<IrVar> variables = module.getVariables();
-//        Set<Vertex<Either<IrExpr, IrBoolExpr>>> start = new HashSet<>();
-//        for (IrVar variable : variables) {
-//            Vertex<Either<IrExpr, IrBoolExpr>> vertex
-//                    = dependencies.getVertexIfPresent(Either.<IrExpr, IrBoolExpr>left(variable));
-//            if (vertex != null) {
-//                start.add(vertex);
-//            }
-//        }
-//        Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
-//        for (Either<IrExpr, IrBoolExpr> reachable : reachables) {
-//            if (reachable.isRight()) {
-//                module.addConstraint(reachable.getRight());
-//            }
-//        }
         return new AstSolutionMap(analysis.getModel(), siblingSets,
                 refPointers, refStrings,
                 softVars, sumSoftVars,
@@ -586,11 +557,9 @@ public class AstCompiler {
                                 : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             if (getScope(clafer.getParent()) > 1) {
-//                symmetries.add(new LexChainChannel(childIndices, weight));
-                module.addConstraint(sortChannel(childIndices, weight));
+                symmetries.add(new LexChainChannel(childIndices, weight));
                 for (int i = 0; i < siblingSet.length; i++) {
-                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
-//                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
+                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
                 }
             }
             if (getCard(clafer).getHigh() > 1) {
