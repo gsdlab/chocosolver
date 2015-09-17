@@ -864,11 +864,11 @@ public class Constraints {
         if (setCard.getLB() > 0) {
             return max(set, setCard, max);
         }
-        // TODO optimize
-        return ifThenElse(
-                ICF.arithm(setCard, "=", 0).reif(),
-                ICF.arithm(max, "=", 0).reif(),
-                max(set, setCard, max).reif());
+        return new Constraint("max",
+                new PropGreaterOrEqualX_Y(new IntVar[]{
+                    ICF.arithm(max, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                }),
+                new PropSetMax(set, setCard, max));
     }
 
     public static Constraint stritctHighBound(SetVar set, IntVar bound) {
