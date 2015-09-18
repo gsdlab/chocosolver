@@ -223,6 +223,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstRangeRestriction ast, T a) {
+        return rangeRestriction(rewrite(ast.getRelation(), a), rewrite(ast.getSet(), a));
+    }
+
+    @Override
     public AstExpr visit(AstInverse ast, T a) {
         return inverse(rewrite(ast.getRelation(), a));
     }

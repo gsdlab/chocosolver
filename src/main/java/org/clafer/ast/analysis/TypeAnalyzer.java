@@ -43,6 +43,7 @@ import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstProduct;
 import org.clafer.ast.AstQuantify;
+import org.clafer.ast.AstRangeRestriction;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstRefRelation;
 import org.clafer.ast.AstSetExpr;
@@ -657,6 +658,17 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<?> visit(AstRefRelation ast, Void a) {
             AstRef ref = ast.getRef();
             return put(ref.getSourceType(), ref.getTargetType(), ast);
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstRangeRestriction ast, Void a) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            if (relation.getCommonSupertype().arity() == 2
+                    && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(1)), set.getType())) {
+                return put(relation.getType(), rangeRestriction(relation.getExpr(), set.getExpr()));
+            }
+            throw new TypeException(relation + " cannot " + relation.getType() + " :> " + set.getType());
         }
 
         @Override

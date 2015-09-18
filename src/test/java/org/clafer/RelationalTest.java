@@ -2,6 +2,8 @@ package org.clafer;
 
 import java.util.HashSet;
 import java.util.Set;
+import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
@@ -371,7 +373,66 @@ public class RelationalTest {
     /**
      * <pre>
      * A *
+     *     B -> int *
+     * C -> B *
+     * [ A . (B :> C.ref) . ref = 1 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRangeRestriction() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B").refTo(IntType);
+        AstConcreteClafer c = model.addChild("C").refTo(b);
+        model.addConstraint(equal(joinRef(join(global(a), rangeRestriction(relation(b), joinRef(c)))), 1));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
+        while (solver.find()) {
+            for (InstanceClafer ci : solver.instance().getTopClafers(c)) {
+                InstanceClafer bi = (InstanceClafer) ci.getRef();
+                assertEquals(1, bi.getRef());
+            }
+        }
+        assertEquals(25, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * abstract A -> int
+     * B : A *
+     * C : A *
+     * D -> A *
+     * [ D . (Dref :> B) = 3 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRangeRestrictionRef() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A").refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").extending(a);
+        AstConcreteClafer c = model.addChild("C").extending(a);
+        AstConcreteClafer d = model.addChild("D").refTo(a);
+        model.addConstraint(equal(joinRef(join(global(d), rangeRestriction(ref(d), global(b)))), 1));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
+        while (solver.find()) {
+            for (InstanceClafer di : solver.instance().getTopClafers(d)) {
+                InstanceClafer bi = (InstanceClafer) di.getRef();
+                if (bi.getType().equals(b)) {
+                    assertEquals(1, bi.getRef());
+                }
+            }
+        }
+        assertEquals(138, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * A *
      *     B *
+     *         [ this . parent = this . ~B ]
      * </pre>
      */
     @Test(timeout = 60000)

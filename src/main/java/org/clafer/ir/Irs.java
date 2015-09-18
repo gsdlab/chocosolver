@@ -2106,6 +2106,14 @@ public class Irs {
         return array(array);
     }
 
+    public static IrSetArrayExpr rangeRestriction(IrSetArrayExpr relation, IrSetExpr restriction) {
+        IrSetExpr[] array = new IrSetExpr[relation.length()];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = intersection(get(relation, i), restriction);
+        }
+        return array(array);
+    }
+
     public static IrSetArrayExpr inverse(IrSetArrayExpr relation, int length) {
         TIntSet[] envs = new TIntSet[length];
         TIntSet[] kers = new TIntSet[length];

@@ -52,6 +52,7 @@ import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstProduct;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
+import org.clafer.ast.AstRangeRestriction;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstRefRelation;
 import org.clafer.ast.AstSetExpr;
@@ -101,6 +102,7 @@ import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IllegalIntException;
+import org.clafer.ir.IrArrayExpr;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntArrayExpr;
 import org.clafer.ir.IrIntExpr;
@@ -947,6 +949,21 @@ public class AstCompiler {
             return sets;
         }
 
+        private IrSetArrayExpr asSets(IrArrayExpr expr) {
+            if (expr instanceof IrIntArrayExpr) {
+                IrIntArrayExpr intArray = (IrIntArrayExpr) expr;
+                IrSetExpr[] array = new IrSetExpr[intArray.length()];
+                for (int i = 0; i < array.length; i++) {
+                    array[i] = asSet(get(intArray, i));
+                }
+                return array(array);
+            } else if (expr instanceof IrSetArrayExpr) {
+                return (IrSetArrayExpr) expr;
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
+        }
+
         private IrSetArrayExpr asRelation(IrExpr expr, ProductType type) {
             assert type.arity() == 2;
             if (expr instanceof IrIntArrayExpr) {
@@ -1708,6 +1725,17 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstRefRelation ast, Void a) {
             return array(refPointers.get(ast.getRef()));
+        }
+
+        @Override
+        public IrExpr visit(AstRangeRestriction ast, Void a) {
+            IrExpr relation = compile(ast.getRelation());
+            IrSetExpr set = asSet(compile(ast.getSet()));
+            if (relation instanceof IrArrayExpr) {
+                return rangeRestriction(asSets((IrArrayExpr) relation), set);
+            }
+            // Bug.
+            throw new AstException("Should not have passed type checking.");
         }
 
         @Override
