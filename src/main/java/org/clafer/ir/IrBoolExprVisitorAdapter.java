@@ -156,4 +156,9 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     public B visit(IrSuffix ir, A a) {
         return null;
     }
+
+    @Override
+    public B visit(IrConnected ir, A a) {
+        return null;
+    }
 }

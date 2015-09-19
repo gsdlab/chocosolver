@@ -102,7 +102,6 @@ import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IllegalIntException;
-import org.clafer.ir.IrArrayExpr;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntArrayExpr;
 import org.clafer.ir.IrIntExpr;
@@ -949,21 +948,6 @@ public class AstCompiler {
             return sets;
         }
 
-        private IrSetArrayExpr asSets(IrArrayExpr expr) {
-            if (expr instanceof IrIntArrayExpr) {
-                IrIntArrayExpr intArray = (IrIntArrayExpr) expr;
-                IrSetExpr[] array = new IrSetExpr[intArray.length()];
-                for (int i = 0; i < array.length; i++) {
-                    array[i] = asSet(get(intArray, i));
-                }
-                return array(array);
-            } else if (expr instanceof IrSetArrayExpr) {
-                return (IrSetArrayExpr) expr;
-            }
-            // Bug.
-            throw new AstException("Should not have passed type checking.");
-        }
-
         private IrSetArrayExpr asRelation(IrExpr expr, ProductType type) {
             assert type.arity() == 2;
             if (expr instanceof IrIntArrayExpr) {
@@ -1300,6 +1284,7 @@ public class AstCompiler {
                     Type type = getType(ast.getLeft());
                     AstClafer returnType = type.getCommonSupertype().get(1);
                     IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
+                    // TODO use asRelation
                     return equal(IrUtil.asArray(filterNotEqual(leftArray, getUninitalizedRef(returnType))), IrUtil.asArray(rightArray));
                 }
             } else if (left instanceof IrSetArrayExpr) {
@@ -1308,6 +1293,7 @@ public class AstCompiler {
                     Type type = getType(ast.getRight());
                     AstClafer returnType = type.getCommonSupertype().get(1);
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
+                    // TODO use asRelation
                     return equal(IrUtil.asArray(leftArray), IrUtil.asArray(filterNotEqual(rightArray, getUninitalizedRef(returnType))));
                 } else if (right instanceof IrSetArrayExpr) {
                     IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
@@ -1731,11 +1717,7 @@ public class AstCompiler {
         public IrExpr visit(AstRangeRestriction ast, Void a) {
             IrExpr relation = compile(ast.getRelation());
             IrSetExpr set = asSet(compile(ast.getSet()));
-            if (relation instanceof IrArrayExpr) {
-                return rangeRestriction(asSets((IrArrayExpr) relation), set);
-            }
-            // Bug.
-            throw new AstException("Should not have passed type checking.");
+            return rangeRestriction(asRelation(relation, getCommonSupertype(ast.getRelation())), set);
         }
 
         @Override
@@ -1744,6 +1726,7 @@ public class AstCompiler {
             AstClafer returnType = type.getCommonSupertype().get(1);
             IrExpr relation = compile(ast.getRelation());
             if (relation instanceof IrIntArrayExpr) {
+                // TODO use asRelation
                 return inverse(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), getScope(returnType));
             }
             if (relation instanceof IrSetArrayExpr) {
@@ -1759,6 +1742,7 @@ public class AstCompiler {
             if (relation instanceof IrIntArrayExpr) {
                 Type type = getType(ast.getRelation());
                 AstClafer returnType = type.getCommonSupertype().get(1);
+                // TODO use asRelation
                 return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isReflexive());
             }
             if (relation instanceof IrSetArrayExpr) {
@@ -1770,19 +1754,17 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstConnected ast, Void a) {
-            IrExpr nodes = compile(ast.getNodes());
+            // TODO node instanceof IrIntExpr
+            IrSetExpr nodes = (IrSetExpr) compile(ast.getNodes());
             IrExpr relation = compile(ast.getRelation());
-            if (relation instanceof IrIntArrayExpr) {
-                Type type = getType(ast.getRelation());
-                AstClafer returnType = type.getCommonSupertype().get(1);
-                //TODO fix
-                return connected((IrSetVar) nodes, asRelation(relation, getCommonSupertype(ast.getRelation())), ast.isDirected());
+
+            IrSetArrayExpr transitiveClosure = transitiveClosure(asRelation(relation, getCommonSupertype(ast.getRelation())), !ast.isDirected());
+            IrBoolExpr[] connectedClosure = new IrBoolExpr[transitiveClosure.length()];
+            for (int i = 0; i < connectedClosure.length; i++) {
+                connectedClosure[i] = implies(member(constant(i), nodes), subsetEq(nodes, get(transitiveClosure, i)));
             }
-            if (relation instanceof IrSetArrayExpr) {
-                return connected((IrSetExpr) nodes, (IrSetArrayExpr) relation, ast.isDirected());
-            }
-            // Bug.
-            throw new AstException("Should not have passed type checking.");
+
+            return and(connectedClosure);
         }
     };
 

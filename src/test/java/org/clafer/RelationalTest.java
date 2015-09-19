@@ -538,6 +538,6 @@ public class RelationalTest {
         m.addConstraint(connected(global(node), join(inverse(join(relation(loc), ref(loc))), join(relation(loc), ref(loc)))));
 
         ClaferSolver solver = ClaferCompiler.compile(m, Scope.defaultScope(4));
-        assertEquals(4, solver.allInstances().length);
+        assertEquals(5, solver.allInstances().length);
     }
 }

@@ -622,11 +622,6 @@ public class Coalescer {
             return null;
         }
 
-        @Override
-        public Void visit(IrConnected ir, Void aVoid) {
-            return null;
-        }
-
         private void propagateEqual(IrIntExpr left, IrIntExpr right) {
             if (left instanceof IrIntVar && right instanceof IrIntVar) {
                 intGraph.union((IrIntVar) left, (IrIntVar) right);
