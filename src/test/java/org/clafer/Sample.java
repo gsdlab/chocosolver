@@ -13,10 +13,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Sample {
 
-    public static final int Default = 10;
-
     /**
      * @return the number of times to repeat the experiment
      */
-    int value() default Default;
+    int value();
 }
