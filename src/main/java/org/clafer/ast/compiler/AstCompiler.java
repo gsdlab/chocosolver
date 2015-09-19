@@ -26,6 +26,7 @@ import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstDifference;
+import org.clafer.ast.AstDomainRestriction;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstExpr;
@@ -1711,6 +1712,13 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstRefRelation ast, Void a) {
             return array(refPointers.get(ast.getRef()));
+        }
+
+        @Override
+        public IrExpr visit(AstDomainRestriction ast, Void a) {
+            IrSetExpr domain = asSet(compile(ast.getDomain()));
+            IrExpr relation = compile(ast.getRelation());
+            return domainRestriction(domain, asRelation(relation, getCommonSupertype(ast.getRelation())));
         }
 
         @Override

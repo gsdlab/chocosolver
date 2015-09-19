@@ -2116,7 +2116,7 @@ public class Irs {
         return array(array);
     }
 
-    public static IrSetArrayExpr rangeRestriction(IrSetArrayExpr relation, IrSetExpr restriction) {
+    public static IrSetArrayExpr domainRestriction(IrSetExpr domain, IrSetArrayExpr relation) {
         IrSetExpr[] array = new IrSetExpr[relation.length()];
         for (int i = 0; i < array.length; i++) {
             array[i] = containsTernary(domain, i, get(relation, i));

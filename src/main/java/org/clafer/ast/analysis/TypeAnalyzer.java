@@ -20,6 +20,7 @@ import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstDifference;
+import org.clafer.ast.AstDomainRestriction;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
@@ -658,6 +659,17 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<?> visit(AstRefRelation ast, Void a) {
             AstRef ref = ast.getRef();
             return put(ref.getSourceType(), ref.getTargetType(), ast);
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstDomainRestriction ast, Void a) {
+            TypedExpr<AstSetExpr> domain = typeCheck(ast.getDomain());
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            if (relation.getCommonSupertype().arity() == 2
+                    && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(0)), domain.getType())) {
+                return put(relation.getType(), domainRestriction(domain.getExpr(), relation.getExpr()));
+            }
+            throw new TypeException(relation + " cannot " + domain.getType() + " <: " + relation.getType());
         }
 
         @Override

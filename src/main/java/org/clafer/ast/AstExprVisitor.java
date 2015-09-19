@@ -81,6 +81,8 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstRefRelation ast, A a);
 
+    public B visit(AstDomainRestriction ast, A a);
+
     public B visit(AstRangeRestriction ast, A a);
 
     public B visit(AstInverse ast, A a);

@@ -3,7 +3,6 @@ package org.clafer;
 import java.util.HashSet;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
@@ -368,6 +367,35 @@ public class RelationalTest {
         assertEquals(2, C[0].getChildren(d).length);
         assertEquals(1, C[1].getChildren(d).length);
         assertFalse(solver.find());
+    }
+
+    /**
+     * <pre>
+     * A *
+     *     B -> int *
+     * C -> A *
+     * [ A . (C.ref :> B) . ref = 1 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testDomainRestriction() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A");
+        AstConcreteClafer b = a.addChild("B").refTo(IntType);
+        AstConcreteClafer c = model.addChild("C").refTo(a);
+        model.addConstraint(equal(joinRef(join(global(a), domainRestriction(joinRef(c), relation(b)))), 1));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
+        while (solver.find()) {
+            for (InstanceClafer ci : solver.instance().getTopClafers(c)) {
+                InstanceClafer ai = (InstanceClafer) ci.getRef();
+                for (InstanceClafer bi : ai.getChildren(b)) {
+                    assertEquals(1, bi.getRef());
+                }
+            }
+        }
+        assertEquals(17, solver.instanceCount());
     }
 
     /**
