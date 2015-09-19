@@ -426,8 +426,12 @@ public class Asts {
         return new AstRefRelation(ref);
     }
 
-    public static AstSetExpr rangeRestriction(AstSetExpr relation, AstSetExpr set) {
-        return new AstRangeRestriction(relation, set);
+    public static AstSetExpr domainRestriction(AstSetExpr domain, AstSetExpr relation) {
+        return new AstDomainRestriction(domain, relation);
+    }
+
+    public static AstSetExpr rangeRestriction(AstSetExpr relation, AstSetExpr range) {
+        return new AstRangeRestriction(relation, range);
     }
 
     public static AstSetExpr inverse(AstSetExpr relation) {

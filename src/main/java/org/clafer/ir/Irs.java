@@ -2119,7 +2119,15 @@ public class Irs {
     public static IrSetArrayExpr rangeRestriction(IrSetArrayExpr relation, IrSetExpr restriction) {
         IrSetExpr[] array = new IrSetExpr[relation.length()];
         for (int i = 0; i < array.length; i++) {
-            array[i] = intersection(get(relation, i), restriction);
+            array[i] = containsTernary(domain, i, get(relation, i));
+        }
+        return array(array);
+    }
+
+    public static IrSetArrayExpr rangeRestriction(IrSetArrayExpr relation, IrSetExpr range) {
+        IrSetExpr[] array = new IrSetExpr[relation.length()];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = intersection(get(relation, i), range);
         }
         return array(array);
     }

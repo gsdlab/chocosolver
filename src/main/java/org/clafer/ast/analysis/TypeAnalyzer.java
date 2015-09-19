@@ -663,12 +663,12 @@ public class TypeAnalyzer implements Analyzer {
         @Override
         public TypedExpr<?> visit(AstRangeRestriction ast, Void a) {
             TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            TypedExpr<AstSetExpr> range = typeCheck(ast.getRange());
             if (relation.getCommonSupertype().arity() == 2
-                    && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(1)), set.getType())) {
-                return put(relation.getType(), rangeRestriction(relation.getExpr(), set.getExpr()));
+                    && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(1)), range.getType())) {
+                return put(relation.getType(), rangeRestriction(relation.getExpr(), range.getExpr()));
             }
-            throw new TypeException(relation + " cannot " + relation.getType() + " :> " + set.getType());
+            throw new TypeException(relation + " cannot " + relation.getType() + " :> " + range.getType());
         }
 
         @Override

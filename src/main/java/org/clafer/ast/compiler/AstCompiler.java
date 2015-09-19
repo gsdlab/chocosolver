@@ -1716,8 +1716,8 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstRangeRestriction ast, Void a) {
             IrExpr relation = compile(ast.getRelation());
-            IrSetExpr set = asSet(compile(ast.getSet()));
-            return rangeRestriction(asRelation(relation, getCommonSupertype(ast.getRelation())), set);
+            IrSetExpr range = asSet(compile(ast.getRange()));
+            return rangeRestriction(asRelation(relation, getCommonSupertype(ast.getRelation())), range);
         }
 
         @Override

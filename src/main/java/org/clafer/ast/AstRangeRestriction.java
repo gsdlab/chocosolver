@@ -8,19 +8,19 @@ import org.clafer.common.Check;
  */
 public class AstRangeRestriction implements AstSetExpr {
 
-    private final AstSetExpr relation, set;
+    private final AstSetExpr relation, range;
 
     AstRangeRestriction(AstSetExpr relation, AstSetExpr set) {
         this.relation = Check.notNull(relation);
-        this.set = Check.notNull(set);
+        this.range = Check.notNull(set);
     }
 
     public AstSetExpr getRelation() {
         return relation;
     }
 
-    public AstSetExpr getSet() {
-        return set;
+    public AstSetExpr getRange() {
+        return range;
     }
 
     @Override
@@ -32,18 +32,18 @@ public class AstRangeRestriction implements AstSetExpr {
     public boolean equals(Object obj) {
         if (obj instanceof AstRangeRestriction) {
             AstRangeRestriction other = (AstRangeRestriction) obj;
-            return relation.equals(other.relation) && set.equals(other.set);
+            return relation.equals(other.relation) && range.equals(other.range);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return 193 * relation.hashCode() ^ set.hashCode();
+        return 193 * relation.hashCode() ^ range.hashCode();
     }
 
     @Override
     public String toString() {
-        return relation + " :> " + set;
+        return relation + " :> " + range;
     }
 }
