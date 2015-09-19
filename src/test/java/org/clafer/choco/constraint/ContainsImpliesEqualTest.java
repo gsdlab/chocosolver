@@ -77,10 +77,6 @@ public class ContainsImpliesEqualTest {
     @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(CSetVar cond, int z, CSetVar x, CSetVar y) {
-        return new Constraint("ContainsImpliesEqual",
-                new PropContainsImpliesEqual(cond.getSet(), z, x.getSet(), y.getSet()),
-                new PropContainsImpliesEqualCard(cond.getSet(), z, x.getCard(), y.getCard()),
-                new PropContainsImpliesEqualCard2(x.getSet(), x.getCard(), y.getSet())
-        );
+        return Constraints.containsImpliesEqualTest(cond.getSet(), z, x.getSet(), x.getCard(), y.getSet(), y.getCard());
     }
 }

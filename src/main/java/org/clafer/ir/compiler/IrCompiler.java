@@ -1573,6 +1573,18 @@ public class IrCompiler {
                     _implies(antecedent.not(), _equal(reify, alternative)).reif(),
                     "=", 2);
         }
+
+        @Override
+        public Object visit(IrContainsSetTernary ir, CSetVar reify) {
+            CSetVar antecedent = compile(ir.getAntecedent());
+            CSetVar consequent = compile(ir.getConsequent());
+            if (reify == null) {
+                CSetVar ternary = numCset("ContainsTernary", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(Constraints.containsImpliesEqualTest(antecedent.getSet(), ir.getX(), ternary.getSet(), ternary.getCard(), consequent.getSet(), consequent.getCard()));
+                return ternary;
+            }
+            return Constraints.containsImpliesEqualTest(antecedent.getSet(), ir.getX(), reify.getSet(), reify.getCard(), consequent.getSet(), consequent.getCard());
+        }
     };
 
     private final IrStringExprVisitor<CStringVar, Object> stringExprCompiler = new IrStringExprVisitor<CStringVar, Object>() {

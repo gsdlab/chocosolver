@@ -1998,6 +1998,16 @@ public class Irs {
         return new IrSetTernary(antecedent, consequent, alternative, env, ker, card);
     }
 
+    public static IrSetExpr containsTernary(IrSetExpr antecedent, int x, IrSetExpr consequent) {
+        if (antecedent.getKer().contains(x)) {
+            return consequent;
+        }
+        if (!antecedent.getEnv().contains(x)) {
+            return EmptySet;
+        }
+        return new IrContainsSetTernary(antecedent, x, consequent, consequent.getEnv(), EmptyDomain, consequent.getCard().insert(0));
+    }
+
     /**
      *******************
      *

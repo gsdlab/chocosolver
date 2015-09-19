@@ -463,6 +463,13 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrContainsSetTernary ir, T a) {
+        traverse(ir.getAntecedent(), a);
+        traverse(ir.getConsequent(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrStringVar ir, T a) {
         return null;
     }

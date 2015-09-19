@@ -662,6 +662,16 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrSetExpr visit(IrContainsSetTernary ir, T a) {
+        IrSetExpr antecedent = rewrite(ir.getAntecedent(), a);
+        IrSetExpr consequent = rewrite(ir.getConsequent(), a);
+        return changed(ir.getAntecedent(), antecedent)
+                || changed(ir.getConsequent(), consequent)
+                        ? containsTernary(antecedent, ir.getX(), consequent)
+                        : ir;
+    }
+
+    @Override
     public IrStringVar visit(IrStringVar ir, T a) {
         IrIntVar[] chars = Util.<IrIntVar>cast(rewrite(ir.getCharVars(), a));
         IrIntVar length = (IrIntVar) rewrite(ir.getLengthVar(), a);

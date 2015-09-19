@@ -1098,6 +1098,15 @@ public class Constraints {
         return pad;
     }
 
+    public static Constraint containsImpliesEqualTest(SetVar cond, int z,
+            SetVar x, IntVar xCard, SetVar y, IntVar yCard) {
+        return new Constraint("containsImpliesEqual",
+                new PropContainsImpliesEqual(cond, z, x, y),
+                new PropContainsImpliesEqualCard(cond, z, xCard, yCard),
+                new PropContainsImpliesEqualCard2(x, xCard, y)
+        );
+    }
+
     public static Constraint transitive(SetVar[] relation) {
         return new Constraint("transitive",
                 new PropTransitive(relation),

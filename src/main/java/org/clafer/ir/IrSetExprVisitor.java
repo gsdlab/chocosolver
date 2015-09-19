@@ -34,4 +34,6 @@ public interface IrSetExprVisitor<A, B> {
     public B visit(IrMask ir, A a);
 
     public B visit(IrSetTernary ir, A a);
+
+    public B visit(IrContainsSetTernary ir, A a);
 }
