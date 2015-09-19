@@ -62,7 +62,7 @@ public class TestReflection {
                 return pow2(var.getSet().getEnvelopeSize() - var.getSet().getKernelSize());
             }
             int count = 0;
-            for (int i = lb; i <= ub; i++) {
+            for (int i = lb; i <= ub; i = var.getCard().nextValue(i)) {
                 count += nChooseR(envSize - kerSize, i);
             }
             return count;
