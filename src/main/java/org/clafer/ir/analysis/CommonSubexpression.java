@@ -6,9 +6,11 @@ import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrExpr;
+import org.clafer.ir.IrInverse;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrTransitiveClosure;
 import org.clafer.ir.IrTraverser;
 import org.clafer.ir.IrVar;
 
@@ -64,6 +66,18 @@ public class CommonSubexpression {
 
         @Override
         public Void visit(IrJoinFunction ir, Void a) {
+            check(ir);
+            return super.visit(ir, a);
+        }
+
+        @Override
+        public Void visit(IrInverse ir, Void a) {
+            check(ir);
+            return super.visit(ir, a);
+        }
+
+        @Override
+        public Void visit(IrTransitiveClosure ir, Void a) {
             check(ir);
             return super.visit(ir, a);
         }
