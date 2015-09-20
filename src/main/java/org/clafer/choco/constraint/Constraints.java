@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint;
 
-//import org.chocosolver.solver.cstrs.GCF;
 import org.chocosolver.solver.variables.*;
 import org.clafer.choco.constraint.propagator.*;
 
@@ -1083,6 +1082,35 @@ public class Constraints {
             propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i, true));
         }
         return new Constraint("Concat",
+                propagators.toArray(new Propagator<?>[propagators.size()]));
+    }
+
+    public static Constraint substring(IntVar[] substring, IntVar substringLength, IntVar index, IntVar[] supstring, IntVar supstringLength) {
+        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        for (int i = 0; i < substring.length; i++) {
+            IntVar[] pad = new IntVar[substringLength.getUB() + index.getUB()];
+            int j;
+            for (j = 0; j < pad.length && j + i < supstring.length; j++) {
+                pad[j] = supstring[j + i];
+            }
+            for (; j < pad.length; j++) {
+                pad[j] = substringLength.getSolver().ZERO();
+            }
+            propagators.add(new PropElementValueSupport(substring[i], pad, index, 0, 0));
+        }
+        for (int i = 0; i < supstring.length; i++) {
+            IntVar[] pad = new IntVar[supstring.length + 1];
+            int j;
+            for (j = 0; j < i && i - j >= 0 && i - j < substring.length; j++) {
+                pad[j] = substring[i - j];
+            }
+            for (; j < pad.length; j++) {
+                pad[j] = substringLength.getSolver().ZERO();
+            }
+            propagators.add(new PropElementArraySupport(supstring[i], pad, index, 0, 0));
+        }
+        propagators.add(new PropGreaterOrEqualX_Y(new IntVar[]{supstringLength, index}));
+        return new Constraint("Substring",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
     }
 
