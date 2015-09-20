@@ -1766,10 +1766,17 @@ public class AstCompiler {
             IrSetExpr nodes = (IrSetExpr) compile(ast.getNodes());
             IrExpr relation = compile(ast.getRelation());
 
+            IrBoolExpr[] membership = null;
+            if (ast.getNodes() instanceof AstGlobal) {
+                membership = memberships.get(((AstGlobal) ast.getNodes()).getType());
+            }
+
             IrSetArrayExpr transitiveClosure = transitiveClosure(asRelation(relation, getCommonSupertype(ast.getRelation())), !ast.isDirected());
             IrBoolExpr[] connectedClosure = new IrBoolExpr[transitiveClosure.length()];
             for (int i = 0; i < connectedClosure.length; i++) {
-                connectedClosure[i] = implies(member(constant(i), nodes), subsetEq(nodes, get(transitiveClosure, i)));
+                connectedClosure[i] = implies(
+                        membership == null ? member(constant(i), nodes) : membership[i],
+                        subsetEq(nodes, get(transitiveClosure, i)));
             }
 
             return and(connectedClosure);
