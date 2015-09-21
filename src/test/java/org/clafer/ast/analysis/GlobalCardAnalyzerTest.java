@@ -40,21 +40,55 @@ public class GlobalCardAnalyzerTest {
 
         Analysis analysis = Analysis.analyze(model, scope, new GlobalCardAnalyzer());
 
-        assertEquals(new Card(7, 14), analysis.getGlobalCard(object));
+        assertEquals(new Card(7, 10), analysis.getGlobalCard(object));
         assertEquals(new Card(7, 10), analysis.getGlobalCard(id));
 
-        assertEquals(new Card(2, 4), analysis.getGlobalCard(animal));
-        assertEquals(new Card(2, 4), analysis.getGlobalCard(mammal));
-        assertEquals(new Card(2, 3), analysis.getGlobalCard(primate));
-        assertEquals(new Card(4, 6), analysis.getGlobalCard(arm));
-        assertEquals(new Card(2, 3), analysis.getGlobalCard(human));
-        assertEquals(new Card(0, 1), analysis.getGlobalCard(jimmy));
-        assertEquals(new Card(0, 1), analysis.getGlobalCard(degree));
+        assertEquals(new Card(2, 3), analysis.getGlobalCard(animal));
+        assertEquals(new Card(2, 3), analysis.getGlobalCard(mammal));
+        assertEquals(new Card(2, 2), analysis.getGlobalCard(primate));
+        assertEquals(new Card(4, 4), analysis.getGlobalCard(arm));
+        assertEquals(new Card(2, 2), analysis.getGlobalCard(human));
+        assertEquals(new Card(0, 0), analysis.getGlobalCard(jimmy));
+        assertEquals(new Card(0, 0), analysis.getGlobalCard(degree));
         assertEquals(new Card(1, 1), analysis.getGlobalCard(mona));
         assertEquals(new Card(1, 1), analysis.getGlobalCard(lisa));
         assertEquals(new Card(0, 1), analysis.getGlobalCard(knut));
 
         assertEquals(new Card(1, 3), analysis.getGlobalCard(art));
         assertEquals(new Card(1, 3), analysis.getGlobalCard(monalisa));
+    }
+
+    @Test
+    public void testOptimize() {
+        AstModel model = Asts.newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1);
+        AstConcreteClafer b = a.addChild("B").withCard(2, 2);
+
+        Scope scope = Scope.defaultScope(5).toScope();
+
+        Analysis analysis = Analysis.analyze(model, scope, new GlobalCardAnalyzer());
+
+        assertEquals(new Card(1, 2), analysis.getGlobalCard(a));
+        assertEquals(new Card(2, 4), analysis.getGlobalCard(b));
+    }
+
+    @Test
+    public void testTradeoff() {
+        AstModel model = Asts.newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstConcreteClafer b = a.addChild("B").withCard(2, 2);
+
+        // The scope of B is shared between C and D.
+        AstConcreteClafer c = model.addChild("C").extending(a);
+        AstConcreteClafer d = model.addChild("D").extending(a);
+
+        Scope scope = Scope.defaultScope(5).toScope();
+
+        Analysis analysis = Analysis.analyze(model, scope, new GlobalCardAnalyzer());
+
+        assertEquals(new Card(0, 2), analysis.getGlobalCard(c));
+        assertEquals(new Card(0, 2), analysis.getGlobalCard(d));
     }
 }
