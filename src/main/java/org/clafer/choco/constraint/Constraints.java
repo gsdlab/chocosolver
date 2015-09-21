@@ -926,8 +926,7 @@ public class Constraints {
             int from, int to) {
         return new Constraint("mask",
                 new PropMask(set, masked, from, to),
-                // Simple cardinality propagation.
-                greaterThanEq(setCard, maskedCard));
+                new PropMaskCard(set, setCard, masked, maskedCard, from, to));
     }
 
     /**
