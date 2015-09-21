@@ -344,7 +344,7 @@ public class RelationalTest {
      * [ #((A -> B) . (B -> ref) . (C -> D)) = 3 ]
      * </pre>
      */
-    @Test(timeout = 600000000)
+    @Test(timeout = 60000)
     public void testRelationJoinFunctionJoinRelation() {
         AstModel model = newModel();
 
@@ -371,14 +371,49 @@ public class RelationalTest {
 
     /**
      * <pre>
-     * A *
+     * abstract A
      *     B -> int *
-     * C -> A *
-     * [ A . (C.ref :> B) . ref = 1 ]
+     * C : A *
+     * D : A *
+     * E -> A *
+     * [ E.ref . (C <: B) . ref = 1 ]
      * </pre>
      */
     @Test(timeout = 60000)
     public void testDomainRestriction() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstConcreteClafer b = a.addChild("B").refTo(IntType);
+        AstConcreteClafer c = model.addChild("C").extending(a);
+        AstConcreteClafer d = model.addChild("D").extending(a);
+        AstConcreteClafer e = model.addChild("E").refToUnique(a);
+        model.addConstraint(equal(joinRef(join(joinRef(e), domainRestriction(global(c), relation(b)))), 1));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(-1).intHigh(1));
+        while (solver.find()) {
+            for (InstanceClafer ei : solver.instance().getTopClafers(e)) {
+                InstanceClafer ai = (InstanceClafer) ei.getRef();
+                if (ai.getType().equals(c)) {
+                    for (InstanceClafer bi : ai.getChildren(b)) {
+                        assertEquals(1, bi.getRef());
+                    }
+                }
+            }
+        }
+        assertEquals(80, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * A *
+     *     B -> int *
+     * C -> A *
+     * [ A . (C.ref <: B) . ref = 1 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testDomainRestrictionRef() {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A");
