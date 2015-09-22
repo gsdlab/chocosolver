@@ -1,7 +1,7 @@
 chocosolver
 ===========
 
-v0.3.10.1
+v0.4.1
 
 A backend for [Clafer](http://clafer.org) using the Choco 3.3 constraint programming library. There are two ways to use the project: programmatically via the Java API, or the Javascript CLI.
 
@@ -18,7 +18,7 @@ Getting Clafer Tools
 
 ### Installation from binaries
 
-Binary distributions of the release 0.3.10 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions).
+Binary distributions of the release 0.4.1 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions).
 
 1. download the binaries and unpack `<target directory>` of your choice
 2. add the `<target directory>` to your system path so that the executables can be found
@@ -33,7 +33,7 @@ Prerequisites
 
 Optional
 --------
-* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below). v0.3.10.
+* [Clafer compiler](https://github.com/gsdlab/clafer) - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls. Can also be done manually by hand quite easily with a bit of typing (examples down below). v0.4.1.
 
 Follow the installation instructions in the [README.md](https://github.com/gsdlab/clafer#clafer).
 
@@ -45,6 +45,7 @@ Install Choco3 development snapshot:
 ```bash
 git clone https://github.com/chocoteam/choco3.git -b develop
 cd choco3
+git checkout 4882b695fff79bb492d3b6aea4e8903628df964b
 mvn install -DskipTests
 ```
 
@@ -62,10 +63,10 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.10.1</version>
+    <version>0.4.1</version>
 </dependency>
 ```
-The CLI is installed to target/chocosolver-0.3.10.1-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.3.10.1-jar-with-dependencies.jar mymodel.js".
+The CLI is installed to target/chocosolver-0.4.1-jar-with-dependencies.jar. Start the CLI using the command "java -jar chocosolver-0.4.1-jar-with-dependencies.jar mymodel.js".
 
 ### Important: Branches must correspond
 

@@ -5,7 +5,7 @@
 
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.3.11-SNAPSHOT</version>
+    <version>0.4.1</version>
     <packaging>jar</packaging>
 
     <name>chocosolver</name>
