@@ -149,12 +149,6 @@ public class Constraints {
         }
     }
 
-    private static IntVar enumerated(String name, int lb, int ub, Solver solver) {
-        return lb == ub
-                ? VF.fixed(lb, solver)
-                : VF.enumerated(name, lb, ub, solver);
-    }
-
     /**
      *******************
      *
@@ -172,7 +166,16 @@ public class Constraints {
      * @return constraint {@code operands[0] ∧ operands[1] ∧ ... ∧ operands[n]}
      */
     public static Constraint and(BoolVar... operands) {
-        return new Constraint("and", new PropAnd(operands));
+        return new Constraint("and", new PropAnd(operands)) {
+            @Override
+            public Constraint makeOpposite() {
+                BoolVar[] nots = new BoolVar[operands.length];
+                for (int i = 0; i < nots.length; i++) {
+                    nots[i] = operands[i].not();
+                }
+                return or(nots);
+            }
+        };
     }
 
     /**
@@ -207,7 +210,17 @@ public class Constraints {
      * @return constraint {@code operands[0] ∨ operands[1] ∨ ... ∨ operands[n]}
      */
     public static Constraint or(BoolVar... operands) {
-        return new Constraint("or", new PropOr(operands));
+        return new Constraint("or", new PropOr(operands)) {
+
+            @Override
+            public Constraint makeOpposite() {
+                BoolVar[] nots = new BoolVar[operands.length];
+                for (int i = 0; i < nots.length; i++) {
+                    nots[i] = operands[i].not();
+                }
+                return and(nots);
+            }
+        };
     }
 
     /**

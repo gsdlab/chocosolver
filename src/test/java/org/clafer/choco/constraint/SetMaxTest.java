@@ -24,7 +24,7 @@ import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 public class SetMaxTest {
 
     @Input(solutions = 37)
-    public Object testSumSet(Solver solver) {
+    public Object testSetMax(Solver solver) {
         /*
          * import Control.Monad
          *

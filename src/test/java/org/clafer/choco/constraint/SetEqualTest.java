@@ -38,6 +38,7 @@ public class SetEqualTest {
         assertArrayEquals(s1, s2);
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(CSetVar s1, CSetVar s2) {
         return Constraints.equal(s1.getSet(), s1.getCard(), s2.getSet(), s2.getCard());

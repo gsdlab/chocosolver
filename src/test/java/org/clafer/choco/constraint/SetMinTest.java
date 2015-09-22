@@ -24,7 +24,7 @@ import static org.chocosolver.solver.variables.VariableFactory.enumerated;
 public class SetMinTest {
 
     @Input(solutions = 37)
-    public Object testSumSet(Solver solver) {
+    public Object testSetMin(Solver solver) {
         /*
          * import Control.Monad
          *
