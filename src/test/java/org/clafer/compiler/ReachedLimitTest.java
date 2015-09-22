@@ -87,7 +87,6 @@ public class ReachedLimitTest {
             assertTrue(System.currentTimeMillis() - start >= 1000);
             while (rle.find()) {
                 assertEquals(1, rle.optimalValues().length);
-                assertTrue(rle.optimalValues()[0] > 0);
             }
         }
     }
