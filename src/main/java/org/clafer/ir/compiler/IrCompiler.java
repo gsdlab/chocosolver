@@ -1759,7 +1759,7 @@ public class IrCompiler {
     }
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
-        return ICF.element(value, array, index, 0);
+        return Constraints.element(value, array, index, 0);
     }
 
     private static Constraint _equal(CSetVar var1, CSetVar var2) {
