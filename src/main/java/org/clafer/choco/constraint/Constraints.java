@@ -453,6 +453,10 @@ public class Constraints {
         for (int i = 0; i < sets.length; i++) {
             propagators.add(new PropContinuous(sets[i], setCards[i]));
         }
+        if (boundary[boundary.length - 1].getUB() < 0) {
+            return solver.FALSE();
+        }
+        propagators.add(new PropContinuousUnion(sets, boundary[boundary.length - 1]));
 
         return new Constraint("sortedSets", propagators.toArray(new Propagator[propagators.size()]));
     }
