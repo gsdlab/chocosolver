@@ -8,7 +8,6 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  *
@@ -172,25 +171,11 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
     @Override
     public void propagate(final int i, int mask) throws ContradictionException {
         relationD[i].freeze();
-        relationD[i].forEach(new IntProcedure() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void execute(int j) throws ContradictionException {
-                forwardPruneIJ(i, j);
-                backwardPruneJK(i, j);
-            }
+        relationD[i].forEach(j -> {
+            forwardPruneIJ(i, j);
+            backwardPruneJK(i, j);
         }, SetEventType.ADD_TO_KER);
-        relationD[i].forEach(new IntProcedure() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void execute(int k) throws ContradictionException {
-                onRemoveEnv(i, k);
-            }
-        }, SetEventType.REMOVE_FROM_ENVELOPE);
+        relationD[i].forEach(k -> onRemoveEnv(i, k), SetEventType.REMOVE_FROM_ENVELOPE);
         relationD[i].unfreeze();
     }
 

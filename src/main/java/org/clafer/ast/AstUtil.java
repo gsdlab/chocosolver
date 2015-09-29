@@ -74,9 +74,7 @@ public class AstUtil {
         KeyGraph<AstClafer> dependency = new KeyGraph<>();
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            for (AstClafer sub : abstractClafer.getSubs()) {
-                node.addNeighbour(dependency.getVertex(sub));
-            }
+            abstractClafer.getSubs().stream().map(dependency::getVertex).forEach(node::addNeighbour);
         }
         for (AstConcreteClafer concreteClafer : getConcreteClafers(model)) {
             if (concreteClafer.hasParent()) {
