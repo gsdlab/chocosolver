@@ -335,6 +335,24 @@ public class AstUtil {
     }
 
     /**
+     * Find the group cardinality belonging to the Clafer or the group
+     * cardinality it inherited.
+     *
+     * @param clafer the Clafer
+     * @return the group cardinality, or {@code null} if none exist
+     */
+    public static Card getInheritedGroupCard(AstClafer clafer) {
+        AstClafer superClafer = Check.notNull(clafer);
+        do {
+            if (superClafer.hasGroupCard()) {
+                return superClafer.getGroupCard();
+            }
+            superClafer = superClafer.getSuperClafer();
+        } while (superClafer != null);
+        return null;
+    }
+
+    /**
      * Retrieve the names of the variables. Use the names for error messages
      * rather than {@link Object#toString}.
      *

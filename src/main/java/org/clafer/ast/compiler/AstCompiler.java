@@ -279,7 +279,6 @@ public class AstCompiler {
             } else if (clafer instanceof AstAbstractClafer) {
                 constrainAbstract((AstAbstractClafer) clafer);
             }
-            constrainGroupCardinality(clafer);
         }
 
         Map<AstConstraint, IrBoolVar> softVars = new HashMap<>();
@@ -665,25 +664,43 @@ public class AstCompiler {
             default:
                 throw new AstException();
         }
+
+        constrainGroupCardinality(clafer);
     }
 
-    private void constrainGroupCardinality(AstClafer clafer) {
-        Card groupCard = clafer.getGroupCard();
-        List<AstConcreteClafer> children = clafer.getChildren();
-        if (groupCard.isBounded()) {
-            IrBoolExpr[] members = memberships.get(clafer);
-            IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
-            for (int i = 0; i < childrenSets.length; i++) {
-                AstConcreteClafer child = children.get(i);
-                childrenSets[i] = siblingSets.get(child);
-            }
+    private void constrainGroupCardinality(AstConcreteClafer clafer) {
+        Card groupCard = AstUtil.getInheritedGroupCard(clafer);
+
+        if (groupCard != null && groupCard.isBounded()) {
             int scope = getScope(clafer);
-            for (int i = 0; i < scope; i++) {
-                IrIntExpr[] cards = new IrIntExpr[childrenSets.length];
-                for (int j = 0; j < cards.length; j++) {
-                    cards[j] = card(childrenSets[j][i]);
+            IrBoolExpr[] members = memberships.get(clafer);
+            AstClafer curClafer = clafer;
+            List<IrIntExpr>[] cards = new List[scope];
+            assert cards.length == members.length;
+            for (int i = 0; i < cards.length; i++) {
+                cards[i] = new ArrayList<>();
+            }
+            do {
+                List<AstConcreteClafer> children = curClafer.getChildren();
+                if (!children.isEmpty()) {
+                    int offset = getOffset(curClafer, clafer);
+                    IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
+                    for (int i = 0; i < childrenSets.length; i++) {
+                        AstConcreteClafer child = children.get(i);
+                        childrenSets[i] = siblingSets.get(child);
+                    }
+                    for (int i = 0; i < scope; i++) {
+                        for (int j = 0; j < childrenSets.length; j++) {
+                            cards[i].add(card(childrenSets[j][i + offset]));
+                        }
+                    }
                 }
-                module.addConstraint(implies(members[i], constrainCard(add(cards), groupCard)));
+            } while ((curClafer = curClafer.getSuperClafer()) != null);
+
+            for (int i = 0; i < cards.length; i++) {
+                if (!cards[i].isEmpty()) {
+                    module.addConstraint(implies(members[i], constrainCard(add(cards[i]), groupCard)));
+                }
             }
         }
     }

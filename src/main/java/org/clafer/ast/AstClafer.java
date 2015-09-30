@@ -18,7 +18,7 @@ public abstract class AstClafer implements AstVar {
     protected final AstAbstractClafer claferClafer;
     private AstAbstractClafer superClafer;
     private AstRef ref;
-    private Card groupCard = new Card();
+    private Card groupCard;
     private final List<AstConcreteClafer> children = new ArrayList<>();
     private final List<AstConstraint> constraints = new ArrayList<>();
 
@@ -134,6 +134,16 @@ public abstract class AstClafer implements AstVar {
         }
         this.ref = new AstRef(this, targetType, true);
         return this;
+    }
+
+    /**
+     * Check if this Clafer has a group cardinality.
+     *
+     * @return {@code true} if and only if this Clafer has a group cardinality,
+     * {@code false} otherwise
+     */
+    public boolean hasGroupCard() {
+        return groupCard != null;
     }
 
     /**

@@ -119,6 +119,127 @@ public class SimpleStructureTest {
 
     /**
      * <pre>
+     * abstract xor Type
+     *   Car ?
+     *   Truck ?
+     *   Van ?
+     * Object : Type *
+     *   Airplane ?
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testInheritedGroupCardinality() {
+        AstModel model = newModel();
+
+        AstAbstractClafer type = model.addAbstract("Type").withGroupCard(1, 1);
+        type.addChild("Car").withCard(Optional);
+        type.addChild("Truck").withCard(Optional);
+        type.addChild("Van").withCard(Optional);
+        AstConcreteClafer object = model.addChild("Object").extending(type);
+        object.addChild("Airplane").withCard(Optional);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        while (solver.find()) {
+            for (InstanceClafer objecti : solver.instance().getTopClafers(object)) {
+                assertEquals(1, objecti.getChildren().length);
+            }
+        }
+        assertEquals(15, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * abstract Type
+     *   Car ?
+     *   Truck ?
+     *   Van ?
+     * xor Object : Type *
+     *   Airplane ?
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testGroupCardinalityWithInheritedChildren() {
+        AstModel model = newModel();
+
+        AstAbstractClafer type = model.addAbstract("Type");
+        type.addChild("Car").withCard(Optional);
+        type.addChild("Truck").withCard(Optional);
+        type.addChild("Van").withCard(Optional);
+        AstConcreteClafer object = model.addChild("Object").withGroupCard(1, 1).extending(type);
+        object.addChild("Airplane").withCard(Optional);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        while (solver.find()) {
+            for (InstanceClafer objecti : solver.instance().getTopClafers(object)) {
+                assertEquals(1, objecti.getChildren().length);
+            }
+        }
+        assertEquals(15, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * abstract xor Type
+     *   Auto ?
+     *   Manual ?
+     * abstract BigType : Type
+     *   Van ?
+     *   Truck ?
+     * abstract SmallType : Type
+     *   Motorcycle ?
+     *   Car ?
+     * BigAir : BigType *
+     *   Airplane ?
+     * BigGround : BigType *
+     *   Train ?
+     * SmallAir : SmallType *
+     *   Helocopter ?
+     * SmallGround : SmallType *
+     *   Bike ?
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testGroupCardinalityWithMultipleInheritance() {
+        AstModel model = newModel();
+
+        AstAbstractClafer type = model.addAbstract("Type").withGroupCard(1, 1);
+        type.addChild("Auto").withCard(Optional);
+        type.addChild("Manual").withCard(Optional);
+        AstAbstractClafer bigType = model.addAbstract("BigType").extending(type);
+        bigType.addChild("Van").withCard(Optional);
+        bigType.addChild("Truck").withCard(Optional);
+        AstAbstractClafer smallType = model.addAbstract("SmallType").extending(type);
+        smallType.addChild("Motorcycle").withCard(Optional);
+        smallType.addChild("Car").withCard(Optional);
+        AstConcreteClafer bigAir = model.addChild("BigAir").extending(bigType);
+        bigAir.addChild("Airplane").withCard(Optional);
+        AstConcreteClafer bigGround = model.addChild("BigGround").extending(bigType);
+        bigGround.addChild("Train").withCard(Optional);
+        AstConcreteClafer smallAir = model.addChild("SmallAir").extending(bigType);
+        smallAir.addChild("Helocopter").withCard(Optional);
+        AstConcreteClafer smallGround = model.addChild("SmallGround").extending(bigType);
+        smallGround.addChild("Bike").withCard(Optional);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        while (solver.find()) {
+            for (InstanceClafer objecti : solver.instance().getTopClafers(bigAir)) {
+                assertEquals(1, objecti.getChildren().length);
+            }
+            for (InstanceClafer objecti : solver.instance().getTopClafers(bigGround)) {
+                assertEquals(1, objecti.getChildren().length);
+            }
+            for (InstanceClafer objecti : solver.instance().getTopClafers(smallAir)) {
+                assertEquals(1, objecti.getChildren().length);
+            }
+            for (InstanceClafer objecti : solver.instance().getTopClafers(smallGround)) {
+                assertEquals(1, objecti.getChildren().length);
+            }
+        }
+        assertEquals(88299, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
      * Person
      *     Age ->> integer 3
      * </pre>
