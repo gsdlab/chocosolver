@@ -55,6 +55,7 @@ public class PropElementValueSupport extends Propagator<IntVar> {
     public void propagate(int evtmask) throws ContradictionException {
         index.updateLowerBound(-offset, this);
         index.updateUpperBound(array.length - offset - 1, this);
+
         if (!value.contains(support)) {
             int ub = index.getUB();
             for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
@@ -82,14 +83,27 @@ public class PropElementValueSupport extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        if (value.contains(support)) {
-            return value.getDomainSize() == 1 ? ESat.TRUE : ESat.UNDEFINED;
-        }
+        int lb = index.getLB();
         int ub = index.getUB();
-        for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
+        if (lb + offset >= array.length || ub + offset < 0) {
+            return ESat.FALSE;
+        }
+        if (lb + offset < 0 || ub + offset >= array.length) {
+            return ESat.UNDEFINED;
+        }
+        if (value.isInstantiatedTo(support)) {
+            return ESat.TRUE;
+        }
+        if (index.isInstantiated() && value.isInstantiated() && array[lb + offset].isInstantiatedTo(value.getValue())) {
+            return ESat.TRUE;
+        }
+        if (value.contains(support)) {
+            return ESat.UNDEFINED;
+        }
+        for (int i = lb; i <= ub; i = index.nextValue(i)) {
             int j = i + offset;
             if (j >= 0 && j < array.length && PropUtil.isDomIntersectDom(value, array[j])) {
-                return index.isInstantiated() && value.isInstantiated() && array[j].isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                return ESat.UNDEFINED;
             }
         }
         return ESat.FALSE;
@@ -97,6 +111,6 @@ public class PropElementValueSupport extends Propagator<IntVar> {
 
     @Override
     public String toString() {
-        return value + " = " + Arrays.toString(array) + "[" + index + "] || " + support;
+        return "elementValueSupport " + value + " = " + Arrays.toString(array) + "[" + index + " + " + offset + "] || " + support;
     }
 }
