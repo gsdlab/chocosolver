@@ -1297,7 +1297,7 @@ public class AstCompiler {
                 IrIntArrayExpr leftArray = (IrIntArrayExpr) left;
                 if (right instanceof IrIntArrayExpr) {
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
-                    return equal(IrUtil.asArray(leftArray), IrUtil.asArray(rightArray));
+                    return equal(leftArray, rightArray);
                 } else if (right instanceof IrSetArrayExpr) {
                     Type type = getType(ast.getLeft());
                     AstClafer returnType = type.getCommonSupertype().get(1);

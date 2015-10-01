@@ -171,6 +171,13 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrArrayEquality ir, T a) {
+        traverse(ir.getLeft(), a);
+        traverse(ir.getRight(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrSetEquality ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);

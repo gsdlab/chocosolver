@@ -367,6 +367,18 @@ public class IrCompiler {
         return (Constraint) result;
     }
 
+    private Constraint compileAsConstraint(IrIntArrayExpr expr, IntVar[] reify) {
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(intArrayExprCompiler, reify);
+        if (result instanceof IntVar[]) {
+            IntVar[] array = (IntVar[]) result;
+            // The compliation failed to reify, explicitly reify now.
+            return Constraints.equal(reify, array);
+        }
+        return (Constraint) result;
+    }
+
     private Constraint compileArithm(IrIntExpr a, Rel op, int b) {
         return compileArithm(a, op, Irs.constant(b));
     }
@@ -860,6 +872,21 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrArrayEquality ir, BoolArg a) {
+            switch (ir.getOp()) {
+                case Equal:
+                    if (ir.getRight() instanceof IrIntArrayVar) {
+                        return compileAsConstraint(ir.getLeft(), compile(ir.getRight()));
+                    }
+                    return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
+                case NotEqual:
+                    return Constraints.equal(compile(ir.getLeft()), compile(ir.getRight())).getOpposite();
+                default:
+                    throw new IllegalArgumentException("Unexpected operator.");
+            }
+        }
+
+        @Override
         public Object visit(IrSetEquality ir, BoolArg a) {
             switch (ir.getOp()) {
                 case Equal:
@@ -1321,6 +1348,11 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrCompare ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
+        public Object visit(IrArrayEquality ir, IntVar a) {
             return compileBool(ir, a);
         }
 

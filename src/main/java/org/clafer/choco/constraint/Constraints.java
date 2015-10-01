@@ -986,6 +986,23 @@ public class Constraints {
         return equal(chars1, length1, chars2, length2).getOpposite();
     }
 
+    public static Constraint equal(IntVar[] chars1, IntVar[] chars2) {
+        if (chars1.length != chars2.length) {
+            throw new IllegalArgumentException();
+        }
+        if (chars1.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        List<Propagator> propagators = new ArrayList<>(chars1.length);
+        for (int i = 0; i < chars1.length; i++) {
+            eq(chars1[i], chars2[i]).ifPresent(propagators::add);
+        }
+        if (propagators.isEmpty()) {
+            return chars1[0].getSolver().TRUE();
+        }
+        return new Constraint("ArrayEqual", propagators.toArray(new Propagator[propagators.size()]));
+    }
+
     public static Constraint lessThan(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
         return ICF.lex_less(

@@ -37,6 +37,8 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrCompare ir, A a);
 
+    public B visit(IrArrayEquality ir, A a);
+
     public B visit(IrSetEquality ir, A a);
 
     public B visit(IrStringCompare ir, A a);

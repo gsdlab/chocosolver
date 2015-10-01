@@ -182,6 +182,7 @@ public class IrUtil {
     }
 
     public static IrIntExpr[] asArray(IrIntArrayExpr array) {
+        // TODO: remove
         if (array instanceof IrIntArrayVar) {
             return ((IrIntArrayVar) array).getArray();
         }

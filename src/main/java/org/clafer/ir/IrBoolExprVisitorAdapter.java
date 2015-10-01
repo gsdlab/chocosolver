@@ -73,6 +73,11 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     }
 
     @Override
+    public B visit(IrArrayEquality ir, A a) {
+        return null;
+    }
+
+    @Override
     public B visit(IrSetEquality ir, A a) {
         return null;
     }

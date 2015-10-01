@@ -448,6 +448,22 @@ public class Irs {
         return and(ands);
     }
 
+    public static IrBoolExpr equality(IrIntArrayExpr left, IrArrayEquality.Op op, IrIntArrayExpr right) {
+        if (left.length() != right.length()) {
+            throw new IllegalArgumentException();
+        }
+        for (int i = 0; i < left.length(); i++) {
+            if (!left.getDomains()[i].intersects(right.getDomains()[i])) {
+                return False;
+            }
+        }
+        return new IrArrayEquality(left, op, right, TrueFalseDomain);
+    }
+
+    public static IrBoolExpr equal(IrIntArrayExpr left, IrIntArrayExpr right) {
+        return equality(left, IrArrayEquality.Op.Equal, right);
+    }
+
     public static IrBoolExpr equality(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
@@ -569,6 +585,10 @@ public class Irs {
 
     public static IrBoolExpr notEqual(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.NotEqual, right);
+    }
+
+    public static IrBoolExpr notEqual(IrIntArrayExpr left, IrIntArrayExpr right) {
+        return equality(left, IrArrayEquality.Op.NotEqual, right);
     }
 
     public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
