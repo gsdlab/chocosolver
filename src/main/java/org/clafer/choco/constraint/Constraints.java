@@ -1101,31 +1101,37 @@ public class Constraints {
                 propagators.toArray(new Propagator<?>[propagators.size()]));
     }
 
-    public static Constraint substring(IntVar[] substring, IntVar substringLength, IntVar index, IntVar[] supstring, IntVar supstringLength) {
+    public static Constraint subarray(IntVar[] subarray, IntVar sublength, IntVar index, IntVar[] suparray) {
+        if (sublength.getUB() < 0 || index.getUB() < 0 || suparray.length == 0) {
+            return sublength.getSolver().FALSE();
+        }
+        if (subarray.length == 0) {
+            return new Constraint(null, new PropEqualXC(sublength, 0), new PropLessOrEqualXC(index, suparray.length - 1));
+        }
         List<Propagator<IntVar>> propagators = new ArrayList<>();
-        for (int i = 0; i < substring.length; i++) {
-            IntVar[] pad = new IntVar[substringLength.getUB() + index.getUB()];
+        for (int i = 0; i < subarray.length; i++) {
+            IntVar[] pad = new IntVar[suparray.length];
             int j;
-            for (j = 0; j < pad.length && j + i < supstring.length; j++) {
-                pad[j] = supstring[j + i];
+            for (j = 0; j < pad.length && j + i < suparray.length; j++) {
+                pad[j] = suparray[j + i];
             }
             for (; j < pad.length; j++) {
-                pad[j] = substringLength.getSolver().ZERO();
+                pad[j] = sublength.getSolver().ZERO();
             }
-            propagators.add(new PropElementValueSupport(substring[i], pad, index, 0, 0));
+            propagators.add(new PropElementValueSupport(subarray[i], pad, index, 0, 0));
         }
-        for (int i = 0; i < supstring.length; i++) {
-            IntVar[] pad = new IntVar[supstring.length + 1];
+        for (int i = 0; i < suparray.length; i++) {
+            IntVar[] pad = new IntVar[suparray.length + 1];
             int j;
-            for (j = 0; j < i && i - j >= 0 && i - j < substring.length; j++) {
-                pad[j] = substring[i - j];
+            for (j = 0; j < i && i - j >= 0 && i - j < subarray.length; j++) {
+                pad[j] = subarray[i - j];
             }
             for (; j < pad.length; j++) {
-                pad[j] = substringLength.getSolver().ZERO();
+                pad[j] = sublength.getSolver().ZERO();
             }
-            propagators.add(new PropElementArraySupport(supstring[i], pad, index, 0, 0));
+            propagators.add(new PropElementArraySupport(suparray[i], pad, index, 0, 0));
         }
-        propagators.add(new PropGreaterOrEqualX_Y(new IntVar[]{supstringLength, index}));
+        propagators.add(new PropLength(subarray, sublength));
         return new Constraint("Substring",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
     }
