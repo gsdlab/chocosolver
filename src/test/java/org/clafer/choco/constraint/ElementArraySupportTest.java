@@ -25,8 +25,7 @@ public class ElementArraySupportTest {
     }
 
     @ArcConsistent
-    @Sample(100000)
-    @Test(timeout = 600000)
+    @Test(timeout = 60000)
     public Constraint setup(IntVar value, @NonEmpty IntVar[] array, IntVar index, int offset, int support) {
         return new Constraint("ElementArraySupport", new PropElementArraySupport(value, array, index, offset, support));
     }
