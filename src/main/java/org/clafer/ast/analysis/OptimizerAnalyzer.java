@@ -12,6 +12,7 @@ import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprRewriter;
 import org.clafer.ast.AstGlobal;
+import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstMembership;
@@ -124,6 +125,36 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         } else if (expr instanceof AstMembership) {
             AstMembership membership = (AstMembership) expr;
             return membership(membership.getMember(), membership.getOp().negate(), membership.getSet());
+        }
+        return ast;
+    }
+
+    @Override
+    public AstExpr visit(AstIfThenElse ast, Analysis a) {
+        if (ast.getConsequent() instanceof AstSetTest && ast.getAlternative() instanceof AstSetTest) {
+            AstSetTest consequent = (AstSetTest) ast.getConsequent();
+            AstSetTest alternative = (AstSetTest) ast.getAlternative();
+
+            if (consequent.getLeft().equals(alternative.getLeft())) {
+                return equal(consequent.getLeft(),
+                        ifThenElse(ast.getAntecedent(),
+                                consequent.getRight(), alternative.getRight()));
+            }
+            if (consequent.getLeft().equals(alternative.getRight())) {
+                return equal(consequent.getLeft(),
+                        ifThenElse(ast.getAntecedent(),
+                                consequent.getRight(), alternative.getLeft()));
+            }
+            if (consequent.getRight().equals(alternative.getLeft())) {
+                return equal(consequent.getRight(),
+                        ifThenElse(ast.getAntecedent(),
+                                consequent.getLeft(), alternative.getRight()));
+            }
+            if (consequent.getRight().equals(alternative.getRight())) {
+                return equal(consequent.getRight(),
+                        ifThenElse(ast.getAntecedent(),
+                                consequent.getLeft(), alternative.getLeft()));
+            }
         }
         return ast;
     }
