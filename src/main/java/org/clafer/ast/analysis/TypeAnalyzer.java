@@ -552,7 +552,7 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstBoolExpr> antecedent = typeCheck(ast.getAntecedent());
             TypedExpr<AstBoolExpr> alternative = typeCheck(ast.getAlternative());
             TypedExpr<AstBoolExpr> consequent = typeCheck(ast.getConsequent());
-            return put(BoolType, ifThenElse(antecedent.getExpr(), alternative.getExpr(), consequent.getExpr()));
+            return put(BoolType, ifThenElse(antecedent.getExpr(), consequent.getExpr(), alternative.getExpr()));
         }
 
         @Override
