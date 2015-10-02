@@ -1255,16 +1255,13 @@ public class IrCompiler {
             BoolVar antecedent = compileAsBoolVar(ir.getAntecedent());
             IntVar consequent = compile(ir.getConsequent());
             IntVar alternative = compile(ir.getAlternative());
+            System.out.println("ternary");
             if (reify == null) {
                 IntVar ternary = numIntVar("Ternary", ir.getDomain());
-                post(_ifThenElse(antecedent,
-                        _arithm(ternary, "=", consequent),
-                        _arithm(ternary, "=", alternative)));
+                post(Constraints.ternary(antecedent, ternary, consequent, alternative));
                 return ternary;
             }
-            return _ifThenElse(antecedent,
-                    _arithm(reify, "=", consequent),
-                    _arithm(reify, "=", alternative));
+            return Constraints.ternary(antecedent, reify, consequent, alternative);
         }
 
         @Override

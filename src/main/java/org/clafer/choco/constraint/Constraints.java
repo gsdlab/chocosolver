@@ -257,6 +257,10 @@ public class Constraints {
         };
     }
 
+    public static Constraint ternary(BoolVar antecedent, IntVar result, IntVar consequent, IntVar alternative) {
+        return new Constraint("Ternary", new PropTernary(antecedent, result, consequent, alternative));
+    }
+
     /**
      * A constraint enforcing {@code count = (Σ_i array[i] != value)}.
      *
