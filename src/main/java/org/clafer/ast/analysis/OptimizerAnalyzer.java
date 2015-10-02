@@ -3,6 +3,7 @@ package org.clafer.ast.analysis;
 import java.util.HashMap;
 import java.util.Map;
 import org.clafer.ast.AstBoolExpr;
+import org.clafer.ast.AstCard;
 import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
@@ -15,11 +16,13 @@ import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinParent;
+import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstMembership;
 import org.clafer.ast.AstNot;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstThis;
+import org.clafer.ast.AstUpcast;
 import static org.clafer.ast.Asts.*;
 import org.clafer.ast.Card;
 import org.clafer.ast.ProductType;
@@ -129,31 +132,79 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         return ast;
     }
 
+    private boolean isZero(AstSetExpr expr) {
+        if (expr instanceof AstConstant) {
+            AstConstant constant = (AstConstant) expr;
+            if (constant.getType().isInt()) {
+                if (constant.getValue().length == 1) {
+                    return constant.getValue()[0].length == 1 && constant.getValue()[0][0] == 0;
+                }
+            }
+        }
+        return false;
+    }
+
+    private AstSetExpr removeUpCast(AstSetExpr expr) {
+        if (expr instanceof AstUpcast) {
+            return removeUpCast(((AstUpcast) expr).getBase());
+        }
+        return expr;
+    }
+
+    private AstExpr rewriteIfThenElse(AstBoolExpr antecedent,
+            AstSetExpr consequentLeft, AstSetExpr consequentRight, AstSetExpr alternativeLeft, AstSetExpr alternativeRight,
+            Analysis analysis) {
+        // rewrite
+        //   if a then b = c else b = d
+        // to
+        //   b = (if a then c else d)
+        if (consequentLeft.equals(alternativeLeft)) {
+            return equal(consequentLeft,
+                    ifThenElse(antecedent, consequentRight, alternativeRight));
+        }
+        // rewrite
+        //   if a then b = c else none b
+        // to
+        //   b = (if a then c else {})
+        if (consequentLeft instanceof AstJoinRef) {
+            AstJoinRef joinRef = (AstJoinRef) consequentLeft;
+            if (alternativeLeft instanceof AstCard && isZero(alternativeRight)) {
+                AstCard card = (AstCard) alternativeLeft;
+                if (removeUpCast(joinRef.getDeref()).equals(removeUpCast(card.getSet()))) {
+                    return equal(consequentLeft,
+                            ifThenElse(antecedent,
+                                    consequentRight,
+                                    constant(analysis.getType(consequentRight).getCommonSupertype().getClaferType())
+                            ));
+                }
+            }
+        }
+
+        return null;
+    }
+
     @Override
     public AstExpr visit(AstIfThenElse ast, Analysis a) {
         if (ast.getConsequent() instanceof AstSetTest && ast.getAlternative() instanceof AstSetTest) {
+            AstBoolExpr antecedent = ast.getAntecedent();
             AstSetTest consequent = (AstSetTest) ast.getConsequent();
             AstSetTest alternative = (AstSetTest) ast.getAlternative();
 
-            if (consequent.getLeft().equals(alternative.getLeft())) {
-                return equal(consequent.getLeft(),
-                        ifThenElse(ast.getAntecedent(),
-                                consequent.getRight(), alternative.getRight()));
+            AstExpr rewrite = rewriteIfThenElse(antecedent, consequent.getLeft(), consequent.getRight(), alternative.getLeft(), alternative.getRight(), a);
+            if (rewrite != null) {
+                return rewrite;
             }
-            if (consequent.getLeft().equals(alternative.getRight())) {
-                return equal(consequent.getLeft(),
-                        ifThenElse(ast.getAntecedent(),
-                                consequent.getRight(), alternative.getLeft()));
+            rewrite = rewriteIfThenElse(antecedent, consequent.getLeft(), consequent.getRight(), alternative.getRight(), alternative.getLeft(), a);
+            if (rewrite != null) {
+                return rewrite;
             }
-            if (consequent.getRight().equals(alternative.getLeft())) {
-                return equal(consequent.getRight(),
-                        ifThenElse(ast.getAntecedent(),
-                                consequent.getLeft(), alternative.getRight()));
+            rewrite = rewriteIfThenElse(antecedent, consequent.getRight(), consequent.getLeft(), alternative.getLeft(), alternative.getRight(), a);
+            if (rewrite != null) {
+                return rewrite;
             }
-            if (consequent.getRight().equals(alternative.getRight())) {
-                return equal(consequent.getRight(),
-                        ifThenElse(ast.getAntecedent(),
-                                consequent.getLeft(), alternative.getLeft()));
+            rewrite = rewriteIfThenElse(antecedent, consequent.getRight(), consequent.getLeft(), alternative.getRight(), alternative.getLeft(), a);
+            if (rewrite != null) {
+                return rewrite;
             }
         }
         return ast;

@@ -41,6 +41,9 @@ public class AstConstant implements AstSetExpr {
 
     @Override
     public String toString() {
+        if (value[0].length == 0) {
+            return "[]";
+        }
         if (type.isInt()) {
             return Integer.toString(value[0][0]);
         }
