@@ -2369,6 +2369,35 @@ public class Irs {
         return IrUtil.asConstant(new IrConcat(left, right, charDomains, length));
     }
 
+    public static IrIntArrayExpr subarray(IrIntArrayExpr array, IrIntExpr index, IrIntExpr sublength) {
+        Integer indexConstant = IrUtil.getConstant(index);
+        if (indexConstant != null) {
+            Integer sublengthConstant = IrUtil.getConstant(sublength);
+            if (sublengthConstant != null) {
+                IrIntExpr[] subarray = new IrIntExpr[array.length()];
+                for (int i = 0; i < sublengthConstant; i++) {
+                    subarray[i] = get(array, indexConstant + i);
+                }
+                for (int i = sublengthConstant; i < subarray.length; i++) {
+                    subarray[i] = constant(-1);
+                }
+                return array(subarray);
+            }
+        }
+        Domain[] charDomains = new Domain[array.length()];
+        for (int i = 0; i < charDomains.length; i++) {
+            charDomains[i] = i < sublength.getHighBound()
+                    ? union(array.getDomains(),
+                            index.getLowBound() + i,
+                            Integer.min(index.getHighBound() + i + 1, charDomains.length))
+                    : EmptyDomain;
+            if (i >= sublength.getLowBound()) {
+                charDomains[i] = charDomains[i].insert(-1);
+            }
+        }
+        return new IrSubarray(array, index, sublength, charDomains);
+    }
+
     private static Domain union(Domain[] domains, int start, int end) {
         assert start < end;
         Domain union = domains[start];

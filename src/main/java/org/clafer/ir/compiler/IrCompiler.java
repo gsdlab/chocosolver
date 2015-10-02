@@ -1674,6 +1674,18 @@ public class IrCompiler {
         public Object visit(IrIntArrayVar ir, IntVar[] a) {
             return compile(ir.getArray());
         }
+
+        @Override
+        public Object visit(IrSubarray ir, IntVar[] reify) {
+            IntVar[] array = compile(ir.getArray());
+            IntVar index = compile(ir.getIndex());
+            IntVar sublength = compile(ir.getSublength());
+            if (reify == null) {
+                // Note that posting the substring constraint will constrain index and sublength.
+                throw new UnsupportedOperationException();
+            }
+            return Constraints.subarray(reify, sublength, index, array);
+        }
     };
 
     private final IrSetArrayExprVisitor<CSetVar[], Object> setArrayExprCompiler = new IrSetArrayExprVisitor<CSetVar[], Object>() {

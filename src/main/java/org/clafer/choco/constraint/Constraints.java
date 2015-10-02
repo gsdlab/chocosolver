@@ -1133,9 +1133,9 @@ public class Constraints {
                 pad[j] = suparray[j + i];
             }
             for (; j < pad.length; j++) {
-                pad[j] = sublength.getSolver().ZERO();
+                pad[j] = VF.fixed(-1, sublength.getSolver());
             }
-            propagators.add(new PropElementValueSupport(subarray[i], pad, index, 0, 0));
+            propagators.add(new PropElementValueSupport(subarray[i], pad, index, 0, -1));
         }
         for (int i = 0; i < suparray.length; i++) {
             IntVar[] pad = new IntVar[suparray.length + 1];
@@ -1144,11 +1144,11 @@ public class Constraints {
                 pad[j] = subarray[i - j];
             }
             for (; j < pad.length; j++) {
-                pad[j] = sublength.getSolver().ZERO();
+                pad[j] = VF.fixed(-1, sublength.getSolver());
             }
-            propagators.add(new PropElementArraySupport(suparray[i], pad, index, 0, 0));
+            propagators.add(new PropElementArraySupport(suparray[i], pad, index, 0, -1));
         }
-        propagators.add(new PropLength(subarray, sublength));
+        propagators.add(new PropLength(subarray, sublength, -1));
         return new Constraint("Substring",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
     }

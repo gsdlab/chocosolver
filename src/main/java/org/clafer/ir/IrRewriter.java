@@ -717,6 +717,16 @@ public abstract class IrRewriter<T>
     }
 
     @Override
+    public IrIntArrayExpr visit(IrSubarray ir, T a) {
+        IrIntArrayExpr array = rewrite(ir.getArray(), a);
+        IrIntExpr index = rewrite(ir.getIndex(), a);
+        IrIntExpr sublength = rewrite(ir.getSublength(), a);
+        return changed(array, ir.getArray()) || changed(index, ir.getIndex()) || changed(sublength, ir.getSublength())
+                ? subarray(array, index, sublength)
+                : ir;
+    }
+
+    @Override
     public IrSetArrayExpr visit(IrSetArrayVar ir, T a) {
         IrSetExpr[] array = rewrite(ir.getArray(), a);
         return changed(ir.getArray(), array)

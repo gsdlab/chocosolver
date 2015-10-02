@@ -502,6 +502,14 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrSubarray ir, T a) {
+        traverse(ir.getArray(), a);
+        traverse(ir.getIndex(), a);
+        traverse(ir.getSublength(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrSetArrayVar ir, T a) {
         traverse(ir.getArray(), a);
         return null;

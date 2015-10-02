@@ -558,9 +558,34 @@ public class AstCompiler {
                                 : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             if (getScope(clafer.getParent()) > 1) {
-                symmetries.add(new LexChainChannel(childIndices, weight));
+                module.addConstraint(sortChannel(childIndices, weight));
+//                symmetries.add(new LexChainChannel(childIndices, weight));
+                IrIntVar[] bounds = siblingBounds.get(clafer);
                 for (int i = 0; i < siblingSet.length; i++) {
-                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
+                    assert index[i].length <= weight.length;
+                    IrIntExpr bound;
+                    if (i == 0) {
+                        bound = Zero;
+                    } else if (bounds == null) {
+                        Card card = getCard(clafer);
+                        assert card.isExact();
+                        assert getFormat(clafer).equals(Format.ParentGroup);
+                        bound = mul(members[i], card.getLow() * i, enumDomain(0, card.getLow() * i));
+                    } else {
+                        bound = bounds[i - 1];
+                    }
+                    int start = index[i].length;
+                    IrIntExpr[] indexTo = Arrays.copyOf(index[i], weight.length + 1);
+                    for (int j = start; j < indexTo.length; j++) {
+                        indexTo[j] = constant(-1);
+                    }
+                    IrIntExpr[] weightTo = Arrays.copyOf(weight, weight.length + 1);
+                    weightTo[weight.length] = constant(-1);
+                    module.addConstraint(equal(
+                            array(indexTo),
+                            subarray(array(weightTo), bound, card(siblingSet[i]))));
+//                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
+//                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
                 }
             }
             if (getCard(clafer).getHigh() > 1) {
@@ -724,6 +749,12 @@ public class AstCompiler {
         }
         Check.noNulls(members);
         memberships.put(clafer, members);
+
+        IrIntVar[] bounds = new IrIntVar[childSet.length];
+        for (int i = 0; i < bounds.length; i++) {
+            bounds[i] = boundInt("bounds" + clafer.getName() + "#" + i, 0, members.length);
+        }
+        siblingBounds.put(clafer, bounds);
     }
 
     private void constrainLowGroupConcrete(AstConcreteClafer clafer) {
@@ -736,13 +767,7 @@ public class AstCompiler {
 
         if (fullSymmetryBreaking) {
             module.addConstraint(selectN(members, card(set)));
-            IrIntExpr[] bounds = new IrIntExpr[childSet.length];
-//            bounds[0] = card(childSet[0]);
-            for (int i = 0; i < bounds.length; i++) {
-//            for (int i = 1; i < bounds.length - 1; i++) {
-                bounds[i] = boundInt("bounds" + clafer.getName() + "#" + i, 0, members.length);
-            }
-//            bounds[bounds.length-1] = card(set);
+            IrIntExpr[] bounds = siblingBounds.get(clafer);
             module.addConstraint(sort(childSet, bounds));
         }
 
@@ -886,6 +911,7 @@ public class AstCompiler {
     }
     private final Map<AstClafer, IrSetVar> sets = new HashMap<>();
     private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<>();
+    private final Map<AstClafer, IrIntVar[]> siblingBounds = new HashMap<>();
     private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<>();
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<>();

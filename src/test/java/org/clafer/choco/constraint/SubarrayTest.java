@@ -21,10 +21,10 @@ public class SubarrayTest {
 
     @Input(solutions = 513)
     public Object testSubstring(Solver solver) {
-        return $(enumeratedArray("substring", 2, dom(0, 1, 2), solver),
+        return $(enumeratedArray("substring", 2, dom(-1, 0, 1), solver),
                 enumerated("substringLength", 0, 2, solver),
                 enumerated("index", 0, 2, solver),
-                enumeratedArray("supstring", 4, dom(0, 1, 2), solver));
+                enumeratedArray("supstring", 4, dom(-1, 0, 1), solver));
     }
 
     @Check
@@ -35,11 +35,11 @@ public class SubarrayTest {
         for (int i = 0; i < sublength; i++) {
             assertTrue(index + i < array.length);
             assertTrue(i < subarray.length);
-            assertNotEquals(0, subarray[i]);
+            assertNotEquals(-1, subarray[i]);
             assertEquals(array[index + i], subarray[i]);
         }
         for (int i = sublength; i < subarray.length; i++) {
-            assertEquals(0, subarray[i]);
+            assertEquals(-1, subarray[i]);
         }
     }
 
