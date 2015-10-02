@@ -29,6 +29,20 @@ public class AstJoin implements AstSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AstJoin) {
+            AstJoin other = (AstJoin) obj;
+            return left.equals(other.left) && right.equals(other.right);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return -2131 ^ left.hashCode() ^ right.hashCode();
+    }
+
+    @Override
     public String toString() {
         return left + " . " + right;
     }

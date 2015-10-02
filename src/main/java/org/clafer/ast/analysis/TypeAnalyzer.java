@@ -3,6 +3,7 @@ package org.clafer.ast.analysis;
 import org.clafer.ast.ProductType;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -107,7 +108,7 @@ public class TypeAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstExpr, Type> typeMap = new HashMap<>();
+        Map<AstExpr, Type> typeMap = new IdentityHashMap<>();
         Map<AstConstraint, AstBoolExpr> typedConstraints = new HashMap<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();

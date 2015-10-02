@@ -24,6 +24,20 @@ public class AstJoinRef implements AstSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AstJoinRef) {
+            AstJoinRef other = (AstJoinRef) obj;
+            return deref.equals(other.deref);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return -133 ^ deref.hashCode();
+    }
+
+    @Override
     public String toString() {
         return deref + " . ref";
     }
