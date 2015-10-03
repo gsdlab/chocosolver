@@ -600,17 +600,17 @@ public class AstCompiler {
                         }
                         // Refs are unique and part of the weight. It is impossible for
                         // two weights to be the same. Enforce a strict order.
-                        module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
+                        module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
                                 sortStrict(childIndices[i + 1], childIndices[i])));
                         if (getScope(clafer.getParent()) > 1) {
-                            module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
+                            module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
                                     lessThan(weight[i + 1], weight[i])));
                         }
                     } else {
-                        module.addConstraint(implies(equal(parents[i], parents[i + 1]),
+                        module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
                                 sort(childIndices[i + 1], childIndices[i])));
                         if (getScope(clafer.getParent()) > 1) {
-                            module.addConstraint(implies(equal(parents[i], parents[i + 1]),
+                            module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
                                     lessThanEqual(weight[i + 1], weight[i])));
                         }
                     }
