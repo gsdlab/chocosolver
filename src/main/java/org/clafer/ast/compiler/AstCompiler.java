@@ -263,7 +263,7 @@ public class AstCompiler {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
         siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
-        memberships.put(analysis.getModel(), new IrBoolExpr[]{True});
+        memberships.put(analysis.getModel(), new IrBoolVar[]{True});
 
         List<AstClafer> clafers = initOrder();
         for (AstClafer clafer : clafers) {
@@ -314,6 +314,7 @@ public class AstCompiler {
         module.addConstraint(equal(sumSoftVars, softSum));
 
         siblingSets.values().forEach(module::addVariables);
+        siblingBounds.values().forEach(module::addVariables);
         refPointers.values().forEach(module::addVariables);
         refStrings.values().forEach(module::addVariables);
 
@@ -405,7 +406,9 @@ public class AstCompiler {
         Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
         Either.filterRight(reachables.stream()).forEach(module::addConstraint);
 
-        return new AstSolutionMap(analysis.getModel(), siblingSets,
+        return new AstSolutionMap(analysis.getModel(),
+                memberships,
+                siblingSets, siblingBounds,
                 refPointers, refStrings,
                 softVars, sumSoftVars,
                 objectiveVars, analysis);
@@ -736,7 +739,7 @@ public class AstCompiler {
         IrSetVar[] childSet = buildChildSet(clafer);
         siblingSets.put(clafer, childSet);
 
-        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
         for (int i = 0; i < members.length; i++) {
             if (partialSolution.hasClafer(i)) {
                 members[i] = True;
@@ -826,8 +829,8 @@ public class AstCompiler {
 
         siblingSets.put(clafer, children);
 
-        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
-        IrBoolExpr[] parentMembership = memberships.get(clafer.getParent());
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        IrBoolVar[] parentMembership = memberships.get(clafer.getParent());
         if (lowCard == 1) {
             if (members.length == parentMembership.length) {
                 members = parentMembership;
@@ -870,11 +873,11 @@ public class AstCompiler {
 
     private void initAbstract(AstAbstractClafer clafer) {
         IrSetVar[] subSets = new IrSetVar[clafer.getSubs().size()];
-        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
         for (int i = 0; i < subSets.length; i++) {
             AstClafer sub = clafer.getSubs().get(i);
             subSets[i] = sets.get(sub);
-            IrBoolExpr[] subMembers = memberships.get(sub);
+            IrBoolVar[] subMembers = memberships.get(sub);
             int offset = getOffset(clafer, sub);
             for (int j = 0; j < subMembers.length; j++) {
                 assert members[offset + j] == null;
@@ -912,7 +915,7 @@ public class AstCompiler {
     private final Map<AstClafer, IrSetVar> sets = new HashMap<>();
     private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<>();
     private final Map<AstClafer, IrIntVar[]> siblingBounds = new HashMap<>();
-    private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<>();
+    private final Map<AstClafer, IrBoolVar[]> memberships = new HashMap<>();
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<>();
     private final Map<AstRef, IrStringVar[]> refStrings = new HashMap<>();

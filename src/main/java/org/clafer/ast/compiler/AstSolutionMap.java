@@ -22,7 +22,9 @@ import org.clafer.objective.Objective;
 public class AstSolutionMap {
 
     private final AstModel model;
+    private final Map<AstClafer, IrBoolVar[]> memberVars;
     private final Map<AstClafer, IrSetVar[]> siblingVars;
+    private final Map<AstClafer, IrIntVar[]> siblingBounds;
     private final Map<AstRef, IrIntVar[]> refVars;
     private final Map<AstRef, IrStringVar[]> refStrings;
     private final Map<AstConstraint, IrBoolVar> softVars;
@@ -31,7 +33,9 @@ public class AstSolutionMap {
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
-            Map<AstClafer, IrSetVar[]> sibling,
+            Map<AstClafer, IrBoolVar[]> memberVars,
+            Map<AstClafer, IrSetVar[]> siblingVars,
+            Map<AstClafer, IrIntVar[]> siblingBounds,
             Map<AstRef, IrIntVar[]> refVars,
             Map<AstRef, IrStringVar[]> refStrings,
             Map<AstConstraint, IrBoolVar> softVars,
@@ -39,7 +43,9 @@ public class AstSolutionMap {
             Map<Objective, IrIntVar> objectiveVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
-        this.siblingVars = Check.notNull(sibling);
+        this.memberVars = memberVars;
+        this.siblingVars = Check.notNull(siblingVars);
+        this.siblingBounds = Check.notNull(siblingBounds);
         this.refVars = Check.notNull(refVars);
         this.refStrings = Check.notNull(refStrings);
         this.softVars = Check.notNull(softVars);
@@ -56,6 +62,10 @@ public class AstSolutionMap {
         return analysis;
     }
 
+    public IrBoolVar[] getMemberVars(AstClafer clafer) {
+        return notNull(clafer + " not part of the AST solution", memberVars.get(clafer));
+    }
+
     /**
      * Returns the sibling variables associated with the Clafer.
      *
@@ -64,6 +74,10 @@ public class AstSolutionMap {
      */
     public IrSetVar[] getSiblingVars(AstClafer clafer) {
         return notNull(clafer + " not part of the AST solution", siblingVars.get(clafer));
+    }
+
+    public IrIntVar[] getSiblingBounds(AstClafer clafer) {
+        return siblingBounds.get(clafer);
     }
 
     /**
