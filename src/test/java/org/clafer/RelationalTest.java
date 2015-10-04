@@ -512,6 +512,39 @@ public class RelationalTest {
 
     /**
      * <pre>
+     * abstract Book
+     *     author -> Author +
+     *     [ Book in this.book ]
+     *
+     * abstract Author
+     *     book -> Book +
+     *     [ Author in this.author ]
+     *
+     * B : Book 4
+     * A : Author 3
+     * </pre>
+     */
+    @Test(timeout = 600000)
+    public void testInverseEquality() {
+        AstModel model = newModel();
+
+        AstAbstractClafer Book = model.addAbstract("Book");
+        AstConcreteClafer author = Book.addChild("author").withCard(1);
+        AstAbstractClafer Author = model.addAbstract("Author");
+        AstConcreteClafer book = Author.addChild("book").withCard(1);
+        author.refToUnique(Author);
+        book.refToUnique(Book);
+        AstConcreteClafer B = model.addChild("B").withCard(4, 4).extending(Book);
+        AstConcreteClafer A = model.addChild("A").withCard(3, 3).extending(Author);
+        author.addConstraint(in(joinParent($this()), joinRef(join(joinRef($this()), book))));
+        book.addConstraint(in(joinParent($this()), joinRef(join(joinRef($this()), author))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(Book, 5).setScope(author, 30).setScope(Author, 6).setScope(book, 30).setScope(B, 5).setScope(A, 6));
+        assertEquals(3284, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
      * A 2
      *     B ->> B +
      * [ #((A -> B) . ~(B -> ref)) = 2 ]

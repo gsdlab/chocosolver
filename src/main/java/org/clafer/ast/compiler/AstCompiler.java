@@ -78,6 +78,7 @@ import org.clafer.ast.analysis.CardAnalyzer;
 import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.FormatAnalyzer;
 import org.clafer.ast.analysis.GlobalCardAnalyzer;
+import org.clafer.ast.analysis.InverseAnalyzer;
 import org.clafer.ast.analysis.OptimizerAnalyzer;
 import org.clafer.ast.analysis.PartialIntAnalyzer;
 import org.clafer.ast.analysis.PartialSolution;
@@ -143,6 +144,7 @@ public class AstCompiler {
         new TypeAnalyzer()
     };
     private final Analysis analysis;
+    private final Map<AstClafer, AstClafer> inverses;
     private final IrModule module;
     private final List<Symmetry> symmetries = new ArrayList<>();
     private final boolean fullSymmetryBreaking;
@@ -153,6 +155,7 @@ public class AstCompiler {
 
     private AstCompiler(AstModel model, Scope scope, Objective[] objectives, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, objectives, analyzers);
+        this.inverses = InverseAnalyzer.analyze(analysis);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
@@ -694,6 +697,16 @@ public class AstCompiler {
         }
 
         constrainGroupCardinality(clafer);
+
+        AstClafer inverse = inverses.get(clafer);
+        if (inverse != null) {
+            int parentScope = getScope(clafer.getParent());
+            IrIntVar[] inverseRefPointers = refPointers.get(inverse.getRef());
+            module.addConstraint(equal(countNotEqual(parentScope, array(inverseRefPointers)), card(sets.get(clafer))));
+            for (int i = 0; i < parentScope; i++) {
+                module.addConstraint(equal(count(i, inverseRefPointers), card(siblingSet[i])));
+            }
+        }
     }
 
     private void constrainGroupCardinality(AstConcreteClafer clafer) {
