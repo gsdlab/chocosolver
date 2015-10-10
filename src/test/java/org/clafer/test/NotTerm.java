@@ -41,4 +41,9 @@ public class NotTerm implements Term {
     public int getValue(IrSolutionMap map) {
         return 1 - view.getValue(map);
     }
+
+    @Override
+    public String toString() {
+        return "!" + view;
+    }
 }

@@ -38,4 +38,9 @@ public class IntTerm implements Term {
     public int getValue(IrSolutionMap map) {
         return map.getValue(var);
     }
+
+    @Override
+    public String toString() {
+        return var.toString();
+    }
 }

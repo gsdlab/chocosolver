@@ -39,4 +39,9 @@ public class BoolTerm implements Term {
     public int getValue(IrSolutionMap map) {
         return map.getValue((IrIntVar) var);
     }
+
+    @Override
+    public String toString() {
+        return var.toString();
+    }
 }

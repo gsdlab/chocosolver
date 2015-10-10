@@ -41,4 +41,9 @@ public class OffsetTerm implements Term {
     public int getValue(IrSolutionMap map) {
         return view.getValue(map) + offset;
     }
+
+    @Override
+    public String toString() {
+        return view + " + " + offset;
+    }
 }
