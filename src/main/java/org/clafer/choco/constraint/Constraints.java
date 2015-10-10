@@ -10,13 +10,14 @@ import java.util.Optional;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.constraints.Operator;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
 import org.chocosolver.solver.constraints.binary.PropEqualX_Y;
 import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
 import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
 import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
-import org.chocosolver.solver.constraints.nary.sum.PropSumEq;
+import org.chocosolver.solver.constraints.nary.sum.PropSum;
 import org.chocosolver.solver.constraints.set.PropIntersection;
 import org.chocosolver.solver.constraints.set.PropSubsetEq;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
@@ -142,10 +143,7 @@ public class Constraints {
                 }
             // fallthrough
             default:
-                if (constant == 0) {
-                    return new PropSumEq(filtered, sum);
-                }
-                return new PropSumEq(Util.cons(VF.fixed(constant, sum.getSolver()), filtered), sum);
+                return new PropSum(Util.snoc(filtered, sum), filter.size(), Operator.EQ, -constant);
         }
     }
 
