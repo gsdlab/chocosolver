@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
@@ -160,6 +161,13 @@ public class AstCompiler {
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
 
+    private AstCompiler(AstModel model, Scope scope, Assertion[] assertions, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        this.analysis = Analysis.analyze(model, scope, assertions, analyzers);
+        this.inverses = InverseAnalyzer.analyze(analysis);
+        this.module = Check.notNull(module);
+        this.fullSymmetryBreaking = fullSymmetryBreaking;
+    }
+
     public static AstSolutionMap compile(AstModel in, Scope scope, IrModule out, boolean fullSymmetryBreaking) {
         return compile(in, scope, out, DefaultAnalyzers, fullSymmetryBreaking);
     }
@@ -175,6 +183,16 @@ public class AstCompiler {
 
     public static AstSolutionMap compile(AstModel in, Scope scope, Objective[] objectives, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         AstCompiler compiler = new AstCompiler(in, scope, objectives,
+                out, analyzers, fullSymmetryBreaking);
+        return compiler.compile();
+    }
+
+    public static AstSolutionMap compile(AstModel in, Scope scope, Assertion[] assertions, IrModule out, boolean fullSymmetryBreaking) {
+        return compile(in, scope, assertions, out, DefaultAnalyzers, fullSymmetryBreaking);
+    }
+
+    public static AstSolutionMap compile(AstModel in, Scope scope, Assertion[] assertions, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        AstCompiler compiler = new AstCompiler(in, scope, assertions,
                 out, analyzers, fullSymmetryBreaking);
         return compiler.compile();
     }
@@ -387,6 +405,15 @@ public class AstCompiler {
             module.addVariable(objectiveVar);
             objectiveVars.put(objective.getKey(), objectiveVar);
         }
+        Map<Assertion, IrBoolVar> assertionVars = new HashMap<>();
+        Map<Assertion, AstBoolExpr> assertions = analysis.getAssertionExprs();
+        for (Entry<Assertion, AstBoolExpr> assertion : assertions.entrySet()) {
+            IrBoolExpr assertionExpr = expressionCompiler.compile(assertion.getValue());
+            IrBoolVar assertionVar = bool("Assertion" + assertion.getKey());
+            module.addConstraint(xor(assertionVar, assertionExpr));
+            module.addVariable(assertionVar);
+            assertionVars.put(assertion.getKey(), assertionVar);
+        }
 
         KeyGraph<Either<IrExpr, IrBoolExpr>> dependencies = new KeyGraph<>();
         for (Symmetry symmetry : symmetries) {
@@ -414,7 +441,7 @@ public class AstCompiler {
                 siblingSets, siblingBounds,
                 refPointers, refStrings,
                 softVars, sumSoftVars,
-                objectiveVars, analysis);
+                objectiveVars, assertionVars, analysis);
     }
 
     private void initConcrete(AstConcreteClafer clafer) {

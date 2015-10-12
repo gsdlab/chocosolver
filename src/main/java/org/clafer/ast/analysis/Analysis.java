@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
@@ -36,6 +37,8 @@ public class Analysis {
     private Scope scope;
     private Objective[] objectives;
     private Map<Objective, AstSetExpr> objectiveExprs;
+    private Assertion[] assertions;
+    private Map<Assertion, AstBoolExpr> assertionExprs;
     private final List<AstClafer> clafers;
     private final List<AstAbstractClafer> abstractClafers;
     private final List<AstConcreteClafer> concreteClafers;
@@ -55,11 +58,11 @@ public class Analysis {
     private Map<AstExpr, Type> typeMap;
 
     Analysis(AstModel model, Scope scope) {
-        this(model, scope, new Objective[0]);
+        this(model, scope, new Objective[0], new Assertion[0]);
     }
 
-    Analysis(AstModel model, Scope scope, Objective[] objectives) {
-        this(model, scope, objectives,
+    Analysis(AstModel model, Scope scope, Objective[] objectives, Assertion[] assertions) {
+        this(model, scope, objectives, assertions,
                 AstUtil.getAbstractClafersInSubOrder(model),
                 AstUtil.getConcreteClafers(model),
                 AstUtil.getClafersInParentAndSubOrder(model));
@@ -67,15 +70,21 @@ public class Analysis {
 
     Analysis(AstModel model, Scope scope,
             Objective[] objectives,
+            Assertion[] assertions,
             List<AstAbstractClafer> abstractClafers,
             List<AstConcreteClafer> concreteClafers,
             List<Set<AstClafer>> clafersInParentAndSubOrder) {
         this.model = model;
         this.scope = scope;
         this.objectives = objectives;
-        this.objectiveExprs = new HashMap<>();
+        this.objectiveExprs = new HashMap<>(objectives.length);
         for (Objective objective : objectives) {
             this.objectiveExprs.put(objective, objective.getExpr());
+        }
+        this.assertions = assertions;
+        this.assertionExprs = new HashMap<>(assertions.length);
+        for (Assertion assertion : assertions) {
+            this.assertionExprs.put(assertion, assertion.getExpr());
         }
         this.clafers = append(abstractClafers, concreteClafers);
         this.abstractClafers = abstractClafers;
@@ -116,7 +125,15 @@ public class Analysis {
     }
 
     public static Analysis analyze(AstModel model, Scopable scope, Objective[] objectives, Analyzer... analyzers) {
-        Analysis analysis = new Analysis(model, scope.toScope(), objectives);
+        Analysis analysis = new Analysis(model, scope.toScope(), objectives, new Assertion[0]);
+        for (Analyzer analyzer : analyzers) {
+            analysis = analyzer.analyze(analysis);
+        }
+        return analysis;
+    }
+
+    public static Analysis analyze(AstModel model, Scopable scope, Assertion[] assertions, Analyzer... analyzers) {
+        Analysis analysis = new Analysis(model, scope.toScope(), new Objective[0], assertions);
         for (Analyzer analyzer : analyzers) {
             analysis = analyzer.analyze(analysis);
         }
@@ -186,6 +203,23 @@ public class Analysis {
 
     public Analysis setObjectiveExprs(Map<Objective, AstSetExpr> objectiveExprs) {
         this.objectiveExprs = objectiveExprs;
+        return this;
+    }
+
+    public AstBoolExpr getExpr(Assertion assertion) {
+        return assertionExprs.get(assertion);
+    }
+
+    public Assertion[] getAssertions() {
+        return assertions;
+    }
+
+    public Map<Assertion, AstBoolExpr> getAssertionExprs() {
+        return assertionExprs;
+    }
+
+    public Analysis setAssertionExprs(Map<Assertion, AstBoolExpr> assertionExprs) {
+        this.assertionExprs = assertionExprs;
         return this;
     }
 

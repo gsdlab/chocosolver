@@ -7,6 +7,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
@@ -126,9 +127,20 @@ public class TypeAnalyzer implements Analyzer {
             }
             typedObjectives.put(objective.getKey(), typedObjective.getExpr());
         }
+        Map<Assertion, AstBoolExpr> assertions = analysis.getAssertionExprs();
+        Map<Assertion, AstBoolExpr> typedAssertions = new HashMap<>(assertions.size());
+        for (Entry<Assertion, AstBoolExpr> assertion : assertions.entrySet()) {
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
+            TypedExpr<AstBoolExpr> typedAssertion = visitor.typeCheck(assertion.getValue());
+            if (!typedAssertion.getCommonSupertype().isBool()) {
+                throw new TypeException("Cannot assert on " + typedAssertion.getType());
+            }
+            typedAssertions.put(assertion.getKey(), typedAssertion.getExpr());
+        }
         return analysis.setTypeMap(typeMap)
                 .setConstraintExprs(typedConstraints)
-                .setObjectiveExprs(typedObjectives);
+                .setObjectiveExprs(typedObjectives)
+                .setAssertionExprs(typedAssertions);
     }
 
     private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {

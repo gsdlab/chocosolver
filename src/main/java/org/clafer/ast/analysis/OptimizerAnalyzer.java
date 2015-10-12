@@ -2,6 +2,7 @@ package org.clafer.ast.analysis;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
 import org.clafer.ast.AstChildRelation;
@@ -46,9 +47,14 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         for (Objective objective : analysis.getObjectives()) {
             objectiveExprs.put(objective, rewrite(analysis.getExpr(objective), analysis));
         }
+        Map<Assertion, AstBoolExpr> assertionExprs = new HashMap<>(analysis.getAssertions().length);
+        for (Assertion assertion : analysis.getAssertions()) {
+            assertionExprs.put(assertion, rewrite(analysis.getExpr(assertion), analysis));
+        }
         return analysis
                 .setConstraintExprs(constraintExprs)
-                .setObjectiveExprs(objectiveExprs);
+                .setObjectiveExprs(objectiveExprs)
+                .setAssertionExprs(assertionExprs);
     }
 
     @Override

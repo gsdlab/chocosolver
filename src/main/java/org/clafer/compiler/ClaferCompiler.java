@@ -2,7 +2,9 @@ package org.clafer.compiler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -44,6 +46,7 @@ import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
+import org.clafer.assertion.Assertion;
 import org.clafer.common.Check;
 import org.clafer.ir.IrBoolVar;
 
@@ -357,6 +360,35 @@ public class ClaferCompiler {
                     : optimizer;
         } catch (UnsatisfiableException e) {
             return new ClaferNoObjectiveOptimizer(new ClaferSolver());
+        }
+    }
+
+    public static ClaferAsserter compile(AstModel in, Scopable scope, Assertion... assertions) {
+        return compile(in, scope, assertions, ClaferOption.Default);
+    }
+
+    public static ClaferAsserter compile(AstModel in, Scopable scope, Assertion[] assertions, ClaferOption options) {
+        Check.noNullsNotEmpty(assertions);
+        try {
+            Solver solver = new Solver();
+            IrModule module = new IrModule();
+
+            AstSolutionMap astSolution = AstCompiler.compile(
+                    in, scope.toScope(), assertions, module,
+                    options.isFullSymmetryBreaking());
+            IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
+            ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
+
+            Map<Assertion, Either<Boolean, BoolVar>> assertionMap = new HashMap<>(assertions.length);
+            for (Assertion assertion : assertions) {
+                assertionMap.put(assertion, irSolution.getVar(astSolution.getAssertionVar(assertion)));
+            }
+
+            set(solver, intStrategy(getDecisionVars(in, solution), options));
+            restartPolicy(solver, options);
+            return new ClaferAsserter(solver, solution, assertionMap);
+        } catch (UnsatisfiableException e) {
+            return new ClaferAsserter();
         }
     }
 

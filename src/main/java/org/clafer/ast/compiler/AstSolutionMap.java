@@ -2,6 +2,7 @@ package org.clafer.ast.compiler;
 
 import java.util.Collections;
 import java.util.Map;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstException;
@@ -30,6 +31,7 @@ public class AstSolutionMap {
     private final Map<AstConstraint, IrBoolVar> softVars;
     private final IrIntVar sumSoftVar;
     private final Map<Objective, IrIntVar> objectiveVars;
+    private final Map<Assertion, IrBoolVar> assertionVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
@@ -41,6 +43,7 @@ public class AstSolutionMap {
             Map<AstConstraint, IrBoolVar> softVars,
             IrIntVar sumSoftVar,
             Map<Objective, IrIntVar> objectiveVars,
+            Map<Assertion, IrBoolVar> assertionVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
         this.memberVars = memberVars;
@@ -51,6 +54,7 @@ public class AstSolutionMap {
         this.softVars = Check.notNull(softVars);
         this.sumSoftVar = Check.notNull(sumSoftVar);
         this.objectiveVars = Check.notNull(objectiveVars);
+        this.assertionVars = Check.notNull(assertionVars);
         this.analysis = Check.notNull(analysis);
     }
 
@@ -129,6 +133,16 @@ public class AstSolutionMap {
      */
     public IrIntVar getObjectiveVar(Objective objective) {
         return notNull(objective + " not a compiled objective", objectiveVars.get(objective));
+    }
+
+    /**
+     * Returns the variable associated to the assertion.
+     *
+     * @param assertion the assertion
+     * @return the variable associated to the assertion
+     */
+    public IrBoolVar getAssertionVar(Assertion assertion) {
+        return notNull(assertion + " not a compiled assertion", assertionVars.get(assertion));
     }
 
     private static <T> T notNull(String message, T t) {
