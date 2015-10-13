@@ -1,6 +1,8 @@
-language: java
+language: oraclejdk8
+sudo: false
 
 before_install:
+  - cd $HOME
   - git clone https://github.com/chocoteam/choco3.git -b develop
   - cd choco3
   - mvn install -DskipTests
