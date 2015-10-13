@@ -1,3 +1,5 @@
+[![Build Status](https://secure.travis-ci.org/gsdlab/chocosolver.svg)](http://travis-ci.org/gsdlab/chocosolver)
+
 chocosolver
 ===========
 
