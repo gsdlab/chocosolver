@@ -10,7 +10,8 @@ jdk:
 
 before_install:
   - cd $HOME
-  - git clone https://github.com/chocoteam/choco3.git -b develop
-  - cd choco3
+  - git clone --depth=50 --branch=develop https://github.com/chocoteam/choco3.git chocoteam/choco3
+  - cd chocoteam/choco3
   - mvn install -DskipTests
-  - rm -rf $HOME/choco3
+  - cd $HOME
+  - rm -rf $HOME/chocoteam/choco3
