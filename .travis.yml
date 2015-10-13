@@ -13,5 +13,5 @@ before_install:
   - git clone --depth=50 --branch=develop https://github.com/chocoteam/choco3.git chocoteam/choco3
   - cd chocoteam/choco3
   - mvn install -DskipTests
-  - cd $HOME
+  - cd $TRAVIS_BUILD_DIR
   - rm -rf $HOME/chocoteam/choco3
