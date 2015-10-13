@@ -6,8 +6,8 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
-import org.clafer.collection.Triple;
 import org.clafer.javascript.Javascript;
+import org.clafer.javascript.JavascriptFile;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
@@ -21,7 +21,7 @@ public class JavascriptTest {
 
     @Test
     public void testReadModel() throws IOException {
-        Triple<AstModel, Scope, Objective[]> triple = Javascript.readModel(
+        JavascriptFile triple = Javascript.readModel(
                 "scope({A:3, B:2, C:1})\n"
                 + "defaultScope(2)\n"
                 + "intRange(-10, 20);\n"
@@ -31,8 +31,8 @@ public class JavascriptTest {
                 + "B = Abstract('B')\n"
                 + "C = B.addChild('C').extending(B).withGroupCard(0, 1)\n"
                 + "min(global(A));");
-        AstModel model = triple.getFst();
-        Scope scope = triple.getSnd();
+        AstModel model = triple.getModel();
+        Scope scope = triple.getScope();
 
         assertEquals(1, model.getChildren().size());
         // The first is the implicit "clafer" Clafer
@@ -63,7 +63,7 @@ public class JavascriptTest {
         assertEquals('a', scope.getCharLow());
         assertEquals('z', scope.getCharHigh());
 
-        Objective[] objectives = triple.getThd();
+        Objective[] objectives = triple.getObjectives();
         assertEquals(1, objectives.length);
         assertFalse(objectives[0].isMaximize());
         assertTrue(objectives[0].isMinimize());

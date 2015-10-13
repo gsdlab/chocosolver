@@ -11,6 +11,7 @@ var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript
 var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
 var max = rc.addMaximizeObjective.bind(rc);
 var min = rc.addMinimizeObjective.bind(rc);
+var assert = rc.addAssertion.bind(rc);
 
 var Int = Asts.IntType; // Some Javascript engine versions has "int" as a keyword.
 var Bool = Asts.BoolType;

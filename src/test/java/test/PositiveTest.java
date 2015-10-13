@@ -11,8 +11,7 @@ import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.javascript.Javascript;
-import org.clafer.objective.Objective;
-import org.clafer.scope.Scope;
+import org.clafer.javascript.JavascriptFile;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,9 +42,10 @@ public class PositiveTest {
 
     @Test
     public void testPositives() throws IOException, ScriptException, URISyntaxException {
-        Triple<AstModel, Scope, Objective[]> p = Javascript.readModel(testFile);
-        assert p.getThd().length == 0 : "Did not expect an optimization problem.";
-        ClaferSolver s = ClaferCompiler.compile(p.getFst(), p.getSnd());
+        JavascriptFile p = Javascript.readModel(testFile);
+        assert p.getObjectives().length == 0 : "Did not expect an optimization problem.";
+        assert p.getAssertions().length == 0 : "Did not expect an assertion problem.";
+        ClaferSolver s = ClaferCompiler.compile(p.getModel(), p.getScope());
 
         assertTrue(s.find());
         for (int i = 0; i < 10 && s.find(); i++) {
