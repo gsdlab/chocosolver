@@ -1,11 +1,6 @@
 language: java
 sudo: required
 
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
-
 jdk:
   - oraclejdk8
 
@@ -13,8 +8,11 @@ before_install:
   - sudo apt-get purge maven
   - wget http://mirrors.sonic.net/apache/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
   - tar -zxf apache-maven-3.3.3-bin.tar.gz
-  - sudo cp -R apache-maven-3.3.3 /usr/local
-  - sudo ln -s /usr/local/apache-maven-3.3.3/bin/mvn /usr/bin/mvn
+  - sudo rm -rf /usr/local/maven
+  - sudo mv apache-maven-3.3.3/ /usr/local/maven
+  - sudo ln -s /usr/local/maven/bin/mvn /usr/bin/mvn
+  - hash -r
+  - which mvn
   - mvn --version
 
 install:
