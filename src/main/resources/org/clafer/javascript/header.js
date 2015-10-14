@@ -48,9 +48,7 @@ function mul(m1, m2) {
 function div(d1, d2) {
     return Asts.div([d1, d2]);
 }
-function mod(d1, d2) {
-    return Asts.mod([d1, d2]);
-}
+var mod = Asts.mod;
 function and(a1, a2) {
     return Asts.and([a1, a2]);
 }
