@@ -1351,7 +1351,7 @@ public class Irs {
             return dividend;
         }
         if (dividendConstant != null && divisorConstant != null) {
-            return constant(dividendConstant / divisorConstant);
+            return constant(dividendConstant % divisorConstant);
         }
         int low = divisor.getDomain().getLowBound();
         int high = divisor.getDomain().getHighBound();
