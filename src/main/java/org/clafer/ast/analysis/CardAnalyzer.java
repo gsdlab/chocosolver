@@ -41,7 +41,12 @@ public class CardAnalyzer implements Analyzer {
 
         int evenlyDistributed = parentlowGlobalCard * low;
         int rest = globalCard.getHigh() - evenlyDistributed;
-        cardMap.put(clafer, new Card(low, Math.min(high, low + rest)));
+        int scope = analysis.getScope(clafer);
+        if (low > scope) {
+            cardMap.put(clafer, new Card(low, low));
+        } else {
+            cardMap.put(clafer, new Card(low, Math.min(scope, Math.min(high, low + rest))));
+        }
 
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, globalCard.getLow(), cardMap, analysis);

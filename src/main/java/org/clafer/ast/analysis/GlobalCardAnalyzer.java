@@ -134,7 +134,9 @@ public class GlobalCardAnalyzer implements Analyzer {
                         if (concreteClafer.getCard().isExact()) {
                             if (concreteClafer.hasParent()) {
                                 Card parentCard = globalCardMap.get(concreteClafer.getParent());
-                                globalCardMap.put(clafer, parentCard.mult(concreteClafer.getCard()));
+                                Card globalCard = parentCard.mult(concreteClafer.getCard());
+                                int scope = analysis.getScope(clafer);
+                                globalCardMap.put(clafer, new Card(globalCard.getLow(), Math.min(scope, globalCard.getHigh())));
                             }
                         } else {
                             IntVar lowCard = lowCards.get(clafer);
