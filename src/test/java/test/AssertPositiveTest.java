@@ -8,7 +8,6 @@ import java.util.List;
 import javax.script.ScriptException;
 import org.clafer.compiler.ClaferAsserter;
 import org.clafer.compiler.ClaferCompiler;
-import org.clafer.compiler.ClaferSolver;
 import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
 import static org.junit.Assert.*;
@@ -19,18 +18,19 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 /**
+ * Tests with assertions where no violations are expected.
  *
  * @author jimmy
  */
 @RunWith(Parameterized.class)
-public class AssertionTest {
+public class AssertPositiveTest {
 
     @Parameter
     public File testFile;
 
     @Parameters(name = "{0}")
     public static List<File[]> testFiles() throws URISyntaxException {
-        File dir = new File(OptimizationTest.class.getResource("/assertion").toURI());
+        File dir = new File(OptimizationTest.class.getResource("/assert-positive").toURI());
         assertTrue(dir.isDirectory());
         List<File[]> files = new ArrayList<>();
         for (File file : dir.listFiles()) {
