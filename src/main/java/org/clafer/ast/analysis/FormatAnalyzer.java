@@ -36,7 +36,8 @@ public class FormatAnalyzer implements Analyzer {
         formatMap.put(clafer,
                 analysis.getCard(clafer).isExact()
                 && analysis.getScope(clafer) >= analysis.getCard(clafer).getHigh() * analysis.getScope(clafer.getParent())
-                ? Format.ParentGroup : Format.LowGroup);
+                        ? Format.ParentGroup : Format.LowGroup);
+        assert analysis.getCard(clafer).isExact() == formatMap.get(clafer).equals(Format.ParentGroup);
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, analysis, formatMap);
         }

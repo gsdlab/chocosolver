@@ -28,8 +28,15 @@ public class ScopeAnalyzer implements Analyzer {
         for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {
             for (AstClafer clafer : component) {
                 if (clafer instanceof AstConcreteClafer) {
-                    Card globalCard = analysis.getGlobalCard(clafer);
-                    optimizedScope.put(clafer, Math.min(scope.getScope(clafer), globalCard.getHigh()));
+                    AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
+                    Card card = analysis.getCard(concreteClafer);
+                    if (card.isExact() && concreteClafer.hasParent()) {
+                        int parentScope = optimizedScope.get(concreteClafer.getParent());
+                        optimizedScope.put(clafer, parentScope * card.getLow());
+                    } else {
+                        Card globalCard = analysis.getGlobalCard(clafer);
+                        optimizedScope.put(clafer, Math.min(scope.getScope(clafer), globalCard.getHigh()));
+                    }
                 } else {
                     int subScopes = 0;
                     for (AstClafer sub : ((AstAbstractClafer) clafer).getSubs()) {

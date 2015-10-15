@@ -43,7 +43,7 @@ public class CardAnalyzer implements Analyzer {
         int rest = globalCard.getHigh() - evenlyDistributed;
         int scope = analysis.getScope(clafer);
         if (low > scope) {
-            cardMap.put(clafer, new Card(low, low));
+            cardMap.put(clafer, new Card(0, 0));
         } else {
             cardMap.put(clafer, new Card(low, Math.min(scope, Math.min(high, low + rest))));
         }
