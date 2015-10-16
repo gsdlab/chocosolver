@@ -26,13 +26,12 @@ public class TransitiveClosureTest {
 
     private void transitiveClosure(TIntSet[] relation, int c, TIntSet closure) {
         assertTrue(c >= 0 && c < relation.length);
-        TIntIterator iter = relation[c].iterator();
-        while (iter.hasNext()) {
-            int next = iter.next();
+        relation[c].forEach(next -> {
             if (closure.add(next)) {
                 transitiveClosure(relation, next, closure);
             }
-        }
+            return true;
+        });
     }
 
     @Input(solutions = 512)
@@ -66,7 +65,7 @@ public class TransitiveClosureTest {
     @Check
     public void check(TIntSet[] relation, TIntSet[] closure) {
         for (int i = 0; i < relation.length; i++) {
-            TIntSet c = new TIntHashSet();
+            TIntSet c = new TIntHashSet(relation.length);
             transitiveClosure(relation, i, c);
             assertTrue(c.equals(closure[i]));
         }
