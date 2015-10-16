@@ -181,20 +181,8 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
 
     @Override
     public ESat isEntailed() {
-        boolean allInstantiated = true;
-        for (int i = 0; i < vars.length; i++) {
-            SetVar var = vars[i];
-            allInstantiated &= var.isInstantiated();
-            for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
-                if (j < 0 || j >= vars.length) {
-                    return ESat.FALSE;
-                }
-                if (i != j && !PropUtil.isKerSubsetEnv(vars[j], var)) {
-                    return ESat.FALSE;
-                }
-            }
-        }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        // PropTransitive has it taken care of.
+        return ESat.TRUE;
     }
 
     @Override

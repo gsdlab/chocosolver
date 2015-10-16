@@ -26,7 +26,6 @@ public class PropTransitive extends Propagator<SetVar> {
 
     @Override
     public int getPropagationConditions(int vIdx) {
-        // TODO ENV
         return SetEventType.ADD_TO_KER.getMask();
     }
 
