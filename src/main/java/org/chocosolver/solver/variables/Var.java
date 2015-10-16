@@ -48,6 +48,14 @@ public class Var extends VariableFactory {
         return new CSetVar(VF.fixed(Arrays.toString(value), value, solver), VF.fixed(value.length, solver));
     }
 
+    public static SetVar[] setArray(String name, int length, int minEnv, int maxEnv, Solver solver) {
+        SetVar[] setVars = new SetVar[length];
+        for (int i = 0; i < setVars.length; i++) {
+            setVars[i] = set(name + i, minEnv, maxEnv, solver);
+        }
+        return setVars;
+    }
+
     public static CSetVar cset(String name, int[] env, Solver solver) {
         SetVar setVar = set(name, env, solver);
         IntVar cardVar = enumerated("|" + name + "|", 0, setVar.getEnvelopeSize(), solver);
@@ -68,6 +76,14 @@ public class Var extends VariableFactory {
         SetVar setVar = set(name, env, ker, solver);
         IntVar cardVar = enumerated("|" + name + "|", card, solver);
         return new CSetVar(setVar, cardVar);
+    }
+
+    public static CSetVar[] csetArray(String name, int length, int minEnv, int maxEnv, Solver solver) {
+        CSetVar[] setVars = new CSetVar[length];
+        for (int i = 0; i < setVars.length; i++) {
+            setVars[i] = cset(name + i, minEnv, maxEnv, solver);
+        }
+        return setVars;
     }
 
     public static CStringVar fixed(String string, Solver solver) {

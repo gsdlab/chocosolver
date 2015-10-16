@@ -24,7 +24,7 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
     public PropSetNotEqualC(SetVar s, int[] c) {
         super(new SetVar[]{s}, PropagatorPriority.LINEAR, true);
         this.s = s;
-        this.sD = s.monitorDelta(aCause);
+        this.sD = s.monitorDelta(this);
         this.c = c;
     }
 

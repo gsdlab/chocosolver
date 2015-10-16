@@ -31,6 +31,8 @@ public interface IrIntExprVisitor<A, B> extends IrBoolExprVisitor<A, B> {
 
     public B visit(IrSetMax ir, A a);
 
+    public B visit(IrSetMin ir, A a);
+
     public B visit(IrSetSum ir, A a);
 
     public B visit(IrTernary ir, A a);

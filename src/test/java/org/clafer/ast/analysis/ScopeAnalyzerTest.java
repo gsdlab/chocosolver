@@ -51,9 +51,9 @@ public class ScopeAnalyzerTest {
                 ).setGlobalCardMap(globalCards));
 
         assertEquals(5, analysis.getScope(object)); // scope(parrot) + scope(robin)
-        assertEquals(2, analysis.getScope(id));
+        assertEquals(5, analysis.getScope(id));
         assertEquals(5, analysis.getScope(hash));
-        assertEquals(2, analysis.getScope(lock)); // default scope
+        assertEquals(5, analysis.getScope(lock));
 
         assertEquals(2, analysis.getScope(parrot)); // default scope
         assertEquals(3, analysis.getScope(robin));

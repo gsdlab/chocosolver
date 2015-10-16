@@ -77,7 +77,7 @@ public class ReachedLimitTest {
         AstConcreteClafer e = model.addChild("E").refToUnique(IntType);
         model.addConstraint(equal(add(joinRef(a), joinRef(b), minus(joinRef(c)), joinRef(d), minus(joinRef(e))), card(global(a))));
 
-        ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(10), Objective.maximize(joinRef(a)));
+        ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(10).intLow(-100).intHigh(100), Objective.maximize(joinRef(a)));
         long start = System.currentTimeMillis();
         solver.limitTime(1000);
         try {
@@ -87,7 +87,6 @@ public class ReachedLimitTest {
             assertTrue(System.currentTimeMillis() - start >= 1000);
             while (rle.find()) {
                 assertEquals(1, rle.optimalValues().length);
-                assertTrue(rle.optimalValues()[0] > 0);
             }
         }
     }

@@ -13,6 +13,16 @@ public class AstThis implements AstSetExpr {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        return obj instanceof AstThis;
+    }
+
+    @Override
+    public int hashCode() {
+        return 1317;
+    }
+
+    @Override
     public String toString() {
         return "this";
     }

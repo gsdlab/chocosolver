@@ -1,11 +1,13 @@
 package org.clafer;
 
+import java.util.Arrays;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -678,4 +680,30 @@ public class SetArithmeticTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(6).intLow(-20000).intHigh(20000));
         assertEquals(54, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * A ->> int 1..2
+     * B -> int 2..3
+     * [ min (A . ref) = max (B . ref) ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testMinAndMax() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refTo(IntType).withCard(1, 2);
+        AstConcreteClafer b = model.addChild("B").refToUnique(IntType).withCard(2, 3);
+        model.addConstraint(equal(min(joinRef(a)), max(joinRef(b))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3).intLow(-1).intHigh(1));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            assertEquals(
+                    Arrays.asList(instance.getTopClafers(a)).stream().mapToInt(x -> (int) x.getRef()).min(),
+                    Arrays.asList(instance.getTopClafers(b)).stream().mapToInt(x -> (int) x.getRef()).max());
+        }
+        assertEquals(9, solver.instanceCount());
+    }
+
 }

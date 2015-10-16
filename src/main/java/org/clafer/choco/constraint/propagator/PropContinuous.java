@@ -22,7 +22,7 @@ public class PropContinuous extends Propagator<Variable> {
     private final IntVar card;
 
     public PropContinuous(SetVar set, IntVar card) {
-        super(new Variable[]{set, card}, PropagatorPriority.QUADRATIC, false);
+        super(new Variable[]{set}, PropagatorPriority.QUADRATIC, false);
         this.set = set;
         this.card = card;
     }
@@ -36,7 +36,7 @@ public class PropContinuous extends Propagator<Variable> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
             return SetEventType.all();
         }
@@ -67,7 +67,7 @@ public class PropContinuous extends Propagator<Variable> {
             assert cur != SetVar.END;
             for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
                 for (int j = cur + 1; j < next; j++) {
-                    set.addToKernel(j, aCause);
+                    set.addToKernel(j, this);
                 }
                 cur = next;
             }
@@ -82,7 +82,7 @@ public class PropContinuous extends Propagator<Variable> {
                 for (i = set.getEnvelopeNext(); prev < min; i = set.getEnvelopeNext()) {
                     if (i > prev + 1) {
                         for (int j = 0; j < size; j++) {
-                            set.removeFromEnvelope(queue[j], aCause);
+                            set.removeFromEnvelope(queue[j], this);
                         }
                         size = 0;
                     }
@@ -95,7 +95,7 @@ public class PropContinuous extends Propagator<Variable> {
                     }
                     if (i != SetVar.END) {
                         for (; i != SetVar.END; i = set.getEnvelopeNext()) {
-                            set.removeFromEnvelope(i, aCause);
+                            set.removeFromEnvelope(i, this);
                         }
                     }
                 }
@@ -119,14 +119,14 @@ public class PropContinuous extends Propagator<Variable> {
                 }
                 if (region != null && size <= region.length) {
                     for (int z = 0; z < size; z++) {
-                        set.removeFromEnvelope(region[z], aCause);
+                        set.removeFromEnvelope(region[z], this);
                     }
                 }
                 prev = i;
                 max = Math.max(max, size);
             } while (i != SetVar.END);
 
-            card.updateUpperBound(max, aCause);
+            card.updateUpperBound(max, this);
         }
     }
 

@@ -7,4 +7,6 @@ package org.clafer.ir;
 public interface IrIntArrayExprVisitor<A, B> {
 
     public B visit(IrIntArrayVar ir, A a);
+
+    public B visit(IrSubarray ir, A a);
 }

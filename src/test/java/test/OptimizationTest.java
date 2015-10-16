@@ -6,13 +6,10 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.script.ScriptException;
-import org.clafer.ast.AstModel;
-import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOptimizer;
 import org.clafer.javascript.Javascript;
-import org.clafer.objective.Objective;
-import org.clafer.scope.Scope;
+import org.clafer.javascript.JavascriptFile;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,8 +40,9 @@ public class OptimizationTest {
 
     @Test
     public void testOptimizations() throws IOException, ScriptException {
-        Triple<AstModel, Scope, Objective[]> p = Javascript.readModel(testFile);
-        ClaferOptimizer s = ClaferCompiler.compile(p.getFst(), p.getSnd(), p.getThd());
+        JavascriptFile p = Javascript.readModel(testFile);
+        assert p.getAssertions().length == 0 : "Did not expect an assertion problem.";
+        ClaferOptimizer s = ClaferCompiler.compile(p.getModel(), p.getScope(), p.getObjectives());
 
         assertTrue(s.find());
         while (s.find()) {

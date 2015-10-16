@@ -6,8 +6,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.CSetVar;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 
 /**
@@ -31,7 +31,7 @@ public class SingletonTest {
          *     return (i, s)
          */
         return $(enumerated("i", -3, 2, solver),
-                set("s", -2, 3, solver));
+                cset("s", -2, 3, solver));
     }
 
     @Check
@@ -39,8 +39,9 @@ public class SingletonTest {
         assertArrayEquals(new int[]{i}, s);
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
-    public Constraint setup(IntVar i, SetVar s) {
-        return Constraints.singleton(i, s);
+    public Constraint setup(IntVar i, CSetVar s) {
+        return Constraints.singleton(i, s.getSet(), s.getCard());
     }
 }

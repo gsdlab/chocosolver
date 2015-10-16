@@ -29,6 +29,10 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstCard ast, A a);
 
+    public B visit(AstMax ast, A a);
+
+    public B visit(AstMin ast, A a);
+
     public B visit(AstSetTest ast, A a);
 
     public B visit(AstCompare ast, A a);
@@ -77,7 +81,13 @@ public interface AstExprVisitor<A, B> {
 
     public B visit(AstRefRelation ast, A a);
 
+    public B visit(AstDomainRestriction ast, A a);
+
+    public B visit(AstRangeRestriction ast, A a);
+
     public B visit(AstInverse ast, A a);
 
     public B visit(AstTransitiveClosure ast, A a);
+
+    public B visit(AstConnected ast, A a);
 }

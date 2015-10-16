@@ -21,6 +21,7 @@ import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.util.ESat;
+import org.clafer.Sample;
 
 /**
  *
@@ -107,6 +108,10 @@ public class ConstraintQuickTest extends Suite {
         return new Object[]{arg1, arg2, arg3, arg4};
     }
 
+    public static Object[] $(Object arg1, Object arg2, Object arg3, Object arg4, Object arg5) {
+        return new Object[]{arg1, arg2, arg3, arg4, arg5};
+    }
+
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public static @interface Input {
@@ -133,10 +138,12 @@ public class ConstraintQuickTest extends Suite {
 
         @Override
         public void evaluate() throws Throwable {
-            for (int i = 0; i < 10; i++) {
+            Sample sample = testMethod.getAnnotation(Sample.class);
+            int n = sample == null ? 10 : sample.value();
+            for (int i = 0; i < n; i++) {
                 evaluate(true);
             }
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < n; i++) {
                 evaluate(false);
             }
         }
@@ -211,10 +218,12 @@ public class ConstraintQuickTest extends Suite {
 
         @Override
         public void evaluate() throws Throwable {
-            for (int i = 0; i < 10; i++) {
+            Sample sample = testMethod.getAnnotation(Sample.class);
+            int n = sample == null ? 10 : sample.value();
+            for (int i = 0; i < n; i++) {
                 evaluate(true);
             }
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < n; i++) {
                 evaluate(false);
             }
         }

@@ -6,9 +6,7 @@ import org.clafer.domain.Domain;
  *
  * @author jimmy
  */
-public interface IrSetArrayExpr extends IrExpr {
-
-    public int length();
+public interface IrSetArrayExpr extends IrArrayExpr {
 
     public Domain[] getEnvs();
 

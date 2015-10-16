@@ -46,12 +46,12 @@ public class PropJoinFunction extends Propagator<Variable> {
     public PropJoinFunction(SetVar take, IntVar[] refs, SetVar to) {
         super(buildArray(take, to, refs), PropagatorPriority.QUADRATIC, true);
         this.take = take;
-        this.takeD = take.monitorDelta(aCause);
+        this.takeD = take.monitorDelta(this);
         this.dontCare = new IndexedBipartiteSet(take.getSolver().getEnvironment(), PropUtil.iterateEnv(take));
         this.refs = refs;
-        this.refsD = PropUtil.monitorDeltas(refs, aCause);
+        this.refsD = PropUtil.monitorDeltas(refs, this);
         this.to = to;
-        this.toD = to.monitorDelta(aCause);
+        this.toD = to.monitorDelta(this);
     }
 
     private static Variable[] buildArray(SetVar take, SetVar to, IntVar[] refs) {
@@ -79,13 +79,13 @@ public class PropJoinFunction extends Propagator<Variable> {
         return idx - 2;
     }
 
-    @Override
-    public boolean advise(int idxVarInProp, int mask) {
-        if (isRefVar(idxVarInProp)) {
-            return dontCare.contains(getRefVarIndex(idxVarInProp));
-        }
-        return super.advise(idxVarInProp, mask);
-    }
+//    @Override
+//    public boolean advise(int idxVarInProp, int mask) {
+//        if (isRefVar(idxVarInProp)) {
+//            return dontCare.contains(getRefVarIndex(idxVarInProp));
+//        }
+//        return super.advise(idxVarInProp, mask);
+//    }
 
     @Override
     public int getPropagationConditions(int vIdx) {
@@ -111,11 +111,11 @@ public class PropJoinFunction extends Propagator<Variable> {
         }
         if (mate == -1) {
             // No mates.
-            to.removeFromEnvelope(toEnv, aCause);
+            to.removeFromEnvelope(toEnv, this);
         } else if (mate != -2 && inKer) {
             // One mate.
-            take.addToKernel(mate, aCause);
-            return refs[mate].instantiateTo(toEnv, aCause);
+            take.addToKernel(mate, this);
+            return refs[mate].instantiateTo(toEnv, this);
         }
         return false;
     }
@@ -134,17 +134,17 @@ public class PropJoinFunction extends Propagator<Variable> {
         // Prune take
         for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
             if (i < 0 || i >= refs.length || !PropUtil.isDomIntersectEnv(refs[i], to)) {
-                take.removeFromEnvelope(i, aCause);
+                take.removeFromEnvelope(i, this);
                 dontCare.remove(i);
             }
         }
 
         // Pick to and prune refs
         for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
-            PropUtil.domSubsetEnv(refs[i], to, aCause);
+            PropUtil.domSubsetEnv(refs[i], to, this);
             if (refs[i].isInstantiated()) {
                 int value = refs[i].getValue();
-                to.addToKernel(value, aCause);
+                to.addToKernel(value, this);
             }
         }
 
@@ -168,7 +168,7 @@ public class PropJoinFunction extends Propagator<Variable> {
                 TIntArrayList removed = null;
                 for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
                     if (!PropUtil.isDomIntersectEnv(refs[i], to)) {
-                        take.removeFromEnvelope(i, aCause);
+                        take.removeFromEnvelope(i, this);
                         dontCare.remove(i);
                         // Cannot call findMate here because we inside iterating take env.
                         // Queue up the even to do later.
@@ -217,13 +217,13 @@ public class PropJoinFunction extends Propagator<Variable> {
             IntVar ref = refs[id];
             if (IntEventType.isRemove(mask)) {
                 if (!PropUtil.isDomIntersectEnv(ref, to)) {
-                    take.removeFromEnvelope(id, aCause);
+                    take.removeFromEnvelope(id, this);
                     dontCare.remove(id);
                 }
             }
             if (ref.isInstantiated()) {
                 if (take.kernelContains(id)) {
-                    to.addToKernel(ref.getValue(), aCause);
+                    to.addToKernel(ref.getValue(), this);
                 }
             }
         }
@@ -252,9 +252,9 @@ public class PropJoinFunction extends Propagator<Variable> {
             assert take.kernelContains(takeKer);
 
             IntVar ref = refs[takeKer];
-            PropUtil.domSubsetEnv(ref, to, aCause);
+            PropUtil.domSubsetEnv(ref, to, PropJoinFunction.this);
             if (ref.isInstantiated()) {
-                to.addToKernel(ref.getValue(), aCause);
+                to.addToKernel(ref.getValue(), PropJoinFunction.this);
             }
         }
     };
@@ -265,8 +265,8 @@ public class PropJoinFunction extends Propagator<Variable> {
 
             for (int takeKer = take.getKernelFirst(); takeKer != SetVar.END; takeKer = take.getKernelNext()) {
                 IntVar ref = refs[takeKer];
-                if (ref.removeValue(toEnv, aCause) && ref.isInstantiated()) {
-                    to.addToKernel(ref.getValue(), aCause);
+                if (ref.removeValue(toEnv, PropJoinFunction.this) && ref.isInstantiated()) {
+                    to.addToKernel(ref.getValue(), PropJoinFunction.this);
                 }
             }
         }

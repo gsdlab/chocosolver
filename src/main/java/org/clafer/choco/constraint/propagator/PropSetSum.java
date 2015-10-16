@@ -85,8 +85,8 @@ public class PropSetSum extends Propagator<Variable> {
             final int envSize = set.getEnvelopeSize();
             final int kerSize = set.getKernelSize();
 
-            setCard.updateLowerBound(kerSize, aCause);
-            setCard.updateUpperBound(envSize, aCause);
+            setCard.updateLowerBound(kerSize, this);
+            setCard.updateUpperBound(envSize, this);
 
             int lbEnd = setCard.getLB() - kerSize;
             int ubEnd = setCard.getUB() - kerSize;
@@ -125,8 +125,8 @@ public class PropSetSum extends Propagator<Variable> {
             }
             highStart = envSize - kerSize - highStart;
 
-            sum.updateLowerBound(low, aCause);
-            sum.updateUpperBound(high, aCause);
+            sum.updateLowerBound(low, this);
+            sum.updateUpperBound(high, this);
 
             int lb = sum.getLB();
             int ub = sum.getUB();
@@ -138,14 +138,14 @@ public class PropSetSum extends Propagator<Variable> {
                         int val = low + i - lowCandidate;
                         // Adding i will never be under the upper bound.
                         if (val > ub) {
-                            changed |= set.removeFromEnvelope(i, aCause);
+                            changed |= set.removeFromEnvelope(i, this);
                         }
                     }
                     if (index < highStart) {
                         int val = high + i - highCandidate;
                         // Adding i will never be over the lower bound.
                         if (val < lb) {
-                            changed |= set.removeFromEnvelope(i, aCause);
+                            changed |= set.removeFromEnvelope(i, this);
                         }
                     }
                     index++;

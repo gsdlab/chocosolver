@@ -43,6 +43,7 @@ public class OrTest {
         assertTrue(Util.sum(bools) >= 1);
     }
 
+    @ArcConsistent(opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(@NonEmpty BoolVar[] bools) {
         return Constraints.or(bools);

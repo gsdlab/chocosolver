@@ -39,12 +39,12 @@ public class PropSetBounded extends Propagator<Variable> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         if (isFromVar(vIdx)) {
-            return IntEventType.DECUPP.getMask();
+            return IntEventType.INSTANTIATE.getMask() + IntEventType.DECUPP.getMask();
         }
         if (isToVar(vIdx)) {
-            return IntEventType.INCLOW.getMask();
+            return IntEventType.INSTANTIATE.getMask() + IntEventType.INCLOW.getMask();
         }
         assert isSetVar(vIdx);
         return SetEventType.all();
@@ -53,10 +53,10 @@ public class PropSetBounded extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         int f = from.getUB();
-        to.updateUpperBound(Math.max(f, PropUtil.maxEnv(set) + 1), aCause);
+        to.updateUpperBound(Math.max(f, PropUtil.maxEnv(set) + 1), this);
         int t = to.getLB();
         for (int i = f; i < t; i++) {
-            set.addToKernel(i, aCause);
+            set.addToKernel(i, this);
         }
     }
 

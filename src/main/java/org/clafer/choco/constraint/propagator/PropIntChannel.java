@@ -9,7 +9,6 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
-import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.procedure.IntProcedure;
@@ -30,9 +29,9 @@ public class PropIntChannel extends Propagator<Variable> {
     public PropIntChannel(SetVar[] sets, IntVar[] ints) {
         super(buildArray(sets, ints), PropagatorPriority.LINEAR, true);
         this.sets = sets;
-        this.setsD = PropUtil.monitorDeltas(sets, aCause);
+        this.setsD = PropUtil.monitorDeltas(sets, this);
         this.ints = ints;
-        this.intsD = PropUtil.monitorDeltas(ints, aCause);
+        this.intsD = PropUtil.monitorDeltas(ints, this);
     }
 
     private static Variable[] buildArray(SetVar[] sets, IntVar[] ints) {
@@ -61,38 +60,29 @@ public class PropIntChannel extends Propagator<Variable> {
     }
 
     @Override
-    public int getPropagationConditions(int vIdx) {
-        if (isSetVar(vIdx)) {
-            return SetEventType.all();
-        }
-        assert isIntVar(vIdx);
-        return IntEventType.all();
-    }
-
-    @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = 0; i < ints.length; i++) {
             int ub = ints[i].getUB();
             for (int j = ints[i].getLB(); j <= ub; j = ints[i].nextValue(j)) {
                 if (j < 0 || j >= sets.length || !sets[j].envelopeContains(i)) {
-                    ints[i].removeValue(j, aCause);
+                    ints[i].removeValue(j, this);
                 }
             }
             if (ints[i].isInstantiated()) {
-                sets[ints[i].getValue()].addToKernel(i, aCause);
+                sets[ints[i].getValue()].addToKernel(i, this);
             }
         }
         for (int i = 0; i < sets.length; i++) {
             for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
                 if (j >= 0 && j < ints.length) {
-                    ints[j].instantiateTo(i, aCause);
+                    ints[j].instantiateTo(i, this);
                 }
             }
         }
         for (int i = 0; i < sets.length; i++) {
             for (int j = sets[i].getEnvelopeFirst(); j != SetVar.END; j = sets[i].getEnvelopeNext()) {
                 if (j < 0 || j >= ints.length || !ints[j].contains(i)) {
-                    sets[i].removeFromEnvelope(j, aCause);
+                    sets[i].removeFromEnvelope(j, this);
                 }
             }
         }
@@ -104,27 +94,21 @@ public class PropIntChannel extends Propagator<Variable> {
             final int id = getSetVarIndex(idxVarInProp);
 
             setsD[id].freeze();
-            setsD[id].forEach(new IntProcedure() {
-                @Override
-                public void execute(int setKer) throws ContradictionException {
-                    ints[setKer].instantiateTo(id, aCause);
-                    for (int i = 0; i < sets.length; i++) {
-                        if (i != id) {
-                            sets[i].removeFromEnvelope(setKer, aCause);
-                        }
+            setsD[id].forEach(setKer -> {
+                ints[setKer].instantiateTo(id, this);
+                for (int i = 0; i < sets.length; i++) {
+                    if (i != id) {
+                        sets[i].removeFromEnvelope(setKer, this);
                     }
                 }
             }, SetEventType.ADD_TO_KER);
-            setsD[id].forEach(new IntProcedure() {
-                @Override
-                public void execute(int setEnv) throws ContradictionException {
-                    if (ints[setEnv].removeValue(id, aCause) && ints[setEnv].isInstantiated()) {
-                        int val = ints[setEnv].getValue();
-                        sets[val].addToKernel(setEnv, aCause);
-                        for (int i = 0; i < sets.length; i++) {
-                            if (i != val) {
-                                sets[i].removeFromEnvelope(setEnv, aCause);
-                            }
+            setsD[id].forEach(setEnv -> {
+                if (ints[setEnv].removeValue(id, this) && ints[setEnv].isInstantiated()) {
+                    int val = ints[setEnv].getValue();
+                    sets[val].addToKernel(setEnv, this);
+                    for (int i = 0; i < sets.length; i++) {
+                        if (i != val) {
+                            sets[i].removeFromEnvelope(setEnv, this);
                         }
                     }
                 }
@@ -135,14 +119,11 @@ public class PropIntChannel extends Propagator<Variable> {
             final int id = getIntVarIndex(idxVarInProp);
 
             intsD[id].freeze();
-            intsD[id].forEachRemVal(new IntProcedure() {
-                @Override
-                public void execute(int intRem) throws ContradictionException {
-                    sets[intRem].removeFromEnvelope(id, aCause);
-                }
+            intsD[id].forEachRemVal((IntProcedure) intRem -> {
+                sets[intRem].removeFromEnvelope(id, this);
             });
             if (ints[id].isInstantiated()) {
-                sets[ints[id].getValue()].addToKernel(id, aCause);
+                sets[ints[id].getValue()].addToKernel(id, this);
             }
             intsD[id].unfreeze();
         }

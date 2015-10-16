@@ -12,7 +12,7 @@ public class AstMod implements AstSetExpr {
 
     AstMod(AstSetExpr dividend, AstSetExpr divisor) {
         this.dividend = Check.notNull(dividend);
-        this.divisor = Check.notNull(dividend);
+        this.divisor = Check.notNull(divisor);
     }
 
     public AstSetExpr getDividend() {

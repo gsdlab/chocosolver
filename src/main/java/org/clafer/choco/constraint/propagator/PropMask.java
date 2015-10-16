@@ -33,8 +33,8 @@ public class PropMask extends Propagator<SetVar> {
 
         this.set = set;
         this.masked = masked;
-        this.setD = set.monitorDelta(aCause);
-        this.maskedD = masked.monitorDelta(aCause);
+        this.setD = set.monitorDelta(this);
+        this.maskedD = masked.monitorDelta(this);
         this.from = from;
         this.to = to;
     }
@@ -48,7 +48,7 @@ public class PropMask extends Propagator<SetVar> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return SetEventType.all();
     }
 
@@ -56,20 +56,20 @@ public class PropMask extends Propagator<SetVar> {
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
             if (i >= from && i < to) {
-                masked.addToKernel(i - from, aCause);
+                masked.addToKernel(i - from, this);
             }
         }
         for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
             if (i >= from && i < to && !masked.envelopeContains(i - from)) {
-                set.removeFromEnvelope(i, aCause);
+                set.removeFromEnvelope(i, this);
             }
         }
         for (int i = masked.getKernelFirst(); i != SetVar.END; i = masked.getKernelNext()) {
-            set.addToKernel(i + from, aCause);
+            set.addToKernel(i + from, this);
         }
         for (int i = masked.getEnvelopeFirst(); i != SetVar.END; i = masked.getEnvelopeNext()) {
             if (i < 0 || i >= to - from || !set.envelopeContains(i + from)) {
-                masked.removeFromEnvelope(i, aCause);
+                masked.removeFromEnvelope(i, this);
             }
         }
     }
@@ -93,7 +93,7 @@ public class PropMask extends Propagator<SetVar> {
         @Override
         public void execute(int ker) throws ContradictionException {
             if (ker >= from && ker < to) {
-                masked.addToKernel(ker - from, aCause);
+                masked.addToKernel(ker - from, PropMask.this);
             }
         }
     };
@@ -101,7 +101,7 @@ public class PropMask extends Propagator<SetVar> {
         @Override
         public void execute(int env) throws ContradictionException {
             if (env >= from && env < to) {
-                masked.removeFromEnvelope(env - from, aCause);
+                masked.removeFromEnvelope(env - from, PropMask.this);
             }
         }
     };
@@ -109,14 +109,14 @@ public class PropMask extends Propagator<SetVar> {
         @Override
         public void execute(int ker) throws ContradictionException {
             assert ker < to - from;
-            set.addToKernel(ker + from, aCause);
+            set.addToKernel(ker + from, PropMask.this);
         }
     };
     private final IntProcedure pruneSetOnMaskedEnv = new IntProcedure() {
         @Override
         public void execute(int env) throws ContradictionException {
             assert env < to - from;
-            set.removeFromEnvelope(env + from, aCause);
+            set.removeFromEnvelope(env + from, PropMask.this);
         }
     };
 

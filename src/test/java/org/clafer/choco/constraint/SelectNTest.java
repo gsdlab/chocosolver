@@ -35,6 +35,7 @@ public class SelectNTest {
         }
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
     public Constraint quickTest(BoolVar[] bools, IntVar n) {
         return Constraints.selectN(bools, n);

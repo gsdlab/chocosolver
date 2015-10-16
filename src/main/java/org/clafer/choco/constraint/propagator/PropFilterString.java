@@ -74,14 +74,6 @@ public class PropFilterString extends Propagator<Variable> {
     }
 
     @Override
-    public boolean advise(int idxVarInProp, int mask) {
-        if (isStringVar(idxVarInProp)) {
-            return set.envelopeContains(getStringVarIndex(idxVarInProp) + offset);
-        }
-        return super.advise(idxVarInProp, mask);
-    }
-
-    @Override
     public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
             return SetEventType.all();
@@ -89,6 +81,7 @@ public class PropFilterString extends Propagator<Variable> {
         if (isSetCardVar(vIdx)) {
             return IntEventType.boundAndInst();
         }
+        // TODO: if (set.envelopeContains(getStringVarIndex(vIdx) + offset)) {
         return IntEventType.all();
     }
 
@@ -104,7 +97,7 @@ public class PropFilterString extends Propagator<Variable> {
                 }
             }
             if (!found) {
-                changed |= sub.removeValue(val, aCause);
+                changed |= sub.removeValue(val, this);
             }
         }
         return changed;
@@ -122,7 +115,7 @@ public class PropFilterString extends Propagator<Variable> {
                 }
             }
             if (!found) {
-                changed |= sub.removeValue(val, aCause);
+                changed |= sub.removeValue(val, this);
             }
         }
         return changed;
@@ -142,7 +135,7 @@ public class PropFilterString extends Propagator<Variable> {
                     }
                 }
                 if (!found) {
-                    changed |= sub.removeValue(val, aCause);
+                    changed |= sub.removeValue(val, this);
                 }
             }
         }
@@ -168,7 +161,7 @@ public class PropFilterString extends Propagator<Variable> {
             for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
                 int x = i - offset;
                 if (x < 0 || x >= string.length) {
-                    set.removeFromEnvelope(i, aCause);
+                    set.removeFromEnvelope(i, this);
                 } else {
                     env[envIndex] = x;
                     if (set.kernelContains(i)) {
@@ -185,7 +178,7 @@ public class PropFilterString extends Propagator<Variable> {
                             }
                         }
                         if (!found) {
-                            changed |= set.removeFromEnvelope(i, aCause);
+                            changed |= set.removeFromEnvelope(i, this);
                         } else {
                             envIndex++;
                         }
@@ -200,14 +193,14 @@ public class PropFilterString extends Propagator<Variable> {
 
             for (; lb < result.length && !result[lb].contains(-1); lb++) {
             }
-            changed |= setCard.updateLowerBound(lb, aCause);
+            changed |= setCard.updateLowerBound(lb, this);
             for (int i = 0; i < result.length; i++) {
                 if (i < kerIndices.length) {
                     changed |= subset(result[i], string, env, i, kerIndices[i] + 1);
                 } else if (i < lb) {
                     changed |= subset(result[i], string, env, i, envIndex);
                 } else if (i > ub) {
-                    changed |= result[i].instantiateTo(-1, aCause);
+                    changed |= result[i].instantiateTo(-1, this);
                 } else {
                     changed |= subsetOrNegativeOne(result[i], string, env, i, envIndex);
                 }

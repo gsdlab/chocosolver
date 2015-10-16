@@ -11,6 +11,7 @@ var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript
 var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
 var max = rc.addMaximizeObjective.bind(rc);
 var min = rc.addMinimizeObjective.bind(rc);
+var assert = rc.addAssertion.bind(rc);
 
 var Int = Asts.IntType; // Some Javascript engine versions has "int" as a keyword.
 var Bool = Asts.BoolType;
@@ -25,6 +26,8 @@ var joinRef = Asts.joinRef;
 var not = Asts.not;
 var minus = Asts.minus;
 var card = Asts.card;
+var maximum = Asts.max;
+var minimum = Asts.min;
 var test = Asts.test;
 var equal = Asts.equal;
 var notEqual = Asts.notEqual;
@@ -45,9 +48,7 @@ function mul(m1, m2) {
 function div(d1, d2) {
     return Asts.div([d1, d2]);
 }
-function mod(d1, d2) {
-    return Asts.mod([d1, d2]);
-}
+var mod = Asts.mod;
 function and(a1, a2) {
     return Asts.and([a1, a2]);
 }
@@ -93,3 +94,4 @@ var ref = Asts.ref;
 var inverse = Asts.inverse;
 var transitiveClosure = Asts.transitiveClosure;
 var transitiveReflexiveClosure = Asts.transitiveReflexiveClosure;
+var connected = Asts.connected;

@@ -26,7 +26,7 @@ public class PropAnd extends Propagator<BoolVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (BoolVar var : vars) {
-            var.setToTrue(aCause);
+            var.setToTrue(this);
         }
     }
 

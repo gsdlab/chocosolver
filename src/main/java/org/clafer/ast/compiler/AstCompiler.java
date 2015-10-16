@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
@@ -21,10 +22,12 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstConnected;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstDifference;
+import org.clafer.ast.AstDomainRestriction;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstExpr;
@@ -39,7 +42,9 @@ import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
+import org.clafer.ast.AstMax;
 import org.clafer.ast.AstMembership;
+import org.clafer.ast.AstMin;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstMod;
 import org.clafer.ast.AstModel;
@@ -49,6 +54,7 @@ import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstProduct;
 import org.clafer.ast.AstQuantify;
 import org.clafer.ast.AstQuantify.Quantifier;
+import org.clafer.ast.AstRangeRestriction;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstRefRelation;
 import org.clafer.ast.AstSetExpr;
@@ -73,6 +79,7 @@ import org.clafer.ast.analysis.CardAnalyzer;
 import org.clafer.ast.analysis.Format;
 import org.clafer.ast.analysis.FormatAnalyzer;
 import org.clafer.ast.analysis.GlobalCardAnalyzer;
+import org.clafer.ast.analysis.InverseAnalyzer;
 import org.clafer.ast.analysis.OptimizerAnalyzer;
 import org.clafer.ast.analysis.PartialIntAnalyzer;
 import org.clafer.ast.analysis.PartialSolution;
@@ -138,6 +145,7 @@ public class AstCompiler {
         new TypeAnalyzer()
     };
     private final Analysis analysis;
+    private final Map<AstClafer, AstClafer> inverses;
     private final IrModule module;
     private final List<Symmetry> symmetries = new ArrayList<>();
     private final boolean fullSymmetryBreaking;
@@ -148,6 +156,14 @@ public class AstCompiler {
 
     private AstCompiler(AstModel model, Scope scope, Objective[] objectives, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, objectives, analyzers);
+        this.inverses = InverseAnalyzer.analyze(analysis);
+        this.module = Check.notNull(module);
+        this.fullSymmetryBreaking = fullSymmetryBreaking;
+    }
+
+    private AstCompiler(AstModel model, Scope scope, Assertion[] assertions, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        this.analysis = Analysis.analyze(model, scope, assertions, analyzers);
+        this.inverses = InverseAnalyzer.analyze(analysis);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
@@ -167,6 +183,16 @@ public class AstCompiler {
 
     public static AstSolutionMap compile(AstModel in, Scope scope, Objective[] objectives, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         AstCompiler compiler = new AstCompiler(in, scope, objectives,
+                out, analyzers, fullSymmetryBreaking);
+        return compiler.compile();
+    }
+
+    public static AstSolutionMap compile(AstModel in, Scope scope, Assertion[] assertions, IrModule out, boolean fullSymmetryBreaking) {
+        return compile(in, scope, assertions, out, DefaultAnalyzers, fullSymmetryBreaking);
+    }
+
+    public static AstSolutionMap compile(AstModel in, Scope scope, Assertion[] assertions, IrModule out, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
+        AstCompiler compiler = new AstCompiler(in, scope, assertions,
                 out, analyzers, fullSymmetryBreaking);
         return compiler.compile();
     }
@@ -258,7 +284,7 @@ public class AstCompiler {
         IrSetVar rootSet = constant(new int[]{0});
         sets.put(analysis.getModel(), rootSet);
         siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
-        memberships.put(analysis.getModel(), new IrBoolExpr[]{True});
+        memberships.put(analysis.getModel(), new IrBoolVar[]{True});
 
         List<AstClafer> clafers = initOrder();
         for (AstClafer clafer : clafers) {
@@ -274,7 +300,6 @@ public class AstCompiler {
             } else if (clafer instanceof AstAbstractClafer) {
                 constrainAbstract((AstAbstractClafer) clafer);
             }
-            constrainGroupCardinality(clafer);
         }
 
         Map<AstConstraint, IrBoolVar> softVars = new HashMap<>();
@@ -310,6 +335,7 @@ public class AstCompiler {
         module.addConstraint(equal(sumSoftVars, softSum));
 
         siblingSets.values().forEach(module::addVariables);
+        siblingBounds.values().forEach(module::addVariables);
         refPointers.values().forEach(module::addVariables);
         refStrings.values().forEach(module::addVariables);
 
@@ -379,6 +405,15 @@ public class AstCompiler {
             module.addVariable(objectiveVar);
             objectiveVars.put(objective.getKey(), objectiveVar);
         }
+        Map<Assertion, IrBoolVar> assertionVars = new HashMap<>();
+        Map<Assertion, AstBoolExpr> assertions = analysis.getAssertionExprs();
+        for (Entry<Assertion, AstBoolExpr> assertion : assertions.entrySet()) {
+            IrBoolExpr assertionExpr = expressionCompiler.compile(assertion.getValue());
+            IrBoolVar assertionVar = bool("Assertion" + assertion.getKey());
+            module.addConstraint(xor(assertionVar, assertionExpr));
+            module.addVariable(assertionVar);
+            assertionVars.put(assertion.getKey(), assertionVar);
+        }
 
         KeyGraph<Either<IrExpr, IrBoolExpr>> dependencies = new KeyGraph<>();
         for (Symmetry symmetry : symmetries) {
@@ -401,10 +436,12 @@ public class AstCompiler {
         Set<Either<IrExpr, IrBoolExpr>> reachables = GraphUtil.reachable(start, dependencies);
         Either.filterRight(reachables.stream()).forEach(module::addConstraint);
 
-        return new AstSolutionMap(analysis.getModel(), siblingSets,
+        return new AstSolutionMap(analysis.getModel(),
+                memberships,
+                siblingSets, siblingBounds,
                 refPointers, refStrings,
                 softVars, sumSoftVars,
-                objectiveVars, analysis);
+                objectiveVars, assertionVars, analysis);
     }
 
     private void initConcrete(AstConcreteClafer clafer) {
@@ -554,9 +591,34 @@ public class AstCompiler {
                                 : boundInt(clafer.getName() + "#" + i + "@Weight", 0, scope - 1);
             }
             if (getScope(clafer.getParent()) > 1) {
-                symmetries.add(new LexChainChannel(childIndices, weight));
+                module.addConstraint(sortChannel(childIndices, weight));
+//                symmetries.add(new LexChainChannel(childIndices, weight));
+                IrIntVar[] bounds = siblingBounds.get(clafer);
                 for (int i = 0; i < siblingSet.length; i++) {
-                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
+                    assert index[i].length <= weight.length;
+                    IrIntExpr bound;
+                    if (i == 0) {
+                        bound = Zero;
+                    } else if (bounds == null) {
+                        Card card = getCard(clafer);
+                        assert card.isExact();
+                        assert getFormat(clafer).equals(Format.ParentGroup);
+                        bound = mul(members[i], card.getLow() * i, enumDomain(0, card.getLow() * i));
+                    } else {
+                        bound = bounds[i - 1];
+                    }
+                    int start = index[i].length;
+                    IrIntExpr[] indexTo = Arrays.copyOf(index[i], weight.length + 1);
+                    for (int j = start; j < indexTo.length; j++) {
+                        indexTo[j] = constant(-1);
+                    }
+                    IrIntExpr[] weightTo = Arrays.copyOf(weight, weight.length + 1);
+                    weightTo[weight.length] = constant(-1);
+                    module.addConstraint(equal(
+                            array(indexTo),
+                            subarray(array(weightTo), bound, card(siblingSet[i]))));
+//                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
+//                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
                 }
             }
             if (getCard(clafer).getHigh() > 1) {
@@ -571,11 +633,19 @@ public class AstCompiler {
                         }
                         // Refs are unique and part of the weight. It is impossible for
                         // two weights to be the same. Enforce a strict order.
-                        module.addConstraint(implies(and(members[i], equal(parents[i], parents[i + 1])),
+                        module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
                                 sortStrict(childIndices[i + 1], childIndices[i])));
+                        if (getScope(clafer.getParent()) > 1) {
+                            module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
+                                    lessThan(weight[i + 1], weight[i])));
+                        }
                     } else {
-                        module.addConstraint(implies(equal(parents[i], parents[i + 1]),
+                        module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
                                 sort(childIndices[i + 1], childIndices[i])));
+                        if (getScope(clafer.getParent()) > 1) {
+                            module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
+                                    lessThanEqual(weight[i + 1], weight[i])));
+                        }
                     }
                 }
             }
@@ -652,25 +722,53 @@ public class AstCompiler {
             default:
                 throw new AstException();
         }
+
+        constrainGroupCardinality(clafer);
+
+        AstClafer inverse = inverses.get(clafer);
+        if (inverse != null) {
+            int parentScope = getScope(clafer.getParent());
+            IrIntVar[] inverseRefPointers = refPointers.get(inverse.getRef());
+            module.addConstraint(equal(countNotEqual(parentScope, array(inverseRefPointers)), card(sets.get(clafer))));
+            for (int i = 0; i < parentScope; i++) {
+                module.addConstraint(equal(count(i, inverseRefPointers), card(siblingSet[i])));
+            }
+        }
     }
 
-    private void constrainGroupCardinality(AstClafer clafer) {
-        Card groupCard = clafer.getGroupCard();
-        List<AstConcreteClafer> children = clafer.getChildren();
-        if (groupCard.isBounded()) {
-            IrBoolExpr[] members = memberships.get(clafer);
-            IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
-            for (int i = 0; i < childrenSets.length; i++) {
-                AstConcreteClafer child = children.get(i);
-                childrenSets[i] = siblingSets.get(child);
-            }
+    private void constrainGroupCardinality(AstConcreteClafer clafer) {
+        Card groupCard = AstUtil.getInheritedGroupCard(clafer);
+
+        if (groupCard != null && groupCard.isBounded()) {
             int scope = getScope(clafer);
-            for (int i = 0; i < scope; i++) {
-                IrIntExpr[] cards = new IrIntExpr[childrenSets.length];
-                for (int j = 0; j < cards.length; j++) {
-                    cards[j] = card(childrenSets[j][i]);
+            IrBoolExpr[] members = memberships.get(clafer);
+            AstClafer curClafer = clafer;
+            List<IrIntExpr>[] cards = new List[scope];
+            assert cards.length == members.length;
+            for (int i = 0; i < cards.length; i++) {
+                cards[i] = new ArrayList<>();
+            }
+            do {
+                List<AstConcreteClafer> children = curClafer.getChildren();
+                if (!children.isEmpty()) {
+                    int offset = getOffset(curClafer, clafer);
+                    IrSetVar[][] childrenSets = new IrSetVar[children.size()][];
+                    for (int i = 0; i < childrenSets.length; i++) {
+                        AstConcreteClafer child = children.get(i);
+                        childrenSets[i] = siblingSets.get(child);
+                    }
+                    for (int i = 0; i < scope; i++) {
+                        for (int j = 0; j < childrenSets.length; j++) {
+                            cards[i].add(card(childrenSets[j][i + offset]));
+                        }
+                    }
                 }
-                module.addConstraint(implies(members[i], constrainCard(add(cards), groupCard)));
+            } while ((curClafer = curClafer.getSuperClafer()) != null);
+
+            for (int i = 0; i < cards.length; i++) {
+                if (!cards[i].isEmpty()) {
+                    module.addConstraint(implies(members[i], constrainCard(add(cards[i]), groupCard)));
+                }
             }
         }
     }
@@ -681,7 +779,7 @@ public class AstCompiler {
         IrSetVar[] childSet = buildChildSet(clafer);
         siblingSets.put(clafer, childSet);
 
-        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
         for (int i = 0; i < members.length; i++) {
             if (partialSolution.hasClafer(i)) {
                 members[i] = True;
@@ -694,6 +792,12 @@ public class AstCompiler {
         }
         Check.noNulls(members);
         memberships.put(clafer, members);
+
+        IrIntVar[] bounds = new IrIntVar[childSet.length];
+        for (int i = 0; i < bounds.length; i++) {
+            bounds[i] = boundInt("bounds" + clafer.getName() + "#" + i, 0, members.length);
+        }
+        siblingBounds.put(clafer, bounds);
     }
 
     private void constrainLowGroupConcrete(AstConcreteClafer clafer) {
@@ -706,7 +810,8 @@ public class AstCompiler {
 
         if (fullSymmetryBreaking) {
             module.addConstraint(selectN(members, card(set)));
-            module.addConstraint(sort(childSet));
+            IrIntExpr[] bounds = siblingBounds.get(clafer);
+            module.addConstraint(sort(childSet, bounds));
         }
 
         for (int i = 0; i < parentMembership.length; i++) {
@@ -764,8 +869,8 @@ public class AstCompiler {
 
         siblingSets.put(clafer, children);
 
-        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
-        IrBoolExpr[] parentMembership = memberships.get(clafer.getParent());
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
+        IrBoolVar[] parentMembership = memberships.get(clafer.getParent());
         if (lowCard == 1) {
             if (members.length == parentMembership.length) {
                 members = parentMembership;
@@ -808,11 +913,11 @@ public class AstCompiler {
 
     private void initAbstract(AstAbstractClafer clafer) {
         IrSetVar[] subSets = new IrSetVar[clafer.getSubs().size()];
-        IrBoolExpr[] members = new IrBoolExpr[getScope(clafer)];
+        IrBoolVar[] members = new IrBoolVar[getScope(clafer)];
         for (int i = 0; i < subSets.length; i++) {
             AstClafer sub = clafer.getSubs().get(i);
             subSets[i] = sets.get(sub);
-            IrBoolExpr[] subMembers = memberships.get(sub);
+            IrBoolVar[] subMembers = memberships.get(sub);
             int offset = getOffset(clafer, sub);
             for (int j = 0; j < subMembers.length; j++) {
                 assert members[offset + j] == null;
@@ -849,7 +954,8 @@ public class AstCompiler {
     }
     private final Map<AstClafer, IrSetVar> sets = new HashMap<>();
     private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<>();
-    private final Map<AstClafer, IrBoolExpr[]> memberships = new HashMap<>();
+    private final Map<AstClafer, IrIntVar[]> siblingBounds = new HashMap<>();
+    private final Map<AstClafer, IrBoolVar[]> memberships = new HashMap<>();
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
     private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<>();
     private final Map<AstRef, IrStringVar[]> refStrings = new HashMap<>();
@@ -1026,6 +1132,7 @@ public class AstCompiler {
                     for (int i = 0; i < join.length; i++) {
                         // TODO global cardinality?
                         join[i] = joinFunction(get(leftArray, i), rightArray, null);
+
                     }
                     return array(join);
                 }
@@ -1201,6 +1308,24 @@ public class AstCompiler {
         }
 
         @Override
+        public IrExpr visit(AstMax ast, Void a) {
+            IrExpr set = compile(ast.getSet());
+            if (set instanceof IrIntExpr) {
+                return set;
+            }
+            return max((IrSetExpr) set, 0);
+        }
+
+        @Override
+        public IrExpr visit(AstMin ast, Void a) {
+            IrExpr set = compile(ast.getSet());
+            if (set instanceof IrIntExpr) {
+                return set;
+            }
+            return min((IrSetExpr) set, 0);
+        }
+
+        @Override
         public IrExpr visit(AstNot ast, Void a) {
             return not(compile(ast.getExpr()));
         }
@@ -1241,11 +1366,12 @@ public class AstCompiler {
                 IrIntArrayExpr leftArray = (IrIntArrayExpr) left;
                 if (right instanceof IrIntArrayExpr) {
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
-                    return equal(IrUtil.asArray(leftArray), IrUtil.asArray(rightArray));
+                    return equal(leftArray, rightArray);
                 } else if (right instanceof IrSetArrayExpr) {
                     Type type = getType(ast.getLeft());
                     AstClafer returnType = type.getCommonSupertype().get(1);
                     IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
+                    // TODO use asRelation
                     return equal(IrUtil.asArray(filterNotEqual(leftArray, getUninitalizedRef(returnType))), IrUtil.asArray(rightArray));
                 }
             } else if (left instanceof IrSetArrayExpr) {
@@ -1254,6 +1380,7 @@ public class AstCompiler {
                     Type type = getType(ast.getRight());
                     AstClafer returnType = type.getCommonSupertype().get(1);
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
+                    // TODO use asRelation
                     return equal(IrUtil.asArray(leftArray), IrUtil.asArray(filterNotEqual(rightArray, getUninitalizedRef(returnType))));
                 } else if (right instanceof IrSetArrayExpr) {
                     IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
@@ -1674,11 +1801,26 @@ public class AstCompiler {
         }
 
         @Override
+        public IrExpr visit(AstDomainRestriction ast, Void a) {
+            IrSetExpr domain = asSet(compile(ast.getDomain()));
+            IrExpr relation = compile(ast.getRelation());
+            return domainRestriction(domain, asRelation(relation, getCommonSupertype(ast.getRelation())));
+        }
+
+        @Override
+        public IrExpr visit(AstRangeRestriction ast, Void a) {
+            IrExpr relation = compile(ast.getRelation());
+            IrSetExpr range = asSet(compile(ast.getRange()));
+            return rangeRestriction(asRelation(relation, getCommonSupertype(ast.getRelation())), range);
+        }
+
+        @Override
         public IrExpr visit(AstInverse ast, Void a) {
             Type type = getType(ast.getRelation());
             AstClafer returnType = type.getCommonSupertype().get(1);
             IrExpr relation = compile(ast.getRelation());
             if (relation instanceof IrIntArrayExpr) {
+                // TODO use asRelation
                 return inverse(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), getScope(returnType));
             }
             if (relation instanceof IrSetArrayExpr) {
@@ -1694,6 +1836,7 @@ public class AstCompiler {
             if (relation instanceof IrIntArrayExpr) {
                 Type type = getType(ast.getRelation());
                 AstClafer returnType = type.getCommonSupertype().get(1);
+                // TODO use asRelation
                 return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isReflexive());
             }
             if (relation instanceof IrSetArrayExpr) {
@@ -1701,6 +1844,28 @@ public class AstCompiler {
             }
             // Bug.
             throw new AstException("Should not have passed type checking.");
+        }
+
+        @Override
+        public IrExpr visit(AstConnected ast, Void a) {
+            // TODO node instanceof IrIntExpr
+            IrSetExpr nodes = (IrSetExpr) compile(ast.getNodes());
+            IrExpr relation = compile(ast.getRelation());
+
+            IrBoolExpr[] membership = null;
+            if (ast.getNodes() instanceof AstGlobal) {
+                membership = memberships.get(((AstGlobal) ast.getNodes()).getType());
+            }
+
+            IrSetArrayExpr transitiveClosure = transitiveClosure(asRelation(relation, getCommonSupertype(ast.getRelation())), !ast.isDirected());
+            IrBoolExpr[] connectedClosure = new IrBoolExpr[transitiveClosure.length()];
+            for (int i = 0; i < connectedClosure.length; i++) {
+                connectedClosure[i] = implies(
+                        membership == null ? member(constant(i), nodes) : membership[i],
+                        subsetEq(nodes, get(transitiveClosure, i)));
+            }
+
+            return and(connectedClosure);
         }
     };
 
@@ -1868,6 +2033,37 @@ public class AstCompiler {
      ************************
      * Convenience functions.
      ************************
+     */
+    /**
+     * Some references use an extra value for uninitialized. For example:
+     *
+     * <pre>
+     * A 2
+     * B -> A *
+     * </pre>
+     *
+     * The references of B are encoded using integers with domain {0,1,2}, where
+     * the values 0 and 1 correspond to A$0 and A$1. The value 2 is used for Bs
+     * that are absent. Consider the following instance:
+     *
+     * <pre>
+     * A$0
+     * A$1
+     * B$0 -> A$1
+     * B$1 -> A$0
+     * </pre>
+     *
+     * If the {@code scope(B) = 3}, then the references of B are represented as
+     * the following:
+     *
+     * <pre>
+     * B$0ref = 1
+     * B$1ref = 0
+     * B$2ref = 2
+     * </pre>
+     *
+     * @param clafer to Clafer referred to
+     * @return the integer value for uninitialized.
      */
     private int getUninitalizedRef(AstClafer clafer) {
         return clafer instanceof AstIntClafer

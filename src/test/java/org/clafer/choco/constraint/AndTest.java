@@ -43,6 +43,7 @@ public class AndTest {
         assertTrue(Util.sum(bools) == bools.length);
     }
 
+    @ArcConsistent(opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(@NonEmpty BoolVar[] bools) {
         return Constraints.and(bools);

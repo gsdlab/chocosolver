@@ -43,7 +43,7 @@ public class PropLength extends Propagator<IntVar> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         if (isLengthVar(vIdx)) {
             return IntEventType.boundAndInst();
         }
@@ -53,8 +53,8 @@ public class PropLength extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        length.updateLowerBound(0, aCause);
-        length.updateUpperBound(chars.length, aCause);
+        length.updateLowerBound(0, this);
+        length.updateUpperBound(chars.length, this);
         for (int i = chars.length - 1; i >= 0; i--) {
             onCharRemove(i);
         }
@@ -88,24 +88,24 @@ public class PropLength extends Propagator<IntVar> {
 
     private void onLengthLB() throws ContradictionException {
         for (int i = 0; i < length.getLB(); i++) {
-            chars[i].removeValue(terminator, aCause);
+            chars[i].removeValue(terminator, this);
         }
     }
 
     private void onLengthUB() throws ContradictionException {
         for (int i = length.getUB(); i < chars.length; i++) {
-            chars[i].instantiateTo(terminator, aCause);
+            chars[i].instantiateTo(terminator, this);
         }
     }
 
     private boolean onCharRemove(int i) throws ContradictionException {
         return !chars[i].contains(terminator)
-                && length.updateLowerBound(i + 1, aCause);
+                && length.updateLowerBound(i + 1, this);
     }
 
     private boolean onCharInstantiate(int i) throws ContradictionException {
         return chars[i].isInstantiatedTo(terminator)
-                && length.updateUpperBound(i, aCause);
+                && length.updateUpperBound(i, this);
     }
 
     @Override

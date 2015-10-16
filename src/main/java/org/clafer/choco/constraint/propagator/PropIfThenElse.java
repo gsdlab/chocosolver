@@ -35,7 +35,7 @@ public class PropIfThenElse extends Propagator<BoolVar> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return IntEventType.all();
     }
 
@@ -43,21 +43,21 @@ public class PropIfThenElse extends Propagator<BoolVar> {
     public void propagate(int evtmask) throws ContradictionException {
         if (antecedent.isInstantiated()) {
             if (antecedent.getValue() == 1) {
-                consequent.setToTrue(aCause);
+                consequent.setToTrue(this);
             } else {
-                alternative.setToTrue(aCause);
+                alternative.setToTrue(this);
             }
             setPassive();
         } else if (consequent.isInstantiatedTo(1) && alternative.isInstantiatedTo(1)) {
             setPassive();
         } else {
             if (consequent.isInstantiatedTo(0)) {
-                antecedent.setToFalse(aCause);
-                alternative.setToTrue(aCause);
+                antecedent.setToFalse(this);
+                alternative.setToTrue(this);
             }
             if (alternative.isInstantiatedTo(0)) {
-                antecedent.setToTrue(aCause);
-                consequent.setToTrue(aCause);
+                antecedent.setToTrue(this);
+                consequent.setToTrue(this);
             }
         }
     }
@@ -67,24 +67,24 @@ public class PropIfThenElse extends Propagator<BoolVar> {
         if (isAntecedent(idxVarInProp)) {
             assert antecedent.isInstantiated();
             if (antecedent.getValue() == 1) {
-                consequent.setToTrue(aCause);
+                consequent.setToTrue(this);
             } else {
-                alternative.setToTrue(aCause);
+                alternative.setToTrue(this);
             }
             setPassive();
         } else if (isConsequent(idxVarInProp)) {
             assert consequent.isInstantiated();
             if (consequent.getValue() == 0) {
-                antecedent.setToFalse(aCause);
-                alternative.setToTrue(aCause);
+                antecedent.setToFalse(this);
+                alternative.setToTrue(this);
             } else if (alternative.isInstantiatedTo(1)) {
                 setPassive();
             }
         } else {
             assert isAlternative(idxVarInProp);
             if (alternative.getValue() == 0) {
-                antecedent.setToTrue(aCause);
-                consequent.setToTrue(aCause);
+                antecedent.setToTrue(this);
+                consequent.setToTrue(this);
             } else if (consequent.isInstantiatedTo(1)) {
                 setPassive();
             }

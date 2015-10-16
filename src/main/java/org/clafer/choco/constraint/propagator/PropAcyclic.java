@@ -34,7 +34,7 @@ public class PropAcyclic extends Propagator<IntVar> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return IntEventType.instantiation();
     }
 
@@ -55,9 +55,9 @@ public class PropAcyclic extends Propagator<IntVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
-            vars[i].removeValue(i, aCause);
-            vars[i].updateLowerBound(0, aCause);
-            vars[i].updateUpperBound(vars.length, aCause);
+            vars[i].removeValue(i, this);
+            vars[i].updateLowerBound(0, this);
+            vars[i].updateUpperBound(vars.length, this);
         }
         for (int i = 0; i < vars.length; i++) {
             if (vars[i].isInstantiated()) {
@@ -80,7 +80,7 @@ public class PropAcyclic extends Propagator<IntVar> {
             if (getLeader(i) == follower) {
                 assert vars[i].isInstantiated();
                 leaders[i].set(realLeader);
-                changed |= vars[realLeader].removeValue(i, aCause);
+                changed |= vars[realLeader].removeValue(i, this);
             }
         }
         leaders[follower].set(realLeader);

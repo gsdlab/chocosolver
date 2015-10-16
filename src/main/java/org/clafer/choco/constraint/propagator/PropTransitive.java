@@ -8,7 +8,6 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  *
@@ -22,12 +21,11 @@ public class PropTransitive extends Propagator<SetVar> {
 
     public PropTransitive(SetVar[] relation) {
         super(relation, PropagatorPriority.LINEAR, true);
-        this.relationD = PropUtil.monitorDeltas(relation, aCause);
+        this.relationD = PropUtil.monitorDeltas(relation, this);
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
-        // TODO ENV
+    public int getPropagationConditions(int vIdx) {
         return SetEventType.ADD_TO_KER.getMask();
     }
 
@@ -37,18 +35,18 @@ public class PropTransitive extends Propagator<SetVar> {
             SetVar var = vars[i];
             for (int j = var.getEnvelopeFirst(); j != SetVar.END; j = var.getEnvelopeNext()) {
                 if (j < 0 || j >= vars.length) {
-                    var.removeFromEnvelope(j, aCause);
+                    var.removeFromEnvelope(j, this);
                 }
             }
             for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
                 if (i != j) {
-                    PropUtil.kerSubsetKer(vars[j], var, aCause);
+                    PropUtil.kerSubsetKer(vars[j], var, this);
                 }
             }
             for (int j = 0; j < i; j++) {
                 assert i != j;
                 if (vars[j].kernelContains(i)) {
-                    PropUtil.kerSubsetKer(var, vars[j], aCause);
+                    PropUtil.kerSubsetKer(var, vars[j], this);
                 }
             }
         }
@@ -64,10 +62,10 @@ public class PropTransitive extends Propagator<SetVar> {
     private void prune(int i, int j, boolean first) throws ContradictionException {
         assert vars[i].kernelContains(j);
         if (i != j) {
-            if (PropUtil.kerSubsetKer(vars[j], vars[i], aCause) || first) {
+            if (PropUtil.kerSubsetKer(vars[j], vars[i], this) || first) {
                 for (int k = 0; k < vars.length; k++) {
                     if (i != k && vars[k].kernelContains(i)) {
-                        if (vars[k].addToKernel(j, aCause)) {
+                        if (vars[k].addToKernel(j, this)) {
                             prune(k, j, false);
                         }
                     }
@@ -79,15 +77,7 @@ public class PropTransitive extends Propagator<SetVar> {
     @Override
     public void propagate(final int i, int mask) throws ContradictionException {
         relationD[i].freeze();
-        relationD[i].forEach(new IntProcedure() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void execute(int j) throws ContradictionException {
-                prune(i, j, true);
-            }
-        }, SetEventType.ADD_TO_KER);
+        relationD[i].forEach(j -> prune(i, j, true), SetEventType.ADD_TO_KER);
         relationD[i].unfreeze();
     }
 

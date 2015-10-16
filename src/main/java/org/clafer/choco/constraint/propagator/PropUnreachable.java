@@ -49,7 +49,7 @@ public class PropUnreachable extends Propagator<IntVar> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return IntEventType.instantiation();
     }
 
@@ -58,8 +58,8 @@ public class PropUnreachable extends Propagator<IntVar> {
         if (from == to) {
             contradiction(vars[from], "trivial path");
         }
-        vars[from].updateLowerBound(0, aCause);
-        vars[from].removeValue(to, aCause);
+        vars[from].updateLowerBound(0, this);
+        vars[from].removeValue(to, this);
         for (int i = 0; i < vars.length; i++) {
             if (vars[i].isInstantiated() && !isPassive()) {
                 follow(i);
@@ -70,7 +70,7 @@ public class PropUnreachable extends Propagator<IntVar> {
     private void remove(IntVar var, IStateIntVector remove) throws ContradictionException {
         int size = remove.size();
         for (int i = 0; i < size; i++) {
-            var.removeValue(remove.get(i), aCause);
+            var.removeValue(remove.get(i), this);
         }
     }
 
@@ -98,7 +98,7 @@ public class PropUnreachable extends Propagator<IntVar> {
             if (cur >= vars.length || i == vars.length) {
                 setPassive();
             } else {
-                vars[cur].updateLowerBound(0, aCause);
+                vars[cur].updateLowerBound(0, this);
                 remove(vars[cur], toComponent);
                 position.set(cur);
                 if (vars[cur].isInstantiated()) {
@@ -107,7 +107,7 @@ public class PropUnreachable extends Propagator<IntVar> {
             }
         } else if (leader < vars.length && !toComponent.contains(follower) && toComponent.contains(leader)) {
             toComponent.add(follower);
-            vars[position.get()].removeValue(follower, aCause);
+            vars[position.get()].removeValue(follower, this);
             for (int i = 0; i < vars.length; i++) {
                 if (vars[i].isInstantiatedTo(follower)) {
                     follow(i);

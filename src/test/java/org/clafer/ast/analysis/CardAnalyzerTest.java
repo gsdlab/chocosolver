@@ -38,10 +38,10 @@ public class CardAnalyzerTest {
 
         Analysis analysis =
                 new CardAnalyzer().analyze(
-                new Analysis(model, Scope.defaultScope(1).toScope()).setGlobalCardMap(globalCards));
+                new Analysis(model, Scope.defaultScope(50).toScope()).setGlobalCardMap(globalCards));
 
         assertEquals(new Card(4, 20), analysis.getCard(limb));
-        assertEquals(new Card(3, 113), analysis.getCard(digit));
+        assertEquals(new Card(3, 50), analysis.getCard(digit));
         assertEquals(new Card(3, 4), analysis.getCard(parrot));
         assertEquals(new Card(1, 1), analysis.getCard(beak));
     }

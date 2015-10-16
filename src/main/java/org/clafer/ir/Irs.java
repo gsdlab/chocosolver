@@ -448,6 +448,22 @@ public class Irs {
         return and(ands);
     }
 
+    public static IrBoolExpr equality(IrIntArrayExpr left, IrArrayEquality.Op op, IrIntArrayExpr right) {
+        if (left.length() != right.length()) {
+            throw new IllegalArgumentException();
+        }
+        for (int i = 0; i < left.length(); i++) {
+            if (!left.getDomains()[i].intersects(right.getDomains()[i])) {
+                return False;
+            }
+        }
+        return new IrArrayEquality(left, op, right, TrueFalseDomain);
+    }
+
+    public static IrBoolExpr equal(IrIntArrayExpr left, IrIntArrayExpr right) {
+        return equality(left, IrArrayEquality.Op.Equal, right);
+    }
+
     public static IrBoolExpr equality(IrSetExpr left, IrSetEquality.Op op, IrSetExpr right) {
         switch (op) {
             case Equal:
@@ -569,6 +585,10 @@ public class Irs {
 
     public static IrBoolExpr notEqual(IrIntExpr left, IrIntExpr right) {
         return compare(left, IrCompare.Op.NotEqual, right);
+    }
+
+    public static IrBoolExpr notEqual(IrIntArrayExpr left, IrIntArrayExpr right) {
+        return equality(left, IrArrayEquality.Op.NotEqual, right);
     }
 
     public static IrBoolExpr notEqual(IrSetExpr left, IrSetExpr right) {
@@ -793,47 +813,15 @@ public class Irs {
         return and(sort);
     }
 
-    public static IrBoolExpr sort(IrSetExpr... sets) {
-        List<IrSetExpr> filter = new ArrayList<>(sets.length);
-        boolean fixedCard = true;
-        for (IrSetExpr set : sets) {
-            if (!set.getEnv().isEmpty()) {
-                filter.add(set);
-                fixedCard = fixedCard && set.getCard().size() == 1;
-            }
+    public static IrBoolExpr sort(IrSetExpr[] sets, IrIntExpr[] bounds) {
+        if (sets.length != bounds.length) {
+            throw new IllegalArgumentException();
         }
-        if (filter.isEmpty()) {
+        if (sets.length == 0) {
             return True;
         }
-        if (filter.size() == 1) {
-            Domain env = filter.get(0).getEnv();
-            Domain ker = filter.get(0).getKer();
-            if (env.getLowBound() == 0) {
-                int i;
-                for (i = 0; i < env.getHighBound(); i++) {
-                    if (!ker.contains(i)) {
-                        break;
-                    }
-                }
-                if (i == env.getHighBound()) {
-                    // env = [0,1,...,n]
-                    // ker = [0,1,...,n] or [0,1,...,n-1]
-                    return True;
-                }
-            }
-        }
-        if (fixedCard) {
-            List<IrBoolExpr> ands = new ArrayList<>();
-            int i = 0;
-            for (IrSetExpr set : filter) {
-                assert set.getCard().size() == 1;
-                int card = set.getCard().getLowBound();
-                ands.add(equal(set, constant(Util.fromTo(i, i + card))));
-                i += card;
-            }
-            return and(ands);
-        }
-        return new IrSortSets(filter.toArray(new IrSetExpr[filter.size()]), TrueFalseDomain);
+        // TODO optimize
+        return new IrSortSets(sets, bounds, TrueFalseDomain);
     }
 
     private static IrBoolExpr sortStrings(IrIntExpr[][] strings, boolean strict) {
@@ -1013,6 +1001,10 @@ public class Irs {
 
     public static IrBoolExpr unreachable(IrIntExpr[] edges, int from, int to) {
         return new IrUnreachable(edges, from, to, TrueFalseDomain);
+    }
+
+    public static IrBoolExpr connected(IrSetExpr nodes, IrSetArrayExpr relation, boolean directed) {
+        return new IrConnected(nodes, relation, directed, TrueFalseDomain);
     }
 
     public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
@@ -1359,7 +1351,7 @@ public class Irs {
             return dividend;
         }
         if (dividendConstant != null && divisorConstant != null) {
-            return constant(dividendConstant / divisorConstant);
+            return constant(dividendConstant % divisorConstant);
         }
         int low = divisor.getDomain().getLowBound();
         int high = divisor.getDomain().getHighBound();
@@ -1451,6 +1443,15 @@ public class Irs {
             domain = domain.boundLow(set.getKer().getHighBound());
         }
         return new IrSetMax(set, defaultValue, set.getCard().getLowBound() > 0
+                ? domain : domain.insert(defaultValue));
+    }
+
+    public static IrIntExpr min(IrSetExpr set, int defaultValue) {
+        Domain domain = set.getEnv();
+        if (!set.getKer().isEmpty()) {
+            domain = domain.boundHigh(set.getKer().getLowBound());
+        }
+        return new IrSetMin(set, defaultValue, set.getCard().getLowBound() > 0
                 ? domain : domain.insert(defaultValue));
     }
 
@@ -1591,6 +1592,17 @@ public class Irs {
             return constant(new int[]{constant});
         }
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
+    }
+
+    public static IrSetExpr singletonFilter(IrIntExpr value, int filter) {
+        if (!value.getDomain().contains(filter)) {
+            return singleton(value);
+        }
+        Integer constant = IrUtil.getConstant(value);
+        if (constant != null) {
+            return constant.equals(filter) ? EmptySet : constant(new int[]{constant});
+        }
+        return new IrSingletonFilter(value, filter, value.getDomain().remove(filter), EmptyDomain, ZeroOneDomain);
     }
 
     public static IrSetExpr arrayToSet(IrIntExpr[] array, Integer globalCardinality) {
@@ -1749,9 +1761,7 @@ public class Irs {
                 cardLow = injective
                         ? cardLow + childDomain.getLowBound()
                         : Math.max(cardLow, childDomain.getLowBound());
-                cardHigh = injective
-                        ? cardHigh + childDomain.getHighBound()
-                        : Math.max(cardHigh, childDomain.getHighBound());
+                cardHigh += childDomain.getHighBound();
             } else {
                 childrenLowCards[index] = childDomain.getLowBound();
                 childrenHighCards[index] = childDomain.getHighBound();
@@ -1770,9 +1780,7 @@ public class Irs {
                     : Math.max(cardLow, childrenLowCards[i]);
         }
         for (int i = 0; i < takeCard.getHighBound() - takeKer.size(); i++) {
-            cardHigh = injective
-                    ? cardHigh + childrenHighCards[childrenHighCards.length - 1 - i]
-                    : Math.max(cardHigh, childrenHighCards[childrenHighCards.length - 1 - i]);
+            cardHigh += childrenHighCards[childrenHighCards.length - 1 - i];
         }
         cardLow = Math.max(cardLow, ker.size());
         cardHigh = Math.min(cardHigh, env.size());
@@ -2010,6 +2018,16 @@ public class Irs {
         return new IrSetTernary(antecedent, consequent, alternative, env, ker, card);
     }
 
+    public static IrSetExpr containsTernary(IrSetExpr antecedent, int x, IrSetExpr consequent) {
+        if (antecedent.getKer().contains(x)) {
+            return consequent;
+        }
+        if (!antecedent.getEnv().contains(x)) {
+            return EmptySet;
+        }
+        return new IrContainsSetTernary(antecedent, x, consequent, consequent.getEnv(), EmptyDomain, consequent.getCard().insert(0));
+    }
+
     /**
      *******************
      *
@@ -2113,7 +2131,23 @@ public class Irs {
         IrSetExpr[] array = new IrSetExpr[expr.length()];
         for (int i = 0; i < array.length; i++) {
             IrIntExpr element = get(expr, i);
-            array[i] = ternary(equal(element, value), EmptySet, singleton(element));
+            array[i] = singletonFilter(element, value);
+        }
+        return array(array);
+    }
+
+    public static IrSetArrayExpr domainRestriction(IrSetExpr domain, IrSetArrayExpr relation) {
+        IrSetExpr[] array = new IrSetExpr[relation.length()];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = containsTernary(domain, i, get(relation, i));
+        }
+        return array(array);
+    }
+
+    public static IrSetArrayExpr rangeRestriction(IrSetArrayExpr relation, IrSetExpr range) {
+        IrSetExpr[] array = new IrSetExpr[relation.length()];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = intersection(get(relation, i), range);
         }
         return array(array);
     }
@@ -2128,11 +2162,17 @@ public class Irs {
         for (int i = 0; i < relation.length(); i++) {
             TIntIterator iter = relation.getEnvs()[i].iterator();
             while (iter.hasNext()) {
-                envs[iter.next()].add(i);
+                int val = iter.next();
+                if (val < envs.length) {
+                    envs[val].add(i);
+                }
             }
             iter = relation.getKers()[i].iterator();
             while (iter.hasNext()) {
-                kers[iter.next()].add(i);
+                int val = iter.next();
+                if (val < kers.length) {
+                    kers[val].add(i);
+                }
             }
         }
         Domain[] cards = new Domain[length];
@@ -2327,6 +2367,35 @@ public class Irs {
             charDomains[i] = charDomains[i].insert(0);
         }
         return IrUtil.asConstant(new IrConcat(left, right, charDomains, length));
+    }
+
+    public static IrIntArrayExpr subarray(IrIntArrayExpr array, IrIntExpr index, IrIntExpr sublength) {
+        Integer indexConstant = IrUtil.getConstant(index);
+        if (indexConstant != null) {
+            Integer sublengthConstant = IrUtil.getConstant(sublength);
+            if (sublengthConstant != null) {
+                IrIntExpr[] subarray = new IrIntExpr[array.length()];
+                for (int i = 0; i < sublengthConstant; i++) {
+                    subarray[i] = get(array, indexConstant + i);
+                }
+                for (int i = sublengthConstant; i < subarray.length; i++) {
+                    subarray[i] = constant(-1);
+                }
+                return array(subarray);
+            }
+        }
+        Domain[] charDomains = new Domain[array.length()];
+        for (int i = 0; i < charDomains.length; i++) {
+            charDomains[i] = i < sublength.getHighBound()
+                    ? union(array.getDomains(),
+                            index.getLowBound() + i,
+                            Integer.min(index.getHighBound() + i + 1, charDomains.length))
+                    : EmptyDomain;
+            if (i >= sublength.getLowBound()) {
+                charDomains[i] = charDomains[i].insert(-1);
+            }
+        }
+        return new IrSubarray(array, index, sublength, charDomains);
     }
 
     private static Domain union(Domain[] domains, int start, int end) {

@@ -622,7 +622,7 @@ public class PropUtilTest {
         }
 
         @Override
-        public void onVariableUpdate(Variable variable, IEventType type, ICause cause) throws ContradictionException {
+        public void onVariableUpdate(Variable variable, IEventType type, ICause cause) {
         }
 
         @Override

@@ -27,9 +27,9 @@ public class PropSingleton extends Propagator<Variable> {
     public PropSingleton(IntVar ivar, SetVar svar) {
         super(new Variable[]{ivar, svar}, PropagatorPriority.UNARY, true);
         this.i = ivar;
-        this.iD = i.monitorDelta(aCause);
+        this.iD = i.monitorDelta(this);
         this.s = svar;
-        this.sD = s.monitorDelta(aCause);
+        this.sD = s.monitorDelta(this);
     }
 
     private boolean isIVar(int idx) {
@@ -55,17 +55,14 @@ public class PropSingleton extends Propagator<Variable> {
             contradiction(s, "Singleton cannot have more than 1 element");
         } else if (s.getKernelSize() == 1) {
             int val = s.getKernelFirst();
-            i.instantiateTo(val, aCause);
-            s.instantiateTo(new int[]{val}, aCause);
-        }
-        PropUtil.domSubsetEnv(i, s, aCause);
-        PropUtil.envSubsetDom(s, i, aCause);
-        if (i.isInstantiated()) {
-            s.instantiateTo(new int[]{i.getValue()}, aCause);
-        } else if (s.getEnvelopeSize() == 1) {
-            int val = s.getEnvelopeFirst();
-            i.instantiateTo(val, aCause);
-            s.instantiateTo(new int[]{val}, aCause);
+            i.instantiateTo(val, this);
+            s.instantiateTo(new int[]{val}, this);
+        } else {
+            PropUtil.domSubsetEnv(i, s, this);
+            PropUtil.envSubsetDom(s, i, this);
+            if (i.isInstantiated()) {
+                s.instantiateTo(new int[]{i.getValue()}, this);
+            }
         }
     }
 
@@ -73,10 +70,10 @@ public class PropSingleton extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isIVar(idxVarInProp)) {
             if (i.isInstantiated()) {
-                s.instantiateTo(new int[]{i.getValue()}, aCause);
+                s.instantiateTo(new int[]{i.getValue()}, this);
             } else {
                 iD.freeze();
-                iD.forEachRemVal(pruneSOnIRem);
+                iD.forEachRemVal((IntProcedure) rem -> s.removeFromEnvelope(rem, this));
                 iD.unfreeze();
             }
         } else {
@@ -86,30 +83,18 @@ public class PropSingleton extends Propagator<Variable> {
                 contradiction(s, "Singleton cannot have more than 1 element");
             } else if (sKerSize == 1) {
                 int val = s.getKernelFirst();
-                i.instantiateTo(val, aCause);
-                s.instantiateTo(new int[]{val}, aCause);
+                i.instantiateTo(val, this);
+                s.instantiateTo(new int[]{val}, this);
             } else {
                 sD.freeze();
-                sD.forEach(pruneIOnSEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                sD.forEach(env -> i.removeValue(env, this), SetEventType.REMOVE_FROM_ENVELOPE);
                 sD.unfreeze();
                 if (i.isInstantiated()) {
-                    s.instantiateTo(new int[]{i.getValue()}, aCause);
+                    s.instantiateTo(new int[]{i.getValue()}, this);
                 }
             }
         }
     }
-    private final IntProcedure pruneSOnIRem = new IntProcedure() {
-        @Override
-        public void execute(int i) throws ContradictionException {
-            s.removeFromEnvelope(i, aCause);
-        }
-    };
-    private final IntProcedure pruneIOnSEnv = new IntProcedure() {
-        @Override
-        public void execute(int sEnv) throws ContradictionException {
-            i.removeValue(sEnv, aCause);
-        }
-    };
 
     @Override
     public ESat isEntailed() {

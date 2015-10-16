@@ -39,4 +39,9 @@ public class MinusTerm implements Term {
     public int getValue(IrSolutionMap map) {
         return -view.getValue(map);
     }
+
+    @Override
+    public String toString() {
+        return "-" + view;
+    }
 }

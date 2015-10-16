@@ -31,7 +31,7 @@ public class PropElement extends Propagator<IntVar> {
         super(buildArray(value, array, index), PropagatorPriority.LINEAR, true);
         this.value = value;
         this.array = array;
-        this.arrayD = PropUtil.monitorDeltas(array, aCause);
+        this.arrayD = PropUtil.monitorDeltas(array, this);
         this.index = index;
         this.offset = offset;
 
@@ -64,7 +64,7 @@ public class PropElement extends Propagator<IntVar> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return IntEventType.all();
     }
 
@@ -98,23 +98,23 @@ public class PropElement extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        index.updateLowerBound(-offset, aCause);
-        index.updateUpperBound(array.length - offset - 1, aCause);
+        index.updateLowerBound(-offset, this);
+        index.updateUpperBound(array.length - offset - 1, this);
 
         int ub = index.getUB();
         for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
             if (!supportForArray(i + offset)) {
-                index.removeValue(i, aCause);
+                index.removeValue(i, this);
             }
         }
         ub = value.getUB();
         for (int i = value.getLB(); i <= ub; i = value.nextValue(i)) {
             if (!supportForValue(i)) {
-                value.removeValue(i, aCause);
+                value.removeValue(i, this);
             }
         }
         if (index.isInstantiated()) {
-            PropUtil.domSubsetDom(array[index.getValue() + offset], value, aCause);
+            PropUtil.domSubsetDom(array[index.getValue() + offset], value, this);
             if (value.isInstantiated()) {
                 setPassive();
             }
@@ -127,14 +127,14 @@ public class PropElement extends Propagator<IntVar> {
             int ub = index.getUB();
             for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
                 if (!supportForArray(i + offset)) {
-                    index.removeValue(i, aCause);
+                    index.removeValue(i, this);
                 }
             }
         } else if (isIndexVar(idxVarInProp)) {
             int ub = value.getUB();
             for (int i = value.getLB(); i <= ub; i = value.nextValue(i)) {
                 if (!supportForValue(i)) {
-                    value.removeValue(i, aCause);
+                    value.removeValue(i, this);
                 }
             }
         } else {
@@ -142,22 +142,19 @@ public class PropElement extends Propagator<IntVar> {
             int i = getArrayVarIndex(idxVarInProp);
             if (index.contains(i - offset)) {
                 if (!supportForArray(i)) {
-                    index.removeValue(i - offset, aCause);
+                    index.removeValue(i - offset, this);
                 }
                 arrayD[i].freeze();
-                arrayD[i].forEachRemVal(new IntProcedure() {
-                    @Override
-                    public void execute(int rem) throws ContradictionException {
-                        if (!supportForValue(rem)) {
-                            value.removeValue(rem, aCause);
-                        }
+                arrayD[i].forEachRemVal((IntProcedure) rem -> {
+                    if (!supportForValue(rem)) {
+                        value.removeValue(rem, this);
                     }
                 });
                 arrayD[i].unfreeze();
             }
         }
         if (index.isInstantiated()) {
-            PropUtil.domSubsetDom(array[index.getValue() + offset], value, aCause);
+            PropUtil.domSubsetDom(array[index.getValue() + offset], value, this);
             if (value.isInstantiated()) {
                 setPassive();
             }

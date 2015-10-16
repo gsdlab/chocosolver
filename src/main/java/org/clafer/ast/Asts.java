@@ -99,6 +99,14 @@ public class Asts {
         return new AstCard(set);
     }
 
+    public static AstSetExpr max(AstSetExpr set) {
+        return new AstMax(set);
+    }
+
+    public static AstSetExpr min(AstSetExpr set) {
+        return new AstMin(set);
+    }
+
     public static AstBoolExpr test(AstSetExpr left, AstSetTest.Op op, AstSetExpr right) {
         return new AstSetTest(left, op, right);
     }
@@ -418,6 +426,14 @@ public class Asts {
         return new AstRefRelation(ref);
     }
 
+    public static AstSetExpr domainRestriction(AstSetExpr domain, AstSetExpr relation) {
+        return new AstDomainRestriction(domain, relation);
+    }
+
+    public static AstSetExpr rangeRestriction(AstSetExpr relation, AstSetExpr range) {
+        return new AstRangeRestriction(relation, range);
+    }
+
     public static AstSetExpr inverse(AstSetExpr relation) {
         return new AstInverse(relation);
     }
@@ -432,5 +448,17 @@ public class Asts {
 
     public static AstSetExpr transitiveReflexiveClosure(AstSetExpr relation) {
         return transitiveClosure(relation, true);
+    }
+
+    public static AstBoolExpr connected(AstSetExpr nodes, AstSetExpr relation, boolean directed) {
+        return new AstConnected(nodes, relation, directed);
+    }
+
+    public static AstBoolExpr connected(AstSetExpr nodes, AstSetExpr relation) {
+        return new AstConnected(nodes, relation, false);
+    }
+
+    public static AstBoolExpr connectedDirected(AstSetExpr nodes, AstSetExpr relation) {
+        return new AstConnected(nodes, relation, true);
     }
 }

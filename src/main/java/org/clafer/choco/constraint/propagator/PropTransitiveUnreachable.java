@@ -8,7 +8,6 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  *
@@ -22,11 +21,11 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
 
     public PropTransitiveUnreachable(SetVar[] relation) {
         super(relation, PropagatorPriority.LINEAR, true);
-        this.relationD = PropUtil.monitorDeltas(relation, aCause);
+        this.relationD = PropUtil.monitorDeltas(relation, this);
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         return SetEventType.all();
     }
 
@@ -42,7 +41,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
             if (i != j) {
                 for (int k = vars[j].getEnvelopeFirst(); k != SetVar.END; k = vars[j].getEnvelopeNext()) {
-                    if (!var.envelopeContains(k) && vars[j].removeFromEnvelope(k, aCause)) {
+                    if (!var.envelopeContains(k) && vars[j].removeFromEnvelope(k, this)) {
                         onRemoveEnv(j, k);
                     }
                 }
@@ -62,7 +61,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         assert var.kernelContains(j);
         for (int k = vars[j].getEnvelopeFirst(); k != SetVar.END; k = vars[j].getEnvelopeNext()) {
             if (!var.envelopeContains(k)) {
-                vars[j].removeFromEnvelope(k, aCause);
+                vars[j].removeFromEnvelope(k, this);
                 onRemoveEnv(j, k);
             }
         }
@@ -79,7 +78,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         SetVar var = vars[i];
         assert !var.envelopeContains(k);
         for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
-            if (i != j && vars[j].removeFromEnvelope(k, aCause)) {
+            if (i != j && vars[j].removeFromEnvelope(k, this)) {
                 onRemoveEnv(j, k);
             }
         }
@@ -108,7 +107,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
             int i = noBackPointers[ii];
             for (int jj = 0; jj < bs; jj++) {
                 int j = backPointers[jj];
-                if (vars[i].removeFromEnvelope(j, aCause)) {
+                if (vars[i].removeFromEnvelope(j, this)) {
                     onRemoveEnv(i, j);
                 }
             }
@@ -125,7 +124,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
     private void backwardPruneJK(int j, int k) throws ContradictionException {
         assert vars[j].kernelContains(k);
         for (int i = 0; i < vars.length; i++) {
-            if (i != j && !vars[i].envelopeContains(k) && vars[i].removeFromEnvelope(j, aCause)) {
+            if (i != j && !vars[i].envelopeContains(k) && vars[i].removeFromEnvelope(j, this)) {
                 onRemoveEnv(i, j);
             }
         }
@@ -142,7 +141,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         SetVar var = vars[i];
         assert !var.envelopeContains(k);
         for (int j = 0; j < vars.length; j++) {
-            if (i != j && vars[j].kernelContains(k) && var.removeFromEnvelope(j, aCause)) {
+            if (i != j && vars[j].kernelContains(k) && var.removeFromEnvelope(j, this)) {
                 onRemoveEnv(i, j);
             }
         }
@@ -159,7 +158,7 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
         for (SetVar var : vars) {
             for (int j = var.getEnvelopeFirst(); j != SetVar.END; j = var.getEnvelopeNext()) {
                 if (j < 0 || j >= vars.length) {
-                    var.removeFromEnvelope(j, aCause);
+                    var.removeFromEnvelope(j, this);
                 }
             }
         }
@@ -172,44 +171,18 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
     @Override
     public void propagate(final int i, int mask) throws ContradictionException {
         relationD[i].freeze();
-        relationD[i].forEach(new IntProcedure() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void execute(int j) throws ContradictionException {
-                forwardPruneIJ(i, j);
-                backwardPruneJK(i, j);
-            }
+        relationD[i].forEach(j -> {
+            forwardPruneIJ(i, j);
+            backwardPruneJK(i, j);
         }, SetEventType.ADD_TO_KER);
-        relationD[i].forEach(new IntProcedure() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void execute(int k) throws ContradictionException {
-                onRemoveEnv(i, k);
-            }
-        }, SetEventType.REMOVE_FROM_ENVELOPE);
+        relationD[i].forEach(k -> onRemoveEnv(i, k), SetEventType.REMOVE_FROM_ENVELOPE);
         relationD[i].unfreeze();
     }
 
     @Override
     public ESat isEntailed() {
-        boolean allInstantiated = true;
-        for (int i = 0; i < vars.length; i++) {
-            SetVar var = vars[i];
-            allInstantiated &= var.isInstantiated();
-            for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
-                if (j < 0 || j >= vars.length) {
-                    return ESat.FALSE;
-                }
-                if (i != j && !PropUtil.isKerSubsetEnv(vars[j], var)) {
-                    return ESat.FALSE;
-                }
-            }
-        }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        // PropTransitive has it taken care of.
+        return ESat.TRUE;
     }
 
     @Override

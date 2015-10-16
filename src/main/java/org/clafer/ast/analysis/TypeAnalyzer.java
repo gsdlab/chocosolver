@@ -3,9 +3,11 @@ package org.clafer.ast.analysis;
 import org.clafer.ast.ProductType;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
@@ -15,10 +17,12 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
 import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstConnected;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstDifference;
+import org.clafer.ast.AstDomainRestriction;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
@@ -32,7 +36,9 @@ import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstLength;
 import org.clafer.ast.AstLocal;
+import org.clafer.ast.AstMax;
 import org.clafer.ast.AstMembership;
+import org.clafer.ast.AstMin;
 import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstMod;
 import org.clafer.ast.AstNot;
@@ -40,6 +46,7 @@ import org.clafer.ast.AstParentRelation;
 import org.clafer.ast.AstPrefix;
 import org.clafer.ast.AstProduct;
 import org.clafer.ast.AstQuantify;
+import org.clafer.ast.AstRangeRestriction;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstRefRelation;
 import org.clafer.ast.AstSetExpr;
@@ -102,7 +109,7 @@ public class TypeAnalyzer implements Analyzer {
 
     @Override
     public Analysis analyze(Analysis analysis) {
-        Map<AstExpr, Type> typeMap = new HashMap<>();
+        Map<AstExpr, Type> typeMap = new IdentityHashMap<>();
         Map<AstConstraint, AstBoolExpr> typedConstraints = new HashMap<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
@@ -120,9 +127,20 @@ public class TypeAnalyzer implements Analyzer {
             }
             typedObjectives.put(objective.getKey(), typedObjective.getExpr());
         }
+        Map<Assertion, AstBoolExpr> assertions = analysis.getAssertionExprs();
+        Map<Assertion, AstBoolExpr> typedAssertions = new HashMap<>(assertions.size());
+        for (Entry<Assertion, AstBoolExpr> assertion : assertions.entrySet()) {
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
+            TypedExpr<AstBoolExpr> typedAssertion = visitor.typeCheck(assertion.getValue());
+            if (!typedAssertion.getCommonSupertype().isBool()) {
+                throw new TypeException("Cannot assert on " + typedAssertion.getType());
+            }
+            typedAssertions.put(assertion.getKey(), typedAssertion.getExpr());
+        }
         return analysis.setTypeMap(typeMap)
                 .setConstraintExprs(typedConstraints)
-                .setObjectiveExprs(typedObjectives);
+                .setObjectiveExprs(typedObjectives)
+                .setAssertionExprs(typedAssertions);
     }
 
     private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {
@@ -343,6 +361,24 @@ public class TypeAnalyzer implements Analyzer {
         }
 
         @Override
+        public TypedExpr<?> visit(AstMax ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            if (set.getType().isInt()) {
+                return put(IntType, max(set.getExpr()));
+            }
+            throw new TypeException("Cannot max " + set.getType() + "|");
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstMin ast, Void a) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            if (set.getType().isInt()) {
+                return put(IntType, min(set.getExpr()));
+            }
+            throw new TypeException("Cannot min " + set.getType() + "|");
+        }
+
+        @Override
         public TypedExpr<AstBoolExpr> visit(AstSetTest ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
@@ -528,7 +564,7 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstBoolExpr> antecedent = typeCheck(ast.getAntecedent());
             TypedExpr<AstBoolExpr> alternative = typeCheck(ast.getAlternative());
             TypedExpr<AstBoolExpr> consequent = typeCheck(ast.getConsequent());
-            return put(BoolType, ifThenElse(antecedent.getExpr(), alternative.getExpr(), consequent.getExpr()));
+            return put(BoolType, ifThenElse(antecedent.getExpr(), consequent.getExpr(), alternative.getExpr()));
         }
 
         @Override
@@ -639,6 +675,28 @@ public class TypeAnalyzer implements Analyzer {
         }
 
         @Override
+        public TypedExpr<?> visit(AstDomainRestriction ast, Void a) {
+            TypedExpr<AstSetExpr> domain = typeCheck(ast.getDomain());
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            if (relation.getCommonSupertype().arity() == 2
+                    && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(0)), domain.getType())) {
+                return put(relation.getType(), domainRestriction(domain.getExpr(), relation.getExpr()));
+            }
+            throw new TypeException(relation + " cannot " + domain.getType() + " <: " + relation.getType());
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstRangeRestriction ast, Void a) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            TypedExpr<AstSetExpr> range = typeCheck(ast.getRange());
+            if (relation.getCommonSupertype().arity() == 2
+                    && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(1)), range.getType())) {
+                return put(relation.getType(), rangeRestriction(relation.getExpr(), range.getExpr()));
+            }
+            throw new TypeException(relation + " cannot " + relation.getType() + " :> " + range.getType());
+        }
+
+        @Override
         public TypedExpr<?> visit(AstInverse ast, Void a) {
             TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
             if (relation.getCommonSupertype().arity() == 2) {
@@ -658,6 +716,18 @@ public class TypeAnalyzer implements Analyzer {
                 }
             }
             throw new TypeException(relation + " cannot be transitively closed");
+        }
+
+        @Override
+        public TypedExpr<?> visit(AstConnected ast, Void a) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+            TypedExpr<AstSetExpr> nodes = typeCheck(ast.getNodes());
+            if (relation.getCommonSupertype().arity() == 2) {
+                if (relation.getCommonSupertype().get(0).equals(relation.getCommonSupertype().get(1))) {
+                    return put(BoolType, connected(nodes.getExpr(), relation.getExpr(), ast.isDirected()));
+                }
+            }
+            throw new TypeException(relation + " cannot be checked for connectivity");
         }
     }
 

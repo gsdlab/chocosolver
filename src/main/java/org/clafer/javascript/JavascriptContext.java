@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.clafer.assertion.Assertion;
+import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstSetExpr;
@@ -25,6 +27,7 @@ public class JavascriptContext {
     private final Map<String, Integer> scope = new HashMap<>();
     private final ScopeBuilder scopeBuilder = Scope.builder();
     private final List<Objective> objectives = new ArrayList<>(0);
+    private final List<Assertion> assertions = new ArrayList<>(0);
 
     public AstModel getModel() {
         return model;
@@ -87,5 +90,13 @@ public class JavascriptContext {
 
     public Objective[] getObjectives() {
         return objectives.toArray(new Objective[objectives.size()]);
+    }
+
+    public void addAssertion(AstBoolExpr expr) {
+        assertions.add(new Assertion(expr));
+    }
+
+    public Assertion[] getAssertions() {
+        return assertions.toArray(new Assertion[assertions.size()]);
     }
 }

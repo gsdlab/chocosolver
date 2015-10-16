@@ -12,7 +12,6 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.Asts;
 import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearch;
@@ -161,10 +160,10 @@ public class JavascriptShell {
         solver = null;
         engine = Javascript.newEngine();
         try {
-            Triple<AstModel, Scope, Objective[]> pair = Javascript.readModel(file, engine);
-            model = pair.getFst();
-            scope = pair.getSnd();
-            objectives = pair.getThd();
+            JavascriptFile pair = Javascript.readModel(file, engine);
+            model = pair.getModel();
+            scope = pair.getScope();
+            objectives = pair.getObjectives();
         } finally {
             init();
         }

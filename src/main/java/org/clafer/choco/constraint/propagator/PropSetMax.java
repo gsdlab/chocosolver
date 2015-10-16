@@ -74,37 +74,37 @@ public class PropSetMax extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         if (setCard.getLB() > 0) {
             if (set.getEnvelopeSize() > 0) {
-                max.updateUpperBound(PropUtil.maxEnv(set), aCause);
+                max.updateUpperBound(PropUtil.maxEnv(set), this);
             }
             int lim = setCard.getLB() - 1;
             if (lim < set.getEnvelopeSize()) {
-                max.updateLowerBound(PropUtil.getEnv(set, lim), aCause);
+                max.updateLowerBound(PropUtil.getEnv(set, lim), this);
             }
             if (set.getKernelSize() > 0) {
-                max.updateLowerBound(PropUtil.maxKer(set), aCause);
+                max.updateLowerBound(PropUtil.maxKer(set), this);
             }
             int in = in();
             if (in != SetVar.END) {
-                max.instantiateTo(in, aCause);
+                max.instantiateTo(in, this);
             }
             int ub = max.getUB();
             for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
                 if (i > ub) {
-                    set.removeFromEnvelope(i, aCause);
+                    set.removeFromEnvelope(i, this);
                 }
             }
             if (max.isInstantiated()) {
-                set.addToKernel(max.getValue(), aCause);
+                set.addToKernel(max.getValue(), this);
                 setPassive();
             }
         } else if (setCard.getUB() > 0) {
             if (!PropUtil.isDomIntersectEnv(max, set)) {
-                setCard.instantiateTo(0, aCause);
+                setCard.instantiateTo(0, this);
             } else if (set.getKernelSize() > 0) {
                 int m = max.getUB();
                 int k = PropUtil.minKer(set);
                 if (m < k) {
-                    setCard.instantiateTo(0, aCause);
+                    setCard.instantiateTo(0, this);
                 }
             }
         }

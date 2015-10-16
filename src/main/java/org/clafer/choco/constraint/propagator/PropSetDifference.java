@@ -24,9 +24,9 @@ public class PropSetDifference extends Propagator<SetVar> {
         this.minuend = Check.notNull(minuend);
         this.subtrahend = Check.notNull(subtrahend);
         this.difference = Check.notNull(difference);
-        this.minuendD = minuend.monitorDelta(aCause);
-        this.subtrahendD = subtrahend.monitorDelta(aCause);
-        this.differenceD = difference.monitorDelta(aCause);
+        this.minuendD = minuend.monitorDelta(this);
+        this.subtrahendD = subtrahend.monitorDelta(this);
+        this.differenceD = difference.monitorDelta(this);
     }
 
     @Override
@@ -38,21 +38,21 @@ public class PropSetDifference extends Propagator<SetVar> {
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = minuend.getEnvelopeFirst(); i != SetVar.END; i = minuend.getEnvelopeNext()) {
             if (!subtrahend.envelopeContains(i) && !minuend.envelopeContains(i)) {
-                minuend.removeFromEnvelope(i, aCause);
+                minuend.removeFromEnvelope(i, this);
             }
         }
         for (int i = difference.getKernelFirst(); i != SetVar.END; i = difference.getKernelNext()) {
-            minuend.addToKernel(i, aCause);
-            subtrahend.removeFromEnvelope(i, aCause);
+            minuend.addToKernel(i, this);
+            subtrahend.removeFromEnvelope(i, this);
         }
 
-        PropUtil.envSubsetEnv(difference, minuend, aCause);
+        PropUtil.envSubsetEnv(difference, minuend, this);
         for (int i = subtrahend.getKernelFirst(); i != SetVar.END; i = subtrahend.getKernelNext()) {
-            difference.removeFromEnvelope(i, aCause);
+            difference.removeFromEnvelope(i, this);
         }
         for (int i = minuend.getKernelFirst(); i != SetVar.END; i = minuend.getKernelNext()) {
             if (!subtrahend.envelopeContains(i)) {
-                difference.addToKernel(i, aCause);
+                difference.addToKernel(i, this);
             }
         }
     }
@@ -86,14 +86,14 @@ public class PropSetDifference extends Propagator<SetVar> {
     private final IntProcedure pruneDifferenceOnMinuendEnv = new IntProcedure() {
         @Override
         public void execute(int minuendEnv) throws ContradictionException {
-            difference.removeFromEnvelope(minuendEnv, aCause);
+            difference.removeFromEnvelope(minuendEnv, PropSetDifference.this);
         }
     };
     private final IntProcedure pickDifferenceOnMinuendKer = new IntProcedure() {
         @Override
         public void execute(int minuendKer) throws ContradictionException {
             if (!subtrahend.envelopeContains(minuendKer)) {
-                difference.addToKernel(minuendKer, aCause);
+                difference.addToKernel(minuendKer, PropSetDifference.this);
             }
         }
     };
@@ -101,31 +101,31 @@ public class PropSetDifference extends Propagator<SetVar> {
         @Override
         public void execute(int subtrahendEnv) throws ContradictionException {
             if (minuend.kernelContains(subtrahendEnv)) {
-                difference.addToKernel(subtrahendEnv, aCause);
+                difference.addToKernel(subtrahendEnv, PropSetDifference.this);
             } else if (difference.kernelContains(subtrahendEnv)) {
-                minuend.addToKernel(subtrahendEnv, aCause);
+                minuend.addToKernel(subtrahendEnv, PropSetDifference.this);
             }
         }
     };
     private final IntProcedure pruneDifferenceOnSubtrahendKer = new IntProcedure() {
         @Override
         public void execute(int subtrahendKer) throws ContradictionException {
-            difference.removeFromEnvelope(subtrahendKer, aCause);
+            difference.removeFromEnvelope(subtrahendKer, PropSetDifference.this);
         }
     };
     private final IntProcedure pruneMinuendOnDifferenceEnv = new IntProcedure() {
         @Override
         public void execute(int differenceEnv) throws ContradictionException {
             if (!subtrahend.envelopeContains(differenceEnv)) {
-                minuend.removeFromEnvelope(differenceEnv, aCause);
+                minuend.removeFromEnvelope(differenceEnv, PropSetDifference.this);
             }
         }
     };
     private final IntProcedure pickMinuendPruneSubtrahendOnDifferenceKer = new IntProcedure() {
         @Override
         public void execute(int differenceKer) throws ContradictionException {
-            minuend.addToKernel(differenceKer, aCause);
-            subtrahend.removeFromEnvelope(differenceKer, aCause);
+            minuend.addToKernel(differenceKer, PropSetDifference.this);
+            subtrahend.removeFromEnvelope(differenceKer, PropSetDifference.this);
         }
     };
 

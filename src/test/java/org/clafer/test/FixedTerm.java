@@ -39,4 +39,9 @@ public class FixedTerm implements Term {
     public int getValue(IrSolutionMap map) {
         return c;
     }
+
+    @Override
+    public String toString() {
+        return Integer.toString(c);
+    }
 }

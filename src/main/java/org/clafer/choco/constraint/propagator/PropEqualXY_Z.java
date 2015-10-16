@@ -65,31 +65,31 @@ public class PropEqualXY_Z extends Propagator<IntVar> {
         boolean changed;
         do {
             changed = false;
-            x.updateLowerBound(z.getLB() - y.getUB(), aCause);
-            x.updateUpperBound(z.getUB() - y.getLB(), aCause);
-            changed |= y.updateLowerBound(z.getLB() - x.getUB(), aCause);
-            changed |= y.updateUpperBound(z.getUB() - x.getLB(), aCause);
-            changed |= z.updateLowerBound(x.getLB() + y.getLB(), aCause);
-            changed |= z.updateUpperBound(x.getUB() + y.getUB(), aCause);
+            x.updateLowerBound(z.getLB() - y.getUB(), this);
+            x.updateUpperBound(z.getUB() - y.getLB(), this);
+            changed |= y.updateLowerBound(z.getLB() - x.getUB(), this);
+            changed |= y.updateUpperBound(z.getUB() - x.getLB(), this);
+            changed |= z.updateLowerBound(x.getLB() + y.getLB(), this);
+            changed |= z.updateUpperBound(x.getUB() + y.getUB(), this);
         } while (changed);
         do {
             changed = false;
             int xub = x.getUB();
             for (int i = x.getLB(); i <= xub; i = x.nextValue(i)) {
                 if (!supportForX(i)) {
-                    x.removeValue(i, aCause);
+                    x.removeValue(i, this);
                 }
             }
             int yub = y.getUB();
             for (int i = y.getLB(); i <= yub; i = y.nextValue(i)) {
                 if (!supportForY(i)) {
-                    changed |= y.removeValue(i, aCause);
+                    changed |= y.removeValue(i, this);
                 }
             }
             int zub = z.getUB();
             for (int i = z.getLB(); i <= zub; i = z.nextValue(i)) {
                 if (!supportForZ(i)) {
-                    changed |= z.removeValue(i, aCause);
+                    changed |= z.removeValue(i, this);
                 }
             }
         } while (changed);

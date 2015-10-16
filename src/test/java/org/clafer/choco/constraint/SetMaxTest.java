@@ -14,6 +14,7 @@ import static org.chocosolver.solver.variables.Var.cset;
 import static org.chocosolver.solver.variables.Var.env;
 import static org.chocosolver.solver.variables.Var.ker;
 import static org.chocosolver.solver.variables.VariableFactory.enumerated;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 
 /**
  *
@@ -22,8 +23,8 @@ import static org.chocosolver.solver.variables.VariableFactory.enumerated;
 @RunWith(ConstraintQuickTest.class)
 public class SetMaxTest {
 
-    @Input(solutions = 45)
-    public Object testSumSet(Solver solver) {
+    @Input(solutions = 37)
+    public Object testSetMax(Solver solver) {
         /*
          * import Control.Monad
          *
@@ -33,22 +34,24 @@ public class SetMaxTest {
          *     set <- powerset [-4..3]
          *     guard $ length set <= 2
          *     max <- [-4..4]
-         *     guard $ null set || max == maximum set
+         *     guard $ if null set then max == 0 else max == maximum set
          *     return (set, max)
          */
         return $(cset("set", env(-4, -3, -2, -1, 0, 1, 2, 3), ker(), card(0, 1, 2), solver),
-                enumerated("max", -4, 4, solver));
+                enumerated("max", -4, 4, solver), 0);
     }
 
-    @ConstraintQuickTest.Check
-    public void check(int[] set, int max) {
+    @Check
+    public void check(int[] set, int max, int d) {
         if (set.length > 0) {
             assertEquals(set[set.length - 1], max);
+        } else {
+            assertEquals(d, max);
         }
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar set, IntVar max) {
-        return Constraints.max(set.getSet(), set.getCard(), max);
+    public Constraint setup(CSetVar set, IntVar max, int d) {
+        return Constraints.max(set.getSet(), set.getCard(), max, d);
     }
 }

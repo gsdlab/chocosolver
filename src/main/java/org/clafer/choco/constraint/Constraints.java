@@ -1,20 +1,38 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.choco.constraint.propagator.PropTransitive;
+import org.chocosolver.solver.variables.*;
+import org.clafer.choco.constraint.propagator.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.ICF;
+import org.chocosolver.solver.constraints.Operator;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
+import org.chocosolver.solver.constraints.binary.PropEqualX_Y;
+import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
+import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
+import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
+import org.chocosolver.solver.constraints.nary.sum.PropSum;
+import org.chocosolver.solver.constraints.set.PropIntersection;
+import org.chocosolver.solver.constraints.set.PropSubsetEq;
+import org.chocosolver.solver.constraints.unary.PropEqualXC;
+import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
+import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
-import org.clafer.choco.constraint.propagator.PropContinuousUnion;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropFilterString;
+import org.clafer.choco.constraint.propagator.PropFilterStringCard;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
@@ -46,26 +64,6 @@ import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.common.Util;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.constraints.Propagator;
-import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
-import org.chocosolver.solver.constraints.binary.PropEqualX_Y;
-import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
-import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
-import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
-import org.chocosolver.solver.constraints.nary.sum.PropSumEq;
-import org.chocosolver.solver.constraints.set.PropIntersection;
-import org.chocosolver.solver.constraints.set.PropSubsetEq;
-import org.chocosolver.solver.constraints.unary.PropEqualXC;
-import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
-import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
-import org.chocosolver.solver.variables.BoolVar;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
-import org.chocosolver.solver.variables.VF;
-import org.chocosolver.solver.variables.Variable;
 
 /**
  * Custom Choco constraints. Designed for Clafer. Note that these constraints
@@ -145,17 +143,8 @@ public class Constraints {
                 }
             // fallthrough
             default:
-                if (constant == 0) {
-                    return new PropSumEq(filtered, sum);
-                }
-                return new PropSumEq(Util.cons(VF.fixed(constant, sum.getSolver()), filtered), sum);
+                return new PropSum(Util.snoc(filtered, sum), filter.size(), Operator.EQ, -constant);
         }
-    }
-
-    private static IntVar enumerated(String name, int lb, int ub, Solver solver) {
-        return lb == ub
-                ? VF.fixed(lb, solver)
-                : VF.enumerated(name, lb, ub, solver);
     }
 
     /**
@@ -175,7 +164,16 @@ public class Constraints {
      * @return constraint {@code operands[0] ∧ operands[1] ∧ ... ∧ operands[n]}
      */
     public static Constraint and(BoolVar... operands) {
-        return new Constraint("and", new PropAnd(operands));
+        return new Constraint("and", new PropAnd(operands)) {
+            @Override
+            public Constraint makeOpposite() {
+                BoolVar[] nots = new BoolVar[operands.length];
+                for (int i = 0; i < nots.length; i++) {
+                    nots[i] = operands[i].not();
+                }
+                return or(nots);
+            }
+        };
     }
 
     /**
@@ -210,7 +208,17 @@ public class Constraints {
      * @return constraint {@code operands[0] ∨ operands[1] ∨ ... ∨ operands[n]}
      */
     public static Constraint or(BoolVar... operands) {
-        return new Constraint("or", new PropOr(operands));
+        return new Constraint("or", new PropOr(operands)) {
+
+            @Override
+            public Constraint makeOpposite() {
+                BoolVar[] nots = new BoolVar[operands.length];
+                for (int i = 0; i < nots.length; i++) {
+                    nots[i] = operands[i].not();
+                }
+                return and(nots);
+            }
+        };
     }
 
     /**
@@ -245,6 +253,10 @@ public class Constraints {
                 return ifThenElse(antecedent, consequent.not(), alternative.not());
             }
         };
+    }
+
+    public static Constraint ternary(BoolVar antecedent, IntVar result, IntVar consequent, IntVar alternative) {
+        return new Constraint("Ternary", new PropTernary(antecedent, result, consequent, alternative));
     }
 
     /**
@@ -320,6 +332,26 @@ public class Constraints {
         return new Constraint("element", new org.clafer.choco.constraint.propagator.PropElement(value, array, index, offset));
     }
 
+//    public static Constraint equalSupport(final IntVar x, final IntVar y, final int c) {
+//        return new Constraint("equalArcConsistent", new PropEqualX_YSupportC(x, y, c)) {
+//            @Override
+//            public Constraint makeOpposite() {
+//                return new Constraint("notEqualSupport", new PropNotEqualX_Y(x, y), new PropNotEqualXC(x, c));
+//            }
+//        };
+//    }
+//
+//    public static Constraint element(IntVar value, IntVar[] array, IntVar index, int offset) {
+//        return new Constraint("element", new PropElement(value, array, index, offset));
+//    }
+//
+//    public static Constraint elementArraySupport(IntVar value, IntVar[] array, IntVar index, int offset, int support) {
+//        return new Constraint("elementArraySupport", new PropElementArraySupport(value, array, index, offset, support));
+//    }
+//
+//    public static Constraint elementValueSupport(IntVar value, IntVar[] array, IntVar index, int offset, int support) {
+//        return new Constraint("elementValueSupport", new PropElementValueSupport(value, array, index, offset, support));
+//    }
     /**
      * A constraint enforcing {@code element ∈ set}.
      *
@@ -384,25 +416,20 @@ public class Constraints {
 
     /**
      * A constraint enforcing
-     * {@code array(sets[0]) ++ array(sets[1]) ++ ... ++ array(sets[n]) ∈ N}
-     * where {@code array} is the sorted array representation of the set,
-     * {@code ++} is append, and {@code N = {[0,1,...,i] | i ≥ 0}}.
+     * {@code sets[i] = \{bounds[i - 1], bound[i - 1] + 1, ..., bounds[i] - 1\}}
+     * where {@code bounds[-1]} is interpreted as 0.
      *
      * @param sets the sets
      * @param setCards the cardinalities of {@code sets}
+     * @param bounds the bounds
      * @return constraint
-     * {@code array(sets[0]) ++ array(sets[1]) ++ ... ++ array(sets[n]) ∈ N}
+     * {@code sets[i] = \{bounds[i - 1], bound[i - 1] + 1, ..., bounds[i] - 1\}}.
      */
-    public static Constraint sortedSets(SetVar[] sets, IntVar[] setCards) {
+    public static Constraint sortedSets(SetVar[] sets, IntVar[] setCards, IntVar[] bounds) {
         if (sets.length != setCards.length) {
             throw new IllegalArgumentException();
         }
         Solver solver = sets[0].getSolver();
-        int lb = 0;
-        int ub = 0;
-        for (IntVar setCard : setCards) {
-            ub += setCard.getUB();
-        }
 
         List<Propagator<?>> propagators = new ArrayList<>();
 
@@ -414,8 +441,11 @@ public class Constraints {
             } else if (setCards[i].isInstantiatedTo(0)) {
                 boundary[i + 1] = boundary[i];
             } else {
-                boundary[i + 1] = enumerated(sets[i].getName() + "@Hb", lb, ub, solver);
-                solver.post(equalArcConsistent(boundary[i], setCards[i], boundary[i + 1]));
+                boundary[i + 1] = bounds[i]; //enumerated(sets[i].getName() + "@Hb", lb, ub, solver);
+                propagators.add(new PropEqualXY_Z(boundary[i], setCards[i], boundary[i + 1]));
+            }
+            if (!boundary[i + 1].equals(bounds[i])) {
+                propagators.add(new PropEqualX_Y(boundary[i + 1], bounds[i]));
             }
             propagators.add(new PropSetLowBound(sets[i], boundary[i]));
             propagators.add(new PropIntMemberNonemptySet(boundary[i], sets[i], setCards[i]));
@@ -424,6 +454,9 @@ public class Constraints {
         }
         for (int i = 0; i < sets.length; i++) {
             propagators.add(new PropContinuous(sets[i], setCards[i]));
+        }
+        if (boundary[boundary.length - 1].getUB() < 0) {
+            return solver.FALSE();
         }
         propagators.add(new PropContinuousUnion(sets, boundary[boundary.length - 1]));
 
@@ -471,6 +504,45 @@ public class Constraints {
         return new Constraint("acyclic", new PropAcyclic(edges));
     }
 
+    public static Constraint connected(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
+        return s.TRUE();
+//        int nodes_upper = PropUtil.maxEnv(nodes) + 1;
+//        boolean fixed_nodes = nodes.isInstantiated();
+//
+//        UndirectedGraph GLB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
+//        UndirectedGraph GUB = new UndirectedGraph(s, nodes_upper, SetType.BITSET, fixed_nodes);
+//
+//        //add nodes
+//        if (!fixed_nodes) {
+//            for (int n = nodes.getKernelFirst(); n != SetVar.END; n = nodes.getKernelNext()) {
+//                GLB.addNode(n);
+//            }
+//            for (int n = nodes.getEnvelopeFirst(); n != SetVar.END; n = nodes.getEnvelopeNext()) {
+//                GUB.addNode(n);
+//            }
+//        }
+//        //add edges
+//        for (int i = 0; i < edges.length; i++) {
+//            SetVar edge = edges[i];
+//            for (int n = edge.getKernelFirst(); n != SetVar.END; n = edge.getKernelNext()) {
+//                if (n < nodes_upper) {
+//                    GLB.addEdge(i, n);
+//                }
+//            }
+//            for (int n = edge.getEnvelopeFirst(); n != SetVar.END; n = edge.getEnvelopeNext()) {
+//                if (n < nodes_upper) {
+//                    GUB.addEdge(i, n);
+//                }
+//            }
+//        }
+//
+//        IUndirectedGraphVar g = GraphVarFactory.undirected_graph_var("ConnectedVar" + varNum++, GLB, GUB, s);
+//        s.post(GCF.nodes_channeling(g, nodes));
+//        s.post(GCF.neighbors_channeling(g, edges));
+//
+//        return GCF.connected(g);
+    }
+
     /**
      * A constraint enforcing no path from one node to another.
      * {@code edges[i] = j} implies that there is a directed edge from node i to
@@ -502,7 +574,9 @@ public class Constraints {
      * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
      */
     public static Constraint filterString(SetVar set, IntVar setCard, int offset, IntVar[] string, IntVar[] result) {
-        return new Constraint("filterString", new PropFilterString(set, setCard, offset, string, result));
+        return new Constraint("filterString",
+                new PropFilterString(set, setCard, offset, string, result),
+                new PropFilterStringCard(setCard, result));
     }
 
     /**
@@ -562,17 +636,6 @@ public class Constraints {
      *******************
      */
     /**
-     * A constraint enforcing {@code {ivar} = svar}.
-     *
-     * @param ivar the integer
-     * @param svar the singleton set
-     * @return constraint {@code {ivar} = svar}
-     */
-    public static Constraint singleton(IntVar ivar, SetVar svar) {
-        return new Constraint("singleton", new PropSingleton(ivar, svar));
-    }
-
-    /**
      * A constraint enforcing {@code {ivar} = svar} and {@code svarCard = 1}.
      * Does not enforce that {@code svarCard = |svarCard|} because of how the
      * compilation works, it is already enforced elsewhere.
@@ -583,9 +646,31 @@ public class Constraints {
      * @return constraint {@code {ivar} = svar}
      */
     public static Constraint singleton(IntVar ivar, SetVar svar, IntVar svarCard) {
+        if (svarCard.isInstantiatedTo(1)) {
+            return new Constraint("singleton",
+                    new PropSingleton(ivar, svar));
+        }
         return new Constraint("singleton",
                 new PropSingleton(ivar, svar),
                 new PropEqualXC(svarCard, 1));
+    }
+
+    /**
+     * A constraint enforcing
+     * {@code if ivar = filter then {} = svar else {ivar} = svar} and
+     * {@code svarCard = 1}. Does not enforce that {@code svarCard = |svarCard|}
+     * because of how the compilation works, it is already enforced elsewhere.
+     *
+     * @param ivar the integer
+     * @param svar the singleton set
+     * @param svarCard the cardinality of {@code svar}
+     * @return constraint
+     * {@code if ivar = filter then {} = svar else {ivar} = svar}
+     */
+    public static Constraint singletonFilter(IntVar ivar, SetVar svar, IntVar svarCard, int filter) {
+        return new Constraint("singletonFilter",
+                new PropSingletonFilter(ivar, svar, filter),
+                new PropEqualX_Y(svarCard, ICF.arithm(ivar, "!=", filter).reif()));
     }
 
     /**
@@ -797,11 +882,11 @@ public class Constraints {
         if (setCard.getLB() > 0) {
             return max(set, setCard, max);
         }
-        // TODO optimize
-        return ifThenElse(
-                ICF.arithm(setCard, "=", 0).reif(),
-                ICF.arithm(max, "=", 0).reif(),
-                max(set, setCard, max).reif());
+        return new Constraint("max",
+                new PropGreaterOrEqualX_Y(new IntVar[]{
+                    ICF.arithm(max, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                }),
+                new PropSetMax(set, setCard, max));
     }
 
     public static Constraint stritctHighBound(SetVar set, IntVar bound) {
@@ -810,6 +895,17 @@ public class Constraints {
 
     public static Constraint min(SetVar set, IntVar setCard, IntVar min) {
         return new Constraint("min", new PropSetMin(set, setCard, min));
+    }
+
+    public static Constraint min(SetVar set, IntVar setCard, IntVar min, int d) {
+        if (setCard.getLB() > 0) {
+            return min(set, setCard, min);
+        }
+        return new Constraint("min",
+                new PropGreaterOrEqualX_Y(new IntVar[]{
+                    ICF.arithm(min, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                }),
+                new PropSetMin(set, setCard, min));
     }
 
     public static Constraint lowBound(SetVar set, IntVar bound) {
@@ -849,8 +945,7 @@ public class Constraints {
             int from, int to) {
         return new Constraint("mask",
                 new PropMask(set, masked, from, to),
-                // Simple cardinality propagation.
-                greaterThanEq(setCard, maskedCard));
+                new PropMaskCard(set, setCard, masked, maskedCard, from, to));
     }
 
     /**
@@ -891,6 +986,23 @@ public class Constraints {
             IntVar[] chars1, IntVar length1,
             IntVar[] chars2, IntVar length2) {
         return equal(chars1, length1, chars2, length2).getOpposite();
+    }
+
+    public static Constraint equal(IntVar[] chars1, IntVar[] chars2) {
+        if (chars1.length != chars2.length) {
+            throw new IllegalArgumentException();
+        }
+        if (chars1.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        List<Propagator> propagators = new ArrayList<>(chars1.length);
+        for (int i = 0; i < chars1.length; i++) {
+            eq(chars1[i], chars2[i]).ifPresent(propagators::add);
+        }
+        if (propagators.isEmpty()) {
+            return chars1[0].getSolver().TRUE();
+        }
+        return new Constraint("ArrayEqual", propagators.toArray(new Propagator[propagators.size()]));
     }
 
     public static Constraint lessThan(IntVar[] chars1, IntVar[] chars2) {
@@ -1008,6 +1120,41 @@ public class Constraints {
                 propagators.toArray(new Propagator<?>[propagators.size()]));
     }
 
+    public static Constraint subarray(IntVar[] subarray, IntVar sublength, IntVar index, IntVar[] suparray) {
+        if (sublength.getUB() < 0 || index.getUB() < 0 || suparray.length == 0) {
+            return sublength.getSolver().FALSE();
+        }
+        if (subarray.length == 0) {
+            return new Constraint(null, new PropEqualXC(sublength, 0), new PropLessOrEqualXC(index, suparray.length - 1));
+        }
+        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        for (int i = 0; i < subarray.length; i++) {
+            IntVar[] pad = new IntVar[suparray.length];
+            int j;
+            for (j = 0; j < pad.length && j + i < suparray.length; j++) {
+                pad[j] = suparray[j + i];
+            }
+            for (; j < pad.length; j++) {
+                pad[j] = VF.fixed(-1, sublength.getSolver());
+            }
+            propagators.add(new PropElementValueSupport(subarray[i], pad, index, 0, -1));
+        }
+        for (int i = 0; i < suparray.length; i++) {
+            IntVar[] pad = new IntVar[suparray.length + 1];
+            int j;
+            for (j = 0; j < i && i - j >= 0 && i - j < subarray.length; j++) {
+                pad[j] = subarray[i - j];
+            }
+            for (; j < pad.length; j++) {
+                pad[j] = VF.fixed(-1, sublength.getSolver());
+            }
+            propagators.add(new PropElementArraySupport(suparray[i], pad, index, 0, -1));
+        }
+        propagators.add(new PropLength(subarray, sublength, -1));
+        return new Constraint("Substring",
+                propagators.toArray(new Propagator<?>[propagators.size()]));
+    }
+
     private static IntVar[] pad(IntVar[] chars, int length, IntVar zero) {
         if (length == chars.length) {
             return chars;
@@ -1018,6 +1165,15 @@ public class Constraints {
         IntVar[] pad = Arrays.copyOf(chars, length);
         Arrays.fill(pad, chars.length, pad.length, zero);
         return pad;
+    }
+
+    public static Constraint containsImpliesEqualTest(SetVar cond, int z,
+            SetVar x, IntVar xCard, SetVar y, IntVar yCard) {
+        return new Constraint("containsImpliesEqual",
+                new PropContainsImpliesEqual(cond, z, x, y),
+                new PropContainsImpliesEqualCard(cond, z, xCard, yCard),
+                new PropContainsImpliesEqualCard2(x, xCard, y)
+        );
     }
 
     public static Constraint transitive(SetVar[] relation) {

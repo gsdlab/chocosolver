@@ -74,9 +74,7 @@ public class AstUtil {
         KeyGraph<AstClafer> dependency = new KeyGraph<>();
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            for (AstClafer sub : abstractClafer.getSubs()) {
-                node.addNeighbour(dependency.getVertex(sub));
-            }
+            abstractClafer.getSubs().stream().map(dependency::getVertex).forEach(node::addNeighbour);
         }
         for (AstConcreteClafer concreteClafer : getConcreteClafers(model)) {
             if (concreteClafer.hasParent()) {
@@ -330,6 +328,24 @@ public class AstUtil {
         do {
             if (superClafer.hasRef()) {
                 return superClafer.getRef();
+            }
+            superClafer = superClafer.getSuperClafer();
+        } while (superClafer != null);
+        return null;
+    }
+
+    /**
+     * Find the group cardinality belonging to the Clafer or the group
+     * cardinality it inherited.
+     *
+     * @param clafer the Clafer
+     * @return the group cardinality, or {@code null} if none exist
+     */
+    public static Card getInheritedGroupCard(AstClafer clafer) {
+        AstClafer superClafer = Check.notNull(clafer);
+        do {
+            if (superClafer.hasGroupCard()) {
+                return superClafer.getGroupCard();
             }
             superClafer = superClafer.getSuperClafer();
         } while (superClafer != null);

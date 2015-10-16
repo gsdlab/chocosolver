@@ -39,25 +39,25 @@ public class PropSelectN extends Propagator<IntVar> {
     private boolean isNVar(int varIdx) {
         return varIdx == bools.length;
     }
-
-    @Override
-    public int getPropagationConditions(int vIdx) {
-        if (isBoolsVar(vIdx)) {
-            return IntEventType.instantiation();
-        }
-        assert isNVar(vIdx);
-        return IntEventType.boundAndInst();
-    }
+// TODO: Sept16
+//    @Override
+//    public int getPropagationConditions(int vIdx) {
+//        if (isBoolsVar(vIdx)) {
+//            return IntEventType.instantiation();
+//        }
+////        assert isNVar(vIdx);
+//        return IntEventType.boundAndInst();
+//    }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        n.updateLowerBound(0, aCause);
-        n.updateUpperBound(bools.length, aCause);
+        n.updateLowerBound(0, this);
+        n.updateUpperBound(bools.length, this);
         // Prune n
         for (int i = n.getLB(); i < n.getUB(); i++) {
             if (bools[i].isInstantiated()) {
                 if (bools[i].getValue() == 0) {
-                    n.updateUpperBound(i, aCause);
+                    n.updateUpperBound(i, this);
                     break;
                 }
             }
@@ -65,16 +65,16 @@ public class PropSelectN extends Propagator<IntVar> {
         for (int i = n.getUB() - 1; i >= n.getLB(); i--) {
             if (bools[i].isInstantiated()) {
                 if (bools[i].getValue() == 1) {
-                    n.updateLowerBound(i + 1, aCause);
+                    n.updateLowerBound(i + 1, this);
                 }
             }
         }
         // Pick bool
         for (int i = 0; i < n.getLB(); i++) {
-            bools[i].setToTrue(aCause);
+            bools[i].setToTrue(this);
         }
         for (int i = n.getUB(); i < bools.length; i++) {
-            bools[i].setToFalse(aCause);
+            bools[i].setToFalse(this);
         }
     }
 
@@ -84,20 +84,20 @@ public class PropSelectN extends Propagator<IntVar> {
             assert bools[idxVarInProp].isInstantiated();
             if (bools[idxVarInProp].getValue() == 0) {
                 for (int i = idxVarInProp + 1; i < bools.length; i++) {
-                    bools[i].setToFalse(aCause);
+                    bools[i].setToFalse(this);
                 }
-                if (n.updateUpperBound(idxVarInProp, aCause) && n.getUB() < idxVarInProp) {
+                if (n.updateUpperBound(idxVarInProp, this) && n.getUB() < idxVarInProp) {
                     for (int i = n.getUB(); i <= idxVarInProp; i++) {
-                        bools[i].setToFalse(aCause);
+                        bools[i].setToFalse(this);
                     }
                 }
             } else {
                 for (int i = 0; i < idxVarInProp; i++) {
-                    bools[i].setToTrue(aCause);
+                    bools[i].setToTrue(this);
                 }
-                if (n.updateLowerBound(idxVarInProp + 1, aCause) && n.getLB() > idxVarInProp + 1) {
+                if (n.updateLowerBound(idxVarInProp + 1, this) && n.getLB() > idxVarInProp + 1) {
                     for (int i = idxVarInProp; i < n.getLB(); i++) {
-                        bools[i].setToTrue(aCause);
+                        bools[i].setToTrue(this);
                     }
                 }
             }
@@ -105,12 +105,12 @@ public class PropSelectN extends Propagator<IntVar> {
             assert isNVar(idxVarInProp);
             if (IntEventType.isInclow(mask)) {
                 for (int i = 0; i < n.getLB(); i++) {
-                    bools[i].setToTrue(aCause);
+                    bools[i].setToTrue(this);
                 }
             }
             if (IntEventType.isDecupp(mask)) {
                 for (int i = n.getUB(); i < bools.length; i++) {
-                    bools[i].setToFalse(aCause);
+                    bools[i].setToFalse(this);
                 }
             }
         }

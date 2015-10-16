@@ -26,7 +26,7 @@ public class PropOne extends Propagator<BoolVar> {
     private void clearAllBut(int exclude) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
             if (i != exclude) {
-                vars[i].setToFalse(aCause);
+                vars[i].setToFalse(this);
             }
         }
     }
@@ -50,7 +50,7 @@ public class PropOne extends Propagator<BoolVar> {
         }
         // Every variable is false except for last.
         if (count == 1) {
-            last.setToTrue(aCause);
+            last.setToTrue(this);
         }
         if (count == 0) {
             contradiction(vars[0], "All false.");

@@ -123,10 +123,10 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     private boolean equal(IntVar a, IntVar b) throws ContradictionException {
         // Don't use short-circuit or
-        return a.updateLowerBound(b.getLB(), aCause)
-                | a.updateUpperBound(b.getUB(), aCause)
-                | b.updateLowerBound(a.getLB(), aCause)
-                | b.updateUpperBound(a.getUB(), aCause);
+        return a.updateLowerBound(b.getLB(), this)
+                | a.updateUpperBound(b.getUB(), this)
+                | b.updateLowerBound(a.getLB(), this)
+                | b.updateUpperBound(a.getUB(), this);
     }
 
     private boolean lessThanString(IntVar[] a, IntVar[] b) throws ContradictionException {
@@ -174,8 +174,8 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     private boolean lessThan(IntVar a, IntVar b) throws ContradictionException {
         // Don't use short-circuit or
-        return a.updateUpperBound(b.getUB() - 1, aCause)
-                | b.updateLowerBound(a.getLB() + 1, aCause);
+        return a.updateUpperBound(b.getUB() - 1, this)
+                | b.updateLowerBound(a.getLB() + 1, this);
     }
 
     private boolean lessThanEqualString(IntVar[] a, IntVar[] b) throws ContradictionException {
@@ -220,8 +220,8 @@ public class PropLexChainChannel extends Propagator<IntVar> {
 
     private boolean lessThanEqual(IntVar a, IntVar b) throws ContradictionException {
         // Don't use short-circuit or
-        return a.updateUpperBound(b.getUB(), aCause)
-                | b.updateLowerBound(a.getLB(), aCause);
+        return a.updateUpperBound(b.getUB(), this)
+                | b.updateLowerBound(a.getLB(), this);
     }
 
     private boolean propagateSmallest(boolean[] notSmallest, boolean notSmaller[], boolean[] lessThanEqual, int smallest) throws ContradictionException {
@@ -234,7 +234,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
                 notSmaller[i] = false;
                 stop = false;
                 lessThanEqualStop |= lessThanEqual[i];
-                changed |= ints[i].instantiateTo(smallest, aCause);
+                changed |= ints[i].instantiateTo(smallest, this);
             }
             notNextSmallest[i] = !notSmaller[i];
         }
@@ -320,7 +320,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
             }
             repeat |= propagateSmallest(notSmallest, notSmallest, lessThanEqual, 0);
             for (IntVar var : ints) {
-                repeat |= var.updateUpperBound(ints.length - 1 - eqs, aCause);
+                repeat |= var.updateUpperBound(ints.length - 1 - eqs, this);
             }
             changed |= repeat;
         } while (repeat);

@@ -13,88 +13,9 @@ import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
-import org.clafer.ir.IrAcyclic;
-import org.clafer.ir.IrAdd;
-import org.clafer.ir.IrAllDifferent;
-import org.clafer.ir.IrAnd;
-import org.clafer.ir.IrArrayToSet;
-import org.clafer.ir.IrBoolChannel;
+import org.clafer.ir.*;
 import org.clafer.domain.BoolDomain;
-import org.clafer.ir.IrBoolExpr;
-import org.clafer.ir.IrBoolExprVisitor;
-import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrCard;
-import org.clafer.ir.IrCompare;
-import org.clafer.ir.IrConcat;
-import org.clafer.ir.IrCount;
-import org.clafer.ir.IrDiv;
 import org.clafer.domain.Domain;
-import org.clafer.ir.IrCountNotEqual;
-import org.clafer.ir.IrElement;
-import org.clafer.ir.IrStringElement;
-import org.clafer.ir.IrExpr;
-import org.clafer.ir.IrFilterString;
-import org.clafer.ir.IrIfOnlyIf;
-import org.clafer.ir.IrIfThenElse;
-import org.clafer.ir.IrImplies;
-import org.clafer.ir.IrIntArrayExpr;
-import org.clafer.ir.IrIntArrayExprVisitor;
-import org.clafer.ir.IrIntArrayVar;
-import org.clafer.ir.IrIntChannel;
-import org.clafer.ir.IrIntConstant;
-import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrIntExprVisitor;
-import org.clafer.ir.IrIntVar;
-import org.clafer.ir.IrInverse;
-import org.clafer.ir.IrJoinFunction;
-import org.clafer.ir.IrJoinRelation;
-import org.clafer.ir.IrLength;
-import org.clafer.ir.IrLone;
-import org.clafer.ir.IrMask;
-import org.clafer.ir.IrMember;
-import org.clafer.ir.IrMinus;
-import org.clafer.ir.IrModule;
-import org.clafer.ir.IrMul;
-import org.clafer.ir.IrNot;
-import org.clafer.ir.IrNotImplies;
-import org.clafer.ir.IrNotMember;
-import org.clafer.ir.IrOffset;
-import org.clafer.ir.IrOne;
-import org.clafer.ir.IrOr;
-import org.clafer.ir.IrPrefix;
-import org.clafer.ir.IrRegister;
-import org.clafer.ir.IrSelectN;
-import org.clafer.ir.IrSetArrayExpr;
-import org.clafer.ir.IrSetArrayExprVisitor;
-import org.clafer.ir.IrSetArrayVar;
-import org.clafer.ir.IrSetDifference;
-import org.clafer.ir.IrSetElement;
-import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrSetExprVisitor;
-import org.clafer.ir.IrSetIntersection;
-import org.clafer.ir.IrSetSum;
-import org.clafer.ir.IrSetTernary;
-import org.clafer.ir.IrSetEquality;
-import org.clafer.ir.IrSetUnion;
-import org.clafer.ir.IrSetVar;
-import org.clafer.ir.IrSingleton;
-import org.clafer.ir.IrSortSets;
-import org.clafer.ir.IrSortStrings;
-import org.clafer.ir.IrSortStringsChannel;
-import org.clafer.ir.IrStringCompare;
-import org.clafer.ir.IrStringExpr;
-import org.clafer.ir.IrStringExprVisitor;
-import org.clafer.ir.IrStringVar;
-import org.clafer.ir.IrSubsetEq;
-import org.clafer.ir.IrSuffix;
-import org.clafer.ir.IrTernary;
-import org.clafer.ir.IrTransitiveClosure;
-import org.clafer.ir.IrUnreachable;
-import org.clafer.ir.IrUtil;
-import org.clafer.ir.IrVar;
-import org.clafer.ir.IrWithin;
-import org.clafer.ir.IrXor;
-import org.clafer.ir.Irs;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
@@ -111,8 +32,6 @@ import org.chocosolver.solver.variables.CStringVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
-import org.clafer.ir.IrMod;
-import org.clafer.ir.IrSetMax;
 
 /**
  * Compile from IR to Choco.
@@ -141,7 +60,6 @@ public class IrCompiler {
 
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(module);
-
         Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
         Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
         if (coalesceVariables) {
@@ -449,6 +367,18 @@ public class IrCompiler {
         return (Constraint) result;
     }
 
+    private Constraint compileAsConstraint(IrIntArrayExpr expr, IntVar[] reify) {
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(intArrayExprCompiler, reify);
+        if (result instanceof IntVar[]) {
+            IntVar[] array = (IntVar[]) result;
+            // The compliation failed to reify, explicitly reify now.
+            return Constraints.equal(reify, array);
+        }
+        return (Constraint) result;
+    }
+
     private Constraint compileArithm(IrIntExpr a, Rel op, int b) {
         return compileArithm(a, op, Irs.constant(b));
     }
@@ -750,7 +680,6 @@ public class IrCompiler {
     }
 
     private final IrBoolExprVisitor<BoolArg, Object> boolExprCompiler = new IrBoolExprVisitor<BoolArg, Object>() {
-
         @Override
         public Object visit(IrRegister ir, BoolArg a) {
             IrVar variable = ir.getVariable();
@@ -943,6 +872,21 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrArrayEquality ir, BoolArg a) {
+            switch (ir.getOp()) {
+                case Equal:
+                    if (ir.getRight() instanceof IrIntArrayVar) {
+                        return compileAsConstraint(ir.getLeft(), compile(ir.getRight()));
+                    }
+                    return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
+                case NotEqual:
+                    return Constraints.equal(compile(ir.getLeft()), compile(ir.getRight())).getOpposite();
+                default:
+                    throw new IllegalArgumentException("Unexpected operator.");
+            }
+        }
+
+        @Override
         public Object visit(IrSetEquality ir, BoolArg a) {
             switch (ir.getOp()) {
                 case Equal:
@@ -1020,7 +964,8 @@ public class IrCompiler {
         @Override
         public Object visit(IrSortSets ir, BoolArg a) {
             CSetVar[] sets = compile(ir.getSets());
-            return Constraints.sortedSets(mapSet(sets), mapCard(sets));
+            IntVar[] bounds = compile(ir.getBounds());
+            return Constraints.sortedSets(mapSet(sets), mapCard(sets), bounds);
         }
 
         @Override
@@ -1054,6 +999,14 @@ public class IrCompiler {
         public Object visit(IrAcyclic ir, BoolArg a) {
             IntVar[] edges = compile(ir.getEdges());
             return Constraints.acyclic(edges);
+        }
+
+        @Override
+        public Object visit(IrConnected ir, BoolArg a) {
+            CSetVar[] relation = compile(ir.getRelation());
+            CSetVar nodes = compile(ir.getNodes());
+            //TODO handle directed graph in the future
+            return Constraints.connected(solver, nodes.getSet(), mapSet(relation), ir.isDirected());
         }
 
         @Override
@@ -1276,6 +1229,17 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrSetMin ir, IntVar reify) {
+            CSetVar set = compile(ir.getSet());
+            if (reify == null) {
+                IntVar min = numIntVar("SetMin", ir.getDomain());
+                post(Constraints.min(set.getSet(), set.getCard(), min, ir.getDefaultValue()));
+                return min;
+            }
+            return Constraints.min(set.getSet(), set.getCard(), reify, ir.getDefaultValue());
+        }
+
+        @Override
         public Object visit(IrSetSum ir, IntVar reify) {
             CSetVar set = compile(ir.getSet());
             if (reify == null) {
@@ -1293,14 +1257,10 @@ public class IrCompiler {
             IntVar alternative = compile(ir.getAlternative());
             if (reify == null) {
                 IntVar ternary = numIntVar("Ternary", ir.getDomain());
-                post(_ifThenElse(antecedent,
-                        _arithm(ternary, "=", consequent),
-                        _arithm(ternary, "=", alternative)));
+                post(Constraints.ternary(antecedent, ternary, consequent, alternative));
                 return ternary;
             }
-            return _ifThenElse(antecedent,
-                    _arithm(reify, "=", consequent),
-                    _arithm(reify, "=", alternative));
+            return Constraints.ternary(antecedent, reify, consequent, alternative);
         }
 
         @Override
@@ -1388,6 +1348,11 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrArrayEquality ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
         public Object visit(IrSetEquality ir, IntVar a) {
             return compileBool(ir, a);
         }
@@ -1453,6 +1418,11 @@ public class IrCompiler {
         }
 
         @Override
+        public Object visit(IrConnected ir, IntVar a) {
+            return compileBool(ir, a);
+        }
+
+        @Override
         public Object visit(IrUnreachable ir, IntVar a) {
             return compileBool(ir, a);
         }
@@ -1483,10 +1453,22 @@ public class IrCompiler {
             IntVar value = compile(ir.getValue());
             if (reify == null) {
                 SetVar singleton = numSetVar("Singleton", ir.getEnv(), ir.getKer());
-                post(Constraints.singleton(value, singleton));
+                post(Constraints.singleton(value, singleton, one(solver)));
                 return new CSetVar(singleton, one(solver));
             }
             return Constraints.singleton(value, reify.getSet(), reify.getCard());
+        }
+
+        @Override
+        public Object visit(IrSingletonFilter ir, CSetVar reify) {
+            IntVar value = compile(ir.getValue());
+            int filter = ir.getFilter();
+            if (reify == null) {
+                CSetVar singleton = numCset("SingletonFilter", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(Constraints.singletonFilter(value, singleton.getSet(), singleton.getCard(), filter));
+                return singleton;
+            }
+            return Constraints.singletonFilter(value, reify.getSet(), reify.getCard(), filter);
         }
 
         @Override
@@ -1619,6 +1601,18 @@ public class IrCompiler {
                     _implies(antecedent.not(), _equal(reify, alternative)).reif(),
                     "=", 2);
         }
+
+        @Override
+        public Object visit(IrContainsSetTernary ir, CSetVar reify) {
+            CSetVar antecedent = compile(ir.getAntecedent());
+            CSetVar consequent = compile(ir.getConsequent());
+            if (reify == null) {
+                CSetVar ternary = numCset("ContainsTernary", ir.getEnv(), ir.getKer(), ir.getCard());
+                post(Constraints.containsImpliesEqualTest(antecedent.getSet(), ir.getX(), ternary.getSet(), ternary.getCard(), consequent.getSet(), consequent.getCard()));
+                return ternary;
+            }
+            return Constraints.containsImpliesEqualTest(antecedent.getSet(), ir.getX(), reify.getSet(), reify.getCard(), consequent.getSet(), consequent.getCard());
+        }
     };
 
     private final IrStringExprVisitor<CStringVar, Object> stringExprCompiler = new IrStringExprVisitor<CStringVar, Object>() {
@@ -1675,6 +1669,18 @@ public class IrCompiler {
         @Override
         public Object visit(IrIntArrayVar ir, IntVar[] a) {
             return compile(ir.getArray());
+        }
+
+        @Override
+        public Object visit(IrSubarray ir, IntVar[] reify) {
+            IntVar[] array = compile(ir.getArray());
+            IntVar index = compile(ir.getIndex());
+            IntVar sublength = compile(ir.getSublength());
+            if (reify == null) {
+                // Note that posting the substring constraint will constrain index and sublength.
+                throw new UnsupportedOperationException();
+            }
+            return Constraints.subarray(reify, sublength, index, array);
         }
     };
 
@@ -1793,7 +1799,7 @@ public class IrCompiler {
     }
 
     private static Constraint _element(IntVar index, IntVar[] array, IntVar value) {
-        return ICF.element(value, array, index, 0);
+        return Constraints.element(value, array, index, 0);
     }
 
     private static Constraint _equal(CSetVar var1, CSetVar var2) {

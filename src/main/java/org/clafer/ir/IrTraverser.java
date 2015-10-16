@@ -171,6 +171,13 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrArrayEquality ir, T a) {
+        traverse(ir.getLeft(), a);
+        traverse(ir.getRight(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrSetEquality ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
@@ -354,6 +361,11 @@ public abstract class IrTraverser<T>
         return null;
     }
 
+    public Void visit(IrSetMin ir, T a) {
+        traverse(ir.getSet(), a);
+        return null;
+    }
+
     @Override
     public Void visit(IrSetSum ir, T a) {
         traverse(ir.getSet(), a);
@@ -381,6 +393,12 @@ public abstract class IrTraverser<T>
 
     @Override
     public Void visit(IrSingleton ir, T a) {
+        traverse(ir.getValue(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrSingletonFilter ir, T a) {
         traverse(ir.getValue(), a);
         return null;
     }
@@ -452,6 +470,13 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrContainsSetTernary ir, T a) {
+        traverse(ir.getAntecedent(), a);
+        traverse(ir.getConsequent(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrStringVar ir, T a) {
         return null;
     }
@@ -477,6 +502,14 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrSubarray ir, T a) {
+        traverse(ir.getArray(), a);
+        traverse(ir.getIndex(), a);
+        traverse(ir.getSublength(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrSetArrayVar ir, T a) {
         traverse(ir.getArray(), a);
         return null;
@@ -490,6 +523,12 @@ public abstract class IrTraverser<T>
 
     @Override
     public Void visit(IrTransitiveClosure ir, T a) {
+        traverse(ir.getRelation(), a);
+        return null;
+    }
+
+    @Override
+    public Void visit(IrConnected ir, T a) {
         traverse(ir.getRelation(), a);
         return null;
     }

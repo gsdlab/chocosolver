@@ -84,6 +84,16 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstMax ast, T a) {
+        return max(rewrite(ast.getSet(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstMin ast, T a) {
+        return min(rewrite(ast.getSet(), a));
+    }
+
+    @Override
     public AstExpr visit(AstSetTest ast, T a) {
         return test(rewrite(ast.getLeft(), a), ast.getOp(), rewrite(ast.getRight(), a));
     }
@@ -213,6 +223,16 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstDomainRestriction ast, T a) {
+        return domainRestriction(rewrite(ast.getDomain(), a), rewrite(ast.getRelation(), a));
+    }
+
+    @Override
+    public AstExpr visit(AstRangeRestriction ast, T a) {
+        return rangeRestriction(rewrite(ast.getRelation(), a), rewrite(ast.getRange(), a));
+    }
+
+    @Override
     public AstExpr visit(AstInverse ast, T a) {
         return inverse(rewrite(ast.getRelation(), a));
     }
@@ -220,5 +240,12 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     @Override
     public AstExpr visit(AstTransitiveClosure ast, T a) {
         return transitiveClosure(rewrite(ast.getRelation(), a), ast.isReflexive());
+    }
+
+    @Override
+    public AstExpr visit(AstConnected ast, T a) {
+        AstSetExpr e = rewrite(ast.getRelation(), a);
+        AstSetExpr n = rewrite(ast.getNodes(), a);
+        return connected(n, e, ast.isDirected());
     }
 }

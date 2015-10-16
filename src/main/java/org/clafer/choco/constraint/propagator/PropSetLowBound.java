@@ -10,7 +10,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  *
@@ -25,7 +24,7 @@ public class PropSetLowBound extends Propagator<Variable> {
     public PropSetLowBound(SetVar set, IntVar bound) {
         super(new Variable[]{set, bound}, PropagatorPriority.UNARY, false);
         this.set = set;
-        this.setD = set.monitorDelta(aCause);
+        this.setD = set.monitorDelta(this);
         this.bound = bound;
     }
 
@@ -38,7 +37,7 @@ public class PropSetLowBound extends Propagator<Variable> {
     }
 
     @Override
-    protected int getPropagationConditions(int vIdx) {
+    public int getPropagationConditions(int vIdx) {
         if (isSetVar(vIdx)) {
             return SetEventType.ADD_TO_KER.getMask();
         }
@@ -51,7 +50,7 @@ public class PropSetLowBound extends Propagator<Variable> {
         int ub = bound.getUB();
         int i;
         for (i = set.getEnvelopeFirst(); i != SetVar.END && i < lb; i = set.getEnvelopeNext()) {
-            set.removeFromEnvelope(i, aCause);
+            set.removeFromEnvelope(i, this);
         }
         if (i != SetVar.END && i >= ub) {
             // The elements in the set's envelope are at least ub.
@@ -62,7 +61,7 @@ public class PropSetLowBound extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         if (set.getKernelSize() > 0) {
-            bound.updateUpperBound(set.getKernelFirst(), aCause);
+            bound.updateUpperBound(set.getKernelFirst(), this);
         }
         boundEnv();
     }
@@ -71,21 +70,13 @@ public class PropSetLowBound extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
             setD.freeze();
-            setD.forEach(pruneBound, SetEventType.ADD_TO_KER);
+            setD.forEach(ker -> bound.updateUpperBound(ker, this), SetEventType.ADD_TO_KER);
             setD.unfreeze();
         } else {
             assert isBoundVar(idxVarInProp);
             boundEnv();
         }
     }
-
-    private final IntProcedure pruneBound = new IntProcedure() {
-
-        @Override
-        public void execute(int ker) throws ContradictionException {
-            bound.updateUpperBound(ker, aCause);
-        }
-    };
 
     @Override
     public ESat isEntailed() {

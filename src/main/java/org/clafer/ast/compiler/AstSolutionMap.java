@@ -2,6 +2,7 @@ package org.clafer.ast.compiler;
 
 import java.util.Collections;
 import java.util.Map;
+import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstException;
@@ -22,29 +23,38 @@ import org.clafer.objective.Objective;
 public class AstSolutionMap {
 
     private final AstModel model;
+    private final Map<AstClafer, IrBoolVar[]> memberVars;
     private final Map<AstClafer, IrSetVar[]> siblingVars;
+    private final Map<AstClafer, IrIntVar[]> siblingBounds;
     private final Map<AstRef, IrIntVar[]> refVars;
     private final Map<AstRef, IrStringVar[]> refStrings;
     private final Map<AstConstraint, IrBoolVar> softVars;
     private final IrIntVar sumSoftVar;
     private final Map<Objective, IrIntVar> objectiveVars;
+    private final Map<Assertion, IrBoolVar> assertionVars;
     private final Analysis analysis;
 
     AstSolutionMap(AstModel model,
-            Map<AstClafer, IrSetVar[]> sibling,
+            Map<AstClafer, IrBoolVar[]> memberVars,
+            Map<AstClafer, IrSetVar[]> siblingVars,
+            Map<AstClafer, IrIntVar[]> siblingBounds,
             Map<AstRef, IrIntVar[]> refVars,
             Map<AstRef, IrStringVar[]> refStrings,
             Map<AstConstraint, IrBoolVar> softVars,
             IrIntVar sumSoftVar,
             Map<Objective, IrIntVar> objectiveVars,
+            Map<Assertion, IrBoolVar> assertionVars,
             Analysis analysis) {
         this.model = Check.notNull(model);
-        this.siblingVars = Check.notNull(sibling);
+        this.memberVars = memberVars;
+        this.siblingVars = Check.notNull(siblingVars);
+        this.siblingBounds = Check.notNull(siblingBounds);
         this.refVars = Check.notNull(refVars);
         this.refStrings = Check.notNull(refStrings);
         this.softVars = Check.notNull(softVars);
         this.sumSoftVar = Check.notNull(sumSoftVar);
         this.objectiveVars = Check.notNull(objectiveVars);
+        this.assertionVars = Check.notNull(assertionVars);
         this.analysis = Check.notNull(analysis);
     }
 
@@ -56,6 +66,10 @@ public class AstSolutionMap {
         return analysis;
     }
 
+    public IrBoolVar[] getMemberVars(AstClafer clafer) {
+        return notNull(clafer + " not part of the AST solution", memberVars.get(clafer));
+    }
+
     /**
      * Returns the sibling variables associated with the Clafer.
      *
@@ -64,6 +78,10 @@ public class AstSolutionMap {
      */
     public IrSetVar[] getSiblingVars(AstClafer clafer) {
         return notNull(clafer + " not part of the AST solution", siblingVars.get(clafer));
+    }
+
+    public IrIntVar[] getSiblingBounds(AstClafer clafer) {
+        return siblingBounds.get(clafer);
     }
 
     /**
@@ -115,6 +133,16 @@ public class AstSolutionMap {
      */
     public IrIntVar getObjectiveVar(Objective objective) {
         return notNull(objective + " not a compiled objective", objectiveVars.get(objective));
+    }
+
+    /**
+     * Returns the variable associated to the assertion.
+     *
+     * @param assertion the assertion
+     * @return the variable associated to the assertion
+     */
+    public IrBoolVar getAssertionVar(Assertion assertion) {
+        return notNull(assertion + " not a compiled assertion", assertionVars.get(assertion));
     }
 
     private static <T> T notNull(String message, T t) {
