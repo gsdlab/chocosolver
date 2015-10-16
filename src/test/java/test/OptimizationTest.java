@@ -6,8 +6,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.script.ScriptException;
-import org.clafer.ast.AstModel;
-import org.clafer.collection.Triple;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOptimizer;
 import org.clafer.javascript.Javascript;
