@@ -29,15 +29,15 @@ public class PropReflexive extends Propagator<SetVar> {
 
     @Override
     public ESat isEntailed() {
-        boolean allInstantiated = true;
+        boolean allKernelContains = true;
         for (int i = 0; i < vars.length; i++) {
             SetVar var = vars[i];
-            allInstantiated &= var.isInstantiated();
             if (!var.envelopeContains(i)) {
                 return ESat.FALSE;
             }
+            allKernelContains &= var.kernelContains(i);
         }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        return allKernelContains ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override
