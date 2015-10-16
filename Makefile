@@ -16,3 +16,8 @@ install:
 	mkdir -p $(to)
 	cp -f README.md $(to)/chocosolver-README.md
 	cp -f target/chocosolver-0.4.2-jar-with-dependencies.jar $(to)/chocosolver.jar
+
+snapshotInstall:
+	mkdir -p $(to)
+	cp -f README.md $(to)/ClaferChocoIG-README.md
+	cp -f target/chocosolver-0.4.2-SNAPSHOT-jar-with-dependencies.jar $(to)/chocosolver.jar
