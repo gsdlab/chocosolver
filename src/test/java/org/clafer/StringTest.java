@@ -78,7 +78,16 @@ public class StringTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(a, 2)
                 .stringLength(3).charLow('a').charHigh('c'));
-        assertEquals(821, solver.allInstances().length);
+        int k = 0;
+        while (solver.find()) {
+            InstanceClafer[] ai = solver.instance().getTopClafers(a);
+            for (int i = 0; i < ai.length - 1; i++) {
+                String ref1 = (String) ai[i].getRef();
+                String ref2 = (String) ai[i + 1].getRef();
+                assertTrue(ref1.compareTo(ref2) > 0);
+            }
+        }
+        assertEquals(821, solver.instanceCount());
     }
 
     /**
