@@ -473,6 +473,10 @@ public class AstCompiler {
                 sets.put(clafer, set);
                 break;
         }
+        IrIntVar[] bounds = siblingBounds.get(clafer);
+        if (bounds != null && bounds.length > 0) {
+            module.addConstraint(equal(bounds[bounds.length - 1], card(sets.get(clafer))));
+        }
 
         if (fullSymmetryBreaking) {
             int scope = getScope(clafer);
