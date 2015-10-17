@@ -666,7 +666,7 @@ public class AstCompiler {
                             for (int j = i + 1; j < strings.length; j++) {
                                 if (refPartitions == null || !refPartitions.connected(i, j)) {
                                     module.addConstraint(
-                                            implies(and(members[i], members[j], equal(parents[i], parents[j])),
+                                            implies(and(members[i], members[j], greaterThanEqual(parents[i], parents[j])),
                                                     notEqual(strings[i], strings[j])));
                                 }
                             }
@@ -686,7 +686,7 @@ public class AstCompiler {
                             for (int j = i + 1; j < refs.length; j++) {
                                 if (refPartitions == null || !refPartitions.connected(i, j)) {
                                     module.addConstraint(
-                                            implies(and(members[i], equal(parents[i], parents[j])),
+                                            implies(and(members[i], greaterThanEqual(parents[i], parents[j])),
                                                     notEqual(refs[i], refs[j])));
                                 }
                             }
