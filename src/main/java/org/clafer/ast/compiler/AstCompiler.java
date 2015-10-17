@@ -596,7 +596,6 @@ public class AstCompiler {
             }
             if (getScope(clafer.getParent()) > 1) {
                 module.addConstraint(sortChannel(childIndices, weight));
-//                symmetries.add(new LexChainChannel(childIndices, weight));
                 IrIntVar[] bounds = siblingBounds.get(clafer);
                 for (int i = 0; i < siblingSet.length; i++) {
                     assert index[i].length <= weight.length;
@@ -621,11 +620,69 @@ public class AstCompiler {
                     module.addConstraint(equal(
                             array(indexTo),
                             subarray(array(weightTo), bound, card(siblingSet[i]))));
-//                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
-//                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
                 }
             }
             if (getCard(clafer).getHigh() > 1) {
+                assert parents.length > 1;
+                if (parents.length > 1) {
+                    /**
+                     * What is this optimization?
+                     *
+                     * Force the lower number atoms to choose lower number
+                     * parents. For example consider the following Clafer model:
+                     *
+                     * <pre>
+                     * Person 2
+                     *     Hand 2
+                     * </pre>
+                     *
+                     * The constraint forbids the case where Hand0 belongs to
+                     * Person1 and Hand1 belongs to Person0. Otherwise, the
+                     * children can swap around creating many isomorphic
+                     * solutions.
+                     */
+                    if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
+                        IrIntExpr[][] parentChildIndices = new IrIntExpr[childIndices.length][];
+                        for (int i = 0; i < parentChildIndices.length; i++) {
+                            parentChildIndices[i] = new IrIntExpr[childIndices[i].length + 2];
+                            parentChildIndices[i][0] = parents[i];
+                            for (int j = 1; j < parentChildIndices[i].length - 1; j++) {
+                                parentChildIndices[i][j] = minus(childIndices[i][j - 1]);
+                            }
+                            parentChildIndices[i][parentChildIndices[i].length - 1] = mul(not(members[i]), i, enumDomain(0, i));
+                        }
+                        // Refs are unique and part of the weight. It is impossible for
+                        // two weights to be the same. Enforce a strict order.
+                        module.addConstraint(sortStrict(parentChildIndices));
+                        if (getScope(clafer.getParent()) > 1) {
+                            IrIntExpr[][] parentChildWeights = new IrIntExpr[parents.length][3];
+                            for (int i = 0; i < parentChildWeights.length; i++) {
+                                parentChildWeights[i][0] = parents[i];
+                                parentChildWeights[i][1] = minus(weight[i]);
+                                parentChildWeights[i][2] = mul(not(members[i]), i, enumDomain(0, i));
+                            }
+                            module.addConstraint(sortStrict(parentChildWeights));
+                        }
+                    } else {
+                        IrIntExpr[][] parentChildIndices = new IrIntExpr[childIndices.length][];
+                        for (int i = 0; i < parentChildIndices.length; i++) {
+                            parentChildIndices[i] = new IrIntExpr[childIndices[i].length + 1];
+                            parentChildIndices[i][0] = parents[i];
+                            for (int j = 1; j < parentChildIndices[i].length; j++) {
+                                parentChildIndices[i][j] = minus(childIndices[i][j - 1]);
+                            }
+                        }
+                        module.addConstraint(sort(parentChildIndices));
+                        if (getScope(clafer.getParent()) > 1) {
+                            IrIntExpr[][] parentChildWeights = new IrIntExpr[parents.length][2];
+                            for (int i = 0; i < parentChildWeights.length; i++) {
+                                parentChildWeights[i][0] = parents[i];
+                                parentChildWeights[i][1] = minus(weight[i]);
+                            }
+                            module.addConstraint(sort(parentChildWeights));
+                        }
+                    }
+                }
                 for (int i = 0; i < parents.length - 1; i++) {
                     if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
                         assert childIndices[i + 1].length == childIndices[i].length;
@@ -634,21 +691,6 @@ public class AstCompiler {
                                 refPartitions = new DisjointSets<>();
                             }
                             refPartitions.union(i, i + 1);
-                        }
-                        // Refs are unique and part of the weight. It is impossible for
-                        // two weights to be the same. Enforce a strict order.
-                        module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
-                                sortStrict(childIndices[i + 1], childIndices[i])));
-                        if (getScope(clafer.getParent()) > 1) {
-                            module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
-                                    lessThan(weight[i + 1], weight[i])));
-                        }
-                    } else {
-                        module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
-                                sort(childIndices[i + 1], childIndices[i])));
-                        if (getScope(clafer.getParent()) > 1) {
-                            module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
-                                    lessThanEqual(weight[i + 1], weight[i])));
                         }
                     }
                 }
@@ -835,25 +877,6 @@ public class AstCompiler {
 
         if (!(childSet.length == 1 && members.length == 1)) {
             module.addConstraint(boolChannel(members, set));
-        }
-
-        /**
-         * What is this optimization?
-         *
-         * Force the lower number atoms to choose lower number parents. For
-         * example consider the following Clafer model:
-         *
-         * <pre>
-         * Person 2
-         *     Hand 2
-         * </pre>
-         *
-         * The constraint forbids the case where Hand0 belongs to Person1 and
-         * Hand1 belongs to Person0. Otherwise, the children can swap around
-         * creating many isomorphic solutions.
-         */
-        if (fullSymmetryBreaking) {
-            module.addConstraint(sort(parentPointers.get(clafer)));
         }
     }
 
