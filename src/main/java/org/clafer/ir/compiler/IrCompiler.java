@@ -320,6 +320,16 @@ public class IrCompiler {
         return asConstraint(var);
     }
 
+    private IntVar compileAsEqualVar(IrIntExpr expr, IntVar value) {
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(intExprCompiler, value);
+        if (result instanceof IntVar) {
+            return _arithm((IntVar) result, "=", value).reif();
+        }
+        return ((Constraint) result).reif();
+    }
+
     private Constraint compileAsEqual(IrIntExpr expr, IntVar value, BoolVar reify) {
         Object result = commonSubexpressions.contains(expr)
                 ? compile(expr)
@@ -330,6 +340,16 @@ public class IrCompiler {
             return _arithm(reify, "=", eq.reif());
         }
         return _arithm(((Constraint) result).reif(), "=", reify);
+    }
+
+    private IntVar compileAsNotEqualVar(IrIntExpr expr, IntVar value) {
+        Object result = commonSubexpressions.contains(expr)
+                ? compile(expr)
+                : expr.accept(intExprCompiler, value);
+        if (result instanceof IntVar) {
+            return _arithm((IntVar) result, "!=", value).reif();
+        }
+        return ((Constraint) result).reif().not();
     }
 
     private Constraint compileAsNotEqual(IrIntExpr expr, IntVar value, BoolVar reify) {
@@ -847,11 +867,9 @@ public class IrCompiler {
                             : compileAsEqual(right, compile(left), reify);
                 }
                 if (a.getPreference().equals(Preference.BoolVar)) {
-                    BoolVar reify = numBoolVar("ReifyEqual");
-                    post(right instanceof IrIntVar
-                            ? compileAsEqual(left, compile(right), reify)
-                            : compileAsEqual(right, compile(left), reify));
-                    return reify;
+                    return right instanceof IrIntVar
+                            ? compileAsEqualVar(left, compile(right))
+                            : compileAsEqualVar(right, compile(left));
                 }
             } else if (IrCompare.Op.NotEqual.equals(op)) {
                 if (a.hasReify()) {
@@ -861,11 +879,9 @@ public class IrCompiler {
                             : compileAsNotEqual(right, compile(left), reify);
                 }
                 if (a.getPreference().equals(Preference.BoolVar)) {
-                    BoolVar reify = numBoolVar("ReifyNotEqual");
-                    post(right instanceof IrIntVar
-                            ? compileAsNotEqual(left, compile(right), reify)
-                            : compileAsNotEqual(right, compile(left), reify));
-                    return reify;
+                    return right instanceof IrIntVar
+                            ? compileAsNotEqualVar(left, compile(right))
+                            : compileAsNotEqualVar(right, compile(left));
                 }
             }
             return compileArithm(left, op, right);
