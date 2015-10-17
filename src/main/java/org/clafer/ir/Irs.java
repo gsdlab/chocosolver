@@ -828,20 +828,31 @@ public class Irs {
         if (strings.length < 2) {
             return True;
         }
+
         boolean[] filter = new boolean[strings.length];
         for (int i = 0; i < strings.length - 1; i++) {
-            switch (IrUtil.compareString(strings[i], strings[i + 1])) {
-                case EQ:
-                case LE:
-                    if (!strict) {
+            if (strict) {
+                switch (IrUtil.compareString(strings[i], strings[i + 1])) {
+                    case LT:
                         break;
-                    }
-                // fallthrough
-                case GT:
-                case GE:
-                case UNKNOWN:
-                    filter[i] = true;
-                    filter[i + 1] = true;
+                    case GT:
+                    case GE:
+                    case EQ:
+                        return False;
+                    default:
+                        filter[i] = true;
+                        filter[i + 1] = true;
+                }
+            } else {
+                switch (IrUtil.compareString(strings[i], strings[i + 1])) {
+                    case LT:
+                        break;
+                    case GT:
+                        return False;
+                    default:
+                        filter[i] = true;
+                        filter[i + 1] = true;
+                }
             }
         }
         List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
@@ -850,21 +861,47 @@ public class Irs {
                 filterStrings.add(strings[i]);
             }
         }
-        IrIntExpr[][] fstrings = filterStrings.toArray(new IrIntExpr[filterStrings.size()][]);
-
-        if (fstrings.length < 2) {
-            return True;
+        if (filterStrings.size() != strings.length) {
+            return sortStrings(filterStrings.toArray(new IrIntExpr[filterStrings.size()][]), strict);
         }
 
-        IrIntExpr[] array = new IrIntExpr[fstrings.length];
-        for (int i = 0; i < fstrings.length; i++) {
-            IrIntExpr[] string = fstrings[i];
-            if (string.length != 1) {
-                return new IrSortStrings(fstrings, strict, TrueFalseDomain);
+        int minLength = strings[0].length;
+        for (int i = 1; i < strings.length; i++) {
+            minLength = Math.min(minLength, strings[i].length);
+        }
+        for (int i = 0; i < minLength; i++) {
+            boolean allSame = true;
+            for (int j = 0; allSame && j < strings.length - 1; j++) {
+                allSame &= strings[j][i].equals(strings[j + 1][i]);
             }
-            array[i] = fstrings[i][0];
+            if (allSame) {
+                IrIntExpr[][] reducedString = new IrIntExpr[strings.length][];
+                for (int k = 0; k < reducedString.length; k++) {
+                    reducedString[k] = new IrIntExpr[strings[k].length - 1];
+                    System.arraycopy(strings[k], 0, reducedString[k], 0, i);
+                    for (int l = i + 1; l < strings[k].length; l++) {
+                        reducedString[k][l - 1] = strings[k][l];
+                    }
+                }
+                return sortStrings(reducedString, strict);
+            }
         }
-        return strict ? sortStrict(array) : sort(array);
+
+        if (minLength == 0) {
+            return strict ? False : True;
+        }
+        if (minLength == 1) {
+            IrIntExpr[] array = new IrIntExpr[strings.length];
+            for (int i = 0; i < strings.length; i++) {
+                IrIntExpr[] string = strings[i];
+                if (string.length != 1) {
+                    return new IrSortStrings(strings, strict, TrueFalseDomain);
+                }
+                array[i] = strings[i][0];
+            }
+            return strict ? sortStrict(array) : sort(array);
+        }
+        return new IrSortStrings(strings, strict, TrueFalseDomain);
     }
 
     public static IrBoolExpr sort(IrIntExpr[]... strings) {
