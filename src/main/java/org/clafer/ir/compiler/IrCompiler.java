@@ -896,7 +896,7 @@ public class IrCompiler {
                     }
                     return compileAsConstraint(ir.getRight(), compile(ir.getLeft()));
                 case NotEqual:
-                    return Constraints.equal(compile(ir.getLeft()), compile(ir.getRight())).getOpposite();
+                    return compileAsConstraint(ir.getRight(), compile(ir.getLeft())).getOpposite();
                 default:
                     throw new IllegalArgumentException("Unexpected operator.");
             }
