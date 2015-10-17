@@ -815,7 +815,9 @@ public class AstCompiler {
         if (fullSymmetryBreaking) {
             module.addConstraint(selectN(members, card(set)));
             IrIntExpr[] bounds = siblingBounds.get(clafer);
-            module.addConstraint(sort(childSet, bounds));
+            if (childSet.length > 1) {
+                module.addConstraint(sort(childSet, bounds));
+            }
         }
 
         for (int i = 0; i < parentMembership.length; i++) {
