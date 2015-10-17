@@ -710,7 +710,11 @@ public class AstCompiler {
                     IrSetVar targetSet = sets.get(ref.getTargetType());
                     for (int i = 0; i < refs.length; i++) {
                         // The ref pointers must point to a target that exists.
-                        module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
+                        if (getFormat(ref.getTargetType()).equals(Format.LowGroup)) {
+                            module.addConstraint(ifOnlyIf(members[i], lessThan(refs[i], card(targetSet))));
+                        } else {
+                            module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
+                        }
                     }
                 }
             }
