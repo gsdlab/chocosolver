@@ -161,7 +161,10 @@ public class REPL {
                 + "\n 'o'ptimizations:    "
                 + (compilerOption.isBasicOptimizations() ? "basic" : "")
                 + (compilerOption.isFullOptimizations() ? "full" : "")
-                + "\n"
+                + "\n 'm'axInt            "
+                + (scope.getIntHigh())
+                + "\n global'S'cope       "
+                + (scope.getDefaultScope())
                 );
                 continue;
             }
