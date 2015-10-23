@@ -132,6 +132,7 @@ public class AstCompiler {
 
     public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
         new TypeAnalyzer(),
+        new InverseAnalyzer(),
         new GlobalCardAnalyzer(),
         new ScopeAnalyzer(),
         new CardAnalyzer(),
@@ -145,7 +146,6 @@ public class AstCompiler {
         new TypeAnalyzer()
     };
     private final Analysis analysis;
-    private final Map<AstClafer, AstClafer> inverses;
     private final IrModule module;
     private final List<Symmetry> symmetries = new ArrayList<>();
     private final boolean fullSymmetryBreaking;
@@ -156,14 +156,12 @@ public class AstCompiler {
 
     private AstCompiler(AstModel model, Scope scope, Objective[] objectives, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, objectives, analyzers);
-        this.inverses = InverseAnalyzer.analyze(analysis);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
 
     private AstCompiler(AstModel model, Scope scope, Assertion[] assertions, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, assertions, analyzers);
-        this.inverses = InverseAnalyzer.analyze(analysis);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
@@ -775,7 +773,7 @@ public class AstCompiler {
 
         constrainGroupCardinality(clafer);
 
-        AstClafer inverse = inverses.get(clafer);
+        AstClafer inverse = analysis.getInverse(clafer);
         if (inverse != null) {
             int parentScope = getScope(clafer.getParent());
             IrIntVar[] inverseRefPointers = refPointers.get(inverse.getRef());
