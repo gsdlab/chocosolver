@@ -66,7 +66,6 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
     }
 
     private void popAll() {
-        assert solver.getSearchLoop().getCurrentDepth() == 0;
         stack.forEach(solver::unpost);
         stack.clear();
     }
