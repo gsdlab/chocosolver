@@ -786,6 +786,34 @@ public class Coalescer {
                     }
                 }
                 propagateInt(enumDomain(domain), element.getIndex());
+            } else if (right instanceof IrCount) {
+                IrCount count = (IrCount) right;
+                int value = count.getValue();
+                int possibles = 0;
+                int mandatories = 0;
+                for (IrIntExpr element : count.getArray()) {
+                    if (element.getDomain().contains(value)) {
+                        if (element.getDomain().size() == 1) {
+                            mandatories++;
+                        } else {
+                            possibles++;
+                        }
+                    }
+                }
+                if (possibles + mandatories <= left.getLowBound()) {
+                    Domain valueDomain = constantDomain(value);
+                    for (IrIntExpr element : count.getArray()) {
+                        if (element.getDomain().contains(value) && element.getDomain().size() > 1) {
+                            propagateInt(valueDomain, element);
+                        }
+                    }
+                } else if (mandatories >= left.getHighBound()) {
+                    for (IrIntExpr element : count.getArray()) {
+                        if (element.getDomain().contains(value) && element.getDomain().size() > 1) {
+                            propagateInt(element.getDomain().remove(value), element);
+                        }
+                    }
+                }
             } else if (right instanceof IrLength) {
                 IrLength length = (IrLength) right;
                 propagateString(tstring(chars(length.getString()), tint(left)), length.getString());
