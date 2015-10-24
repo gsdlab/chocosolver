@@ -475,28 +475,48 @@ public class Coalescer {
             return null;
         }
 
+        private boolean isZero(Domain domain) {
+            return domain.size() == 1 && domain.getLowBound() == 0;
+        }
+
         @Override
         public Void visit(IrSortSets ir, Void a) {
-            // TODO
-//            IrSetExpr[] sets = ir.getSets();
-//            int low = 0;
-//            int high = 0;
-//            for (IrSetExpr set : sets) {
-//                Domain card = set.getCard();
-//                int newLow = low + card.getLowBound();
-//                int newHigh = high + card.getHighBound();
-//                failIf(low >= newHigh);
-//                Domain env = boundDomain(low, newHigh - 1);
-//                Domain ker = set.getKer();
-//                if (!ker.isEmpty() && !ker.isBounded()) {
-//                    ker = boundDomain(ker.getLowBound(), ker.getHighBound());
-//                }
-//                if (high < newLow) {
-//                    ker = ker.union(boundDomain(high, newLow - 1));
-//                }
-//                propagateSet(new PartialSet(env, ker, null), set);
-//                low = newLow;
-//                high = newHigh;
+            IrSetExpr[] sets = ir.getSets();
+            IrIntExpr[] bounds = ir.getBounds();
+            IrIntExpr[] boundary = new IrIntExpr[sets.length + 1];
+            boundary[0] = Zero;
+            for (int i = 0; i < sets.length; i++) {
+                if (isZero(boundary[i].getDomain())) {
+                    boundary[i + 1] = Irs.card(sets[i]);
+                } else if (isZero(sets[i].getCard())) {
+                    boundary[i + 1] = boundary[i];
+                } else {
+                    boundary[i + 1] = bounds[i];
+                    propagateEqual(add(boundary[i], Irs.card(sets[i])), boundary[i + 1]);
+                }
+                if (!boundary[i + 1].equals(bounds[i])) {
+                    propagateEqual(boundary[i + 1], bounds[i]);
+                }
+                if (boundary[i].getDomain().size() == 1) {
+                    int constant = boundary[i].getDomain().getLowBound();
+                    if (sets[i].getCard().getLowBound() > 0 && !sets[i].getKer().contains(constant)) {
+                        propagateKer(constantDomain(constant), sets[i]);
+                    }
+                }
+                Domain env = null;
+                if (boundary[i].getLowBound() < boundary[i + 1].getHighBound()) {
+                    env = boundDomain(boundary[i].getLowBound(), boundary[i + 1].getHighBound() - 1);
+                }
+                Domain ker = null;
+                if (boundary[i].getHighBound() < boundary[i + 1].getLowBound()) {
+                    ker = boundDomain(boundary[i].getHighBound(), boundary[i + 1].getLowBound() - 1);
+                }
+                if (env != null || ker != null) {
+                    propagateSet(new PartialSet(env, ker, null), sets[i]);
+                }
+            }
+//            for (int i = 0; i < sets.length; i++) {
+//                propagators.add(new PropContinuous(sets[i], setCards[i]));
 //            }
             return null;
         }
