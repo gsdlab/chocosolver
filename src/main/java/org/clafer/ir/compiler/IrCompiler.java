@@ -182,6 +182,12 @@ public class IrCompiler {
     }
 
     private CSetVar cset(String name, Domain env, Domain ker, Domain card) {
+        if (card.getLowBound() == env.size()) {
+            return constant(env.getValues(), solver);
+        }
+        if (card.getHighBound() == ker.size()) {
+            return constant(ker.getValues(), solver);
+        }
         SetVar set = setVar(name, env, ker);
         return new CSetVar(set, intVar("|" + name + "|", card));
     }
