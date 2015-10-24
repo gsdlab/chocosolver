@@ -314,6 +314,16 @@ public class Coalescer {
         }
 
         @Override
+        public Void visit(IrArrayEquality ir, Void a) {
+            switch (ir.getOp()) {
+                case Equal:
+                    propagateEqual(ir.getLeft(), ir.getRight());
+                    break;
+            }
+            return null;
+        }
+
+        @Override
         public Void visit(IrSetEquality ir, Void a) {
             IrSetExpr left = ir.getLeft();
             IrSetExpr right = ir.getRight();
@@ -663,6 +673,34 @@ public class Coalescer {
             } else {
                 propagateInt(left.getDomain(), right);
                 propagateInt(right.getDomain(), left);
+            }
+        }
+
+        private IrIntExpr get(IrIntArrayExpr array, int index) {
+            if (array instanceof IrIntArrayVar) {
+                IrIntArrayVar var = (IrIntArrayVar) array;
+                return var.getArray()[index];
+            }
+            if (array instanceof IrSubarray) {
+                IrSubarray subarray = (IrSubarray) array;
+                if (subarray.getIndex().getDomain().size() == 1 && index < subarray.getSublength().getLowBound()) {
+                    return get(subarray.getArray(), subarray.getIndex().getLowBound() + index);
+                }
+            }
+            return null;
+        }
+
+        private void propagateEqual(IrIntArrayExpr a, IrIntArrayExpr b) {
+            for (int i = 0; i < a.length(); i++) {
+                IrIntExpr aI = get(a, i);
+                IrIntExpr bI = get(b, i);
+                if (aI != null && bI != null) {
+                    propagateEqual(aI, bI);
+                } else if (aI != null) {
+                    propagateInt(b.getDomains()[i], aI);
+                } else if (bI != null) {
+                    propagateInt(a.getDomains()[i], bI);
+                }
             }
         }
 
