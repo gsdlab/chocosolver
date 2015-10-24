@@ -775,12 +775,13 @@ public class AstCompiler {
 
         AstClafer inverse = analysis.getInverse(clafer);
         if (inverse != null) {
-            int parentScope = getScope(clafer.getParent());
+            int uninitializedRef = getUninitalizedRef(inverse.getRef().getTargetType());
             IrIntVar[] inverseRefPointers = refPointers.get(inverse.getRef());
-            module.addConstraint(equal(countNotEqual(parentScope, array(inverseRefPointers)), card(sets.get(clafer))));
-            for (int i = 0; i < parentScope; i++) {
+            module.addConstraint(equal(countNotEqual(uninitializedRef, array(inverseRefPointers)), card(sets.get(clafer))));
+            for (int i = 0; i < siblingSet.length; i++) {
                 module.addConstraint(equal(count(i, inverseRefPointers), card(siblingSet[i])));
             }
+            module.addConstraint(equal(card(sets.get(clafer)), card(sets.get(inverse))));
         }
     }
 
