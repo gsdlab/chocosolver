@@ -501,6 +501,21 @@ public class Coalescer {
             return null;
         }
 
+        private int largerThan(IrIntExpr[][] strings, int index) {
+            int larger = 0;
+            for (int i = 0; i < strings.length; i++) {
+                if (i != index) {
+                    switch (IrUtil.compareString(strings[index], strings[i])) {
+                        case GE:
+                        case GT:
+                        case UNKNOWN:
+                            larger++;
+                    }
+                }
+            }
+            return larger;
+        }
+
         @Override
         public Void visit(IrSortStringsChannel ir, Void a) {
             IrIntExpr[][] strings = ir.getStrings();
@@ -525,10 +540,10 @@ public class Coalescer {
                             break;
                     }
                 }
+                int larger = largerThan(strings, i);
+                propagateInt(ints[i].getDomain().boundHigh(larger), ints[i]);
             }
-            Domain dom = boundDomain(0, ints.length - 1);
             for (int i = 0; i < ints.length; i++) {
-                propagateInt(dom, ints[i]);
                 for (int j = i + 1; j < ints.length; j++) {
                     switch (IrUtil.compare(ints[i], ints[j])) {
                         case EQ:
