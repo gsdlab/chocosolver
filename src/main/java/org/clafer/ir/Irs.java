@@ -2423,11 +2423,11 @@ public class Irs {
         }
         Domain[] charDomains = new Domain[array.length()];
         for (int i = 0; i < charDomains.length; i++) {
-            charDomains[i] = i < sublength.getHighBound()
+            charDomains[i] = i < sublength.getHighBound() && index.getLowBound() + i < charDomains.length
                     ? union(array.getDomains(),
                             index.getLowBound() + i,
                             Integer.min(index.getHighBound() + i + 1, charDomains.length))
-                    : EmptyDomain;
+                    : NegativeOneDomain;
             if (i >= sublength.getLowBound()) {
                 charDomains[i] = charDomains[i].insert(-1);
             }

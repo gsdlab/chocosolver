@@ -15,6 +15,7 @@ public class Domains {
     public static final BoolDomain TrueDomain = BoolDomain.TrueDomain;
     public static final BoolDomain FalseDomain = BoolDomain.FalseDomain;
     public static final BoolDomain TrueFalseDomain = BoolDomain.TrueFalseDomain;
+    public static final Domain NegativeOneDomain = constantDomain(-1);
     public static final Domain EmptyDomain = new EmptyDomain();
     public static final Domain ZeroDomain = FalseDomain;
     public static final Domain OneDomain = TrueDomain;
