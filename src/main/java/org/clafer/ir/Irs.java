@@ -449,15 +449,51 @@ public class Irs {
     }
 
     public static IrBoolExpr equality(IrIntArrayExpr left, IrArrayEquality.Op op, IrIntArrayExpr right) {
+        if (left instanceof IrIntArrayVar && right instanceof IrIntArrayVar) {
+            return equal((IrIntArrayVar) left, (IrIntArrayVar) right);
+        }
         if (left.length() != right.length()) {
             throw new IllegalArgumentException();
         }
         for (int i = 0; i < left.length(); i++) {
             if (!left.getDomains()[i].intersects(right.getDomains()[i])) {
-                return False;
+                switch (op) {
+                    case Equal:
+                        return False;
+                    case NotEqual:
+                        return True;
+                }
             }
         }
         return new IrArrayEquality(left, op, right, TrueFalseDomain);
+    }
+
+    public static IrBoolExpr equal(IrIntArrayVar left, IrIntArrayVar right) {
+        if (left.length() != right.length()) {
+            throw new IllegalArgumentException();
+        }
+        List<IrIntExpr> filterLeft = new ArrayList<>(left.length());
+        List<IrIntExpr> filterRight = new ArrayList<>(right.length());
+        for (int i = 0; i < left.length(); i++) {
+            if (!left.getDomains()[i].intersects(right.getDomains()[i])) {
+                return False;
+            }
+            if (!left.getArray()[i].equals(right.getArray()[i])) {
+                filterLeft.add(left.getArray()[i]);
+                filterRight.add(right.getArray()[i]);
+            }
+        }
+        if (filterLeft.isEmpty()) {
+            return True;
+        }
+        if (filterLeft.size() == left.length()) {
+            return new IrArrayEquality(left, IrArrayEquality.Op.Equal, right, TrueFalseDomain);
+        }
+        return new IrArrayEquality(
+                array(filterLeft.toArray(new IrIntExpr[filterLeft.size()])),
+                IrArrayEquality.Op.Equal,
+                array(filterRight.toArray(new IrIntExpr[filterRight.size()])),
+                TrueFalseDomain);
     }
 
     public static IrBoolExpr equal(IrIntArrayExpr left, IrIntArrayExpr right) {
