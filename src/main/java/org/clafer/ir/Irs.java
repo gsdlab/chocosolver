@@ -988,7 +988,8 @@ public class Irs {
                     return False;
                 }
                 if (partialOrdering[constant[i]] != null) {
-                    throw new IllegalStateException();
+                    // TODO
+                    return new IrSortStringsChannel(fstrings, fints, TrueFalseDomain);
                 }
                 partialOrdering[constant[i]] = fstrings[i];
             }
