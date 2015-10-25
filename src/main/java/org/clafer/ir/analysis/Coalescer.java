@@ -1,10 +1,13 @@
 package org.clafer.ir.analysis;
 
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -550,28 +553,50 @@ public class Coalescer {
         public Void visit(IrSortStringsChannel ir, Void a) {
             IrIntExpr[][] strings = ir.getStrings();
             IrIntExpr[] ints = ir.getInts();
+            DisjointSets<Integer> equivalenceClasses = new DisjointSets<>();
+            TIntList[] largerThans = new TIntList[strings.length];
+            for (int i = 0; i < strings.length; i++) {
+                largerThans[i] = new TIntArrayList(4);
+                equivalenceClasses.union(i, i);
+            }
             for (int i = 0; i < strings.length; i++) {
                 for (int j = i + 1; j < strings.length; j++) {
                     switch (IrUtil.compareString(strings[i], strings[j])) {
                         case EQ:
                             propagateEqual(ints[i], ints[j]);
+                            equivalenceClasses.union(i, j);
                             break;
                         case LT:
                             propagateLessThan(ints[i], ints[j]);
+                            largerThans[j].add(i);
                             break;
                         case LE:
                             propagateLessThanEqual(ints[i], ints[j]);
+                            largerThans[j].add(i);
                             break;
                         case GT:
                             propagateLessThan(ints[j], ints[i]);
+                            largerThans[i].add(j);
                             break;
                         case GE:
                             propagateLessThanEqual(ints[j], ints[i]);
+                            largerThans[i].add(j);
+                            break;
+                        case UNKNOWN:
+                            largerThans[i].add(j);
+                            largerThans[j].add(i);
                             break;
                     }
                 }
-                int larger = largerThan(strings, i);
-                propagateInt(ints[i].getDomain().boundHigh(larger), ints[i]);
+            }
+            Collection<Set<Integer>> equivalenceComponents = equivalenceClasses.connectedComponents();
+            for (Set<Integer> equivalenceComponent : equivalenceComponents) {
+                int representative = equivalenceClasses.representative(equivalenceComponent.iterator().next());
+                TIntHashSet largerThanClasses = new TIntHashSet(largerThans[representative].size());
+                largerThans[representative].forEach(x -> largerThanClasses.add(equivalenceClasses.representative(x)) || true);
+                for (int i : equivalenceComponent) {
+                    propagateInt(ints[i].getDomain().boundHigh(largerThanClasses.size()), ints[i]);
+                }
             }
             for (int i = 0; i < ints.length; i++) {
                 for (int j = i + 1; j < ints.length; j++) {

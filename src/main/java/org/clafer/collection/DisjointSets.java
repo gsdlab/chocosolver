@@ -29,6 +29,10 @@ public class DisjointSets<V> {
         return v;
     }
 
+    public int representative(V i) {
+        return find(i);
+    }
+
     private int find(int n) {
         int p = parents.get(n);
         if (n == p) {
