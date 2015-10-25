@@ -468,7 +468,7 @@ public class Irs {
     }
 
     public static IrBoolExpr equality(IrIntArrayExpr left, IrArrayEquality.Op op, IrIntArrayExpr right) {
-        if (left instanceof IrIntArrayVar && right instanceof IrIntArrayVar) {
+        if (op.equals(IrArrayEquality.Op.Equal) && left instanceof IrIntArrayVar && right instanceof IrIntArrayVar) {
             return equal((IrIntArrayVar) left, (IrIntArrayVar) right);
         }
         if (left.length() != right.length()) {
@@ -504,6 +504,9 @@ public class Irs {
         }
         if (filterLeft.isEmpty()) {
             return True;
+        }
+        if (filterLeft.size() == 1) {
+            return equal(filterLeft.get(0), filterRight.get(0));
         }
         if (filterLeft.size() == left.length()) {
             return new IrArrayEquality(left, IrArrayEquality.Op.Equal, right, TrueFalseDomain);
