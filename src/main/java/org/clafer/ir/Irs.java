@@ -1860,7 +1860,7 @@ public class Irs {
         cardHigh = Math.min(cardHigh, env.size());
         Domain card = boundDomain(cardLow, cardHigh);
 
-        return new IrJoinRelation(take, $children, env, ker, card, injective);
+        return IrUtil.asConstant(new IrJoinRelation(take, $children, env, ker, card, injective));
     }
 
     public static IrSetExpr joinFunction(IrSetExpr take, IrIntExpr[] refs, Integer globalCardinality) {
@@ -1922,7 +1922,7 @@ public class Irs {
                     Math.min(highTakeCard, env.size()));
         }
 
-        return new IrJoinFunction(take, $refs, env, ker, card, globalCardinality);
+        return IrUtil.asConstant(new IrJoinFunction(take, $refs, env, ker, card, globalCardinality));
     }
 
     private static int divRoundUp(int a, int b) {

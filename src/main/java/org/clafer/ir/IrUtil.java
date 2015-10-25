@@ -131,11 +131,11 @@ public class IrUtil {
             return Irs.constant(env);
         }
         Domain card = s.getCard();
-        if (card.size() == 1) {
-            int constantCard = card.getLowBound();
-            if (constantCard == ker.size()) {
+        if (card.getLowBound()== env.size()) {
+            return Irs.constant(env);
+        }
+        if(card.getHighBound() == ker.size()) {
                 return Irs.constant(ker);
-            }
         }
         return s;
     }
