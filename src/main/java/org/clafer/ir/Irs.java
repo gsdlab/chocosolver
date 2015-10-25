@@ -422,6 +422,25 @@ public class Irs {
                     throw new IllegalArgumentException();
             }
         }
+        if (!left.getLength().intersects(right.getLength())) {
+            switch (op) {
+                case Equal:
+                    return False;
+                case NotEqual:
+                    return True;
+            }
+        }
+        int minLength = Math.min(left.getLength().getLowBound(), right.getLength().getLowBound());
+        for (int i = 0; i < minLength; i++) {
+            if (!left.getChars()[i].intersects(right.getChars()[i])) {
+                switch (op) {
+                    case Equal:
+                        return False;
+                    case NotEqual:
+                        return True;
+                }
+            }
+        }
         return new IrStringCompare(left, op, right, TrueFalseDomain);
     }
 
