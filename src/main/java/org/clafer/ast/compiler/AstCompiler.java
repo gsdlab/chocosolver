@@ -445,7 +445,8 @@ public class AstCompiler {
     private void initConcrete(AstConcreteClafer clafer) {
         parentPointers.put(clafer, buildParentPointers(clafer));
         buildRef(clafer);
-        switch (getFormat(clafer)) {
+        Format format = getFormat(clafer);
+        switch (format) {
             case LowGroup:
                 initLowGroupConcrete(clafer);
                 break;
@@ -465,8 +466,11 @@ public class AstCompiler {
                 sets.put(clafer, siblingSet[0]);
                 break;
             default:
+                int lowGlobalCard = getGlobalCard(clafer).getLow();
                 IrSetExpr union = union(siblingSet, true);
-                IrSetVar set = set(clafer.getName(), union.getEnv(), union.getKer(), union.getCard());
+                IrSetVar set = set(clafer.getName(), union.getEnv(),
+                        format.equals(Format.LowGroup) ? union.getKer().union(fromToDomain(0, lowGlobalCard)) : union.getKer(),
+                        union.getCard().boundLow(lowGlobalCard));
                 module.addConstraint(equal(set, union));
                 sets.put(clafer, set);
                 break;
