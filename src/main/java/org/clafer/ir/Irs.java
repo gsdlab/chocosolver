@@ -878,6 +878,17 @@ public class Irs {
         if (sets.length == 0) {
             return True;
         }
+        Integer low = bounds.length == 1 ? Integer.valueOf(0) : IrUtil.getConstant(bounds[bounds.length - 2]);
+        if (low != null) {
+            Integer high = IrUtil.getConstant(bounds[bounds.length - 1]);
+            if (high != null) {
+                Domain bound = fromToDomain(low, high);
+
+                IrSetExpr[] filterSets = Arrays.copyOf(sets, sets.length - 1);
+                IrIntExpr[] filterBounds = Arrays.copyOf(bounds, bounds.length - 1);
+                return and(equal(sets[sets.length - 1], constant(bound)), sort(filterSets, filterBounds));
+            }
+        }
         // TODO optimize
         return new IrSortSets(sets, bounds, TrueFalseDomain);
     }
