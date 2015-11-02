@@ -252,10 +252,14 @@ public class ClaferCompiler {
             return Optional.empty();
         }
         switch (options.getStrategy()) {
+            case PreferSmallerInstances:
+                return firstFailInDomainMin(vars);
+            case PreferLargerInstances:
+                return firstFailInDomainMax(vars);
             case Random:
                 return Optional.of(IntStrategyFactory.random_value(vars, System.nanoTime()));
             default:
-                return firstFailInDomainMin(vars);
+                throw new IllegalArgumentException();
         }
     }
 

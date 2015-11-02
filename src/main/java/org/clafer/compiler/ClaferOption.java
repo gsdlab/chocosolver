@@ -26,8 +26,8 @@ public class ClaferOption {
     /**
      * Use the default options.
      */
-    public static final ClaferOption Optimized = new ClaferOption(ClaferSearchStrategy.PreferLargerInstances, false, false);
-    public static final ClaferOption Basic = new ClaferOption(ClaferSearchStrategy.PreferLargerInstances, true, true);
+    public static final ClaferOption Optimized = new ClaferOption(ClaferSearchStrategy.PreferSmallerInstances, false, false);
+    public static final ClaferOption Basic = new ClaferOption(ClaferSearchStrategy.PreferSmallerInstances, true, true);
     public static final ClaferOption Default = Optimized;
 
     private ClaferOption(ClaferSearchStrategy strategy, boolean basicSymmetryBreaking, boolean basicOptimizations) {
