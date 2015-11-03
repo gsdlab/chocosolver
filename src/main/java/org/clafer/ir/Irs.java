@@ -422,6 +422,25 @@ public class Irs {
                     throw new IllegalArgumentException();
             }
         }
+        if (!left.getLength().intersects(right.getLength())) {
+            switch (op) {
+                case Equal:
+                    return False;
+                case NotEqual:
+                    return True;
+            }
+        }
+        int minLength = Math.min(left.getLength().getLowBound(), right.getLength().getLowBound());
+        for (int i = 0; i < minLength; i++) {
+            if (!left.getChars()[i].intersects(right.getChars()[i])) {
+                switch (op) {
+                    case Equal:
+                        return False;
+                    case NotEqual:
+                        return True;
+                }
+            }
+        }
         return new IrStringCompare(left, op, right, TrueFalseDomain);
     }
 
@@ -449,15 +468,54 @@ public class Irs {
     }
 
     public static IrBoolExpr equality(IrIntArrayExpr left, IrArrayEquality.Op op, IrIntArrayExpr right) {
+        if (op.equals(IrArrayEquality.Op.Equal) && left instanceof IrIntArrayVar && right instanceof IrIntArrayVar) {
+            return equal((IrIntArrayVar) left, (IrIntArrayVar) right);
+        }
         if (left.length() != right.length()) {
             throw new IllegalArgumentException();
         }
         for (int i = 0; i < left.length(); i++) {
             if (!left.getDomains()[i].intersects(right.getDomains()[i])) {
-                return False;
+                switch (op) {
+                    case Equal:
+                        return False;
+                    case NotEqual:
+                        return True;
+                }
             }
         }
         return new IrArrayEquality(left, op, right, TrueFalseDomain);
+    }
+
+    public static IrBoolExpr equal(IrIntArrayVar left, IrIntArrayVar right) {
+        if (left.length() != right.length()) {
+            throw new IllegalArgumentException();
+        }
+        List<IrIntExpr> filterLeft = new ArrayList<>(left.length());
+        List<IrIntExpr> filterRight = new ArrayList<>(right.length());
+        for (int i = 0; i < left.length(); i++) {
+            if (!left.getDomains()[i].intersects(right.getDomains()[i])) {
+                return False;
+            }
+            if (!left.getArray()[i].equals(right.getArray()[i])) {
+                filterLeft.add(left.getArray()[i]);
+                filterRight.add(right.getArray()[i]);
+            }
+        }
+        if (filterLeft.isEmpty()) {
+            return True;
+        }
+        if (filterLeft.size() == 1) {
+            return equal(filterLeft.get(0), filterRight.get(0));
+        }
+        if (filterLeft.size() == left.length()) {
+            return new IrArrayEquality(left, IrArrayEquality.Op.Equal, right, TrueFalseDomain);
+        }
+        return new IrArrayEquality(
+                array(filterLeft.toArray(new IrIntExpr[filterLeft.size()])),
+                IrArrayEquality.Op.Equal,
+                array(filterRight.toArray(new IrIntExpr[filterRight.size()])),
+                TrueFalseDomain);
     }
 
     public static IrBoolExpr equal(IrIntArrayExpr left, IrIntArrayExpr right) {
@@ -820,6 +878,17 @@ public class Irs {
         if (sets.length == 0) {
             return True;
         }
+        Integer low = bounds.length == 1 ? Integer.valueOf(0) : IrUtil.getConstant(bounds[bounds.length - 2]);
+        if (low != null) {
+            Integer high = IrUtil.getConstant(bounds[bounds.length - 1]);
+            if (high != null) {
+                Domain bound = fromToDomain(low, high);
+
+                IrSetExpr[] filterSets = Arrays.copyOf(sets, sets.length - 1);
+                IrIntExpr[] filterBounds = Arrays.copyOf(bounds, bounds.length - 1);
+                return and(equal(sets[sets.length - 1], constant(bound)), sort(filterSets, filterBounds));
+            }
+        }
         // TODO optimize
         return new IrSortSets(sets, bounds, TrueFalseDomain);
     }
@@ -828,20 +897,31 @@ public class Irs {
         if (strings.length < 2) {
             return True;
         }
+
         boolean[] filter = new boolean[strings.length];
         for (int i = 0; i < strings.length - 1; i++) {
-            switch (IrUtil.compareString(strings[i], strings[i + 1])) {
-                case EQ:
-                case LE:
-                    if (!strict) {
+            if (strict) {
+                switch (IrUtil.compareString(strings[i], strings[i + 1])) {
+                    case LT:
                         break;
-                    }
-                // fallthrough
-                case GT:
-                case GE:
-                case UNKNOWN:
-                    filter[i] = true;
-                    filter[i + 1] = true;
+                    case GT:
+                    case GE:
+                    case EQ:
+                        return False;
+                    default:
+                        filter[i] = true;
+                        filter[i + 1] = true;
+                }
+            } else {
+                switch (IrUtil.compareString(strings[i], strings[i + 1])) {
+                    case LT:
+                        break;
+                    case GT:
+                        return False;
+                    default:
+                        filter[i] = true;
+                        filter[i + 1] = true;
+                }
             }
         }
         List<IrIntExpr[]> filterStrings = new ArrayList<>(strings.length);
@@ -850,21 +930,47 @@ public class Irs {
                 filterStrings.add(strings[i]);
             }
         }
-        IrIntExpr[][] fstrings = filterStrings.toArray(new IrIntExpr[filterStrings.size()][]);
-
-        if (fstrings.length < 2) {
-            return True;
+        if (filterStrings.size() != strings.length) {
+            return sortStrings(filterStrings.toArray(new IrIntExpr[filterStrings.size()][]), strict);
         }
 
-        IrIntExpr[] array = new IrIntExpr[fstrings.length];
-        for (int i = 0; i < fstrings.length; i++) {
-            IrIntExpr[] string = fstrings[i];
-            if (string.length != 1) {
-                return new IrSortStrings(fstrings, strict, TrueFalseDomain);
+        int minLength = strings[0].length;
+        for (int i = 1; i < strings.length; i++) {
+            minLength = Math.min(minLength, strings[i].length);
+        }
+        for (int i = 0; i < minLength; i++) {
+            boolean allSame = true;
+            for (int j = 0; allSame && j < strings.length - 1; j++) {
+                allSame &= strings[j][i].equals(strings[j + 1][i]);
             }
-            array[i] = fstrings[i][0];
+            if (allSame) {
+                IrIntExpr[][] reducedString = new IrIntExpr[strings.length][];
+                for (int k = 0; k < reducedString.length; k++) {
+                    reducedString[k] = new IrIntExpr[strings[k].length - 1];
+                    System.arraycopy(strings[k], 0, reducedString[k], 0, i);
+                    for (int l = i + 1; l < strings[k].length; l++) {
+                        reducedString[k][l - 1] = strings[k][l];
+                    }
+                }
+                return sortStrings(reducedString, strict);
+            }
         }
-        return strict ? sortStrict(array) : sort(array);
+
+        if (minLength == 0) {
+            return strict ? False : True;
+        }
+        if (minLength == 1) {
+            IrIntExpr[] array = new IrIntExpr[strings.length];
+            for (int i = 0; i < strings.length; i++) {
+                IrIntExpr[] string = strings[i];
+                if (string.length != 1) {
+                    return new IrSortStrings(strings, strict, TrueFalseDomain);
+                }
+                array[i] = strings[i][0];
+            }
+            return strict ? sortStrict(array) : sort(array);
+        }
+        return new IrSortStrings(strings, strict, TrueFalseDomain);
     }
 
     public static IrBoolExpr sort(IrIntExpr[]... strings) {
@@ -915,7 +1021,8 @@ public class Irs {
                     return False;
                 }
                 if (partialOrdering[constant[i]] != null) {
-                    throw new IllegalStateException();
+                    // TODO
+                    return new IrSortStringsChannel(fstrings, fints, TrueFalseDomain);
                 }
                 partialOrdering[constant[i]] = fstrings[i];
             }
@@ -1786,7 +1893,7 @@ public class Irs {
         cardHigh = Math.min(cardHigh, env.size());
         Domain card = boundDomain(cardLow, cardHigh);
 
-        return new IrJoinRelation(take, $children, env, ker, card, injective);
+        return IrUtil.asConstant(new IrJoinRelation(take, $children, env, ker, card, injective));
     }
 
     public static IrSetExpr joinFunction(IrSetExpr take, IrIntExpr[] refs, Integer globalCardinality) {
@@ -1848,7 +1955,7 @@ public class Irs {
                     Math.min(highTakeCard, env.size()));
         }
 
-        return new IrJoinFunction(take, $refs, env, ker, card, globalCardinality);
+        return IrUtil.asConstant(new IrJoinFunction(take, $refs, env, ker, card, globalCardinality));
     }
 
     private static int divRoundUp(int a, int b) {
@@ -2386,11 +2493,11 @@ public class Irs {
         }
         Domain[] charDomains = new Domain[array.length()];
         for (int i = 0; i < charDomains.length; i++) {
-            charDomains[i] = i < sublength.getHighBound()
+            charDomains[i] = i < sublength.getHighBound() && index.getLowBound() + i < charDomains.length
                     ? union(array.getDomains(),
                             index.getLowBound() + i,
                             Integer.min(index.getHighBound() + i + 1, charDomains.length))
-                    : EmptyDomain;
+                    : NegativeOneDomain;
             if (i >= sublength.getLowBound()) {
                 charDomains[i] = charDomains[i].insert(-1);
             }

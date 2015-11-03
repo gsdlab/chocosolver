@@ -132,6 +132,7 @@ public class AstCompiler {
 
     public static final Analyzer[] DefaultAnalyzers = new Analyzer[]{
         new TypeAnalyzer(),
+        new InverseAnalyzer(),
         new GlobalCardAnalyzer(),
         new ScopeAnalyzer(),
         new CardAnalyzer(),
@@ -145,7 +146,6 @@ public class AstCompiler {
         new TypeAnalyzer()
     };
     private final Analysis analysis;
-    private final Map<AstClafer, AstClafer> inverses;
     private final IrModule module;
     private final List<Symmetry> symmetries = new ArrayList<>();
     private final boolean fullSymmetryBreaking;
@@ -156,14 +156,12 @@ public class AstCompiler {
 
     private AstCompiler(AstModel model, Scope scope, Objective[] objectives, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, objectives, analyzers);
-        this.inverses = InverseAnalyzer.analyze(analysis);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
 
     private AstCompiler(AstModel model, Scope scope, Assertion[] assertions, IrModule module, Analyzer[] analyzers, boolean fullSymmetryBreaking) {
         this.analysis = Analysis.analyze(model, scope, assertions, analyzers);
-        this.inverses = InverseAnalyzer.analyze(analysis);
         this.module = Check.notNull(module);
         this.fullSymmetryBreaking = fullSymmetryBreaking;
     }
@@ -447,7 +445,8 @@ public class AstCompiler {
     private void initConcrete(AstConcreteClafer clafer) {
         parentPointers.put(clafer, buildParentPointers(clafer));
         buildRef(clafer);
-        switch (getFormat(clafer)) {
+        Format format = getFormat(clafer);
+        switch (format) {
             case LowGroup:
                 initLowGroupConcrete(clafer);
                 break;
@@ -467,11 +466,18 @@ public class AstCompiler {
                 sets.put(clafer, siblingSet[0]);
                 break;
             default:
+                int lowGlobalCard = getGlobalCard(clafer).getLow();
                 IrSetExpr union = union(siblingSet, true);
-                IrSetVar set = set(clafer.getName(), union.getEnv(), union.getKer(), union.getCard());
+                IrSetVar set = set(clafer.getName(), union.getEnv(),
+                        format.equals(Format.LowGroup) ? union.getKer().union(fromToDomain(0, lowGlobalCard)) : union.getKer(),
+                        union.getCard().boundLow(lowGlobalCard));
                 module.addConstraint(equal(set, union));
                 sets.put(clafer, set);
                 break;
+        }
+        IrIntVar[] bounds = siblingBounds.get(clafer);
+        if (bounds != null && bounds.length > 0) {
+            module.addConstraint(equal(bounds[bounds.length - 1], card(sets.get(clafer))));
         }
 
         if (fullSymmetryBreaking) {
@@ -592,7 +598,6 @@ public class AstCompiler {
             }
             if (getScope(clafer.getParent()) > 1) {
                 module.addConstraint(sortChannel(childIndices, weight));
-//                symmetries.add(new LexChainChannel(childIndices, weight));
                 IrIntVar[] bounds = siblingBounds.get(clafer);
                 for (int i = 0; i < siblingSet.length; i++) {
                     assert index[i].length <= weight.length;
@@ -617,11 +622,69 @@ public class AstCompiler {
                     module.addConstraint(equal(
                             array(indexTo),
                             subarray(array(weightTo), bound, card(siblingSet[i]))));
-//                    module.addConstraint(filterString(siblingSet[i], weight, index[i]));
-//                    symmetries.add(new FilterString(siblingSet[i], weight, index[i]));
                 }
             }
             if (getCard(clafer).getHigh() > 1) {
+                assert parents.length > 1;
+                if (parents.length > 1) {
+                    /**
+                     * What is this optimization?
+                     *
+                     * Force the lower number atoms to choose lower number
+                     * parents. For example consider the following Clafer model:
+                     *
+                     * <pre>
+                     * Person 2
+                     *     Hand 2
+                     * </pre>
+                     *
+                     * The constraint forbids the case where Hand0 belongs to
+                     * Person1 and Hand1 belongs to Person0. Otherwise, the
+                     * children can swap around creating many isomorphic
+                     * solutions.
+                     */
+                    if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
+                        IrIntExpr[][] parentChildIndices = new IrIntExpr[childIndices.length][];
+                        for (int i = 0; i < parentChildIndices.length; i++) {
+                            parentChildIndices[i] = new IrIntExpr[childIndices[i].length + 2];
+                            parentChildIndices[i][0] = parents[i];
+                            for (int j = 1; j < parentChildIndices[i].length - 1; j++) {
+                                parentChildIndices[i][j] = minus(childIndices[i][j - 1]);
+                            }
+                            parentChildIndices[i][parentChildIndices[i].length - 1] = mul(not(members[i]), i, enumDomain(0, i));
+                        }
+                        // Refs are unique and part of the weight. It is impossible for
+                        // two weights to be the same. Enforce a strict order.
+                        module.addConstraint(sortStrict(parentChildIndices));
+                        if (getScope(clafer.getParent()) > 1) {
+                            IrIntExpr[][] parentChildWeights = new IrIntExpr[parents.length][3];
+                            for (int i = 0; i < parentChildWeights.length; i++) {
+                                parentChildWeights[i][0] = parents[i];
+                                parentChildWeights[i][1] = minus(weight[i]);
+                                parentChildWeights[i][2] = mul(not(members[i]), i, enumDomain(0, i));
+                            }
+                            module.addConstraint(sortStrict(parentChildWeights));
+                        }
+                    } else {
+                        IrIntExpr[][] parentChildIndices = new IrIntExpr[childIndices.length][];
+                        for (int i = 0; i < parentChildIndices.length; i++) {
+                            parentChildIndices[i] = new IrIntExpr[childIndices[i].length + 1];
+                            parentChildIndices[i][0] = parents[i];
+                            for (int j = 1; j < parentChildIndices[i].length; j++) {
+                                parentChildIndices[i][j] = minus(childIndices[i][j - 1]);
+                            }
+                        }
+                        module.addConstraint(sort(parentChildIndices));
+                        if (getScope(clafer.getParent()) > 1) {
+                            IrIntExpr[][] parentChildWeights = new IrIntExpr[parents.length][2];
+                            for (int i = 0; i < parentChildWeights.length; i++) {
+                                parentChildWeights[i][0] = parents[i];
+                                parentChildWeights[i][1] = minus(weight[i]);
+                            }
+                            module.addConstraint(sort(parentChildWeights));
+                        }
+                    }
+                }
                 for (int i = 0; i < parents.length - 1; i++) {
                     if (ref != null && analysis.isBreakableRef(ref) && ref.isUnique()) {
                         assert childIndices[i + 1].length == childIndices[i].length;
@@ -630,21 +693,6 @@ public class AstCompiler {
                                 refPartitions = new DisjointSets<>();
                             }
                             refPartitions.union(i, i + 1);
-                        }
-                        // Refs are unique and part of the weight. It is impossible for
-                        // two weights to be the same. Enforce a strict order.
-                        module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
-                                sortStrict(childIndices[i + 1], childIndices[i])));
-                        if (getScope(clafer.getParent()) > 1) {
-                            module.addConstraint(implies(and(members[i], greaterThanEqual(parents[i], parents[i + 1])),
-                                    lessThan(weight[i + 1], weight[i])));
-                        }
-                    } else {
-                        module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
-                                sort(childIndices[i + 1], childIndices[i])));
-                        if (getScope(clafer.getParent()) > 1) {
-                            module.addConstraint(implies(greaterThanEqual(parents[i], parents[i + 1]),
-                                    lessThanEqual(weight[i + 1], weight[i])));
                         }
                     }
                 }
@@ -662,7 +710,7 @@ public class AstCompiler {
                             for (int j = i + 1; j < strings.length; j++) {
                                 if (refPartitions == null || !refPartitions.connected(i, j)) {
                                     module.addConstraint(
-                                            implies(and(members[i], members[j], equal(parents[i], parents[j])),
+                                            implies(and(members[i], members[j], greaterThanEqual(parents[i], parents[j])),
                                                     notEqual(strings[i], strings[j])));
                                 }
                             }
@@ -682,7 +730,7 @@ public class AstCompiler {
                             for (int j = i + 1; j < refs.length; j++) {
                                 if (refPartitions == null || !refPartitions.connected(i, j)) {
                                     module.addConstraint(
-                                            implies(and(members[i], equal(parents[i], parents[j])),
+                                            implies(and(members[i], greaterThanEqual(parents[i], parents[j])),
                                                     notEqual(refs[i], refs[j])));
                                 }
                             }
@@ -706,7 +754,11 @@ public class AstCompiler {
                     IrSetVar targetSet = sets.get(ref.getTargetType());
                     for (int i = 0; i < refs.length; i++) {
                         // The ref pointers must point to a target that exists.
-                        module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
+                        if (getFormat(ref.getTargetType()).equals(Format.LowGroup)) {
+                            module.addConstraint(ifOnlyIf(members[i], lessThan(refs[i], card(targetSet))));
+                        } else {
+                            module.addConstraint(ifOnlyIf(members[i], member(refs[i], targetSet)));
+                        }
                     }
                 }
             }
@@ -725,14 +777,15 @@ public class AstCompiler {
 
         constrainGroupCardinality(clafer);
 
-        AstClafer inverse = inverses.get(clafer);
+        AstClafer inverse = analysis.getInverse(clafer);
         if (inverse != null) {
-            int parentScope = getScope(clafer.getParent());
+            int uninitializedRef = getUninitalizedRef(inverse.getRef().getTargetType());
             IrIntVar[] inverseRefPointers = refPointers.get(inverse.getRef());
-            module.addConstraint(equal(countNotEqual(parentScope, array(inverseRefPointers)), card(sets.get(clafer))));
-            for (int i = 0; i < parentScope; i++) {
+            module.addConstraint(equal(countNotEqual(uninitializedRef, array(inverseRefPointers)), card(sets.get(clafer))));
+            for (int i = 0; i < siblingSet.length; i++) {
                 module.addConstraint(equal(count(i, inverseRefPointers), card(siblingSet[i])));
             }
+            module.addConstraint(equal(card(sets.get(clafer)), card(sets.get(inverse))));
         }
     }
 
@@ -811,7 +864,9 @@ public class AstCompiler {
         if (fullSymmetryBreaking) {
             module.addConstraint(selectN(members, card(set)));
             IrIntExpr[] bounds = siblingBounds.get(clafer);
-            module.addConstraint(sort(childSet, bounds));
+            if (childSet.length > 1) {
+                module.addConstraint(sort(childSet, bounds));
+            }
         }
 
         for (int i = 0; i < parentMembership.length; i++) {
@@ -825,25 +880,6 @@ public class AstCompiler {
 
         if (!(childSet.length == 1 && members.length == 1)) {
             module.addConstraint(boolChannel(members, set));
-        }
-
-        /**
-         * What is this optimization?
-         *
-         * Force the lower number atoms to choose lower number parents. For
-         * example consider the following Clafer model:
-         *
-         * <pre>
-         * Person 2
-         *     Hand 2
-         * </pre>
-         *
-         * The constraint forbids the case where Hand0 belongs to Person1 and
-         * Hand1 belongs to Person0. Otherwise, the children can swap around
-         * creating many isomorphic solutions.
-         */
-        if (fullSymmetryBreaking) {
-            module.addConstraint(sort(parentPointers.get(clafer)));
         }
     }
 

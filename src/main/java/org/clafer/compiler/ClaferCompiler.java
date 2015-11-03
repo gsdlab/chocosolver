@@ -37,7 +37,7 @@ import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.search.limits.FailCounter;
+import org.chocosolver.solver.search.limits.NodeCounter;
 import org.chocosolver.solver.search.loop.monitors.SMF;
 import org.chocosolver.solver.search.strategy.ISF;
 import org.chocosolver.solver.search.strategy.IntStrategyFactory;
@@ -252,17 +252,21 @@ public class ClaferCompiler {
             return Optional.empty();
         }
         switch (options.getStrategy()) {
+            case PreferSmallerInstances:
+                return firstFailInDomainMin(vars);
+            case PreferLargerInstances:
+                return firstFailInDomainMax(vars);
             case Random:
                 return Optional.of(IntStrategyFactory.random_value(vars, System.nanoTime()));
             default:
-                return firstFailInDomainMin(vars);
+                throw new IllegalArgumentException();
         }
     }
 
     private static void restartPolicy(Solver solver, ClaferOption options) {
         switch (options.getStrategy()) {
             case Random:
-                SMF.luby(solver, 16, 16, new FailCounter(16), Integer.MAX_VALUE);
+                SMF.luby(solver, 16, 16, new NodeCounter(solver, 16), Integer.MAX_VALUE);
         }
     }
 

@@ -49,7 +49,7 @@ public class PropContinuousUnion extends Propagator<Variable> {
     boolean isTotalCardVar(int idx) {
         return idx == sets.length;
     }
-    
+
 //TODO: Sept16
 //    @Override
 //    public int getPropagationConditions(int vIdx) {
@@ -59,8 +59,10 @@ public class PropContinuousUnion extends Propagator<Variable> {
 //        assert isTotalCardVar(vIdx);
 //        return IntEventType.all();
 //    }
-
     private boolean support(int value) {
+        if (value >= supports.length) {
+            return false;
+        }
         int support = supports[value];
         if (sets[support].envelopeContains(value)) {
             return true;

@@ -56,6 +56,7 @@ public class Analysis {
     private Map<AstRef, int[]> breakableRefsMap;
     private Map<AstClafer, AstRef[]> breakableTargetsMap;
     private Map<AstExpr, Type> typeMap;
+    private Map<AstClafer, AstClafer> inverseMap;
 
     Analysis(AstModel model, Scope scope) {
         this(model, scope, new Objective[0], new Assertion[0]);
@@ -100,6 +101,7 @@ public class Analysis {
             constraintExprs.put(constraint, constraint.getExpr());
         }
         this.cardMap = buildCardMap(clafers);
+        this.inverseMap = new HashMap<>(0);
     }
 
     private static Map<AstConcreteClafer, Card> buildCardMap(List<AstClafer> clafers) {
@@ -529,6 +531,19 @@ public class Analysis {
 
     public Analysis setTypeMap(Map<AstExpr, Type> typeMap) {
         this.typeMap = typeMap;
+        return this;
+    }
+
+    public AstClafer getInverse(AstClafer clafer) {
+        return getInverseMap().get(clafer);
+    }
+
+    public Map<AstClafer, AstClafer> getInverseMap() {
+        return notNull("Inverses", inverseMap);
+    }
+
+    public Analysis setInverseMap(Map<AstClafer, AstClafer> inverseMap) {
+        this.inverseMap = inverseMap;
         return this;
     }
 }

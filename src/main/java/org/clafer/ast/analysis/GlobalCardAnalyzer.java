@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import org.chocosolver.solver.ResolutionPolicy;
@@ -120,6 +121,10 @@ public class GlobalCardAnalyzer implements Analyzer {
                     solver.post(ICF.sum(subLowCards, lowCard));
                     solver.post(ICF.sum(subHighCards, highCard));
                 }
+            }
+            for (Entry<AstClafer, AstClafer> inverse : analysis.getInverseMap().entrySet()) {
+                solver.post(ICF.arithm(lowCards.get(inverse.getKey()), "=", lowCards.get(inverse.getValue())));
+                solver.post(ICF.arithm(highCards.get(inverse.getKey()), "=", highCards.get(inverse.getValue())));
             }
             SMF.limitTime(solver, 5000);
             AbstractStrategy<IntVar> strategy = ISF.domOverWDeg(intVars, 0);

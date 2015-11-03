@@ -3,9 +3,8 @@ package org.clafer.compiler;
 import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.ResolutionPolicy;
 import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.SolverUtil;
 import org.chocosolver.solver.objective.ObjectiveManager;
-import org.chocosolver.solver.propagation.NoPropagationEngine;
-import org.chocosolver.solver.propagation.hardcoded.SevenQueuesPropagatorEngine;
 import org.chocosolver.solver.search.loop.monitors.IMonitorSolution;
 import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
@@ -68,23 +67,12 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
                 scoreVar,
                 isMaximize() ? ResolutionPolicy.MAXIMIZE : ResolutionPolicy.MINIMIZE,
                 true));
-        solver.getSearchLoop().plugSearchMonitor(new IMonitorSolution() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void onSolution() {
-                if (count == 0) {
-                    firstSolution.record(solver);
-                }
+        solver.plugMonitor((IMonitorSolution) () -> {
+            if (count == 0) {
+                firstSolution.record(solver);
             }
         });
-        if (solver.getEngine() == NoPropagationEngine.SINGLETON) {
-            solver.set(new SevenQueuesPropagatorEngine(solver));
-        }
-        if (!solver.getEngine().isInitialized()) {
-            solver.getEngine().initialize();
-        }
-        solver.getSearchLoop().launch(false);
+        SolverUtil.solve(solver);
         return firstSolution.hasBeenFound() && !solver.hasReachedLimit();
     }
 

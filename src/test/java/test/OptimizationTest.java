@@ -45,7 +45,7 @@ public class OptimizationTest {
         ClaferOptimizer s = ClaferCompiler.compile(p.getModel(), p.getScope(), p.getObjectives());
 
         assertTrue(s.find());
-        while (s.find()) {
+        for (int i = 0; i < 10 && s.find(); i++) {
         }
     }
 }

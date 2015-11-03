@@ -31,7 +31,7 @@ public class ClaferAsserter implements ClaferSearch {
     }
 
     public ClaferAsserter() {
-        this.solver = null;
+        this.solver = new Solver();
         this.solutionMap = null;
         this.assertions = null;
         this.more = false;

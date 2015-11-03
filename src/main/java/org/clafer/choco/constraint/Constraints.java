@@ -16,6 +16,7 @@ import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
 import org.chocosolver.solver.constraints.binary.PropEqualX_Y;
 import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
 import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
+import org.chocosolver.solver.constraints.binary.PropNotEqualX_Y;
 import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
 import org.chocosolver.solver.constraints.nary.sum.PropSum;
 import org.chocosolver.solver.constraints.set.PropIntersection;
@@ -23,6 +24,7 @@ import org.chocosolver.solver.constraints.set.PropSubsetEq;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
 import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
 import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
+import org.chocosolver.solver.constraints.unary.PropNotEqualXC;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
@@ -81,13 +83,10 @@ public class Constraints {
 
     private static Optional<Propagator<IntVar>> eq(IntVar l, IntVar r) {
         if (l.isInstantiated()) {
-            if (r.isInstantiatedTo(l.getValue())) {
-                return Optional.empty();
-            }
-            return Optional.of(new PropEqualXC(r, l.getValue()));
+            return eq(r, l.getValue());
         }
         if (r.isInstantiated()) {
-            return Optional.of(new PropEqualXC(l, r.getValue()));
+            return eq(l, r.getValue());
         }
         return Optional.of(new PropEqualX_Y(l, r));
     }
@@ -97,6 +96,23 @@ public class Constraints {
             return Optional.empty();
         }
         return Optional.of(new PropEqualXC(l, r));
+    }
+
+    private static Optional<Propagator<IntVar>> neq(IntVar l, IntVar r) {
+        if (l.isInstantiated()) {
+            return neq(r, l.getValue());
+        }
+        if (r.isInstantiated()) {
+            return neq(l, r.getValue());
+        }
+        return Optional.of(new PropNotEqualX_Y(l, r));
+    }
+
+    private static Optional<Propagator<IntVar>> neq(IntVar l, int r) {
+        if (l.isInstantiated() && l.getValue() != r) {
+            return Optional.empty();
+        }
+        return Optional.of(new PropNotEqualXC(l, r));
     }
 
     private static Propagator<IntVar> lessThanEq(IntVar l, IntVar g) {

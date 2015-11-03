@@ -1,3 +1,7 @@
+# chocosolver version 0.4.2.1 released on Nov 03, 2015
+
+[Release](https://github.com/gsdlab/chocosolver/pull/22)
+
 # chocosolver version 0.4.2 released on Oct 16, 2015
 
 [Release](https://github.com/gsdlab/chocosolver/pull/19)

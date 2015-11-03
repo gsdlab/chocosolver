@@ -1,10 +1,13 @@
 package org.clafer.ir.analysis;
 
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -314,6 +317,16 @@ public class Coalescer {
         }
 
         @Override
+        public Void visit(IrArrayEquality ir, Void a) {
+            switch (ir.getOp()) {
+                case Equal:
+                    propagateEqual(ir.getLeft(), ir.getRight());
+                    break;
+            }
+            return null;
+        }
+
+        @Override
         public Void visit(IrSetEquality ir, Void a) {
             IrSetExpr left = ir.getLeft();
             IrSetExpr right = ir.getRight();
@@ -475,60 +488,117 @@ public class Coalescer {
             return null;
         }
 
+        private boolean isZero(Domain domain) {
+            return domain.size() == 1 && domain.getLowBound() == 0;
+        }
+
         @Override
         public Void visit(IrSortSets ir, Void a) {
-            // TODO
-//            IrSetExpr[] sets = ir.getSets();
-//            int low = 0;
-//            int high = 0;
-//            for (IrSetExpr set : sets) {
-//                Domain card = set.getCard();
-//                int newLow = low + card.getLowBound();
-//                int newHigh = high + card.getHighBound();
-//                failIf(low >= newHigh);
-//                Domain env = boundDomain(low, newHigh - 1);
-//                Domain ker = set.getKer();
-//                if (!ker.isEmpty() && !ker.isBounded()) {
-//                    ker = boundDomain(ker.getLowBound(), ker.getHighBound());
-//                }
-//                if (high < newLow) {
-//                    ker = ker.union(boundDomain(high, newLow - 1));
-//                }
-//                propagateSet(new PartialSet(env, ker, null), set);
-//                low = newLow;
-//                high = newHigh;
+            IrSetExpr[] sets = ir.getSets();
+            IrIntExpr[] bounds = ir.getBounds();
+            IrIntExpr[] boundary = new IrIntExpr[sets.length + 1];
+            boundary[0] = Zero;
+            for (int i = 0; i < sets.length; i++) {
+                if (isZero(boundary[i].getDomain())) {
+                    boundary[i + 1] = Irs.card(sets[i]);
+                } else if (isZero(sets[i].getCard())) {
+                    boundary[i + 1] = boundary[i];
+                } else {
+                    boundary[i + 1] = bounds[i];
+                    propagateEqual(add(boundary[i], Irs.card(sets[i])), boundary[i + 1]);
+                }
+                if (!boundary[i + 1].equals(bounds[i])) {
+                    propagateEqual(boundary[i + 1], bounds[i]);
+                }
+                if (boundary[i].getDomain().size() == 1) {
+                    int constant = boundary[i].getDomain().getLowBound();
+                    if (sets[i].getCard().getLowBound() > 0 && !sets[i].getKer().contains(constant)) {
+                        propagateKer(constantDomain(constant), sets[i]);
+                    }
+                }
+                Domain env = null;
+                if (boundary[i].getLowBound() < boundary[i + 1].getHighBound()) {
+                    env = boundDomain(boundary[i].getLowBound(), boundary[i + 1].getHighBound() - 1);
+                }
+                Domain ker = null;
+                if (boundary[i].getHighBound() < boundary[i + 1].getLowBound()) {
+                    ker = boundDomain(boundary[i].getHighBound(), boundary[i + 1].getLowBound() - 1);
+                }
+                if (env != null || ker != null) {
+                    propagateSet(new PartialSet(env, ker, null), sets[i]);
+                }
+            }
+//            for (int i = 0; i < sets.length; i++) {
+//                propagators.add(new PropContinuous(sets[i], setCards[i]));
 //            }
             return null;
+        }
+
+        private int largerThan(IrIntExpr[][] strings, int index) {
+            int larger = 0;
+            for (int i = 0; i < strings.length; i++) {
+                if (i != index) {
+                    switch (IrUtil.compareString(strings[index], strings[i])) {
+                        case GE:
+                        case GT:
+                        case UNKNOWN:
+                            larger++;
+                    }
+                }
+            }
+            return larger;
         }
 
         @Override
         public Void visit(IrSortStringsChannel ir, Void a) {
             IrIntExpr[][] strings = ir.getStrings();
             IrIntExpr[] ints = ir.getInts();
+            DisjointSets<Integer> equivalenceClasses = new DisjointSets<>();
+            TIntList[] largerThans = new TIntList[strings.length];
+            for (int i = 0; i < strings.length; i++) {
+                largerThans[i] = new TIntArrayList(4);
+                equivalenceClasses.union(i, i);
+            }
             for (int i = 0; i < strings.length; i++) {
                 for (int j = i + 1; j < strings.length; j++) {
                     switch (IrUtil.compareString(strings[i], strings[j])) {
                         case EQ:
                             propagateEqual(ints[i], ints[j]);
+                            equivalenceClasses.union(i, j);
                             break;
                         case LT:
                             propagateLessThan(ints[i], ints[j]);
+                            largerThans[j].add(i);
                             break;
                         case LE:
                             propagateLessThanEqual(ints[i], ints[j]);
+                            largerThans[j].add(i);
                             break;
                         case GT:
                             propagateLessThan(ints[j], ints[i]);
+                            largerThans[i].add(j);
                             break;
                         case GE:
                             propagateLessThanEqual(ints[j], ints[i]);
+                            largerThans[i].add(j);
+                            break;
+                        case UNKNOWN:
+                            largerThans[i].add(j);
+                            largerThans[j].add(i);
                             break;
                     }
                 }
             }
-            Domain dom = boundDomain(0, ints.length - 1);
+            Collection<Set<Integer>> equivalenceComponents = equivalenceClasses.connectedComponents();
+            for (Set<Integer> equivalenceComponent : equivalenceComponents) {
+                int representative = equivalenceClasses.representative(equivalenceComponent.iterator().next());
+                TIntHashSet largerThanClasses = new TIntHashSet(largerThans[representative].size());
+                largerThans[representative].forEach(x -> largerThanClasses.add(equivalenceClasses.representative(x)) || true);
+                for (int i : equivalenceComponent) {
+                    propagateInt(ints[i].getDomain().boundHigh(largerThanClasses.size()), ints[i]);
+                }
+            }
             for (int i = 0; i < ints.length; i++) {
-                propagateInt(dom, ints[i]);
                 for (int j = i + 1; j < ints.length; j++) {
                     switch (IrUtil.compare(ints[i], ints[j])) {
                         case EQ:
@@ -628,6 +698,34 @@ public class Coalescer {
             } else {
                 propagateInt(left.getDomain(), right);
                 propagateInt(right.getDomain(), left);
+            }
+        }
+
+        private IrIntExpr get(IrIntArrayExpr array, int index) {
+            if (array instanceof IrIntArrayVar) {
+                IrIntArrayVar var = (IrIntArrayVar) array;
+                return var.getArray()[index];
+            }
+            if (array instanceof IrSubarray) {
+                IrSubarray subarray = (IrSubarray) array;
+                if (subarray.getIndex().getDomain().size() == 1 && index < subarray.getSublength().getLowBound()) {
+                    return get(subarray.getArray(), subarray.getIndex().getLowBound() + index);
+                }
+            }
+            return null;
+        }
+
+        private void propagateEqual(IrIntArrayExpr a, IrIntArrayExpr b) {
+            for (int i = 0; i < a.length(); i++) {
+                IrIntExpr aI = get(a, i);
+                IrIntExpr bI = get(b, i);
+                if (aI != null && bI != null) {
+                    propagateEqual(aI, bI);
+                } else if (aI != null) {
+                    propagateInt(b.getDomains()[i], aI);
+                } else if (bI != null) {
+                    propagateInt(a.getDomains()[i], bI);
+                }
             }
         }
 
@@ -786,6 +884,34 @@ public class Coalescer {
                     }
                 }
                 propagateInt(enumDomain(domain), element.getIndex());
+            } else if (right instanceof IrCount) {
+                IrCount count = (IrCount) right;
+                int value = count.getValue();
+                int possibles = 0;
+                int mandatories = 0;
+                for (IrIntExpr element : count.getArray()) {
+                    if (element.getDomain().contains(value)) {
+                        if (element.getDomain().size() == 1) {
+                            mandatories++;
+                        } else {
+                            possibles++;
+                        }
+                    }
+                }
+                if (possibles + mandatories <= left.getLowBound()) {
+                    Domain valueDomain = constantDomain(value);
+                    for (IrIntExpr element : count.getArray()) {
+                        if (element.getDomain().contains(value) && element.getDomain().size() > 1) {
+                            propagateInt(valueDomain, element);
+                        }
+                    }
+                } else if (mandatories >= left.getHighBound()) {
+                    for (IrIntExpr element : count.getArray()) {
+                        if (element.getDomain().contains(value) && element.getDomain().size() > 1) {
+                            propagateInt(element.getDomain().remove(value), element);
+                        }
+                    }
+                }
             } else if (right instanceof IrLength) {
                 IrLength length = (IrLength) right;
                 propagateString(tstring(chars(length.getString()), tint(left)), length.getString());

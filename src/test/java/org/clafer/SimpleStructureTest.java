@@ -833,13 +833,15 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(a, 2).setScope(b, 3));
         assertTrue(solver.find());
+        assertTrue(solver.find());
+        assertFalse(solver.find());
     }
 
     /**
      * <pre>
      * abstract A
      * abstract B
-     * C : B
+     * C : B *
      *     D -> A ?
      * </pre>
      */
@@ -854,6 +856,8 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(c, 1).setScope(d, 1));
         assertTrue(solver.find());
+        assertTrue(solver.find());
+        assertFalse(solver.find());
     }
 
     /**

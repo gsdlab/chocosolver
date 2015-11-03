@@ -135,7 +135,7 @@ public class LinearEquationOptimizer {
                 new LinearEquation(equation.getLeft().mul(lcm), equation.getOp(), equation.getRight().mul(lcm), false)
             };
         }
-        long multiplier = Math.min(Math.abs(50000 / max.ceil()), Math.abs(50000 / min.floor()));
+        long multiplier = 50000 / Math.max(Math.abs(max.ceil()), Math.abs(min.floor()));
         if (multiplier == 0) {
             multiplier = 1;
         }

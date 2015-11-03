@@ -49,12 +49,19 @@ public class IrStringVar extends IrAbstractString implements IrVar {
 
     @Override
     public boolean equals(Object obj) {
-        return this == obj;
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof IrStringVar) {
+            IrStringVar other = (IrStringVar) obj;
+            return length.equals(other.length) && Arrays.equals(chars, other.chars);
+        }
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return Arrays.hashCode(chars) ^ length.hashCode();
     }
 
     @Override

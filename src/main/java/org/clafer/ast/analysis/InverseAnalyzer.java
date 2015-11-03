@@ -22,7 +22,7 @@ import org.clafer.collection.Pair;
  *
  * @author jimmy
  */
-public class InverseAnalyzer {
+public class InverseAnalyzer implements Analyzer {
 
     private static boolean isZero(AstConstant constant) {
         return constant.getValue().length == 1 && constant.getValue()[0].length == 1 && constant.getValue()[0][0] == 0;
@@ -60,7 +60,8 @@ public class InverseAnalyzer {
         return Optional.empty();
     }
 
-    public static Map<AstClafer, AstClafer> analyze(Analysis analysis) {
+    @Override
+    public Analysis analyze(Analysis analysis) {
         Stack<Pair<AstClafer, AstClafer>> direction = new Stack<>();
         Map<AstClafer, AstClafer> inverses = new HashMap<>();
 
@@ -96,6 +97,6 @@ public class InverseAnalyzer {
                 }
             }
         }
-        return inverses;
+        return analysis.setInverseMap(inverses);
     }
 }
