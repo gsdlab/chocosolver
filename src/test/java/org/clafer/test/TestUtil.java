@@ -238,7 +238,7 @@ public class TestUtil {
 
     public static IrStringVar randIrStringVar() {
         String name = "String" + varCount++;
-        IrIntVar length = randIrIntVar("Int", 0, 4);
+        IrIntVar length = randIrIntVar("|" + name + "|", 0, 4);
         IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
         for (int i = 0; i < chars.length; i++) {
             Domain domain = randNonEmptyDomain('a', 'c');
@@ -251,7 +251,7 @@ public class TestUtil {
 
     public static IrStringVar randNonEmptyIrStringVar() {
         String name = "String" + varCount++;
-        IrIntVar length = randIrIntVar("Int", 1, 4);
+        IrIntVar length = randIrIntVar("|" + name + "|", 1, 4);
         IrIntVar[] chars = new IrIntVar[length.getDomain().getHighBound()];
         for (int i = 0; i < chars.length; i++) {
             Domain domain = randNonEmptyDomain('a', 'c');
