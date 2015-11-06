@@ -68,10 +68,10 @@ public class PropLength extends Propagator<IntVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isLengthVar(idxVarInProp)) {
-            if (IntEventType.isInclow(mask)) {
+            if (IntEventType.isInclow(mask) || IntEventType.isInstantiate(mask)) {
                 onLengthLB();
             }
-            if (IntEventType.isDecupp(mask)) {
+            if (IntEventType.isDecupp(mask) || IntEventType.isInstantiate(mask)) {
                 onLengthUB();
             }
         } else {
