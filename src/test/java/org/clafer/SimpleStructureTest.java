@@ -77,7 +77,7 @@ public class SimpleStructureTest {
 
     /**
      * <pre>
-     * xor Type
+     * 2..3 Type
      *     Car ?
      *     Truck ?
      *     Van ?
