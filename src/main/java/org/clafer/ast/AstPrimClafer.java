@@ -38,6 +38,16 @@ public abstract class AstPrimClafer extends AstClafer {
     }
 
     @Override
+    public boolean hasParent() {
+        return false;
+    }
+
+    @Override
+    public AstClafer getParent() {
+        return null;
+    }
+
+    @Override
     public AstConcreteClafer addChild(String name) {
         throw new UnsupportedOperationException("Cannot add a child under " + getName() + " primitive");
     }

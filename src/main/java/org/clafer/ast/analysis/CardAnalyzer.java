@@ -17,18 +17,16 @@ public class CardAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstConcreteClafer, Card> cardMap = new HashMap<>();
-        cardMap.put(analysis.getModel(), new Card(1, 1));
-        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
-            analyze(abstractClafer, cardMap, analysis);
-        }
-        for (AstConcreteClafer child : analysis.getModel().getChildren()) {
-            analyze(child, 1, cardMap, analysis);
-        }
+        analyze(analysis.getModel().getAbstractRoot(), cardMap, analysis);
+        analyze(analysis.getModel().getRoot(), 1, cardMap, analysis);
         return analysis.setCardMap(cardMap);
     }
 
     private static void analyze(AstAbstractClafer clafer, Map<AstConcreteClafer, Card> cardMap, Analysis analysis) {
         Card globalCard = analysis.getGlobalCard(clafer);
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
+            analyze(child, cardMap, analysis);
+        }
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, globalCard.getLow(), cardMap, analysis);
         }

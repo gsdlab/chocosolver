@@ -168,7 +168,7 @@ public class TypeAnalyzerTest {
     /**
      * <pre>
      * A
-     * [ some A.parent ]
+     * [ some A.parent.parent ]
      * </pre>
      */
     @Test(expected = TypeException.class)
@@ -176,7 +176,7 @@ public class TypeAnalyzerTest {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("a").withCard(Mandatory);
-        model.addConstraint(some(joinParent(global(a))));
+        model.addConstraint(some(joinParent(joinParent(global(a)))));
 
         Analysis.analyze(model, Scope.defaultScope(1), new TypeAnalyzer());
     }

@@ -188,6 +188,10 @@ public abstract class AstClafer implements AstVar {
         return withGroupCard(new Card(low, high));
     }
 
+    public abstract boolean hasParent();
+
+    public abstract AstClafer getParent();
+
     /**
      * Checks if this Clafer has any concrete children.
      *
@@ -207,6 +211,10 @@ public abstract class AstClafer implements AstVar {
         return Collections.unmodifiableList(children);
     }
 
+    protected AstAbstractClafer getClaferClafer() {
+        return claferClafer;
+    }
+
     /**
      * Add a new concrete child under this Clafer.
      *
@@ -214,9 +222,9 @@ public abstract class AstClafer implements AstVar {
      * @return the new child
      */
     public AstConcreteClafer addChild(String name) {
-        AstConcreteClafer child = new AstConcreteClafer(name, this, claferClafer);
+        AstConcreteClafer child = new AstConcreteClafer(name, this, getClaferClafer());
         children.add(child);
-        return child.extending(claferClafer);
+        return child.extending(getClaferClafer());
     }
 
     /**

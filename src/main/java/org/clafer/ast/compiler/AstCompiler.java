@@ -280,9 +280,9 @@ public class AstCompiler {
 
     private AstSolutionMap compile() {
         IrSetVar rootSet = constant(new int[]{0});
-        sets.put(analysis.getModel(), rootSet);
-        siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
-        memberships.put(analysis.getModel(), new IrBoolVar[]{True});
+        sets.put(analysis.getModel().getRoot(), rootSet);
+        siblingSets.put(analysis.getModel().getRoot(), new IrSetVar[]{rootSet});
+        memberships.put(analysis.getModel().getRoot(), new IrBoolVar[]{True});
 
         List<AstClafer> clafers = initOrder();
         for (AstClafer clafer : clafers) {

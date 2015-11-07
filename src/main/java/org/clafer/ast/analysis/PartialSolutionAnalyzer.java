@@ -19,13 +19,8 @@ public class PartialSolutionAnalyzer implements Analyzer {
     public Analysis analyze(Analysis analysis) {
         Map<AstClafer, PartialSolution> partialSolutionMap = new HashMap<>();
 
-        partialSolutionMap.put(analysis.getModel(), new PartialSolution(new boolean[]{true}, new int[0][]));
-        for (AstConcreteClafer child : analysis.getModel().getChildren()) {
-            analyze(child, analysis, partialSolutionMap);
-        }
-        for (AstAbstractClafer abstractClafer : analysis.getAbstractClafers()) {
-            analyze(abstractClafer, analysis, partialSolutionMap);
-        }
+        analyze(analysis.getModel().getRoot(), analysis, partialSolutionMap);
+        analyze(analysis.getModel().getAbstractRoot(), analysis, partialSolutionMap);
 
         return analysis.setPartialSolutionMap(partialSolutionMap);
     }
@@ -52,6 +47,9 @@ public class PartialSolutionAnalyzer implements Analyzer {
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, analysis, partialSolutionMap);
         }
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
+            analyze(child, analysis, partialSolutionMap);
+        }
     }
 
     private static void analyze(
@@ -67,36 +65,41 @@ public class PartialSolutionAnalyzer implements Analyzer {
             parents[i] = new TIntArrayList();
         }
 
-        PartialSolution partialParentSolution = partialSolutionMap.get(clafer.getParent());
         Card card = analysis.getCard(clafer);
         int lowCard = card.getLow();
         int highCard = card.getHigh();
-        switch (format) {
-            case LowGroup:
-                Arrays.fill(solution, 0, globalCard.getLow(), true);
-                int low = 0;
-                int high = highCard;
-                for (int i = 0; i < partialParentSolution.size(); i++) {
-                    for (int j = low; j < high && j < parents.length; j++) {
-                        parents[j].add(i);
+        if (clafer.hasParent()) {
+            PartialSolution partialParentSolution = partialSolutionMap.get(clafer.getParent());
+            switch (format) {
+                case LowGroup:
+                    Arrays.fill(solution, 0, globalCard.getLow(), true);
+                    int low = 0;
+                    int high = highCard;
+                    for (int i = 0; i < partialParentSolution.size(); i++) {
+                        for (int j = low; j < high && j < parents.length; j++) {
+                            parents[j].add(i);
+                        }
+                        if (partialParentSolution.hasClafer(i)) {
+                            low += lowCard;
+                        }
+                        high += highCard;
                     }
-                    if (partialParentSolution.hasClafer(i)) {
-                        low += lowCard;
+                    break;
+                case ParentGroup:
+                    assert lowCard == highCard;
+                    for (int i = 0; i < partialParentSolution.size(); i++) {
+                        for (int j = 0; j < lowCard; j++) {
+                            solution[i * lowCard + j] = partialParentSolution.hasClafer(i);
+                            parents[i * lowCard + j].add(i);
+                        }
                     }
-                    high += highCard;
-                }
-                break;
-            case ParentGroup:
-                assert lowCard == highCard;
-                for (int i = 0; i < partialParentSolution.size(); i++) {
-                    for (int j = 0; j < lowCard; j++) {
-                        solution[i * lowCard + j] = partialParentSolution.hasClafer(i);
-                        parents[i * lowCard + j].add(i);
-                    }
-                }
-                break;
-            default:
-                throw new AnalysisException();
+                    break;
+                default:
+                    throw new AnalysisException();
+            }
+        } else {
+            Arrays.fill(solution, 0, lowCard, true);
+            Arrays.fill(parents, new TIntArrayList(new int[]{0}));
         }
         partialSolutionMap.put(clafer, new PartialSolution(solution, toArray(parents)));
 

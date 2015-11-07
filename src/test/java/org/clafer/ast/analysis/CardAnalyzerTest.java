@@ -34,7 +34,9 @@ public class CardAnalyzerTest {
         globalCards.put(digit, new Card(100, 200));
         globalCards.put(parrot, new Card(3, 4));
         globalCards.put(beak, new Card(1, 15));
-        globalCards.put(model.getTypeHierarchyRoot(), new Card(1, 1));
+        globalCards.put(animal.getSuperClafer(), new Card(1, 1));
+        globalCards.put(model.getAbstractRoot(), new Card(1, 1));
+        globalCards.put(model.getRoot(), new Card(1, 1));
 
         Analysis analysis =
                 new CardAnalyzer().analyze(

@@ -23,7 +23,7 @@ public class ScopeAnalyzer implements Analyzer {
     public Analysis analyze(Analysis analysis) {
         Scope scope = analysis.getScope();
         Map<AstClafer, Integer> optimizedScope = new HashMap<>();
-        optimizedScope.put(analysis.getModel(), 1);
+        optimizedScope.put(analysis.getModel().getRoot(), 1);
 
         for (Set<AstClafer> component : analysis.getClafersInParentAndSubOrder()) {
             for (AstClafer clafer : component) {

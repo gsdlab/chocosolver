@@ -32,7 +32,8 @@ public class AstUtil {
      */
     public static List<AstClafer> getClafers(AstModel model) {
         List<AstClafer> clafers = new ArrayList<>();
-        clafers.add(model);
+        clafers.add(model.getAbstractRoot());
+        clafers.add(model.getRoot());
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             clafers.add(abstractClafer);
             getNestedChildClafers(abstractClafer, clafers);
@@ -52,14 +53,8 @@ public class AstUtil {
      */
     public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
         List<AstConcreteClafer> clafers = new ArrayList<>();
-        clafers.add(model);
-        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
-            getNestedChildClafers(abstractClafer, clafers);
-        }
-        for (AstConcreteClafer child : model.getChildren()) {
-            clafers.add(child);
-            getNestedChildClafers(child, clafers);
-        }
+        getNestedChildClafers(model.getAbstractRoot(), clafers);
+        clafers.add(model.getRoot());
         return clafers;
     }
 
@@ -93,8 +88,16 @@ public class AstUtil {
      */
     public static List<AstAbstractClafer> getAbstractClafersInSubOrder(AstModel model) {
         List<AstAbstractClafer> clafers = new ArrayList<>(model.getAbstracts());
+        getAbstractClafers(model.getAbstractRoot(), clafers);
         Collections.sort(clafers, Comparator.comparing(a -> AstUtil.getSuperHierarchy(a).size()));
         return clafers;
+    }
+
+    private static void getAbstractClafers(AstAbstractClafer clafer, List<AstAbstractClafer> list) {
+        list.add(clafer);
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
+            getAbstractClafers(child, list);
+        }
     }
 
     /**
@@ -116,8 +119,8 @@ public class AstUtil {
      * @return {@code true} if and only if the Clafer is the root, {@code false}
      * otherwise
      */
-    public static boolean isRoot(AstConcreteClafer clafer) {
-        return clafer instanceof AstModel;
+    public static boolean isRoot(AstClafer clafer) {
+        return !clafer.hasParent();
     }
 
     /**
@@ -165,6 +168,11 @@ public class AstUtil {
             clafers.add(child);
             getNestedChildClafers(child, clafers);
         }
+        if (clafer instanceof AstAbstractClafer) {
+            for (AstAbstractClafer child : ((AstAbstractClafer) clafer).getAbstractChildren()) {
+                getNestedChildClafers(child, clafers);
+            }
+        }
     }
 
     /**
@@ -205,7 +213,7 @@ public class AstUtil {
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             getNestedConstraints(abstractClafer, constraints);
         }
-        getNestedConstraints(model, constraints);
+        getNestedConstraints(model.getAbstractRoot(), constraints);
         return constraints;
     }
 
