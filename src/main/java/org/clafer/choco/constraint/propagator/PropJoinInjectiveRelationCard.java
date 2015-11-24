@@ -69,7 +69,6 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 //        }
 //        return super.advise(idxVarInProp, mask);
 //    }
-
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isTakeVar(vIdx)) {
@@ -81,6 +80,12 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (i < 0 || i >= childrenCards.length) {
+                take.removeFromEnvelope(i, this);
+            }
+        }
+
         boolean changed;
         do {
             int minCard = 0;

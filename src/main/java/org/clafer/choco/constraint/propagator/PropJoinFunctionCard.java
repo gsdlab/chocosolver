@@ -82,7 +82,6 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
 //        }
 //        return super.advise(idxVarInProp, mask);
 //    }
-
     @Override
     public int getPropagationConditions(int vIdx) {
         if (isTakeVar(vIdx)) {
@@ -174,6 +173,13 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         takeCard.updateLowerBound(take.getKernelSize(), this);
         takeCard.updateUpperBound(take.getEnvelopeSize(), this);
+
+        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            if (i < 0 || i >= refs.length) {
+                take.removeFromEnvelope(i, this);
+            }
+        }
+
         boolean changed;
         do {
             changed = false;
