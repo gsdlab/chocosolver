@@ -186,7 +186,11 @@ public class PartialIntAnalyzer implements Analyzer {
             AstJoin join = ((AstJoin) exp);
             AstSetExpr right = join.getRight();
             if (right instanceof AstChildRelation) {
-                return cons(((AstChildRelation) right).getChildType(), analyze(join.getLeft()));
+                AstChildRelation relation = (AstChildRelation) right;
+                // TODO what if is abstract not concrete?
+                if (relation.getChildType() instanceof AstConcreteClafer) {
+                    return cons((AstConcreteClafer) relation.getChildType(), analyze(join.getLeft()));
+                }
             }
         } else if (exp instanceof AstThis || exp instanceof AstGlobal) {
             return empty();

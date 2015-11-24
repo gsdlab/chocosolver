@@ -596,4 +596,29 @@ public class SimpleConstraintTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(4, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * abstract Message
+     *     abstract Content -> int
+     * Mail : Message ?
+     *     Letter : Content
+     *     Gift : Content *
+     *     [ 1 in this.Content.ref ]
+     * </pre>
+     */
+    @Test()
+    public void testNestedAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer message = model.addAbstract("Message");
+        AstAbstractClafer content = message.addAbstractChild("Content").refToUnique(IntType);
+        AstConcreteClafer mail = model.addChild("Mail").extending(message).withCard(Optional);
+        AstConcreteClafer letter = mail.addChild("Letter").extending(content).withCard(Mandatory);
+        AstConcreteClafer gift = mail.addChild("Gift").extending(content);
+        mail.addConstraint(in(constant(1), joinRef(join($this(), content))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(0).intHigh(1));
+        assertEquals(7, solver.allInstances().length);
+    }
 }

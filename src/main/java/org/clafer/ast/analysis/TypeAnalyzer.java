@@ -652,7 +652,7 @@ public class TypeAnalyzer implements Analyzer {
 
         @Override
         public TypedExpr<?> visit(AstChildRelation ast, Void a) {
-            AstConcreteClafer child = ast.getChildType();
+            AstClafer child = ast.getChildType();
             if (!child.hasParent()) {
                 throw new TypeException(child + " does not have a parent");
             }

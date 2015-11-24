@@ -2028,6 +2028,10 @@ public class Irs {
         return union(operands, false);
     }
 
+    public static IrSetExpr unionDisjoint(IrSetExpr... operands) {
+        return union(operands, true);
+    }
+
     public static IrSetExpr union(IrSetExpr[] operands, boolean disjoint) {
         List<IrSetExpr> flatten = new ArrayList<>(operands.length);
         for (IrSetExpr operand : operands) {

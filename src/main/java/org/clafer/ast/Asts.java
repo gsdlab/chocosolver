@@ -71,7 +71,7 @@ public class Asts {
         return new AstJoin(left, right);
     }
 
-    public static AstSetExpr join(AstSetExpr left, AstConcreteClafer right) {
+    public static AstSetExpr join(AstSetExpr left, AstClafer right) {
         return new AstJoin(left, relation(right));
     }
 
@@ -407,7 +407,7 @@ public class Asts {
         return new AstSuffix(suffix, word);
     }
 
-    public static AstSetExpr relation(AstConcreteClafer child) {
+    public static AstSetExpr relation(AstClafer child) {
         return new AstChildRelation(child);
     }
 

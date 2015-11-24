@@ -1202,14 +1202,33 @@ public class AstCompiler {
             throw new AstException();
         }
 
-        private IrExpr doJoin(IrExpr left, AstConcreteClafer right) {
-            // Why empty set? The "take" var can contain unused.
-            IrSetArrayExpr rightArray = snoc(array(siblingSets.get(right)), EmptySet);
+        private IrExpr doJoin(IrExpr left, AstClafer right) {
+            IrSetArrayExpr rightArray;
+            if (right instanceof AstConcreteClafer) {
+                // Why empty set? The "take" var can contain unused.
+                rightArray = snoc(array(siblingSets.get(right)), EmptySet);
+            } else {
+                AstAbstractClafer abstractRight = (AstAbstractClafer) right;
+                IrSetExpr[] array = new IrSetExpr[getScope(right.getParent())];
+                Arrays.fill(array, EmptySet);
+                for (AstClafer sub : abstractRight.getSubs()) {
+                    IrSetVar[] subSiblingSet = siblingSets.get(sub);
+                    int offset = getOffset(abstractRight, sub);
+                    assert array.length == subSiblingSet.length;
+                    for (int i = 0; i < array.length; i++) {
+                        array[i] = unionDisjoint(array[i], offset(subSiblingSet[i], offset));
+                    }
+                }
+                rightArray = array(array);
+            }
             if (left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) left;
-                if (Format.ParentGroup.equals(getFormat(right)) && getCard(right).getLow() == 1) {
-                    assert getCard(right).isExact();
-                    return $intLeft;
+                if (Format.ParentGroup.equals(getFormat(right)) && right instanceof AstConcreteClafer) {
+                    Card card = getCard((AstConcreteClafer) right);
+                    if (card.getLow() == 1) {
+                        assert card.isExact();
+                        return $intLeft;
+                    }
                 }
                 return joinRelation(singleton($intLeft), rightArray, true);
             } else if (left instanceof IrSetExpr) {
@@ -1270,7 +1289,7 @@ public class AstCompiler {
             AstClafer derefType = getCommonSupertype(deref).getClaferType();
 
             Integer globalCardinality = null;
-            IrExpr $deref;
+            IrExpr $deref = null;
             if (derefType.getRef().isUnique()) {
                 if (deref instanceof AstJoin) {
                     AstJoin join = (AstJoin) deref;
@@ -1281,16 +1300,14 @@ public class AstCompiler {
                         globalCardinality = left instanceof IrSetExpr
                                 ? ((IrSetExpr) left).getCard().getHighBound()
                                 : 1;
-                    } else {
-                        $deref = compile(deref);
-                        if (derefType instanceof AstConcreteClafer) {
-                            globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
-                        }
+                        globalCardinality *= AstUtil.getConcreteSubs(derefType).size();
                     }
-                } else {
+                }
+                if ($deref == null) {
                     $deref = compile(deref);
-                    if (derefType instanceof AstConcreteClafer) {
-                        globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
+                    globalCardinality = 0;
+                    for (AstConcreteClafer sub : AstUtil.getConcreteSubs(derefType)) {
+                        globalCardinality += getScope(sub.getParent());
                     }
                 }
             } else {

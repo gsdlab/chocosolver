@@ -61,11 +61,12 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
     public AstExpr visit(AstJoin ast, Analysis a) {
         if (ast.getRight() instanceof AstChildRelation) {
             AstSetExpr left = rewrite(ast.getLeft(), a);
-            AstConcreteClafer right = ((AstChildRelation) ast.getRight()).getChildType();
+            AstClafer right = ((AstChildRelation) ast.getRight()).getChildType();
             if (left instanceof AstGlobal) {
                 return global(right);
-            } else if (left instanceof AstConstant) {
-                Card childCard = a.getCard(right);
+            } else if (left instanceof AstConstant && right instanceof AstConcreteClafer) {
+                // TODO what if right is abstract?
+                Card childCard = a.getCard((AstConcreteClafer) right);
                 if (Format.ParentGroup.equals(a.getFormat(right))) {
                     AstConstant constant = (AstConstant) left;
                     if (constant.getType().arity() == 1) {
