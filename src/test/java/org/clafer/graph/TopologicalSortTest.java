@@ -13,7 +13,7 @@ import org.junit.Test;
  */
 public class TopologicalSortTest {
 
-    private static <T> HashSet<T> set(T... items) {
+    private static <T> HashSet<Character> set(Character... items) {
         return new HashSet<>(Arrays.asList(items));
     }
 
