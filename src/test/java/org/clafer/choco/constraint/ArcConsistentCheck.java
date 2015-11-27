@@ -20,27 +20,18 @@ public class ArcConsistentCheck implements IMonitorDownBranch, IMonitorContradic
     }
 
     @Override
-    public void beforeDownLeftBranch() {
-        Variable[] vars = solver.getVars();
-        lastDecision.setLength(0);
-        lastDecision.append("Decision: ").append(solver.getSearchLoop().getLastDecision()).append('\n');
-        lastDecision.append("Variables: ");
-        for (Variable var : vars) {
-            lastDecision.append(var).append(' ');
+    public void beforeDownBranch(boolean left) {
+        if (left) {
+            Variable[] vars = solver.getVars();
+            lastDecision.setLength(0);
+            lastDecision.append("Decision: ").append(solver.getSearchLoop().getLastDecision()).append('\n');
+            lastDecision.append("Variables: ");
+            for (Variable var : vars) {
+                lastDecision.append(var).append(' ');
+            }
+        } else {
+            lastDecision.setLength(0);
         }
-    }
-
-    @Override
-    public void afterDownLeftBranch() {
-    }
-
-    @Override
-    public void beforeDownRightBranch() {
-        lastDecision.setLength(0);
-    }
-
-    @Override
-    public void afterDownRightBranch() {
     }
 
     @Override
