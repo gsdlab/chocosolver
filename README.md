@@ -2,7 +2,7 @@
 
 # chocosolver
 
-v0.4.2.1
+v0.4.3
 
 An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 3.3 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
@@ -22,7 +22,7 @@ The CLI is used by
 
 ### Installation from binaries
 
-Binary distributions of the release 0.4.2.1 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions).
+Binary distributions of the release 0.4.3 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions).
 
 1. download the binaries and unpack `<target directory>` of your choice
 2. add the `<target directory>` to your system path so that the executables can be found
@@ -41,7 +41,7 @@ See [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
 
 ## Recommended but optional
 
-* [Clafer compiler](https://github.com/gsdlab/clafer), v0.4.2.1.
+* [Clafer compiler](https://github.com/gsdlab/clafer), v0.4.3.
   - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls.
   - The API calls can also be written manually quite easily with a bit of extra typing (examples down below).
 
@@ -71,11 +71,11 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.4.2.1</version>
+    <version>0.4.3</version>
 </dependency>
 ```
 
-The CLI is installed to `target/chocosolver-0.4.2.1-jar-with-dependencies.jar`;
+The CLI is installed to `target/chocosolver-0.4.3-jar-with-dependencies.jar`;
 however, in the Clafer Tools binary distribution it is called `chocosolver.jar`.
 
 ### Important: Branches must correspond
