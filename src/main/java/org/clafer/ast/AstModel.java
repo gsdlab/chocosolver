@@ -52,6 +52,10 @@ public class AstModel {
         return rootClafer;
     }
 
+    public AstAbstractClafer getTypeRoot() {
+        return typeRoot;
+    }
+
     /**
      * Returns all the abstract Clafers
      *

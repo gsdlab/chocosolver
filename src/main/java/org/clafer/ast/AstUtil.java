@@ -35,14 +35,29 @@ public class AstUtil {
         clafers.add(model.getAbstractRoot());
         clafers.add(model.getRoot());
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
-            clafers.add(abstractClafer);
-            getNestedChildClafers(abstractClafer, clafers);
+            getNestedClafers(abstractClafer, clafers);
         }
         for (AstConcreteClafer child : model.getChildren()) {
-            clafers.add(child);
-            getNestedChildClafers(child, clafers);
+            getNestedClafers(child, clafers);
         }
         return clafers;
+    }
+
+    private static void getNestedClafers(AstAbstractClafer abstractClafer, List<AstClafer> clafers) {
+        clafers.add(abstractClafer);
+        for (AstAbstractClafer child : abstractClafer.getAbstractChildren()) {
+            getNestedClafers(child, clafers);
+        }
+        for (AstConcreteClafer child : abstractClafer.getChildren()) {
+            getNestedClafers(child, clafers);
+        }
+    }
+
+    private static void getNestedClafers(AstConcreteClafer concreteClafer, List<AstClafer> clafers) {
+        clafers.add(concreteClafer);
+        for (AstConcreteClafer child : concreteClafer.getChildren()) {
+            getNestedClafers(child, clafers);
+        }
     }
 
     /**
@@ -67,13 +82,16 @@ public class AstUtil {
      */
     public static List<Set<AstClafer>> getClafersInParentAndSubOrder(AstModel model) {
         KeyGraph<AstClafer> dependency = new KeyGraph<>();
-        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
-            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            abstractClafer.getSubs().stream().map(dependency::getVertex).forEach(node::addNeighbour);
-        }
-        for (AstConcreteClafer concreteClafer : getConcreteClafers(model)) {
-            if (concreteClafer.hasParent()) {
-                dependency.addEdge(concreteClafer, concreteClafer.getParent());
+        for (AstClafer clafer : getClafers(model)) {
+            if (clafer instanceof AstAbstractClafer) {
+                AstAbstractClafer abstractClafer = (AstAbstractClafer) clafer;
+                Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
+                abstractClafer.getSubs().stream().map(dependency::getVertex).forEach(node::addNeighbour);
+            } else {
+                AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
+                if (concreteClafer.hasParent()) {
+                    dependency.addEdge(concreteClafer, concreteClafer.getParent());
+                }
             }
         }
         return GraphUtil.computeStronglyConnectedComponents(dependency);
