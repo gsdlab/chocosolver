@@ -1212,11 +1212,12 @@ public class AstCompiler {
                 IrSetExpr[] array = new IrSetExpr[getScope(right.getParent())];
                 Arrays.fill(array, EmptySet);
                 for (AstClafer sub : abstractRight.getSubs()) {
-                    IrSetVar[] subSiblingSet = siblingSets.get(sub);
                     int offset = getOffset(abstractRight, sub);
-                    assert array.length == subSiblingSet.length;
-                    for (int i = 0; i < array.length; i++) {
-                        array[i] = unionDisjoint(array[i], offset(subSiblingSet[i], offset));
+                    int parentOffset = getOffset(abstractRight.getParent(), sub.getParent());
+                    IrSetVar[] subSiblingSet = siblingSets.get(sub);
+                    for (int i = 0; i < subSiblingSet.length; i++) {
+                        array[i + parentOffset] = unionDisjoint(array[i + parentOffset],
+                                offset(subSiblingSet[i], offset));
                     }
                 }
                 rightArray = array(array);
