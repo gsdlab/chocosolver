@@ -32,14 +32,8 @@ public class AstUtil {
      */
     public static List<AstClafer> getClafers(AstModel model) {
         List<AstClafer> clafers = new ArrayList<>();
-        clafers.add(model.getAbstractRoot());
-        clafers.add(model.getRoot());
-        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
-            getNestedClafers(abstractClafer, clafers);
-        }
-        for (AstConcreteClafer child : model.getChildren()) {
-            getNestedClafers(child, clafers);
-        }
+        getNestedClafers(model.getAbstractRoot(), clafers);
+        getNestedClafers(model.getRoot(), clafers);
         return clafers;
     }
 
@@ -64,13 +58,55 @@ public class AstUtil {
      * Find all the nested concrete Clafers in no specific order.
      *
      * @param model the Clafer model
-     * @return the concrete Clafers in the model excluding the root
+     * @return the concrete Clafers in the model
+     */
+    public static List<AstAbstractClafer> getAbstractClafers(AstModel model) {
+        List<AstAbstractClafer> clafers = new ArrayList<>();
+        getNestedAbstractClafers(model.getAbstractRoot(), clafers);
+        getNestedAbstractClafers(model.getRoot(), clafers);
+        return clafers;
+    }
+
+    private static void getNestedAbstractClafers(AstAbstractClafer abstractClafer, List<AstAbstractClafer> clafers) {
+        clafers.add(abstractClafer);
+        for (AstAbstractClafer child : abstractClafer.getAbstractChildren()) {
+            getNestedAbstractClafers(child, clafers);
+        }
+        for (AstConcreteClafer child : abstractClafer.getChildren()) {
+            getNestedAbstractClafers(child, clafers);
+        }
+    }
+
+    private static void getNestedAbstractClafers(AstConcreteClafer concreteClafer, List<AstAbstractClafer> clafers) {
+    }
+
+    /**
+     * Find all the nested concrete Clafers in no specific order.
+     *
+     * @param model the Clafer model
+     * @return the concrete Clafers in the model
      */
     public static List<AstConcreteClafer> getConcreteClafers(AstModel model) {
         List<AstConcreteClafer> clafers = new ArrayList<>();
-        getNestedChildClafers(model.getAbstractRoot(), clafers);
-        clafers.add(model.getRoot());
+        getNestedConcreteClafers(model.getAbstractRoot(), clafers);
+        getNestedConcreteClafers(model.getRoot(), clafers);
         return clafers;
+    }
+
+    private static void getNestedConcreteClafers(AstAbstractClafer abstractClafer, List<AstConcreteClafer> clafers) {
+        for (AstAbstractClafer child : abstractClafer.getAbstractChildren()) {
+            getNestedConcreteClafers(child, clafers);
+        }
+        for (AstConcreteClafer child : abstractClafer.getChildren()) {
+            getNestedConcreteClafers(child, clafers);
+        }
+    }
+
+    private static void getNestedConcreteClafers(AstConcreteClafer concreteClafer, List<AstConcreteClafer> clafers) {
+        clafers.add(concreteClafer);
+        for (AstConcreteClafer child : concreteClafer.getChildren()) {
+            getNestedConcreteClafers(child, clafers);
+        }
     }
 
     /**
