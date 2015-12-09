@@ -26,11 +26,8 @@ import org.clafer.common.Util;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
-import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
-import org.clafer.ir.IrSetConstant;
-import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
@@ -58,44 +55,6 @@ import org.clafer.ir.IrBoolVar;
 public class ClaferCompiler {
 
     private ClaferCompiler() {
-    }
-
-    private static SetVar[] getSetVars(AstModel model, ClaferSolutionMap map) {
-        KeyGraph<AstClafer> dependency = new KeyGraph<>();
-        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
-            Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
-            for (AstClafer sub : abstractClafer.getSubs()) {
-                node.addNeighbour(dependency.getVertex(sub));
-            }
-            if (abstractClafer.hasRef()) {
-                node.addNeighbour(dependency.getVertex(abstractClafer.getRef().getTargetType()));
-            }
-        }
-        for (AstConcreteClafer concreteClafer : AstUtil.getConcreteClafers(model)) {
-            Vertex<AstClafer> node = dependency.getVertex(concreteClafer);
-            if (concreteClafer.hasParent()) {
-                node.addNeighbour(dependency.getVertex(concreteClafer.getParent()));
-            }
-            if (concreteClafer.hasRef()) {
-                node.addNeighbour(dependency.getVertex(concreteClafer.getRef().getTargetType()));
-            }
-        }
-        List<SetVar> vars = new ArrayList<>();
-        for (Set<AstClafer> component : GraphUtil.computeStronglyConnectedComponents(dependency)) {
-            for (AstClafer clafer : component) {
-                if (clafer instanceof AstConcreteClafer) {
-                    for (IrSetVar setVar : map.getAstSolution().getSiblingVars(clafer)) {
-                        if (!(setVar instanceof IrSetConstant)) {
-                            Either<int[], SetVar> var = map.getIrSolution().getVar(setVar);
-                            if (var.isRight()) {
-                                vars.add(var.getRight());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return vars.toArray(new SetVar[vars.size()]);
     }
 
     private static IntVar[] getDecisionVars(AstModel model, ClaferSolutionMap map) {
@@ -174,40 +133,6 @@ public class ClaferCompiler {
         return vars.toArray(new IntVar[vars.size()]);
     }
 
-    private static IntVar[] getIntVars(AstModel model, ClaferSolutionMap map) {
-        List<IntVar> vars = new ArrayList<>();
-        for (AstClafer clafer : AstUtil.getClafers(model)) {
-            if (clafer.hasRef()) {
-                AstRef ref = clafer.getRef();
-                if (ref.getTargetType() instanceof AstStringClafer) {
-                    for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref)) {
-                        Either<Integer, IntVar> lengthVar
-                                = map.getIrSolution().getVar(stringVar.getLengthVar());
-                        if (lengthVar.isRight()) {
-                            vars.add(lengthVar.getRight());
-                        }
-                        for (IrIntVar charVar : stringVar.getCharVars()) {
-                            Either<Integer, IntVar> var = map.getIrSolution().getVar(charVar);
-                            if (var.isRight()) {
-                                vars.add(var.getRight());
-                            }
-                        }
-                    }
-                } else {
-                    for (IrIntVar intVar : map.getAstSolution().getRefVars(ref)) {
-                        if (!(intVar instanceof IrIntConstant)) {
-                            Either<Integer, IntVar> var = map.getIrSolution().getVar(intVar);
-                            if (var.isRight()) {
-                                vars.add(var.getRight());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return vars.toArray(new IntVar[vars.size()]);
-    }
-
     @SafeVarargs
     private static void set(Solver solver, Optional<AbstractStrategy<?>>... strategies) {
         AbstractStrategy<?>[] strats = new AbstractStrategy<?>[strategies.length];
@@ -224,26 +149,6 @@ public class ClaferCompiler {
             // Give the solver a dummy strategy for trivial problems so the underlying Choco
             // framework does not warn of no search strategy.
             solver.set(ISF.lexico_LB(solver.ZERO()));
-        }
-    }
-
-    private static Optional<AbstractStrategy<?>> setStrategy(SetVar[] vars, ClaferOption options) {
-        if (vars.length == 0) {
-            return Optional.empty();
-        }
-        switch (options.getStrategy()) {
-            case PreferSmallerInstances:
-                return Optional.of(SetStrategyFactory.remove_first(vars));
-            case PreferLargerInstances:
-                return Optional.of(SetStrategyFactory.force_first(vars));
-            case Random:
-                Random rand = new Random();
-                return Optional.of(new RandomSetDecisionStrategy(
-                        vars,
-                        new org.chocosolver.solver.search.strategy.selectors.variables.Random<>(System.nanoTime()),
-                        new RandomSetValueSelector(rand), rand));
-            default:
-                throw new IllegalStateException("Unknown strategy: " + options.getStrategy());
         }
     }
 
@@ -412,8 +317,7 @@ public class ClaferCompiler {
 
         set(solver,
                 firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
-                setStrategy(getSetVars(in, solution), options),
-                intStrategy(getIntVars(in, solution), options));
+                intStrategy(getDecisionVars(in, solution), options));
         restartPolicy(solver, options);
         return new ClaferUnsat(solver, solution);
     }
