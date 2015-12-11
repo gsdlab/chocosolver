@@ -1,15 +1,19 @@
 package org.clafer.compiler;
 
+import gnu.trove.impl.Constants;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clafer.ast.AstAbstractClafer;
-import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
@@ -18,8 +22,6 @@ import org.clafer.ast.AstUtil;
 import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
-import org.clafer.choco.search.RandomSetDecisionStrategy;
-import org.clafer.choco.search.RandomSetValueSelector;
 import org.clafer.collection.Either;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
@@ -38,12 +40,11 @@ import org.chocosolver.solver.search.limits.NodeCounter;
 import org.chocosolver.solver.search.loop.monitors.SMF;
 import org.chocosolver.solver.search.strategy.ISF;
 import org.chocosolver.solver.search.strategy.IntStrategyFactory;
-import org.chocosolver.solver.search.strategy.SetStrategyFactory;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
 import org.clafer.assertion.Assertion;
+import org.clafer.ast.AstClafer;
 import org.clafer.common.Check;
 import org.clafer.ir.IrBoolVar;
 
@@ -57,7 +58,79 @@ public class ClaferCompiler {
     private ClaferCompiler() {
     }
 
-    private static IntVar[] getDecisionVars(AstModel model, ClaferSolutionMap map) {
+    private static TObjectIntMap<AstClafer> getBranchingPriorities(ClaferOption option) {
+        int size = 0;
+        for (Set<AstClafer> clafers : option.getBranchingPriority()) {
+            size += clafers.size();
+        }
+        TObjectIntMap<AstClafer> priorities = new TObjectIntHashMap<>(size, Constants.DEFAULT_LOAD_FACTOR, option.getBranchingPriority().length);
+        int priority = 0;
+        for (Set<AstClafer> clafers : option.getBranchingPriority()) {
+            for (AstClafer clafer : clafers) {
+                priorities.put(clafer, priority);
+            }
+            priority++;
+        }
+        return priorities;
+    }
+
+    private static List<IntVar> getDecisionVars(AstClafer clafer, ClaferSolutionMap map) {
+        List<IntVar> vars = new ArrayList<>();
+        if (clafer instanceof AstConcreteClafer) {
+            IrIntVar[] siblingBounds = map.getAstSolution().getSiblingBounds(clafer);
+            if (siblingBounds == null) {
+                for (IrBoolVar memberVar : map.getAstSolution().getMemberVars(clafer)) {
+                    Either<Boolean, BoolVar> var = map.getIrSolution().getVar(memberVar);
+                    if (var.isRight()) {
+                        assert !var.getRight().isInstantiated();
+                        vars.add(var.getRight());
+                    }
+                }
+            } else {
+                for (IrIntVar boundVar : siblingBounds) {
+                    Either<Integer, IntVar> var = map.getIrSolution().getVar(boundVar);
+                    if (var.isRight()) {
+                        assert !var.getRight().isInstantiated();
+                        vars.add(var.getRight());
+                    }
+                }
+            }
+        }
+        if (clafer.hasRef()) {
+            AstRef ref = clafer.getRef();
+            if (ref.getTargetType() instanceof AstStringClafer) {
+                for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref)) {
+                    Either<Integer, IntVar> lengthVar = map.getIrSolution().getVar(stringVar.getLengthVar());
+                    if (lengthVar.isRight()) {
+                        assert !lengthVar.getRight().isInstantiated();
+                        vars.add(lengthVar.getRight());
+                    }
+                    for (IrIntVar charVar : stringVar.getCharVars()) {
+                        Either<Integer, IntVar> var = map.getIrSolution().getVar(charVar);
+                        if (var.isRight()) {
+                            assert !var.getRight().isInstantiated();
+                            vars.add(var.getRight());
+                        }
+                    }
+                }
+            } else {
+                for (IrIntVar intVar : map.getAstSolution().getRefVars(ref)) {
+                    Either<Integer, IntVar> var = map.getIrSolution().getVar(intVar);
+                    if (var.isRight()) {
+                        assert !var.getRight().isInstantiated();
+                        vars.add(var.getRight());
+                    }
+                }
+            }
+        }
+        return vars;
+    }
+
+    private static List<IntVar> getDecisionVars(List<AstClafer> clafer, ClaferSolutionMap map) {
+        return clafer.stream().flatMap(x -> getDecisionVars(x, map).stream()).collect(Collectors.toList());
+    }
+
+    private static List<List<IntVar>> getDecisionVars(AstModel model, ClaferOption option, ClaferSolutionMap map) {
         KeyGraph<AstClafer> dependency = new KeyGraph<>();
         for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
             Vertex<AstClafer> node = dependency.getVertex(abstractClafer);
@@ -77,72 +150,17 @@ public class ClaferCompiler {
                 node.addNeighbour(dependency.getVertex(concreteClafer.getRef().getTargetType()));
             }
         }
-        List<IntVar> vars = new ArrayList<>();
-        for (Set<AstClafer> component : GraphUtil.computeStronglyConnectedComponents(dependency)) {
-            for (AstClafer clafer : component) {
-                if (clafer instanceof AstConcreteClafer) {
-                    IrIntVar[] siblingBounds = map.getAstSolution().getSiblingBounds(clafer);
-                    if (siblingBounds == null) {
-                        for (IrBoolVar memberVar : map.getAstSolution().getMemberVars(clafer)) {
-                            Either<Boolean, BoolVar> var = map.getIrSolution().getVar(memberVar);
-                            if (var.isRight()) {
-                                assert !var.getRight().isInstantiated();
-                                vars.add(var.getRight());
-                            }
-                        }
-                    } else {
-                        for (IrIntVar boundVar : siblingBounds) {
-                            Either<Integer, IntVar> var = map.getIrSolution().getVar(boundVar);
-                            if (var.isRight()) {
-                                assert !var.getRight().isInstantiated();
-                                vars.add(var.getRight());
-                            }
-                        }
-                    }
-                }
-                if (clafer.hasRef()) {
-                    AstRef ref = clafer.getRef();
-                    if (ref.getTargetType() instanceof AstStringClafer) {
-                        for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref)) {
-                            Either<Integer, IntVar> lengthVar
-                                    = map.getIrSolution().getVar(stringVar.getLengthVar());
-                            if (lengthVar.isRight()) {
-                                assert !lengthVar.getRight().isInstantiated();
-                                vars.add(lengthVar.getRight());
-                            }
-                            for (IrIntVar charVar : stringVar.getCharVars()) {
-                                Either<Integer, IntVar> var = map.getIrSolution().getVar(charVar);
-                                if (var.isRight()) {
-                                    assert !var.getRight().isInstantiated();
-                                    vars.add(var.getRight());
-                                }
-                            }
-                        }
-                    } else {
-                        for (IrIntVar intVar : map.getAstSolution().getRefVars(ref)) {
-                            Either<Integer, IntVar> var = map.getIrSolution().getVar(intVar);
-                            if (var.isRight()) {
-                                assert !var.getRight().isInstantiated();
-                                vars.add(var.getRight());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return vars.toArray(new IntVar[vars.size()]);
+        TObjectIntMap<AstClafer> priorities = getBranchingPriorities(option);
+        return GraphUtil.computeStronglyConnectedComponents(dependency).stream()
+                .flatMap(Set::stream)
+                .collect(Collectors.groupingBy(priorities::get))
+                .entrySet().stream()
+                .sorted(Comparator.comparing(Entry::getKey))
+                .map(Entry::getValue).map(x -> getDecisionVars(x, map)).collect(Collectors.toList());
     }
 
-    @SafeVarargs
-    private static void set(Solver solver, Optional<AbstractStrategy<?>>... strategies) {
-        AbstractStrategy<?>[] strats = new AbstractStrategy<?>[strategies.length];
-        int j = 0;
-        for (Optional<AbstractStrategy<?>> strategy : strategies) {
-            if (strategy.isPresent()) {
-                strats[j++] = strategy.get();
-            }
-        }
-        strats = Arrays.copyOf(strats, j);
+    private static void set(Solver solver, List<AbstractStrategy<?>> strategies) {
+        AbstractStrategy<?>[] strats = strategies.toArray(new AbstractStrategy[strategies.size()]);
         if (strats.length > 0) {
             solver.set(strats);
         } else {
@@ -166,6 +184,14 @@ public class ClaferCompiler {
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    private static List<AbstractStrategy<?>> intStrategies(List<List<IntVar>> vars, ClaferOption options) {
+        List<AbstractStrategy<?>> strategies = new ArrayList<>();
+        for (List<IntVar> ivars : vars) {
+            intStrategy(ivars.toArray(new IntVar[ivars.size()]), options).ifPresent(strategies::add);
+        }
+        return strategies;
     }
 
     private static void restartPolicy(Solver solver, ClaferOption options) {
@@ -203,10 +229,7 @@ public class ClaferCompiler {
             IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
             ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-            set(solver, intStrategy(getDecisionVars(in, solution), options));
-//            set(solver,
-//                    setStrategy(getSetVars(in, solution), options),
-//                    intStrategy(getIntVars(in, solution), options));
+            set(solver, intStrategies(getDecisionVars(in, options, solution), options));
             restartPolicy(solver, options);
             return new ClaferSolver(solver, solution, options.getStrategy() == ClaferSearchStrategy.Random);
         } catch (UnsatisfiableException e) {
@@ -252,11 +275,7 @@ public class ClaferCompiler {
             maximizes = Arrays.copyOf(maximizes, variableScores);
             scores = Arrays.copyOf(scores, variableScores);
 
-            set(solver, intStrategy(getDecisionVars(in, solution), options));
-//            set(solver,
-//                    setStrategy(getSetVars(in, solution), options),
-//                    //                firstFailInDomainMax(objectiveVars),
-//                    intStrategy(getIntVars(in, solution), options));
+            set(solver, intStrategies(getDecisionVars(in, options, solution), options));
             restartPolicy(solver, options);
             ClaferOptimizer optimizer = maximizes.length == 0
                     ? new ClaferNoObjectiveOptimizer(new ClaferSolver(solver, solution))
@@ -293,7 +312,7 @@ public class ClaferCompiler {
                 assertionMap.put(assertion, irSolution.getVar(astSolution.getAssertionVar(assertion)));
             }
 
-            set(solver, intStrategy(getDecisionVars(in, solution), options));
+            set(solver, intStrategies(getDecisionVars(in, options, solution), options));
             restartPolicy(solver, options);
             return new ClaferAsserter(solver, solution, assertionMap);
         } catch (UnsatisfiableException e) {
@@ -316,8 +335,8 @@ public class ClaferCompiler {
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
         set(solver,
-                firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
-                intStrategy(getDecisionVars(in, solution), options));
+                Util.maybeCons(firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
+                        intStrategies(getDecisionVars(in, options, solution), options)));
         restartPolicy(solver, options);
         return new ClaferUnsat(solver, solution);
     }

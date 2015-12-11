@@ -1,5 +1,7 @@
 package org.clafer.compiler;
 
+import java.util.Set;
+import org.clafer.ast.AstClafer;
 import org.clafer.common.Check;
 
 /**
@@ -13,16 +15,29 @@ import org.clafer.common.Check;
 public class ClaferOption {
 
     private final ClaferSearchStrategy strategy;
-    /*
-     * true: basic symmetry breaking
-     * false: full symmetry breaking
+    /**
+     * If true then basic symmetry breaking, else full symmetry breaking.
      */
     private final boolean basicSymmetryBreaking;
-    /*
-     * true: basic optimizations
-     * false: full optimizations
+    /**
+     * If true then basic optimizations else full optimizations.
      */
     private final boolean basicOptimizations;
+    /**
+     * The branching heuristic will use the priorities to determine the order of
+     * branching.
+     *
+     * For example, consider the priorities [{a,b}, {c,d}, {e}]. This forces the
+     * branching heuristic to branch on either a or b. Once both a and b are
+     * assigned, then the branching heuristic will branch on either c or d. Once
+     * all a, b, c, and d are assigned then the branching heuristic will branch
+     * on e. Once all a, b, c, d, and e are assigned, then the branching
+     * heuristic will branch on the remaining Clafers.
+     *
+     * Assumes that the sets in this array are all pairwise disjoint.
+     */
+    private final Set<AstClafer>[] branchingPriority;
+
     /**
      * Use the default options.
      */
@@ -30,10 +45,15 @@ public class ClaferOption {
     public static final ClaferOption Basic = new ClaferOption(ClaferSearchStrategy.PreferSmallerInstances, true, true);
     public static final ClaferOption Default = Optimized;
 
-    private ClaferOption(ClaferSearchStrategy strategy, boolean basicSymmetryBreaking, boolean basicOptimizations) {
+    private ClaferOption(ClaferSearchStrategy strategy, boolean basicSymmetryBreaking, boolean basicOptimizations, Set<AstClafer>[] branchingPriority) {
         this.strategy = Check.notNull(strategy);
         this.basicSymmetryBreaking = basicSymmetryBreaking;
         this.basicOptimizations = basicOptimizations;
+        this.branchingPriority = branchingPriority;
+    }
+
+    private ClaferOption(ClaferSearchStrategy strategy, boolean basicSymmetryBreaking, boolean basicOptimizations) {
+        this(strategy, basicSymmetryBreaking, basicOptimizations, new Set[0]);
     }
 
     public ClaferSearchStrategy getStrategy() {
@@ -74,6 +94,14 @@ public class ClaferOption {
 
     public ClaferOption fullOptimizations() {
         return new ClaferOption(strategy, basicSymmetryBreaking, false);
+    }
+
+    public Set<AstClafer>[] getBranchingPriority() {
+        return branchingPriority;
+    }
+
+    public ClaferOption setBranchingPriority(Set<AstClafer>... branchingPriority) {
+        return new ClaferOption(strategy, basicSymmetryBreaking, basicOptimizations, branchingPriority);
     }
 
     @Override
