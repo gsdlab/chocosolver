@@ -32,12 +32,13 @@ public class LinearEquation {
         if (left.hasConstant()) {
             throw new IllegalArgumentException();
         }
-        if (!scale || right.isZero()) {
+        if (scale && (!right.isZero() || left.arity() > 0)) {
+            Rational divisor = right.isZero() ? left.getCoefficients()[0].abs() : right.abs();
+            this.left = left.div(divisor);
+            this.right = right.div(divisor);
+        } else {
             this.left = left;
             this.right = right;
-        } else {
-            this.left = left.div(right.abs());
-            this.right = right.div(right.abs());
         }
         this.op = op;
     }

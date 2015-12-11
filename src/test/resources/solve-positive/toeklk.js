@@ -1,0 +1,24 @@
+scope({c0_HWComponent:2, c0_Platform:3, c0_hwComponents:6, c0_platforms:3, c0_price:3, c1_price:2});
+defaultScope(1);
+intRange(0, 64);
+stringLength(16);
+
+c0_Platform = Abstract("c0_Platform");
+c0_HWComponent = Abstract("c0_HWComponent");
+c0_Deployment = Abstract("c0_Deployment");
+c0_price = c0_Platform.addChild("c0_price").withCard(1, 1);
+c0_hwComponents = c0_Platform.addChild("c0_hwComponents").withCard(1, 2);
+c1_price = c0_HWComponent.addChild("c1_price").withCard(1, 1);
+c2_price = c0_Deployment.addChild("c2_price").withCard(1, 1);
+c0_platforms = c0_Deployment.addChild("c0_platforms").withCard(2, 3).extending(c0_Platform);
+c0_CAN = Clafer("c0_CAN").withCard(1, 1).extending(c0_HWComponent);
+c0_DO = Clafer("c0_DO").withCard(1, 1).extending(c0_HWComponent);
+c0_D1 = Clafer("c0_D1").withCard(1, 1).extending(c0_Deployment);
+c0_price.refTo(Int);
+c0_hwComponents.refToUnique(c0_HWComponent);
+c1_price.refTo(Int);
+c2_price.refTo(Int);
+c0_Platform.addConstraint(implies(some(join($this(), c0_price)), equal(joinRef(join($this(), c0_price)), sum(join(joinRef(join($this(), c0_hwComponents)), c1_price)))));
+c0_Deployment.addConstraint(implies(some(join($this(), c2_price)), equal(joinRef(join($this(), c2_price)), add(mul(card(join($this(), c0_platforms)), constant(10)), sum(join(join($this(), c0_platforms), c0_price))))));
+c0_CAN.addConstraint(equal(joinRef(join($this(), c1_price)), constant(10)));
+c0_DO.addConstraint(equal(joinRef(join($this(), c1_price)), constant(2)));
