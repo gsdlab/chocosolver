@@ -42,7 +42,7 @@ public class Validate {
             compilerOption = compilerOption.setStrategy((ClaferSearchStrategy) options.valueOf("search"));
         }
 
-        ClaferAsserter solver = ClaferCompiler.compile(javascriptFile.getModel(), scope, assertions);
+        ClaferAsserter solver = ClaferCompiler.compile(javascriptFile.getModel(), scope, assertions, javascriptFile.getOption());
 
         int index = 0; // optimal instance id
         boolean prettify = options.has("prettify");
