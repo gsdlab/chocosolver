@@ -62,6 +62,7 @@ public class Javascript {
             return new JavascriptFile(
                     context.getModel(),
                     context.getScope(engine),
+                    context.getClaferOption(),
                     context.getObjectives(),
                     context.getAssertions());
         } finally {
@@ -86,6 +87,7 @@ public class Javascript {
             return new JavascriptFile(
                     context.getModel(),
                     context.getScope(engine),
+                    context.getClaferOption(),
                     context.getObjectives(),
                     context.getAssertions());
         } finally {

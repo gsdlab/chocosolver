@@ -26,15 +26,6 @@ public class ClaferOption {
     /**
      * The branching heuristic will use the priorities to determine the order of
      * branching.
-     *
-     * For example, consider the priorities [{a,b}, {c,d}, {e}]. This forces the
-     * branching heuristic to branch on either a or b. Once both a and b are
-     * assigned, then the branching heuristic will branch on either c or d. Once
-     * all a, b, c, and d are assigned then the branching heuristic will branch
-     * on e. Once all a, b, c, d, and e are assigned, then the branching
-     * heuristic will branch on the remaining Clafers.
-     *
-     * Assumes that the sets in this array are all pairwise disjoint.
      */
     private final Set<AstClafer>[] branchingPriority;
 
@@ -100,6 +91,21 @@ public class ClaferOption {
         return branchingPriority;
     }
 
+    /**
+     * Specify priorities of Clafers for branching.
+     *
+     * For example, consider the priorities [{a,b}, {c,d}, {e}]. This forces the
+     * branching heuristic to branch on either a or b. Once both a and b are
+     * assigned, then the branching heuristic will branch on either c or d. Once
+     * all a, b, c, and d are assigned then the branching heuristic will branch
+     * on e. Once all a, b, c, d, and e are assigned, then the branching
+     * heuristic will branch on the remaining Clafers.
+     *
+     * Assumes that the sets in this array are all pairwise disjoint.
+     *
+     * @param branchingPriority
+     * @return
+     */
     public ClaferOption setBranchingPriority(Set<AstClafer>... branchingPriority) {
         return new ClaferOption(strategy, basicSymmetryBreaking, basicOptimizations, branchingPriority);
     }
