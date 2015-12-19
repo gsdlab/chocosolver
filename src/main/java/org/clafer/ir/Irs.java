@@ -1394,17 +1394,39 @@ public class Irs {
         if (multiplicandConstant != null && multiplierConstant != null) {
             return constant(multiplicandConstant * multiplierConstant);
         }
-        int low1 = multiplicand.getDomain().getLowBound();
-        int high1 = multiplicand.getDomain().getHighBound();
-        int low2 = multiplier.getDomain().getLowBound();
-        int high2 = multiplier.getDomain().getHighBound();
-        int ll = mulTwo(low1, low2);
-        int lh = mulTwo(low1, high2);
-        int hl = mulTwo(high1, low2);
-        int hh = mulTwo(high1, high2);
-        int min = Util.min(ll, lh, hl, hh);
-        int max = Util.max(ll, lh, hl, hh);
-        return new IrMul(multiplicand, multiplier, intRange, intRange.boundBetween(min, max));
+        Domain domain;
+        long m0 = multiplicand.getDomain().size();
+        long m1 = multiplier.getDomain().size();
+        if (m0 * m1 <= 16 || m0 * m1 <= intRange.size()) {
+            TIntSet domainSet = new TIntHashSet();
+            TIntIterator iter0 = multiplicand.getDomain().iterator();
+            while (iter0.hasNext()) {
+                long i0 = iter0.next();
+                TIntIterator iter1 = multiplier.getDomain().iterator();
+                while (iter1.hasNext()) {
+                    long i1 = iter1.next();
+                    long mul = i0 * i1;
+                    int mulI = (int) mul;
+                    if (mul == mulI) {
+                        domainSet.add(mulI);
+                    }
+                }
+            }
+            domain = enumDomain(domainSet);
+        } else {
+            int low1 = multiplicand.getDomain().getLowBound();
+            int high1 = multiplicand.getDomain().getHighBound();
+            int low2 = multiplier.getDomain().getLowBound();
+            int high2 = multiplier.getDomain().getHighBound();
+            int ll = mulTwo(low1, low2);
+            int lh = mulTwo(low1, high2);
+            int hl = mulTwo(high1, low2);
+            int hh = mulTwo(high1, high2);
+            int min = Util.min(ll, lh, hl, hh);
+            int max = Util.max(ll, lh, hl, hh);
+            domain = intRange.boundBetween(min, max);
+        }
+        return new IrMul(multiplicand, multiplier, intRange, domain);
     }
 
     public static IrIntExpr mul(IrIntExpr[] multiplicands, Domain intRange) {
