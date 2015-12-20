@@ -1414,19 +1414,23 @@ public class Irs {
             }
             domain = enumDomain(domainSet);
         } else {
-            int low1 = multiplicand.getDomain().getLowBound();
-            int high1 = multiplicand.getDomain().getHighBound();
-            int low2 = multiplier.getDomain().getLowBound();
-            int high2 = multiplier.getDomain().getHighBound();
-            int ll = mulTwo(low1, low2);
-            int lh = mulTwo(low1, high2);
-            int hl = mulTwo(high1, low2);
-            int hh = mulTwo(high1, high2);
-            int min = Util.min(ll, lh, hl, hh);
-            int max = Util.max(ll, lh, hl, hh);
-            domain = intRange.boundBetween(min, max);
+            domain = mulBoundDomain(multiplicand.getDomain(), multiplier.getDomain()).intersection(intRange);
         }
         return new IrMul(multiplicand, multiplier, intRange, domain);
+    }
+
+    public static Domain mulBoundDomain(Domain multiplicandDomain, Domain multiplierDomain) {
+        int low1 = multiplicandDomain.getLowBound();
+        int high1 = multiplicandDomain.getHighBound();
+        int low2 = multiplierDomain.getLowBound();
+        int high2 = multiplierDomain.getHighBound();
+        int ll = mulTwo(low1, low2);
+        int lh = mulTwo(low1, high2);
+        int hl = mulTwo(high1, low2);
+        int hh = mulTwo(high1, high2);
+        return boundDomain(
+                Util.min(ll, lh, hl, hh),
+                Util.max(ll, lh, hl, hh));
     }
 
     public static IrIntExpr mul(IrIntExpr[] multiplicands, Domain intRange) {

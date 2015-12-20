@@ -307,7 +307,7 @@ public class AstCompiler {
             int scope = getScope(clafer);
             if (analysis.isHard(constraint)) {
                 for (int j = 0; j < scope; j++) {
-                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
                     IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
                     IrBoolExpr conditionalConstraint = isConditional(expr)
                             ? implies(memberships.get(clafer)[j], thisConstraint)
@@ -318,7 +318,7 @@ public class AstCompiler {
                 IrBoolVar softVar = bool(constraint.toString());
                 softVars.put(constraint, softVar);
                 for (int j = 0; j < scope; j++) {
-                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
                     IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
                     IrBoolExpr conditionalConstraint = isConditional(expr)
                             ? implies(memberships.get(clafer)[j], thisConstraint)
@@ -391,7 +391,7 @@ public class AstCompiler {
             }
         }
 
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(analysis.getModel().getRoot(), 0);
         Map<Objective, IrIntVar> objectiveVars = new HashMap<>();
         Map<Objective, AstSetExpr> objectives = analysis.getObjectiveExprs();
         for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
@@ -1002,10 +1002,12 @@ public class AstCompiler {
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 
+        private final AstClafer thisType;
         private final int thisId;
         private final Map<AstLocal, IrIntExpr> locals = new HashMap<>();
 
-        private ExpressionCompiler(int thisId) {
+        private ExpressionCompiler(AstClafer thisType, int thisId) {
+            this.thisType = thisType;
             this.thisId = thisId;
         }
 
@@ -1479,11 +1481,22 @@ public class AstCompiler {
                 case Sub:
                     return sub(operands);
                 case Mul:
-                    try {
-                        return mul(operands, getMulRange());
-                    } catch (IllegalIntException e) {
-                        throw new UnsatisfiableException(e);
+                    IrBoolVar member = memberships.get(thisType)[thisId];
+                    Domain mulRange = getMulRange();
+                    IrIntExpr product = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        IrIntExpr operand = operands[i];
+                        Domain mulBoundDomain = mulBoundDomain(product.getDomain(), operand.getDomain());
+                        if (!mulBoundDomain.isSubsetOf(mulRange)) {
+                            operand = ternary(member, operands[i], Zero);
+                        }
+                        try {
+                            product = mul(product, operand, mulRange);
+                        } catch (IllegalIntException e) {
+                            throw new UnsatisfiableException(e);
+                        }
                     }
+                    return product;
                 case Div:
                     IrIntExpr quotient = operands[0];
                     for (int i = 1; i < operands.length; i++) {
