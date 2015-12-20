@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Either;
+import org.clafer.collection.Triple;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
@@ -89,7 +90,7 @@ public class LinearEquationOptimizer {
         return false;
     }
 
-    private static LinearEquation linearEquation(IrIntExpr expr, Map<IrIntVar, Variable> map) {
+    private static Triple<LinearEquation, Domain, Domain> linearEquation(IrIntExpr expr, Map<IrIntVar, Variable> map) {
         if (expr instanceof IrCompare) {
             IrCompare compare = (IrCompare) expr;
 
@@ -100,11 +101,14 @@ public class LinearEquationOptimizer {
                     if (right != null) {
                         switch (compare.getOp()) {
                             case Equal:
-                                return LinearEquation.equal(left, right);
+                                return new Triple<>(LinearEquation.equal(left, right),
+                                        compare.getLeft().getDomain(), compare.getRight().getDomain());
                             case LessThan:
-                                return LinearEquation.lessThan(left, right);
+                                return new Triple<>(LinearEquation.lessThan(left, right),
+                                        compare.getLeft().getDomain(), compare.getRight().getDomain());
                             case LessThanEqual:
-                                return LinearEquation.lessThanEqual(left, right);
+                                return new Triple<>(LinearEquation.lessThanEqual(left, right),
+                                        compare.getLeft().getDomain(), compare.getRight().getDomain());
                         }
                     }
                 }
@@ -172,7 +176,7 @@ public class LinearEquationOptimizer {
         }
     }
 
-    private static IrBoolExpr[] boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map) {
+    private static IrBoolExpr[] boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map, int low, int high) {
         LinearEquation[] rounds = round(equation);
         IrBoolExpr[] exprs = new IrBoolExpr[rounds.length];
         for (int i = 0; i < exprs.length; i++) {
@@ -185,7 +189,16 @@ public class LinearEquationOptimizer {
             IrIntExpr[] addends = new IrIntExpr[cs.length];
             for (int j = 0; j < addends.length; j++) {
                 assert cs[j].isWhole();
-                addends[j] = mul((int) cs[j].getNumerator(), map.get(vs[j]), Domains.Unbounded);
+                long coefficient = cs[j].getNumerator();
+                int coefficientI = (int) coefficient;
+                IrIntVar var = map.get(vs[j]);
+
+                long a = coefficient * var.getLowBound();
+                long b = coefficient * var.getHighBound();
+                if (Math.min(a, b) < low || Math.max(a, b) > high || coefficientI != coefficient) {
+                    return new IrBoolExpr[0];
+                }
+                addends[j] = mul(coefficientI, var, Domains.Unbounded);
             }
             assert right.isWhole();
             switch (round.getOp()) {
@@ -206,13 +219,20 @@ public class LinearEquationOptimizer {
         List<IrBoolExpr> constraints = new ArrayList<>();
         Set<LinearEquation> equations = new HashSet<>();
         Map<IrIntVar, Variable> map = new HashMap<>();
+        int low = Integer.MAX_VALUE;
+        int high = Integer.MIN_VALUE;
         for (IrBoolExpr constraint : module.getConstraints()) {
-            LinearEquation equation = linearEquation(constraint, map);
-            if (equation != null) {
+            Triple<LinearEquation, Domain, Domain> pair = linearEquation(constraint, map);
+            if (pair != null) {
+                LinearEquation equation = pair.getFst();
+                Domain d1 = pair.getSnd();
+                Domain d2 = pair.getThd();
                 equations.add(equation);
-            } else {
-                constraints.add(constraint);
+                low = Math.min(Math.min(low, d1.getLowBound()), d2.getLowBound());
+                high = Math.max(Math.max(high, d1.getHighBound()), d2.getHighBound());
             }
+            // TODO: add only if pair is null
+            constraints.add(constraint);
         }
 
         if (equations.size() > 0) {
@@ -237,7 +257,7 @@ public class LinearEquationOptimizer {
                         .addEquations(componentEquation)
                         .dominantElimination()
                         .getEquations()) {
-                    for (IrBoolExpr constraint : boolExpr(equation, inverse)) {
+                    for (IrBoolExpr constraint : boolExpr(equation, inverse, low, high)) {
                         constraints.add(constraint);
                     }
                 }
