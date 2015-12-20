@@ -607,7 +607,7 @@ public class SimpleConstraintTest {
      *     [ 1 in this.Content.ref ]
      * </pre>
      */
-    @Test()
+    @Test(timeout = 60000)
     public void testNestedAbstract() {
         AstModel model = newModel();
 
