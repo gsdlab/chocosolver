@@ -1490,11 +1490,7 @@ public class AstCompiler {
                         if (!mulBoundDomain.isSubsetOf(mulRange)) {
                             operand = ternary(member, operands[i], Zero);
                         }
-                        try {
-                            product = mul(product, operand, mulRange);
-                        } catch (IllegalIntException e) {
-                            throw new UnsatisfiableException(e);
-                        }
+                        product = mul(product, operand, mulRange);
                     }
                     return product;
                 case Div:

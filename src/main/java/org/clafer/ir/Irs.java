@@ -1416,6 +1416,9 @@ public class Irs {
         } else {
             domain = mulBoundDomain(multiplicand.getDomain(), multiplier.getDomain()).intersection(intRange);
         }
+        if (domain.isEmpty()) {
+            throw new UnsatisfiableException();
+        }
         return new IrMul(multiplicand, multiplier, intRange, domain);
     }
 
@@ -1465,6 +1468,9 @@ public class Irs {
             return dividend;
         }
         if (dividendConstant != null && divisorConstant != null) {
+            if (divisorConstant == 0) {
+                throw new UnsatisfiableException();
+            }
             return constant(dividendConstant / divisorConstant);
         }
         int low = dividend.getDomain().getLowBound();
