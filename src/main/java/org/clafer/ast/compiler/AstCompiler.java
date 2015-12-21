@@ -1494,9 +1494,12 @@ public class AstCompiler {
                     }
                     return product;
                 case Div:
+                    member = memberships.get(thisType)[thisId];
                     IrIntExpr quotient = operands[0];
                     for (int i = 1; i < operands.length; i++) {
-                        quotient = div(quotient, operands[i]);
+                        IrIntExpr operand = operands[i];
+                        quotient = div(quotient,
+                                operand.getDomain().contains(0) ? ternary(member, operand, One) : operand);
                     }
                     return quotient;
                 default:

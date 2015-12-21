@@ -1780,9 +1780,6 @@ public class IrCompiler {
     }
 
     private static Constraint _div(IntVar dividend, IntVar divisor, IntVar quotient) {
-        if (divisor.contains(0)) {
-            divisor.getSolver().post(_arithm(divisor, "!=", 0));
-        }
         return ICF.eucl_div(dividend, divisor, quotient);
     }
 

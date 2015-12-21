@@ -150,8 +150,9 @@ public class ArithmeticTest {
      * <pre>
      * A -> int
      * B -> int
+     * [ A.ref > B.ref ]
      * C -> int ?
-     *     [ this.ref = A.ref * B.ref ]
+     *     [ this.ref = A.ref * B.ref + 1 ]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -191,6 +192,35 @@ public class ArithmeticTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
         assertEquals(32, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> int
+     * [ A.ref > B.ref ]
+     * C -> int ?
+     *     [ this.ref = A.ref / B.ref + 1 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testOptionalDiv() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer c = model.addChild("C").refToUnique(IntType).withCard(Optional);
+        model.addConstraint(greaterThan(joinRef(a), joinRef(b)));
+        c.addConstraint(equal(joinRef($this()), add(div(joinRef(a), joinRef(b)), constant(1))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(0).intHigh(3));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            for (InstanceClafer ci : instance.getTopClafers(c)) {
+                assertEquals(ci.getRef(), (Integer) instance.getTopClafer(a).getRef() / (Integer) instance.getTopClafer(b).getRef() + 1);
+            }
+        }
+        assertEquals(8, solver.instanceCount());
     }
 
     /**
