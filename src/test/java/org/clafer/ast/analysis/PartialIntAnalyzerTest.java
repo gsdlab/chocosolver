@@ -167,4 +167,46 @@ public class PartialIntAnalyzerTest {
                 new Domain[]{boundDomain(1, 2), boundDomain(1, 2), boundDomain(1, 2)},
                 analysis.getPartialInts(c.getRef()));
     }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> int
+     * [ A = 0 | A = 1 ]
+     * </pre>
+     */
+    @Test
+    public void testOrKnown() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(IntType).withCard(Mandatory);
+        model.addConstraint(or(equal(joinRef(a), constant(0)), equal(joinRef(a), constant(1))));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
+
+        assertArrayEquals(new Domain[]{ZeroOneDomain}, analysis.getPartialInts(a.getRef()));
+        assertArrayEquals(new Domain[]{boundDomain(-2, 2)}, analysis.getPartialInts(b.getRef()));
+    }
+
+    /**
+     * <pre>
+     * A -> int
+     * B -> int
+     * [ A = 1 | B = 1 ]
+     * </pre>
+     */
+    @Test
+    public void testOrUnknown() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").refToUnique(IntType).withCard(Mandatory);
+        model.addConstraint(or(equal(joinRef(a), constant(1)), equal(joinRef(b), constant(1))));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
+
+        assertArrayEquals(new Domain[]{boundDomain(-2, 2)}, analysis.getPartialInts(a.getRef()));
+        assertArrayEquals(new Domain[]{boundDomain(-2, 2)}, analysis.getPartialInts(b.getRef()));
+    }
 }

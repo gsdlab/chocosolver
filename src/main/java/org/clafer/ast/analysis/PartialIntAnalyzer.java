@@ -226,13 +226,15 @@ public class PartialIntAnalyzer {
             AstBoolArithm arithm = (AstBoolArithm) expr;
             switch (arithm.getOp()) {
                 case Or:
-                    Map<Path, Domain> map = new HashMap<>();
-                    for (AstBoolExpr operand : arithm.getOperands()) {
-                        Map<Path, Domain> operandMap = analyze(operand);
+                    AstBoolExpr[] operands = arithm.getOperands();
+                    Map<Path, Domain> map = new HashMap<>(analyze(operands[0]));
+                    for (int i = 1; i < operands.length; i++) {
+                        Map<Path, Domain> operandMap = analyze(operands[i]);
+                        map.keySet().retainAll(operandMap.keySet());
                         for (Entry<Path, Domain> entry : operandMap.entrySet()) {
-                            Domain domain = map.get(entry.getKey());
-                            domain = domain == null ? entry.getValue() : domain.union(entry.getValue());
-                            map.put(entry.getKey(), domain);
+                            if (map.containsKey(entry.getKey())) {
+                                map.put(entry.getKey(), map.get(entry.getKey()).union(entry.getValue()));
+                            }
                         }
                     }
                     return map;
