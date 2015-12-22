@@ -230,6 +230,12 @@ public class DomainTheory {
     }
 
     @Theory
+    public void intersectionUnboundedIsIdentity(Domain d) {
+        Domain intersection = d.intersection(Domains.Unbounded);
+        assertSame(intersection, d);
+    }
+
+    @Theory
     public void unionAxiom(Domain d1, Domain d2) {
         Domain union = d1.union(d2);
         for (int i : union.getValues()) {

@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Random;
 import org.chocosolver.util.iterators.IntIterator;
 
@@ -353,6 +354,19 @@ public class Util {
         int[] r = Arrays.copyOf(array, array.length + 1);
         r[array.length] = item;
         return r;
+    }
+
+    /**
+     * Functional-programming cons if head is present. Nondestructive.
+     *
+     * @param <T> the type of the elements
+     * @param head the beginning of the new list if present
+     * @param tail the end of the new list
+     * @return a copy of the original list with head appended at the start if
+     * present, otherwise a copy of tail
+     */
+    public static <T> List<T> maybeCons(Optional<T> head, List<? extends T> tail) {
+        return head.map(h -> cons(h, tail)).orElse(new ArrayList<>(tail));
     }
 
     /**

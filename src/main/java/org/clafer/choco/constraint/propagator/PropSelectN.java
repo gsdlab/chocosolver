@@ -27,27 +27,31 @@ public class PropSelectN extends Propagator<IntVar> {
 
     private static IntVar[] buildArray(BoolVar[] bools, IntVar n) {
         IntVar[] init = new IntVar[bools.length + 1];
-        System.arraycopy(bools, 0, init, 0, bools.length);
-        init[bools.length] = n;
+        init[0] = n;
+        System.arraycopy(bools, 0, init, 1, bools.length);
         return init;
     }
 
     private boolean isBoolsVar(int varIdx) {
-        return varIdx < bools.length;
+        return varIdx > 0;
+    }
+
+    private int getBoolVarIndex(int varIdx) {
+        return varIdx - 1;
     }
 
     private boolean isNVar(int varIdx) {
-        return varIdx == bools.length;
+        return varIdx == 0;
     }
-// TODO: Sept16
-//    @Override
-//    public int getPropagationConditions(int vIdx) {
-//        if (isBoolsVar(vIdx)) {
-//            return IntEventType.instantiation();
-//        }
-////        assert isNVar(vIdx);
-//        return IntEventType.boundAndInst();
-//    }
+
+    @Override
+    public int getPropagationConditions(int vIdx) {
+        if (isBoolsVar(vIdx)) {
+            return IntEventType.instantiation();
+        }
+        assert isNVar(vIdx);
+        return IntEventType.boundAndInst();
+    }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
@@ -81,34 +85,35 @@ public class PropSelectN extends Propagator<IntVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isBoolsVar(idxVarInProp)) {
-            assert bools[idxVarInProp].isInstantiated();
-            if (bools[idxVarInProp].getValue() == 0) {
-                for (int i = idxVarInProp + 1; i < bools.length; i++) {
+            int index = getBoolVarIndex(idxVarInProp);
+            assert bools[index].isInstantiated();
+            if (bools[index].getValue() == 0) {
+                for (int i = index + 1; i < bools.length; i++) {
                     bools[i].setToFalse(this);
                 }
-                if (n.updateUpperBound(idxVarInProp, this) && n.getUB() < idxVarInProp) {
-                    for (int i = n.getUB(); i <= idxVarInProp; i++) {
+                if (n.updateUpperBound(index, this) && n.getUB() < index) {
+                    for (int i = n.getUB(); i <= index; i++) {
                         bools[i].setToFalse(this);
                     }
                 }
             } else {
-                for (int i = 0; i < idxVarInProp; i++) {
+                for (int i = 0; i < index; i++) {
                     bools[i].setToTrue(this);
                 }
-                if (n.updateLowerBound(idxVarInProp + 1, this) && n.getLB() > idxVarInProp + 1) {
-                    for (int i = idxVarInProp; i < n.getLB(); i++) {
+                if (n.updateLowerBound(index + 1, this) && n.getLB() > index + 1) {
+                    for (int i = index; i < n.getLB(); i++) {
                         bools[i].setToTrue(this);
                     }
                 }
             }
         } else {
             assert isNVar(idxVarInProp);
-            if (IntEventType.isInclow(mask)) {
+            if (IntEventType.isInclow(mask) || IntEventType.isInstantiate(mask)) {
                 for (int i = 0; i < n.getLB(); i++) {
                     bools[i].setToTrue(this);
                 }
             }
-            if (IntEventType.isDecupp(mask)) {
+            if (IntEventType.isDecupp(mask) || IntEventType.isInstantiate(mask)) {
                 for (int i = n.getUB(); i < bools.length; i++) {
                     bools[i].setToFalse(this);
                 }

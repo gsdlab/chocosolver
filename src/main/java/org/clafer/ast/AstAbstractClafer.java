@@ -3,6 +3,7 @@ package org.clafer.ast;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.clafer.common.Check;
 
 /**
  * An abstract Clafer.
@@ -11,10 +12,18 @@ import java.util.List;
  */
 public class AstAbstractClafer extends AstClafer {
 
+    private final AstAbstractClafer parent;
+    private final List<AstAbstractClafer> abstractChildren = new ArrayList<>();
     private final List<AstClafer> subs = new ArrayList<>();
 
     AstAbstractClafer(String name, AstAbstractClafer claferClafer) {
         super(name, claferClafer);
+        this.parent = null;
+    }
+
+    AstAbstractClafer(String name, AstAbstractClafer parent, AstAbstractClafer claferClafer) {
+        super(name, claferClafer);
+        this.parent = Check.notNull(parent);
     }
 
     @Override
@@ -31,6 +40,23 @@ public class AstAbstractClafer extends AstClafer {
     @Override
     public AstAbstractClafer withGroupCard(int low, int high) {
         return withGroupCard(new Card(low, high));
+    }
+
+    public boolean hasAbstractChildren() {
+        return !abstractChildren.isEmpty();
+    }
+
+    public List<AstAbstractClafer> getAbstractChildren() {
+        return Collections.unmodifiableList(abstractChildren);
+    }
+
+    public AstAbstractClafer addAbstractChild(String name) {
+        AstAbstractClafer child = new AstAbstractClafer(name, this, getClaferClafer());
+        if (getClaferClafer() != null) {
+            child.extending(getClaferClafer());
+        }
+        abstractChildren.add(child);
+        return child;
     }
 
     /**
@@ -66,6 +92,16 @@ public class AstAbstractClafer extends AstClafer {
     public AstAbstractClafer refToUnique(AstClafer targetType) {
         super.refToUnique(targetType);
         return this;
+    }
+
+    @Override
+    public boolean hasParent() {
+        return parent != null;
+    }
+
+    @Override
+    public AstAbstractClafer getParent() {
+        return parent;
     }
 
     @Override

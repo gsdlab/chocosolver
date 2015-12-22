@@ -185,7 +185,7 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
     }
 
     private static void printClafer(InstanceClafer clafer, String indent, Appendable out) throws IOException {
-        out.append(indent).append(clafer.getType().getName()).append('$').append(Integer.toString(clafer.getId()));
+        out.append(indent).append(clafer.getType().getName()).append(countSuffix(clafer.getId()));
 
         if (clafer.getType().getSuperClafer() != null) {
             String name = clafer.getType().getSuperClafer().getName();
@@ -198,7 +198,7 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
             out.append(" -> " + AstUtil.getInheritedRef(clafer.getType()).getTargetType().getName() + " = ");
             if (clafer.getRef() instanceof InstanceClafer) {
                 InstanceClafer refClafer = (InstanceClafer) clafer.getRef();
-                out.append(refClafer.getType().getName()).append('$').append(Integer.toString(refClafer.getId()));
+                out.append(refClafer.getType().getName()).append(countSuffix(refClafer.getId()));
             } else
                 out.append(clafer.getRef().toString());
         }
@@ -208,6 +208,14 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
             printClafer(child, indent + "  ", out);
         }
     }
+
+    public static String countSuffix(int count) {
+        return count == 0 ? "" : "$" + Integer.toString(count);
+    }
+    public static String simpleName(String fullName) {
+        return fullName.substring(fullName.indexOf('_')+1);
+    }
+
     public static Scope resolveScopes(JavascriptFile javascriptFile, OptionSet options) {
         Scope scope = javascriptFile.getScope();
         if (options.has("scope"))

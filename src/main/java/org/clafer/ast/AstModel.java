@@ -1,7 +1,5 @@
 package org.clafer.ast;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,25 +25,35 @@ import java.util.List;
  *
  * @author jimmy
  */
-public class AstModel extends AstConcreteClafer {
+public class AstModel {
 
-    private final List<AstAbstractClafer> abstracts;
+    private final AstAbstractClafer abstractRootClafer;
+    private final AstConcreteClafer rootClafer;
+    // the type every non-primitive non-root type extends from.
+    private final AstAbstractClafer typeRoot;
 
     AstModel() {
-        super("#root#", new AstAbstractClafer("#clafer#", null));
-        super.withCard(new Card(1, 1));
-        this.abstracts = new ArrayList<>();
-        this.abstracts.add(claferClafer);
-        super.extending(claferClafer);
+        this.abstractRootClafer = new AstAbstractClafer("#root#", null) {
+
+            @Override
+            protected AstAbstractClafer getClaferClafer() {
+                return typeRoot;
+            }
+        };
+        this.rootClafer = new AstConcreteClafer("root", null).extending(abstractRootClafer).withCard(1, 1);
+        this.typeRoot = abstractRootClafer.addAbstractChild("#clafer#");
     }
 
-    /**
-     * Returns the type every non-primitive type extends from.
-     *
-     * @return the Clafer named "clafer"
-     */
-    public AstAbstractClafer getTypeHierarchyRoot() {
-        return claferClafer;
+    public AstAbstractClafer getAbstractRoot() {
+        return abstractRootClafer;
+    }
+
+    public AstConcreteClafer getRoot() {
+        return rootClafer;
+    }
+
+    public AstAbstractClafer getTypeRoot() {
+        return typeRoot;
     }
 
     /**
@@ -54,7 +62,7 @@ public class AstModel extends AstConcreteClafer {
      * @return all the abstract Clafers
      */
     public List<AstAbstractClafer> getAbstracts() {
-        return Collections.unmodifiableList(abstracts);
+        return abstractRootClafer.getAbstractChildren();
     }
 
     /**
@@ -64,33 +72,26 @@ public class AstModel extends AstConcreteClafer {
      * @return the new abstract Clafer
      */
     public AstAbstractClafer addAbstract(String name) {
-        AstAbstractClafer abstractClafer = new AstAbstractClafer(name, claferClafer).extending(claferClafer);
-        abstracts.add(abstractClafer);
-        return abstractClafer;
+        return abstractRootClafer.addAbstractChild(name);
     }
 
-    @Override
-    public AstModel extending(AstAbstractClafer superClafer) {
-        throw new UnsupportedOperationException("Cannot extend from " + getName());
+    public List<AstConcreteClafer> getChildren() {
+        return abstractRootClafer.getChildren();
     }
 
-    @Override
-    public AstModel refTo(AstClafer targetType) {
-        throw new UnsupportedOperationException("Cannot ref from " + getName());
+    public AstConcreteClafer addChild(String name) {
+        return abstractRootClafer.addChild(name);
     }
 
-    @Override
-    public AstModel refToUnique(AstClafer targetType) {
-        throw new UnsupportedOperationException("Cannot ref from " + getName());
+    public boolean hasConstraints() {
+        return abstractRootClafer.hasConstraints();
     }
 
-    @Override
-    public AstConcreteClafer withCard(Card card) {
-        throw new UnsupportedOperationException("Cannot set cardinality for " + getName());
+    public List<AstConstraint> getConstraints() {
+        return abstractRootClafer.getConstraints();
     }
 
-    @Override
-    public AstModel withGroupCard(Card groupCard) {
-        throw new UnsupportedOperationException("Cannot set group cardinality for " + getName());
+    public AstConstraint addConstraint(AstBoolExpr expr) {
+        return abstractRootClafer.addConstraint(expr);
     }
 }

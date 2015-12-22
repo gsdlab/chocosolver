@@ -2,7 +2,7 @@
 
 # chocosolver
 
-v0.4.2.1
+##### v0.4.3
 
 An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 3.3 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
@@ -14,7 +14,7 @@ The CLI is used by
 ## Contributors
 
 * [Jimmy Liang](http://gsd.uwaterloo.ca/jliang), MSc. Candidate. Main developer.
-* [Michal Antkiewicz](http://gsd.uwaterloo.ca/mantkiew), Research Engineer. Release Management, testing.
+* [Michal Antkiewicz](http://gsd.uwaterloo.ca/mantkiew), Research Engineer. Release Management, development, testing.
 * [Alexandr Murashkin](http://gsd.uwaterloo.ca/amurashk). CLI, stress testing.
 * [Jordan Ross](http://gsd.uwaterloo.ca/j25ross). Stress testing.
 
@@ -22,7 +22,7 @@ The CLI is used by
 
 ### Installation from binaries
 
-Binary distributions of the release 0.4.2.1 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions).
+Binary distributions of the release 0.4.3 of Clafer Tools for Windows, Mac, and Linux, can be downloaded from [Clafer Tools - Binary Distributions](http://http://gsd.uwaterloo.ca/clafer-tools-binary-distributions).
 
 1. download the binaries and unpack `<target directory>` of your choice
 2. add the `<target directory>` to your system path so that the executables can be found
@@ -35,27 +35,19 @@ See [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
 
 ## Prerequisites
 
-* [Choco 3.3+](https://github.com/chocoteam/choco3), v3.3.2-SNAPSHOT.
+* [Choco 3.3+](https://github.com/chocoteam/choco3), v3.3.3.
 * [Java 8+](http://www.oracle.com/technetwork/java/javase/downloads/index.html), 64bit.
 * [Maven 3.2+](http://maven.apache.org/). Required for building the project.
 
 ## Recommended but optional
 
-* [Clafer compiler](https://github.com/gsdlab/clafer), v0.4.2.1.
+* [Clafer compiler](https://github.com/gsdlab/clafer), v0.4.3 (also works with 0.4.2).
   - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls.
   - The API calls can also be written manually quite easily with a bit of extra typing (examples down below).
 
 Follow the installation instructions in the [README.md](https://github.com/gsdlab/clafer#clafer).
 
 ## Installation
-
-Install Choco3 development snapshot:
-
-```bash
-git clone https://github.com/chocoteam/choco3.git -b develop
-cd choco3
-mvn install -DskipTests
-```
 
 Install the API and the CLI.
 
@@ -71,19 +63,25 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.4.2.1</version>
+    <version>0.4.3</version>
 </dependency>
 ```
 
-The CLI is installed to `target/chocosolver-0.4.2.1-jar-with-dependencies.jar`;
+The CLI is installed to `target/chocosolver-0.4.3-jar-with-dependencies.jar`;
 however, in the Clafer Tools binary distribution it is called `chocosolver.jar`.
 
-### Important: Branches must correspond
+You can deploy the files the same way as in Clafer Tools binary distribution by executing
+
+```bash
+make install to=<target path>
+```
+
+### Important: branches must correspond
 
 All related projects are following the *simultaneous release model*.
 The branch `master` contains releases, whereas the branch `develop` contains code under development.
 When building the tools, the branches should match.
-Releases from branches 'master` are guaranteed to work well together.
+Releases from branches `master` are guaranteed to work well together.
 Development versions from branches `develop` should work well together but this might not always be the case.
 
 
@@ -117,7 +115,7 @@ The CLI supports four modes of operation:
 * `-v` - validation mode,
 * `--repl` - interactive mode,
 * `-moo` - batch multi-objective optimization mode, and
-* batch instance generation mode.
+* (default) batch instance generation mode.
 
 The last mode is selected when no `-v` and `--repl` are given and the model does not contain optimization objectives.
 
@@ -125,6 +123,14 @@ If the `.cfr` file is given, the CLI will first call the Clafer compiler using `
 which will produce `model.js`.
 Certain features, such as transitive closure, are not yet supported by Clafer,
 so they can only be used directly via API call in the `.js` file.
+We recommend using the so called Choco escapes, as follows:
+
+
+```
+[choco|
+<your code to be inserted verbatim at the end of the generated output>
+|]
+```
 
 ### CLI interactive mode
 
@@ -136,9 +142,12 @@ Type 'help' for the list of available REPL commands
 
 === Instance 1 Begin ===
 
-c0_aCar$0 : c0_Car
-  c0_Transmission$0
-    c0_Manual$0
+Bob
+  owns -> car
+car
+  transmission
+    manual
+  drivenBy -> Bob
 
 --- Instance 1 End ---
 
@@ -184,7 +193,7 @@ In general, the CLI classes are good examples of using the API:
 
 Consider the following Clafer model.
 
-```clafer
+```
 Installation
     xor Status
         Ok
@@ -192,6 +201,7 @@ Installation
     Time -> integer
         [this > 2]
 ```
+
 Below is an example of using the API to build the model above. [AstModel](http://gsdlab.github.io/chocosolver/org/clafer/ast/AstModel.html) represents the implicit "root" of the model.
 Every Clafer in the model is nested below it.
 
@@ -215,12 +225,13 @@ public static void main(String[] args) {
             // Note that joinRef is explicit whereas it was implicit in the original model.
 }
 ```
+
 The [Asts](http://gsdlab.github.io/chocosolver/org/clafer/ast/Asts.html) class provides all the functions required for building the model. See the previous link for a list of all the supported expressions. More examples of building models: [structure](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/SimpleStructureTest.java), [expressions](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/SimpleConstraintTest.java), [quantifiers](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/QuantifierTest.java), and [attributed feature models](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/FeatureModelTest.java#L229).
 
 ### Finding Instances
 
-
 The next step is to solve the model.
+
 ```java
 import org.clafer.compiler.*;
 import org.clafer.scope.*;
@@ -245,6 +256,7 @@ public static void main(String[] args) {
 ### Finding Optimal Instances
 
 Optimizing on a single objective is supported. Suppose we wanted to optimize on the expression "sum time".
+
 ```java
 import org.clafer.objective.*;
 ...
@@ -281,6 +293,7 @@ Floats ?
 [Witch]
 ```
 The model is overconstrained and has no solutions. The solver can help here as well.
+
 ```java
 AstModel model = newModel();
 AstConcreteClafer mob = model.addChild("Mob").withCard(0, 1);
@@ -297,11 +310,18 @@ ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
 // Print the Min-Unsat and near-miss example.
 System.out.println(unsat.minUnsat());
 ```
-The above code will print two things. First it will print "#(Witch) >= 1" which is the constraint that is unsatisfiable in the model, ie. the last constraint that enforces there to be some witch. Next it will print the near-miss example "Mob#0". What this means is that removing the "some(Witch)" constraint would make the model satisfiable and an example of a solution (after removing the constraint), is the instance with exactly one mob and nothing else. For this example, the min-unsat is not unique, so it is possible that the library may report another set of constraints although the set of constraints is guaranteed to have a size of one.
+
+The above code will print two things.
+First it will print "#(Witch) >= 1" which is the constraint that is unsatisfiable in the model, i.e., the last constraint that enforces there to be some witch.
+Next, it will print the near-miss example `Mob#0`.
+It means that removing the `some(Witch)` constraint would make the model satisfiable and an example of a solution (after removing the constraint), is the instance with exactly one mob and nothing else.
+For this example, the min-unsat is not unique, so it is possible that the library may report another set of constraints although the set of constraints is guaranteed to have a size of one.
 
 ### Finding Unsat-Core
 
-The above example found that removing one constraint will *fix* the model but you may be wondering why the model cannot have a witch. In this case, it is more useful to compute the Unsat-Core instead.
+The above example found that removing one constraint will *fix* the model but you may be wondering why the model cannot have a witch.
+In this case, it is more useful to compute the unsat-core instead.
+
 ```java
 ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, Scope.defaultScope(1));
 // Print the Unsat-Core.
@@ -326,7 +346,7 @@ public static void main(String[] args) {
 
 ## Configuring as a Web Tool Backend
 
-The configuration is done in the `<host-tool-path>/Server/Backends/backends.json` file, where `<host-tool-path>` is a path to the web-based tool (`ClaferIDE`, etc.) you want to configure to use `ClaferChocoIG` as a backend.
+The configuration is done in the `<host-tool-path>/Server/Backends/backends.json` file, where `<host-tool-path>` is a path to the web-based tool (`ClaferIDE`, etc.) you want to configure to use `chocosolver` as a backend.
 
 * An example configuration for [ClaferIDE](https://github.com/gsdlab/ClaferIDE):
 
@@ -339,8 +359,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "An instance generator and multi-objective optimizer based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "~/bin/chocosolver.jar", "--file=$filepath$", "--repl", "--prettify"],
-            "tool_version_args": ["-jar", "~/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--repl", "--prettify"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
             "scope_options": {
                 "set_default_scope" : {"command": "SetGlobalScope $value$\n", "label": "Default:", "argument": "--scope=$value$", "default_value": 1},
                 "set_individual_scope": {"command": "setScope $clafer$ $value$\n"},
@@ -374,8 +394,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "A multi-objective optimizer based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "~/bin/chocosolver.jar", "--file=$filepath$", "--moo"],
-            "tool_version_args": ["-jar", "~/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--moo"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
             "optimization_options": {
                 "set_int_scope" : {"label": "Max. integer:", "argument": "--maxint=$value$", "default_value": 127},
                 "set_default_scope" : {"label": "Default scopes:", "argument": "--scope=$value$", "default_value": 25}
@@ -396,8 +416,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "An instance generator based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "~/bin/chocosolver.jar", "--file=$filepath$", "--repl"],
-            "tool_version_args": ["-jar", "~/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--repl"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
             "scope_options": {
                 "set_default_scope" : {"command": "SetGlobalScope $value$\n"},
                 "set_individual_scope": {"command": "setScope $clafer$ $value$\n"},
@@ -429,15 +449,22 @@ Also, check the `eXecute` permission on the `jar` file.
 ## Semantic Differences with the Alloy backend
 
 Consider the following constraint.
-```clafer
+
+```
 [5 + 5 = -6]
 ```
-For this backend, the constraint is always unsatisfiable. For the Alloy backend, the constraint can be satisfied, depending on the set bitwidth. Why? In the default bitwidth of 4, the number succeeding 7 is -8. Hence 5 + 5 is translated to 5 -> 6 -> 7 -> -8 -> -7 -> -6, hence the constraint is true. For any other bitwidth, the constraint is false. Overflow can be a problem for low bitwidths when dealing with arithmetic. This backend can also suffer from overflow. It essentially, in regards to overflow, has a fixed bitwidth of 32.
+
+For this backend, the constraint is always unsatisfiable.
+For the Alloy backend, the constraint can be satisfied, depending on the set bitwidth.
+Why? In the default bitwidth of 4, the number succeeding 7 is -8. Hence 5 + 5 is translated to 5 -> 6 -> 7 -> -8 -> -7 -> -6, hence the constraint is true.
+For any other bitwidth, the constraint is false.
+Overflow can be a problem for low bitwidths when dealing with arithmetic (in the new Alloy there's an option which prevents overflows).
+This backend can also suffer from overflow.
+It essentially, in regards to overflow, has a fixed bitwidth of 32.
 
 ## Possible Future Work?
 
 * API for choosing branching strategy. Two reasons. The advantage of constraint programming is the ability to tune the solver to the specific problem. Choosing the right branching strategy can make a world of difference. Secondly, it allows the user to control the order of instances generated. For example, the user would like to see instances where Feature A is present and Feature B is absent before any other instances. This can be done by choosing the branching strategy.
-* Transitive closure, inverse
 * Reals
 
 # Need help?

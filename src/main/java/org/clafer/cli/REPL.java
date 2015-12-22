@@ -103,7 +103,7 @@ public class REPL {
 
         Scope scope = Utils.resolveScopes(javascriptFile, options);
 
-        ClaferOption compilerOption = ClaferOption.Default;
+        ClaferOption compilerOption = javascriptFile.getOption();
         if (options.has("search"))
             compilerOption = compilerOption.setStrategy((ClaferSearchStrategy) options.valueOf("search"));
 

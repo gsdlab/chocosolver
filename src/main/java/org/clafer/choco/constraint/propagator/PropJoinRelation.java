@@ -140,6 +140,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
         for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
             findMate(i);
         }
+        takeD.unfreeze();
     }
 
     @Override

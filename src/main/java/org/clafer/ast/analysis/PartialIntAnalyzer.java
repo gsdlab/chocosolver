@@ -15,6 +15,7 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
+import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
@@ -22,6 +23,7 @@ import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
+import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
@@ -43,13 +45,14 @@ public class PartialIntAnalyzer implements Analyzer {
         Map<AstRef, Domain[]> partialInts = new HashMap<>();
 
         List<Pair<FList<AstConcreteClafer>, Domain>> assignments = new ArrayList<>();
-        for (AstConstraint constraint : analysis.getConstraints()) {
-            AstClafer clafer = constraint.getContext();
+        for (Entry<AstConstraint, AstBoolExpr> pair : analysis.getConstraintExprs().entrySet()) {
+            AstConstraint constraint = pair.getKey();
             if (analysis.isSoft(constraint)) {
                 continue;
             }
+            AstClafer clafer = constraint.getContext();
             try {
-                Map<FList<AstConcreteClafer>, Domain> assignment = analyze(analysis.getExpr(constraint));
+                Map<FList<AstConcreteClafer>, Domain> assignment = analyze(pair.getValue());
                 for (Entry<FList<AstConcreteClafer>, Domain> entry : assignment.entrySet()) {
                     FList<AstConcreteClafer> path = entry.getKey();
                     Domain value = entry.getValue();
@@ -138,11 +141,14 @@ public class PartialIntAnalyzer implements Analyzer {
         if (expr instanceof AstSetTest) {
             AstSetTest compare = (AstSetTest) expr;
             if (AstSetTest.Op.Equal.equals(compare.getOp())) {
-                if (compare.getLeft() instanceof AstJoinRef && compare.getRight() instanceof AstConstant) {
-                    return analyzeEqual((AstJoinRef) compare.getLeft(), (AstConstant) compare.getRight());
-                }
-                if (compare.getRight() instanceof AstJoinRef && compare.getLeft() instanceof AstConstant) {
-                    return analyzeEqual((AstJoinRef) compare.getRight(), (AstConstant) compare.getLeft());
+                try {
+                    if (compare.getLeft() instanceof AstJoinRef) {
+                        return analyzeEqual((AstJoinRef) compare.getLeft(), compare.getRight());
+                    }
+                } catch (NotAssignmentException e) {
+                    if (compare.getRight() instanceof AstJoinRef) {
+                        return analyzeEqual((AstJoinRef) compare.getRight(), compare.getLeft());
+                    }
                 }
             }
         } else if (expr instanceof AstBoolArithm) {
@@ -164,15 +170,25 @@ public class PartialIntAnalyzer implements Analyzer {
         throw new NotAssignmentException();
     }
 
-    private static Map<FList<AstConcreteClafer>, Domain> analyzeEqual(
-            AstJoinRef exp, AstConstant constant) throws NotAssignmentException {
-        if (constant.getType().arity() == 1) {
-            int[] value = constant.getValue()[0];
-            if (value.length == 1) {
-                return Collections.singletonMap(analyze(exp), Domains.constantDomain(value[0]));
+    private static Domain analyzeDomain(AstExpr expr) throws NotAssignmentException {
+        if (expr instanceof AstConstant) {
+            AstConstant constant = (AstConstant) expr;
+            if (constant.getType().arity() == 1) {
+                int[] constantValue = constant.getValue()[0];
+                if (constantValue.length == 1) {
+                    return Domains.constantDomain(constantValue[0]);
+                }
             }
+        } else if (expr instanceof AstTernary) {
+            AstTernary ternary = (AstTernary) expr;
+            return analyzeDomain(ternary.getConsequent()).union(analyzeDomain(ternary.getAlternative()));
         }
         throw new NotAssignmentException();
+    }
+
+    private static Map<FList<AstConcreteClafer>, Domain> analyzeEqual(
+            AstJoinRef var, AstExpr value) throws NotAssignmentException {
+        return Collections.singletonMap(analyze(var), analyzeDomain(value));
     }
 
     private static FList<AstConcreteClafer> analyze(AstJoinRef exp) throws NotAssignmentException {
@@ -186,7 +202,11 @@ public class PartialIntAnalyzer implements Analyzer {
             AstJoin join = ((AstJoin) exp);
             AstSetExpr right = join.getRight();
             if (right instanceof AstChildRelation) {
-                return cons(((AstChildRelation) right).getChildType(), analyze(join.getLeft()));
+                AstChildRelation relation = (AstChildRelation) right;
+                // TODO what if is abstract not concrete?
+                if (relation.getChildType() instanceof AstConcreteClafer) {
+                    return cons((AstConcreteClafer) relation.getChildType(), analyze(join.getLeft()));
+                }
             }
         } else if (exp instanceof AstThis || exp instanceof AstGlobal) {
             return empty();

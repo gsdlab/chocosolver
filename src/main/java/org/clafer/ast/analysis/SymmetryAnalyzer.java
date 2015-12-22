@@ -46,7 +46,7 @@ public class SymmetryAnalyzer implements Analyzer {
         for (AstAbstractClafer clafer : analysis.getAbstractClafers()) {
             breakableChildren(clafer, breakableChildren, analysis);
         }
-        breakableChildren(analysis.getModel(), breakableChildren, analysis);
+        breakableChildren(analysis.getModel().getRoot(), breakableChildren, analysis);
         return analysis.setBreakableChildrenMap(breakableChildren);
     }
 

@@ -29,6 +29,7 @@ public class AstConcreteClafer extends AstClafer {
      * @return {@code true} if and only if this Clafer has a parent,
      * {@code false} otherwise
      */
+    @Override
     public boolean hasParent() {
         return parent != null;
     }
@@ -38,6 +39,7 @@ public class AstConcreteClafer extends AstClafer {
      *
      * @return this Clafer's parent
      */
+    @Override
     public AstClafer getParent() {
         return parent;
     }

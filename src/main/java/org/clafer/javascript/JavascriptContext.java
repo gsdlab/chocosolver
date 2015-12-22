@@ -1,16 +1,20 @@
 package org.clafer.javascript;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.Asts;
+import org.clafer.compiler.ClaferOption;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 import org.clafer.scope.ScopeBuilder;
@@ -28,6 +32,7 @@ public class JavascriptContext {
     private final ScopeBuilder scopeBuilder = Scope.builder();
     private final List<Objective> objectives = new ArrayList<>(0);
     private final List<Assertion> assertions = new ArrayList<>(0);
+    private Set<AstClafer>[] branchingPriority = new Set[0];
 
     public AstModel getModel() {
         return model;
@@ -78,6 +83,14 @@ public class JavascriptContext {
             scopeBuilder.setScope(clafer, entry.getValue());
         }
         return scopeBuilder.toScope();
+    }
+
+    public void setBranchingPriority(List<List<AstClafer>> branchingPriority) {
+        this.branchingPriority = branchingPriority.stream().map(HashSet::new).toArray(x -> new Set[x]);
+    }
+
+    public ClaferOption getClaferOption() {
+        return ClaferOption.Default.setBranchingPriority(branchingPriority);
     }
 
     public void addMaximizeObjective(AstSetExpr expr) {

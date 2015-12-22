@@ -95,6 +95,10 @@ public class LinearFunction implements LinearFunctionable {
         this.coefficientMap = map;
     }
 
+    public int arity() {
+        return coefficients.length;
+    }
+
     public Rational getCoefficient(Variable variable) {
         return coefficientMap.get(variable);
     }

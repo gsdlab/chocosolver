@@ -280,9 +280,9 @@ public class AstCompiler {
 
     private AstSolutionMap compile() {
         IrSetVar rootSet = constant(new int[]{0});
-        sets.put(analysis.getModel(), rootSet);
-        siblingSets.put(analysis.getModel(), new IrSetVar[]{rootSet});
-        memberships.put(analysis.getModel(), new IrBoolVar[]{True});
+        sets.put(analysis.getModel().getRoot(), rootSet);
+        siblingSets.put(analysis.getModel().getRoot(), new IrSetVar[]{rootSet});
+        memberships.put(analysis.getModel().getRoot(), new IrBoolVar[]{True});
 
         List<AstClafer> clafers = initOrder();
         for (AstClafer clafer : clafers) {
@@ -307,7 +307,7 @@ public class AstCompiler {
             int scope = getScope(clafer);
             if (analysis.isHard(constraint)) {
                 for (int j = 0; j < scope; j++) {
-                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
                     IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
                     IrBoolExpr conditionalConstraint = isConditional(expr)
                             ? implies(memberships.get(clafer)[j], thisConstraint)
@@ -318,7 +318,7 @@ public class AstCompiler {
                 IrBoolVar softVar = bool(constraint.toString());
                 softVars.put(constraint, softVar);
                 for (int j = 0; j < scope; j++) {
-                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(j);
+                    ExpressionCompiler expressionCompiler = new ExpressionCompiler(clafer, j);
                     IrBoolExpr thisConstraint = expressionCompiler.compile(expr);
                     IrBoolExpr conditionalConstraint = isConditional(expr)
                             ? implies(memberships.get(clafer)[j], thisConstraint)
@@ -391,7 +391,7 @@ public class AstCompiler {
             }
         }
 
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(0);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(analysis.getModel().getRoot(), 0);
         Map<Objective, IrIntVar> objectiveVars = new HashMap<>();
         Map<Objective, AstSetExpr> objectives = analysis.getObjectiveExprs();
         for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
@@ -1002,10 +1002,12 @@ public class AstCompiler {
 
     private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
 
+        private final AstClafer thisType;
         private final int thisId;
         private final Map<AstLocal, IrIntExpr> locals = new HashMap<>();
 
-        private ExpressionCompiler(int thisId) {
+        private ExpressionCompiler(AstClafer thisType, int thisId) {
+            this.thisType = thisType;
             this.thisId = thisId;
         }
 
@@ -1202,14 +1204,34 @@ public class AstCompiler {
             throw new AstException();
         }
 
-        private IrExpr doJoin(IrExpr left, AstConcreteClafer right) {
-            // Why empty set? The "take" var can contain unused.
-            IrSetArrayExpr rightArray = snoc(array(siblingSets.get(right)), EmptySet);
+        private IrExpr doJoin(IrExpr left, AstClafer right) {
+            IrSetArrayExpr rightArray;
+            if (right instanceof AstConcreteClafer) {
+                // Why empty set? The "take" var can contain unused.
+                rightArray = snoc(array(siblingSets.get(right)), EmptySet);
+            } else {
+                AstAbstractClafer abstractRight = (AstAbstractClafer) right;
+                IrSetExpr[] array = new IrSetExpr[getScope(right.getParent())];
+                Arrays.fill(array, EmptySet);
+                for (AstClafer sub : abstractRight.getSubs()) {
+                    int offset = getOffset(abstractRight, sub);
+                    int parentOffset = getOffset(abstractRight.getParent(), sub.getParent());
+                    IrSetVar[] subSiblingSet = siblingSets.get(sub);
+                    for (int i = 0; i < subSiblingSet.length; i++) {
+                        array[i + parentOffset] = unionDisjoint(array[i + parentOffset],
+                                offset(subSiblingSet[i], offset));
+                    }
+                }
+                rightArray = array(array);
+            }
             if (left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) left;
-                if (Format.ParentGroup.equals(getFormat(right)) && getCard(right).getLow() == 1) {
-                    assert getCard(right).isExact();
-                    return $intLeft;
+                if (Format.ParentGroup.equals(getFormat(right)) && right instanceof AstConcreteClafer) {
+                    Card card = getCard((AstConcreteClafer) right);
+                    if (card.getLow() == 1) {
+                        assert card.isExact();
+                        return $intLeft;
+                    }
                 }
                 return joinRelation(singleton($intLeft), rightArray, true);
             } else if (left instanceof IrSetExpr) {
@@ -1270,7 +1292,7 @@ public class AstCompiler {
             AstClafer derefType = getCommonSupertype(deref).getClaferType();
 
             Integer globalCardinality = null;
-            IrExpr $deref;
+            IrExpr $deref = null;
             if (derefType.getRef().isUnique()) {
                 if (deref instanceof AstJoin) {
                     AstJoin join = (AstJoin) deref;
@@ -1281,16 +1303,14 @@ public class AstCompiler {
                         globalCardinality = left instanceof IrSetExpr
                                 ? ((IrSetExpr) left).getCard().getHighBound()
                                 : 1;
-                    } else {
-                        $deref = compile(deref);
-                        if (derefType instanceof AstConcreteClafer) {
-                            globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
-                        }
+                        globalCardinality *= AstUtil.getConcreteSubs(derefType).size();
                     }
-                } else {
+                }
+                if ($deref == null) {
                     $deref = compile(deref);
-                    if (derefType instanceof AstConcreteClafer) {
-                        globalCardinality = getScope(((AstConcreteClafer) derefType).getParent());
+                    globalCardinality = 0;
+                    for (AstConcreteClafer sub : AstUtil.getConcreteSubs(derefType)) {
+                        globalCardinality += getScope(sub.getParent());
                     }
                 }
             } else {
@@ -1461,15 +1481,25 @@ public class AstCompiler {
                 case Sub:
                     return sub(operands);
                 case Mul:
-                    try {
-                        return mul(operands, getMulRange());
-                    } catch (IllegalIntException e) {
-                        throw new UnsatisfiableException(e);
+                    IrBoolVar member = memberships.get(thisType)[thisId];
+                    Domain mulRange = getMulRange();
+                    IrIntExpr product = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        IrIntExpr operand = operands[i];
+                        Domain mulBoundDomain = mulBoundDomain(product.getDomain(), operand.getDomain());
+                        if (!mulBoundDomain.isSubsetOf(mulRange)) {
+                            operand = ternary(member, operands[i], Zero);
+                        }
+                        product = mul(product, operand, mulRange);
                     }
+                    return product;
                 case Div:
+                    member = memberships.get(thisType)[thisId];
                     IrIntExpr quotient = operands[0];
                     for (int i = 1; i < operands.length; i++) {
-                        quotient = div(quotient, operands[i]);
+                        IrIntExpr operand = operands[i];
+                        quotient = div(quotient,
+                                operand.getDomain().contains(0) ? ternary(member, operand, One) : operand);
                     }
                     return quotient;
                 default:

@@ -150,6 +150,7 @@ public class PropJoinFunction extends Propagator<Variable> {
 
         // Prune to
         findMates();
+        takeD.unfreeze();
     }
 
     @Override

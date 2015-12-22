@@ -137,7 +137,7 @@ public class PropArrayToSet extends Propagator<Variable> {
             int id = getAVarIndex(idxVarInProp);
             if (IntEventType.isRemove(mask)
                     || (IntEventType.isInclow(mask) && as[id].getLB() > s.getEnvelopeFirst())
-                    || IntEventType.isDecupp(mask)) {
+                    || IntEventType.isDecupp(mask) || IntEventType.isInstantiate(mask)) {
                 asD[id].freeze();
                 asD[id].forEachRemVal((IntProcedure) aRem -> {
                     if (s.envelopeContains(aRem)) {

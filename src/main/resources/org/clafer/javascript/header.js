@@ -9,6 +9,7 @@ var charRange = rc.setCharRange.bind(rc);
 var Clafer = rc.getModel().addChild.bind(rc.getModel());
 var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript engine versions has "abstract" as a keyword.
 var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
+var branchingPriority = rc.setBranchingPriority.bind(rc);
 var max = rc.addMaximizeObjective.bind(rc);
 var min = rc.addMinimizeObjective.bind(rc);
 var assert = rc.addAssertion.bind(rc);

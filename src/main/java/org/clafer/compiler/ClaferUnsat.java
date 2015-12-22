@@ -15,7 +15,6 @@ import org.clafer.ir.IrBoolVar;
 import org.chocosolver.solver.ResolutionPolicy;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.search.loop.monitors.IMonitorSolution;
 import org.chocosolver.solver.search.loop.monitors.SMF;
 import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.BoolVar;
@@ -70,11 +69,8 @@ public class ClaferUnsat {
      * unknown
      */
     public Pair<Set<AstConstraint>, InstanceModel> minUnsat() throws ReachedLimitException {
-        Solution lastSolution = new Solution();
-        IMonitorSolution monitor = () -> lastSolution.record(solver);
-        solver.plugMonitor(monitor);
-        maximize();
-        if (lastSolution.hasBeenFound()) {
+        if (ESat.TRUE.equals(maximize())) {
+            Solution lastSolution = solver.getSolutionRecorder().getLastSolution();
             Set<AstConstraint> unsat = new HashSet<>();
             for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
                 Either<Boolean, BoolVar> var = softVar.getSnd();
@@ -87,7 +83,7 @@ public class ClaferUnsat {
             if (solver.hasReachedLimit()) {
                 throw new ReachedLimitBestKnownUnsatException(unsat, solutionMap.getInstance(lastSolution));
             }
-            return new Pair<>(unsat, solutionMap.getInstance());
+            return new Pair<>(unsat, solutionMap.getInstance(lastSolution));
         }
         if (solver.hasReachedLimit()) {
             throw new ReachedLimitException();
@@ -111,12 +107,13 @@ public class ClaferUnsat {
                     throw new ReachedLimitException();
                 }
                 changed = false;
+                Solution lastSolution = solver.getSolutionRecorder().getLastSolution();
                 List<BoolVar> minUnsat = new ArrayList<>();
                 for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
                     Either<Boolean, BoolVar> var = softVar.getSnd();
                     if (var.isLeft()
                             ? !var.getLeft()
-                            : var.getRight().isInstantiatedTo(0)) {
+                            : lastSolution.getIntVal(var.getRight()) == 0) {
                         changed |= unsat.add(softVar.getFst());
                         if (var.isRight()) {
                             minUnsat.add(var.getRight());

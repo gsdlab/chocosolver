@@ -8,13 +8,13 @@ import org.clafer.common.Check;
  */
 public class AstChildRelation implements AstSetExpr {
 
-    private final AstConcreteClafer childRelation;
+    private final AstClafer childRelation;
 
-    AstChildRelation(AstConcreteClafer childRelation) {
+    AstChildRelation(AstClafer childRelation) {
         this.childRelation = Check.notNull(childRelation);
     }
 
-    public AstConcreteClafer getChildType() {
+    public AstClafer getChildType() {
         return childRelation;
     }
 

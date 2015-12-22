@@ -4,7 +4,7 @@ import org.clafer.domain.Domain;
 import org.clafer.common.Check;
 
 /**
- * multiplicant * multiplier
+ * multiplicand * multiplier
  *
  * @author jimmy
  */
@@ -16,6 +16,13 @@ public class IrMul extends IrAbstractInt {
      * Choco easier.
      */
     private final IrIntExpr multiplicand, multiplier;
+    /**
+     * The intRange explicitly limits the domain of the multiplication. That is
+     * it must be the case that domain is a subset of intRange. This intRange
+     * needs to be stored so that any rewriting of the multiplication will
+     * remember the limit. Note that this limit is only a recommendation and is
+     * typically set by the end user to avoid excessive memory usage.
+     */
     private final Domain intRange;
 
     IrMul(IrIntExpr multiplicand, IrIntExpr multiplier, Domain intRange, Domain domain) {

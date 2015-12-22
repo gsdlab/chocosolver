@@ -36,8 +36,7 @@ public class ScopeAnalyzerTest {
         scope.put(robin, 3);
 
         Map<AstClafer, Card> globalCards = new HashMap<>();
-        globalCards.put(model, new Card(1, 1));
-        globalCards.put(model.getTypeHierarchyRoot(), new Card(1, 1));
+        globalCards.put(model.getRoot(), new Card(1, 1));
         globalCards.put(object, new Card(3));
         globalCards.put(id, new Card(0, 2));
         globalCards.put(hash, new Card(7));

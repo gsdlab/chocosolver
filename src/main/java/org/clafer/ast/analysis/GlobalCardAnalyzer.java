@@ -58,7 +58,6 @@ public class GlobalCardAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstClafer, Card> globalCardMap = new HashMap<>();
-        globalCardMap.put(analysis.getModel(), new Card(1, 1));
         globalCardMap.put(IntType, new Card(0, analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1));
         List<Pair<AstClafer, Integer>> insufficientScopes = new ArrayList<>();
 
@@ -209,15 +208,20 @@ public class GlobalCardAnalyzer implements Analyzer {
 
     private static void analyze(AstAbstractClafer clafer, Analysis analysis,
             Map<AstClafer, Card> globalCardMap, List<Pair<AstClafer, Integer>> insufficientScopes) {
-        Card globalCard = new Card(0, 0);
-        for (AstClafer sub : clafer.getSubs()) {
-            Card subGlobalCard = globalCardMap.get(sub);
-            if (subGlobalCard == null) {
-                // This is possible if a child of an abstract extends the abstract.
-                // Assume the worst possible case.
-                subGlobalCard = new Card(0, analysis.getScope(sub));
+        Card globalCard;
+        if (AstUtil.isRoot(clafer)) {
+            globalCard = new Card(1, 1);
+        } else {
+            globalCard = new Card(0, 0);
+            for (AstClafer sub : clafer.getSubs()) {
+                Card subGlobalCard = globalCardMap.get(sub);
+                if (subGlobalCard == null) {
+                    // This is possible if a child of an abstract extends the abstract.
+                    // Assume the worst possible case.
+                    subGlobalCard = new Card(0, analysis.getScope(sub));
+                }
+                globalCard = globalCard.add(subGlobalCard);
             }
-            globalCard = globalCard.add(subGlobalCard);
         }
         globalCardMap.put(clafer, globalCard);
     }

@@ -120,7 +120,7 @@ public class TypeAnalyzer implements Analyzer {
         Map<Objective, AstSetExpr> objectives = analysis.getObjectiveExprs();
         Map<Objective, AstSetExpr> typedObjectives = new HashMap<>(objectives.size());
         for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
-            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap);
             TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(objective.getValue());
             if (!typedObjective.getCommonSupertype().isInt()) {
                 throw new TypeException("Cannot optimize on " + typedObjective.getType());
@@ -130,7 +130,7 @@ public class TypeAnalyzer implements Analyzer {
         Map<Assertion, AstBoolExpr> assertions = analysis.getAssertionExprs();
         Map<Assertion, AstBoolExpr> typedAssertions = new HashMap<>(assertions.size());
         for (Entry<Assertion, AstBoolExpr> assertion : assertions.entrySet()) {
-            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel()), typeMap);
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap);
             TypedExpr<AstBoolExpr> typedAssertion = visitor.typeCheck(assertion.getValue());
             if (!typedAssertion.getCommonSupertype().isBool()) {
                 throw new TypeException("Cannot assert on " + typedAssertion.getType());
@@ -652,7 +652,7 @@ public class TypeAnalyzer implements Analyzer {
 
         @Override
         public TypedExpr<?> visit(AstChildRelation ast, Void a) {
-            AstConcreteClafer child = ast.getChildType();
+            AstClafer child = ast.getChildType();
             if (!child.hasParent()) {
                 throw new TypeException(child + " does not have a parent");
             }

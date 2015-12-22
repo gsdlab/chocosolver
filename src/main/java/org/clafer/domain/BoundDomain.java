@@ -55,7 +55,8 @@ public class BoundDomain implements Domain {
 
     @Override
     public int size() {
-        return high + 1 - low;
+        long size = (long) high + 1 - low;
+        return size >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) size;
     }
 
     @Override
