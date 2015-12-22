@@ -380,6 +380,21 @@ public class AstUtil {
     }
 
     /**
+     * Finds the ancestors of the Clafer, including itself.
+     *
+     * @param clafer the Clafer
+     * @return the ancestors
+     */
+    public static List<AstClafer> getAncestors(AstClafer clafer) {
+        List<AstClafer> ancestors = new ArrayList<>();
+        do {
+            ancestors.add(clafer);
+            clafer = clafer.getParent();
+        } while (clafer != null);
+        return ancestors;
+    }
+
+    /**
      * Find the reference belonging to the Clafer or the reference it inherited.
      *
      * @param clafer the Clafer
