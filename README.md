@@ -2,7 +2,7 @@
 
 # chocosolver
 
-v0.4.3
+##### v0.4.3
 
 An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 3.3 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
@@ -35,7 +35,7 @@ See [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
 
 ## Prerequisites
 
-* [Choco 3.3+](https://github.com/chocoteam/choco3), v3.3.3-SNAPSHOT (the branch `develop`).
+* [Choco 3.3+](https://github.com/chocoteam/choco3), v3.3.3.
 * [Java 8+](http://www.oracle.com/technetwork/java/javase/downloads/index.html), 64bit.
 * [Maven 3.2+](http://maven.apache.org/). Required for building the project.
 
@@ -48,14 +48,6 @@ See [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
 Follow the installation instructions in the [README.md](https://github.com/gsdlab/clafer#clafer).
 
 ## Installation
-
-Install Choco3 development snapshot:
-
-```bash
-git clone https://github.com/chocoteam/choco3.git -b develop
-cd choco3
-mvn install -DskipTests
-```
 
 Install the API and the CLI.
 
@@ -84,7 +76,7 @@ You can deploy the files the same way as in Clafer Tools binary distribution by 
 make install to=<target path>
 ```
 
-### Important: Branches must correspond
+### Important: branches must correspond
 
 All related projects are following the *simultaneous release model*.
 The branch `master` contains releases, whereas the branch `develop` contains code under development.
