@@ -3,6 +3,7 @@ package org.clafer.ast.analysis;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -11,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Stack;
 import java.util.stream.Collectors;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolArithm;
@@ -49,81 +49,98 @@ import org.clafer.scope.Scope;
 public class PartialIntAnalyzer {
 
     private final AstClafer context;
+    private final Map<AstRef, Domain[]> partialInts;
     private final Analysis analysis;
 
-    private PartialIntAnalyzer(AstClafer context, Analysis analysis) {
+    private PartialIntAnalyzer(AstClafer context, Map<AstRef, Domain[]> partialInts, Analysis analysis) {
         this.context = context;
+        this.partialInts = partialInts;
         this.analysis = analysis;
     }
 
     public static Analysis analyze(Analysis analysis) {
         Map<AstRef, Domain[]> partialInts = new HashMap<>();
 
-        List<Pair<FList<AstConcreteClafer>, Domain>> assignments = new ArrayList<>();
-        Map<FList<AstConcreteClafer>, Pair<Domain, Set<AstClafer>>> conditionAssignments = new HashMap<>();
-        for (Entry<AstConstraint, AstBoolExpr> pair : analysis.getConstraintExprs().entrySet()) {
-            AstConstraint constraint = pair.getKey();
-            if (analysis.isSoft(constraint)) {
-                continue;
-            }
-            AstClafer clafer = constraint.getContext();
-            PartialIntAnalyzer analyzer = new PartialIntAnalyzer(clafer, analysis);
-            try {
-                Map<Path, Domain> assignment = analyzer.analyze(pair.getValue());
-                for (Entry<Path, Domain> entry : assignment.entrySet()) {
-                    Path path = entry.getKey();
-                    Domain value = entry.getValue();
+        boolean changed;
+        do {
+            changed = false;
+            List<Pair<FList<AstConcreteClafer>, Domain>> assignments = new ArrayList<>();
+            Map<FList<AstConcreteClafer>, Pair<Domain, Set<AstClafer>>> conditionAssignments = new HashMap<>();
+            for (Entry<AstConstraint, AstBoolExpr> pair : analysis.getConstraintExprs().entrySet()) {
+                AstConstraint constraint = pair.getKey();
+                if (analysis.isSoft(constraint)) {
+                    continue;
+                }
+                AstClafer clafer = constraint.getContext();
+                PartialIntAnalyzer analyzer = new PartialIntAnalyzer(clafer, partialInts, analysis);
+                try {
+                    Map<Path, Domain> assignment = analyzer.analyze(pair.getValue());
+                    for (Entry<Path, Domain> entry : assignment.entrySet()) {
+                        Path path = entry.getKey();
+                        Domain value = entry.getValue();
 
-                    for (FList<AstConcreteClafer> concretePath : concretize(dropConcreteSuffix(path.path))) {
-                        if (path.condition.isEmpty()) {
-                            assignments.add(new Pair<>(concretePath, value));
-                        } else {
-                            /**
-                             * Condition assignments are when a variable is
-                             * assigned under all alternatives. For example,
-                             * consider the following model.
-                             *
-                             * <pre>
-                             * A -> int
-                             * xor B
-                             *     C
-                             *         [ A = 3 ]
-                             *     D
-                             *         [ A = 4 ]
-                             * </pre>
-                             *
-                             * In this model, A must be assigned to either 3 or
-                             * 4. Note that if one of the constraints above were
-                             * removed, we would know nothing about the values
-                             * of A.
-                             */
-                            conditionAssignments.merge(concretePath, new Pair<>(value, path.condition),
-                                    (previous, current) -> new Pair<>(
-                                            previous.getFst().union(current.getFst()),
-                                            Util.union(previous.getSnd(), current.getSnd())));
+                        for (FList<AstConcreteClafer> concretePath : concretize(dropConcreteSuffix(path.path))) {
+                            if (path.condition.isEmpty()) {
+                                assignments.add(new Pair<>(concretePath, value));
+                            } else {
+                                /**
+                                 * Condition assignments are when a variable is
+                                 * assigned under all alternatives. For example,
+                                 * consider the following model.
+                                 *
+                                 * <pre>
+                                 * A -> int
+                                 * xor B
+                                 *     C
+                                 *         [ A = 3 ]
+                                 *     D
+                                 *         [ A = 4 ]
+                                 * </pre>
+                                 *
+                                 * In this model, A must be assigned to either 3
+                                 * or 4. Note that if one of the constraints
+                                 * above were removed, we would know nothing
+                                 * about the values of A.
+                                 */
+                                conditionAssignments.merge(concretePath, new Pair<>(value, path.condition),
+                                        (previous, current) -> new Pair<>(
+                                                previous.getFst().union(current.getFst()),
+                                                Util.union(previous.getSnd(), current.getSnd())));
+                            }
+                        }
+                    }
+                } catch (NotAssignmentException e) {
+                    // Only analyze assignments
+                }
+            }
+            for (Entry<FList<AstConcreteClafer>, Pair<Domain, Set<AstClafer>>> conditionAssignment : conditionAssignments.entrySet()) {
+                if (isConditionCovered(conditionAssignment.getValue().getSnd())) {
+                    assignments.add(new Pair(conditionAssignment.getKey(), conditionAssignment.getValue().getFst()));
+                }
+            }
+            AssignmentAutomata automata = new AssignmentAutomata(assignments);
+            for (AstClafer clafer : analysis.getClafers()) {
+                if (clafer.hasRef()) {
+                    int scope = analysis.getScope(clafer);
+                    Domain[] domains = new Domain[scope];
+                    for (int i = 0; i < scope; i++) {
+                        domains[i] = partialInts(i, clafer.getRef(), automata, analysis);
+                    }
+                    Domain[] previous = partialInts.putIfAbsent(clafer.getRef(), domains);
+                    if (previous == null) {
+                        changed = true;
+                    } else {
+                        for (int i = 0; i < previous.length; i++) {
+                            Domain newDomain = previous[i].intersection(domains[i]);
+                            if (!changed) {
+                                changed = !previous[i].equals(newDomain);
+                            }
+                            previous[i] = newDomain;
                         }
                     }
                 }
-            } catch (NotAssignmentException e) {
-                // Only analyze assignments
             }
-        }
-        for (Entry<FList<AstConcreteClafer>, Pair<Domain, Set<AstClafer>>> conditionAssignment : conditionAssignments.entrySet()) {
-            if (isConditionCovered(conditionAssignment.getValue().getSnd())) {
-                assignments.add(new Pair(conditionAssignment.getKey(), conditionAssignment.getValue().getFst()));
-            }
-        }
-        AssignmentAutomata automata = new AssignmentAutomata(assignments);
-        for (AstClafer clafer : analysis.getClafers()) {
-            if (clafer.hasRef()) {
-                int scope = analysis.getScope(clafer);
-                Domain[] domains = new Domain[scope];
-                for (int i = 0; i < scope; i++) {
-                    domains[i] = partialInts(i, clafer.getRef(), automata, analysis);
-                }
-                partialInts.put(clafer.getRef(), domains);
-            }
-        }
+        } while (changed);
         return analysis.setPartialIntsMap(partialInts);
     }
 
@@ -212,14 +229,16 @@ public class PartialIntAnalyzer {
         if (expr instanceof AstSetTest) {
             AstSetTest compare = (AstSetTest) expr;
             if (AstSetTest.Op.Equal.equals(compare.getOp())) {
+                Map<Path, Domain> map = new HashMap<>(2);
                 try {
                     if (compare.getLeft() instanceof AstJoinRef) {
-                        return analyzeEqual((AstJoinRef) compare.getLeft(), compare.getRight());
+                        map.putAll(analyzeEqual((AstJoinRef) compare.getLeft(), compare.getRight()));
                     }
-                } catch (NotAssignmentException e) {
+                } finally {
                     if (compare.getRight() instanceof AstJoinRef) {
-                        return analyzeEqual((AstJoinRef) compare.getRight(), compare.getLeft());
+                        map.putAll(analyzeEqual((AstJoinRef) compare.getRight(), compare.getLeft()));
                     }
+                    return map;
                 }
             }
         } else if (expr instanceof AstBoolArithm) {
@@ -251,6 +270,12 @@ public class PartialIntAnalyzer {
                 if (constantValue.length == 1) {
                     return Domains.constantDomain(constantValue[0]);
                 }
+            }
+        } else if (expr instanceof AstJoinRef) {
+            AstClafer type = analysis.getType(((AstJoinRef) expr).getDeref()).getClaferType();
+            Domain[] domains = partialInts.get(AstUtil.getInheritedRef(type));
+            if (domains != null) {
+                return Domains.union(Arrays.asList(domains));
             }
         } else if (expr instanceof AstTernary) {
             AstTernary ternary = (AstTernary) expr;

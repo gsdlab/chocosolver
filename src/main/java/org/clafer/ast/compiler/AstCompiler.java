@@ -94,7 +94,6 @@ import org.clafer.collection.Monoid;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
-import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
@@ -104,7 +103,6 @@ import org.clafer.ir.IrBoolVar;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.*;
-import org.clafer.ir.IllegalIntException;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntArrayExpr;
 import org.clafer.ir.IrIntExpr;
@@ -140,10 +138,10 @@ public class AstCompiler {
         new AbstractOffsetAnalyzer(),
         new OptimizerAnalyzer(),
         new PartialSolutionAnalyzer(),
-        PartialIntAnalyzer::analyze,
-        new SymmetryAnalyzer(),
         // Reanalyze types
-        new TypeAnalyzer()
+        new TypeAnalyzer(),
+        PartialIntAnalyzer::analyze,
+        new SymmetryAnalyzer()
     };
     private final Analysis analysis;
     private final IrModule module;
