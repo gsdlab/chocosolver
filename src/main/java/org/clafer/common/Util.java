@@ -7,12 +7,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import org.chocosolver.util.iterators.IntIterator;
 
 /**
@@ -858,5 +860,12 @@ public class Util {
                 : (T[]) Array.newInstance(dest.getClass().getComponentType(), array.length);
         System.arraycopy(array, 0, to, 0, to.length);
         return to;
+    }
+
+    public static <T> Set<T> union(Set<T> a, Set<T> b) {
+        Set<T> union = new HashSet<>();
+        union.addAll(a);
+        union.addAll(b);
+        return union;
     }
 }
