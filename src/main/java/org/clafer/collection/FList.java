@@ -88,4 +88,12 @@ public abstract class FList<E> implements Iterable<E> {
         }
         return cons(head.getHead(), snoc(head.getTail(), tail));
     }
+
+    public static <E> FList<E> fromIterable(Iterable<E> iterable) {
+        FList<E> list = empty();
+        for (E e : iterable) {
+            list = cons(e, list);
+        }
+        return list;
+    }
 }
