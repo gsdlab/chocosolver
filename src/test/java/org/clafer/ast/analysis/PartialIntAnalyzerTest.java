@@ -1,11 +1,12 @@
 package org.clafer.ast.analysis;
 
+import java.util.Arrays;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.*;
 import org.clafer.domain.Domain;
-import org.clafer.domain.Domains;
+import static org.clafer.domain.Domains.*;
 import org.clafer.scope.Scopable;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
@@ -19,13 +20,14 @@ public class PartialIntAnalyzerTest {
 
     private Analysis analyze(AstModel model, Scopable scope) {
         return Analysis.analyze(model, scope,
+                new TypeAnalyzer(),
                 new GlobalCardAnalyzer(),
                 new ScopeAnalyzer(),
                 new CardAnalyzer(),
                 new FormatAnalyzer(),
                 new AbstractOffsetAnalyzer(),
                 new PartialSolutionAnalyzer(),
-                new PartialIntAnalyzer());
+                PartialIntAnalyzer::analyze);
     }
 
     /**
@@ -60,9 +62,9 @@ public class PartialIntAnalyzerTest {
         Domain[] partialInts = analysis.getPartialInts(cost.getRef());
         assertNotNull(partialInts);
         assertEquals(3, partialInts.length);
-        assertEquals(Domains.constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
-        assertEquals(Domains.constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
-        assertEquals(Domains.constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
+        assertEquals(constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
+        assertEquals(constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
+        assertEquals(constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
     }
 
     /**
@@ -99,10 +101,10 @@ public class PartialIntAnalyzerTest {
         Domain[] partialInts = analysis.getPartialInts(cost.getRef());
         assertNotNull(partialInts);
         assertEquals(4, partialInts.length);
-        assertEquals(Domains.constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
-        assertEquals(Domains.constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
-        assertEquals(Domains.constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
-        assertEquals(Domains.boundDomain(-3, 3), partialInts[analysis.getOffsets(feature).getOffset(e)]);
+        assertEquals(constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
+        assertEquals(constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
+        assertEquals(constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
+        assertEquals(boundDomain(-3, 3), partialInts[analysis.getOffsets(feature).getOffset(e)]);
     }
 
     /**
@@ -130,9 +132,39 @@ public class PartialIntAnalyzerTest {
         Domain[] partialInts = analysis.getPartialInts(cost.getRef());
         assertNotNull(partialInts);
         assertEquals(4, partialInts.length);
-        assertEquals(Domains.constantDomain(4), partialInts[0]);
-        assertEquals(Domains.boundDomain(-3, 4), partialInts[1]);
-        assertEquals(Domains.boundDomain(-3, 3), partialInts[2]);
-        assertEquals(Domains.boundDomain(-3, 3), partialInts[3]);
+        assertEquals(constantDomain(4), partialInts[0]);
+        assertEquals(boundDomain(-3, 4), partialInts[1]);
+        assertEquals(boundDomain(-3, 3), partialInts[2]);
+        assertEquals(boundDomain(-3, 3), partialInts[3]);
+    }
+
+    /**
+     * <pre>
+     * A +
+     *     B -> int
+     *     xor C +
+     *         C1 ?
+     *             [ this.parent.parent.B.ref = 1 ]
+     *         C2 ?
+     *             [ B.ref = 2 ]
+     * </pre>
+     */
+    @Test
+    public void testConditional() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Many);
+        AstConcreteClafer b = a.addChild("B");
+        AstConcreteClafer c = b.addChild("C").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer d = a.addChild("D").withGroupCard(1, 1).withCard(Many);
+        AstConcreteClafer d1 = d.addChild("D1").withCard(Optional);
+        AstConcreteClafer d2 = d.addChild("D2").withCard(Optional);
+        d1.addConstraint(equal(joinRef(join(join(joinParent(joinParent($this())), b), c)), constant(1)));
+        d2.addConstraint(equal(joinRef(c), constant(2)));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
+        assertArrayEquals(
+                new Domain[]{boundDomain(1, 2), boundDomain(1, 2), boundDomain(1, 2)},
+                analysis.getPartialInts(c.getRef()));
     }
 }

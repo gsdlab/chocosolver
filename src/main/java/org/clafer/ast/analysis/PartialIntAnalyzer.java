@@ -1,12 +1,18 @@
 package org.clafer.ast.analysis;
 
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.Stack;
+import java.util.stream.Collectors;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
@@ -19,6 +25,7 @@ import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
+import org.clafer.ast.AstJoinParent;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
@@ -30,6 +37,7 @@ import org.clafer.ast.AstUtil;
 import org.clafer.collection.FList;
 import static org.clafer.collection.FList.*;
 import org.clafer.collection.Pair;
+import org.clafer.common.Util;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
 import org.clafer.scope.Scope;
@@ -38,30 +46,71 @@ import org.clafer.scope.Scope;
  *
  * @author jimmy
  */
-public class PartialIntAnalyzer implements Analyzer {
+public class PartialIntAnalyzer {
 
-    @Override
-    public Analysis analyze(Analysis analysis) {
+    private final AstClafer context;
+    private final Analysis analysis;
+
+    private PartialIntAnalyzer(AstClafer context, Analysis analysis) {
+        this.context = context;
+        this.analysis = analysis;
+    }
+
+    public static Analysis analyze(Analysis analysis) {
         Map<AstRef, Domain[]> partialInts = new HashMap<>();
 
         List<Pair<FList<AstConcreteClafer>, Domain>> assignments = new ArrayList<>();
+        Map<FList<AstConcreteClafer>, Pair<Domain, Set<AstClafer>>> conditionAssignments = new HashMap<>();
         for (Entry<AstConstraint, AstBoolExpr> pair : analysis.getConstraintExprs().entrySet()) {
             AstConstraint constraint = pair.getKey();
             if (analysis.isSoft(constraint)) {
                 continue;
             }
             AstClafer clafer = constraint.getContext();
+            PartialIntAnalyzer analyzer = new PartialIntAnalyzer(clafer, analysis);
             try {
-                Map<FList<AstConcreteClafer>, Domain> assignment = analyze(pair.getValue());
-                for (Entry<FList<AstConcreteClafer>, Domain> entry : assignment.entrySet()) {
-                    FList<AstConcreteClafer> path = entry.getKey();
+                Map<Path, Domain> assignment = analyzer.analyze(pair.getValue());
+                for (Entry<Path, Domain> entry : assignment.entrySet()) {
+                    Path path = entry.getKey();
                     Domain value = entry.getValue();
-                    for (AstConcreteClafer concreteClafer : AstUtil.getConcreteSubs(clafer)) {
-                        assignments.add(new Pair<>(snoc(path, concreteClafer), value));
+
+                    for (FList<AstConcreteClafer> concretePath : concretize(dropConcreteSuffix(path.path))) {
+                        if (path.condition.isEmpty()) {
+                            assignments.add(new Pair<>(concretePath, value));
+                        } else {
+                            /**
+                             * Condition assignments are when a variable is
+                             * assigned under all alternatives. For example,
+                             * consider the following model.
+                             *
+                             * <pre>
+                             * A -> int
+                             * xor B
+                             *     C
+                             *         [ A = 3 ]
+                             *     D
+                             *         [ A = 4 ]
+                             * </pre>
+                             *
+                             * In this model, A must be assigned to either 3 or
+                             * 4. Note that if one of the constraints above were
+                             * removed, we would know nothing about the values
+                             * of A.
+                             */
+                            conditionAssignments.merge(concretePath, new Pair<>(value, path.condition),
+                                    (previous, current) -> new Pair<>(
+                                            previous.getFst().union(current.getFst()),
+                                            Util.union(previous.getSnd(), current.getSnd())));
+                        }
                     }
                 }
             } catch (NotAssignmentException e) {
                 // Only analyze assignments
+            }
+        }
+        for (Entry<FList<AstConcreteClafer>, Pair<Domain, Set<AstClafer>>> conditionAssignment : conditionAssignments.entrySet()) {
+            if (isConditionCovered(conditionAssignment.getValue().getSnd())) {
+                assignments.add(new Pair(conditionAssignment.getKey(), conditionAssignment.getValue().getFst()));
             }
         }
         AssignmentAutomata automata = new AssignmentAutomata(assignments);
@@ -76,6 +125,29 @@ public class PartialIntAnalyzer implements Analyzer {
             }
         }
         return analysis.setPartialIntsMap(partialInts);
+    }
+
+    private static boolean isConditionCovered(Set<AstClafer> condition) {
+        for (Entry<AstClafer, Set<AstClafer>> group
+                : condition.stream().collect(Collectors.groupingBy(AstClafer::getParent, Collectors.toSet())).entrySet()) {
+            if (AstUtil.getConcreteSubs(group.getKey()).stream().flatMap(x -> x.getChildren().stream()).allMatch(group.getValue()::contains)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static FList<AstClafer> dropConcreteSuffix(FList<AstClafer> path) {
+        Deque<AstClafer> stack = new ArrayDeque<>();
+        path.forEach(stack::push);
+        while (stack.size() > 1) {
+            AstClafer top = stack.pop();
+            if (!top.equals(stack.peek().getParent())) {
+                stack.push(top);
+                break;
+            }
+        }
+        return FList.fromIterable(stack);
     }
 
     private static Domain partialInts(
@@ -136,8 +208,7 @@ public class PartialIntAnalyzer implements Analyzer {
         return covered;
     }
 
-    private static Map<FList<AstConcreteClafer>, Domain> analyze(
-            AstBoolExpr expr) throws NotAssignmentException {
+    private Map<Path, Domain> analyze(AstBoolExpr expr) throws NotAssignmentException {
         if (expr instanceof AstSetTest) {
             AstSetTest compare = (AstSetTest) expr;
             if (AstSetTest.Op.Equal.equals(compare.getOp())) {
@@ -155,10 +226,10 @@ public class PartialIntAnalyzer implements Analyzer {
             AstBoolArithm arithm = (AstBoolArithm) expr;
             switch (arithm.getOp()) {
                 case Or:
-                    Map<FList<AstConcreteClafer>, Domain> map = new HashMap<>();
+                    Map<Path, Domain> map = new HashMap<>();
                     for (AstBoolExpr operand : arithm.getOperands()) {
-                        Map<FList<AstConcreteClafer>, Domain> operandMap = analyze(operand);
-                        for (Entry<FList<AstConcreteClafer>, Domain> entry : operandMap.entrySet()) {
+                        Map<Path, Domain> operandMap = analyze(operand);
+                        for (Entry<Path, Domain> entry : operandMap.entrySet()) {
                             Domain domain = map.get(entry.getKey());
                             domain = domain == null ? entry.getValue() : domain.union(entry.getValue());
                             map.put(entry.getKey(), domain);
@@ -170,7 +241,7 @@ public class PartialIntAnalyzer implements Analyzer {
         throw new NotAssignmentException();
     }
 
-    private static Domain analyzeDomain(AstExpr expr) throws NotAssignmentException {
+    private Domain analyzeDomain(AstExpr expr) throws NotAssignmentException {
         if (expr instanceof AstConstant) {
             AstConstant constant = (AstConstant) expr;
             if (constant.getType().arity() == 1) {
@@ -186,16 +257,16 @@ public class PartialIntAnalyzer implements Analyzer {
         throw new NotAssignmentException();
     }
 
-    private static Map<FList<AstConcreteClafer>, Domain> analyzeEqual(
+    private Map<Path, Domain> analyzeEqual(
             AstJoinRef var, AstExpr value) throws NotAssignmentException {
         return Collections.singletonMap(analyze(var), analyzeDomain(value));
     }
 
-    private static FList<AstConcreteClafer> analyze(AstJoinRef exp) throws NotAssignmentException {
+    private Path analyze(AstJoinRef exp) throws NotAssignmentException {
         return analyze(exp.getDeref());
     }
 
-    private static FList<AstConcreteClafer> analyze(AstSetExpr exp) throws NotAssignmentException {
+    private Path analyze(AstSetExpr exp) throws NotAssignmentException {
         if (exp instanceof AstUpcast) {
             return analyze(((AstUpcast) exp).getBase());
         } else if (exp instanceof AstJoin) {
@@ -205,11 +276,58 @@ public class PartialIntAnalyzer implements Analyzer {
                 AstChildRelation relation = (AstChildRelation) right;
                 // TODO what if is abstract not concrete?
                 if (relation.getChildType() instanceof AstConcreteClafer) {
-                    return cons((AstConcreteClafer) relation.getChildType(), analyze(join.getLeft()));
+                    return analyze(join.getLeft()).cons((AstConcreteClafer) relation.getChildType());
                 }
             }
-        } else if (exp instanceof AstThis || exp instanceof AstGlobal) {
-            return empty();
+        } else if (exp instanceof AstJoinParent) {
+            Set<AstClafer> conditions = new HashSet<>(0);
+            AstClafer type = analysis.getType(exp).getClaferType();
+            do {
+                AstJoinParent joinParent = (AstJoinParent) exp;
+                exp = joinParent.getChildren();
+                AstClafer childType = analysis.getType(exp).getClaferType();
+                // TODO what if abstract?
+                if (childType instanceof AstConcreteClafer) {
+                    AstConcreteClafer concreteType = (AstConcreteClafer) childType;
+                    if (concreteType.getCard().getLow() == 0) {
+                        if (!concreteType.getParent().hasGroupCard() || concreteType.getParent().getGroupCard().getLow() == 0) {
+                            throw new NotAssignmentException();
+                        }
+                        conditions.add(concreteType);
+                    }
+                }
+            } while (exp instanceof AstJoinParent);
+            if (exp instanceof AstThis) {
+                return new Path(conditions, single(type));
+            }
+        } else if (exp instanceof AstThis) {
+            return new Path(single(context));
+        } else if (exp instanceof AstGlobal || exp instanceof AstConstant) {
+            AstClafer type;
+            if (exp instanceof AstGlobal) {
+                AstGlobal global = (AstGlobal) exp;
+                type = global.getType();
+            } else {
+                AstConstant constant = (AstConstant) exp;
+                type = constant.getType().getClaferType();
+                if (constant.getValue().length != analysis.getScope(type)) {
+                    throw new IllegalArgumentException();
+                }
+            }
+            Set<AstClafer> conditions = new HashSet<>();
+            AstClafer current = context;
+            // TODO what if abstract?
+            List<AstClafer> ancestors = AstUtil.getAncestors(type);
+            while (current instanceof AstConcreteClafer && !ancestors.contains(current)) {
+                if (((AstConcreteClafer) current).getCard().getLow() == 0) {
+                    if (!current.getParent().hasGroupCard() || current.getParent().getGroupCard().getLow() == 0) {
+                        throw new NotAssignmentException();
+                    }
+                    conditions.add(current);
+                }
+                current = current.getParent();
+            }
+            return new Path(conditions, single(type));
         }
         throw new NotAssignmentException();
     }
@@ -258,6 +376,63 @@ public class PartialIntAnalyzer implements Analyzer {
     private static class NotAssignmentException extends Exception {
 
         NotAssignmentException() {
+        }
+    }
+
+    private static FList<AstConcreteClafer>[] concretize(FList<AstClafer> path) {
+        if (path.isEmpty()) {
+            return new FList[]{empty()};
+        }
+        FList<AstConcreteClafer>[] tails = concretize(path.getTail());
+        List<AstConcreteClafer> heads = AstUtil.getConcreteSubs(path.getHead());
+        FList<AstConcreteClafer>[] paths = new FList[tails.length * heads.size()];
+        int i = 0;
+        for (AstConcreteClafer head : heads) {
+            for (FList<AstConcreteClafer> tail : tails) {
+                paths[i++] = cons(head, tail);
+            }
+        }
+        assert i == paths.length;
+        return paths;
+    }
+
+    private static final Path EMPTY = new Path();
+
+    private static class Path {
+
+        private final Set<AstClafer> condition;
+        private final FList<AstClafer> path;
+
+        public Path() {
+            this(empty());
+        }
+
+        public Path(FList<AstClafer> path) {
+            this(Collections.emptySet(), path);
+        }
+
+        public Path(Set<AstClafer> condition, FList<AstClafer> concretePath) {
+            assert condition.stream().map(AstClafer::getParent).allMatch(AstClafer::hasGroupCard);
+            this.condition = condition;
+            this.path = concretePath;
+        }
+
+        public Path cons(AstClafer clafer) {
+            return new Path(condition, FList.cons(clafer, path));
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Path) {
+                Path other = (Path) obj;
+                return condition.equals(other.condition) && path.equals(other.path);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return condition.hashCode() ^ path.hashCode();
         }
     }
 }

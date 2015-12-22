@@ -140,7 +140,7 @@ public class AstCompiler {
         new AbstractOffsetAnalyzer(),
         new OptimizerAnalyzer(),
         new PartialSolutionAnalyzer(),
-        new PartialIntAnalyzer(),
+        PartialIntAnalyzer::analyze,
         new SymmetryAnalyzer(),
         // Reanalyze types
         new TypeAnalyzer()
