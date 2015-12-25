@@ -32,6 +32,50 @@ public class PartialIntAnalyzerTest {
 
     /**
      * <pre>
+     * Feature *
+     *     cost -> integer *
+     *     [ this.cost = 3 ]
+     * </pre>
+     */
+    @Test
+    public void testSingleConcrete() {
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addChild("Feature");
+        AstConcreteClafer cost = feature.addChild("cost").refToUnique(IntType);
+        feature.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(3));
+
+        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        assertArrayEquals(new Domain[]{constantDomain(3), constantDomain(3), constantDomain(3)}, partialInts);
+    }
+
+    /**
+     * <pre>
+     * Feature *
+     *     cost -> integer *
+     * Expensive
+     *     [ cost . ref = 3 ]
+     * </pre>
+     */
+    @Test
+    public void testGlobal() {
+        AstModel model = newModel();
+
+        AstConcreteClafer feature = model.addChild("Feature");
+        AstConcreteClafer cost = feature.addChild("cost").refToUnique(IntType);
+        AstConcreteClafer expensive = model.addChild("Expensive").withCard(Mandatory);
+        expensive.addConstraint(equal(joinRef(cost), constant(3)));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(3));
+
+        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        assertArrayEquals(new Domain[]{constantDomain(3), constantDomain(3), constantDomain(3)}, partialInts);
+    }
+
+    /**
+     * <pre>
      * abstract Feature
      *     cost -> integer
      * xor A
@@ -65,6 +109,43 @@ public class PartialIntAnalyzerTest {
         assertEquals(constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
         assertEquals(constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
         assertEquals(constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     cost -> integer +
+     * xor A
+     *     B : Feature
+     *         [this.cost.ref = 3]
+     *     C : Feature
+     *         [this.cost.ref = 4]
+     *     D : Feature
+     *         [this.cost.ref = 6]
+     * </pre>
+     */
+    @Test
+    public void testKnownMany() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstract("Feature");
+        AstConcreteClafer cost = feature.addChild("cost").refToUnique(IntType).withCard(Many);
+        AstConcreteClafer a = model.addChild("A").withGroupCard(1, 1).withCard(Mandatory);
+        AstConcreteClafer b = a.addChild("B").extending(feature).withCard(Optional);
+        b.addConstraint(equal(joinRef(join($this(), cost)), constant(3)));
+        AstConcreteClafer c = a.addChild("C").extending(feature).withCard(Optional);
+        c.addConstraint(equal(joinRef(join($this(), cost)), constant(4)));
+        AstConcreteClafer d = a.addChild("D").extending(feature).withCard(Optional);
+        d.addConstraint(equal(joinRef(join($this(), cost)), constant(6)));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(3));
+
+        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        assertNotNull(partialInts);
+        assertEquals(3, partialInts.length);
+        assertEquals(enumDomain(3, 4, 6), partialInts[analysis.getOffsets(feature).getOffset(b)]);
+        assertEquals(enumDomain(3, 4, 6), partialInts[analysis.getOffsets(feature).getOffset(c)]);
+        assertEquals(enumDomain(3, 4, 6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
     }
 
     /**
@@ -104,7 +185,7 @@ public class PartialIntAnalyzerTest {
         assertEquals(constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
         assertEquals(constantDomain(4), partialInts[analysis.getOffsets(feature).getOffset(c)]);
         assertEquals(constantDomain(6), partialInts[analysis.getOffsets(feature).getOffset(d)]);
-        assertEquals(boundDomain(-3, 3), partialInts[analysis.getOffsets(feature).getOffset(e)]);
+        assertNull(partialInts[analysis.getOffsets(feature).getOffset(e)]);
     }
 
     /**
@@ -133,19 +214,20 @@ public class PartialIntAnalyzerTest {
         assertNotNull(partialInts);
         assertEquals(4, partialInts.length);
         assertEquals(constantDomain(4), partialInts[0]);
-        assertEquals(boundDomain(-3, 4), partialInts[1]);
-        assertEquals(boundDomain(-3, 3), partialInts[2]);
-        assertEquals(boundDomain(-3, 3), partialInts[3]);
+        assertNull(partialInts[1]);
+        assertNull(partialInts[2]);
+        assertNull(partialInts[3]);
     }
 
     /**
      * <pre>
      * A +
-     *     B -> int
-     *     xor C +
-     *         C1 ?
-     *             [ this.parent.parent.B.ref = 1 ]
-     *         C2 ?
+     *     B
+     *         C -> int
+     *     xor D +
+     *         D1 ?
+     *             [ this.parent.parent.B.C.ref = 1 ]
+     *         D2 ?
      *             [ B.ref = 2 ]
      * </pre>
      */
@@ -206,7 +288,7 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
 
-        assertArrayEquals(new Domain[]{boundDomain(-2, 2)}, analysis.getPartialInts(a.getRef()));
-        assertArrayEquals(new Domain[]{boundDomain(-2, 2)}, analysis.getPartialInts(b.getRef()));
+        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(a.getRef()));
+        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(b.getRef()));
     }
 }

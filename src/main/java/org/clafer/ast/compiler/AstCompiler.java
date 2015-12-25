@@ -2035,11 +2035,16 @@ public class AstCompiler {
         PartialSolution partialSolution = getPartialSolution(src);
         Domain[] partialInts = getPartialInts(ref);
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
+        Domain refRange = getRefRange(ref);;
         for (int i = 0; i < ivs.length; i++) {
+            Domain domain = partialInts[i];
+            if (domain == null) {
+                domain = refRange;
+            }
             if (partialSolution.hasClafer(i)) {
-                ivs[i] = domainInt(src.getName() + "@Ref" + i, partialInts[i]);
+                ivs[i] = domainInt(src.getName() + "@Ref" + i, domain);
             } else {
-                ivs[i] = domainInt(src.getName() + "@Ref" + i, partialInts[i].insert(getUninitalizedRef(tar)));
+                ivs[i] = domainInt(src.getName() + "@Ref" + i, domain.insert(getUninitalizedRef(tar)));
             }
         }
 
@@ -2147,6 +2152,14 @@ public class AstCompiler {
     private Domain getMulRange() {
         Scope scope = analysis.getScope();
         return Domains.boundDomain(scope.getMulLow(), scope.getMulHigh());
+    }
+
+    private Domain getRefRange(AstRef ref) {
+        AstClafer target = ref.getTargetType();
+        if (target instanceof AstIntClafer) {
+            return getIntRange();
+        }
+        return fromToDomain(0, getScope(target));
     }
 
     private Format getFormat(AstClafer clafer) {
