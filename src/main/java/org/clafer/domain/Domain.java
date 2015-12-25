@@ -29,6 +29,44 @@ public interface Domain {
      */
     public boolean contains(int value);
 
+    public default boolean containsAll(TIntCollection values) {
+        TIntIterator iter = values.iterator();
+        while (iter.hasNext()) {
+            if (!contains(iter.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public default boolean containsAll(int[] values) {
+        for (int value : values) {
+            if (!contains(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public default boolean containsAny(TIntCollection values) {
+        TIntIterator iter = values.iterator();
+        while (iter.hasNext()) {
+            if (contains(iter.next())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public default boolean containsAny(int[] values) {
+        for (int value : values) {
+            if (contains(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns the smallest integer contained in this domain. Undefined if this
      * domain is empty.
