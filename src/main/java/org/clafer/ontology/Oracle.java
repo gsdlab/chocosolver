@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.clafer.collection.Pair;
 import org.clafer.domain.Domain;
 import org.clafer.math.SetTheory;
 
@@ -23,7 +22,7 @@ public class Oracle {
 
     private final IdMap<Path> idMap = new IdMap<>();
     private final SetTheory theory = new SetTheory();
-    int tempId = -1;
+    private int tempId = -1;
 
     public Oracle(
             Relation<Concept> isA,
@@ -65,16 +64,7 @@ public class Oracle {
         }
 
         for (Path path : new ArrayList<>(idMap.keySet())) {
-            Path cur = path;
-            while (cur.length() > 1) {
-                Path next = cur.dropPrefix(1);
-                theory.
-                        union(hasA.to(next.getContext()).stream()
-                                .filter(x -> isGround(x, isA))
-                                .map(next::prepend).mapToInt(idMap::getId).toArray())
-                        .equalsTo(idMap.getId(next));
-                cur = next;
-            }
+            addPathConstraints(path);
         }
     }
 
@@ -96,6 +86,21 @@ public class Oracle {
         return newHasA;
     }
 
+    private void addPathConstraints(Path path) {
+        for (Concept[] steps : groundPaths(path.getSteps())) {
+            Path cur = new Path(steps);
+            while (cur.length() > 1) {
+                Path next = cur.dropPrefix(1);
+                theory.
+                        union(hasA.to(next.getContext()).stream()
+                                .filter(x -> isGround(x, isA))
+                                .map(next::prepend).mapToInt(idMap::getId).toArray())
+                        .equalsTo(idMap.getId(next));
+                cur = next;
+            }
+        }
+    }
+
     public boolean isA(Concept sub, Concept sup) {
         return isA.has(sub, sup);
     }
@@ -115,19 +120,7 @@ public class Oracle {
      * @return the envelope of values the path must take, or null if unbounded
      */
     public Domain getAssignment(Path path) {
-        for (Concept[] steps : groundPaths(path.getSteps())) {
-            Path cur = new Path(steps);
-            while (cur.length() > 1) {
-                Path next = cur.dropPrefix(1);
-                theory.
-                        union(hasA.to(next.getContext()).stream()
-                                .filter(x -> isGround(x, isA))
-                                .map(next::prepend).mapToInt(idMap::getId).toArray())
-                        .equalsTo(idMap.getId(next));
-                cur = next;
-            }
-        }
-
+        addPathConstraints(path);
         theory
                 .union(groundPaths(path.getSteps()).stream().map(Path::new).mapToInt(idMap::getId).toArray())
                 .equalsTo(idMap.getId(path));
