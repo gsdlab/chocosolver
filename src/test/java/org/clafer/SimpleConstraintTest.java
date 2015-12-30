@@ -418,8 +418,8 @@ public class SimpleConstraintTest {
      * <pre>
      * A -> integer 3..4
      * B -> integer 3..4
-     * [this.A.ref = this.B.ref]
-     * [this.A.ref > 5000]
+     * [A.ref = B.ref]
+     * [A.ref > 5000]
      * </pre>
      */
     @Test(timeout = 60000)
