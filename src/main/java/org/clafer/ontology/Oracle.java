@@ -2,14 +2,14 @@ package org.clafer.ontology;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clafer.collection.Pair;
 import org.clafer.domain.Domain;
+import org.clafer.math.SetTheory;
 
 /**
  * An oracle for answering queries of is-a and has-a relationships.
@@ -20,10 +20,10 @@ public class Oracle {
 
     private final Relation<Concept> isA;
     private final Relation<Concept> hasA;
-    private final Map<Path, Domain> assignments;
-    private final Relation<Path> equalities;
 
-    private final Map<Path, Domain> cache = new HashMap<>();
+    private final IdMap<Path> idMap = new IdMap<>();
+    private final SetTheory theory = new SetTheory();
+    int tempId = -1;
 
     public Oracle(
             Relation<Concept> isA,
@@ -32,8 +32,50 @@ public class Oracle {
             Relation<Path> equalities) {
         this.isA = learnInheritedIsA(isA);
         this.hasA = learnInheritedHasA(this.isA, hasA);
-        this.assignments = learnAllGroundAssignments(this.isA, assignments);
-        this.equalities = learnAllGroundEqualities(this.isA, equalities);
+
+        for (Entry<Path, Domain> assignment : assignments.entrySet()) {
+            Concept[] steps = assignment.getKey().getSteps();
+            for (Concept[] groundPath : groundPaths(steps, isA)) {
+                theory.subset(idMap.getId(new Path(groundPath)), assignment.getValue());
+            }
+        }
+
+        for (Entry<Path, Set<Path>> equality1 : equalities.entrySet()) {
+            Map<Concept, List<Path>> groundPathsMap1
+                    = groundPaths(equality1.getKey().getSteps(), isA).stream().map(Path::new)
+                    .collect(Collectors.groupingBy(Path::getContext));
+            for (Path equality2 : equality1.getValue()) {
+                Map<Concept, List<Path>> groundPathsMap2
+                        = groundPaths(equality2.getSteps(), isA).stream().map(Path::new)
+                        .collect(Collectors.groupingBy(Path::getContext));
+                for (Concept concept : groundPathsMap1.keySet()) {
+                    int[] groundPaths1 = groundPathsMap1.get(concept).stream().mapToInt(idMap::getId).toArray();
+                    int[] groundPaths2 = groundPathsMap2.get(concept).stream().mapToInt(idMap::getId).toArray();
+                    if (groundPaths1.length == 1) {
+                        theory.union(groundPaths2).equalsTo(groundPaths1[0]);
+                    }
+                    if (groundPaths2.length == 1) {
+                        theory.union(groundPaths1).equalsTo(groundPaths2[0]);
+                    }
+                    theory.union(groundPaths1).equalsTo(tempId);
+                    theory.union(groundPaths2).equalsTo(tempId);
+                    tempId--;
+                }
+            }
+        }
+
+        for (Path path : new ArrayList<>(idMap.keySet())) {
+            Path cur = path;
+            while (cur.length() > 1) {
+                Path next = cur.dropPrefix(1);
+                theory.
+                        union(hasA.to(next.getContext()).stream()
+                                .filter(x -> isGround(x, isA))
+                                .map(next::prepend).mapToInt(idMap::getId).toArray())
+                        .equalsTo(idMap.getId(next));
+                cur = next;
+            }
+        }
     }
 
     private static Relation<Concept> learnInheritedIsA(Relation<Concept> isA) {
@@ -52,32 +94,6 @@ public class Oracle {
             }
         }
         return newHasA;
-    }
-
-    private static Map<Path, Domain> learnAllGroundAssignments(Relation<Concept> isA, Map<Path, Domain> assignments) {
-        Map<Path, Domain> newAssignments = new HashMap<>();
-        for (Map.Entry<Path, Domain> assignment : assignments.entrySet()) {
-            Concept[] steps = assignment.getKey().getSteps();
-
-            for (Concept[] groundPath : groundPaths(steps, isA)) {
-                newAssignments.merge(new Path(groundPath), assignment.getValue(), Domain::intersection);
-            }
-        }
-        return newAssignments;
-    }
-
-    private static Relation<Path> learnAllGroundEqualities(Relation<Concept> isA, Relation<Path> equalities) {
-        Relation<Path> newEqualities = new Relation<>();
-        for (Pair<Path, Path> equality : equalities) {
-            for (Concept[] groundPath1 : groundPaths(equality.getFst().getSteps(), isA)) {
-                for (Concept[] groundPath2 : groundPaths(equality.getSnd().getSteps(), isA)) {
-                    if (groundPath1[0].equals(groundPath2[0])) {
-                        newEqualities.add(new Path(groundPath1), new Path(groundPath2));
-                    }
-                }
-            }
-        }
-        return newEqualities;
     }
 
     public boolean isA(Concept sub, Concept sup) {
@@ -99,117 +115,24 @@ public class Oracle {
      * @return the envelope of values the path must take, or null if unbounded
      */
     public Domain getAssignment(Path path) {
-        if (cache.containsKey(path)) {
-            return cache.get(path);
-        }
-        // Temporary cache to avoid infinite recursion.
-        cache.put(path, null);
-        List<Path> groundPaths = groundAndExpand(path);
-        Iterator<Path> iter = groundPaths.iterator();
-        assert iter.hasNext();
-        Domain domain = getGroundPathAssignment(iter.next());
-        while (domain != null && iter.hasNext()) {
-            Domain nextDomain = getGroundPathAssignment(iter.next());
-            domain = nextDomain == null ? null : domain.union(nextDomain);
-        }
-        cache.put(path, domain);
-        return domain;
-    }
-
-    private Domain getGroundPathAssignment(Path groundPath) {
-        Domain domain = null;
-        for (int i = 0; i < groundPath.length(); i++) {
-            // Try all suffixes.
-            Path suffix = groundPath.dropPrefix(i);
-            Domain groundDomain = getGroundSuffixPathAssignment(suffix);
-            if (groundDomain != null) {
-                domain = domain == null ? groundDomain : domain.intersection(groundDomain);
+        for (Concept[] steps : groundPaths(path.getSteps())) {
+            Path cur = new Path(steps);
+            while (cur.length() > 1) {
+                Path next = cur.dropPrefix(1);
+                theory.
+                        union(hasA.to(next.getContext()).stream()
+                                .filter(x -> isGround(x, isA))
+                                .map(next::prepend).mapToInt(idMap::getId).toArray())
+                        .equalsTo(idMap.getId(next));
+                cur = next;
             }
         }
-        return domain;
-    }
 
-    private Domain getGroundSuffixPathAssignment(Path groundPath) {
-        assert groundPaths(groundPath.getSteps()).size() == 1 : groundPath;
-
-        Domain assigmentDomain = getGroundSuffixPathDirectAssignment(groundPath);
-        Domain equalityDomain = getGroundSuffixPathEqualityAssignment(groundPath);
-        if (assigmentDomain == null) {
-            return equalityDomain;
-        }
-        return equalityDomain == null ? assigmentDomain : assigmentDomain.intersection(equalityDomain);
-    }
-
-    private Domain getGroundSuffixPathDirectAssignment(Path groundPath) {
-        assert groundPaths(groundPath.getSteps()).size() == 1;
-
-        return assignments.get(groundPath);
-    }
-
-    private Domain getGroundSuffixPathEqualityAssignment(Path groundPath) {
-        assert groundPaths(groundPath.getSteps()).size() == 1;
-
-        Domain domain = null;
-        for (Path equality : equalities.from(groundPath)) {
-            Domain assignment = getAssignment(equality);
-            if (assignment != null) {
-                domain = domain == null
-                        ? assignment
-                        : domain.intersection(assignment);
-            }
-        }
-        return domain;
-    }
-
-    private List<Path> groundAndExpand(Path path) {
-        List<Path> expandPaths = new ArrayList<>();
-        ArrayList<Path> queue = new ArrayList<>();
-        queue.add(path);
-        while (!queue.isEmpty()) {
-            for (Concept[] groundSteps : groundPaths(queue.remove(queue.size() - 1).getSteps())) {
-                Path groundPath = new Path(groundSteps);
-                Path expandPath = expandPath(groundPath);
-                if (groundPath == expandPath) {
-                    expandPaths.add(expandPath);
-                } else {
-                    queue.add(expandPath);
-                }
-            }
-        }
-        return expandPaths;
-    }
-
-    private Path expandPath(Path path) {
-        Concept[] steps = expandPath(path.getSteps());
-        if (steps == path.getSteps()) {
-            return path;
-        }
-        return new Path(steps);
-    }
-
-    private Concept[] expandPath(Concept[] steps) {
-        Concept uniqueParent = highest(hasA.to(steps[0]));
-        if (uniqueParent == null) {
-            return steps;
-        }
-        for (Concept step : steps) {
-            if (uniqueParent.equals(step)) {
-                return steps;
-            }
-        }
-        Concept[] newSteps = new Concept[steps.length + 1];
-        newSteps[0] = uniqueParent;
-        System.arraycopy(steps, 0, newSteps, 1, steps.length);
-        return newSteps;
-    }
-
-    private Concept highest(Collection<Concept> concepts) {
-        for (Concept concept : concepts) {
-            if (concepts.stream().allMatch(x -> isA(x, concept))) {
-                return concept;
-            }
-        }
-        return null;
+        theory
+                .union(groundPaths(path.getSteps()).stream().map(Path::new).mapToInt(idMap::getId).toArray())
+                .equalsTo(idMap.getId(path));
+        theory.propagate();
+        return theory.getEnv(idMap.getId(path));
     }
 
     private ArrayList<Concept[]> groundPaths(Concept[] steps) {

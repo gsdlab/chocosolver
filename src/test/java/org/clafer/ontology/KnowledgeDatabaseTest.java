@@ -251,7 +251,7 @@ public class KnowledgeDatabaseTest {
         assertEquals(Domains.constantDomain(1), oracle.getAssignment(alice));
         assertEquals(Domains.constantDomain(1), oracle.getAssignment(bob));
     }
-    
+
     @Test
     public void testAssignmentEqualityIntersection() {
         KnowledgeDatabase kd = new KnowledgeDatabase();
@@ -475,5 +475,39 @@ public class KnowledgeDatabaseTest {
         assertNull(oracle.getAssignment(new Path(animal, id)));
         assertEquals(Domains.enumDomain(1), oracle.getAssignment(new Path(owner, idCard)));
         assertEquals(Domains.enumDomain(1, 2), oracle.getAssignment(new Path(human, idCard)));
+    }
+
+    @Test
+    public void testEqualitySubIsASubIsA() {
+        KnowledgeDatabase db = new KnowledgeDatabase();
+        Concept animal = db.newConcept("Animal");
+        Concept human = db.newConcept("Human");
+        Concept raven = db.newConcept("Raven");
+        Concept habitat = db.newConcept("Habitat");
+        Concept house = db.newConcept("House");
+        Concept nest = db.newConcept("Nest");
+        Concept cost = db.newConcept("Cost");
+        Concept size = db.newConcept("Size");
+
+        db.newIsA(human, animal);
+        db.newIsA(raven, animal);
+        db.newIsA(house, habitat);
+        db.newIsA(nest, habitat);
+        db.newHasA(animal, house);
+        db.newHasA(house, cost);
+        db.newHasA(house, size);
+
+        db.newAssignment(new Path(human, house, size), 5);
+        db.newAssignment(new Path(human, nest, size), 0);
+        db.newAssignment(new Path(raven, house, size), 0);
+        db.newAssignment(new Path(raven, nest, size), 1);
+        db.newEquality(new Path(animal, habitat, cost), new Path(animal, habitat, size));
+
+        Oracle o = db.oracle();
+
+        assertEquals(Domains.enumDomain(0, 1, 5), o.getAssignment(animal, habitat, cost));
+        // A human's habitat is either 0 or 5. Cannot know that a human's habitat is not a nest.
+        assertEquals(Domains.enumDomain(0, 5), o.getAssignment(human, house, cost));
+        assertEquals(Domains.enumDomain(0, 1), o.getAssignment(raven, nest, cost));
     }
 }

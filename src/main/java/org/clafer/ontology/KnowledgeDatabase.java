@@ -1,8 +1,6 @@
 package org.clafer.ontology;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
@@ -14,7 +12,6 @@ import org.clafer.domain.Domains;
  */
 public class KnowledgeDatabase {
 
-    private final List<Concept> concepts = new ArrayList<>();
     private final Relation<Concept> isA = new Relation<>();
     private final Relation<Concept> hasA = new Relation<>();
     private final Map<Path, Domain> assignments = new HashMap<>();
@@ -22,7 +19,6 @@ public class KnowledgeDatabase {
 
     public Concept newConcept(String name) {
         Concept concept = new Concept(name);
-        concepts.add(concept);
         newIsA(concept, concept);
         return concept;
     }
