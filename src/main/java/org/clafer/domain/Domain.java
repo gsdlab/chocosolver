@@ -192,6 +192,8 @@ public interface Domain {
      */
     public Domain offset(int c);
 
+    public Domain add(Domain other);
+
     /**
      * Returns all the values contained in this domain.
      *

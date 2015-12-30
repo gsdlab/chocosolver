@@ -2,6 +2,7 @@ package org.clafer.domain;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import org.clafer.collection.ArrayIntIterator;
@@ -273,6 +274,34 @@ public class EnumDomain implements Domain {
             offset[i] = getValues()[i] + c;
         }
         return Domains.enumDomain(offset);
+    }
+
+    @Override
+    public Domain add(Domain other) {
+        if (size() == 1) {
+            return other.offset(getLowBound());
+        }
+        if (other.size() == 1) {
+            return offset(other.getLowBound());
+        }
+        TIntSet add = new TIntHashSet();
+        if (other.isBounded()) {
+            for (int value : values) {
+                int otherHighBound = other.getHighBound();
+                for (int i = other.getLowBound(); i <= otherHighBound; i++) {
+                    add.add(value + i);
+                }
+            }
+        } else {
+            TIntIterator iter = other.iterator();
+            while (iter.hasNext()) {
+                int next = iter.next();
+                for (int value : values) {
+                    add.add(next + value);
+                }
+            }
+        }
+        return Domains.enumDomain(add);
     }
 
     @Override

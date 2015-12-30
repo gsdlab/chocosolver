@@ -214,6 +214,20 @@ public enum BoolDomain implements Domain {
         return Domains.boundDomain(getLowBound() + c, getHighBound() + c);
     }
 
+    @Override
+    public Domain add(Domain other) {
+        switch (this) {
+            case TrueDomain:
+                return other.offset(1);
+            case FalseDomain:
+                return other;
+            case TrueFalseDomain:
+                return other.union(other.offset(1));
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
     /**
      * Reverse the domain. Maps {0}->{1}, {1}->{0}, and {0,1}->{0,1}.
      *

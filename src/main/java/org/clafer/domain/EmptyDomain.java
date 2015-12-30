@@ -103,6 +103,11 @@ public class EmptyDomain implements Domain {
     }
 
     @Override
+    public Domain add(Domain other) {
+        return this;
+    }
+
+    @Override
     public int[] getValues() {
         return new int[]{};
     }
