@@ -1,6 +1,5 @@
 package org.clafer.ast.analysis;
 
-import java.util.Arrays;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -217,6 +216,35 @@ public class PartialIntAnalyzerTest {
         assertNull(partialInts[1]);
         assertNull(partialInts[2]);
         assertNull(partialInts[3]);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     cost -> integer
+     * A : Feature ?
+     *     [ this.cost.ref = this.B.cost.ref ]
+     *     B : Feature ?
+     *         [ this.cost = 2 ]
+     * </pre>
+     */
+    @Test
+    public void testEquality() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstract("Feature");
+        AstConcreteClafer cost = feature.addChild("cost").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer a = model.addChild("A").extending(feature).withCard(Optional);
+        AstConcreteClafer b = a.addChild("B").extending(feature).withCard(Optional);
+        a.addConstraint(equal(
+                joinRef(join($this(), cost)),
+                joinRef(join(join($this(), b), cost))));
+        b.addConstraint(equal(joinRef(join($this(), cost)), constant(2)));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
+
+        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        assertArrayEquals(new Domain[]{constantDomain(2), constantDomain(2)}, partialInts);
     }
 
     /**

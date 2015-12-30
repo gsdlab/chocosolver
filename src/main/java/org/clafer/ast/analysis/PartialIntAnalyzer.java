@@ -1,7 +1,5 @@
 package org.clafer.ast.analysis;
 
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
@@ -26,12 +23,12 @@ import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstThis;
+import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
-import org.clafer.ast.AstUtil;
+import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
-import org.clafer.ir.IrBoolExpr;
 import org.clafer.ontology.Concept;
 import org.clafer.ontology.KnowledgeDatabase;
 import org.clafer.ontology.Oracle;
@@ -192,15 +189,23 @@ public class PartialIntAnalyzer {
     }
 
     private void analyzeConstraint(AstBoolExpr expr, AstClafer context) {
-        analyzeExpr(expr, context).forEach(x -> knowledgeDatabase.newAssignment(x.getFst(), x.getSnd()));
+        analyzeExpr(expr, context).forEach(x -> addEquality(x.getFst(), x.getSnd()));
     }
 
-    private List<Pair<Path, Domain>> analyzeExpr(AstBoolExpr expr, AstClafer context) {
+    private void addEquality(Path var, Either<Domain, Path> value) {
+        if (value.isLeft()) {
+            knowledgeDatabase.newAssignment(var, value.getLeft());
+        } else {
+            knowledgeDatabase.newEquality(var, value.getRight());
+        }
+    }
+
+    private List<Pair<Path, Either<Domain, Path>>> analyzeExpr(AstBoolExpr expr, AstClafer context) {
         if (expr instanceof AstSetTest) {
             AstSetTest compare = (AstSetTest) expr;
             switch (compare.getOp()) {
                 case Equal:
-                    List<Pair<Path, Domain>> paths = new ArrayList<>(2);
+                    List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>(2);
                     if (compare.getLeft() instanceof AstJoinRef) {
                         analyzeEqual((AstJoinRef) compare.getLeft(), compare.getRight(), context)
                                 .ifPresent(paths::add);
@@ -232,11 +237,21 @@ public class PartialIntAnalyzer {
         return Collections.emptyList();
     }
 
-    private Optional<Pair<Path, Domain>> analyzeEqual(AstJoinRef var, AstSetExpr value, AstClafer context) {
-        return asPath(var, context).flatMap(
-                varPath -> asDomain(value).map(
-                        valueDomain -> new Pair<>(varPath, valueDomain))
-        );
+    private Optional<Pair<Path, Either<Domain, Path>>> analyzeEqual(AstJoinRef var, AstSetExpr value, AstClafer context) {
+        Optional<Path> varPath = asPath(var.getDeref(), context);
+        if (varPath.isPresent()) {
+            Optional<Domain> valueDomain = asDomain(value);
+            if (valueDomain.isPresent()) {
+                return Optional.of(new Pair<>(varPath.get(), Either.left(valueDomain.get())));
+            }
+            if (value instanceof AstJoinRef) {
+                Optional<Path> valuePath = asPath((AstJoinRef) value, context);
+                if (valuePath.isPresent() && varPath.map(Path::getContext).equals(valuePath.map(Path::getContext))) {
+                    return Optional.of(new Pair<>(varPath.get(), Either.right(valuePath.get())));
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private Optional<Path> asPath(AstJoinRef ast, AstClafer context) {
@@ -282,7 +297,7 @@ public class PartialIntAnalyzer {
 
     private Optional<Path> asPath(AstGlobal ast, AstClafer context) {
         if (analysis.getGlobalCard(context).getLow() > 0) {
-            return Optional.of(new Path(asConcept(ast.getType())));
+            return Optional.of(new Path(asConcept(ast.getType().getParent()), asConcept(ast.getType())));
         }
         return Optional.empty();
     }
@@ -298,6 +313,9 @@ public class PartialIntAnalyzer {
         if (ast instanceof AstConstant) {
             return asDomain((AstConstant) ast);
         }
+        if (ast instanceof AstUnion) {
+            return asDomain((AstUnion) ast);
+        }
         return Optional.empty();
     }
 
@@ -308,6 +326,17 @@ public class PartialIntAnalyzer {
                 values[i] = ast.getValue()[i][0];
             }
             return Optional.of(Domains.enumDomain(values));
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Domain> asDomain(AstUnion ast) {
+        Optional<Domain> left = asDomain(ast.getLeft());
+        if (left.isPresent()) {
+            Optional<Domain> right = asDomain(ast.getRight());
+            if (right.isPresent()) {
+                return Optional.of(left.get().union(right.get()));
+            }
         }
         return Optional.empty();
     }
