@@ -14,6 +14,7 @@ import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstraint;
+import org.clafer.ast.AstException;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
@@ -398,6 +399,25 @@ public class Analysis {
             sup = sup.getSuperClafer();
         } while (sup != null);
         return null;
+    }
+
+    public int getOffset(AstClafer sup, AstClafer sub) {
+        if (sup instanceof AstConcreteClafer) {
+            assert sup.equals(sub);
+            return 0;
+        }
+        return getOffset((AstAbstractClafer) sup, sub);
+    }
+
+    public int getOffset(AstAbstractClafer sup, AstClafer sub) {
+        int offset = 0;
+        for (AstClafer cur = sub; !sup.equals(cur); cur = cur.getSuperClafer()) {
+            if (!cur.hasSuperClafer()) {
+                throw new AstException(sub + " is not a sub clafer of " + sup);
+            }
+            offset += getOffsets(cur.getSuperClafer()).getOffset(cur);
+        }
+        return offset;
     }
 
     public Offsets getOffsets(AstAbstractClafer clafer) {
