@@ -179,7 +179,7 @@ public class ArithmeticTest {
      * <pre>
      * A -> integer
      * B -> integer
-     * [ 12 * A.ref = B.ref]
+     * [ 12 / A.ref = B.ref ]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -227,7 +227,7 @@ public class ArithmeticTest {
      * <pre>
      * A -> integer
      * B -> integer
-     * [ A.ref = -B.ref]
+     * [ A.ref = -B.ref ]
      * </pre>
      */
     @Test(timeout = 60000)

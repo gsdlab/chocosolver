@@ -139,7 +139,7 @@ public class StringTest {
      * <pre>
      * abstract A -> string
      * B : A ?
-     *     [ this.ref = "b"
+     *     [ this.ref = "b" ]
      * C : A ?
      *     [ this.ref = "c" ]
      * </pre>

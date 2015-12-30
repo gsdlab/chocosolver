@@ -527,8 +527,8 @@ public class SetArithmeticTest {
      *     C -> A *
      * D : A
      * E : B
+     *     [this.c = F]
      *     F : A
-     *         [this.parent.C.ref = F]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -542,7 +542,6 @@ public class SetArithmeticTest {
         AstConcreteClafer e = model.addChild("E").extending(b).withCard(Mandatory);
         AstConcreteClafer f = e.addChild("F").extending(a).withCard(Mandatory);
         e.addConstraint(in(joinRef(join($this(), c)), global(f)));
-        f.addConstraint(equal(joinRef(join(joinParent($this()), c)), $this()));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);
