@@ -127,6 +127,8 @@ public class ReachedLimitTest {
         AstConcreteClafer c = model.addChild("C").refToUnique(IntType);
         AstConcreteClafer d = model.addChild("D").refTo(IntType);
         AstConcreteClafer e = model.addChild("E").refToUnique(IntType);
+        AstConcreteClafer f = model.addChild("F").refToUnique(IntType);
+        AstConcreteClafer g = model.addChild("G").refToUnique(IntType);
         model.addConstraint(equal(add(joinRef(a), joinRef(b), minus(joinRef(c)), joinRef(d), minus(joinRef(e))), card(global(a))));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(10),
