@@ -1,10 +1,12 @@
 package org.clafer.math;
 
+import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.function.IntFunction;
 import org.clafer.domain.Domain;
 
 /**
@@ -14,18 +16,18 @@ import org.clafer.domain.Domain;
 public class SetTheory {
 
     private final TIntObjectMap<Domain> envs = new TIntObjectHashMap<>();
-    private final Set<Union> unions = new LinkedHashSet<>();
-    private final Set<Subset> subsets = new LinkedHashSet<>();
+    private final Set<Union> unions = new HashSet<>();
+    private final Set<Subset> subsets = new HashSet<>();
 
     public Equalable union(int... operands) {
-        if (operands.length == 0) {
-            return x -> {
-            };
+        switch (operands.length) {
+            case 0:
+                throw new IllegalArgumentException();
+            case 1:
+                return x -> equal(x, operands[0]);
+            default:
+                return x -> unions.add(new Union(operands, x));
         }
-        if (operands.length == 1) {
-            return x -> equal(x, operands[0]);
-        }
-        return x -> unions.add(new Union(operands, x));
     }
 
     public void equal(int v1, int v2) {
@@ -147,5 +149,30 @@ public class SetTheory {
         public int hashCode() {
             return sub ^ sup;
         }
+    }
+
+    public String toString(IntFunction<Object> mapper) {
+        StringBuilder result = new StringBuilder();
+        result.append("===ENV===\n");
+        for (TIntObjectIterator iter = envs.iterator(); iter.hasNext();) {
+            iter.advance();
+            result.append("  ").append(mapper.apply(iter.key())).append(" subset of ").append(iter.value()).append('\n');
+        }
+        result.append("===UNION===\n");
+        for (Union union : unions) {
+            result.append("  ").append(mapper.apply(union.output)).append(" = union(");
+            for (int i = 0; i < union.operands.length; i++) {
+                if (i > 0) {
+                    result.append(", ");
+                }
+                result.append(mapper.apply(union.operands[i]));
+            }
+            result.append(")\n");
+        }
+        result.append("===SUBSET===\n");
+        for (Subset subset : subsets) {
+            result.append("  ").append(mapper.apply(subset.sub)).append(" subset of ").append(mapper.apply(subset.sup)).append('\n');
+        }
+        return result.toString();
     }
 }
