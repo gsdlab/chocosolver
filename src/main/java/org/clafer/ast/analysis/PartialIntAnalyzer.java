@@ -17,11 +17,13 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstGlobal;
+import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
+import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
@@ -142,12 +144,6 @@ public class PartialIntAnalyzer {
                         Arrays.fill(paths, new Path[]{new Path(asConcept(clafer))});
                     }
                 }
-                for (Path[] p : paths) {
-                    assert p != null;
-                    for (Path q : p) {
-                        assert q != null;
-                    }
-                }
                 pathsToClafers.put(clafer, paths);
             }
         }
@@ -220,6 +216,12 @@ public class PartialIntAnalyzer {
             if (expr instanceof AstBoolArithm) {
                 AstBoolArithm boolArithm = (AstBoolArithm) expr;
                 switch (boolArithm.getOp()) {
+                    case And:
+                        List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>();
+                        for (AstBoolExpr operand : boolArithm.getOperands()) {
+                            paths.addAll(analyzeExpr(operand, context));
+                        }
+                        return paths;
                     case Or:
 //                        AstBoolExpr[] operands = boolArithm.getOperands();
 //                        List<Pair<Path, Domain>> paths = analyzeExpr(operands[0], context);
@@ -316,6 +318,12 @@ public class PartialIntAnalyzer {
         if (ast instanceof AstUnion) {
             return asDomain((AstUnion) ast);
         }
+        if (ast instanceof AstTernary) {
+            return asDomain((AstTernary) ast);
+        }
+        if (ast instanceof AstUpcast) {
+            return asDomain((AstUpcast) ast);
+        }
         return Optional.empty();
     }
 
@@ -337,6 +345,28 @@ public class PartialIntAnalyzer {
             if (right.isPresent()) {
                 return Optional.of(left.get().union(right.get()));
             }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Domain> asDomain(AstTernary ast) {
+        Optional<Domain> consequent = asDomain(ast.getConsequent());
+        if (consequent.isPresent()) {
+            Optional<Domain> alternative = asDomain(ast.getAlternative());
+            if (alternative.isPresent()) {
+                return Optional.of(consequent.get().union(alternative.get()));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Domain> asDomain(AstUpcast ast) {
+        Optional<Domain> base = asDomain(ast.getBase());
+        if (base.isPresent()) {
+            int offset = analysis.getOffset(
+                    ast.getTarget().getClaferType(),
+                    analysis.getType(ast.getBase()).getClaferType());
+            return Optional.of(base.get().offset(offset));
         }
         return Optional.empty();
     }
