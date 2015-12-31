@@ -35,7 +35,7 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
     }
 
     public Relation(Relation copy) {
-        this(copy.forwards, copy.backwards);
+        this(new HashMap<>(copy.forwards), new HashMap<>(copy.backwards));
     }
 
     Relation(Map<T, Set<T>> forwards, Map<T, Set<T>> backwards) {
@@ -97,6 +97,22 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
     public Set<T> to(T b) {
         Set<T> as = backwards.get(b);
         return as == null ? Collections.emptySet() : as;
+    }
+
+    public Relation<T> compose(Relation<T> with) {
+        Relation<T> composition = new Relation<>();
+        for (Entry<T, Set<T>> entry : entrySet()) {
+            T sub = entry.getKey();
+            Set<T> sups = entry.getValue();
+            for (T sup : sups) {
+                composition.addAll(sub, with.from(sup));
+            }
+        }
+        return composition;
+    }
+
+    public Relation<T> inverse() {
+        return new Relation<>(new HashMap<>(backwards), new HashMap<>(forwards));
     }
 
     public void closeTransitively() {

@@ -19,6 +19,7 @@ public class Oracle {
 
     private final Relation<Concept> isA;
     private final Relation<Concept> hasA;
+    private final Relation<Concept> aHas;
 
     private final IdMap<Path> idMap = new IdMap<>();
     private final SetTheory theory = new SetTheory();
@@ -29,8 +30,9 @@ public class Oracle {
             Relation<Concept> hasA,
             Map<Path, Domain> assignments,
             Relation<Path> equalities) {
-        this.isA = learnInheritedIsA(isA);
-        this.hasA = learnInheritedHasA(this.isA, hasA);
+        this.isA = isA.transitiveClosureWithoutCycles();
+        this.hasA = this.isA.compose(hasA);
+        this.aHas = this.isA.compose(this.hasA.inverse());
 
         for (Entry<Path, Domain> assignment : assignments.entrySet()) {
             Concept[] steps = assignment.getKey().getSteps();
@@ -68,31 +70,13 @@ public class Oracle {
         }
     }
 
-    private static Relation<Concept> learnInheritedIsA(Relation<Concept> isA) {
-        return isA.transitiveClosureWithoutCycles();
-    }
-
-    private static Relation<Concept> learnInheritedHasA(
-            Relation<Concept> isA,
-            Relation<Concept> hasA) {
-        Relation<Concept> newHasA = new Relation<>(hasA);
-        for (Entry<Concept, Set<Concept>> entry : isA.entrySet()) {
-            Concept concept = entry.getKey();
-            Set<Concept> sups = entry.getValue();
-            for (Concept sup : sups) {
-                newHasA.addAll(concept, newHasA.from(sup));
-            }
-        }
-        return newHasA;
-    }
-
     private void addPathConstraints(Path path) {
         for (Concept[] steps : groundPaths(path.getSteps())) {
             Path cur = new Path(steps);
             while (cur.length() > 1) {
                 Path next = cur.dropPrefix(1);
                 theory.
-                        union(hasA.to(next.getContext()).stream()
+                        union(aHas.from(next.getContext()).stream()
                                 .filter(x -> isGround(x, isA))
                                 .map(next::prepend).mapToInt(idMap::getId).toArray())
                         .equalsTo(idMap.getId(next));

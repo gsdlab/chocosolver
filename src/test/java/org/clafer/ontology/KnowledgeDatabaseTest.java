@@ -493,7 +493,7 @@ public class KnowledgeDatabaseTest {
         db.newIsA(raven, animal);
         db.newIsA(house, habitat);
         db.newIsA(nest, habitat);
-        db.newHasA(animal, house);
+        db.newHasA(animal, habitat);
         db.newHasA(house, cost);
         db.newHasA(house, size);
 
@@ -509,5 +509,37 @@ public class KnowledgeDatabaseTest {
         // A human's habitat is either 0 or 5. Cannot know that a human's habitat is not a nest.
         assertEquals(Domains.enumDomain(0, 5), o.getAssignment(human, house, cost));
         assertEquals(Domains.enumDomain(0, 1), o.getAssignment(raven, nest, cost));
+    }
+
+    @Test
+    public void testEqualityOverPartition() {
+        KnowledgeDatabase db = new KnowledgeDatabase();
+        Concept animal = db.newConcept("Animal");
+        Concept human = db.newConcept("Human");
+        Concept raven = db.newConcept("Raven");
+        Concept habitat = db.newConcept("Habitat");
+        Concept house = db.newConcept("House");
+        Concept nest = db.newConcept("Nest");
+        Concept cost = db.newConcept("Cost");
+
+        db.newIsA(human, animal);
+        db.newIsA(raven, animal);
+        db.newIsA(house, habitat);
+        db.newIsA(nest, habitat);
+        db.newHasA(animal, habitat);
+        db.newHasA(habitat, cost);
+
+        db.newAssignment(new Path(human, house, cost), 5);
+        db.newAssignment(new Path(human, nest, cost), 0);
+        db.newAssignment(new Path(raven, house, cost), 2);
+        db.newAssignment(new Path(raven, nest, cost), 1);
+
+        Oracle o = db.oracle();
+
+        assertEquals(Domains.enumDomain(0, 1, 2, 5), o.getAssignment(cost));
+        assertEquals(Domains.enumDomain(2, 5), o.getAssignment(house, cost));
+        assertEquals(Domains.enumDomain(0, 1), o.getAssignment(nest, cost));
+        assertEquals(Domains.enumDomain(0, 5), o.getAssignment(human, habitat, cost));
+        assertEquals(Domains.enumDomain(1, 2), o.getAssignment(raven, habitat, cost));
     }
 }
