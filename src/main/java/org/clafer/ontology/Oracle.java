@@ -21,58 +21,72 @@ public class Oracle {
     private final Relation<Concept> hasA;
     private final Relation<Concept> aHas;
 
-    private final IdMap<Path> idMap = new IdMap<>();
-    private final SetTheory theory = new SetTheory();
+    final IdMap<Path> idMap = new IdMap<>();
+    final SetTheory theory = new SetTheory();
     private int tempId = -1;
 
     public Oracle(
             Relation<Concept> isA,
             Relation<Concept> hasA,
             Map<Path, Domain> assignments,
-            Relation<Path> equalities) {
+            Relation<Path> equalities,
+            Relation<Path> localEqualities) {
         this.isA = isA.transitiveClosureWithoutCycles();
         this.hasA = this.isA.compose(hasA);
         this.aHas = this.isA.compose(this.hasA.inverse());
 
         for (Entry<Path, Domain> assignment : assignments.entrySet()) {
-            Concept[] steps = assignment.getKey().getSteps();
-            for (Concept[] groundPath : groundPaths(steps, isA)) {
-                theory.subset(idMap.getId(new Path(groundPath)), assignment.getValue());
+            Path path = assignment.getKey();
+            Domain value = assignment.getValue();
+            for (Path groundPath : groundPaths(path)) {
+                theory.subset(idMap.getId(groundPath), value);
             }
         }
 
         for (Entry<Path, Set<Path>> equality1 : equalities.entrySet()) {
+            Path path1 = equality1.getKey();
+            List<Path> groundPaths1 = groundPaths(path1);
+            for (Path path2 : equality1.getValue()) {
+                int[] groundPaths1Id = idMap.getIds(groundPaths1);
+                int[] groundPaths2Id = idMap.getIds(groundPaths(path2));
+                unionEqual(groundPaths1Id, groundPaths2Id);
+            }
+        }
+
+        for (Entry<Path, Set<Path>> equality1 : localEqualities.entrySet()) {
+            Path path1 = equality1.getKey();
+            List<Path> groundPaths1 = groundPaths(path1);
             Map<Concept, List<Path>> groundPathsMap1
-                    = groundPaths(equality1.getKey().getSteps(), isA).stream().map(Path::new)
-                    .collect(Collectors.groupingBy(Path::getContext));
-            for (Path equality2 : equality1.getValue()) {
+                    = groundPaths1.stream().collect(Collectors.groupingBy(Path::getContext));
+            for (Path path2 : equality1.getValue()) {
                 Map<Concept, List<Path>> groundPathsMap2
-                        = groundPaths(equality2.getSteps(), isA).stream().map(Path::new)
-                        .collect(Collectors.groupingBy(Path::getContext));
+                        = groundPaths(path2).stream().collect(Collectors.groupingBy(Path::getContext));
                 for (Concept concept : groundPathsMap1.keySet()) {
-                    int[] groundPaths1 = groundPathsMap1.get(concept).stream().mapToInt(idMap::getId).toArray();
-                    int[] groundPaths2 = groundPathsMap2.get(concept).stream().mapToInt(idMap::getId).toArray();
-                    if (groundPaths1.length == 1) {
-                        theory.union(groundPaths2).equalsTo(groundPaths1[0]);
-                    }
-                    if (groundPaths2.length == 1) {
-                        theory.union(groundPaths1).equalsTo(groundPaths2[0]);
-                    }
-                    theory.union(groundPaths1).equalsTo(tempId);
-                    theory.union(groundPaths2).equalsTo(tempId);
-                    tempId--;
+                    int[] groundPaths1Id = idMap.getIds(groundPathsMap1.get(concept));
+                    int[] groundPaths2Id = idMap.getIds(groundPathsMap2.get(concept));
+                    unionEqual(groundPaths1Id, groundPaths2Id);
                 }
             }
         }
 
-        for (Path path : new ArrayList<>(idMap.keySet())) {
-            addPathConstraints(path);
+        new ArrayList<>(idMap.keySet()).forEach(this::addPathConstraints);
+    }
+
+    private void unionEqual(int[] union1, int[] union2) {
+        if (union1.length == 1) {
+            theory.union(union2).equalsTo(union1[0]);
+        } else if (union2.length == 1) {
+            theory.union(union1).equalsTo(union2[0]);
+        } else {
+            theory.union(union1).equalsTo(tempId);
+            theory.union(union2).equalsTo(tempId);
+            tempId--;
         }
     }
 
     private void addPathConstraints(Path path) {
-        for (Concept[] steps : groundPaths(path.getSteps())) {
-            Path cur = new Path(steps);
+        for (Path groundPath : groundPaths(path)) {
+            Path cur = groundPath;
             while (cur.length() > 1) {
                 Path next = cur.dropPrefix(1);
                 theory.
@@ -106,32 +120,28 @@ public class Oracle {
     public Domain getAssignment(Path path) {
         addPathConstraints(path);
         theory
-                .union(groundPaths(path.getSteps()).stream().map(Path::new).mapToInt(idMap::getId).toArray())
+                .union(idMap.getIds(groundPaths(path)))
                 .equalsTo(idMap.getId(path));
         theory.propagate();
         return theory.getEnv(idMap.getId(path));
     }
 
-    private ArrayList<Concept[]> groundPaths(Concept[] steps) {
-        return groundPaths(steps, isA);
-    }
-
-    private static ArrayList<Concept[]> groundPaths(Concept[] steps, Relation<Concept> isA) {
-        ArrayList<Concept[]> out = new ArrayList<>();
-        groundPaths(steps, 0, isA, out);
+    private ArrayList<Path> groundPaths(Path path) {
+        ArrayList<Path> out = new ArrayList<>();
+        groundPaths(path.getSteps(), 0, out);
         return out;
     }
 
-    private static void groundPaths(Concept[] steps, int index, Relation<Concept> isA, List<Concept[]> out) {
+    private void groundPaths(Concept[] steps, int index, List<Path> out) {
         if (index == steps.length) {
-            out.add(steps);
+            out.add(new Path(steps));
         } else {
             Collection<Concept> subs = isA.to(steps[index]);
             for (Concept sub : subs) {
                 if (isGround(sub, isA)) {
                     Concept[] alter = steps.clone();
                     alter[index] = sub;
-                    groundPaths(alter, index + 1, isA, out);
+                    groundPaths(alter, index + 1, out);
                 }
             }
         }

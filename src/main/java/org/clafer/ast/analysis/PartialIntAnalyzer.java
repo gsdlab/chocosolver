@@ -14,6 +14,7 @@ import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstGlobal;
@@ -27,6 +28,7 @@ import org.clafer.ast.AstTernary;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
+import org.clafer.ast.AstUtil;
 import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
 import org.clafer.domain.Domain;
@@ -44,6 +46,7 @@ public class PartialIntAnalyzer {
 
     private final Analysis analysis;
     private final Map<AstClafer, Concept> conceptMap = new HashMap<>();
+    private final Map<Concept, AstClafer> claferMap = new HashMap<>();
     private final KnowledgeDatabase knowledgeDatabase = new KnowledgeDatabase();
 
     private PartialIntAnalyzer(Analysis analysis) {
@@ -51,7 +54,17 @@ public class PartialIntAnalyzer {
     }
 
     private Concept asConcept(AstClafer clafer) {
-        return conceptMap.computeIfAbsent(clafer, x -> knowledgeDatabase.newConcept(x.getName()));
+        Concept concept = conceptMap.get(clafer);
+        if (concept == null) {
+            concept = knowledgeDatabase.newConcept(clafer.getName());
+            conceptMap.put(clafer, concept);
+            claferMap.put(concept, clafer);
+        }
+        return concept;
+    }
+
+    private AstClafer asClafer(Concept concept) {
+        return claferMap.get(concept);
     }
 
     public static Analysis analyze(Analysis analysis) {
@@ -185,14 +198,32 @@ public class PartialIntAnalyzer {
     }
 
     private void analyzeConstraint(AstBoolExpr expr, AstClafer context) {
-        analyzeExpr(expr, context).forEach(x -> addEquality(x.getFst(), x.getSnd()));
+        analyzeExpr(expr, context).forEach(x -> addEquality(context, x.getFst(), x.getSnd()));
     }
 
-    private void addEquality(Path var, Either<Domain, Path> value) {
+    private void addEquality(AstClafer context, Path var, Either<Domain, Path> value) {
         if (value.isLeft()) {
-            knowledgeDatabase.newAssignment(var, value.getLeft());
+            if (var instanceof LocalPath || analysis.getGlobalCard(context).getLow() > 0) {
+                knowledgeDatabase.newAssignment(var, value.getLeft());
+            }
         } else {
-            knowledgeDatabase.newEquality(var, value.getRight());
+            if (var instanceof LocalPath && value.getRight() instanceof LocalPath) {
+                knowledgeDatabase.newLocalEquality(var, value.getRight());
+            } else if (var instanceof LocalPath || value.getRight() instanceof LocalPath) {
+                Path localPath = var instanceof LocalPath ? var : value.getRight();
+                Path globalPath = var instanceof LocalPath ? value.getRight() : var;
+                for (AstConcreteClafer sub : AstUtil.getConcreteSubs(asClafer(localPath.getContext()))) {
+                    if (analysis.getGlobalCard(sub).getLow() > 0) {
+                        knowledgeDatabase.newLocalEquality(
+                                localPath.replaceContext(asConcept(sub)),
+                                globalPath);
+                    }
+                }
+            } else {
+                if (analysis.getGlobalCard(context).getLow() > 0) {
+                    knowledgeDatabase.newLocalEquality(var, value.getRight());
+                }
+            }
         }
     }
 
@@ -248,7 +279,7 @@ public class PartialIntAnalyzer {
             }
             if (value instanceof AstJoinRef) {
                 Optional<Path> valuePath = asPath((AstJoinRef) value, context);
-                if (valuePath.isPresent() && varPath.map(Path::getContext).equals(valuePath.map(Path::getContext))) {
+                if (valuePath.isPresent()) {
                     return Optional.of(new Pair<>(varPath.get(), Either.right(valuePath.get())));
                 }
             }
@@ -294,18 +325,15 @@ public class PartialIntAnalyzer {
     }
 
     private Optional<Path> asPath(AstThis ast, AstClafer context) {
-        return Optional.of(new Path(asConcept(context)));
+        return Optional.of(new LocalPath(asConcept(context)));
     }
 
     private Optional<Path> asPath(AstGlobal ast, AstClafer context) {
-        if (analysis.getGlobalCard(context).getLow() > 0) {
-            return Optional.of(new Path(asConcept(ast.getType().getParent()), asConcept(ast.getType())));
-        }
-        return Optional.empty();
+        return Optional.of(new Path(asConcept(ast.getType().getParent()), asConcept(ast.getType())));
     }
 
     private Optional<Path> asPath(AstConstant ast, AstClafer context) {
-        if (ast.getType().isClaferType() && analysis.getGlobalCard(context).getLow() > 0) {
+        if (ast.getType().isClaferType()) {
             return Optional.of(new Path(asConcept(ast.getType().getClaferType())));
         }
         return Optional.empty();
@@ -369,5 +397,17 @@ public class PartialIntAnalyzer {
             return Optional.of(base.get().offset(offset));
         }
         return Optional.empty();
+    }
+
+    private class LocalPath extends Path {
+
+        public LocalPath(Concept... steps) {
+            super(steps);
+        }
+
+        @Override
+        protected Path newPath(Concept... steps) {
+            return new LocalPath(steps);
+        }
     }
 }

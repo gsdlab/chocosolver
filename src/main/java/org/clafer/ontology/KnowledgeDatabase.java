@@ -16,6 +16,7 @@ public class KnowledgeDatabase {
     private final Relation<Concept> hasA = new Relation<>();
     private final Map<Path, Domain> assignments = new HashMap<>();
     private final Relation<Path> equalities = new Relation<>();
+    private final Relation<Path> localEqualities = new Relation<>();
 
     public Concept newConcept(String name) {
         Concept concept = new Concept(name);
@@ -44,7 +45,12 @@ public class KnowledgeDatabase {
         equalities.add(path2, path1);
     }
 
+    public void newLocalEquality(Path path1, Path path2) {
+        localEqualities.add(path1, path2);
+        localEqualities.add(path2, path1);
+    }
+
     public Oracle oracle() {
-        return new Oracle(isA, hasA, assignments, equalities);
+        return new Oracle(isA, hasA, assignments, equalities, localEqualities);
     }
 }

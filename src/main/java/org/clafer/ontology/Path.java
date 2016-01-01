@@ -1,7 +1,6 @@
 package org.clafer.ontology;
 
 import java.util.Arrays;
-import org.clafer.common.Check;
 
 /**
  *
@@ -12,7 +11,7 @@ public class Path {
     private final Concept[] steps;
 
     public Path(Concept... steps) {
-        this.steps = Check.noNullsNotEmpty(steps);
+        this.steps = steps;
     }
 
     public Concept getContext() {
@@ -27,24 +26,34 @@ public class Path {
         return steps.length;
     }
 
+    protected Path newPath(Concept... steps) {
+        return new Path(steps);
+    }
+
     public Path prepend(Concept step) {
         Concept[] newSteps = new Concept[steps.length + 1];
         newSteps[0] = step;
         System.arraycopy(steps, 0, newSteps, 1, steps.length);
-        return new Path(newSteps);
+        return newPath(newSteps);
     }
 
     public Path append(Concept step) {
         Concept[] newSteps = Arrays.copyOf(steps, steps.length + 1);
         newSteps[steps.length] = step;
-        return new Path(newSteps);
+        return newPath(newSteps);
+    }
+
+    public Path replaceContext(Concept newContext) {
+        Concept[] newSteps = Arrays.copyOf(steps, steps.length);
+        newSteps[0] = newContext;
+        return newPath(steps);
     }
 
     public Path dropPrefix(int index) {
         if (index == 0) {
             return this;
         }
-        return new Path(Arrays.copyOfRange(steps, index, steps.length));
+        return newPath(Arrays.copyOfRange(steps, index, steps.length));
     }
 
     @Override

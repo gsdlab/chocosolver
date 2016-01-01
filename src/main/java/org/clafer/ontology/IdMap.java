@@ -4,6 +4,7 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -22,6 +23,15 @@ public class IdMap<T> {
             keyMap.put(id, key);
         }
         return id;
+    }
+
+    public int[] getIds(Collection<T> keys) {
+        int[] ids = new int[keys.size()];
+        int i = 0;
+        for (T key : keys) {
+            ids[i++] = getId(key);
+        }
+        return ids;
     }
 
     public T getKey(int id) {

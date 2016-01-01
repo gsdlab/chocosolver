@@ -244,7 +244,7 @@ public class KnowledgeDatabaseTest {
         kd.newHasA(party, bob);
 
         kd.newAssignment(new Path(alice), 1);
-        kd.newEquality(new Path(party, alice), new Path(party, bob));
+        kd.newLocalEquality(new Path(party, alice), new Path(party, bob));
 
         Oracle oracle = kd.oracle();
 
@@ -264,7 +264,7 @@ public class KnowledgeDatabaseTest {
 
         kd.newAssignment(new Path(alice), Domains.boundDomain(1, 2));
         kd.newAssignment(new Path(bob), Domains.boundDomain(2, 3));
-        kd.newEquality(new Path(party, alice), new Path(party, bob));
+        kd.newLocalEquality(new Path(party, alice), new Path(party, bob));
 
         Oracle oracle = kd.oracle();
 
@@ -293,7 +293,7 @@ public class KnowledgeDatabaseTest {
 
         kd.newAssignment(new Path(breaks, cost), 2);
         kd.newAssignment(new Path(horn, cost), 1);
-        kd.newEquality(new Path(car, breaks, cost), new Path(car, wheel, cost));
+        kd.newLocalEquality(new Path(car, breaks, cost), new Path(car, wheel, cost));
 
         Oracle oracle = kd.oracle();
 
@@ -313,7 +313,7 @@ public class KnowledgeDatabaseTest {
         kd.newHasA(party, alice);
         kd.newHasA(party, bob);
 
-        kd.newEquality(new Path(party, alice), new Path(party, bob));
+        kd.newLocalEquality(new Path(party, alice), new Path(party, bob));
 
         Oracle oracle = kd.oracle();
 
@@ -424,7 +424,7 @@ public class KnowledgeDatabaseTest {
         kd.newAssignment(new Path(bird, id), Domains.constantDomain(3));
         kd.newAssignment(new Path(owner, id), Domains.constantDomain(1));
 
-        kd.newEquality(new Path(human, id), new Path(human, idCard));
+        kd.newLocalEquality(new Path(human, id), new Path(human, idCard));
 
         Oracle oracle = kd.oracle();
 
@@ -501,7 +501,7 @@ public class KnowledgeDatabaseTest {
         db.newAssignment(new Path(human, nest, size), 0);
         db.newAssignment(new Path(raven, house, size), 0);
         db.newAssignment(new Path(raven, nest, size), 1);
-        db.newEquality(new Path(animal, habitat, cost), new Path(animal, habitat, size));
+        db.newLocalEquality(new Path(animal, habitat, cost), new Path(animal, habitat, size));
 
         Oracle o = db.oracle();
 
@@ -541,5 +541,39 @@ public class KnowledgeDatabaseTest {
         assertEquals(Domains.enumDomain(0, 1), o.getAssignment(nest, cost));
         assertEquals(Domains.enumDomain(0, 5), o.getAssignment(human, habitat, cost));
         assertEquals(Domains.enumDomain(1, 2), o.getAssignment(raven, habitat, cost));
+    }
+
+    @Test
+    public void testLocalAndGlobalEquality() {
+        KnowledgeDatabase db = new KnowledgeDatabase();
+        Concept animal = db.newConcept("Animal");
+        Concept mammal = db.newConcept("Mammal");
+        Concept bird = db.newConcept("Bird");
+        Concept age = db.newConcept("Age");
+        Concept weight = db.newConcept("Weight");
+        Concept localWeight = db.newConcept("LocalWeight");
+        Concept globalAge = db.newConcept("GlobalAge");
+
+        db.newIsA(mammal, animal);
+        db.newIsA(bird, animal);
+        db.newHasA(animal, age);
+        db.newHasA(animal, weight);
+        db.newHasA(animal, localWeight);
+        db.newHasA(animal, globalAge);
+
+        db.newAssignment(new Path(mammal, weight), 5);
+        db.newAssignment(new Path(mammal, age), 0);
+        db.newAssignment(new Path(bird, weight), 2);
+        db.newAssignment(new Path(bird, age), 1);
+
+        db.newLocalEquality(new Path(animal, weight), new Path(animal, localWeight));
+        db.newEquality(new Path(animal, age), new Path(animal, globalAge));
+
+        Oracle o = db.oracle();
+
+        assertEquals(Domains.enumDomain(5), o.getAssignment(mammal, localWeight));
+        assertEquals(Domains.enumDomain(2), o.getAssignment(bird, localWeight));
+        assertEquals(Domains.enumDomain(0, 1), o.getAssignment(mammal, globalAge));
+        assertEquals(Domains.enumDomain(0, 1), o.getAssignment(bird, globalAge));
     }
 }
