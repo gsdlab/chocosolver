@@ -21,8 +21,8 @@ public class Oracle {
     private final Relation<Concept> hasA;
     private final Relation<Concept> aHas;
 
-    final IdMap<Path> idMap = new IdMap<>();
-    final SetTheory theory = new SetTheory();
+    private final IdMap<Path> idMap = new IdMap<>();
+    private final SetTheory theory = new SetTheory();
     private int tempId = -1;
 
     public Oracle(
@@ -124,6 +124,14 @@ public class Oracle {
                 .equalsTo(idMap.getId(path));
         theory.propagate();
         return theory.getEnv(idMap.getId(path));
+    }
+
+    public void newAssignment(Path path, Domain value) {
+        theory.subset(idMap.getId(path), value);
+    }
+
+    public boolean propagate() {
+        return theory.propagate();
     }
 
     private ArrayList<Path> groundPaths(Path path) {

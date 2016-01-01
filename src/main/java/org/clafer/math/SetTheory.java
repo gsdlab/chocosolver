@@ -50,7 +50,8 @@ public class SetTheory {
         return envs.get(v);
     }
 
-    public void propagate() {
+    public boolean propagate() {
+        boolean propagated = false;
         boolean changed;
         do {
             changed = false;
@@ -78,7 +79,9 @@ public class SetTheory {
                     changed |= retainEnv(subset.sub, supEnv);
                 }
             }
+            propagated |= changed;
         } while (changed);
+        return propagated;
     }
 
     private boolean retainEnv(int var, Domain retain) {

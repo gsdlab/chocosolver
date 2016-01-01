@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
+import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstChildRelation;
@@ -31,6 +32,7 @@ import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
 import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
+import org.clafer.common.Util;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
 import org.clafer.ontology.Concept;
@@ -77,11 +79,22 @@ public class PartialIntAnalyzer {
             AstBoolExpr expr = constraintExpr.getValue();
 
             if (constraint.isHard()) {
-                analyzer.analyzeConstraint(expr, constraint.getContext());
+                analyzer.analyzeConstraint(expr, constraint.getContext(), null);
             }
         }
 
         Oracle oracle = analyzer.knowledgeDatabase.oracle();
+        do {
+            for (Entry<AstConstraint, AstBoolExpr> constraintExpr : analysis.getConstraintExprs().entrySet()) {
+                AstConstraint constraint = constraintExpr.getKey();
+                AstBoolExpr expr = constraintExpr.getValue();
+
+                if (constraint.isHard()) {
+                    analyzer.analyzeConstraint(expr, constraint.getContext(), oracle);
+                }
+            }
+        } while (oracle.propagate());
+
         Map<AstRef, Domain[]> partialInts = analyzer.partialInts(oracle);
         return analysis.setPartialIntsMap(partialInts);
     }
@@ -197,14 +210,18 @@ public class PartialIntAnalyzer {
                 -> knowledgeDatabase.newHasA(asConcept(clafer), asConcept(child)));
     }
 
-    private void analyzeConstraint(AstBoolExpr expr, AstClafer context) {
-        analyzeExpr(expr, context).forEach(x -> addEquality(context, x.getFst(), x.getSnd()));
+    private void analyzeConstraint(AstBoolExpr expr, AstClafer context, Oracle oracle) {
+        analyzeExpr(expr, context, oracle).forEach(x -> addEquality(x.getFst(), x.getSnd(), context, oracle));
     }
 
-    private void addEquality(AstClafer context, Path var, Either<Domain, Path> value) {
+    private void addEquality(Path var, Either<Domain, Path> value, AstClafer context, Oracle oracle) {
         if (value.isLeft()) {
             if (var instanceof LocalPath || analysis.getGlobalCard(context).getLow() > 0) {
-                knowledgeDatabase.newAssignment(var, value.getLeft());
+                if (oracle == null) {
+                    knowledgeDatabase.newAssignment(var, value.getLeft());
+                } else {
+                    oracle.newAssignment(var, value.getLeft());
+                }
             }
         } else {
             if (var instanceof LocalPath && value.getRight() instanceof LocalPath) {
@@ -227,18 +244,19 @@ public class PartialIntAnalyzer {
         }
     }
 
-    private List<Pair<Path, Either<Domain, Path>>> analyzeExpr(AstBoolExpr expr, AstClafer context) {
+    private List<Pair<Path, Either<Domain, Path>>> analyzeExpr(
+            AstBoolExpr expr, AstClafer context, Oracle oracle) {
         if (expr instanceof AstSetTest) {
             AstSetTest compare = (AstSetTest) expr;
             switch (compare.getOp()) {
                 case Equal:
                     List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>(2);
                     if (compare.getLeft() instanceof AstJoinRef) {
-                        analyzeEqual((AstJoinRef) compare.getLeft(), compare.getRight(), context)
+                        analyzeEqual((AstJoinRef) compare.getLeft(), compare.getRight(), context, oracle)
                                 .ifPresent(paths::add);
                     }
                     if (compare.getRight() instanceof AstJoinRef) {
-                        analyzeEqual((AstJoinRef) compare.getRight(), compare.getLeft(), context)
+                        analyzeEqual((AstJoinRef) compare.getRight(), compare.getLeft(), context, oracle)
                                 .ifPresent(paths::add);
                     }
                     return paths;
@@ -250,7 +268,7 @@ public class PartialIntAnalyzer {
                     case And:
                         List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>();
                         for (AstBoolExpr operand : boolArithm.getOperands()) {
-                            paths.addAll(analyzeExpr(operand, context));
+                            paths.addAll(analyzeExpr(operand, context, oracle));
                         }
                         return paths;
                     case Or:
@@ -270,10 +288,11 @@ public class PartialIntAnalyzer {
         return Collections.emptyList();
     }
 
-    private Optional<Pair<Path, Either<Domain, Path>>> analyzeEqual(AstJoinRef var, AstSetExpr value, AstClafer context) {
+    private Optional<Pair<Path, Either<Domain, Path>>> analyzeEqual(
+            AstJoinRef var, AstSetExpr value, AstClafer context, Oracle oracle) {
         Optional<Path> varPath = asPath(var.getDeref(), context);
         if (varPath.isPresent()) {
-            Optional<Domain> valueDomain = asDomain(value);
+            Optional<Domain> valueDomain = asDomain(value, context, oracle);
             if (valueDomain.isPresent()) {
                 return Optional.of(new Pair<>(varPath.get(), Either.left(valueDomain.get())));
             }
@@ -339,23 +358,31 @@ public class PartialIntAnalyzer {
         return Optional.empty();
     }
 
-    private Optional<Domain> asDomain(AstSetExpr ast) {
+    private Optional<Domain> asDomain(AstSetExpr ast, AstClafer context, Oracle oracle) {
         if (ast instanceof AstConstant) {
-            return asDomain((AstConstant) ast);
+            return asDomain((AstConstant) ast, context, oracle);
+        }
+        if (ast instanceof AstArithm) {
+            return asDomain((AstArithm) ast, context, oracle);
         }
         if (ast instanceof AstUnion) {
-            return asDomain((AstUnion) ast);
+            return asDomain((AstUnion) ast, context, oracle);
         }
         if (ast instanceof AstTernary) {
-            return asDomain((AstTernary) ast);
+            return asDomain((AstTernary) ast, context, oracle);
         }
         if (ast instanceof AstUpcast) {
-            return asDomain((AstUpcast) ast);
+            return asDomain((AstUpcast) ast, context, oracle);
+        }
+        if (oracle != null && ast instanceof AstJoinRef) {
+            AstJoinRef joinRef = (AstJoinRef) ast;
+            Optional<Path> path = asPath(joinRef.getDeref(), context);
+            return path.map(oracle::getAssignment);
         }
         return Optional.empty();
     }
 
-    private Optional<Domain> asDomain(AstConstant ast) {
+    private Optional<Domain> asDomain(AstConstant ast, AstClafer context, Oracle oracle) {
         if (ast.getValue().length > 0 && ast.getValue()[0].length == 1) {
             int[] values = new int[ast.getValue().length];
             for (int i = 0; i < values.length; i++) {
@@ -366,10 +393,45 @@ public class PartialIntAnalyzer {
         return Optional.empty();
     }
 
-    private Optional<Domain> asDomain(AstUnion ast) {
-        Optional<Domain> left = asDomain(ast.getLeft());
+    private Optional<Domain> asDomain(AstArithm ast, AstClafer context, Oracle oracle) {
+        int[] operands = new int[ast.getOperands().length];
+        for (int i = 0; i < operands.length; i++) {
+            Optional<Domain> domain = asDomain(ast.getOperands()[i], context, oracle);
+            if (!domain.isPresent() || domain.get().size() != 1) {
+                return Optional.empty();
+            }
+            operands[i] = domain.get().getLowBound();
+        }
+        switch (ast.getOp()) {
+            case Add:
+                return Optional.of(Domains.constantDomain(Util.sum(operands)));
+            case Sub:
+                int difference = operands[0];
+                for (int i = 1; i < operands.length; i++) {
+                    difference -= operands[i];
+                }
+                return Optional.of(Domains.constantDomain(difference));
+            case Mul:
+                int product = 1;
+                for (int operand : operands) {
+                    product *= operand;
+                }
+                return Optional.of(Domains.constantDomain(product));
+            case Div:
+                int quotient = operands[0];
+                for (int i = 1; i < operands.length; i++) {
+                    quotient /= operands[i];
+                }
+                return Optional.of(Domains.constantDomain(quotient));
+            default:
+                return Optional.empty();
+        }
+    }
+
+    private Optional<Domain> asDomain(AstUnion ast, AstClafer context, Oracle oracle) {
+        Optional<Domain> left = asDomain(ast.getLeft(), context, oracle);
         if (left.isPresent()) {
-            Optional<Domain> right = asDomain(ast.getRight());
+            Optional<Domain> right = asDomain(ast.getRight(), context, oracle);
             if (right.isPresent()) {
                 return Optional.of(left.get().union(right.get()));
             }
@@ -377,10 +439,10 @@ public class PartialIntAnalyzer {
         return Optional.empty();
     }
 
-    private Optional<Domain> asDomain(AstTernary ast) {
-        Optional<Domain> consequent = asDomain(ast.getConsequent());
+    private Optional<Domain> asDomain(AstTernary ast, AstClafer context, Oracle oracle) {
+        Optional<Domain> consequent = asDomain(ast.getConsequent(), context, oracle);
         if (consequent.isPresent()) {
-            Optional<Domain> alternative = asDomain(ast.getAlternative());
+            Optional<Domain> alternative = asDomain(ast.getAlternative(), context, oracle);
             if (alternative.isPresent()) {
                 return Optional.of(consequent.get().union(alternative.get()));
             }
@@ -388,8 +450,8 @@ public class PartialIntAnalyzer {
         return Optional.empty();
     }
 
-    private Optional<Domain> asDomain(AstUpcast ast) {
-        Optional<Domain> base = asDomain(ast.getBase());
+    private Optional<Domain> asDomain(AstUpcast ast, AstClafer context, Oracle oracle) {
+        Optional<Domain> base = asDomain(ast.getBase(), context, oracle);
         if (base.isPresent()) {
             int offset = analysis.getOffset(
                     ast.getTarget().getClaferType(),
