@@ -1,5 +1,6 @@
 package org.clafer.compiler;
 
+import org.chocosolver.solver.Model;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.Solver;
@@ -17,8 +18,9 @@ public class ClaferSolver implements ClaferSearch {
     private boolean more = true;
 
     ClaferSolver() {
-        this.solver = new Solver();
-        this.solver.post(solver.FALSE());
+        Model model = new Model();
+        model.falseConstraint().post();
+        this.solver = model.getSolver();
         this.solutionMap = null;
         this.restartAfterEachSolution = false;
     }
@@ -43,13 +45,12 @@ public class ClaferSolver implements ClaferSearch {
             return false;
         }
         if (restartAfterEachSolution) {
-            solver.getEngine().flush();
-            solver.getSearchLoop().reset();
-            more &= solver.findSolution();
+            solver.reset();
+            more &= solver.solve();
         } else {
-            more &= count == 0 ? solver.findSolution() : solver.nextSolution();
+            more &= solver.solve();
         }
-        if (solver.hasReachedLimit()) {
+        if (solver.isStopCriterionMet()) {
             more = false;
             throw new ReachedLimitException();
         }

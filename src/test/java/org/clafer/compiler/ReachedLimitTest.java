@@ -45,15 +45,12 @@ public class ReachedLimitTest {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A").refTo(IntType);
-        model.addChild("B").refTo(IntType);
-        model.addChild("C").refTo(IntType);
-        model.addChild("D").refTo(IntType);
-        model.addChild("E").refTo(IntType);
-        model.addChild("F").refTo(IntType);
-        model.addChild("G").refTo(IntType);
-        model.addChild("H").refTo(IntType);
-        model.addChild("I").refTo(IntType);
-        model.addChild("J").refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").refTo(IntType);
+        AstConcreteClafer c = model.addChild("C").refTo(IntType);
+        model.addConstraint(equal(
+                add(mul(joinRef(a), joinRef(a), joinRef(a)),
+                        mul(joinRef(b), joinRef(b), joinRef(b))),
+                mul(joinRef(c), joinRef(c), joinRef(c))));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(10), Objective.maximize(joinRef(a)));
         long start = System.currentTimeMillis();

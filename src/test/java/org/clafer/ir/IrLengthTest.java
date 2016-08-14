@@ -5,7 +5,6 @@ import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.CStringVar;
 import org.chocosolver.solver.variables.IntVar;
 
@@ -23,6 +22,6 @@ public class IrLengthTest {
 
     @Solution
     public Constraint setup(IntVar length, CStringVar word) {
-        return ICF.arithm(length, "=", word.getLength());
+        return length.getModel().arithm(length, "=", word.getLength());
     }
 }

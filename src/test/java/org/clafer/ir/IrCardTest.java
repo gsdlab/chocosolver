@@ -5,7 +5,6 @@ import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.set.SCF;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 
@@ -23,6 +22,6 @@ public class IrCardTest {
 
     @Solution
     public Constraint setup(IntVar card, SetVar set) {
-        return SCF.cardinality(set, card);
+        return card.getModel().arithm(card, "=", set.getCard());
     }
 }

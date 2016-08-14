@@ -1,14 +1,13 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -18,9 +17,9 @@ import static org.chocosolver.solver.variables.Var.*;
 public class SelectNTest {
 
     @Input(solutions = 5)
-    public Object testSelectN(Solver solver) {
-        return $(boolArray("bool", 4, solver),
-                enumerated("n", 0, 4, solver));
+    public Object testSelectN(Model model) {
+        return $(model.boolVarArray("bool", 4),
+                model.intVar("n", 0, 4));
     }
 
     @Check

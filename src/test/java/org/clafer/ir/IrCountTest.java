@@ -5,7 +5,6 @@ import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.IntVar;
 
 /**
@@ -22,6 +21,6 @@ public class IrCountTest {
 
     @Solution
     public Constraint setup(int value, IntVar[] array, IntVar count) {
-        return ICF.count(value, array, count);
+        return count.getModel().count(value, array, count);
     }
 }

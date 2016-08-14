@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.chocosolver.solver.Model;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -37,9 +38,7 @@ import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.limits.NodeCounter;
-import org.chocosolver.solver.search.loop.monitors.SMF;
-import org.chocosolver.solver.search.strategy.ISF;
-import org.chocosolver.solver.search.strategy.IntStrategyFactory;
+import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
@@ -162,11 +161,12 @@ public class ClaferCompiler {
     private static void set(Solver solver, List<AbstractStrategy<?>> strategies) {
         AbstractStrategy<?>[] strats = strategies.toArray(new AbstractStrategy[strategies.size()]);
         if (strats.length > 0) {
-            solver.set(strats);
+            solver.setSearch(strats);
         } else {
             // Give the solver a dummy strategy for trivial problems so the underlying Choco
             // framework does not warn of no search strategy.
-            solver.set(ISF.lexico_LB(solver.ZERO()));
+            // TODO
+//            solver.set(ISF.lexico_LB(solver.ZERO()));
         }
     }
 
@@ -180,7 +180,7 @@ public class ClaferCompiler {
             case PreferLargerInstances:
                 return firstFailInDomainMax(vars);
             case Random:
-                return Optional.of(IntStrategyFactory.random_value(vars, System.nanoTime()));
+                return Optional.of(Search.randomSearch(vars, System.nanoTime()));
             default:
                 throw new IllegalArgumentException();
         }
@@ -197,7 +197,7 @@ public class ClaferCompiler {
     private static void restartPolicy(Solver solver, ClaferOption options) {
         switch (options.getStrategy()) {
             case Random:
-                SMF.luby(solver, 16, 16, new NodeCounter(solver, 16), Integer.MAX_VALUE);
+                solver.setLubyRestart(16, 16, new NodeCounter(solver, 16), Integer.MAX_VALUE);
         }
     }
 
@@ -205,14 +205,14 @@ public class ClaferCompiler {
         if (vars.length == 0) {
             return Optional.empty();
         }
-        return Optional.of(IntStrategyFactory.minDom_UB(vars));
+        return Optional.of(Search.minDomUBSearch(vars));
     }
 
     private static Optional<AbstractStrategy<?>> firstFailInDomainMin(IntVar[] vars) {
         if (vars.length == 0) {
             return Optional.empty();
         }
-        return Optional.of(IntStrategyFactory.minDom_LB(vars));
+        return Optional.of(Search.minDomLBSearch(vars));
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
@@ -221,14 +221,15 @@ public class ClaferCompiler {
 
     public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOption options) {
         try {
-            Solver solver = new Solver();
+            Model model = new Model();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
                     options.isFullSymmetryBreaking());
-            IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
+            IrSolutionMap irSolution = IrCompiler.compile(module, model, options.isFullOptimizations());
             ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
+            Solver solver = model.getSolver();
             set(solver, intStrategies(getDecisionVars(in, options, solution), options));
             restartPolicy(solver, options);
             return new ClaferSolver(solver, solution, options.getStrategy() == ClaferSearchStrategy.Random);
@@ -244,13 +245,13 @@ public class ClaferCompiler {
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOption options) {
         Check.noNullsNotEmpty(objectives);
         try {
-            Solver solver = new Solver();
+            Model model = new Model();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(
                     in, scope.toScope(), objectives, module,
                     options.isFullSymmetryBreaking());
-            IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
+            IrSolutionMap irSolution = IrCompiler.compile(module, model, options.isFullOptimizations());
             ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
             IrIntVar[] objectiveIrVars = new IrIntVar[objectives.length];
@@ -275,6 +276,7 @@ public class ClaferCompiler {
             maximizes = Arrays.copyOf(maximizes, variableScores);
             scores = Arrays.copyOf(scores, variableScores);
 
+            Solver solver = model.getSolver();
             set(solver, intStrategies(getDecisionVars(in, options, solution), options));
             restartPolicy(solver, options);
             ClaferOptimizer optimizer = maximizes.length == 0
@@ -298,13 +300,13 @@ public class ClaferCompiler {
     public static ClaferAsserter compile(AstModel in, Scopable scope, Assertion[] assertions, ClaferOption options) {
         Check.noNullsNotEmpty(assertions);
         try {
-            Solver solver = new Solver();
+            Model model = new Model();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(
                     in, scope.toScope(), assertions, module,
                     options.isFullSymmetryBreaking());
-            IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
+            IrSolutionMap irSolution = IrCompiler.compile(module, model, options.isFullOptimizations());
             ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
             Map<Assertion, Either<Boolean, BoolVar>> assertionMap = new HashMap<>(assertions.length);
@@ -312,6 +314,7 @@ public class ClaferCompiler {
                 assertionMap.put(assertion, irSolution.getVar(astSolution.getAssertionVar(assertion)));
             }
 
+            Solver solver = model.getSolver();
             set(solver, intStrategies(getDecisionVars(in, options, solution), options));
             restartPolicy(solver, options);
             return new ClaferAsserter(solver, solution, assertionMap);
@@ -325,15 +328,16 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOption options) {
-        Solver solver = new Solver();
+        Model model = new Model();
         IrModule module = new IrModule();
 
         AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
                 Util.cons(new UnsatAnalyzer(), AstCompiler.DefaultAnalyzers),
                 options.isFullSymmetryBreaking());
-        IrSolutionMap irSolution = IrCompiler.compile(module, solver, options.isFullOptimizations());
+        IrSolutionMap irSolution = IrCompiler.compile(module, model, options.isFullOptimizations());
         ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
+        Solver solver = model.getSolver();
         set(solver,
                 Util.maybeCons(firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
                         intStrategies(getDecisionVars(in, options, solution), options)));

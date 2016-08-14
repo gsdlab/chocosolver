@@ -3,7 +3,6 @@ package org.clafer.choco.constraint.propagator;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.Arrays;
-import org.chocosolver.memory.structure.IndexedBipartiteSet;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -11,6 +10,7 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.procedure.IntProcedure;
 
 /**
@@ -31,7 +31,6 @@ public class PropJoinRelation extends Propagator<SetVar> {
 
     private final SetVar take;
     private final ISetDeltaMonitor takeD;
-    private final IndexedBipartiteSet dontCare;
     private final SetVar[] children;
     private final ISetDeltaMonitor[] childrenD;
     private final SetVar to;
@@ -41,21 +40,10 @@ public class PropJoinRelation extends Propagator<SetVar> {
         super(buildArray(take, to, children), PropagatorPriority.QUADRATIC, true);
         this.take = take;
         this.takeD = take.monitorDelta(this);
-        this.dontCare = new IndexedBipartiteSet(take.getSolver().getEnvironment(), iterateNonNegativeEnv(take));
         this.children = children;
         this.childrenD = PropUtil.monitorDeltas(children, this);
         this.to = to;
         this.toD = to.monitorDelta(this);
-    }
-
-    private static int[] iterateNonNegativeEnv(SetVar set) {
-        TIntArrayList iterate = new TIntArrayList(set.getEnvelopeSize());
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            if (i >= 0) {
-                iterate.add(i);
-            }
-        }
-        return iterate.toArray();
     }
 
     private static SetVar[] buildArray(SetVar take, SetVar to, SetVar[] children) {
@@ -83,23 +71,18 @@ public class PropJoinRelation extends Propagator<SetVar> {
         return idx - 2;
     }
 
-//    @Override
-//    public boolean advise(int idxVarInProp, int mask) {
-//        if (isChildVar(idxVarInProp)) {
-//            return dontCare.contains(getChildVarIndex(idxVarInProp));
-//        }
-//        return super.advise(idxVarInProp, mask);
-//    }
     @Override
     public int getPropagationConditions(int vIdx) {
         return SetEventType.all();
     }
 
     private void findMate(int toEnv) throws ContradictionException {
-        boolean inKer = to.kernelContains(toEnv);
+        boolean inKer = to.getLB().contains(toEnv);
         int mate = -1;
-        for (int j = take.getEnvelopeFirst(); j != SetVar.END; j = take.getEnvelopeNext()) {
-            if (children[j].envelopeContains(toEnv)) {
+        ISetIterator iter = take.getUB().iterator();
+        while (iter.hasNext()) {
+            int j = iter.nextInt();
+            if (children[j].getUB().contains(toEnv)) {
                 // Found a second mate.
                 if (mate != -1 || !inKer) {
                     mate = -2;
@@ -110,34 +93,39 @@ public class PropJoinRelation extends Propagator<SetVar> {
         }
         if (mate == -1) {
             // No mates.
-            to.removeFromEnvelope(toEnv, this);
+            to.remove(toEnv, this);
         } else if (mate != -2 && inKer) {
             // One mate.
-            take.addToKernel(mate, this);
+            take.force(mate, this);
             PropUtil.kerSubsetKer(children[mate], to, this);
             PropUtil.envSubsetEnv(children[mate], to, this);
-            children[mate].addToKernel(toEnv, this);
+            children[mate].force(toEnv, this);
         }
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         // Prune take
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+        ISetIterator takeEnv = take.getUB().iterator();
+        while (takeEnv.hasNext()) {
+            int i = takeEnv.nextInt();
             if (i < 0 || i >= children.length || !PropUtil.isKerSubsetEnv(children[i], to)) {
-                take.removeFromEnvelope(i, this);
-                dontCare.remove(i);
+                take.remove(i, this);
             }
         }
 
         // Pick to and prune child
-        for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+        ISetIterator takeKer = take.getLB().iterator();
+        while (takeKer.hasNext()) {
+            int i = takeKer.nextInt();
             PropUtil.kerSubsetKer(children[i], to, this);
             PropUtil.envSubsetEnv(children[i], to, this);
         }
 
         // Pick take, pick child, pick take, prune to
-        for (int i = to.getEnvelopeFirst(); i != SetVar.END; i = to.getEnvelopeNext()) {
+        ISetIterator toEnv = to.getUB().iterator();
+        while (toEnv.hasNext()) {
+            int i = toEnv.nextInt();
             findMate(i);
         }
         takeD.unfreeze();
@@ -147,7 +135,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isTakeVar(idxVarInProp)) {
             takeD.freeze();
-            takeD.forEach(pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            takeD.forEach(this::pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             takeD.forEach(pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
             takeD.unfreeze();
         } else if (isToVar(idxVarInProp)) {
@@ -157,10 +145,11 @@ public class PropJoinRelation extends Propagator<SetVar> {
             toD.unfreeze();
             if (SetEventType.isEnvRemoval(mask)) {
                 TIntArrayList removed = null;
-                for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+                ISetIterator takeEnv = take.getUB().iterator();
+                while (takeEnv.hasNext()) {
+                    int i = takeEnv.nextInt();
                     if (!PropUtil.isKerSubsetEnv(children[i], to)) {
-                        take.removeFromEnvelope(i, this);
-                        dontCare.remove(i);
+                        take.remove(i, this);
                         // Cannot call findMate here because we inside iterating take env.
                         // Queue up the even to do later.
                         if (removed == null) {
@@ -173,8 +162,10 @@ public class PropJoinRelation extends Propagator<SetVar> {
                     TIntIterator it = removed.iterator();
                     while (it.hasNext()) {
                         SetVar child = children[it.next()];
-                        for (int i = child.getEnvelopeFirst(); i != SetVar.END; i = child.getEnvelopeNext()) {
-                            if (to.envelopeContains(i)) {
+                        ISetIterator childEnv = child.getUB().iterator();
+                        while (childEnv.hasNext()) {
+                            int i = childEnv.nextInt();
+                            if (to.getUB().contains(i)) {
                                 findMate(i);
                             }
                         }
@@ -191,15 +182,16 @@ public class PropJoinRelation extends Propagator<SetVar> {
             // from child at the same time is no longer supported, we need to
             // remove val from to as well.
             childD.forEach(pruneToOnChildEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            if (take.kernelContains(id)) {
+            if (take.getLB().contains(id)) {
                 childD.forEach(pickToOnChildKer, SetEventType.ADD_TO_KER);
-            } else if (take.envelopeContains(id)) {
+            } else if (take.getUB().contains(id)) {
                 childD.forEach(childKer -> {
-                    if (!to.envelopeContains(childKer)) {
-                        take.removeFromEnvelope(id, this);
-                        dontCare.remove(id);
-                        for (int i = children[id].getEnvelopeFirst(); i != SetVar.END; i = children[id].getEnvelopeNext()) {
-                            if (to.envelopeContains(i)) {
+                    if (!to.getUB().contains(childKer)) {
+                        take.remove(id, this);
+                        ISetIterator childEnv = children[id].getUB().iterator();
+                        while (childEnv.hasNext()) {
+                            int i = childEnv.nextInt();
+                            if (to.getUB().contains(i)) {
                                 findMate(i);
                             }
                         }
@@ -209,22 +201,22 @@ public class PropJoinRelation extends Propagator<SetVar> {
             childD.unfreeze();
         }
     }
-    private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
-        @Override
-        public void execute(int takeEnv) throws ContradictionException {
-            assert !take.envelopeContains(takeEnv);
-            dontCare.remove(takeEnv);
-            for (int i = children[takeEnv].getEnvelopeFirst(); i != SetVar.END; i = children[takeEnv].getEnvelopeNext()) {
-                if (to.envelopeContains(i)) {
-                    findMate(i);
-                }
+
+    private void pruneToOnTakeEnv(int takeEnv) throws ContradictionException {
+        assert !take.getUB().contains(takeEnv);
+        ISetIterator iter = children[takeEnv].getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (to.getUB().contains(i)) {
+                findMate(i);
             }
         }
-    };
+    }
+
     private final IntProcedure pickToAndPruneChildOnTakeKer = new IntProcedure() {
         @Override
         public void execute(int takeKer) throws ContradictionException {
-            assert take.kernelContains(takeKer);
+            assert take.getLB().contains(takeKer);
 
             SetVar child = children[takeKer];
             PropUtil.kerSubsetKer(child, to, PropJoinRelation.this);
@@ -241,7 +233,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
             //     take = {0,1}, child0 = {0}, child1 = {1}, child2 = {}, to = {0,1,2}
             // Need to find mate for 2 on child2 or else to will keep 2, and break
             // idempotency.
-            if (to.envelopeContains(childEnv)) {
+            if (to.getUB().contains(childEnv)) {
                 findMate(childEnv);
             }
         }
@@ -250,43 +242,50 @@ public class PropJoinRelation extends Propagator<SetVar> {
         @Override
         public void execute(int childKer) throws ContradictionException {
             // assert id in ker(take)
-            to.addToKernel(childKer, PropJoinRelation.this);
+            to.force(childKer, PropJoinRelation.this);
         }
     };
     private final IntProcedure pruneChildOnToEnv = new IntProcedure() {
         @Override
         public void execute(int toEnv) throws ContradictionException {
-            assert !to.envelopeContains(toEnv);
+            assert !to.getUB().contains(toEnv);
 
-            for (int takeKer = take.getKernelFirst(); takeKer != SetVar.END; takeKer = take.getKernelNext()) {
-                children[takeKer].removeFromEnvelope(toEnv, PropJoinRelation.this);
+            ISetIterator iter = take.getLB().iterator();
+            while (iter.hasNext()) {
+                children[iter.nextInt()].remove(toEnv, PropJoinRelation.this);
             }
         }
     };
     private final IntProcedure pickTakeOnToKer = new IntProcedure() {
         @Override
         public void execute(int toVal) throws ContradictionException {
-            assert to.kernelContains(toVal);
+            assert to.getLB().contains(toVal);
             findMate(toVal);
         }
     };
 
     @Override
     public ESat isEntailed() {
-        for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+        ISetIterator takeKer = take.getLB().iterator();
+        while (takeKer.hasNext()) {
+            int i = takeKer.nextInt();
             if (i < 0 || i >= children.length) {
                 return ESat.FALSE;
             }
-            for (int j = children[i].getKernelFirst(); j != SetVar.END; j = children[i].getKernelNext()) {
-                if (!to.envelopeContains(j)) {
+            ISetIterator childKer = children[i].getLB().iterator();
+            while (childKer.hasNext()) {
+                int j = childKer.nextInt();
+                if (!to.getUB().contains(j)) {
                     return ESat.FALSE;
                 }
             }
         }
         boolean completelyInstantiated = take.isInstantiated() && to.isInstantiated();
         int count = 0;
-        SetVar[] taken = new SetVar[take.getEnvelopeSize()];
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+        SetVar[] taken = new SetVar[take.getUB().size()];
+        ISetIterator takeEnv = take.getUB().iterator();
+        while (takeEnv.hasNext()) {
+            int i = takeEnv.nextInt();
             if (i >= 0 && i < children.length) {
                 SetVar child = children[i];
                 completelyInstantiated = completelyInstantiated && child.isInstantiated();
@@ -296,7 +295,9 @@ public class PropJoinRelation extends Propagator<SetVar> {
         if (count < taken.length) {
             taken = Arrays.copyOf(taken, count);
         }
-        for (int i = to.getKernelFirst(); i != SetVar.END; i = to.getKernelNext()) {
+        ISetIterator toKer = to.getLB().iterator();
+        while (toKer.hasNext()) {
+            int i = toKer.nextInt();
             if (!PropUtil.envsContain(taken, i)) {
                 return ESat.FALSE;
             }

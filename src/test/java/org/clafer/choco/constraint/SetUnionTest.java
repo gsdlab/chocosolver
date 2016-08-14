@@ -2,13 +2,13 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 
 /**
@@ -19,7 +19,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class SetUnionTest {
 
     @Input(solutions = 64)
-    public Object testSetUnion(Solver solver) {
+    public Object testSetUnion(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -34,14 +34,14 @@ public class SetUnionTest {
          *     return (s1, s2, s3)
          */
         return $(
-                new CSetVar[]{
-                    cset("s1", -1, 2, solver),
-                    cset("s2", -2, 1, solver)},
-                cset("s3", -1, 1, solver), false);
+                new SetVar[]{
+                    model.setVar("s1", ker(), env(-1, 0, 1, 2)),
+                    model.setVar("s2", ker(), env(-2, -1, 0, 1))},
+                model.setVar("s3", ker(), env(-1, 0, 1)), false);
     }
 
     @Input(solutions = 27)
-    public Object testSetUnionDisjoint(Solver solver) {
+    public Object testSetUnionDisjoint(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -56,10 +56,10 @@ public class SetUnionTest {
          *     return (s1, s2, s3)
          */
         return $(
-                new CSetVar[]{
-                    cset("s1", -1, 2, solver),
-                    cset("s2", -2, 1, solver)},
-                cset("s3", -1, 1, solver), true);
+                new SetVar[]{
+                    model.setVar("s1", ker(), env(-1, 0, 1, 2)),
+                    model.setVar("s2", ker(), env(-2, -1, 0, 1))},
+                model.setVar("s3", ker(), env(-1, 0, 1)), true);
     }
 
     @Check
@@ -78,10 +78,10 @@ public class SetUnionTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar[] sets, CSetVar union, boolean disjoint) {
+    public Constraint setup(SetVar[] sets, SetVar union, boolean disjoint) {
         return Constraints.union(
-                mapSet(sets), mapCard(sets),
-                union.getSet(), union.getCard(),
+                sets, mapCard(sets),
+                union, union.getCard(),
                 disjoint);
     }
 }

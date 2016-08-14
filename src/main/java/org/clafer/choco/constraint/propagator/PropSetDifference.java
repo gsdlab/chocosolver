@@ -8,6 +8,7 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.procedure.IntProcedure;
 
 /**
@@ -36,23 +37,31 @@ public class PropSetDifference extends Propagator<SetVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        for (int i = minuend.getEnvelopeFirst(); i != SetVar.END; i = minuend.getEnvelopeNext()) {
-            if (!subtrahend.envelopeContains(i) && !minuend.envelopeContains(i)) {
-                minuend.removeFromEnvelope(i, this);
+        ISetIterator minuendEnv = minuend.getUB().iterator();
+        while (minuendEnv.hasNext()) {
+            int i = minuendEnv.nextInt();
+            if (!subtrahend.getUB().contains(i) && !minuend.getUB().contains(i)) {
+                minuend.remove(i, this);
             }
         }
-        for (int i = difference.getKernelFirst(); i != SetVar.END; i = difference.getKernelNext()) {
-            minuend.addToKernel(i, this);
-            subtrahend.removeFromEnvelope(i, this);
+        ISetIterator differenceKer = difference.getLB().iterator();
+        while (differenceKer.hasNext()) {
+            int i = differenceKer.nextInt();
+            minuend.force(i, this);
+            subtrahend.remove(i, this);
         }
 
         PropUtil.envSubsetEnv(difference, minuend, this);
-        for (int i = subtrahend.getKernelFirst(); i != SetVar.END; i = subtrahend.getKernelNext()) {
-            difference.removeFromEnvelope(i, this);
+        ISetIterator subtrahendIter = subtrahend.getLB().iterator();
+        while (subtrahendIter.hasNext()) {
+            int i = subtrahendIter.nextInt();
+            difference.remove(i, this);
         }
-        for (int i = minuend.getKernelFirst(); i != SetVar.END; i = minuend.getKernelNext()) {
-            if (!subtrahend.envelopeContains(i)) {
-                difference.addToKernel(i, this);
+        ISetIterator minuendKer = minuend.getLB().iterator();
+        while (minuendKer.hasNext()) {
+            int i = minuendKer.nextInt();
+            if (!subtrahend.getUB().contains(i)) {
+                difference.force(i, this);
             }
         }
     }
@@ -86,58 +95,62 @@ public class PropSetDifference extends Propagator<SetVar> {
     private final IntProcedure pruneDifferenceOnMinuendEnv = new IntProcedure() {
         @Override
         public void execute(int minuendEnv) throws ContradictionException {
-            difference.removeFromEnvelope(minuendEnv, PropSetDifference.this);
+            difference.remove(minuendEnv, PropSetDifference.this);
         }
     };
     private final IntProcedure pickDifferenceOnMinuendKer = new IntProcedure() {
         @Override
         public void execute(int minuendKer) throws ContradictionException {
-            if (!subtrahend.envelopeContains(minuendKer)) {
-                difference.addToKernel(minuendKer, PropSetDifference.this);
+            if (!subtrahend.getUB().contains(minuendKer)) {
+                difference.force(minuendKer, PropSetDifference.this);
             }
         }
     };
     private final IntProcedure pickMinuendPickDiffrenceOnSubtrahendEnv = new IntProcedure() {
         @Override
         public void execute(int subtrahendEnv) throws ContradictionException {
-            if (minuend.kernelContains(subtrahendEnv)) {
-                difference.addToKernel(subtrahendEnv, PropSetDifference.this);
-            } else if (difference.kernelContains(subtrahendEnv)) {
-                minuend.addToKernel(subtrahendEnv, PropSetDifference.this);
+            if (minuend.getLB().contains(subtrahendEnv)) {
+                difference.force(subtrahendEnv, PropSetDifference.this);
+            } else if (difference.getLB().contains(subtrahendEnv)) {
+                minuend.force(subtrahendEnv, PropSetDifference.this);
             }
         }
     };
     private final IntProcedure pruneDifferenceOnSubtrahendKer = new IntProcedure() {
         @Override
         public void execute(int subtrahendKer) throws ContradictionException {
-            difference.removeFromEnvelope(subtrahendKer, PropSetDifference.this);
+            difference.remove(subtrahendKer, PropSetDifference.this);
         }
     };
     private final IntProcedure pruneMinuendOnDifferenceEnv = new IntProcedure() {
         @Override
         public void execute(int differenceEnv) throws ContradictionException {
-            if (!subtrahend.envelopeContains(differenceEnv)) {
-                minuend.removeFromEnvelope(differenceEnv, PropSetDifference.this);
+            if (!subtrahend.getUB().contains(differenceEnv)) {
+                minuend.remove(differenceEnv, PropSetDifference.this);
             }
         }
     };
     private final IntProcedure pickMinuendPruneSubtrahendOnDifferenceKer = new IntProcedure() {
         @Override
         public void execute(int differenceKer) throws ContradictionException {
-            minuend.addToKernel(differenceKer, PropSetDifference.this);
-            subtrahend.removeFromEnvelope(differenceKer, PropSetDifference.this);
+            minuend.force(differenceKer, PropSetDifference.this);
+            subtrahend.remove(differenceKer, PropSetDifference.this);
         }
     };
 
     @Override
     public ESat isEntailed() {
-        for (int i = minuend.getKernelFirst(); i != SetVar.END; i = minuend.getKernelNext()) {
-            if (!subtrahend.envelopeContains(i) && !difference.envelopeContains(i)) {
+        ISetIterator minuendKer = minuend.getLB().iterator();
+        while (minuendKer.hasNext()) {
+            int i = minuendKer.nextInt();
+            if (!subtrahend.getUB().contains(i) && !difference.getUB().contains(i)) {
                 return ESat.FALSE;
             }
         }
-        for (int i = difference.getKernelFirst(); i != SetVar.END; i = difference.getKernelNext()) {
-            if (!minuend.envelopeContains(i) || subtrahend.kernelContains(i)) {
+        ISetIterator differenceKer = difference.getLB().iterator();
+        while (differenceKer.hasNext()) {
+            int i = differenceKer.nextInt();
+            if (!minuend.getUB().contains(i) || subtrahend.getLB().contains(i)) {
                 return ESat.FALSE;
             }
         }

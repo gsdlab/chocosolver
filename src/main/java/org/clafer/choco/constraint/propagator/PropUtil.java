@@ -7,6 +7,8 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
+import org.chocosolver.util.objects.setDataStructures.ISet;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * Various static utility functions for writing Choco propagators.
@@ -48,6 +50,22 @@ public class PropUtil {
         return deltas;
     }
 
+    public static boolean equals(ISet a, ISet b) {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        ISetIterator aIter = a.iterator();
+        ISetIterator bIter = b.iterator();
+        while (aIter.hasNext()) {
+            assert bIter.hasNext();
+            if (aIter.nextInt() != bIter.nextInt()) {
+                return false;
+            }
+        }
+        assert !bIter.hasNext();
+        return true;
+    }
+
     /**
      * Enumerate the domain of a integer variable.
      *
@@ -72,10 +90,11 @@ public class PropUtil {
      * @return {@code env(set)}
      */
     public static int[] iterateEnv(SetVar set) {
-        int[] iterate = new int[set.getEnvelopeSize()];
+        int[] iterate = new int[set.getUB().size()];
         int count = 0;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            iterate[count++] = i;
+        ISetIterator iter = set.getUB().iterator();
+        while (iter.hasNext()) {
+            iterate[count++] = iter.nextInt();
         }
         assert count == iterate.length;
         return iterate;
@@ -88,73 +107,25 @@ public class PropUtil {
      * @return {@code ker(set)}
      */
     public static int[] iterateKer(SetVar set) {
-        int[] iterate = new int[set.getKernelSize()];
+        int[] iterate = new int[set.getLB().size()];
         int count = 0;
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            iterate[count++] = i;
+        ISetIterator iter = set.getLB().iterator();
+        while (iter.hasNext()) {
+            iterate[count++] = iter.nextInt();
         }
         assert count == iterate.length;
         return iterate;
     }
 
     public static int getEnv(SetVar set, int index) {
-        int env = set.getEnvelopeFirst();
-        for (int i = 0; i < index && env != SetVar.END; i++) {
-            env = set.getEnvelopeNext();
+        ISetIterator iter = set.getUB().iterator();
+        for (int i = 0; i < index && iter.hasNext(); i++) {
+            iter.nextInt();
         }
-        return env;
-    }
-
-    /**
-     * Returns the largest element in the set's envelope. Returns
-     * {@link SetVar#END} if the envelope is empty.
-     *
-     * @param set the set variable
-     * @return the largest element in the set's envelope
-     */
-    public static int maxEnv(SetVar set) {
-        int max = SetVar.END;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            max = i;
+        if (iter.hasNext()) {
+            return iter.nextInt();
         }
-        return max;
-    }
-
-    /**
-     * Returns the largest element in the set's kernel. Returns
-     * {@link SetVar#END} if the kernel is empty.
-     *
-     * @param set the set variable
-     * @return the largest element in the set's kernel
-     */
-    public static int maxKer(SetVar set) {
-        int max = SetVar.END;
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            max = i;
-        }
-        return max;
-    }
-
-    /**
-     * Returns the smallest element in the set's envelope. Returns
-     * {@link SetVar#END} if the envelope is empty.
-     *
-     * @param set the set variable
-     * @return the smallest element in the set's envelope
-     */
-    public static int minEnv(SetVar set) {
-        return set.getEnvelopeFirst();
-    }
-
-    /**
-     * Returns the smallest element in the set's kernel. Returns
-     * {@link SetVar#END} if the kernel is empty.
-     *
-     * @param set the set variable
-     * @return the smallest element in the set's kernel
-     */
-    public static int minKer(SetVar set) {
-        return set.getKernelFirst();
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -184,7 +155,7 @@ public class PropUtil {
      */
     public static boolean envsContain(SetVar[] union, int value) {
         for (SetVar var : union) {
-            if (var.envelopeContains(value)) {
+            if (var.getUB().contains(value)) {
                 return true;
             }
         }
@@ -201,7 +172,7 @@ public class PropUtil {
      */
     public static boolean kersContain(SetVar[] union, int value) {
         for (SetVar var : union) {
-            if (var.kernelContains(value)) {
+            if (var.getLB().contains(value)) {
                 return true;
             }
         }
@@ -250,9 +221,9 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isDomIntersectEnv(IntVar i1, SetVar i2) {
-        if (i1.getDomainSize() < i2.getEnvelopeSize()) {
+        if (i1.getDomainSize() < i2.getUB().size()) {
             int i = i1.getLB();
-            int envFirst = i2.getEnvelopeFirst();
+            int envFirst = i2.getUB().min();
             if (envFirst >= i) {
                 if (envFirst == i || i1.contains(envFirst)) {
                     return true;
@@ -261,18 +232,25 @@ public class PropUtil {
             }
             int ub = i1.getUB();
             for (; i <= ub; i = i1.nextValue(i)) {
-                if (i2.envelopeContains(i)) {
+                if (i2.getUB().contains(i)) {
                     return true;
                 }
             }
         } else {
-            for (int i = i2.getEnvelopeFirst(); i != SetVar.END;) {
-                int next = i1.nextValue(i - 1);
-                while (i < next && i != SetVar.END) {
-                    i = i2.getEnvelopeNext();
-                }
-                if (i == next) {
-                    return true;
+            ISetIterator iter = i2.getUB().iterator();
+            if (iter.hasNext()) {
+                int i = iter.nextInt();
+                while (true) {
+                    int next = i1.nextValue(i - 1);
+                    while (i < next) {
+                        if (!iter.hasNext()) {
+                            return false;
+                        }
+                        i = iter.nextInt();
+                    }
+                    if (i == next) {
+                        return true;
+                    }
                 }
             }
         }
@@ -288,29 +266,36 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isDomIntersectKer(IntVar i1, SetVar i2) {
-        if (i1.getDomainSize() < i2.getKernelSize()) {
+        if (i1.getDomainSize() < i2.getLB().size()) {
             int i = i1.getLB();
-            int envFirst = i2.getKernelFirst();
-            if (envFirst >= i) {
-                if (envFirst == i || i1.contains(envFirst)) {
+            int kerFirst = i2.getLB().min();
+            if (kerFirst >= i) {
+                if (kerFirst == i || i1.contains(kerFirst)) {
                     return true;
                 }
-                i = i1.nextValue(envFirst);
+                i = i1.nextValue(kerFirst);
             }
             int ub = i1.getUB();
             for (; i <= ub; i = i1.nextValue(i)) {
-                if (i2.kernelContains(i)) {
+                if (i2.getLB().contains(i)) {
                     return true;
                 }
             }
         } else {
-            for (int i = i2.getKernelFirst(); i != SetVar.END;) {
-                int next = i1.nextValue(i - 1);
-                while (i < next && i != SetVar.END) {
-                    i = i2.getKernelNext();
-                }
-                if (i == next) {
-                    return true;
+            ISetIterator iter = i2.getLB().iterator();
+            if (iter.hasNext()) {
+                int i = iter.nextInt();
+                while (true) {
+                    int next = i1.nextValue(i - 1);
+                    while (i < next) {
+                        if (!iter.hasNext()) {
+                            return false;
+                        }
+                        i = iter.nextInt();
+                    }
+                    if (i == next) {
+                        return true;
+                    }
                 }
             }
         }
@@ -329,12 +314,14 @@ public class PropUtil {
     public static boolean isEnvIntersectEnv(SetVar i1, SetVar i2) {
         SetVar small = i1;
         SetVar large = i2;
-        if (i1.getEnvelopeSize() > i2.getEnvelopeSize()) {
+        if (i1.getUB().size() > i2.getUB().size()) {
             small = i2;
             large = i1;
         }
-        for (int i = small.getEnvelopeFirst(); i != SetVar.END; i = small.getEnvelopeNext()) {
-            if (large.envelopeContains(i)) {
+        ISetIterator iter = small.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (large.getUB().contains(i)) {
                 return true;
             }
         }
@@ -350,15 +337,19 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isEnvIntersectKer(SetVar i1, SetVar i2) {
-        if (i1.getEnvelopeSize() < i2.getEnvelopeSize()) {
-            for (int i = i1.getEnvelopeFirst(); i != SetVar.END; i = i1.getEnvelopeNext()) {
-                if (i2.kernelContains(i)) {
+        if (i1.getUB().size() < i2.getUB().size()) {
+            ISetIterator iter = i1.getUB().iterator();
+            while (iter.hasNext()) {
+                int i = iter.nextInt();
+                if (i2.getLB().contains(i)) {
                     return true;
                 }
             }
         } else {
-            for (int i = i2.getKernelFirst(); i != SetVar.END; i = i2.getKernelNext()) {
-                if (i1.envelopeContains(i)) {
+            ISetIterator iter = i2.getLB().iterator();
+            while (iter.hasNext()) {
+                int i = iter.nextInt();
+                if (i1.getUB().contains(i)) {
                     return true;
                 }
             }
@@ -378,12 +369,14 @@ public class PropUtil {
     public static boolean isKerIntersectKer(SetVar i1, SetVar i2) {
         SetVar small = i1;
         SetVar large = i2;
-        if (i1.getKernelSize() > i2.getKernelSize()) {
+        if (i1.getLB().size() > i2.getLB().size()) {
             small = i2;
             large = i1;
         }
-        for (int i = small.getKernelFirst(); i != SetVar.END; i = small.getKernelNext()) {
-            if (large.kernelContains(i)) {
+        ISetIterator iter = small.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (large.getLB().contains(i)) {
                 return true;
             }
         }
@@ -422,12 +415,12 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isDomSubsetEnv(IntVar sub, SetVar sup) {
-        if (sub.getDomainSize() > sup.getEnvelopeSize()) {
+        if (sub.getDomainSize() > sup.getUB().size()) {
             return false;
         }
         int ub = sub.getUB();
         for (int i = sub.getLB(); i <= ub; i = sub.nextValue(i)) {
-            if (!sup.envelopeContains(i)) {
+            if (!sup.getUB().contains(i)) {
                 return false;
             }
         }
@@ -443,12 +436,12 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isDomSubsetKer(IntVar sub, SetVar sup) {
-        if (sub.getDomainSize() > sup.getKernelSize()) {
+        if (sub.getDomainSize() > sup.getLB().size()) {
             return false;
         }
         int ub = sub.getUB();
         for (int i = sub.getLB(); i <= ub; i = sub.nextValue(i)) {
-            if (!sup.kernelContains(i)) {
+            if (!sup.getLB().contains(i)) {
                 return false;
             }
         }
@@ -464,10 +457,12 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isEnvSubsetDom(SetVar sub, IntVar sup) {
-        if (sub.getEnvelopeSize() > sup.getDomainSize()) {
+        if (sub.getUB().size() > sup.getDomainSize()) {
             return false;
         }
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
+        ISetIterator iter = sub.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (!sup.contains(i)) {
                 return false;
             }
@@ -485,11 +480,13 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isEnvSubsetEnv(SetVar sub, SetVar sup) {
-        if (sub.getEnvelopeSize() > sup.getEnvelopeSize()) {
+        if (sub.getUB().size() > sup.getUB().size()) {
             return false;
         }
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!sup.envelopeContains(i)) {
+        ISetIterator iter = sub.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (!sup.getUB().contains(i)) {
                 return false;
             }
         }
@@ -505,11 +502,13 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isEnvSubsetKer(SetVar sub, SetVar sup) {
-        if (sub.getEnvelopeSize() > sup.getKernelSize()) {
+        if (sub.getUB().size() > sup.getLB().size()) {
             return false;
         }
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!sup.kernelContains(i)) {
+        ISetIterator iter = sub.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (!sup.getLB().contains(i)) {
                 return false;
             }
         }
@@ -525,7 +524,9 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isKerSubsetDom(SetVar sub, IntVar sup) {
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
+        ISetIterator iter = sub.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (!sup.contains(i)) {
                 return false;
             }
@@ -542,8 +543,10 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isKerSubsetEnv(SetVar sub, SetVar sup) {
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            if (!sup.envelopeContains(i)) {
+        ISetIterator iter = sub.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (!sup.getUB().contains(i)) {
                 return false;
             }
         }
@@ -559,8 +562,10 @@ public class PropUtil {
      * otherwise
      */
     public static boolean isKerSubsetKer(SetVar sub, SetVar sup) {
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            if (!sup.kernelContains(i)) {
+        ISetIterator iter = sub.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (!sup.getLB().contains(i)) {
                 return false;
             }
         }
@@ -647,7 +652,7 @@ public class PropUtil {
         int right = left;
         int ub = sub.getUB();
         for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
-            if (!sup.envelopeContains(val)) {
+            if (!sup.getUB().contains(val)) {
                 if (val == right + 1) {
                     right = val;
                 } else {
@@ -678,7 +683,7 @@ public class PropUtil {
         int right = left;
         int ub = sub.getUB();
         for (int val = sub.getLB(); val <= ub; val = sub.nextValue(val)) {
-            if (!sup.kernelContains(val)) {
+            if (!sup.getLB().contains(val)) {
                 if (val == right + 1) {
                     right = val;
                 } else {
@@ -704,9 +709,11 @@ public class PropUtil {
      */
     public static boolean envSubsetSet(SetVar sub, TIntSet sup, ICause propagator) throws ContradictionException {
         boolean changed = false;
-        for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
+        ISetIterator iter = sub.getUB().iterator();
+        while (iter.hasNext()) {
+            int val = iter.nextInt();
             if (!sup.contains(val)) {
-                changed |= sub.removeFromEnvelope(val, propagator);
+                changed |= sub.remove(val, propagator);
             }
         }
         return changed;
@@ -725,9 +732,11 @@ public class PropUtil {
      */
     public static boolean envSubsetDom(SetVar sub, IntVar sup, ICause propagator) throws ContradictionException {
         boolean changed = false;
-        for (int val = sub.getEnvelopeFirst(); val != SetVar.END; val = sub.getEnvelopeNext()) {
+        ISetIterator iter = sub.getUB().iterator();
+        while (iter.hasNext()) {
+            int val = iter.nextInt();
             if (!sup.contains(val)) {
-                changed |= sub.removeFromEnvelope(val, propagator);
+                changed |= sub.remove(val, propagator);
             }
         }
         return changed;
@@ -746,9 +755,11 @@ public class PropUtil {
      */
     public static boolean envSubsetEnv(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
         boolean changed = false;
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!sup.envelopeContains(i)) {
-                changed |= sub.removeFromEnvelope(i, propagator);
+        ISetIterator iter = sub.getUB().iterator();
+        while (iter.hasNext()) {
+            int val = iter.nextInt();
+            if (!sup.getUB().contains(val)) {
+                changed |= sub.remove(val, propagator);
             }
         }
         return changed;
@@ -767,9 +778,11 @@ public class PropUtil {
      */
     public static boolean envSubsetKer(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
         boolean changed = false;
-        for (int i = sub.getEnvelopeFirst(); i != SetVar.END; i = sub.getEnvelopeNext()) {
-            if (!sup.kernelContains(i)) {
-                changed |= sub.removeFromEnvelope(i, propagator);
+        ISetIterator iter = sub.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (!sup.getLB().contains(i)) {
+                changed |= sub.remove(i, propagator);
             }
         }
         return changed;
@@ -787,8 +800,10 @@ public class PropUtil {
      */
     public static boolean kerSubsetKer(SetVar sub, SetVar sup, ICause propagator) throws ContradictionException {
         boolean changed = false;
-        for (int i = sub.getKernelFirst(); i != SetVar.END; i = sub.getKernelNext()) {
-            changed |= sup.addToKernel(i, propagator);
+        ISetIterator iter = sub.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            changed |= sup.force(i, propagator);
         }
         return changed;
     }

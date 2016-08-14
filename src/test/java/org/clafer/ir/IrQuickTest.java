@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.chocosolver.solver.Model;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
@@ -103,44 +104,42 @@ public class IrQuickTest extends Suite {
                     irConstraint = positive ? irConstraint : irConstraint.negate();
                     module.addConstraint(irConstraint);
 
-                    Solver irSolver = new Solver();
-                    IrSolutionMap irSolutionMap = IrCompiler.compile(module, irSolver);
+                    Model irModel = new Model();
+                    IrSolutionMap irSolutionMap = IrCompiler.compile(module, irModel);
+                    Solver irSolver = irModel.getSolver();
                     for (FrameworkMethod checkMethod : checkMethods) {
                         checkMethod.invokeExplosively(target, irSolver);
                     }
 
-                    if (randomizeStrategy(irSolver).findSolution()) {
-                        do {
-                            solutions.add(TestReflection.value(irSolutionMap, irArgs));
-                        } while (irSolver.nextSolution());
+                    randomizeStrategy(irSolver);
+                    while (irSolver.solve()) {
+                        solutions.add(TestReflection.value(irSolutionMap, irArgs));
                     }
                 } catch (UnsatisfiableException e) {
                     // Do nothing.
                 }
 
                 for (FrameworkMethod solutionMethod : solutionMethods) {
-                    Solver solver = new Solver();
-
+                    Model model = new Model();
                     Class<?>[] parameters = solutionMethod.getMethod().getParameterTypes();
                     Object[] args = new Object[irArgs.length];
                     for (int i = 0; i < args.length; i++) {
                         args[i] = TestReflection.toVar(
                                 irArgs[i],
                                 parameters[i],
-                                solver);
+                                model);
                     }
 
                     Constraint constraint = (Constraint) solutionMethod.invokeExplosively(target, args);
                     constraint = positive ? constraint : constraint.getOpposite();
-                    solver.post(constraint);
-
-                    if (randomizeStrategy(solver).findSolution()) {
-                        do {
-                            Object solution = TestReflection.value(args);
-                            if (!solutions.remove(solution)) {
-                                fail("Missing" + (positive ? " " : " negative ") + "solution " + solution + "\nfrom " + Arrays.deepToString(irArgs));
-                            }
-                        } while (solver.nextSolution());
+                    constraint.post();
+                    Solver solver = model.getSolver();
+                    randomizeStrategy(solver);
+                    while (solver.solve()) {
+                        Object solution = TestReflection.value(args);
+                        if (!solutions.remove(solution)) {
+                            fail("Missing" + (positive ? " " : " negative ") + "solution " + solution + "\nfrom " + Arrays.deepToString(irArgs));
+                        }
                     }
                 }
 

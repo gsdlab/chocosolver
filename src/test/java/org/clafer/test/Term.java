@@ -1,9 +1,9 @@
 package org.clafer.test;
 
+import org.chocosolver.solver.Model;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.compiler.IrSolutionMap;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.variables.IntVar;
 
 /**
@@ -16,7 +16,7 @@ public interface Term {
 
     IrIntVar getIrVar();
 
-    IntVar toChocoVar(Solver solver);
+    IntVar toChocoVar(Model model);
 
     int getValue(IrSolutionMap map);
 }

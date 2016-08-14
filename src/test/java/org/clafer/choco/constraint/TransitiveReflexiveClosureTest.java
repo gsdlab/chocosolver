@@ -2,6 +2,7 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
 import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import org.clafer.choco.constraint.ConstraintQuickTest.Input;
@@ -11,10 +12,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.SetVar;
-import static org.chocosolver.solver.variables.VariableFactory.set;
+import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -35,7 +35,7 @@ public class TransitiveReflexiveClosureTest {
     }
 
     @Input(solutions = 512)
-    public Object testTransitive(Solver solver) {
+    public Object testTransitive(Model model) {
         /*
          * import Control.Monad
          *
@@ -51,15 +51,8 @@ public class TransitiveReflexiveClosureTest {
          *         implies True False = False
          *         implies _ _ = True
          */
-        SetVar[] relation = new SetVar[3];
-        for (int i = 0; i < relation.length; i++) {
-            relation[i] = set("relation[" + i + "]", 0, relation.length - 1, solver);
-        }
-        SetVar[] closure = new SetVar[relation.length];
-        for (int i = 0; i < relation.length; i++) {
-            closure[i] = set("closure[" + i + "]", 0, closure.length - 1, solver);
-        }
-        return $(relation, closure);
+        return $(model.setVarArray("relation", 3, ker(), env(0, 1, 2)),
+                model.setVarArray("closure", 3, ker(), env(0, 1, 2)));
     }
 
     @Check

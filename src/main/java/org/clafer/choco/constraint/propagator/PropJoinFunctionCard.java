@@ -12,6 +12,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -78,7 +79,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
 //    @Override
 //    public boolean advise(int idxVarInProp, int mask) {
 //        if (isRefVar(idxVarInProp)) {
-//            return take.envelopeContains(getRefVarIndex(idxVarInProp));
+//            return take.getUB().contains(getRefVarIndex(idxVarInProp));
 //        }
 //        return super.advise(idxVarInProp, mask);
 //    }
@@ -115,8 +116,10 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
     }
 
     private TIntIntHashMap countRefs() {
-        TIntIntHashMap map = new TIntIntHashMap(take.getKernelSize());
-        for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+        TIntIntHashMap map = new TIntIntHashMap(take.getLB().size());
+        ISetIterator iter = take.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             IntVar ref = refs[i];
             if (ref.isInstantiated()) {
                 map.adjustOrPutValue(ref.getValue(), 1, 1);
@@ -157,7 +160,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                     refs[ker[j]].removeValue(value, this);
                 }
             } else if (count > gc) {
-                contradiction(a, "Above global cardinality");
+                fails();
             }
         }
     }
@@ -171,12 +174,14 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        takeCard.updateLowerBound(take.getKernelSize(), this);
-        takeCard.updateUpperBound(take.getEnvelopeSize(), this);
+        takeCard.updateLowerBound(take.getLB().size(), this);
+        takeCard.updateUpperBound(take.getUB().size(), this);
 
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+        ISetIterator takeEnv = take.getUB().iterator();
+        while (takeEnv.hasNext()) {
+            int i = takeEnv.nextInt();
             if (i < 0 || i >= refs.length) {
-                take.removeFromEnvelope(i, this);
+                take.remove(i, this);
             }
         }
 
@@ -185,7 +190,7 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             changed = false;
             TIntIntHashMap map = hasGlobalCardinality() ? constrainGlobalCardinality() : countRefs();
             int instCard = map.size();
-            int kerSize = take.getKernelSize();
+            int kerSize = take.getLB().size();
 
             int minUninstantiated;
             int maxUninstantiated;
@@ -195,9 +200,11 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             do {
                 cardChanged = false;
                 int kerUninstantiated = 0;
-                for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+                takeEnv.reset();
+                while (takeEnv.hasNext()) {
+                    int i = takeEnv.nextInt();
                     if (!refs[i].isInstantiated()) {
-                        if (take.kernelContains(i)) {
+                        if (take.getLB().contains(i)) {
                             kerUninstantiated++;
                         }
                     }
@@ -223,7 +230,9 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
             if (maxUninstantiated != 0) {
                 if (instCard == toCard.getUB()) {
                     // The rest must be duplicates.
-                    for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+                    ISetIterator takeKer = take.getLB().iterator();
+                    while (takeKer.hasNext()) {
+                        int i = takeKer.nextInt();
                         IntVar ref = refs[i];
                         assert !ref.isInstantiated() || map.contains(ref.getValue());
                         if (!ref.isInstantiated()) {
@@ -233,7 +242,9 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
                 }
                 if (maxCard == toCard.getLB()) {
                     // No more duplicate values.
-                    for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+                    ISetIterator takeKer = take.getLB().iterator();
+                    while (takeKer.hasNext()) {
+                        int i = takeKer.nextInt();
                         IntVar ref = refs[i];
                         if (!ref.isInstantiated()) {
                             TIntIntIterator iter = map.iterator();
@@ -253,7 +264,9 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
     public ESat isEntailed() {
         TIntIntHashMap map = new TIntIntHashMap();
         int gc = hasGlobalCardinality() ? getGlobalCardinality() : Integer.MAX_VALUE;
-        for (int i = take.getKernelFirst(); i != SetVar.END; i = take.getKernelNext()) {
+        ISetIterator takeKer = take.getLB().iterator();
+        while (takeKer.hasNext()) {
+            int i = takeKer.nextInt();
             if (i < 0 || i >= refs.length) {
                 return ESat.FALSE;
             }
@@ -267,12 +280,14 @@ public class PropJoinFunctionCard extends Propagator<Variable> {
 
         boolean completelyInstantiated = take.isInstantiated() && takeCard.isInstantiated() && toCard.isInstantiated();
         int instCard = map.size();
-        int minUninstantiated = Math.max(0, takeCard.getLB() - take.getKernelSize());
-        int maxUninstantiated = Math.max(0, takeCard.getUB() - take.getKernelSize());
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+        int minUninstantiated = Math.max(0, takeCard.getLB() - take.getLB().size());
+        int maxUninstantiated = Math.max(0, takeCard.getUB() - take.getLB().size());
+        ISetIterator takeEnv = take.getUB().iterator();
+        while (takeEnv.hasNext()) {
+            int i = takeEnv.nextInt();
             if (i >= 0 && i < refs.length && !refs[i].isInstantiated()) {
                 completelyInstantiated = false;
-                if (take.kernelContains(i)) {
+                if (take.getLB().contains(i)) {
                     minUninstantiated++;
                 }
                 maxUninstantiated++;

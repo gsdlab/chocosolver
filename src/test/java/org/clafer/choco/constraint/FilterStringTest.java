@@ -1,13 +1,13 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 import org.junit.Ignore;
 
@@ -19,7 +19,7 @@ import org.junit.Ignore;
 public class FilterStringTest {
 
     @Input(solutions = 216)
-    public Object testFilterString(Solver solver) {
+    public Object testFilterString(Model model) {
         /*
          * import Control.Monad
          *
@@ -32,10 +32,10 @@ public class FilterStringTest {
          *
          *     return (set, string, result)
          */
-        return $(cset("set", 0, 2, solver),
+        return $(model.setVar("set", ker(), env(0,1 ,2)),
                 0,
-                enumeratedArray("string", 3, 0, 2, solver),
-                enumeratedArray("result", 3, -1, 2, solver));
+                model.intVarArray("string", 3, 0, 2),
+                model.intVarArray("result", 3, -1, 2));
     }
 
     @Check
@@ -56,7 +56,7 @@ public class FilterStringTest {
     @Ignore
     @ArcConsistent
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar set, int offset, IntVar[] string, IntVar[] result) {
-        return Constraints.filterString(set.getSet(), set.getCard(), offset, string, result);
+    public Constraint setup(SetVar set, int offset, IntVar[] string, IntVar[] result) {
+        return Constraints.filterString(set, set.getCard(), offset, string, result);
     }
 }

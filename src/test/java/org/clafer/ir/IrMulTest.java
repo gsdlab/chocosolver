@@ -5,7 +5,6 @@ import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.IntVar;
 import org.clafer.domain.Domains;
 
@@ -23,6 +22,6 @@ public class IrMulTest {
 
     @Solution
     public Constraint setup(IntVar multiplicand, IntVar multiplier, IntVar product) {
-        return ICF.times(multiplicand, multiplier, product);
+        return multiplicand.getModel().times(multiplicand, multiplier, product);
     }
 }

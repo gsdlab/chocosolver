@@ -14,10 +14,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Triple;
 import org.clafer.common.UnsatisfiableException;
-import org.clafer.common.Util;
 import org.clafer.ir.*;
 import org.clafer.domain.BoolDomain;
 import static org.clafer.domain.BoolDomain.FalseDomain;
@@ -33,6 +33,17 @@ import static org.clafer.ir.Irs.*;
 public class Coalescer {
 
     private Coalescer() {
+    }
+
+    private static String stripParens(String name) {
+        if (name.startsWith("(") && name.endsWith(")")) {
+            return name.substring(1, name.length() - 1);
+        }
+        return name;
+    }
+
+    private static String joinNames(List<String> names) {
+        return names.stream().map(Coalescer::stripParens).collect(Collectors.joining(";", "(", ")"));
     }
 
     public static Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesce(IrModule module) {
@@ -121,7 +132,7 @@ public class Coalescer {
                 }
                 intGraph.union(card, tint(ker.size(), env.size()));
                 Triple<String, Domain, Domain> key
-                        = new Triple<>(Util.intercalate(";", names), env, ker);
+                        = new Triple<>(joinNames(names), env, ker);
                 for (IrSetVar coalesce : component) {
                     if (!(coalesce instanceof TempSetVar)) {
                         coalescedSetNameEnvKers.put(coalesce, key);
@@ -146,7 +157,7 @@ public class Coalescer {
                     domain = domain.intersection(var.getDomain());
                 }
                 failIf(domain.isEmpty());
-                IrIntVar coalesced = domainInt(Util.intercalate(";", names), domain);
+                IrIntVar coalesced = domainInt(joinNames(names), domain);
                 for (IrIntVar coalesce : component) {
                     if (!coalesced.equals(coalesce) && !(coalesce instanceof TempIntVar)
                             && (names.size() > 1 || !coalesce.getDomain().equals(coalesced.getDomain()))) {

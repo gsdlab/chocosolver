@@ -1,10 +1,10 @@
 package org.clafer.test;
 
+import org.chocosolver.solver.Model;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.clafer.test.TestUtil.toVar;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.variables.IntVar;
 
 /**
@@ -30,8 +30,8 @@ public class IntTerm implements Term {
     }
 
     @Override
-    public IntVar toChocoVar(Solver solver) {
-        return toVar(var, solver);
+    public IntVar toChocoVar(Model model) {
+        return toVar(var, model);
     }
 
     @Override

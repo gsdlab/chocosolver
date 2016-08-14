@@ -1,7 +1,7 @@
 package org.clafer.ir.compiler;
 
 import java.util.Map;
-import org.chocosolver.solver.search.solution.Solution;
+import org.chocosolver.solver.Solution;
 import org.clafer.collection.Either;
 import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
@@ -58,7 +58,7 @@ public class IrSolutionMap {
     }
 
     protected int[] getSetVal(SetVar var) {
-        return var.getValues();
+        return var.getValue().toArray();
     }
 
     public IrSolutionMap fromSolution(final Solution solution) {

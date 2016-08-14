@@ -2,13 +2,13 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 
 /**
@@ -19,7 +19,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class SetDifferenceTest {
 
     @Input(solutions = 128)
-    public Object testSetDifference(Solver solver) {
+    public Object testSetDifference(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -33,9 +33,9 @@ public class SetDifferenceTest {
          *     guard $ difference == deleteFirstsBy (==) minuend subtrahend
          *     return (minuend, subtrahend, difference)
          */
-        return $(cset(",inuend", -2, 1, solver),
-                cset("subtrahend", -1, 2, solver),
-                cset("difference", -1, 2, solver));
+        return $(model.setVar("minuend", ker(), env(-2, -1, 0, 1)),
+                model.setVar("subtrahend", ker(), env(-1, 0, 1, 2)),
+                model.setVar("difference", ker(), env(-1, 0, 1, 2)));
     }
 
     @Check
@@ -46,10 +46,10 @@ public class SetDifferenceTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar minuend, CSetVar subtrahend, CSetVar difference) {
+    public Constraint setup(SetVar minuend, SetVar subtrahend, SetVar difference) {
         return Constraints.difference(
-                minuend.getSet(), minuend.getCard(),
-                subtrahend.getSet(), subtrahend.getCard(),
-                difference.getSet(), difference.getCard());
+                minuend, minuend.getCard(),
+                subtrahend, subtrahend.getCard(),
+                difference, difference.getCard());
     }
 }

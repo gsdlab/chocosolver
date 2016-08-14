@@ -6,9 +6,9 @@ import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISet;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.objects.setDataStructures.SetFactory;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 
@@ -28,8 +28,8 @@ public class PropCountNotEqual extends Propagator<IntVar> {
         this.value = value;
         this.array = array;
         this.count = count;
-        this.possibles = SetFactory.makeStoredSet(SetType.BITSET, array.length, solver);
-        this.mandatories = SetFactory.makeStoredSet(SetType.BITSET, array.length, solver);
+        this.possibles = SetFactory.makeStoredSet(SetType.BITSET, 0, count.getModel());
+        this.mandatories = SetFactory.makeStoredSet(SetType.BITSET, 0, count.getModel());
     }
 
     boolean isArrayVar(int idx) {
@@ -54,12 +54,14 @@ public class PropCountNotEqual extends Propagator<IntVar> {
 //    }
 
     private void filter() throws ContradictionException {
-        count.updateLowerBound(mandatories.getSize(), this);
-        count.updateUpperBound(mandatories.getSize() + possibles.getSize(), this);
+        count.updateLowerBound(mandatories.size(), this);
+        count.updateUpperBound(mandatories.size() + possibles.size(), this);
         if (count.isInstantiated()) {
             int nb = count.getValue();
-            if (possibles.getSize() + mandatories.getSize() == nb) {
-                for (int j = possibles.getFirstElement(); j >= 0; j = possibles.getNextElement()) {
+            if (possibles.size() + mandatories.size() == nb) {
+                ISetIterator iter = possibles.iterator();
+                while (iter.hasNext()) {
+                    int j = iter.nextInt();
                     // vars[j] might be a bounded variabled
                     if (vars[j].removeValue(value, this)) {
                         possibles.remove(j);
@@ -68,8 +70,10 @@ public class PropCountNotEqual extends Propagator<IntVar> {
                 if (possibles.isEmpty()) {
                     setPassive();
                 }
-            } else if (mandatories.getSize() == nb) {
-                for (int j = possibles.getFirstElement(); j >= 0; j = possibles.getNextElement()) {
+            } else if (mandatories.size() == nb) {
+                ISetIterator iter = possibles.iterator();
+                while (iter.hasNext()) {
+                    int j = iter.nextInt();
                     vars[j].instantiateTo(value, this);
                 }
                 setPassive();
@@ -96,7 +100,7 @@ public class PropCountNotEqual extends Propagator<IntVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isArrayVar(idxVarInProp)) {
             IntVar var = vars[idxVarInProp];
-            if (possibles.contain(idxVarInProp)) {
+            if (possibles.contains(idxVarInProp)) {
                 if (!var.contains(value)) {
                     possibles.remove(idxVarInProp);
                     mandatories.add(idxVarInProp);

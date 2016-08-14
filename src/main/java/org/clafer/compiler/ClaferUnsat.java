@@ -12,14 +12,10 @@ import org.clafer.collection.Pair;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.clafer.ir.IrBoolVar;
-import org.chocosolver.solver.ResolutionPolicy;
+import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.search.loop.monitors.SMF;
-import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.util.ESat;
 
 /**
  * Either call {@link #minUnsat()} xor {@link #unsatCore()} at most once. If you
@@ -52,7 +48,7 @@ public class ClaferUnsat {
     }
 
     public ClaferUnsat limitTime(long ms) {
-        SMF.limitTime(getInternalSolver(), ms);
+        getInternalSolver().limitTime(ms);
         return this;
     }
 
@@ -69,8 +65,8 @@ public class ClaferUnsat {
      * unknown
      */
     public Pair<Set<AstConstraint>, InstanceModel> minUnsat() throws ReachedLimitException {
-        if (ESat.TRUE.equals(maximize())) {
-            Solution lastSolution = solver.getSolutionRecorder().getLastSolution();
+        Solution lastSolution;
+        if ((lastSolution = maximize()) != null) {
             Set<AstConstraint> unsat = new HashSet<>();
             for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
                 Either<Boolean, BoolVar> var = softVar.getSnd();
@@ -80,12 +76,12 @@ public class ClaferUnsat {
                     unsat.add(softVar.getFst());
                 }
             }
-            if (solver.hasReachedLimit()) {
+            if (solver.isStopCriterionMet()) {
                 throw new ReachedLimitBestKnownUnsatException(unsat, solutionMap.getInstance(lastSolution));
             }
             return new Pair<>(unsat, solutionMap.getInstance(lastSolution));
         }
-        if (solver.hasReachedLimit()) {
+        if (solver.isStopCriterionMet()) {
             throw new ReachedLimitException();
         }
         return null;
@@ -100,14 +96,14 @@ public class ClaferUnsat {
      */
     public Set<AstConstraint> unsatCore() throws ReachedLimitException {
         Set<AstConstraint> unsat = new HashSet<>();
-        if (ESat.TRUE.equals(maximize())) {
+        Solution lastSolution;
+        if ((lastSolution = maximize()) != null) {
             boolean changed;
             do {
-                if (solver.hasReachedLimit()) {
+                if (solver.isStopCriterionMet()) {
                     throw new ReachedLimitException();
                 }
                 changed = false;
-                Solution lastSolution = solver.getSolutionRecorder().getLastSolution();
                 List<BoolVar> minUnsat = new ArrayList<>();
                 for (Pair<AstConstraint, Either<Boolean, BoolVar>> softVar : softVars) {
                     Either<Boolean, BoolVar> var = softVar.getSnd();
@@ -120,25 +116,22 @@ public class ClaferUnsat {
                         }
                     }
                 }
-                solver.getSearchLoop().reset();
+                solver.reset();
                 for (BoolVar var : minUnsat) {
-                    solver.post(ICF.arithm(var, "=", 1));
+                    solver.getModel().arithm(var, "=", 1).post();
                 }
-            } while (changed && ESat.TRUE.equals(maximize()));
+            } while (changed && (lastSolution = maximize()) != null);
             return unsat;
         }
-        if (solver.hasReachedLimit()) {
+        if (solver.isStopCriterionMet()) {
             throw new ReachedLimitException();
         }
         return null;
     }
 
-    private ESat maximize() {
-        if (score.isLeft()) {
-            solver.findSolution();
-        } else {
-            solver.findOptimalSolution(ResolutionPolicy.MAXIMIZE, score.getRight());
-        }
-        return solver.isFeasible();
+    private Solution maximize() {
+        return score.isLeft()
+                ? solver.findSolution()
+                : solver.findOptimalSolution(score.getRight(), true);
     }
 }

@@ -1,14 +1,14 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.common.Util;
-import org.chocosolver.solver.variables.CSetVar;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 
 /**
@@ -19,7 +19,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class SetSumTest {
 
     @Input(solutions = 32)
-    public Object testSumSet(Solver solver) {
+    public Object testSumSet(Model model) {
         /*
          * import Control.Monad
          *
@@ -32,12 +32,15 @@ public class SetSumTest {
          *     guard $ sum set == setSum
          *     return set
          */
-        return $(cset("set", env(-4, -3, -2, -1, 0, 1, 2, 3), ker(), card(0, 1, 2), solver),
-                enumerated("sum", -4, 4, solver));
+        SetVar set = model.setVar("set", ker(), env(-4, -3, -2, -1, 0, 1, 2, 3));
+        IntVar card = model.intVar("|set|", 0, 2);
+        set.setCard(card);
+        IntVar sum = model.intVar("sum", -4, 4);
+        return $(set, sum);
     }
 
     @Input(solutions = 14)
-    public Object testSumNonPositiveSet(Solver solver) {
+    public Object testSumNonPositiveSet(Model model) {
         /*
          * import Control.Monad
          *
@@ -51,12 +54,15 @@ public class SetSumTest {
          *     return set
          *
          */
-        return $(cset("set", env(-5, -4, -3, -2, -1, 0), ker(), card(0, 1, 2, 3, 4), solver),
-                enumerated("sum", -4, 2, solver));
+        SetVar set = model.setVar("set", ker(), env(-5, -4, -3, -2, -1, 0));
+        IntVar card = model.intVar("|set|", 0, 4);
+        set.setCard(card);
+        IntVar sum = model.intVar("sum", -4, 2);
+        return $(set, sum);
     }
 
     @Input(solutions = 3)
-    public Object testSumKnown(Solver solver) {
+    public Object testSumKnown(Model model) {
         /*
          * import Control.Monad
          *
@@ -68,8 +74,11 @@ public class SetSumTest {
          *     guard $ sum set == 2
          *     return set
          */
-        return $(cset("set", env(-1, 0, 1, 2, 3), ker(), card(1, 2), solver),
-                enumerated("sum", 2, 2, solver));
+        SetVar set = model.setVar("set", ker(), env(-1, 0, 1, 2, 3));
+        IntVar card = model.intVar("|set|", 1, 2);
+        set.setCard(card);
+        IntVar sum = model.intVar("sum", 2, 2);
+        return $(set, sum);
     }
 
     @Check
@@ -78,7 +87,7 @@ public class SetSumTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar set, IntVar sum) {
-        return Constraints.setSum(set.getSet(), set.getCard(), sum);
+    public Constraint setup(SetVar set, IntVar sum) {
+        return Constraints.setSum(set, set.getCard(), sum);
     }
 }

@@ -60,7 +60,7 @@ public class OrConstraint extends Constraint {
                 }
             }
             if (allFalse) {
-                contradiction(vars[0], "All unsat.");
+                fails();
             }
         }
 

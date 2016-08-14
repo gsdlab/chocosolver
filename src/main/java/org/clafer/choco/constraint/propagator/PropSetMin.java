@@ -9,6 +9,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * The smallest element in the set. Does nothing if the set is empty.
@@ -55,11 +56,13 @@ public class PropSetMin extends Propagator<Variable> {
     }
 
     int in() {
-        int in = SetVar.END;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+        int in = Integer.MAX_VALUE;
+        ISetIterator iter = set.getUB().iterator();
+        while(iter.hasNext()) {
+            int i = iter.nextInt();
             if (min.contains(i)) {
-                if (in != SetVar.END) {
-                    return SetVar.END;
+                if (in != Integer.MAX_VALUE) {
+                    return Integer.MAX_VALUE;
                 }
                 in = i;
             }
@@ -70,34 +73,36 @@ public class PropSetMin extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         if (setCard.getLB() > 0) {
-            if (set.getEnvelopeSize() > 0) {
-                min.updateLowerBound(PropUtil.minEnv(set), this);
+            if (set.getUB().size() > 0) {
+                min.updateLowerBound(set.getUB().min(), this);
             }
-            int lim = set.getEnvelopeSize() - setCard.getLB();
+            int lim = set.getUB().size() - setCard.getLB();
             if (lim >= 0) {
                 min.updateUpperBound(PropUtil.getEnv(set, lim), this);
             }
-            if (set.getKernelSize() > 0) {
-                min.updateUpperBound(PropUtil.minKer(set), this);
+            if (set.getLB().size() > 0) {
+                min.updateUpperBound(set.getLB().min(), this);
             }
             int in = in();
-            if (in != SetVar.END) {
+            if (in != Integer.MAX_VALUE) {
                 min.instantiateTo(in, this);
             }
             int lb = min.getLB();
-            for (int i = set.getEnvelopeFirst(); i != SetVar.END && i < lb; i = set.getEnvelopeNext()) {
-                set.removeFromEnvelope(i, this);
+            ISetIterator iter = set.getUB().iterator();
+            int i;
+            while(iter.hasNext() && (i = iter.nextInt()) < lb) {
+                set.remove(i, this);
             }
             if (min.isInstantiated()) {
-                set.addToKernel(min.getValue(), this);
+                set.force(min.getValue(), this);
                 setPassive();
             }
         } else if (setCard.getUB() > 0) {
             if (!PropUtil.isDomIntersectEnv(min, set)) {
                 setCard.instantiateTo(0, this);
-            } else if (set.getKernelSize() > 0) {
+            } else if (set.getLB().size() > 0) {
                 int m = min.getLB();
-                int k = PropUtil.minKer(set);
+                int k = set.getLB().min();
                 if (m > k) {
                     setCard.instantiateTo(0, this);
                 }
@@ -111,13 +116,13 @@ public class PropSetMin extends Propagator<Variable> {
             if (!PropUtil.isDomIntersectEnv(min, set)) {
                 return ESat.FALSE;
             }
-            if (set.getKernelSize() > 0) {
+            if (set.getLB().size() > 0) {
                 int m = min.getLB();
-                int e = PropUtil.minEnv(set);
-                int k = PropUtil.minKer(set);
+                int k = set.getLB().min();
                 if (m > k) {
                     return ESat.FALSE;
                 }
+                int e = set.getUB().min();
                 if (min.isInstantiated() && m == e && m == k) {
                     return ESat.TRUE;
                 }

@@ -38,20 +38,20 @@ public class PropContainsImpliesEqualCard2 extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (subsetCard.getUB() == superset.getKernelSize()) {
+        if (subsetCard.getUB() == superset.getLB().size()) {
             PropUtil.envSubsetKer(subset, superset, this);
         }
-        if (subsetCard.getUB() <= superset.getKernelSize()) {
+        if (subsetCard.getUB() <= superset.getLB().size()) {
             setPassive();
         }
     }
 
     @Override
     public ESat isEntailed() {
-        if (subsetCard.getLB() > superset.getEnvelopeSize()) {
+        if (subsetCard.getLB() > superset.getUB().size()) {
             return ESat.FALSE;
         }
-        if (subsetCard.getUB() <= superset.getKernelSize()) {
+        if (subsetCard.getUB() <= superset.getLB().size()) {
             return ESat.TRUE;
         }
         return ESat.UNDEFINED;

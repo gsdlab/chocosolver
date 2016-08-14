@@ -10,6 +10,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * result = [string !! i | i <- set].
@@ -81,7 +82,7 @@ public class PropFilterString extends Propagator<Variable> {
         if (isSetCardVar(vIdx)) {
             return IntEventType.boundAndInst();
         }
-        // TODO: if (set.envelopeContains(getStringVarIndex(vIdx) + offset)) {
+        // TODO: if (set.getUB().contains(getStringVarIndex(vIdx) + offset)) {
         return IntEventType.all();
     }
 
@@ -144,12 +145,12 @@ public class PropFilterString extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (set.getKernelSize() > result.length) {
-            contradiction(set, "Too many in kernel");
+        if (set.getLB().size() > result.length) {
+            fails();
         }
 
-        int[] env = new int[set.getEnvelopeSize()];
-        int[] kerIndices = new int[set.getKernelSize()];
+        int[] env = new int[set.getUB().size()];
+        int[] kerIndices = new int[set.getLB().size()];
 
         boolean changed;
         do {
@@ -158,13 +159,15 @@ public class PropFilterString extends Propagator<Variable> {
             int kerIndex = 0;
             // The number of env elements seen.
             int envIndex = 0;
-            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            ISetIterator iter = set.getUB().iterator();
+            while (iter.hasNext()) {
+                int i = iter.nextInt();
                 int x = i - offset;
                 if (x < 0 || x >= string.length) {
-                    set.removeFromEnvelope(i, this);
+                    set.remove(i, this);
                 } else {
                     env[envIndex] = x;
-                    if (set.kernelContains(i)) {
+                    if (set.getLB().contains(i)) {
                         kerIndices[kerIndex] = envIndex;
                         changed |= subset(string[x], result, kerIndex, Math.min(envIndex + 1, result.length));
                         envIndex++;
@@ -178,7 +181,7 @@ public class PropFilterString extends Propagator<Variable> {
                             }
                         }
                         if (!found) {
-                            changed |= set.removeFromEnvelope(i, this);
+                            changed |= set.remove(i, this);
                         } else {
                             envIndex++;
                         }
@@ -211,7 +214,9 @@ public class PropFilterString extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         int index = 0;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END && set.kernelContains(i); i = set.getEnvelopeNext(), index++) {
+        ISetIterator iter = set.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (index >= result.length) {
                 return ESat.FALSE;
             }
@@ -224,7 +229,7 @@ public class PropFilterString extends Propagator<Variable> {
                 return ESat.FALSE;
             }
         }
-        for (int i = set.getEnvelopeSize(); i < result.length; i++) {
+        for (int i = set.getUB().size(); i < result.length; i++) {
             if (!result[i].contains(-1)) {
                 return ESat.FALSE;
             }

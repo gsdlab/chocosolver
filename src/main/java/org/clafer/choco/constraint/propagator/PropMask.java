@@ -7,6 +7,7 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.procedure.IntProcedure;
 
 /**
@@ -54,22 +55,30 @@ public class PropMask extends Propagator<SetVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+        ISetIterator setKer = set.getLB().iterator();
+        while (setKer.hasNext()) {
+            int i = setKer.nextInt();
             if (i >= from && i < to) {
-                masked.addToKernel(i - from, this);
+                masked.force(i - from, this);
             }
         }
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            if (i >= from && i < to && !masked.envelopeContains(i - from)) {
-                set.removeFromEnvelope(i, this);
+        ISetIterator setEnv = set.getUB().iterator();
+        while (setEnv.hasNext()) {
+            int i = setEnv.nextInt();
+            if (i >= from && i < to && !masked.getUB().contains(i - from)) {
+                set.remove(i, this);
             }
         }
-        for (int i = masked.getKernelFirst(); i != SetVar.END; i = masked.getKernelNext()) {
-            set.addToKernel(i + from, this);
+        ISetIterator maskedKer = masked.getLB().iterator();
+        while (maskedKer.hasNext()) {
+            int i = maskedKer.nextInt();
+            set.force(i + from, this);
         }
-        for (int i = masked.getEnvelopeFirst(); i != SetVar.END; i = masked.getEnvelopeNext()) {
-            if (i < 0 || i >= to - from || !set.envelopeContains(i + from)) {
-                masked.removeFromEnvelope(i, this);
+        ISetIterator maskedEnv = masked.getUB().iterator();
+        while (maskedEnv.hasNext()) {
+            int i = maskedEnv.nextInt();
+            if (i < 0 || i >= to - from || !set.getUB().contains(i + from)) {
+                masked.remove(i, this);
             }
         }
     }
@@ -93,7 +102,7 @@ public class PropMask extends Propagator<SetVar> {
         @Override
         public void execute(int ker) throws ContradictionException {
             if (ker >= from && ker < to) {
-                masked.addToKernel(ker - from, PropMask.this);
+                masked.force(ker - from, PropMask.this);
             }
         }
     };
@@ -101,7 +110,7 @@ public class PropMask extends Propagator<SetVar> {
         @Override
         public void execute(int env) throws ContradictionException {
             if (env >= from && env < to) {
-                masked.removeFromEnvelope(env - from, PropMask.this);
+                masked.remove(env - from, PropMask.this);
             }
         }
     };
@@ -109,26 +118,30 @@ public class PropMask extends Propagator<SetVar> {
         @Override
         public void execute(int ker) throws ContradictionException {
             assert ker < to - from;
-            set.addToKernel(ker + from, PropMask.this);
+            set.force(ker + from, PropMask.this);
         }
     };
     private final IntProcedure pruneSetOnMaskedEnv = new IntProcedure() {
         @Override
         public void execute(int env) throws ContradictionException {
             assert env < to - from;
-            set.removeFromEnvelope(env + from, PropMask.this);
+            set.remove(env + from, PropMask.this);
         }
     };
 
     @Override
     public ESat isEntailed() {
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            if (i >= from && i < to && !masked.envelopeContains(i - from)) {
+        ISetIterator setKer = set.getLB().iterator();
+        while (setKer.hasNext()) {
+            int i = setKer.nextInt();
+            if (i >= from && i < to && !masked.getUB().contains(i - from)) {
                 return ESat.FALSE;
             }
         }
-        for (int i = masked.getKernelFirst(); i != SetVar.END; i = masked.getKernelNext()) {
-            if (i < 0 || i >= to - from || !set.envelopeContains(i + from)) {
+        ISetIterator maskedKer = masked.getLB().iterator();
+        while (maskedKer.hasNext()) {
+            int i = maskedKer.nextInt();
+            if (i < 0 || i >= to - from || !set.getUB().contains(i + from)) {
                 return ESat.FALSE;
             }
         }

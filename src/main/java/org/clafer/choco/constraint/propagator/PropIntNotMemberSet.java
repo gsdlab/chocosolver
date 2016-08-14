@@ -10,6 +10,7 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * Missing from the library.
@@ -48,11 +49,12 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            element.removeValue(i, this);
+        ISetIterator iter = set.getLB().iterator();
+        while (iter.hasNext()) {
+            element.removeValue(iter.nextInt(), this);
         }
         if (element.isInstantiated()) {
-            set.removeFromEnvelope(element.getValue(), this);
+            set.remove(element.getValue(), this);
             setPassive();
         } else if (set.isInstantiated()) {
             setPassive();
@@ -63,7 +65,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isElementVar(idxVarInProp)) {
             assert element.isInstantiated();
-            set.removeFromEnvelope(element.getValue(), this);
+            set.remove(element.getValue(), this);
             setPassive();
         } else {
             assert isSetVar(idxVarInProp);
@@ -71,7 +73,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
             setD.forEach(setKer -> element.removeValue(setKer, this), SetEventType.ADD_TO_KER);
             setD.unfreeze();
             if (element.isInstantiated()) {
-                set.removeFromEnvelope(element.getValue(), this);
+                set.remove(element.getValue(), this);
                 setPassive();
             } else if (set.isInstantiated()) {
                 setPassive();
@@ -82,7 +84,7 @@ public class PropIntNotMemberSet extends Propagator<Variable> {
     @Override
     public ESat isEntailed() {
         if (element.isInstantiated()) {
-            if (!set.envelopeContains(element.getValue())) {
+            if (!set.getUB().contains(element.getValue())) {
                 return ESat.TRUE;
             }
             return set.isInstantiated() ? ESat.FALSE : ESat.UNDEFINED;

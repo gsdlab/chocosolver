@@ -11,6 +11,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * Sums a set and |set| &le n. This implementation <b>assumes</b> that the
@@ -59,11 +60,13 @@ public class PropSetSum extends Propagator<Variable> {
         final int[] smallest = new int[n];
         final int[] largest = new int[n];
 
-        int chooseSize = set.getEnvelopeSize() - ker.length;
+        int chooseSize = set.getUB().size() - ker.length;
         int highStart = chooseSize - n;
 
         int index = 0;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+        ISetIterator iter = set.getUB().iterator();
+        while(iter.hasNext()) {
+            int i = iter.nextInt();
             if (!Util.in(i, ker)) {
                 if (index < smallest.length) {
                     smallest[index] = i;
@@ -82,8 +85,8 @@ public class PropSetSum extends Propagator<Variable> {
         boolean changed;
         do {
             changed = false;
-            final int envSize = set.getEnvelopeSize();
-            final int kerSize = set.getKernelSize();
+            final int envSize = set.getUB().size();
+            final int kerSize = set.getLB().size();
 
             setCard.updateLowerBound(kerSize, this);
             setCard.updateUpperBound(envSize, this);
@@ -132,20 +135,22 @@ public class PropSetSum extends Propagator<Variable> {
             int ub = sum.getUB();
 
             int index = 0;
-            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            ISetIterator iter = set.getUB().iterator();
+            while(iter.hasNext()) {
+                int i = iter.nextInt();
                 if (!Util.in(i, ker)) {
                     if (index >= lowEnd) {
                         int val = low + i - lowCandidate;
                         // Adding i will never be under the upper bound.
                         if (val > ub) {
-                            changed |= set.removeFromEnvelope(i, this);
+                            changed |= set.remove(i, this);
                         }
                     }
                     if (index < highStart) {
                         int val = high + i - highCandidate;
                         // Adding i will never be over the lower bound.
                         if (val < lb) {
-                            changed |= set.removeFromEnvelope(i, this);
+                            changed |= set.remove(i, this);
                         }
                     }
                     index++;
@@ -156,8 +161,8 @@ public class PropSetSum extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        int envSize = set.getEnvelopeSize();
-        int kerSize = set.getKernelSize();
+        int envSize = set.getUB().size();
+        int kerSize = set.getLB().size();
         if (kerSize > setCard.getUB()) {
             return ESat.FALSE;
         }
@@ -168,7 +173,9 @@ public class PropSetSum extends Propagator<Variable> {
         int index = 0;
         int lowEnd = Math.max(setCard.getLB(), envSize) - kerSize;
         int highStart = envSize - kerSize - lowEnd;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+        ISetIterator iter = set.getUB().iterator();
+        while(iter.hasNext()) {
+            int i = iter.nextInt();
             if (Util.in(i, ker)) {
                 low += i;
                 high += i;

@@ -11,6 +11,7 @@ import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.procedure.IntProcedure;
 
 /**
@@ -64,25 +65,29 @@ public class PropIntChannel extends Propagator<Variable> {
         for (int i = 0; i < ints.length; i++) {
             int ub = ints[i].getUB();
             for (int j = ints[i].getLB(); j <= ub; j = ints[i].nextValue(j)) {
-                if (j < 0 || j >= sets.length || !sets[j].envelopeContains(i)) {
+                if (j < 0 || j >= sets.length || !sets[j].getUB().contains(i)) {
                     ints[i].removeValue(j, this);
                 }
             }
             if (ints[i].isInstantiated()) {
-                sets[ints[i].getValue()].addToKernel(i, this);
+                sets[ints[i].getValue()].force(i, this);
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
+            ISetIterator iter = sets[i].getLB().iterator();
+            while (iter.hasNext()) {
+                int j = iter.nextInt();
                 if (j >= 0 && j < ints.length) {
                     ints[j].instantiateTo(i, this);
                 }
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            for (int j = sets[i].getEnvelopeFirst(); j != SetVar.END; j = sets[i].getEnvelopeNext()) {
+            ISetIterator iter = sets[i].getUB().iterator();
+            while (iter.hasNext()) {
+                int j = iter.nextInt();
                 if (j < 0 || j >= ints.length || !ints[j].contains(i)) {
-                    sets[i].removeFromEnvelope(j, this);
+                    sets[i].remove(j, this);
                 }
             }
         }
@@ -98,17 +103,17 @@ public class PropIntChannel extends Propagator<Variable> {
                 ints[setKer].instantiateTo(id, this);
                 for (int i = 0; i < sets.length; i++) {
                     if (i != id) {
-                        sets[i].removeFromEnvelope(setKer, this);
+                        sets[i].remove(setKer, this);
                     }
                 }
             }, SetEventType.ADD_TO_KER);
             setsD[id].forEach(setEnv -> {
                 if (ints[setEnv].removeValue(id, this) && ints[setEnv].isInstantiated()) {
                     int val = ints[setEnv].getValue();
-                    sets[val].addToKernel(setEnv, this);
+                    sets[val].force(setEnv, this);
                     for (int i = 0; i < sets.length; i++) {
                         if (i != val) {
-                            sets[i].removeFromEnvelope(setEnv, this);
+                            sets[i].remove(setEnv, this);
                         }
                     }
                 }
@@ -120,10 +125,10 @@ public class PropIntChannel extends Propagator<Variable> {
 
             intsD[id].freeze();
             intsD[id].forEachRemVal((IntProcedure) intRem -> {
-                sets[intRem].removeFromEnvelope(id, this);
+                sets[intRem].remove(id, this);
             });
             if (ints[id].isInstantiated()) {
-                sets[ints[id].getValue()].addToKernel(id, this);
+                sets[ints[id].getValue()].force(id, this);
             }
             intsD[id].unfreeze();
         }
@@ -134,13 +139,15 @@ public class PropIntChannel extends Propagator<Variable> {
         for (int i = 0; i < ints.length; i++) {
             if (ints[i].isInstantiated()) {
                 int value = ints[i].getValue();
-                if (value < 0 || value >= sets.length || !sets[value].envelopeContains(i)) {
+                if (value < 0 || value >= sets.length || !sets[value].getUB().contains(i)) {
                     return ESat.FALSE;
                 }
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            for (int j = sets[i].getKernelFirst(); j != SetVar.END; j = sets[i].getKernelNext()) {
+            ISetIterator iter = sets[i].getLB().iterator();
+            while(iter.hasNext()) {
+                int j = iter.nextInt();
                 if (j < 0 || j >= ints.length || !ints[j].contains(i)) {
                     return ESat.FALSE;
                 }

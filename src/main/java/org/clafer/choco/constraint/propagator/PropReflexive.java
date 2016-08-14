@@ -22,22 +22,22 @@ public class PropReflexive extends Propagator<SetVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
-            vars[i].addToKernel(i, this);
+            vars[i].force(i, this);
         }
         setPassive();
     }
 
     @Override
     public ESat isEntailed() {
-        boolean allKernelContains = true;
+        boolean allUbContains = true;
         for (int i = 0; i < vars.length; i++) {
             SetVar var = vars[i];
-            if (!var.envelopeContains(i)) {
+            if (!var.getUB().contains(i)) {
                 return ESat.FALSE;
             }
-            allKernelContains &= var.kernelContains(i);
+            allUbContains &= var.getLB().contains(i);
         }
-        return allKernelContains ? ESat.TRUE : ESat.UNDEFINED;
+        return allUbContains ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

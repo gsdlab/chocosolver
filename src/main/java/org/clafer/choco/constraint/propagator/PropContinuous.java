@@ -9,6 +9,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -44,101 +45,70 @@ public class PropContinuous extends Propagator<Variable> {
         return IntEventType.VOID.getMask();
     }
 
-    public int maxKer(SetVar set) {
-        int max = SetVar.END;
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            max = i;
-        }
-        return max;
-    }
-
-    public int maxEnv(SetVar set) {
-        int max = SetVar.END;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            max = i;
-        }
-        return max;
-    }
-
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (set.getKernelSize() > 0) {
-            int cur = set.getKernelFirst();
-            assert cur != SetVar.END;
-            for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
+        if (set.getLB().size() > 0) {
+            ISetIterator setKer = set.getLB().iterator();
+            assert setKer.hasNext();
+            int cur = setKer.nextInt();
+            while (setKer.hasNext()) {
+                int next = setKer.nextInt();
                 for (int j = cur + 1; j < next; j++) {
-                    set.addToKernel(j, this);
+                    set.force(j, this);
                 }
                 cur = next;
             }
-            if (!set.isInstantiated()) {
-                int min = set.getKernelFirst();
+        }
+        if (set.getUB().size() > 0) {
+            int cardLb = card.getLB();
+            if (cardLb >= 2) {
+                int ker = set.getLB().isEmpty() ? 0 : set.getLB().min();
+                int maxSize = 0;
 
-                int prev = set.getEnvelopeFirst();
-                int[] queue = new int[set.getEnvelopeSize() - set.getKernelSize() + 1];
-                queue[0] = prev;
-                int size = 1;
-                int i;
-                for (i = set.getEnvelopeNext(); prev < min; i = set.getEnvelopeNext()) {
-                    if (i > prev + 1) {
-                        for (int j = 0; j < size; j++) {
-                            set.removeFromEnvelope(queue[j], this);
+                ISetIterator iter = set.getUB().iterator();
+                if (iter.hasNext()) {
+                    int prev = iter.nextInt();
+                    int size = 1;
+                    while (iter.hasNext()) {
+                        assert (!set.getUB().contains(prev - 1));
+
+                        int next = iter.nextInt();
+
+                        while (next == prev + 1) {
+                            size++;
+                            if (!iter.hasNext()) {
+                                break;
+                            }
+                            prev = next;
+                            next = iter.nextInt();
                         }
-                        size = 0;
-                    }
-                    prev = i;
-                    queue[size++] = prev;
-                }
-                if (prev != SetVar.END) {
-                    for (; i != SetVar.END && i == prev + 1; i = set.getEnvelopeNext()) {
-                        prev = i;
-                    }
-                    if (i != SetVar.END) {
-                        for (; i != SetVar.END; i = set.getEnvelopeNext()) {
-                            set.removeFromEnvelope(i, this);
+
+                        if (next != prev + 1
+                                && (!set.getLB().isEmpty() && ker <= prev - size && ker > prev)
+                                || size < cardLb) {
+                            for (int i = prev; i > prev - size; i--) {
+                                set.remove(i, this);
+                            }
+                        } else if (size > maxSize) {
+                            maxSize = size;
                         }
+                        prev = next;
+                        size = 1;
                     }
                 }
+                card.updateUpperBound(maxSize, this);
             }
-        } else if (set.getEnvelopeSize() > 0) {
-            int prev = set.getEnvelopeFirst();
-            int i;
-            int max = 0;
-            int[] region = card.getLB() >= 2 ? new int[card.getLB() - 1] : null;
-            do {
-                if (region != null) {
-                    region[0] = prev;
-                }
-                int size = 1;
-                for (i = set.getEnvelopeNext(); i != SetVar.END && prev + 1 == i; i = set.getEnvelopeNext()) {
-                    prev = i;
-                    if (region != null && size < region.length) {
-                        region[size] = prev;
-                    }
-                    size++;
-                }
-                if (region != null && size <= region.length) {
-                    for (int z = 0; z < size; z++) {
-                        set.removeFromEnvelope(region[z], this);
-                    }
-                }
-                prev = i;
-                max = Math.max(max, size);
-            } while (i != SetVar.END);
-
-            card.updateUpperBound(max, this);
         }
     }
 
     @Override
     public ESat isEntailed() {
-        int cur = set.getKernelFirst();
-        if (cur != SetVar.END) {
-            for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
-                for (int j = cur + 1; j < next; j++) {
-                    if (!set.envelopeContains(j)) {
-                        return ESat.FALSE;
-                    }
+        if (set.getLB().size() > 0) {
+            int min = set.getLB().min();
+            int max = set.getLB().max();
+            for (int i = min + 1; i < max; i++) {
+                if (!set.getUB().contains(i)) {
+                    return ESat.FALSE;
                 }
             }
         }

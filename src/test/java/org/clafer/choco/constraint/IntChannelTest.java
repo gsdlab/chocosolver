@@ -1,12 +1,12 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.common.Util;
 import org.clafer.test.NonEmpty;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
@@ -20,13 +20,9 @@ import static org.chocosolver.solver.variables.Var.*;
 public class IntChannelTest {
 
     @Input(solutions = 27)
-    public Object testIntChannel(Solver solver) {
-        SetVar[] sets = new SetVar[3];
-        for (int i = 0; i < sets.length; i++) {
-            sets[i] = set("set_" + i, Util.fromTo(0, 3), solver);
-        }
-        IntVar[] ints = enumeratedArray("int", 3, Util.fromTo(0, 3), solver);
-        return $(sets, ints);
+    public Object testIntChannel(Model model) {
+        return $(model.setVarArray("set", 3, ker(), env(0, 1, 2)),
+                model.intVarArray("int", 3, env(0, 1, 2)));
     }
 
     @Check

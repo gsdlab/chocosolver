@@ -7,7 +7,6 @@ import org.clafer.test.NonEmpty;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.IntVar;
 
 /**
@@ -24,6 +23,6 @@ public class IrWithinTest {
 
     @Solution
     public Constraint setup(IntVar value, int[] range) {
-        return ICF.member(value, range);
+        return value.getModel().member(value, range);
     }
 }

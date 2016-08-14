@@ -1,6 +1,7 @@
 package org.clafer.choco.constraint;
 
 import java.util.Set;
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
@@ -11,7 +12,6 @@ import org.junit.runner.RunWith;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -21,7 +21,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class AcyclicTest {
 
     @Input(solutions = 125)
-    public Object testAcyclic(Solver solver) {
+    public Object testAcyclic(Model model) {
         /*
          * import Control.Monad
          * import Data.Graph
@@ -34,17 +34,17 @@ public class AcyclicTest {
          *         isAcyclic AcyclicSCC{} = True
          *         isAcyclic _ = False
          */
-        return $(enumeratedArray("edges", 4, 0, 4, solver));
+        return $(model.intVarArray("edges", 4, 0, 4));
     }
 
     @Input(solutions = 0)
-    public Object testTrivialCyclic(Solver solver) {
-        return $(new IntVar[]{solver.ZERO()});
+    public Object testTrivialCyclic(Model model) {
+        return $(new IntVar[]{model.intVar(0)});
     }
 
     @Input(solutions = 1)
-    public Object testTrivialAcyclic(Solver solver) {
-        return $(new IntVar[]{solver.ONE()});
+    public Object testTrivialAcyclic(Model model) {
+        return $(new IntVar[]{model.intVar(1)});
     }
 
     @Check

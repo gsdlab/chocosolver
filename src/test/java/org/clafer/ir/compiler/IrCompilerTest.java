@@ -1,5 +1,6 @@
 package org.clafer.ir.compiler;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.domain.Domains.*;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
@@ -8,8 +9,7 @@ import static org.clafer.ir.Irs.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.search.strategy.SetStrategyFactory;
-import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.search.strategy.Search;
 
 /**
  *
@@ -23,16 +23,15 @@ public class IrCompilerTest {
         IrSetVar var = set("set", boundDomain(0, 10), boundDomain(1, 2), boundDomain(2, 3));
         module.addVariable(var);
 
-        Solver solver = new Solver();
-        IrSolutionMap map = IrCompiler.compile(module, solver);
-        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getVar(var).getRight()}));
+        Model model = new Model();
+        IrSolutionMap map = IrCompiler.compile(module, model);
+        Solver solver = model.getSolver();
+        solver.setSearch(Search.setVarSearch(map.getVar(var).getRight()));
 
         int count = 0;
-        if (solver.findSolution()) {
-            do {
-                assertTrue(map.getValue(var).length <= 3);
-                count++;
-            } while (solver.nextSolution());
+        while (solver.solve()) {
+            assertTrue(map.getValue(var).length <= 3);
+            count++;
         }
         assertEquals(10, count);
     }
@@ -48,17 +47,16 @@ public class IrCompilerTest {
         module.addConstraint(equal(card1, card(var)));
         module.addConstraint(equal(card2, card(var)));
 
-        Solver solver = new Solver();
-        IrSolutionMap map = IrCompiler.compile(module, solver);
-        solver.set(SetStrategyFactory.force_first(new SetVar[]{map.getVar(var).getRight()}));
+        Model model = new Model();
+        IrSolutionMap map = IrCompiler.compile(module, model);
+        Solver solver = model.getSolver();
+        solver.setSearch(Search.setVarSearch(map.getVar(var).getRight()));
 
         int count = 0;
-        if (solver.findSolution()) {
-            do {
-                assertEquals(map.getValue(var).length, map.getValue(card1));
-                assertEquals(map.getValue(var).length, map.getValue(card2));
-                count++;
-            } while (solver.nextSolution());
+        while (solver.solve()) {
+            assertEquals(map.getValue(var).length, map.getValue(card1));
+            assertEquals(map.getValue(var).length, map.getValue(card2));
+            count++;
         }
         assertEquals(16, count);
     }

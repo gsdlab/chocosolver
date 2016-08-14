@@ -52,26 +52,31 @@ public class PropSetBounded extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        from.updateUpperBound(to.getUB(), this);
+        to.updateLowerBound(from.getLB(), this);
+        if (from.getUB() < to.getLB() && !set.getUB().isEmpty()) {
+            from.updateLowerBound(set.getUB().min(), this);
+            to.updateUpperBound(set.getUB().max() + 1, this);
+        }
         int f = from.getUB();
-        to.updateUpperBound(Math.max(f, PropUtil.maxEnv(set) + 1), this);
         int t = to.getLB();
         for (int i = f; i < t; i++) {
-            set.addToKernel(i, this);
+            set.force(i, this);
         }
     }
 
     @Override
     public ESat isEntailed() {
-        if (to.getUB() - from.getLB() < set.getKernelSize()) {
+        if (from.getLB() > to.getUB()) {
             return ESat.FALSE;
         }
         int f = from.getUB();
         int t = to.getLB();
-        if (t - f > set.getEnvelopeSize()) {
+        if (t - f > set.getUB().size()) {
             return ESat.FALSE;
         }
         for (int i = f; i < t; i++) {
-            if (!set.envelopeContains(i)) {
+            if (!set.getUB().contains(i)) {
                 return ESat.FALSE;
             }
         }

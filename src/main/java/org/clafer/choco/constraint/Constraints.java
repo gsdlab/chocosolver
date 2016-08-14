@@ -7,9 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.constraints.Operator;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
@@ -445,12 +444,12 @@ public class Constraints {
         if (sets.length != setCards.length) {
             throw new IllegalArgumentException();
         }
-        Solver solver = sets[0].getSolver();
+        Model model = sets[0].getModel();
 
         List<Propagator<?>> propagators = new ArrayList<>();
 
         IntVar[] boundary = new IntVar[sets.length + 1];
-        boundary[0] = VF.zero(solver);
+        boundary[0] = model.intVar(0);
         for (int i = 0; i < sets.length; i++) {
             if (boundary[i].isInstantiatedTo(0)) {
                 boundary[i + 1] = setCards[i];
@@ -472,7 +471,7 @@ public class Constraints {
             propagators.add(new PropContinuous(sets[i], setCards[i]));
         }
         if (boundary[boundary.length - 1].getUB() < 0) {
-            return solver.FALSE();
+            return model.falseConstraint();
         }
         propagators.add(new PropContinuousUnion(sets, boundary[boundary.length - 1]));
 
@@ -520,8 +519,8 @@ public class Constraints {
         return new Constraint("acyclic", new PropAcyclic(edges));
     }
 
-    public static Constraint connected(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
-        return s.TRUE();
+    public static Constraint connected(SetVar nodes, SetVar[] edges, boolean directed) {
+        return nodes.getModel().trueConstraint();
 //        int nodes_upper = PropUtil.maxEnv(nodes) + 1;
 //        boolean fixed_nodes = nodes.isInstantiated();
 //
@@ -686,7 +685,7 @@ public class Constraints {
     public static Constraint singletonFilter(IntVar ivar, SetVar svar, IntVar svarCard, int filter) {
         return new Constraint("singletonFilter",
                 new PropSingletonFilter(ivar, svar, filter),
-                new PropEqualX_Y(svarCard, ICF.arithm(ivar, "!=", filter).reif()));
+                new PropEqualX_Y(svarCard, ivar.getModel().arithm(ivar, "!=", filter).reify()));
     }
 
     /**
@@ -900,7 +899,7 @@ public class Constraints {
         }
         return new Constraint("max",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
-                    ICF.arithm(max, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                    set.getModel().arithm(max, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
                 }),
                 new PropSetMax(set, setCard, max));
     }
@@ -919,7 +918,7 @@ public class Constraints {
         }
         return new Constraint("min",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
-                    ICF.arithm(min, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                    set.getModel().arithm(min, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
                 }),
                 new PropSetMin(set, setCard, min));
     }
@@ -989,7 +988,7 @@ public class Constraints {
             eq(chars2[i], 0).ifPresent(propagators::add);
         }
         if (propagators.isEmpty()) {
-            return length1.getSolver().TRUE();
+            return length1.getModel().trueConstraint();
         }
         return new Constraint("arrayEqual",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
@@ -1016,30 +1015,30 @@ public class Constraints {
             eq(chars1[i], chars2[i]).ifPresent(propagators::add);
         }
         if (propagators.isEmpty()) {
-            return chars1[0].getSolver().TRUE();
+            return chars1[0].getModel().trueConstraint();
         }
         return new Constraint("ArrayEqual", propagators.toArray(new Propagator[propagators.size()]));
     }
 
     public static Constraint lessThan(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
-        return ICF.lex_less(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
+        return chars1[0].getModel().lexLess(
+                pad(chars1, maxLength, chars1[0].getModel().intVar(0)),
+                pad(chars2, maxLength, chars1[0].getModel().intVar(0)));
     }
 
     public static Constraint lessThanEqual(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
-        return ICF.lex_less_eq(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
+        return chars1[0].getModel().lexLessEq(
+                pad(chars1, maxLength, chars1[0].getModel().intVar(0)),
+                pad(chars2, maxLength, chars1[0].getModel().intVar(0)));
     }
 
-    private static IntVar[] charsAt(Solver solver, IntVar[][] strings, int index) {
+    private static IntVar[] charsAt(Model model, IntVar[][] strings, int index) {
         IntVar[] charsAt = new IntVar[strings.length];
         for (int i = 0; i < charsAt.length; i++) {
             charsAt[i] = index < strings[i].length
-                    ? strings[i][index] : solver.ZERO();
+                    ? strings[i][index] : model.intVar(0);
         }
         return charsAt;
     }
@@ -1061,7 +1060,7 @@ public class Constraints {
         propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
         propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
         for (int i = 0; i < value.length; i++) {
-            IntVar[] charsAt = charsAt(index.getSolver(), array, i);
+            IntVar[] charsAt = charsAt(index.getModel(), array, i);
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
         }
@@ -1076,7 +1075,7 @@ public class Constraints {
             IntVar[] prefix, IntVar prefixLength,
             IntVar[] word, IntVar wordLength) {
         if (prefixLength.getLB() > wordLength.getUB()) {
-            return prefixLength.getSolver().FALSE();
+            return prefixLength.getModel().falseConstraint();
         }
         return new Constraint("Prefix",
                 lessThanEq(prefixLength, wordLength),
@@ -1086,19 +1085,19 @@ public class Constraints {
     public static Constraint suffix(
             IntVar[] suffix, IntVar suffixLength,
             IntVar[] word, IntVar wordLength) {
-        Solver solver = suffixLength.getSolver();
+        Model model = suffixLength.getModel();
         if (suffixLength.getLB() > wordLength.getUB()) {
-            return solver.FALSE();
+            return model.falseConstraint();
         }
-        IntVar prefixLength = VF.enumerated("SuffixVar" + varNum++,
+        IntVar prefixLength = model.intVar("SuffixVar" + varNum++,
                 Math.min(wordLength.getLB() - suffixLength.getUB(), 0),
-                wordLength.getUB() - suffixLength.getLB(), solver);
-        solver.post(new Constraint("SuffixVarSum",
+                wordLength.getUB() - suffixLength.getLB(), false);
+        model.post(new Constraint("SuffixVarSum",
                 sumEq(new IntVar[]{prefixLength, suffixLength}, wordLength)));
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(lessThanEq(suffixLength, wordLength));
         for (int i = 0; i < suffix.length; i++) {
-            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, suffixLength.getSolver().ZERO());
+            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, model.intVar(0));
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -1118,13 +1117,13 @@ public class Constraints {
             IntVar[] right, IntVar rightLength,
             IntVar[] concat, IntVar concatLength) {
         if (leftLength.getLB() + rightLength.getLB() > concatLength.getUB()) {
-            return leftLength.getSolver().FALSE();
+            return leftLength.getModel().falseConstraint();
         }
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(sumEq(new IntVar[]{leftLength, rightLength}, concatLength));
         propagators.add(new PropSamePrefix(leftLength, left, concat));
         for (int i = 0; i < right.length; i++) {
-            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getSolver().ZERO());
+            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getModel().intVar(0));
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -1138,7 +1137,7 @@ public class Constraints {
 
     public static Constraint subarray(IntVar[] subarray, IntVar sublength, IntVar index, IntVar[] suparray) {
         if (sublength.getUB() < 0 || index.getUB() < 0 || suparray.length == 0) {
-            return sublength.getSolver().FALSE();
+            return sublength.getModel().falseConstraint();
         }
         if (subarray.length == 0) {
             return new Constraint(null, new PropEqualXC(sublength, 0), new PropLessOrEqualXC(index, suparray.length - 1));
@@ -1151,7 +1150,7 @@ public class Constraints {
                 pad[j] = suparray[j + i];
             }
             for (; j < pad.length; j++) {
-                pad[j] = VF.fixed(-1, sublength.getSolver());
+                pad[j] = sublength.getModel().intVar(-1);
             }
             propagators.add(new PropElementValueSupport(subarray[i], pad, index, 0, -1));
         }
@@ -1162,7 +1161,7 @@ public class Constraints {
                 pad[j] = subarray[i - j];
             }
             for (; j < pad.length; j++) {
-                pad[j] = VF.fixed(-1, sublength.getSolver());
+                pad[j] = sublength.getModel().intVar(-1);
             }
             propagators.add(new PropElementArraySupport(suparray[i], pad, index, 0, -1));
         }

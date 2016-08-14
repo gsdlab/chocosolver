@@ -9,6 +9,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * The largest element in the set. Does nothing if the set is empty.
@@ -58,11 +59,13 @@ public class PropSetMax extends Propagator<Variable> {
     }
 
     int in() {
-        int in = SetVar.END;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+        int in = Integer.MAX_VALUE;
+        ISetIterator iter = set.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (max.contains(i)) {
-                if (in != SetVar.END) {
-                    return SetVar.END;
+                if (in != Integer.MAX_VALUE) {
+                    return Integer.MAX_VALUE;
                 }
                 in = i;
             }
@@ -73,36 +76,38 @@ public class PropSetMax extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         if (setCard.getLB() > 0) {
-            if (set.getEnvelopeSize() > 0) {
-                max.updateUpperBound(PropUtil.maxEnv(set), this);
+            if (set.getUB().size() > 0) {
+                max.updateUpperBound(set.getUB().max(), this);
             }
             int lim = setCard.getLB() - 1;
-            if (lim < set.getEnvelopeSize()) {
+            if (lim < set.getUB().size()) {
                 max.updateLowerBound(PropUtil.getEnv(set, lim), this);
             }
-            if (set.getKernelSize() > 0) {
-                max.updateLowerBound(PropUtil.maxKer(set), this);
+            if (set.getLB().size() > 0) {
+                max.updateLowerBound(set.getLB().max(), this);
             }
             int in = in();
-            if (in != SetVar.END) {
+            if (in != Integer.MAX_VALUE) {
                 max.instantiateTo(in, this);
             }
             int ub = max.getUB();
-            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            ISetIterator iter = set.getUB().iterator();
+            while (iter.hasNext()) {
+                int i = iter.nextInt();
                 if (i > ub) {
-                    set.removeFromEnvelope(i, this);
+                    set.remove(i, this);
                 }
             }
             if (max.isInstantiated()) {
-                set.addToKernel(max.getValue(), this);
+                set.force(max.getValue(), this);
                 setPassive();
             }
         } else if (setCard.getUB() > 0) {
             if (!PropUtil.isDomIntersectEnv(max, set)) {
                 setCard.instantiateTo(0, this);
-            } else if (set.getKernelSize() > 0) {
+            } else if (set.getLB().size() > 0) {
                 int m = max.getUB();
-                int k = PropUtil.minKer(set);
+                int k = set.getLB().min();
                 if (m < k) {
                     setCard.instantiateTo(0, this);
                 }
@@ -116,13 +121,13 @@ public class PropSetMax extends Propagator<Variable> {
             if (!PropUtil.isDomIntersectEnv(max, set)) {
                 return ESat.FALSE;
             }
-            if (set.getKernelSize() > 0) {
+            if (set.getLB().size() > 0) {
                 int m = max.getUB();
-                int e = PropUtil.maxEnv(set);
-                int k = PropUtil.maxKer(set);
+                int k = set.getLB().max();
                 if (m < k) {
                     return ESat.FALSE;
                 }
+                int e = set.getUB().max();
                 if (max.isInstantiated() && m == e && m == k) {
                     return ESat.TRUE;
                 }

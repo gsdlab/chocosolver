@@ -133,7 +133,7 @@ public class PropArrayToSetCard extends Propagator<Variable> {
                     as[j].removeValue(value, this);
                 }
             } else if (count > gc) {
-                contradiction(a, "Above global cardinality");
+                fails();
             }
         }
     }

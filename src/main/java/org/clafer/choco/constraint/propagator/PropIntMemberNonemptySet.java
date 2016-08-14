@@ -7,6 +7,7 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -31,29 +32,31 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
         this.element = element;
         this.set = set;
         this.setCard = setCard;
-        this.watch1 = SetVar.END;
-        this.watch2 = SetVar.END;
+        this.watch1 = 0;
+        this.watch2 = 0;
     }
 
     /**
      * @return {@code true} if at most one watch left, {@code false} otherwise
      */
     private boolean updateWatches() {
-        watch1 = element.contains(watch1) ? watch1 : SetVar.END;
-        watch2 = element.contains(watch2) ? watch2 : SetVar.END;
-        if (watch1 == SetVar.END || watch2 == SetVar.END) {
+        watch1 = element.contains(watch1) ? watch1 : Integer.MAX_VALUE;
+        watch2 = element.contains(watch2) ? watch2 : Integer.MAX_VALUE;
+        if (watch1 == Integer.MAX_VALUE || watch2 == Integer.MAX_VALUE) {
             // watch1 == SetVar.End => watch2 == SetVar.End
-            if (watch1 == SetVar.END) {
+            if (watch1 == Integer.MAX_VALUE) {
                 watch1 = watch2;
-                watch2 = SetVar.END;
+                watch2 = Integer.MAX_VALUE;
             }
-            for (int j = set.getEnvelopeFirst(); j != SetVar.END; j = set.getEnvelopeNext()) {
+            ISetIterator iter = set.getUB().iterator();
+            while(iter.hasNext()) {
+                int j = iter.nextInt();
                 if (element.contains(j)) {
-                    if (watch1 == SetVar.END) {
+                    if (watch1 == Integer.MAX_VALUE) {
                         watch1 = j;
                     } else if (watch1 != j) {
                         // Found the second watch.
-                        assert (watch2 == SetVar.END);
+                        assert (watch2 == Integer.MAX_VALUE);
                         watch2 = j;
                         return false;
                     }
@@ -66,12 +69,12 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
 
     private void watchFilter() throws ContradictionException {
         if (updateWatches()) {
-            if (watch1 != SetVar.END && watch2 == SetVar.END) {
-                set.addToKernel(watch1, this);
+            if (watch1 != Integer.MAX_VALUE && watch2 == Integer.MAX_VALUE) {
+                set.force(watch1, this);
                 element.instantiateTo(watch1, this);
                 setPassive();
-            } else if (watch1 == SetVar.END) {
-                contradiction(element, "");
+            } else if (watch1 == Integer.MAX_VALUE) {
+                fails();
             }
         }
     }
@@ -81,13 +84,13 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
         if (setCard.getLB() > 0) {
             PropUtil.domSubsetEnv(element, set, this);
             if (element.isInstantiated()) {
-                set.addToKernel(element.getValue(), this);
+                set.force(element.getValue(), this);
                 setPassive();
             } else {
                 watchFilter();
             }
         } else {
-            if (updateWatches() && watch1 == SetVar.END) {
+            if (updateWatches() && watch1 == Integer.MAX_VALUE) {
                 setCard.instantiateTo(0, this);
             }
         }

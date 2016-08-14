@@ -1,13 +1,12 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.BoolVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -17,10 +16,10 @@ import static org.chocosolver.solver.variables.Var.*;
 public class IfThenElseTest {
 
     @Input(solutions = 4)
-    public Object testIfThenElse(Solver solver) {
-        return $(bool("antecedent", solver),
-                bool("consequent", solver),
-                bool("alternative", solver));
+    public Object testIfThenElse(Model model) {
+        return $(model.boolVar("antecedent"),
+                model.boolVar("consequent"),
+                model.boolVar("alternative"));
     }
 
     @Check

@@ -5,7 +5,6 @@ import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.set.SCF;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.SetVar;
 
@@ -23,6 +22,6 @@ public class IrBoolChannelTest {
 
     @Solution
     public Constraint setup(BoolVar[] bools, SetVar set) {
-        return SCF.bool_channel(bools, set, 0);
+        return set.getModel().setBoolsChanneling(bools, set, 0);
     }
 }

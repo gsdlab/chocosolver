@@ -5,7 +5,6 @@ import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.BoolVar;
 
 /**
@@ -22,6 +21,6 @@ public class IrNotTest {
 
     @Solution
     public Constraint setup(BoolVar var) {
-        return ICF.arithm(var, "=", 0);
+        return var.getModel().arithm(var, "=", 0);
     }
 }

@@ -1,11 +1,11 @@
 package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
@@ -19,7 +19,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class NotMemberTest {
 
     @Input(solutions = 192)
-    public Object testNotMember(Solver solver) {
+    public Object testNotMember(Model model) {
         /*
          * import Control.Monad
          *
@@ -31,20 +31,20 @@ public class NotMemberTest {
          *     guard $ i `notElem` s
          *     return (i, s)
          */
-        return $(enumerated("element", -1, 3, solver),
-                set("set", 0, 5, solver));
+        return $(model.intVar("element", -1, 3),
+                model.setVar("set", ker(), env(0, 1, 2, 3, 4, 5)));
     }
 
     @Input(solutions = 192)
-    public Object testTautology(Solver solver) {
-        return $(enumerated("element", 6, 8, solver),
-                set("set", 0, 5, solver));
+    public Object testTautology(Model model) {
+        return $(model.intVar("element", 6, 8),
+                model.setVar("set", ker(), env(0, 1, 2, 3, 4, 5)));
     }
 
     @Input(solutions = 0)
-    public Object testFalseTautology(Solver solver) {
-        return $(enumerated("element", dom(1, 2, 4), solver),
-                set("set", env(0, 1, 2, 3, 4), ker(1, 2, 4), solver));
+    public Object testFalseTautology(Model model) {
+        return $(model.intVar("element", dom(1, 2, 4)),
+                model.setVar("set", ker(1, 2, 4), env(0, 1, 2, 3, 4)));
     }
 
     @Check

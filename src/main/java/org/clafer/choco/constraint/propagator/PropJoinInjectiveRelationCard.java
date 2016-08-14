@@ -10,6 +10,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -65,7 +66,7 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 //    @Override
 //    public boolean advise(int idxVarInProp, int mask) {
 //        if (isChildCardVar(idxVarInProp)) {
-//            return take.envelopeContains(getChildCardVarIndex(idxVarInProp));
+//            return take.getUB().contains(getChildCardVarIndex(idxVarInProp));
 //        }
 //        return super.advise(idxVarInProp, mask);
 //    }
@@ -80,9 +81,11 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+        ISetIterator takeEnv = take.getUB().iterator();
+        while (takeEnv.hasNext()) {
+            int i = takeEnv.nextInt();
             if (i < 0 || i >= childrenCards.length) {
-                take.removeFromEnvelope(i, this);
+                take.remove(i, this);
             }
         }
 
@@ -90,9 +93,11 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
         do {
             int minCard = 0;
             int maxCard = 0;
-            for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+            takeEnv.reset();
+            while (takeEnv.hasNext()) {
+                int i = takeEnv.nextInt();
                 IntVar childCard = childrenCards[i];
-                if (take.kernelContains(i)) {
+                if (take.getLB().contains(i)) {
                     minCard += childCard.getLB();
                 }
                 maxCard += childCard.getUB();
@@ -108,15 +113,17 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             int minCardInc = 0;
             int maxCardDec = 0;
 
-            for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-                if (!take.kernelContains(i)) {
+            takeEnv.reset();
+            while (takeEnv.hasNext()) {
+                int i = takeEnv.nextInt();
+                if (!take.getLB().contains(i)) {
                     IntVar childCard = childrenCards[i];
                     if (maxCard - childCard.getUB() < lb) {
-                        take.addToKernel(i, this);
+                        take.force(i, this);
                         minCardInc += childCard.getLB();
                         changed = true;
                     } else if (minCard + childCard.getLB() > ub) {
-                        take.removeFromEnvelope(i, this);
+                        take.remove(i, this);
                         maxCardDec += childCard.getUB();
                         changed = true;
                     }
@@ -125,16 +132,18 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
             minCard += minCardInc;
             maxCard -= maxCardDec;
 
-            for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-                if (take.kernelContains(i)) {
+            takeEnv.reset();
+            while (takeEnv.hasNext()) {
+                int i = takeEnv.nextInt();
+                if (take.getLB().contains(i)) {
                     changed |= childrenCards[i].updateLowerBound(lb - maxCard + childrenCards[i].getUB(), this);
                     changed |= childrenCards[i].updateUpperBound(ub - minCard + childrenCards[i].getLB(), this);
                 } else {
                     if (maxCard - childrenCards[i].getLB() < lb) {
-                        take.addToKernel(i, this);
+                        take.force(i, this);
                     }
                     if (minCard - childrenCards[i].getUB() > ub) {
-                        take.removeFromEnvelope(i, this);
+                        take.remove(i, this);
                     }
                 }
             }
@@ -142,13 +151,15 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
 
         int lb = toCard.getLB();
         int ub = toCard.getUB();
-        int[] envLbs = new int[take.getEnvelopeSize() - take.getKernelSize()];
+        int[] envLbs = new int[take.getUB().size() - take.getLB().size()];
         int[] envUbs = new int[envLbs.length];
         int kerMinCard = 0;
         int kerMaxCard = 0;
         int env = 0;
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
-            if (take.kernelContains(i)) {
+        takeEnv.reset();
+        while (takeEnv.hasNext()) {
+            int i = takeEnv.nextInt();
+            if (take.getLB().contains(i)) {
                 kerMinCard += childrenCards[i].getLB();
                 kerMaxCard += childrenCards[i].getUB();
             } else {
@@ -163,11 +174,11 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
         for (i = 0; i < envLbs.length && (kerMinCard < ub || envLbs[i] == 0); i++) {
             kerMinCard += envLbs[i];
         }
-        takeCard.updateUpperBound(i + take.getKernelSize(), this);
+        takeCard.updateUpperBound(i + take.getLB().size(), this);
         for (i = envUbs.length - 1; i >= 0 && kerMaxCard < lb; i--) {
             kerMaxCard += envUbs[i];
         }
-        takeCard.updateLowerBound(envUbs.length - 1 - i + take.getKernelSize(), this);
+        takeCard.updateLowerBound(envUbs.length - 1 - i + take.getLB().size(), this);
     }
 
     @Override
@@ -175,11 +186,13 @@ public class PropJoinInjectiveRelationCard extends Propagator<Variable> {
         boolean completelyInstantiated = take.isInstantiated() && takeCard.isInstantiated() && toCard.isInstantiated();
         int minCard = 0;
         int maxCard = 0;
-        for (int i = take.getEnvelopeFirst(); i != SetVar.END; i = take.getEnvelopeNext()) {
+        ISetIterator takeEnv = take.getUB().iterator();
+        while (takeEnv.hasNext()) {
+            int i = takeEnv.nextInt();
             if (i >= 0 && i < childrenCards.length) {
                 IntVar childCard = childrenCards[i];
                 completelyInstantiated = completelyInstantiated && childCard.isInstantiated();
-                if (take.kernelContains(i)) {
+                if (take.getLB().contains(i)) {
                     minCard += childCard.getLB();
                 }
                 maxCard += childCard.getUB();

@@ -1,8 +1,7 @@
 package org.clafer.ir;
 
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
-import org.chocosolver.solver.variables.Var;
+import org.chocosolver.solver.variables.SetVar;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrQuickTest.Solution;
 import static org.clafer.ir.Irs.*;
@@ -25,10 +24,7 @@ public class IrJoinRelationTest {
     }
 
     @Solution
-    public Constraint setup(CSetVar take, CSetVar[] children, boolean injective, CSetVar join) {
-        return Constraints.joinRelation(
-                take.getSet(),
-                Var.mapSet(children),
-                join.getSet());
+    public Constraint setup(SetVar take, SetVar[] children, boolean injective, SetVar join) {
+        return Constraints.joinRelation(take, children, join);
     }
 }

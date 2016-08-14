@@ -7,17 +7,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
-import org.chocosolver.solver.ResolutionPolicy;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.objective.ObjectiveManager;
-import org.chocosolver.solver.search.loop.monitors.IMonitorSolution;
-import org.chocosolver.solver.search.loop.monitors.SMF;
-import org.chocosolver.solver.search.solution.Solution;
-import org.chocosolver.solver.search.strategy.ISF;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.Solution;
+import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.VF;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -75,13 +69,13 @@ public class GlobalCardAnalyzer implements Analyzer {
 
         // Step 2. Optimization pass with constraint solver.
         if (insufficientScopes.isEmpty()) {
-            Solver solver = new Solver();
+            Model model = new Model();
             Map<AstClafer, IntVar> lowCards = new HashMap<>();
             Map<AstClafer, IntVar> highCards = new HashMap<>();
             Function<AstClafer, IntVar> getLowCard = clafer -> {
                 IntVar lowCard = lowCards.get(clafer);
                 if (lowCard == null) {
-                    lowCard = VF.enumerated(clafer.getName() + "@LowCard", globalCardMap.get(clafer).getLow(), globalCardMap.get(clafer).getHigh(), solver);
+                    lowCard = model.intVar(clafer.getName() + "@LowCard", globalCardMap.get(clafer).getLow(), globalCardMap.get(clafer).getHigh());
                     lowCards.put(clafer, lowCard);
                 }
                 return lowCard;
@@ -89,7 +83,7 @@ public class GlobalCardAnalyzer implements Analyzer {
             Function<AstClafer, IntVar> getHighCard = clafer -> {
                 IntVar highCard = highCards.get(clafer);
                 if (highCard == null) {
-                    highCard = VF.enumerated(clafer.getName() + "@HighCard", globalCardMap.get(clafer).getLow(), globalCardMap.get(clafer).getHigh(), solver);
+                    highCard = model.intVar(clafer.getName() + "@HighCard", globalCardMap.get(clafer).getLow(), globalCardMap.get(clafer).getHigh());
                     highCards.put(clafer, highCard);
                 }
                 return highCard;
@@ -106,29 +100,27 @@ public class GlobalCardAnalyzer implements Analyzer {
                     IntVar childHighCard = getHighCard.apply(child);
                     Card card = analysis.getCard(child);
                     if (card.hasLow()) {
-                        solver.post(ICF.times(lowCard, card.getLow(), childLowCard));
-                        solver.post(ICF.arithm(childHighCard, ">=", VF.scale(highCard, card.getLow())));
+                        model.times(lowCard, card.getLow(), childLowCard).post();
+                        model.arithm(childHighCard, ">=", model.intScaleView(highCard, card.getLow())).post();
                     }
                     if (card.hasHigh()) {
-                        solver.post(ICF.arithm(childHighCard, "<=", VF.scale(highCard, card.getHigh())));
+                        model.arithm(childHighCard, "<=", model.intScaleView(highCard, card.getHigh())).post();
                     }
                 }
                 if (clafer instanceof AstAbstractClafer) {
                     AstAbstractClafer abstractClafer = (AstAbstractClafer) clafer;
                     IntVar[] subLowCards = abstractClafer.getSubs().stream().map(getLowCard).toArray(x -> new IntVar[x]);
                     IntVar[] subHighCards = abstractClafer.getSubs().stream().map(getHighCard).toArray(x -> new IntVar[x]);
-                    solver.post(ICF.sum(subLowCards, lowCard));
-                    solver.post(ICF.sum(subHighCards, highCard));
+                    model.sum(subLowCards, "=", lowCard).post();
+                    model.sum(subHighCards, "=", highCard).post();
                 }
             }
             for (Entry<AstClafer, AstClafer> inverse : analysis.getInverseMap().entrySet()) {
-                solver.post(ICF.arithm(lowCards.get(inverse.getKey()), "=", lowCards.get(inverse.getValue())));
-                solver.post(ICF.arithm(highCards.get(inverse.getKey()), "=", highCards.get(inverse.getValue())));
+                model.arithm(lowCards.get(inverse.getKey()), "=", lowCards.get(inverse.getValue())).post();
+                model.arithm(highCards.get(inverse.getKey()), "=", highCards.get(inverse.getValue())).post();
             }
-            SMF.limitTime(solver, 5000);
-            AbstractStrategy<IntVar> strategy = ISF.domOverWDeg(intVars, 0);
-            Solution solution = new Solution();
-            solver.plugMonitor((IMonitorSolution) () -> solution.record(solver));
+            model.getSolver().limitTime(5000);
+            AbstractStrategy<IntVar> strategy = Search.domOverWDegSearch(intVars);
 
             // Optimize each global cardinality individually.
             for (Set<AstClafer> component : order) {
@@ -146,21 +138,20 @@ public class GlobalCardAnalyzer implements Analyzer {
                             IntVar highCard = highCards.get(clafer);
 
                             // We can optimize the low and high card at once since they do not affect each other.
-                            IntVar objective = VF.enumerated("Objective@" + clafer.getName(), highCard.getLB() - lowCard.getUB(), highCard.getUB() - lowCard.getLB(), solver);
-                            solver.post(Constraints.equalArcConsistent(highCard, VF.minus(lowCard), objective));
+                            IntVar objective = model.intVar("Objective@" + clafer.getName(), highCard.getLB() - lowCard.getUB(), highCard.getUB() - lowCard.getLB());
+                            model.post(Constraints.equalArcConsistent(highCard, model.intMinusView(lowCard), objective));
 
-                            solver.set(new ObjectiveManager<>(objective, ResolutionPolicy.MAXIMIZE, true));
-                            solver.set(ISF.lexico_UB(objective), strategy);
+                            model.getSolver().setSearch(Search.inputOrderUBSearch(objective), strategy);
+                            Solution solution = model.getSolver().findOptimalSolution(objective, true);
 
-                            if (solver.findAllSolutions() == 0 || solver.hasReachedLimit()) {
+                            if (solution == null) {
                                 break;
                             }
                             assert solution.getIntVal(lowCard) >= globalCardMap.get(clafer).getLow();
                             assert solution.getIntVal(highCard) <= globalCardMap.get(clafer).getHigh();
                             globalCardMap.put(clafer, new Card(solution.getIntVal(lowCard), solution.getIntVal(highCard)));
 
-                            solver.getEngine().flush();
-                            solver.getSearchLoop().reset();
+                            model.getSolver().reset();
                         }
                     } else {
                         analyze((AstAbstractClafer) clafer, analysis, globalCardMap, insufficientScopes);

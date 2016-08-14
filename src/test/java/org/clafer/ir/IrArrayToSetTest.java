@@ -7,8 +7,8 @@ import org.clafer.test.NonEmpty;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  *
@@ -23,7 +23,7 @@ public class IrArrayToSetTest {
     }
 
     @Solution
-    public Constraint setup(IntVar[] array, int globalCardinality, CSetVar set) {
-        return Constraints.arrayToSet(array, set.getSet(), set.getCard(), null);
+    public Constraint setup(IntVar[] array, int globalCardinality, SetVar set) {
+        return Constraints.arrayToSet(array, set, set.getCard(), null);
     }
 }

@@ -6,7 +6,7 @@ import static org.clafer.ir.Irs.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
+import org.chocosolver.solver.variables.SetVar;
 
 /**
  *
@@ -21,12 +21,12 @@ public class IrSetEqualityTest {
     }
 
     @Solution
-    public Constraint setup(CSetVar var1, IrSetEquality.Op op, CSetVar var2) {
+    public Constraint setup(SetVar var1, IrSetEquality.Op op, SetVar var2) {
         switch (op) {
             case Equal:
-                return Constraints.equal(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
+                return Constraints.equal(var1, var1.getCard(), var2, var2.getCard());
             case NotEqual:
-                return Constraints.notEqual(var1.getSet(), var1.getCard(), var2.getSet(), var2.getCard());
+                return Constraints.notEqual(var1, var1.getCard(), var2, var2.getCard());
             default:
                 throw new IllegalArgumentException();
         }

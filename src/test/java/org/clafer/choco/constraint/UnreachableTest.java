@@ -1,5 +1,6 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.clafer.test.NonEmpty;
 import org.clafer.test.Positive;
@@ -7,10 +8,8 @@ import static org.junit.Assert.*;
 import static org.junit.Assume.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -20,8 +19,8 @@ import static org.chocosolver.solver.variables.Var.*;
 public class UnreachableTest {
 
     @Input(solutions = 440)
-    public Object testUnreachable(Solver solver) {
-        return $(enumeratedArray("edge", 4, 0, 4, solver), 3, 1);
+    public Object testUnreachable(Model model) {
+        return $(model.intVarArray("edge", 4, 0, 4), 3, 1);
     }
 
     @Check

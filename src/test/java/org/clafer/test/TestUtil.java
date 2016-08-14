@@ -1,12 +1,12 @@
 package org.clafer.test;
 
-import org.chocosolver.solver.variables.CSetVar;
 import org.chocosolver.solver.variables.CStringVar;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.chocosolver.solver.Model;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.domain.Domain;
@@ -19,17 +19,17 @@ import static org.clafer.ir.Irs.*;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.constraints.Propagator;
-import org.chocosolver.solver.search.strategy.ISF;
-import org.chocosolver.solver.search.strategy.SetStrategyFactory;
-import org.chocosolver.solver.search.strategy.selectors.SetValueSelector;
+import org.chocosolver.solver.search.strategy.Search;
+import org.chocosolver.solver.search.strategy.selectors.values.SetValueSelector;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.search.strategy.strategy.SetStrategy;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
-import org.chocosolver.solver.variables.Var;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
+import org.clafer.domain.Domains;
 
 /**
  *
@@ -56,7 +56,7 @@ public class TestUtil {
     public static Solver randomizeStrategy(Solver solver) {
         List<IntVar> intVars = new ArrayList<>();
         List<SetVar> setVars = new ArrayList<>();
-        for (Variable var : solver.getVars()) {
+        for (Variable var : solver.getModel().getVars()) {
             if (!var.isInstantiated()
                     && (var.getTypeAndKind() & Variable.VIEW) == 0
                     && !(var.getName().startsWith("TMP_"))) {
@@ -70,11 +70,11 @@ public class TestUtil {
             }
         }
         if (randBool()) {
-            solver.set(
+            solver.setSearch(
                     randomSearch(setVars.toArray(new SetVar[setVars.size()])),
                     randomSearch(intVars.toArray(new IntVar[intVars.size()])));
         } else {
-            solver.set(
+            solver.setSearch(
                     randomSearch(intVars.toArray(new IntVar[intVars.size()])),
                     randomSearch(setVars.toArray(new SetVar[setVars.size()])));
         }
@@ -82,11 +82,11 @@ public class TestUtil {
     }
 
     private static AbstractStrategy<IntVar> randomSearch(IntVar[] vars) {
-        return ISF.random_value(vars, rand.nextLong());
+        return Search.randomSearch(vars, rand.nextLong());
     }
 
     private static SetStrategy randomSearch(SetVar[] vars) {
-        return SetStrategyFactory.custom(
+        return Search.setVarSearch(
                 new org.chocosolver.solver.search.strategy.selectors.variables.Random<>(rand.nextLong()),
                 new RandomSetValueSelector(), randBool(), vars);
     }
@@ -95,9 +95,11 @@ public class TestUtil {
 
         @Override
         public int selectValue(SetVar s) {
-            int m = rand.nextInt(s.getEnvelopeSize() - s.getKernelSize());
-            for (int i = s.getEnvelopeFirst(); i != SetVar.END; i = s.getEnvelopeNext()) {
-                if (!s.kernelContains(i)) {
+            int m = rand.nextInt(s.getUB().size() - s.getLB().size());
+            ISetIterator iter = s.getUB().iterator();
+            while (iter.hasNext()) {
+                int i = iter.nextInt();
+                if (!s.getLB().contains(i)) {
                     if (m == 0) {
                         return i;
                     }
@@ -232,6 +234,21 @@ public class TestUtil {
         return TestUtil.randIrSetVar(-4, 4);
     }
 
+    public static IrSetVar randIrSetVarNoCard(int low, int high) {
+        if (low > high) {
+            throw new IllegalArgumentException();
+        }
+        Domain env = randDomain(low, high);
+        Domain ker = randDomain(low, high).intersection(env);
+        int a = randInt(ker.size(), env.size());
+        int b = randInt(ker.size(), env.size());
+        return set("Set" + varCount++, env, ker);
+    }
+
+    public static IrSetVar randIrSetVarNoCard() {
+        return TestUtil.randIrSetVarNoCard(-4, 4);
+    }
+
     public static IrSetVar randPositiveIrSetVar() {
         return TestUtil.randIrSetVar(0, 4);
     }
@@ -262,101 +279,103 @@ public class TestUtil {
         return string(name, chars, length);
     }
 
-    public static BoolVar toVar(IrBoolVar var, Solver solver) {
+    public static BoolVar toVar(IrBoolVar var, Model model) {
         switch (var.getDomain()) {
             case FalseDomain:
-                return Var.zero(solver);
+                return model.boolVar(false);
             case TrueDomain:
-                return Var.one(solver);
+                return model.boolVar(true);
             case TrueFalseDomain:
-                return Var.bool(var.getName(), solver);
+                return model.boolVar(var.getName());
             default:
                 throw new IllegalStateException();
         }
     }
 
-    public static IntVar toVar(IrIntVar var, Solver solver) {
+    public static IntVar toVar(IrIntVar var, Model model) {
         Domain domain = var.getDomain();
         return domain.isBounded()
-                ? Var.enumerated(var.getName(), domain.getLowBound(), domain.getHighBound(), solver)
-                : Var.enumerated(var.getName(), domain.getValues(), solver);
+                ? model.intVar(var.getName(), domain.getLowBound(), domain.getHighBound())
+                : model.intVar(var.getName(), domain.getValues());
     }
 
-    public static SetVar toVarNoCard(IrSetVar var, Solver solver) {
-        return Var.set(var.getName(), var.getEnv().getValues(), var.getKer().getValues(), solver);
+    public static SetVar toVar(IrSetVar var, Model model) {
+        Domain ker = var.getKer();
+        Domain env = var.getEnv();
+        Domain card = var.getCard();
+        SetVar setVar = model.setVar(
+                var.getName(),
+                ker.getValues(),
+                env.getValues());
+        if (card.equals(Domains.boundDomain(ker.size(), env.size()))) {
+            return setVar;
+        }
+        IntVar setCardVar = model.intVar("|" + var.getName() + "|", card.getValues());
+        setVar.setCard(setCardVar);
+        return setVar;
     }
 
-    public static CSetVar toVar(IrSetVar var, Solver solver) {
-        SetVar setVar = toVarNoCard(var, solver);
-        IntVar cardVar = Var.enumerated("|" + var.getName() + "|", var.getCard().getValues(), solver);
-        return new CSetVar(setVar, cardVar);
-    }
-
-    public static CStringVar toVar(IrStringVar var, Solver solver) {
+    public static CStringVar toVar(IrStringVar var, Model model) {
         IntVar[] chars = new IntVar[var.getCharVars().length];
         for (int i = 0; i < chars.length; i++) {
-            chars[i] = toVar(var.getCharVars()[i], solver);
+            chars[i] = toVar(var.getCharVars()[i], model);
         }
-        IntVar length = toVar(var.getLengthVar(), solver);
-        solver.post(Constraints.length(chars, length));
+        IntVar length = toVar(var.getLengthVar(), model);
+        model.post(Constraints.length(chars, length));
         return new CStringVar(chars, length);
     }
 
-    public static BoolVar randBoolVar(Solver solver) {
-        return toVar(randIrBoolVar(), solver);
+    public static BoolVar randBoolVar(Model model) {
+        return toVar(randIrBoolVar(), model);
     }
 
-    public static IntVar randIntVar(String name, int low, int high, Solver solver) {
+    public static IntVar randIntVar(String name, int low, int high, Model model) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
-        return toVar(randIrIntVar(name, low, high), solver);
+        return toVar(randIrIntVar(name, low, high), model);
     }
 
-    public static IntVar randIntVar(Solver solver) {
-        return toVar(randIrIntVar(), solver);
+    public static IntVar randIntVar(Model model) {
+        return toVar(randIrIntVar(), model);
     }
 
-    public static IntVar randPositiveIntVar(Solver solver) {
-        return toVar(randPositiveIrIntVar(), solver);
+    public static IntVar randPositiveIntVar(Model model) {
+        return toVar(randPositiveIrIntVar(), model);
     }
 
-    public static SetVar randSetVar(int low, int high, Solver solver) {
+    public static SetVar randSetVar(int low, int high, Model model) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
-        return toVarNoCard(randIrSetVar(low, high), solver);
+        return toVar(randIrSetVar(low, high), model);
     }
 
-    public static SetVar randSetVar(Solver solver) {
-        return toVarNoCard(randIrSetVar(), solver);
+    public static SetVar randSetVar(Model model) {
+        return toVar(randIrSetVar(), model);
     }
 
-    public static SetVar randPositiveSetVar(Solver solver) {
-        return toVarNoCard(randPositiveIrSetVar(), solver);
-    }
-
-    public static CSetVar randCSetVar(int low, int high, Solver solver) {
+    public static SetVar randSetVarNoCard(int low, int high, Model model) {
         if (low > high) {
             throw new IllegalArgumentException();
         }
-        return toVar(randIrSetVar(low, high), solver);
+        return toVar(randIrSetVarNoCard(low, high), model);
     }
 
-    public static CSetVar randCSetVar(Solver solver) {
-        return toVar(randIrSetVar(), solver);
+    public static SetVar randSetVarNoCard(Model model) {
+        return toVar(randIrSetVarNoCard(), model);
     }
 
-    public static CSetVar randPositiveCSetVar(Solver solver) {
-        return toVar(randPositiveIrSetVar(), solver);
+    public static SetVar randPositiveSetVar(Model model) {
+        return toVar(randPositiveIrSetVar(), model);
     }
 
-    public static CStringVar randStringVar(Solver solver) {
-        return toVar(randIrStringVar(), solver);
+    public static CStringVar randStringVar(Model model) {
+        return toVar(randIrStringVar(), model);
     }
 
-    public static CStringVar randNonEmptyStringVar(Solver solver) {
-        return toVar(randNonEmptyIrStringVar(), solver);
+    public static CStringVar randNonEmptyStringVar(Model model) {
+        return toVar(randNonEmptyIrStringVar(), model);
     }
 
     public static Term randTerm() {

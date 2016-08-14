@@ -25,8 +25,6 @@ public class PropOr extends Propagator<BoolVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        // The number of uninstantiated variables.
-        int count = 0;
         BoolVar last = null;
         for (BoolVar var : vars) {
             if (var.isInstantiated()) {
@@ -34,17 +32,16 @@ public class PropOr extends Propagator<BoolVar> {
                     setPassive();
                     return;
                 }
+            } else if (last != null) {
+                return;
             } else {
-                count++;
                 last = var;
             }
         }
-        // Every variable if false except for last.
-        if (count == 1) {
+        if (last == null) {
+            fails();
+        } else {
             last.setToTrue(this);
-        }
-        if (count == 0) {
-            contradiction(vars[0], "All false.");
         }
     }
 

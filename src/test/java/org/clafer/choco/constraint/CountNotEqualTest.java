@@ -1,13 +1,12 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -17,18 +16,18 @@ import static org.chocosolver.solver.variables.Var.*;
 public class CountNotEqualTest {
 
     @Input(solutions = 625)
-    public Object testCountNotEqual(Solver solver) {
-        return $(2, enumeratedArray("array", 4, 0, 4, solver), enumerated("count", 0, 4, solver));
+    public Object testCountNotEqual(Model model) {
+        return $(2, model.intVarArray("array", 4, 0, 4), model.intVar("count", 0, 4));
     }
 
     @Input(solutions = 0)
-    public Object testTrivialNoCount(Solver solver) {
-        return $(2, enumeratedArray("array", 2, 0, 4, solver), fixed(4, solver));
+    public Object testTrivialNoCount(Model model) {
+        return $(2, model.intVarArray("array", 2, 0, 4), model.intVar(4));
     }
 
     @Input(solutions = 1)
-    public Object testTrivialCount(Solver solver) {
-        return $(2, enumeratedArray("array", 4, 0, 4, solver), fixed(0, solver));
+    public Object testTrivialCount(Model model) {
+        return $(2, model.intVarArray("array", 4, 0, 4), model.intVar(0));
     }
 
     @Check

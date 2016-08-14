@@ -1,12 +1,12 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import org.chocosolver.solver.variables.CStringVar;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import static org.chocosolver.solver.variables.Var.*;
 
@@ -18,7 +18,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class PrefixTest {
 
     @Input(solutions = 142)
-    public Object testPrefix(Solver solver) {
+    public Object testPrefix(Model model) {
         /*
          * import Control.Monad
          *
@@ -29,8 +29,8 @@ public class PrefixTest {
          *     guard $ take length string1 == take length string2
          *     return (length, string1, string2)
          */
-        return $(cstring("prefix", chars(0, 1, 2, 3), 3, solver),
-                cstring("word", chars(0, 1, 2, 3), 3, solver));
+        return $(cstring("prefix", chars(0, 1, 2, 3), 3, model),
+                cstring("word", chars(0, 1, 2, 3), 3, model));
     }
 
     @Check

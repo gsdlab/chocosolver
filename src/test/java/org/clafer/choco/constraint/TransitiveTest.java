@@ -2,6 +2,7 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
 import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import org.clafer.choco.constraint.ConstraintQuickTest.Input;
@@ -10,10 +11,10 @@ import org.clafer.test.Positive;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.SetVar;
-import static org.chocosolver.solver.variables.VariableFactory.*;
+import static org.chocosolver.solver.variables.Var.*;
+import static org.clafer.ir.Irs.set;
 
 /**
  *
@@ -23,7 +24,7 @@ import static org.chocosolver.solver.variables.VariableFactory.*;
 public class TransitiveTest {
 
     @Input(solutions = 3994)
-    public Object testTransitive(Solver solver) {
+    public Object testTransitive(Model model) {
         /*
          * import Control.Monad
          *
@@ -39,11 +40,7 @@ public class TransitiveTest {
          *         implies True False = False
          *         implies _ _ = True
          */
-        SetVar[] relation = new SetVar[4];
-        for (int i = 0; i < relation.length; i++) {
-            relation[i] = set("relation[" + i + "]", 0, relation.length - 1, solver);
-        }
-        return $(relation);
+        return $(model.setVarArray("relation", 4, ker(), env(0, 1, 2, 3)));
     }
 
     @Check

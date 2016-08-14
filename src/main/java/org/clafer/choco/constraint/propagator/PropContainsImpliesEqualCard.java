@@ -34,7 +34,7 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
         this.y = y;
         this.yD = y.monitorDelta(this);
         this.z = z;
-        this.condDecided = cond.getSolver().getEnvironment().makeBool(false);
+        this.condDecided = cond.getEnvironment().makeBool(false);
     }
 
     private boolean isCondVar(int vIdx) {
@@ -68,18 +68,18 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
                 x.removeValue(i, this);
             }
         }
-        if (!cond.envelopeContains(z) || y.isInstantiatedTo(0)) {
+        if (!cond.getUB().contains(z) || y.isInstantiatedTo(0)) {
             x.instantiateTo(0, this);
             condDecided.set(true);
             setPassive();
-        } else if (cond.kernelContains(z) || !x.contains(0)) {
-            cond.addToKernel(z, this);
+        } else if (cond.getLB().contains(z) || !x.contains(0)) {
+            cond.force(z, this);
             PropUtil.domSubsetDom(x, y, this);
             PropUtil.domSubsetDom(y, x, this);
             condDecided.set(true);
         } else if (x.isInstantiatedTo(0)) {
             if (!y.contains(0)) {
-                cond.removeFromEnvelope(z, this);
+                cond.remove(z, this);
                 condDecided.set(true);
                 setPassive();
             }
@@ -96,13 +96,13 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        if (isCondVar(idxVarInProp) || (!x.contains(0) && cond.addToKernel(z, this))) {
+        if (isCondVar(idxVarInProp) || (!x.contains(0) && cond.force(z, this))) {
             if (!condDecided.get()) {
-                if (cond.kernelContains(z)) {
+                if (cond.getLB().contains(z)) {
                     PropUtil.domSubsetDom(x, y, this);
                     PropUtil.domSubsetDom(y, x, this);
                     condDecided.set(true);
-                } else if (!cond.envelopeContains(z)) {
+                } else if (!cond.getUB().contains(z)) {
                     x.instantiateTo(0, this);
                     condDecided.set(true);
                     setPassive();
@@ -111,11 +111,11 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
         } else if (isXVar(idxVarInProp)) {
             xD.freeze();
             if (!xIntersectsY()) {
-                cond.removeFromEnvelope(z, this);
+                cond.remove(z, this);
                 x.instantiateTo(0, this);
                 condDecided.set(true);
                 setPassive();
-            } else if (cond.kernelContains(z)) {
+            } else if (cond.getLB().contains(z)) {
                 xD.forEachRemVal((IntProcedure) xRem -> y.removeValue(xRem, this));
             }
             xD.unfreeze();
@@ -123,7 +123,7 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
         } else {
             assert isYVar(idxVarInProp);
             yD.freeze();
-            if (cond.kernelContains(z)) {
+            if (cond.getLB().contains(z)) {
                 yD.forEachRemVal((IntProcedure) yRem -> x.removeValue(yRem, this));
             } else {
                 yD.forEachRemVal((IntProcedure) yRem -> {
@@ -134,7 +134,7 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
             }
             yD.unfreeze();
             if (x.isInstantiatedTo(0) && !y.contains(0)) {
-                cond.removeFromEnvelope(z, this);
+                cond.remove(z, this);
                 condDecided.set(true);
                 setPassive();
             }

@@ -1,13 +1,12 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -17,14 +16,14 @@ import static org.chocosolver.solver.variables.Var.*;
 public class LengthTest {
 
     @Input(solutions = 85)
-    public Object testLength(Solver solver) {
+    public Object testLength(Model model) {
         /*
          * import Control.Monad
          *
          * solutions = [0..3] >>= flip replicateM [1..4]
          */
-        return $(enumeratedArray("char", 3, 0, 4, solver),
-                enumerated("length", 0, 3, solver));
+        return $(model.intVarArray("char", 3, 0, 4),
+                model.intVar("length", 0, 3));
     }
 
     @Check

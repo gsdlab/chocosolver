@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.impl.FixedBoolVarImpl;
@@ -26,9 +25,9 @@ public class IrArithmXYCTest {
 
     @Check
     public void check(Solver solver) {
-        assertTrue("Correct but not optimized.", solver.getNbCstrs() <= 1);
-        assertTrue("Correct but not optimized.", solver.getNbVars() <= 4);
-        for (Variable var : solver.getVars()) {
+        assertTrue("Correct but not optimized.", solver.getModel().getNbCstrs() <= 1);
+        assertTrue("Correct but not optimized.", solver.getModel().getNbVars() <= 4);
+        for (Variable var : solver.getModel().getVars()) {
             assertFalse("Correct but not optimized.",
                     var instanceof FixedIntVarImpl && !(var instanceof FixedBoolVarImpl));
             assertFalse("Correct but not optimized.", var instanceof IntView);
@@ -49,7 +48,7 @@ public class IrArithmXYCTest {
 
     @Solution
     public Constraint setup(boolean left, IrCompare.Op op, IntVar var1, IntVar var2, IntVar var3) {
-        return ICF.sum(new IntVar[]{var1, var2}, left ? op.getSyntax() : reverse(op), var3);
+        return var1.getModel().sum(new IntVar[]{var1, var2}, left ? op.getSyntax() : reverse(op), var3);
     }
 
     private String reverse(IrCompare.Op op) {

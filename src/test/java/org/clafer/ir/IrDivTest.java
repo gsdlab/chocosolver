@@ -6,7 +6,6 @@ import static org.junit.Assume.assumeFalse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.variables.IntVar;
 
 /**
@@ -24,6 +23,6 @@ public class IrDivTest {
 
     @Solution
     public Constraint setup(IntVar dividend, IntVar divisor, IntVar quotient) {
-        return ICF.eucl_div(dividend, divisor, quotient);
+        return dividend.getModel().div(dividend, divisor, quotient);
     }
 }

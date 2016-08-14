@@ -1,13 +1,13 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
 import static org.clafer.choco.constraint.ConstraintQuickTest.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 
 /**
@@ -18,7 +18,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class SingletonFilterTest {
 
     @Input(solutions = 5)
-    public Object testSingletonFilter(Solver solver) {
+    public Object testSingletonFilter(Model model) {
         /*
          * import Control.Monad
          *
@@ -30,8 +30,8 @@ public class SingletonFilterTest {
          *     guard $ [i] == s
          *     return (i, s)
          */
-        return $(enumerated("i", -3, 2, solver),
-                cset("s", -2, 3, solver),
+        return $(model.intVar("i", -3, 2),
+                model.setVar("s", ker(), env(-2, -1, 0, 1, 2, 3)),
                 2);
     }
 
@@ -42,7 +42,7 @@ public class SingletonFilterTest {
 
     @ArcConsistent
     @Test(timeout = 60000)
-    public Constraint setup(IntVar i, CSetVar s, int filter) {
-        return Constraints.singletonFilter(i, s.getSet(), s.getCard(), filter);
+    public Constraint setup(IntVar i, SetVar s, int filter) {
+        return Constraints.singletonFilter(i, s, s.getCard(), filter);
     }
 }

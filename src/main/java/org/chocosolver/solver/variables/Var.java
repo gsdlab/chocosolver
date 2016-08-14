@@ -1,15 +1,15 @@
 package org.chocosolver.solver.variables;
 
 import java.util.Arrays;
+import org.chocosolver.solver.Model;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.common.Util;
-import org.chocosolver.solver.Solver;
 
 /**
  *
  * @author jimmy
  */
-public class Var extends VariableFactory {
+public class Var {
 
     public static int[] dom(int... doms) {
         return doms;
@@ -44,76 +44,34 @@ public class Var extends VariableFactory {
         return as;
     }
 
-    public static CSetVar constant(int[] value, Solver solver) {
-        return new CSetVar(VF.fixed(Arrays.toString(value), value, solver), VF.fixed(value.length, solver));
-    }
-
-    public static SetVar[] setArray(String name, int length, int minEnv, int maxEnv, Solver solver) {
+    public static SetVar[] setArray(String name, int length, int minEnv, int maxEnv, Model model) {
         SetVar[] setVars = new SetVar[length];
         for (int i = 0; i < setVars.length; i++) {
-            setVars[i] = set(name + i, minEnv, maxEnv, solver);
+            setVars[i] = model.setVar(name + i, Util.range(minEnv, maxEnv));
         }
         return setVars;
     }
 
-    public static CSetVar cset(String name, int[] env, Solver solver) {
-        SetVar setVar = set(name, env, solver);
-        IntVar cardVar = enumerated("|" + name + "|", 0, setVar.getEnvelopeSize(), solver);
-        return new CSetVar(setVar, cardVar);
-    }
-
-    public static CSetVar cset(String name, int minEnv, int maxEnv, Solver solver) {
-        SetVar setVar = set(name, minEnv, maxEnv, solver);
-        IntVar cardVar = enumerated("|" + name + "|", 0, setVar.getEnvelopeSize(), solver);
-        return new CSetVar(setVar, cardVar);
-    }
-
-    public static CSetVar cset(String name, int[] env, int[] ker, Solver solver) {
-        return cset(name, env, ker, Util.range(ker.length, env.length), solver);
-    }
-
-    public static CSetVar cset(String name, int[] env, int[] ker, int[] card, Solver solver) {
-        SetVar setVar = set(name, env, ker, solver);
-        IntVar cardVar = enumerated("|" + name + "|", card, solver);
-        return new CSetVar(setVar, cardVar);
-    }
-
-    public static CSetVar[] csetArray(String name, int length, int minEnv, int maxEnv, Solver solver) {
-        CSetVar[] setVars = new CSetVar[length];
-        for (int i = 0; i < setVars.length; i++) {
-            setVars[i] = cset(name + i, minEnv, maxEnv, solver);
-        }
-        return setVars;
-    }
-
-    public static CStringVar fixed(String string, Solver solver) {
+    public static CStringVar fixed(String string, Model model) {
         IntVar[] chars = new IntVar[string.length()];
         for (int i = 0; i < string.length(); i++) {
-            chars[i] = fixed(string.charAt(i), solver);
+            chars[i] = model.intVar(string.charAt(i));
         }
-        return new CStringVar(chars, fixed(string.length(), solver));
+        return new CStringVar(chars, model.intVar(string.length()));
     }
 
-    public static CStringVar cstring(String name, int[] charDomain, int maxLength, Solver solver) {
+    public static CStringVar cstring(String name, int[] charDomain, int maxLength, Model model) {
         int[] charsWithZero = insertIntoSortedArray(charDomain, 0);
         IntVar[] chars = new IntVar[maxLength];
         for (int i = 0; i < chars.length; i++) {
-            chars[i] = enumerated(name + "[" + i + "]", charsWithZero, solver);
+            chars[i] = model.intVar(name + "[" + i + "]", charsWithZero);
         }
-        IntVar length = enumerated("|" + name + "|", 0, maxLength, solver);
-        solver.post(Constraints.length(chars, length));
+        IntVar length = model.intVar("|" + name + "|", 0, maxLength);
+        model.post(Constraints.length(chars, length));
         return new CStringVar(chars, length);
     }
 
-    public static SetVar[] mapSet(CSetVar... vars) {
-        SetVar[] sets = new SetVar[vars.length];
-        for (int i = 0; i < vars.length; i++) {
-            sets[i] = vars[i].getSet();
-        }
-        return sets;
-    }
-
-    public static IntVar[] mapCard(CSetVar... vars) {
+    public static IntVar[] mapCard(SetVar... vars) {
         IntVar[] cards = new IntVar[vars.length];
         for (int i = 0; i < vars.length; i++) {
             cards[i] = vars[i].getCard();

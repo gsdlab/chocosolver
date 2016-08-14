@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
-import org.clafer.Sample;
 import org.clafer.choco.constraint.propagator.PropElementArraySupport;
 
 /**
