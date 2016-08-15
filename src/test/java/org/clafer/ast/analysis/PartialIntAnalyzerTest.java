@@ -9,6 +9,7 @@ import static org.clafer.domain.Domains.*;
 import org.clafer.scope.Scopable;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -259,6 +260,7 @@ public class PartialIntAnalyzerTest {
      *             [ B.ref = 2 ]
      * </pre>
      */
+    @Ignore
     @Test
     public void testConditional() {
         AstModel model = newModel();
@@ -285,6 +287,7 @@ public class PartialIntAnalyzerTest {
      * [ A = 0 | A = 1 ]
      * </pre>
      */
+    @Ignore
     @Test
     public void testOrKnown() {
         AstModel model = newModel();
