@@ -32,8 +32,6 @@ import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
 import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
-import org.clafer.choco.constraint.propagator.PropFilterString;
-import org.clafer.choco.constraint.propagator.PropFilterStringCard;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
@@ -571,27 +569,6 @@ public class Constraints {
      */
     public static Constraint unreachable(IntVar[] edges, int from, int to) {
         return new Constraint("unreachable", new PropUnreachable(edges, from, to));
-    }
-
-    /**
-     * A constraint enforcing
-     * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
-     * where {@code array} is the sorted array representation of the set. Does
-     * not enforce that {@code setCard = |setCard|} because of how the
-     * compilation works, it is already enforced elsewhere.
-     *
-     * @param set the set
-     * @param setCard the cardinality of {@code set}
-     * @param offset the offset
-     * @param string the string
-     * @param result the result
-     * @return constraint
-     * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
-     */
-    public static Constraint filterString(SetVar set, IntVar setCard, int offset, IntVar[] string, IntVar[] result) {
-        return new Constraint("filterString",
-                new PropFilterString(set, setCard, offset, string, result),
-                new PropFilterStringCard(setCard, result));
     }
 
     /**

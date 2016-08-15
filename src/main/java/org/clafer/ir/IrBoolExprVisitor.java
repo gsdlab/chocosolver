@@ -67,8 +67,6 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrUnreachable ir, A a);
 
-    public B visit(IrFilterString ir, A a);
-
     public B visit(IrPrefix ir, A a);
 
     public B visit(IrSuffix ir, A a);

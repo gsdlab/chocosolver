@@ -1038,15 +1038,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrFilterString ir, BoolArg a) {
-            SetVar set = compile(ir.getSet());
-            int offset = ir.getOffset();
-            IntVar[] string = compile(ir.getString());
-            IntVar[] result = compile(ir.getResult());
-            return Constraints.filterString(set, set.getCard(), offset, string, result);
-        }
-
-        @Override
         public Object visit(IrPrefix ir, BoolArg a) {
             CStringVar prefix = compile(ir.getPrefix());
             CStringVar word = compile(ir.getWord());
@@ -1446,11 +1437,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrUnreachable ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrFilterString ir, IntVar a) {
             return compileBool(ir, a);
         }
 

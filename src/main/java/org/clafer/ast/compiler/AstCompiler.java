@@ -2211,37 +2211,6 @@ public class AstCompiler {
         IrBoolExpr getConstraint();
     }
 
-    private static class FilterString implements Symmetry {
-
-        private final IrSetExpr set;
-        private final IrIntExpr[] string;
-        private final IrIntExpr[] result;
-
-        FilterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
-            this.set = set;
-            this.string = string;
-            this.result = result;
-        }
-
-        @Override
-        public IrExpr[] getInput() {
-            IrExpr[] input = new IrExpr[string.length + 1];
-            input[0] = set;
-            System.arraycopy(string, 0, input, 1, string.length);
-            return input;
-        }
-
-        @Override
-        public IrExpr[] getOutput() {
-            return result;
-        }
-
-        @Override
-        public IrBoolExpr getConstraint() {
-            return filterString(set, string, result);
-        }
-    }
-
     private static class LexChainChannel implements Symmetry {
 
         private final IrIntExpr[][] strings;

@@ -402,18 +402,6 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrFilterString ir, T a) {
-        IrSetExpr set = rewrite(ir.getSet(), a);
-        IrIntExpr[] string = rewrite(ir.getString(), a);
-        IrIntExpr[] result = rewrite(ir.getResult(), a);
-        return changed(ir.getSet(), set)
-                || changed(ir.getString(), string)
-                || changed(ir.getResult(), result)
-                        ? filterString(set, ir.getOffset(), string, result)
-                        : ir;
-    }
-
-    @Override
     public IrIntExpr visit(IrPrefix ir, T a) {
         IrStringExpr prefix = rewrite(ir.getPrefix(), a);
         IrStringExpr word = rewrite(ir.getWord(), a);

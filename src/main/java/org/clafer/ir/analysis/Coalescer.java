@@ -665,33 +665,6 @@ public class Coalescer {
         }
 
         @Override
-        public Void visit(IrFilterString ir, Void a) {
-            TIntIterator iter = ir.getSet().getEnv().iterator();
-            int i = 0;
-            Domain values = EmptyDomain;
-            while (iter.hasNext()) {
-                int env = iter.next();
-                if (!ir.getSet().getKer().contains(env)) {
-                    i = -1;
-                }
-                if (i >= 0) {
-                    IrIntExpr string = ir.getString()[env - ir.getOffset()];
-                    IrIntExpr result = ir.getResult()[i];
-                    propagateEqual(string, result);
-                    i++;
-                }
-                values = values.union(ir.getString()[env - ir.getOffset()].getDomain());
-            }
-            for (int j = 0; j < ir.getSet().getCard().getLowBound(); j++) {
-                propagateInt(values, ir.getResult()[j]);
-            }
-            for (int j = ir.getSet().getCard().getHighBound(); j < ir.getResult().length; j++) {
-                propagateInt(constantDomain(-1), ir.getResult()[j]);
-            }
-            return null;
-        }
-
-        @Override
         public Void visit(IrPrefix ir, Void a) {
             propagatePrefix(ir.getPrefix(), ir.getWord());
             return null;

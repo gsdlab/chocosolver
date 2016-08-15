@@ -271,14 +271,6 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public Void visit(IrFilterString ir, T a) {
-        traverse(ir.getSet(), a);
-        traverse(ir.getString(), a);
-        traverse(ir.getResult(), a);
-        return null;
-    }
-
-    @Override
     public Void visit(IrPrefix ir, T a) {
         traverse(ir.getPrefix(), a);
         traverse(ir.getWord(), a);

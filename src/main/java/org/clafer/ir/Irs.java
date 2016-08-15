@@ -1114,54 +1114,6 @@ public class Irs {
         return new IrConnected(nodes, relation, directed, TrueFalseDomain);
     }
 
-    public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
-        if (set.getEnv().isEmpty()) {
-            return filterString(set, 0, new IrIntExpr[0], result);
-        }
-        int offset = set.getEnv().getLowBound();
-        int end = set.getEnv().getHighBound();
-        return filterString(set, offset,
-                Arrays.copyOfRange(string, offset, end + 1),
-                result);
-    }
-
-    public static IrBoolExpr filterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result) {
-        Domain constant = IrUtil.getConstant(set);
-        if (constant != null) {
-            int[] array = constant.getValues();
-            IrBoolExpr[] ands = new IrBoolExpr[result.length];
-            for (int i = 0; i < array.length; i++) {
-                ands[i] = equal(string[array[i] - offset], result[i]);
-            }
-            for (int i = array.length; i < result.length; i++) {
-                ands[i] = equal(result[i], -1);
-            }
-            return and(ands);
-        }
-        IrIntExpr[] filterString = Arrays.copyOf(string, string.length);
-        IrIntExpr[] filterResult = Arrays.copyOf(result, result.length);
-        TIntIterator iter = set.getEnv().iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            int env = iter.next();
-            int x = env - offset;
-            if (!set.getKer().contains(env) || !filterString[x].equals(filterResult[i])) {
-                break;
-            }
-            filterString[x] = Zero;
-            filterResult[i] = Zero;
-            i++;
-        }
-        int cut = filterResult.length;
-        while (cut > 0 && Integer.valueOf(-1).equals(IrUtil.getConstant(filterResult[cut - 1]))) {
-            cut--;
-        }
-        if (cut != filterResult.length) {
-            filterResult = Arrays.copyOf(filterResult, cut);
-        }
-        return new IrFilterString(set, offset, filterString, filterResult, TrueFalseDomain);
-    }
-
     /*
      * TODO STRING
      */
