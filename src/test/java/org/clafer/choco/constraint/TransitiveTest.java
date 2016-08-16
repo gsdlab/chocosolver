@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
-import static org.clafer.ir.Irs.set;
+import org.clafer.test.NoCard;
 
 /**
  *
@@ -56,7 +56,7 @@ public class TransitiveTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(@NonEmpty @Positive SetVar[] relation) {
+    public Constraint setup(@NoCard @NonEmpty @Positive SetVar[] relation) {
         return Constraints.transitive(relation);
     }
 }

@@ -15,6 +15,7 @@ import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.test.NoCard;
 
 /**
  *
@@ -64,7 +65,9 @@ public class TransitiveClosureTest {
     }
 
     @Test(timeout = 300000)
-    public Constraint setup(@NonEmpty @Positive SetVar[] relation, @NonEmpty @Positive SetVar[] closure) {
+    public Constraint setup(
+            @NoCard @NonEmpty @Positive SetVar[] relation,
+            @NoCard @NonEmpty @Positive SetVar[] closure) {
         assumeTrue(relation.length == closure.length);
         return Constraints.transitiveClosure(relation, closure);
     }
