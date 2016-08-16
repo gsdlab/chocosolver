@@ -65,7 +65,7 @@ public class TransitiveReflexiveClosureTest {
         }
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 60000)
     public Constraint setup(@NoCard @NonEmpty @Positive SetVar[] relation, @NoCard @NonEmpty @Positive SetVar[] closure) {
         assumeTrue(relation.length == closure.length);
         return Constraints.transitiveReflexiveClosure(relation, closure);
