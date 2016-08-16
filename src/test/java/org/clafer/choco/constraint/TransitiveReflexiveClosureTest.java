@@ -16,7 +16,6 @@ import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 import org.clafer.test.NoCard;
-import org.junit.Ignore;
 
 /**
  *
@@ -43,15 +42,9 @@ public class TransitiveReflexiveClosureTest {
          *
          * powerset = filterM (const [True, False])
          *
-         * positive = do
-         *     relation <- replicateM 4 $ powerset [0..3]
-         *     guard $ and $ do
-         *         [i,j,k] <- replicateM 3 $ [0..3]
-         *         return $ ((j `elem` relation !! i) && (k `elem` relation !! j)) `implies` (k `elem` relation !! i)
+         * solutions = do
+         *     relation <- replicateM 3 $ powerset [0..2]
          *     return relation
-         *     where
-         *         implies True False = False
-         *         implies _ _ = True
          */
         return $(model.setVarArray("relation", 3, ker(), env(0, 1, 2)),
                 model.setVarArray("closure", 3, ker(), env(0, 1, 2)));
