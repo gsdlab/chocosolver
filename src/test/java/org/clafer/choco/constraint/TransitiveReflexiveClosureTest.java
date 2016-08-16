@@ -35,7 +35,7 @@ public class TransitiveReflexiveClosureTest {
         });
     }
 
-    @Input(solutions = 512)
+    @Input(solutions = 16)
     public Object testTransitive(Model model) {
         /*
          * import Control.Monad
@@ -52,8 +52,8 @@ public class TransitiveReflexiveClosureTest {
          *         implies True False = False
          *         implies _ _ = True
          */
-        return $(model.setVarArray("relation", 3, ker(), env(0, 1, 2)),
-                model.setVarArray("closure", 3, ker(), env(0, 1, 2)));
+        return $(model.setVarArray("relation", 2, ker(), env(0, 1)),
+                model.setVarArray("closure", 2, ker(), env(0, 1)));
     }
 
     @Check
