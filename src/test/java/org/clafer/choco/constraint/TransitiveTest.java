@@ -23,24 +23,24 @@ import org.clafer.test.NoCard;
 @RunWith(ConstraintQuickTest.class)
 public class TransitiveTest {
 
-    @Input(solutions = 3994)
+    @Input(solutions = 171)
     public Object testTransitive(Model model) {
         /*
          * import Control.Monad
          *
          * powerset = filterM (const [True, False])
          *
-         * positive = do
-         *     relation <- replicateM 4 $ powerset [0..3]
+         * solutions = do
+         *     relation <- replicateM 3 $ powerset [0..2]
          *     guard $ and $ do
-         *         [i,j,k] <- replicateM 3 $ [0..3]
+         *         [i,j,k] <- replicateM 3 $ [0..2]
          *         return $ ((j `elem` relation !! i) && (k `elem` relation !! j)) `implies` (k `elem` relation !! i)
          *     return relation
          *     where
          *         implies True False = False
          *         implies _ _ = True
          */
-        return $(model.setVarArray("relation", 4, ker(), env(0, 1, 2, 3)));
+        return $(model.setVarArray("relation", 3, ker(), env(0, 1, 2)));
     }
 
     @Check
