@@ -16,6 +16,7 @@ import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.SetVar;
 import static org.chocosolver.solver.variables.Var.*;
 import org.clafer.test.NoCard;
+import org.junit.Ignore;
 
 /**
  *
@@ -35,7 +36,7 @@ public class TransitiveReflexiveClosureTest {
         });
     }
 
-    @Input(solutions = 16)
+    @Input(solutions = 512)
     public Object testTransitive(Model model) {
         /*
          * import Control.Monad
@@ -52,8 +53,8 @@ public class TransitiveReflexiveClosureTest {
          *         implies True False = False
          *         implies _ _ = True
          */
-        return $(model.setVarArray("relation", 2, ker(), env(0, 1)),
-                model.setVarArray("closure", 2, ker(), env(0, 1)));
+        return $(model.setVarArray("relation", 3, ker(), env(0, 1, 2)),
+                model.setVarArray("closure", 3, ker(), env(0, 1, 2)));
     }
 
     @Check
@@ -65,7 +66,8 @@ public class TransitiveReflexiveClosureTest {
         }
     }
 
-    @Test(timeout = 60000)
+    @Ignore
+    @Test(timeout = 300000)
     public Constraint setup(@NoCard @NonEmpty @Positive SetVar[] relation, @NoCard @NonEmpty @Positive SetVar[] closure) {
         assumeTrue(relation.length == closure.length);
         return Constraints.transitiveReflexiveClosure(relation, closure);
