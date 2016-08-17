@@ -15,3 +15,5 @@ install:
   - rm -rf $HOME/chocoteam/choco3
 
 before_script: cd $TRAVIS_BUILD_DIR
+
+script: mvn test -DargLine="-Xmx=1024m"
