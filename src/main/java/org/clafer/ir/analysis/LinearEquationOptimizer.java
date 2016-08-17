@@ -195,9 +195,6 @@ public class LinearEquationOptimizer {
 
                 long a = coefficient * var.getLowBound();
                 long b = coefficient * var.getHighBound();
-                if (Math.min(a, b) < low || Math.max(a, b) > high || coefficientI != coefficient) {
-                    return new IrBoolExpr[0];
-                }
                 addends[j] = mul(coefficientI, var, Domains.Unbounded);
             }
             assert right.isWhole();
@@ -230,11 +227,11 @@ public class LinearEquationOptimizer {
                 equations.add(equation);
                 low = Math.min(Math.min(low, d1.getLowBound()), d2.getLowBound());
                 high = Math.max(Math.max(high, d1.getHighBound()), d2.getHighBound());
+            } else {
+                // TODO: add only if pair is null
+                constraints.add(constraint);
             }
-            // TODO: add only if pair is null
-            constraints.add(constraint);
         }
-
         if (equations.size() > 0) {
             Map<Variable, IrIntVar> inverse = Util.inverse(map);
 
