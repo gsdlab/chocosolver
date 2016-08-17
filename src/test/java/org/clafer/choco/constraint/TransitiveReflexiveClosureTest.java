@@ -63,10 +63,6 @@ public class TransitiveReflexiveClosureTest {
     public Constraint setup(
             @NoCard @NonEmpty @Positive SetVar[] relation,
             @NoCard @NonEmpty @Positive SetVar[] closure) {
-        Runtime runtime = Runtime.getRuntime();
-        System.out.println(runtime.maxMemory());
-        System.out.println(runtime.totalMemory());
-        System.out.println(runtime.freeMemory());
         assumeTrue(relation.length == closure.length);
         return Constraints.transitiveReflexiveClosure(relation, closure);
     }
