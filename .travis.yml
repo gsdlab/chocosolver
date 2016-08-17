@@ -5,7 +5,7 @@ jdk:
   - oraclejdk8
 
 env:
-  - MAVEN_OPTS='-DargLine="-Xmx=1024m"'
+  - MAVEN_OPTS='-DargLine="-Xmx1024m"'
 
 install:
   - cd $HOME
@@ -15,5 +15,3 @@ install:
   - rm -rf $HOME/chocoteam/choco3
 
 before_script: cd $TRAVIS_BUILD_DIR
-
-script: mvn test -DargLine="-Xmx=1024m"
