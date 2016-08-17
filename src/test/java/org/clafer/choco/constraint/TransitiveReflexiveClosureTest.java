@@ -63,6 +63,8 @@ public class TransitiveReflexiveClosureTest {
     public Constraint setup(
             @NoCard @NonEmpty @Positive SetVar[] relation,
             @NoCard @NonEmpty @Positive SetVar[] closure) {
+        System.out.println(System.getProperty("argLine"));
+        System.out.println(System.getProperties());
         assumeTrue(relation.length == closure.length);
         return Constraints.transitiveReflexiveClosure(relation, closure);
     }
