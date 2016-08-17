@@ -5,7 +5,7 @@ jdk:
   - oraclejdk8
 
 env:
-  - MAVEN_OPTS='-DargLine="-Xms1024m -Xmx=1024m"'
+  - MAVEN_OPTS='-DargLine="-Xmx=1024m"'
 
 install:
   - cd $HOME
