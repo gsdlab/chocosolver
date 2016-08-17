@@ -33,24 +33,25 @@ public class PropOne extends Propagator<BoolVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        BoolVar last = null;
+        int zeroes = 0;
+        int unassigned = 0;
         for (int i = 0; i < vars.length; i++) {
             BoolVar var = vars[i];
             if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
                     clearAllBut(i);
                     return;
+                } else {
+                    zeroes++;
                 }
-            } else if (last != null) {
-                return;
             } else {
-                last = var;
+                unassigned = i;
             }
         }
-        if (last == null) {
-            fails();
-        } else {
-            last.setToTrue(this);
+        if (zeroes >= vars.length - 1) {
+            vars[unassigned].setToTrue(this);
+            clearAllBut(unassigned);
+
         }
     }
 
