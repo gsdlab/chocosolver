@@ -13,4 +13,4 @@ install:
 
 before_script: cd $TRAVIS_BUILD_DIR
 
-script: mvn test -DargLine="-Xmx=1024m"
+script: mvn test -DargLine="-Xmx1024m"
