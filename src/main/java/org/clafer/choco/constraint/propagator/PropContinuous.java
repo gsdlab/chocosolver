@@ -9,6 +9,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISet;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
@@ -23,7 +24,7 @@ public class PropContinuous extends Propagator<Variable> {
     private final IntVar card;
 
     public PropContinuous(SetVar set, IntVar card) {
-        super(new Variable[]{set}, PropagatorPriority.QUADRATIC, false);
+        super(new Variable[]{set, card}, PropagatorPriority.QUADRATIC, false);
         this.set = set;
         this.card = card;
     }
@@ -42,15 +43,27 @@ public class PropContinuous extends Propagator<Variable> {
             return SetEventType.all();
         }
         assert isCardVar(vIdx);
-        return IntEventType.VOID.getMask();
+        return IntEventType.all();
+    }
+
+    private static boolean containsRange(ISet set, int low, int high) {
+        for (int i = low; i <= high; i++) {
+            if (!set.contains(low)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        int kerMax = 0;
+        int kerMin = 0;
         if (set.getLB().size() > 0) {
             ISetIterator setKer = set.getLB().iterator();
             assert setKer.hasNext();
             int cur = setKer.nextInt();
+            kerMin = cur;
             while (setKer.hasNext()) {
                 int next = setKer.nextInt();
                 for (int j = cur + 1; j < next; j++) {
@@ -58,45 +71,57 @@ public class PropContinuous extends Propagator<Variable> {
                 }
                 cur = next;
             }
+            kerMax = cur;
         }
+        final int kerMaxFinal = kerMax;
+        final int kerMinFinal = kerMin;
         if (set.getUB().size() > 0) {
-            int cardLb = card.getLB();
-            if (cardLb >= 2) {
-                int ker = set.getLB().isEmpty() ? 0 : set.getLB().min();
-                int maxSize = 0;
+            final int cardLb = card.getLB();
+            final int cardUb = card.getUB();
 
-                ISetIterator iter = set.getUB().iterator();
-                if (iter.hasNext()) {
-                    int prev = iter.nextInt();
-                    int size = 1;
-                    while (iter.hasNext()) {
-                        assert (!set.getUB().contains(prev - 1));
+            int[] regionBounds = new int[2 * set.getUB().size()];
+            int regions = iterateRange(set.getUB().iterator(), regionBounds);
+            int survivingRegions = regions;
+            int maxSize = 0;
 
-                        int next = iter.nextInt();
+            for (int region = 0; region < regions; region++) {
+                int low = regionBounds[2 * region];
+                int high = regionBounds[2 * region + 1];
 
-                        while (next == prev + 1) {
-                            size++;
-                            if (!iter.hasNext()) {
-                                break;
-                            }
-                            prev = next;
-                            next = iter.nextInt();
-                        }
+                assert !set.getUB().contains(low - 1);
+                assert containsRange(set.getUB(), low, high);
+                assert !set.getUB().contains(high + 1) : set + ", " + low + ", " + high;
 
-                        if (next != prev + 1
-                                && (!set.getLB().isEmpty() && ker <= prev - size && ker > prev)
-                                || size < cardLb) {
-                            for (int i = prev; i > prev - size; i--) {
-                                set.remove(i, this);
-                            }
-                        } else if (size > maxSize) {
-                            maxSize = size;
-                        }
-                        prev = next;
-                        size = 1;
+                int size = high - low + 1;
+                if (size < cardLb
+                        || (!set.getLB().isEmpty() && (kerMinFinal < low || kerMaxFinal > high))) {
+                    for (int i = low; i <= high; i++) {
+                        set.remove(i, this);
                     }
+                    survivingRegions--;
+                } else {
+                    if (!set.getLB().isEmpty()) {
+                        for (int i = low; i <= kerMaxFinal - cardUb; i++) {
+                            boolean changed = set.remove(i, this);
+                            assert changed;
+                        }
+                        for (int i = high; i >= kerMinFinal + cardUb; i--) {
+                            boolean changed = set.remove(i, this);
+                            assert changed;
+                        }
+                    }
+                    maxSize = Math.max(maxSize, size);
                 }
-                card.updateUpperBound(maxSize, this);
+            }
+
+            card.updateUpperBound(maxSize, this);
+
+            if (survivingRegions == 1) {
+                int low = set.getUB().min();
+                int high = set.getUB().max();
+                for (int i = high - cardLb + 1; i < low + cardLb; i++) {
+                    set.force(i, this);
+                }
             }
         }
     }
@@ -115,8 +140,30 @@ public class PropContinuous extends Propagator<Variable> {
         return set.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
+    private int iterateRange(ISetIterator iter, int[] out) throws ContradictionException {
+        assert iter.hasNext();
+        int prev = iter.nextInt();
+        int size = 1;
+        int regions = 0;
+        while (iter.hasNext()) {
+            int next = iter.nextInt();
+            if (next != prev + 1) {
+                out[2 * regions] = prev - size + 1;
+                out[2 * regions + 1] = prev;
+                regions++;
+                size = 0;
+            }
+            prev = next;
+            size++;
+        }
+        out[2 * regions] = prev - size + 1;
+        out[2 * regions + 1] = prev;
+        regions++;
+        return regions;
+    }
+
     @Override
     public String toString() {
-        return "continuous(" + set + ")";
+        return "continuous(" + set + ", " + card + ")";
     }
 }
