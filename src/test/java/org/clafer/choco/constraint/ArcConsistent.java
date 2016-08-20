@@ -17,7 +17,7 @@ public @interface ArcConsistent {
     /**
      *
      * @return {@code true} if the opposite constraint is also arc-consistent,
-     * false otherwise
+     * {@code false} otherwise
      */
     boolean opposite() default false;
 }

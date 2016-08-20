@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Denotes a constraint that is idempotent.
  *
  * @author jimmy
  */

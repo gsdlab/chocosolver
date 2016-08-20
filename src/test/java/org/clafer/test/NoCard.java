@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Denotes a set variable to not constrain its cardinality.
  *
  * @author jimmy
  */
