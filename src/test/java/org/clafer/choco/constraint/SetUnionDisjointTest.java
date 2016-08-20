@@ -17,10 +17,10 @@ import org.clafer.test.NoCard;
  * @author jimmy
  */
 @RunWith(ConstraintQuickTest.class)
-public class SetUnionTest {
+public class SetUnionDisjointTest {
 
-    @Input(solutions = 64)
-    public Object testSetUnion(Model model) {
+    @Input(solutions = 27)
+    public Object testSetUnionDisjoint(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -31,7 +31,7 @@ public class SetUnionTest {
          *     s1 <- powerset [-1..2]
          *     s2 <- powerset [-2..1]
          *     s3 <- powerset [-1..1]
-         *     guard $ sort (nub $ s1 ++ s2) == sort s3
+         *     guard $ (sort (nub $ s1 ++ s2) == sort s3) && (all (`notElem` s1) s2)
          *     return (s1, s2, s3)
          */
         return $(
@@ -45,7 +45,9 @@ public class SetUnionTest {
     public void check(TIntSet[] sets, TIntSet union) {
         TIntSet answer = new TIntHashSet();
         for (TIntSet set : sets) {
-            answer.addAll(set);
+            for (int c : set.toArray()) {
+                assertTrue(answer.add(c));
+            }
         }
         assertEquals(union, answer);
     }
@@ -55,6 +57,6 @@ public class SetUnionTest {
         return Constraints.union(
                 sets, mapCard(sets),
                 union, union.getCard(),
-                false);
+                true);
     }
 }
