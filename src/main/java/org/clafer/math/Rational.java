@@ -9,8 +9,8 @@ import org.clafer.common.Util;
  */
 public class Rational implements Comparable<Rational> {
 
-    public static Rational Zero = new Rational(0);
-    public static Rational One = new Rational(1);
+    public static final Rational Zero = new Rational(0);
+    public static final Rational One = new Rational(1);
 
     private final long numerator, denominator;
 

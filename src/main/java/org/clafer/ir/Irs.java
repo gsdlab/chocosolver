@@ -1153,8 +1153,8 @@ public class Irs {
      *
      *******************
      */
-    public static IrIntVar Zero = False;
-    public static IrIntVar One = True;
+    public static final IrIntVar Zero = False;
+    public static final IrIntVar One = True;
 
     public static IrIntVar constant(int value) {
         switch (value) {
@@ -2336,7 +2336,7 @@ public class Irs {
      *
      *******************
      */
-    public static IrStringVar EmptyString = new IrStringConstant("");
+    public static final IrStringVar EmptyString = new IrStringConstant("");
 
     public static IrStringVar constant(String value) {
         if (value.length() == 0) {

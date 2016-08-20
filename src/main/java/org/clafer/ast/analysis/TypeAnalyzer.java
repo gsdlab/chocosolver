@@ -585,10 +585,6 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> alternative = typeCheck(ast.getAlternative());
             TypedExpr<AstSetExpr> consequent = typeCheck(ast.getConsequent());
             ProductType unionType = getLowestCommonSupertype(alternative.getCommonSupertype(), consequent.getCommonSupertype());
-            if (unionType == null) {
-                throw new TypeException("Cannot if " + antecedent.getType() + " then "
-                        + consequent.getType() + " else " + alternative.getType());
-            }
             return put(new Type(unionType), ifThenElse(antecedent.getExpr(),
                     upcastTo(consequent, unionType), upcastTo(alternative, unionType)));
         }

@@ -36,7 +36,7 @@ public class IrSingletonFilter extends IrAbstractSet {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof IrSingleton) {
+        if (obj instanceof IrSingletonFilter) {
             IrSingletonFilter other = (IrSingletonFilter) obj;
             return value.equals(other.value) && filter == other.filter && super.equals(other);
         }

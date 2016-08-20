@@ -300,7 +300,7 @@ public class LinearSystem {
         return set;
     }
 
-    private int tieBreaker(LinearEquation eq1, LinearEquation eq2) {
+    private static int tieBreaker(LinearEquation eq1, LinearEquation eq2) {
         return eq1.getVariables().length - eq2.getVariables().length;
     }
 
@@ -471,10 +471,10 @@ public class LinearSystem {
         Set<LinearEquation> newEquations = new LinkedHashSet<>(
                 bestLowBound.size() + bestHighBound.size());
         for (Pair<Set<LinearEquation>, ?> b : bestLowBound.values()) {
-            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
+            newEquations.add(Collections.min(b.getFst(), LinearSystem::tieBreaker));
         }
         for (Pair<Set<LinearEquation>, ?> b : bestHighBound.values()) {
-            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
+            newEquations.add(Collections.min(b.getFst(), LinearSystem::tieBreaker));
         }
         return new LinearSystem(newEquations);
     }

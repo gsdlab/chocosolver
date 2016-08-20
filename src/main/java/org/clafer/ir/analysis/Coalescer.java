@@ -609,21 +609,6 @@ public class Coalescer {
             return null;
         }
 
-        private int largerThan(IrIntExpr[][] strings, int index) {
-            int larger = 0;
-            for (int i = 0; i < strings.length; i++) {
-                if (i != index) {
-                    switch (IrUtil.compareString(strings[index], strings[i])) {
-                        case GE:
-                        case GT:
-                        case UNKNOWN:
-                            larger++;
-                    }
-                }
-            }
-            return larger;
-        }
-
         @Override
         public Void visit(IrSortStringsChannel ir, Void a) {
             IrIntExpr[][] strings = ir.getStrings();
@@ -1001,9 +986,7 @@ public class Coalescer {
                 card = left.getCard();
             }
             IrSetVar set = tset(env, ker, card);
-            if (set != null) {
-                setGraph.union(right, set);
-            }
+            setGraph.union(right, set);
         }
 
         private void propagateSingleton(PartialSet left, IrSingleton right) {
