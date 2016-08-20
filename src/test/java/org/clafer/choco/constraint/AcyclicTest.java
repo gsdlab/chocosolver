@@ -2,16 +2,18 @@ package org.clafer.choco.constraint;
 
 import java.util.Set;
 import org.chocosolver.solver.Model;
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
 import org.clafer.test.NonEmpty;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *

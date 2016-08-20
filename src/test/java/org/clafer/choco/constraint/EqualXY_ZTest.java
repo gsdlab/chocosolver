@@ -1,11 +1,11 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *

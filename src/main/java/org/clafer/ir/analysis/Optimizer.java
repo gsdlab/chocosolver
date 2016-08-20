@@ -1,10 +1,10 @@
 package org.clafer.ir.analysis;
 
+import org.clafer.domain.Domain;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCompare;
 import static org.clafer.ir.IrCompare.Op.Equal;
 import static org.clafer.ir.IrCompare.Op.NotEqual;
-import org.clafer.domain.Domain;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrLone;
@@ -14,7 +14,15 @@ import org.clafer.ir.IrOr;
 import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrUtil;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.add;
+import static org.clafer.ir.Irs.greaterThan;
+import static org.clafer.ir.Irs.implies;
+import static org.clafer.ir.Irs.lessThanEqual;
+import static org.clafer.ir.Irs.lone;
+import static org.clafer.ir.Irs.not;
+import static org.clafer.ir.Irs.offset;
+import static org.clafer.ir.Irs.or;
+import static org.clafer.ir.Irs.sub;
 
 /**
  *

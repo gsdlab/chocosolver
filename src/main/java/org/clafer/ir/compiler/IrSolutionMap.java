@@ -2,6 +2,9 @@ package org.clafer.ir.compiler;
 
 import java.util.Map;
 import org.chocosolver.solver.Solution;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import org.clafer.collection.Either;
 import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
@@ -10,9 +13,6 @@ import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
-import org.chocosolver.solver.variables.BoolVar;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
 
 /**
  * Maps IR non-constant variables to their translated Choco variables. IR

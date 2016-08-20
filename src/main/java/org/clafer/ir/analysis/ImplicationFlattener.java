@@ -9,7 +9,10 @@ import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrRewriter;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.and;
+import static org.clafer.ir.Irs.implies;
+import static org.clafer.ir.Irs.not;
+import static org.clafer.ir.Irs.notImplies;
 
 /**
  *

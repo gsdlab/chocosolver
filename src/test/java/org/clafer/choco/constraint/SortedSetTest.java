@@ -1,17 +1,22 @@
 package org.clafer.choco.constraint;
 
 import org.chocosolver.solver.Model;
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.clafer.common.Util;
-import org.clafer.test.NonEmpty;
-import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
-import static org.chocosolver.solver.variables.Var.*;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
+import static org.chocosolver.solver.variables.Var.mapCard;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import org.clafer.common.Util;
+import org.clafer.test.NonEmpty;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *

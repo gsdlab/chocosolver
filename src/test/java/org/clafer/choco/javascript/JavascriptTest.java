@@ -10,7 +10,9 @@ import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**

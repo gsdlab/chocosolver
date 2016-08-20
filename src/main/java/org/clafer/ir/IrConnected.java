@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import org.clafer.domain.BoolDomain;
-import org.clafer.domain.Domain;
 
 /**
  *

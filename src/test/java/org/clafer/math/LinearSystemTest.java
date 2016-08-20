@@ -1,7 +1,9 @@
 package org.clafer.math;
 
 import org.clafer.common.Util;
-import static org.clafer.math.LinearEquation.*;
+import static org.clafer.math.LinearEquation.equal;
+import static org.clafer.math.LinearEquation.greaterThanEqual;
+import static org.clafer.math.LinearEquation.lessThanEqual;
 import static org.clafer.math.LinearFunctionBuilder.constant;
 import static org.clafer.math.LinearFunctionBuilder.term;
 import static org.junit.Assert.assertTrue;

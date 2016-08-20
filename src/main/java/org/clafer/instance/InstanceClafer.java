@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Objects;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
-import org.clafer.common.Check;
 import org.clafer.cli.Utils;
+import org.clafer.common.Check;
 
 /**
  *

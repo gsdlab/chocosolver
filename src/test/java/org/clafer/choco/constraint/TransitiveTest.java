@@ -3,18 +3,19 @@ package org.clafer.choco.constraint;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
 import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import org.clafer.test.NoCard;
 import org.clafer.test.NonEmpty;
 import org.clafer.test.Positive;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.SetVar;
-import static org.chocosolver.solver.variables.Var.*;
-import org.clafer.test.NoCard;
 
 /**
  *

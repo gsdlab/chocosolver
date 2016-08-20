@@ -1,7 +1,6 @@
 package org.clafer.collection;
 
 import gnu.trove.iterator.TIntIterator;
-import java.util.Iterator;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

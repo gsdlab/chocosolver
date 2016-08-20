@@ -1,24 +1,40 @@
 package org.clafer.test;
 
-import org.chocosolver.solver.variables.CStringVar;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import org.chocosolver.solver.Model;
-import static org.clafer.test.TestUtil.*;
-import org.clafer.ir.IrBoolVar;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.CStringVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import org.clafer.domain.Domain;
+import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.compiler.IrSolutionMap;
-import org.chocosolver.solver.variables.BoolVar;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
+import static org.clafer.test.TestUtil.randBool;
+import static org.clafer.test.TestUtil.randBoolVar;
+import static org.clafer.test.TestUtil.randDomain;
+import static org.clafer.test.TestUtil.randElement;
+import static org.clafer.test.TestUtil.randInt;
+import static org.clafer.test.TestUtil.randIntVar;
+import static org.clafer.test.TestUtil.randIrBoolVar;
+import static org.clafer.test.TestUtil.randIrIntVar;
+import static org.clafer.test.TestUtil.randIrSetVar;
+import static org.clafer.test.TestUtil.randIrStringVar;
+import static org.clafer.test.TestUtil.randNonEmptyDomain;
+import static org.clafer.test.TestUtil.randNonEmptyIrStringVar;
+import static org.clafer.test.TestUtil.randNonEmptyStringVar;
+import static org.clafer.test.TestUtil.randSetVar;
+import static org.clafer.test.TestUtil.randSetVarNoCard;
+import static org.clafer.test.TestUtil.randStringVar;
+import static org.clafer.test.TestUtil.randTerm;
 
 /**
  *

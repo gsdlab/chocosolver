@@ -2,11 +2,20 @@ package org.clafer;
 
 import java.util.HashSet;
 import java.util.Set;
-
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.$this;
+import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.in;
+import static org.clafer.ast.Asts.join;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.notIn;
+import static org.clafer.ast.Asts.ref;
+import static org.clafer.ast.Asts.relation;
+import static org.clafer.ast.Asts.transitiveClosure;
+import static org.clafer.ast.Asts.transitiveReflexiveClosure;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;

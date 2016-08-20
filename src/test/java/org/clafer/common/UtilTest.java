@@ -2,8 +2,19 @@ package org.clafer.common;
 
 import java.util.Arrays;
 import java.util.List;
-import static org.junit.Assert.*;
-import static org.clafer.common.Util.*;
+import static org.clafer.common.Util.concat;
+import static org.clafer.common.Util.divCeil;
+import static org.clafer.common.Util.divFloor;
+import static org.clafer.common.Util.dropUntil;
+import static org.clafer.common.Util.endsWith;
+import static org.clafer.common.Util.permutations;
+import static org.clafer.common.Util.sequence;
+import static org.clafer.common.Util.startsWith;
+import static org.clafer.common.Util.takeUntil;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**

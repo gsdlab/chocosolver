@@ -7,7 +7,9 @@ import static org.clafer.choco.constraint.ConstraintQuickTest.$;
 import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import org.clafer.choco.constraint.ConstraintQuickTest.Input;
 import org.clafer.test.Positive;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

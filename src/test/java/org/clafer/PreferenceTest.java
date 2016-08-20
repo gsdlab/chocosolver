@@ -2,7 +2,7 @@ package org.clafer;
 
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.newModel;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearchStrategy;

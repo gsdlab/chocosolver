@@ -4,8 +4,6 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import java.util.Random;
-import static org.junit.Assert.*;
-import org.junit.Test;
 import org.chocosolver.solver.Cause;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
@@ -17,6 +15,10 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IEventType;
 import org.chocosolver.solver.variables.events.PropagatorEventType;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import org.junit.Test;
 
 /**
  *

@@ -10,20 +10,21 @@ import java.util.Arrays;
 import java.util.List;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Settings;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.util.ESat;
+import org.clafer.Sample;
 import org.clafer.test.TestReflection;
 import org.clafer.test.TestUtil;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.Propagator;
-import org.chocosolver.util.ESat;
-import org.clafer.Sample;
 
 /**
  *

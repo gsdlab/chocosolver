@@ -1,11 +1,11 @@
 package org.clafer.test;
 
 import org.chocosolver.solver.Model;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.compiler.IrSolutionMap;
 import static org.clafer.test.TestUtil.toVar;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *

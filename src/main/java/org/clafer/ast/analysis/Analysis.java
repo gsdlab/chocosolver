@@ -1,6 +1,5 @@
 package org.clafer.ast.analysis;
 
-import org.clafer.ast.ProductType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,6 +20,7 @@ import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
+import org.clafer.ast.ProductType;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;

@@ -11,20 +11,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.chocosolver.solver.Model;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.test.TestReflection;
-import static org.clafer.test.TestUtil.*;
-import static org.junit.Assert.*;
+import static org.clafer.test.TestUtil.randomizeStrategy;
+import static org.junit.Assert.fail;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
 
 /**
  *

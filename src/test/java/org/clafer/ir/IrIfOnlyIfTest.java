@@ -1,11 +1,11 @@
 package org.clafer.ir;
 
-import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.BoolVar;
+import org.clafer.ir.IrQuickTest.Solution;
+import static org.clafer.ir.Irs.ifOnlyIf;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *

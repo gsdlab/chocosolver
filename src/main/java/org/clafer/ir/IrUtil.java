@@ -1,11 +1,11 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
-import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.clafer.domain.BoolDomain;
+import org.clafer.domain.Domain;
 
 /**
  *

@@ -5,7 +5,10 @@ import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.Optional;
+import static org.clafer.ast.Asts.newModel;
 import org.clafer.ast.analysis.InsufficientScopeException;
 import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
@@ -13,7 +16,11 @@ import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**

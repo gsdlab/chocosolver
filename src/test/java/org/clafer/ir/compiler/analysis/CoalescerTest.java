@@ -3,9 +3,11 @@ package org.clafer.ir.compiler.analysis;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrUtil;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.boundInt;
+import static org.clafer.ir.Irs.constant;
+import static org.clafer.ir.Irs.equal;
 import org.clafer.ir.analysis.Coalescer;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**

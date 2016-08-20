@@ -1,6 +1,7 @@
 package org.clafer.math;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;

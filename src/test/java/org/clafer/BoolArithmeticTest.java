@@ -2,12 +2,27 @@ package org.clafer;
 
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.and;
+import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.ifOnlyIf;
+import static org.clafer.ast.Asts.ifThenElse;
+import static org.clafer.ast.Asts.implies;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.not;
+import static org.clafer.ast.Asts.or;
+import static org.clafer.ast.Asts.some;
+import static org.clafer.ast.Asts.xor;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**

@@ -1,8 +1,5 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
-import static org.clafer.domain.Domains.*;
-import org.clafer.domain.EnumDomain;
 import gnu.trove.TIntCollection;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
@@ -16,6 +13,16 @@ import java.util.List;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.domain.BoolDomain;
+import org.clafer.domain.Domain;
+import static org.clafer.domain.Domains.EmptyDomain;
+import static org.clafer.domain.Domains.NegativeOneDomain;
+import static org.clafer.domain.Domains.TrueFalseDomain;
+import static org.clafer.domain.Domains.ZeroOneDomain;
+import static org.clafer.domain.Domains.boundDomain;
+import static org.clafer.domain.Domains.enumDomain;
+import static org.clafer.domain.Domains.enumDomains;
+import static org.clafer.domain.Domains.fromToDomain;
+import org.clafer.domain.EnumDomain;
 
 /**
  * Import this class to access all IR building functions.

@@ -3,9 +3,14 @@ package org.clafer.collection;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import static org.clafer.collection.FList.*;
+import static org.clafer.collection.FList.cons;
+import static org.clafer.collection.FList.empty;
+import static org.clafer.collection.FList.single;
+import static org.clafer.collection.FList.snoc;
 import org.clafer.common.Util;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**

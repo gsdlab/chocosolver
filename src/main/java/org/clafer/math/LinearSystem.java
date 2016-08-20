@@ -20,8 +20,8 @@ import java.util.Set;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
 import org.clafer.math.LinearEquation.Op;
-import static org.clafer.math.LinearEquation.*;
-import static org.clafer.math.LinearEquation.Op.*;
+import static org.clafer.math.LinearEquation.Op.Equal;
+import static org.clafer.math.LinearEquation.Op.LessThanEqual;
 
 /**
  * @author jimmy

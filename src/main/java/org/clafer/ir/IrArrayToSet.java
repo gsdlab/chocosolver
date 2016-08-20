@@ -1,9 +1,9 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
+import org.clafer.domain.Domain;
 
 /**
  *

@@ -1,11 +1,11 @@
 package org.clafer.ast.analysis;
 
-import org.clafer.ast.ProductType;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.ProductType;
 
 /**
  * Sum type.

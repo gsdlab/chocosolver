@@ -1,21 +1,11 @@
 package org.clafer.test;
 
-import org.chocosolver.solver.variables.CStringVar;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import org.chocosolver.solver.Model;
-import org.clafer.choco.constraint.Constraints;
-import org.clafer.ir.IrBoolVar;
-import org.clafer.domain.Domain;
-import static org.clafer.domain.Domains.*;
-import org.clafer.domain.EmptyDomain;
-import org.clafer.ir.IrIntVar;
-import org.clafer.ir.IrSetVar;
-import org.clafer.ir.IrStringVar;
-import static org.clafer.ir.Irs.*;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.constraints.Propagator;
@@ -24,12 +14,29 @@ import org.chocosolver.solver.search.strategy.selectors.values.SetValueSelector;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.search.strategy.strategy.SetStrategy;
 import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.CStringVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
+import org.clafer.choco.constraint.Constraints;
+import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
+import static org.clafer.domain.Domains.EmptyDomain;
+import static org.clafer.domain.Domains.boundDomain;
+import static org.clafer.domain.Domains.constantDomain;
+import static org.clafer.domain.Domains.enumDomain;
+import org.clafer.ir.IrBoolVar;
+import org.clafer.ir.IrIntVar;
+import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
+import static org.clafer.ir.Irs.False;
+import static org.clafer.ir.Irs.True;
+import static org.clafer.ir.Irs.bool;
+import static org.clafer.ir.Irs.domainInt;
+import static org.clafer.ir.Irs.set;
+import static org.clafer.ir.Irs.string;
 
 /**
  *

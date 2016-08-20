@@ -1,15 +1,19 @@
 package org.clafer.ir.compiler;
 
 import org.chocosolver.solver.Model;
-import static org.clafer.domain.Domains.*;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.search.strategy.Search;
+import static org.clafer.domain.Domains.boundDomain;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
-import static org.clafer.ir.Irs.*;
-import static org.junit.Assert.*;
+import static org.clafer.ir.Irs.card;
+import static org.clafer.ir.Irs.domainInt;
+import static org.clafer.ir.Irs.equal;
+import static org.clafer.ir.Irs.set;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.search.strategy.Search;
 
 /**
  *

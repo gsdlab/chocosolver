@@ -6,16 +6,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.chocosolver.solver.Solution;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ast.AstConstraint;
 import org.clafer.collection.Either;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
 import org.clafer.ir.IrBoolVar;
-import org.chocosolver.solver.Solution;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.variables.BoolVar;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  * Either call {@link #minUnsat()} xor {@link #unsatCore()} at most once. If you

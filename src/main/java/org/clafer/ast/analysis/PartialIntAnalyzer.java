@@ -19,7 +19,6 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstGlobal;
-import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
 import org.clafer.ast.AstRef;

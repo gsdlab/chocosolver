@@ -1,13 +1,13 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.domain.Domain;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.within;
 import org.clafer.test.NonEmpty;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *

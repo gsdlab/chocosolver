@@ -1,7 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import org.clafer.common.Util;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -11,6 +10,7 @@ import org.chocosolver.util.objects.setDataStructures.ISet;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.objects.setDataStructures.SetFactory;
 import org.chocosolver.util.objects.setDataStructures.SetType;
+import org.clafer.common.Util;
 
 /**
  *

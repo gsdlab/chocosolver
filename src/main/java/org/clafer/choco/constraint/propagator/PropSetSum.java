@@ -1,7 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.clafer.collection.Triple;
-import org.clafer.common.Util;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -12,6 +10,8 @@ import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
+import org.clafer.collection.Triple;
+import org.clafer.common.Util;
 
 /**
  * Sums a set and |set| &le n. This implementation <b>assumes</b> that the

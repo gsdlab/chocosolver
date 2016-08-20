@@ -1,13 +1,13 @@
 package org.clafer.choco.constraint;
 
-import org.clafer.choco.constraint.ConstraintQuickTest.Check;
-import org.clafer.test.NonEmpty;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import org.clafer.choco.constraint.propagator.PropElementValueSupport;
+import org.clafer.test.NonEmpty;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *

@@ -1,12 +1,14 @@
 package org.clafer.choco.constraint;
 
 import org.chocosolver.solver.Model;
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *

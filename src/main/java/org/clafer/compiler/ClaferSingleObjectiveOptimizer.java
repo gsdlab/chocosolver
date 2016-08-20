@@ -1,9 +1,9 @@
 package org.clafer.compiler;
 
-import org.clafer.instance.InstanceModel;
 import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.variables.IntVar;
+import org.clafer.instance.InstanceModel;
 
 /**
  *
