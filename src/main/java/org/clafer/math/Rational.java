@@ -174,6 +174,10 @@ public class Rational implements Comparable<Rational> {
         return numerator * m.denominator < m.numerator * denominator ? this : m;
     }
 
+    public boolean isLessThan(Rational o) {
+        return numerator * o.denominator < o.numerator * denominator;
+    }
+
     @Override
     public int compareTo(Rational o) {
         return Long.compare(numerator * o.denominator, o.numerator * denominator);

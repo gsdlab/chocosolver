@@ -524,6 +524,7 @@ public class LinearSystem {
                 optimize.remove(new LinearEquation(equation.getLeft(), LessThanEqual, equation.getRight()));
                 optimize.remove(new LinearEquation(equation.getLeft().minus(), LessThanEqual, equation.getRight().minus()));
             }
+            optimize.removeIf(equation::subsumes);
         }
         return optimize.size() == equations.length ? this : new LinearSystem(optimize);
     }

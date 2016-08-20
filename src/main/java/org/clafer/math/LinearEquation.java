@@ -131,6 +131,16 @@ public class LinearEquation {
         }
     }
 
+    public boolean subsumes(LinearEquation other) {
+        if (left.getVariableSet().equals(other.left.getVariableSet())
+                && Op.LessThanEqual.equals(other.getOp())) {
+            Rational scale = left.getCoefficients()[0].div(other.left.getCoefficients()[0]);
+            return left.equals(other.left.mul(scale))
+                    && right.isLessThan(other.right.mul(scale));
+        }
+        return false;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {

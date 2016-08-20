@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.clafer.common.Check;
 
 /**
@@ -109,6 +110,10 @@ public class LinearFunction implements LinearFunctionable {
 
     public Variable[] getVariables() {
         return variables;
+    }
+
+    public Set<Variable> getVariableSet() {
+        return coefficientMap.keySet();
     }
 
     public boolean hasConstant() {
