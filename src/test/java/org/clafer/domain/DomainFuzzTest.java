@@ -3,6 +3,7 @@ package org.clafer.domain;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.stream.IntStream;
 import org.clafer.common.Util;
@@ -288,7 +289,7 @@ public class DomainFuzzTest {
         Domain domain = Domain.enumDomain(set);
 
         TIntSet iterated = new TIntHashSet();
-        TIntIterator iter = domain.iterator();
+        PrimitiveIterator.OfInt iter = domain.iterator();
         int prev = Integer.MIN_VALUE;
         while (iter.hasNext()) {
             int cur = iter.next();
@@ -305,7 +306,7 @@ public class DomainFuzzTest {
         Domain domain = Domain.enumDomain(set);
 
         TIntSet iterated = new TIntHashSet();
-        TIntIterator iter = domain.iterator(false);
+        PrimitiveIterator.OfInt iter = domain.iterator(false);
         int prev = Integer.MAX_VALUE;
         while (iter.hasNext()) {
             int cur = iter.next();

@@ -5,6 +5,12 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
+import java.util.PrimitiveIterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 import org.clafer.common.Util;
 import org.clafer.ir.IrException;
 
@@ -462,12 +468,28 @@ public class Domain {
         return values;
     }
 
-    public TIntIterator iterator() {
+    void forEachRemaining(IntConsumer action) {
+        for (int region = 0; region < bounds.length; region += 2) {
+            for (int i = bounds[region]; i < bounds[region + 1]; i++) {
+                action.accept(i);
+            }
+        }
+    }
+
+    public PrimitiveIterator.OfInt iterator() {
         return new ForwardIterator();
     }
 
-    public TIntIterator iterator(boolean increasing) {
+    public PrimitiveIterator.OfInt iterator(boolean increasing) {
         return increasing ? new ForwardIterator() : new ReverseIterator();
+    }
+
+    public IntStream stream() {
+        Spliterator.OfInt spliterator = Spliterators.spliteratorUnknownSize(
+                iterator(),
+                Spliterator.DISTINCT | Spliterator.IMMUTABLE
+                | Spliterator.ORDERED | Spliterator.SORTED);
+        return StreamSupport.intStream(spliterator, false);
     }
 
     public void transferTo(TIntCollection collection) {
@@ -517,13 +539,13 @@ public class Domain {
         return result.toString();
     }
 
-    private class ForwardIterator implements TIntIterator {
+    private class ForwardIterator implements PrimitiveIterator.OfInt {
 
         int region = 0;
         int i = 0;
 
         @Override
-        public int next() {
+        public int nextInt() {
             int next = bounds[region] + i;
             if (next == bounds[region + 1] - 1) {
                 region += 2;
@@ -545,13 +567,13 @@ public class Domain {
         }
     }
 
-    private class ReverseIterator implements TIntIterator {
+    private class ReverseIterator implements PrimitiveIterator.OfInt {
 
         int region = bounds.length - 2;
         int i = 1;
 
         @Override
-        public int next() {
+        public int nextInt() {
             int next = bounds[region + 1] - i;
             if (next == bounds[region]) {
                 region -= 2;

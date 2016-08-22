@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis;
 
-import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
@@ -13,6 +12,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.clafer.collection.DisjointSets;
@@ -909,7 +909,7 @@ public class Coalescer {
             } else if (right instanceof IrElement) {
                 IrElement element = (IrElement) right;
                 TIntHashSet domain = new TIntHashSet(element.getIndex().getDomain().size());
-                TIntIterator iter = element.getIndex().getDomain().iterator();
+                PrimitiveIterator.OfInt iter = element.getIndex().getDomain().iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
                     if (left.intersects(element.getArray().getDomains()[val])) {
@@ -1009,7 +1009,7 @@ public class Coalescer {
                 }
             }
             if (left.isKerMask()) {
-                TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
+                PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
                     IrIntExpr index = null;
@@ -1036,7 +1036,7 @@ public class Coalescer {
                     if (children instanceof IrSetArrayVar) {
                         Domain env = left.getEnv();
                         Domain card = left.isCardMask() ? boundDomain(0, left.getCard().getHighBound()) : null;
-                        TIntIterator iter = right.getTake().getKer().iterator();
+                        PrimitiveIterator.OfInt iter = right.getTake().getKer().iterator();
                         PartialSet set = new PartialSet(env, null, card);
                         while (iter.hasNext()) {
                             propagateSet(set, ((IrSetArrayVar) children).getArray()[iter.next()]);
@@ -1044,10 +1044,10 @@ public class Coalescer {
                     }
                 }
                 if (left.isKerMask()) {
-                    TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
+                    PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                     while (iter.hasNext()) {
                         int val = iter.next();
-                        TIntIterator env = right.getTake().getEnv().iterator();
+                        PrimitiveIterator.OfInt env = right.getTake().getEnv().iterator();
                         int index = -1;
                         while (env.hasNext()) {
                             int j = env.next();
@@ -1076,7 +1076,7 @@ public class Coalescer {
                     int kerMinCard = 0;
                     int kerMaxCard = 0;
                     int env = 0;
-                    TIntIterator iter = take.getEnv().iterator();
+                    PrimitiveIterator.OfInt iter = take.getEnv().iterator();
                     while (iter.hasNext()) {
                         int i = iter.next();
                         if (take.getKer().contains(i)) {
@@ -1121,7 +1121,7 @@ public class Coalescer {
                 if (right.getRefs() instanceof IrIntArrayVar) {
                     IrIntExpr[] rightArray = ((IrIntArrayVar) right.getRefs()).getArray();
                     Domain env = left.getEnv();
-                    TIntIterator iter = right.getTake().getKer().iterator();
+                    PrimitiveIterator.OfInt iter = right.getTake().getKer().iterator();
                     while (iter.hasNext()) {
                         propagateInt(env, rightArray[iter.next()]);
                     }
@@ -1130,10 +1130,10 @@ public class Coalescer {
             if (left.isKerMask()) {
                 if (right.getRefs() instanceof IrIntArrayVar) {
                     IrIntExpr[] rightArray = ((IrIntArrayVar) right.getRefs()).getArray();
-                    TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
+                    PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                     while (iter.hasNext()) {
                         int val = iter.next();
-                        TIntIterator env = right.getTake().getEnv().iterator();
+                        PrimitiveIterator.OfInt env = right.getTake().getEnv().iterator();
                         int index = -1;
                         while (env.hasNext()) {
                             int j = env.next();
@@ -1193,7 +1193,7 @@ public class Coalescer {
                 }
             }
             if (left.isKerMask()) {
-                TIntIterator iter = left.getKer().difference(right.getKer()).iterator();
+                PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
                     IrSetExpr index = null;

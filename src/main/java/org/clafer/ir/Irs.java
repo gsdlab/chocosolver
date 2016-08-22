@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import gnu.trove.TIntCollection;
-import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.TIntStack;
@@ -10,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.PrimitiveIterator;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
@@ -832,7 +832,7 @@ public class Irs {
         for (int i = 0; i < sets.length; i++) {
             Domain constant = IrUtil.getConstant(sets[i]);
             if (constant != null) {
-                TIntIterator iter = constant.iterator();
+                PrimitiveIterator.OfInt iter = constant.iterator();
                 while (iter.hasNext()) {
                     int j = iter.next();
                     if (j < 0 || j >= ints.length) {
@@ -1362,10 +1362,11 @@ public class Irs {
         long m1 = multiplier.getDomain().size();
         if (m0 * m1 <= 16 || m0 * m1 <= intRange.size()) {
             TIntSet domainSet = new TIntHashSet();
-            TIntIterator iter0 = multiplicand.getDomain().iterator();
+            PrimitiveIterator.OfInt iter0 = multiplicand.getDomain().iterator();
+            // TODO: implement domain.mul
             while (iter0.hasNext()) {
                 long i0 = iter0.next();
-                TIntIterator iter1 = multiplier.getDomain().iterator();
+                PrimitiveIterator.OfInt iter1 = multiplier.getDomain().iterator();
                 while (iter1.hasNext()) {
                     long i1 = iter1.next();
                     long mul = i0 * i1;
@@ -1473,7 +1474,7 @@ public class Irs {
         if (constant != null) {
             return get($array, constant);
         }
-        TIntIterator iter = index.getDomain().iterator();
+        PrimitiveIterator.OfInt iter = index.getDomain().iterator();
         assert iter.hasNext();
 
         Domain domain = $array.getDomains()[iter.next()];
@@ -1558,13 +1559,13 @@ public class Irs {
     }
 
     public static IrIntExpr sum(IrSetExpr set) {
-        int sum = Util.sum(set.getKer().iterator());
+        int sum = set.getKer().stream().sum();
         int count = set.getKer().size();
 
         // Calculate low
         int low = sum;
         int lowCount = count;
-        TIntIterator envIter = set.getEnv().iterator();
+        PrimitiveIterator.OfInt envIter = set.getEnv().iterator();
         while (lowCount < set.getCard().getHighBound() && envIter.hasNext()) {
             int env = envIter.next();
             if (env >= 0 && lowCount >= set.getCard().getLowBound()) {
@@ -1772,7 +1773,7 @@ public class Irs {
 //    }
     public static IrSetExpr element(IrSetArrayExpr array, IrIntExpr index) {
         // TODO bound for other element calls
-        TIntIterator iter = index.getDomain().boundBetween(0, array.length() - 1).iterator();
+        PrimitiveIterator.OfInt iter = index.getDomain().boundBetween(0, array.length() - 1).iterator();
         assert iter.hasNext();
 
         int val = iter.next();
@@ -1821,7 +1822,7 @@ public class Irs {
         }
 
         // Compute env
-        TIntIterator iter = take.getEnv().iterator();
+        PrimitiveIterator.OfInt iter = take.getEnv().iterator();
         Domain env;
         if (iter.hasNext()) {
             Domain domain = $children.getEnvs()[iter.next()];
@@ -1912,7 +1913,7 @@ public class Irs {
         }
 
         // Compute env
-        TIntIterator iter = take.getEnv().iterator();
+        PrimitiveIterator.OfInt iter = take.getEnv().iterator();
         Domain env;
         if (iter.hasNext()) {
             Domain domain = $refs.getDomains()[iter.next()];
@@ -2266,7 +2267,7 @@ public class Irs {
             kers[i] = new TIntHashSet();
         }
         for (int i = 0; i < relation.length(); i++) {
-            TIntIterator iter = relation.getEnvs()[i].iterator();
+            PrimitiveIterator.OfInt iter = relation.getEnvs()[i].iterator();
             while (iter.hasNext()) {
                 int val = iter.next();
                 if (val < envs.length) {
@@ -2302,13 +2303,8 @@ public class Irs {
                 env.add(i);
             }
             do {
-                TIntIterator iter = relation.getEnvs()[q.pop()].iterator();
-                while (iter.hasNext()) {
-                    int j = iter.next();
-                    if (env.add(j)) {
-                        q.push(j);
-                    }
-                }
+                relation.getEnvs()[q.pop()].stream()
+                        .filter(env::add).forEach(q::push);
             } while (q.size() > 0);
 
             q.push(i);
@@ -2317,13 +2313,8 @@ public class Irs {
                 ker.add(i);
             }
             do {
-                TIntIterator iter = relation.getKers()[q.pop()].iterator();
-                while (iter.hasNext()) {
-                    int j = iter.next();
-                    if (ker.add(j)) {
-                        q.push(j);
-                    }
-                }
+                relation.getKers()[q.pop()].stream()
+                        .filter(ker::add).forEach(q::push);
             } while (q.size() > 0);
 
             envs[i] = enumDomain(env);
@@ -2400,7 +2391,7 @@ public class Irs {
         if (constant != null) {
             return $array[constant];
         }
-        TIntIterator iter = index.getDomain().iterator();
+        PrimitiveIterator.OfInt iter = index.getDomain().iterator();
         assert iter.hasNext();
 
         Domain length = EmptyDomain;
