@@ -13,6 +13,7 @@ import java.util.List;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.EmptyDomain;
 import static org.clafer.domain.Domains.NegativeOneDomain;
 import static org.clafer.domain.Domains.TrueFalseDomain;
@@ -1978,7 +1979,7 @@ public class Irs {
                 flatten.add(operand);
             }
         }
-        TIntSet constants = null;
+        Domain constants = null;
         List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
             Domain constant = IrUtil.getConstant(operand);
@@ -1986,9 +1987,9 @@ public class Irs {
                 filter.add(operand);
             } else {
                 if (constants == null) {
-                    constants = new TIntHashSet(constant.getValues());
+                    constants = constant;
                 } else {
-                    constants.retainAll(constant.getValues());
+                    constants = constants.intersection(constant);
                 }
             }
         }
@@ -2036,14 +2037,14 @@ public class Irs {
                 flatten.add(operand);
             }
         }
-        TIntSet constants = new TIntHashSet();
+        Domain constants = Domains.EmptyDomain;
         List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
             Domain constant = IrUtil.getConstant(operand);
             if (constant == null) {
                 filter.add(operand);
             } else {
-                constant.transferTo(constants);
+                constants = constants.union(constant);
             }
         }
         if (!constants.isEmpty()) {
