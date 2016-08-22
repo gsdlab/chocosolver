@@ -888,8 +888,8 @@ public class AstCompiler {
                         childrenSets[i] = siblingSets.get(child);
                     }
                     for (int i = 0; i < scope; i++) {
-                        for (int j = 0; j < childrenSets.length; j++) {
-                            cards[i].add(card(childrenSets[j][i + offset]));
+                        for (IrSetVar[] childrenSet : childrenSets) {
+                            cards[i].add(card(childrenSet[i + offset]));
                         }
                     }
                 }
@@ -1385,10 +1385,9 @@ public class AstCompiler {
                 }
                 if ($deref == null) {
                     $deref = compile(deref);
-                    globalCardinality = 0;
-                    for (AstConcreteClafer sub : AstUtil.getConcreteSubs(derefType)) {
-                        globalCardinality += getScope(sub.getParent());
-                    }
+                    globalCardinality = AstUtil.getConcreteSubs(derefType).stream()
+                            .map(AstConcreteClafer::getParent)
+                            .mapToInt(AstCompiler.this::getScope).sum();
                 }
             } else {
                 $deref = compile(deref);
@@ -2114,7 +2113,7 @@ public class AstCompiler {
         PartialSolution partialSolution = getPartialSolution(src);
         Domain[] partialInts = getPartialInts(ref);
         IrIntVar[] ivs = new IrIntVar[getScope(src)];
-        Domain refRange = getRefRange(ref);;
+        Domain refRange = getRefRange(ref);
         for (int i = 0; i < ivs.length; i++) {
             Domain domain = partialInts[i];
             if (domain == null) {

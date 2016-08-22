@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.PrimitiveIterator;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
@@ -1474,23 +1475,12 @@ public class Irs {
         if (constant != null) {
             return get($array, constant);
         }
-        PrimitiveIterator.OfInt iter = index.getDomain().iterator();
-        assert iter.hasNext();
 
-        Domain domain = $array.getDomains()[iter.next()];
-        int low = domain.getLowBound();
-        int high = domain.getHighBound();
-        while (iter.hasNext()) {
-            int val = iter.next();
-            if (val < $array.length()) {
-                domain = $array.getDomains()[val];
-                // TODO Use IrUtil.union
-                low = Math.min(low, domain.getLowBound());
-                high = Math.max(high, domain.getHighBound());
-            }
-        }
-        domain = boundDomain(low, high);
-        return new IrElement($array, index, domain);
+        Optional<Domain> domain = Util.mapWithin(
+                index.getDomain().stream(), $array.getDomains())
+                .reduce(Domain::union);
+        assert domain.isPresent();
+        return new IrElement($array, index, domain.get());
     }
 
     public static IrIntExpr count(int value, IrIntExpr[] array) {
@@ -1821,42 +1811,27 @@ public class Irs {
             return union(to, injective);
         }
 
-        // Compute env
-        PrimitiveIterator.OfInt iter = take.getEnv().iterator();
-        Domain env;
-        if (iter.hasNext()) {
-            Domain domain = $children.getEnvs()[iter.next()];
-            while (iter.hasNext()) {
-                domain = domain.union($children.getEnvs()[iter.next()]);
-            }
-            env = domain;
-        } else {
-            env = EmptyDomain;
-        }
-
-        // Compute ker
-        iter = take.getKer().iterator();
-        Domain ker;
-        if (iter.hasNext()) {
-            Domain domain = $children.getKers()[iter.next()];
-            while (iter.hasNext()) {
-                domain = domain.union($children.getKers()[iter.next()]);
-            }
-            ker = domain;
-        } else {
-            ker = EmptyDomain;
-        }
-
-        // Compute card
         Domain takeEnv = take.getEnv();
         Domain takeKer = take.getKer();
+
+        // Compute env
+        Domain env = Util.map(
+                takeEnv.stream(), $children.getEnvs())
+                .reduce(Domain::union).orElse(EmptyDomain);
+
+        // Compute ker
+        Domain ker = Util.map(
+                takeKer.stream(), $children.getKers())
+                .reduce(Domain::union).orElse(EmptyDomain);
+
+        // Compute card
         Domain takeCard = take.getCard();
         int index = 0;
         int[] childrenLowCards = new int[takeEnv.size() - takeKer.size()];
         int[] childrenHighCards = new int[takeEnv.size() - takeKer.size()];
         int cardLow = 0, cardHigh = 0;
 
-        iter = takeEnv.iterator();
+        PrimitiveIterator.OfInt iter = takeEnv.iterator();
         while (iter.hasNext()) {
             int val = iter.next();
             Domain childDomain = $children.getCards()[val];
@@ -1913,28 +1888,14 @@ public class Irs {
         }
 
         // Compute env
-        PrimitiveIterator.OfInt iter = take.getEnv().iterator();
-        Domain env;
-        if (iter.hasNext()) {
-            Domain domain = $refs.getDomains()[iter.next()];
-            while (iter.hasNext()) {
-                domain = domain.union($refs.getDomains()[iter.next()]);
-            }
-            env = domain;
-        } else {
-            env = EmptyDomain;
-        }
+        Domain env = Util.map(
+                take.getEnv().stream(), refs.getDomains())
+                .reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute ker
-        iter = take.getKer().iterator();
-        TIntHashSet values = new TIntHashSet(0);
-        while (iter.hasNext()) {
-            Integer constantRef = IrUtil.getConstant($refs, iter.next());
-            if (constantRef != null) {
-                values.add(constantRef);
-            }
-        }
-        Domain ker = values.isEmpty() ? EmptyDomain : Domain.enumDomain(values);
+        Domain ker = Util.map(
+                take.getKer().stream(), refs.getDomains())
+                .filter(Domain::isConstant).reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute card
         Domain takeCard = take.getCard();

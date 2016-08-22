@@ -485,10 +485,10 @@ public class Domain {
     }
 
     public IntStream stream() {
-        Spliterator.OfInt spliterator = Spliterators.spliteratorUnknownSize(
-                iterator(),
+        Spliterator.OfInt spliterator = Spliterators.spliterator(
+                iterator(), size(),
                 Spliterator.DISTINCT | Spliterator.IMMUTABLE
-                | Spliterator.ORDERED | Spliterator.SORTED);
+                | Spliterator.ORDERED | Spliterator.SORTED | Spliterator.SIZED);
         return StreamSupport.intStream(spliterator, false);
     }
 

@@ -13,8 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.chocosolver.util.iterators.IntIterator;
 
 /**
@@ -231,6 +237,42 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static <T> Optional<T> findUnique(T[] array, Predicate<T> predicate) {
+        Optional<T> i = Optional.empty();
+        for (T t : array) {
+            if (predicate.test(t)) {
+                if (i.isPresent()) {
+                    return Optional.empty();
+                }
+                i = Optional.of(t);
+            }
+        }
+        return i;
+    }
+
+    public static OptionalInt findUnique(PrimitiveIterator.OfInt iter, IntPredicate predicate) {
+        OptionalInt i = OptionalInt.empty();
+        while (iter.hasNext()) {
+            int val = iter.nextInt();
+            if (predicate.test(val)) {
+                if (i.isPresent()) {
+                    return OptionalInt.empty();
+                }
+                i = OptionalInt.of(val);
+            }
+        }
+        return i;
+    }
+
+    public static <T> Stream<T> map(IntStream stream, T[] map) {
+        return stream.mapToObj(x -> map[x]);
+    }
+
+    public static <T> Stream<T> mapWithin(IntStream stream, T[] map) {
+        return stream.filter(x -> x >= 0 && x < map.length)
+                .mapToObj(x -> map[x]);
     }
 
     /**

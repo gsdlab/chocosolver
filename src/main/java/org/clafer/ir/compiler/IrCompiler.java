@@ -176,9 +176,7 @@ public class IrCompiler {
         }
 
         Map<IrSetVar, SetVar> setVarMapSet = new HashMap<>(setVarMap.size());
-        for (Entry<IrSetVar, SetVar> set : setVarMap.entrySet()) {
-            setVarMapSet.put(set.getKey(), set.getValue());
-        }
+        setVarMap.forEach(setVarMapSet::put);
 
         return new IrSolutionMap(
                 coalescedIntVars, intVarMap,

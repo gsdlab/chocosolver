@@ -12,12 +12,14 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Triple;
 import org.clafer.common.UnsatisfiableException;
+import org.clafer.common.Util;
 import org.clafer.domain.BoolDomain;
 import static org.clafer.domain.BoolDomain.FalseDomain;
 import static org.clafer.domain.BoolDomain.TrueDomain;
@@ -1012,19 +1014,9 @@ public class Coalescer {
                 PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
-                    IrIntExpr index = null;
-                    for (IrIntExpr operand : right.getArray()) {
-                        if (operand.getDomain().contains(val)) {
-                            if (index != null) {
-                                index = null;
-                                break;
-                            }
-                            index = operand;
-                        }
-                    }
-                    if (index != null) {
-                        propagateInt(constantDomain(val), index);
-                    }
+                    Util.findUnique(right.getArray(), x -> x.getDomain().contains(val))
+                            .ifPresent(index
+                                    -> propagateInt(constantDomain(val), index));
                 }
             }
         }
@@ -1047,22 +1039,13 @@ public class Coalescer {
                     PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                     while (iter.hasNext()) {
                         int val = iter.next();
-                        PrimitiveIterator.OfInt env = right.getTake().getEnv().iterator();
-                        int index = -1;
-                        while (env.hasNext()) {
-                            int j = env.next();
-                            if (children.getEnvs()[j].contains(val)) {
-                                if (index != -1) {
-                                    index = -1;
-                                    break;
-                                }
-                                index = j;
-                            }
-                        }
-                        if (index != -1) {
-                            propagateKer(constantDomain(index), right.getTake());
+                        OptionalInt index = Util.findUnique(
+                                right.getTake().getEnv().iterator(),
+                                j -> children.getEnvs()[j].contains(val));
+                        if (index.isPresent()) {
+                            propagateKer(constantDomain(index.getAsInt()), right.getTake());
                             if (children instanceof IrSetArrayVar) {
-                                propagateKer(constantDomain(val), ((IrSetArrayVar) children).getArray()[index]);
+                                propagateKer(constantDomain(val), ((IrSetArrayVar) children).getArray()[index.getAsInt()]);
                             }
                         }
                     }
@@ -1133,22 +1116,13 @@ public class Coalescer {
                     PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                     while (iter.hasNext()) {
                         int val = iter.next();
-                        PrimitiveIterator.OfInt env = right.getTake().getEnv().iterator();
-                        int index = -1;
-                        while (env.hasNext()) {
-                            int j = env.next();
-                            if (right.getRefs().getDomains()[j].contains(val)) {
-                                if (index != -1) {
-                                    index = -1;
-                                    break;
-                                }
-                                index = j;
-                            }
-                        }
-                        if (index != -1) {
-                            propagateKer(constantDomain(index), right.getTake());
-                            propagateInt(constantDomain(val), rightArray[index]);
-                        }
+                        Util.findUnique(
+                                right.getTake().getEnv().iterator(),
+                                j -> right.getRefs().getDomains()[j].contains(val))
+                                .ifPresent(index -> {
+                                    propagateKer(constantDomain(index), right.getTake());
+                                    propagateInt(constantDomain(val), rightArray[index]);
+                                });
                     }
                 }
             }
@@ -1196,19 +1170,11 @@ public class Coalescer {
                 PrimitiveIterator.OfInt iter = left.getKer().difference(right.getKer()).iterator();
                 while (iter.hasNext()) {
                     int val = iter.next();
-                    IrSetExpr index = null;
-                    for (IrSetExpr operand : right.getOperands()) {
-                        if (operand.getEnv().contains(val)) {
-                            if (index != null) {
-                                index = null;
-                                break;
-                            }
-                            index = operand;
-                        }
-                    }
-                    if (index != null) {
-                        propagateKer(constantDomain(val), index);
-                    }
+                    Util.<IrSetExpr>findUnique(
+                            right.getOperands(),
+                            x -> x.getEnv().contains(val))
+                            .ifPresent(index
+                                    -> propagateKer(constantDomain(val), index));
                 }
             }
         }
