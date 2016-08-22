@@ -22,9 +22,7 @@ public class Type implements Iterable<ProductType> {
             throw new IllegalArgumentException();
         }
         this.unionType = new LinkedHashSet<>(unionType.size());
-        for (AstClafer type : unionType) {
-            this.unionType.add(new ProductType(type));
-        }
+        unionType.stream().map(ProductType::new).forEach(this.unionType::add);
         this.commonSupertype = new ProductType(commonSupertype);
     }
 

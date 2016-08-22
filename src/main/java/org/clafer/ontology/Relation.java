@@ -8,7 +8,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import org.clafer.collection.Pair;
 import org.clafer.graph.GraphUtil;
 import org.clafer.graph.KeyGraph;
@@ -137,9 +139,7 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
 
     public Relation transitiveClosureWithoutCycles() {
         KeyGraph<T> graph = new KeyGraph<>();
-        for (Pair<T, T> is : this) {
-            graph.addEdge(is.getFst(), is.getSnd());
-        }
+        forEach(graph::addEdge);
         List<Set<T>> items = GraphUtil.computeStronglyConnectedComponents(graph);
         for (Set<T> cycle : items) {
             if (cycle.size() > 1) {
@@ -157,12 +157,9 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
                     Set<T> tos = map.get(from);
                     if (tos != null) {
                         newTos.addAll(tos);
-                        for (T to : tos) {
-                            Set<T> totos = map.get(to);
-                            if (totos != null) {
-                                newTos.addAll(totos);
-                            }
-                        }
+                        tos.stream().map(map::get)
+                                .filter(Objects::nonNull)
+                                .forEach(newTos::addAll);
                     }
                     map.put(from, newTos);
                 }
@@ -182,6 +179,10 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
 
     public Set<Entry<T, Set<T>>> entrySet() {
         return forwards.entrySet();
+    }
+
+    public void forEach(BiConsumer<T, T> action) {
+        forwards.forEach((x, y) -> y.forEach(z -> action.accept(x, z)));
     }
 
     @Override

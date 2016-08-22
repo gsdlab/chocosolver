@@ -46,8 +46,8 @@ public class Oracle {
         for (Entry<Path, Set<Path>> equality1 : equalities.entrySet()) {
             Path path1 = equality1.getKey();
             List<Path> groundPaths1 = groundPaths(path1);
+            int[] groundPaths1Id = idMap.getIds(groundPaths1);
             for (Path path2 : equality1.getValue()) {
-                int[] groundPaths1Id = idMap.getIds(groundPaths1);
                 int[] groundPaths2Id = idMap.getIds(groundPaths(path2));
                 unionEqual(groundPaths1Id, groundPaths2Id);
             }
@@ -85,17 +85,19 @@ public class Oracle {
     }
 
     private void addPathConstraints(Path path) {
-        for (Path groundPath : groundPaths(path)) {
-            Path cur = groundPath;
-            while (cur.length() > 1) {
-                Path next = cur.dropPrefix(1);
-                theory.
-                        union(aHas.from(next.getContext()).stream()
-                                .filter(x -> isGround(x, isA))
-                                .map(next::prepend).mapToInt(idMap::getId).toArray())
-                        .equalsTo(idMap.getId(next));
-                cur = next;
-            }
+        groundPaths(path).forEach(this::addGroundPathConstraints);
+    }
+
+    private void addGroundPathConstraints(Path groundPath) {
+        Path cur = groundPath;
+        while (cur.length() > 1) {
+            Path next = cur.dropPrefix(1);
+            theory.
+                    union(aHas.from(next.getContext()).stream()
+                            .filter(x -> isGround(x, isA))
+                            .map(next::prepend).mapToInt(idMap::getId).toArray())
+                    .equalsTo(idMap.getId(next));
+            cur = next;
         }
     }
 
