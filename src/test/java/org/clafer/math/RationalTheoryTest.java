@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
  * @author jimmy
  */
 @RunWith(Theories.class)
-public class RationalTheory {
+public class RationalTheoryTest {
 
     @DataPoints
     public static final Rational[] rationals = new Rational[]{

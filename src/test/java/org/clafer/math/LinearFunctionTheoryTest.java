@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
  * @author jimmy
  */
 @RunWith(Theories.class)
-public class LinearFunctionTheory {
+public class LinearFunctionTheoryTest {
 
     @DataPoints
     public static final LinearFunction[] functions = new LinearFunction[]{

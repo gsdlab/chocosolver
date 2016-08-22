@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
  * @author jimmy
  */
 @RunWith(Theories.class)
-public class MatrixTheory {
+public class MatrixTheoryTest {
 
     @DataPoints
     public static final Matrix[] matrices = new Matrix[]{
