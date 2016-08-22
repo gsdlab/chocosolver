@@ -108,7 +108,10 @@ public class PropUnreachable extends Propagator<IntVar> {
         } else if (leader < vars.length && !toComponent.contains(follower) && toComponent.contains(leader)) {
             toComponent.add(follower);
             vars[position.get()].removeValue(follower, this);
-            for (int i = 0; i < vars.length; i++) {
+            if (vars[position.get()].isInstantiated()) {
+                follow(position.get());
+            }
+            for (int i = 0; i < vars.length && isActive(); i++) {
                 if (vars[i].isInstantiatedTo(follower)) {
                     follow(i);
                 }
