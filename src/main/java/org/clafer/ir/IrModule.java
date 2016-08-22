@@ -66,13 +66,10 @@ public class IrModule {
             IrNotImplies notImplies = (IrNotImplies) expr;
             addConstraint(notImplies.getAntecedent());
             addConstraint(Irs.not(notImplies.getConsequent()));
-        } else {
-            switch (expr.getDomain()) {
-                case FalseDomain:
-                    throw new UnsatisfiableException();
-                case TrueFalseDomain:
-                    constraints.add(expr);
-            }
+        } else if (expr.getDomain().isFalse()) {
+            throw new UnsatisfiableException();
+        } else if (!expr.getDomain().isTrue()) {
+            constraints.add(expr);
         }
         return this;
     }

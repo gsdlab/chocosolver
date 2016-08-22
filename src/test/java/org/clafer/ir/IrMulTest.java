@@ -18,7 +18,7 @@ public class IrMulTest {
 
     @Test(timeout = 60000)
     public IrBoolExpr setup(IrIntVar multiplicand, IrIntVar multiplier, IrIntVar product) {
-        return equal(mul(multiplicand, multiplier, Domains.Unbounded), product);
+        return equal(mul(multiplicand, multiplier, Domains.boundDomain(-1000, 1000)), product);
     }
 
     @Solution

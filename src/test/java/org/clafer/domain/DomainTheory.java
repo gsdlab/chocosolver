@@ -29,26 +29,26 @@ public class DomainTheory {
     @DataPoints
     public static final Domain[] domains
             = new Domain[]{
-                new EmptyDomain(),
-                BoolDomain.TrueDomain,
-                BoolDomain.FalseDomain,
-                BoolDomain.TrueFalseDomain,
-                new EnumDomain(-2, -1, 0, 1, 2),
-                new EnumDomain(-2, -1, 0, 1),
-                new EnumDomain(-1, 0, 1, 2),
-                new EnumDomain(-2, 0, 1, 2),
-                new EnumDomain(0, 1, 2),
-                new EnumDomain(-2, 2),
-                new EnumDomain(-1, 1),
-                new EnumDomain(2),
-                new EnumDomain(-1),
-                new BoundDomain(-2, 2),
-                new BoundDomain(-1, 2),
-                new BoundDomain(-2, 0),
-                new BoundDomain(-1, 1),
-                new BoundDomain(-1, -1),
-                new BoundDomain(2, 2),
-                new BoundDomain(1, 2)
+                Domains.EmptyDomain,
+                Domains.TrueDomain,
+                Domains.FalseDomain,
+                Domains.TrueFalseDomain,
+                Domains.enumDomain(-2, -1, 0, 1, 2),
+                Domains.enumDomain(-2, -1, 0, 1),
+                Domains.enumDomain(-1, 0, 1, 2),
+                Domains.enumDomain(-2, 0, 1, 2),
+                Domains.enumDomain(0, 1, 2),
+                Domains.enumDomain(-2, 2),
+                Domains.enumDomain(-1, 1),
+                Domains.enumDomain(2),
+                Domains.enumDomain(-1),
+                Domains.enumDomain(-2, 2),
+                Domains.enumDomain(-1, 2),
+                Domains.enumDomain(-2, 0),
+                Domains.enumDomain(-1, 1),
+                Domains.enumDomain(-1, -1),
+                Domains.enumDomain(2, 2),
+                Domains.enumDomain(1, 2)
             };
 
     @Theory
@@ -234,8 +234,8 @@ public class DomainTheory {
     }
 
     @Theory
-    public void intersectionUnboundedIsIdentity(Domain d) {
-        Domain intersection = d.intersection(Domains.Unbounded);
+    public void intersectionSupersetIsIdentity(Domain d) {
+        Domain intersection = d.intersection(d.union(Domain.boundDomain(-100, 100)));
         assertSame(intersection, d);
     }
 

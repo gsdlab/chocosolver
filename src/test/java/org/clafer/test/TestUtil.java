@@ -287,16 +287,13 @@ public class TestUtil {
     }
 
     public static BoolVar toVar(IrBoolVar var, Model model) {
-        switch (var.getDomain()) {
-            case FalseDomain:
-                return model.boolVar(false);
-            case TrueDomain:
-                return model.boolVar(true);
-            case TrueFalseDomain:
-                return model.boolVar(var.getName());
-            default:
-                throw new IllegalStateException();
+        if (var.getDomain().isFalse()) {
+            return model.boolVar(false);
         }
+        if (var.getDomain().isTrue()) {
+            return model.boolVar(true);
+        }
+        return model.boolVar(var.getName());
     }
 
     public static IntVar toVar(IrIntVar var, Model model) {

@@ -196,9 +196,11 @@ public class LinearEquationOptimizer {
                 int coefficientI = (int) coefficient;
                 IrIntVar var = map.get(vs[j]);
 
-                long a = coefficient * var.getLowBound();
-                long b = coefficient * var.getHighBound();
-                addends[j] = mul(coefficientI, var, Domains.Unbounded);
+                int a = (int) (coefficient * var.getLowBound());
+                int b = (int) (coefficient * var.getHighBound());
+
+                addends[j] = mul(coefficientI, var,
+                        Domains.boundDomain(Math.min(a, b), Math.max(a, b)));
             }
             assert right.isWhole();
             switch (round.getOp()) {

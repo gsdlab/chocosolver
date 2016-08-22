@@ -222,14 +222,13 @@ public class IrCompiler {
     }
 
     private BoolVar boolVar(String name, BoolDomain domain) {
-        switch (domain) {
-            case TrueDomain:
-                return model.boolVar(true);
-            case FalseDomain:
-                return model.boolVar(false);
-            default:
-                return model.boolVar(name);
+        if (domain.isTrue()) {
+            return model.boolVar(true);
         }
+        if (domain.isFalse()) {
+            return model.boolVar(false);
+        }
+        return model.boolVar(name);
     }
 
     private IntVar intVar(String name, Domain domain) {

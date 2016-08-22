@@ -29,29 +29,23 @@ public class IrUtil {
     }
 
     public static Boolean getConstant(IrBoolExpr b) {
-        switch (b.getDomain()) {
-            case TrueDomain:
-                return Boolean.TRUE;
-            case FalseDomain:
-                return Boolean.FALSE;
-            case TrueFalseDomain:
-                return null;
-            default:
-                throw new IllegalArgumentException();
+        if (b.getDomain().isTrue()) {
+            return Boolean.TRUE;
         }
+        if (b.getDomain().isFalse()) {
+            return Boolean.FALSE;
+        }
+        return null;
     }
 
     public static IrBoolVar asConstant(IrBoolVar b) {
-        switch (b.getDomain()) {
-            case TrueDomain:
-                return Irs.True;
-            case FalseDomain:
-                return Irs.False;
-            case TrueFalseDomain:
-                return b;
-            default:
-                throw new IllegalArgumentException();
+        if (b.getDomain().isTrue()) {
+            return Irs.True;
         }
+        if (b.getDomain().isFalse()) {
+            return Irs.False;
+        }
+        return b;
     }
 
     public static boolean isConstant(IrIntExpr i) {
@@ -131,11 +125,11 @@ public class IrUtil {
             return Irs.constant(env);
         }
         Domain card = s.getCard();
-        if (card.getLowBound()== env.size()) {
+        if (card.getLowBound() == env.size()) {
             return Irs.constant(env);
         }
-        if(card.getHighBound() == ker.size()) {
-                return Irs.constant(ker);
+        if (card.getHighBound() == ker.size()) {
+            return Irs.constant(ker);
         }
         return s;
     }

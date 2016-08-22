@@ -1,6 +1,6 @@
 package org.clafer.ir;
 
-import org.clafer.domain.BoundDomain;
+import org.clafer.domain.Domain;
 
 /**
  *
@@ -11,7 +11,7 @@ public class IrIntConstant extends IrIntVar implements IrConstant {
     private final int value;
 
     IrIntConstant(int value) {
-        super(Integer.toString(value), new BoundDomain(value, value));
+        super(Integer.toString(value), Domain.constantDomain(value));
         this.value = value;
     }
 

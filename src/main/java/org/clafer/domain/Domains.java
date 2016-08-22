@@ -15,12 +15,11 @@ public class Domains {
     public static final BoolDomain TrueDomain = BoolDomain.TrueDomain;
     public static final BoolDomain FalseDomain = BoolDomain.FalseDomain;
     public static final BoolDomain TrueFalseDomain = BoolDomain.TrueFalseDomain;
-    public static final Domain NegativeOneDomain = constantDomain(-1);
-    public static final Domain EmptyDomain = new EmptyDomain();
-    public static final Domain ZeroDomain = FalseDomain;
-    public static final Domain OneDomain = TrueDomain;
-    public static final Domain ZeroOneDomain = TrueFalseDomain;
-    public static final Domain Unbounded = boundDomain(Integer.MIN_VALUE, Integer.MAX_VALUE);
+    public static final Domain NegativeOneDomain = Domain.constantDomain(-1);
+    public static final Domain EmptyDomain = Domain.enumDomain();
+    public static final Domain ZeroDomain = BoolDomain.FalseDomain;
+    public static final Domain OneDomain = BoolDomain.TrueDomain;
+    public static final Domain ZeroOneDomain = BoolDomain.TrueFalseDomain;
 
     public static BoolDomain domain(boolean value) {
         return value ? TrueDomain : FalseDomain;
@@ -47,7 +46,7 @@ public class Domains {
         if (low == 0 && high == 1) {
             return ZeroOneDomain;
         }
-        return new BoundDomain(low, high);
+        return Domain.boundDomain(low, high);
     }
 
     public static Domain enumDomain(int... values) {
@@ -75,7 +74,7 @@ public class Domains {
                     // A contigious interval.
                     return boundDomain(low, high);
                 }
-                return new EnumDomain(array);
+                return Domain.enumDomain(array);
         }
     }
 

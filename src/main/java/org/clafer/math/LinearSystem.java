@@ -19,6 +19,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
+import org.clafer.domain.BoolDomain;
 import org.clafer.math.LinearEquation.Op;
 import static org.clafer.math.LinearEquation.Op.Equal;
 import static org.clafer.math.LinearEquation.Op.LessThanEqual;
@@ -117,13 +118,11 @@ public class LinearSystem {
         for (TIntObjectMap<Rational> row : p.multiply(a.addColumns(b)).getRows()) {
             LinearEquation equation = toEquation(row, id + 1, variableOrder);
             if (equation != null) {
-                switch (equation.isEntailed()) {
-                    case TrueFalseDomain:
-                        optimize.add(equation);
-                        break;
-                    case FalseDomain:
-                    // TODO
+                BoolDomain entailed = equation.isEntailed();
+                if (entailed.isUnknown()) {
+                    optimize.add(equation);
                 }
+                // TODO: if entailed.isFalse
             }
         }
         return new LinearSystem(optimize);
@@ -454,13 +453,11 @@ public class LinearSystem {
                                         new LinearFunction(newCoefficients, newVariables, Rational.Zero),
                                         LessThanEqual,
                                         a0.mul(bk.minus()).add(b0.mul(ak)));
-                                switch (newEquation.isEntailed()) {
-                                    case TrueFalseDomain:
-                                        changed |= cost(newEquation, bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
-                                        break;
-                                    case FalseDomain:
-                                    // TODO
+                                BoolDomain entailed = newEquation.isEntailed();
+                                if (entailed.isUnknown()) {
+                                    changed |= cost(newEquation, bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
                                 }
+                                // TODO: if entailed.isFalse
                             }
                         }
                     }

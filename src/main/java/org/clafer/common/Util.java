@@ -234,6 +234,32 @@ public class Util {
     }
 
     /**
+     * @param item count the number of elements in the array no greater than
+     * this item
+     * @param array the array assumed to be sorted
+     * @return the number of elements in the array no greater than the item
+     */
+    public static int ordinal(int item, int[] array) {
+        int from = 0;
+        int to = array.length;
+
+        while (from < to) {
+            int mid = (from + to) >>> 1;
+            int midVal = array[mid];
+
+            if (midVal < item) {
+                from = mid + 1;
+            } else if (midVal > item) {
+                to = mid;
+            } else {
+                assert item >= array[mid];
+                return mid + 1;
+            }
+        }
+        return from;
+    }
+
+    /**
      * Check if every element in the array is unique.
      *
      * @param array the array

@@ -12,7 +12,6 @@ import java.util.Collection;
 import java.util.List;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
-import org.clafer.domain.BoolDomain;
 import org.clafer.domain.Domain;
 import static org.clafer.domain.Domains.EmptyDomain;
 import static org.clafer.domain.Domains.NegativeOneDomain;
@@ -22,7 +21,6 @@ import static org.clafer.domain.Domains.boundDomain;
 import static org.clafer.domain.Domains.enumDomain;
 import static org.clafer.domain.Domains.enumDomains;
 import static org.clafer.domain.Domains.fromToDomain;
-import org.clafer.domain.EnumDomain;
 
 /**
  * Import this class to access all IR building functions.
@@ -1168,13 +1166,18 @@ public class Irs {
     }
 
     public static IrIntVar domainInt(String name, Domain domain) {
-        if (domain.size() == 1) {
-            return constant(domain.getLowBound());
+        switch (domain.size()) {
+            case 0:
+                throw new IllegalArgumentException();
+            case 1:
+                return constant(domain.getLowBound());
+            case 2:
+                if (domain.getLowBound() == 0 && domain.getHighBound() == 1) {
+                    return new IrBoolVar(name, TrueFalseDomain);
+                }
+            default:
+                return new IrIntVar(name, domain);
         }
-        if (domain instanceof BoolDomain) {
-            return new IrBoolVar(name, (BoolDomain) domain);
-        }
-        return new IrIntVar(name, domain);
     }
 
     public static IrIntVar boundInt(String name, int low, int high) {
@@ -1929,7 +1932,7 @@ public class Irs {
                 values.add(constantRef);
             }
         }
-        Domain ker = values.isEmpty() ? EmptyDomain : new EnumDomain(values.toArray());
+        Domain ker = values.isEmpty() ? EmptyDomain : Domain.enumDomain(values);
 
         // Compute card
         Domain takeCard = take.getCard();
