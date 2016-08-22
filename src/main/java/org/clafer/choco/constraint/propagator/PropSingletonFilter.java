@@ -102,8 +102,7 @@ public class PropSingletonFilter extends Propagator<Variable> {
                     if (env != filter) {
                         i.removeValue(env, this);
                     }
-                }, SetEventType.REMOVE_FROM_ENVELOPE
-                );
+                }, SetEventType.REMOVE_FROM_ENVELOPE);
                 sD.unfreeze();
                 if (i.isInstantiated()) {
                     int val = i.getValue();

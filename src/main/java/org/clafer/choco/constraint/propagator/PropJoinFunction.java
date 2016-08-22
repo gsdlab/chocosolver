@@ -161,13 +161,13 @@ public class PropJoinFunction extends Propagator<Variable> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isTakeVar(idxVarInProp)) {
             takeD.freeze();
-            takeD.forEach(pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            takeD.forEach(pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
+            takeD.forEach(this::pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            takeD.forEach(this::pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
             takeD.unfreeze();
         } else if (isToVar(idxVarInProp)) {
             toD.freeze();
-            toD.forEach(pruneRefOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            toD.forEach(pickTakeOnToKer, SetEventType.ADD_TO_KER);
+            toD.forEach(this::pruneRefOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            toD.forEach(this::pickTakeOnToKer, SetEventType.ADD_TO_KER);
             toD.unfreeze();
             if (SetEventType.isEnvRemoval(mask)) {
                 TIntArrayList removed = null;
@@ -205,15 +205,12 @@ public class PropJoinFunction extends Propagator<Variable> {
             final IIntDeltaMonitor refD = refsD[id];
             final MutableBoolean bool = new MutableBoolean();
             refD.freeze();
-            IntProcedure pruneToOnRefRem = new IntProcedure() {
-                @Override
-                public void execute(int refRem) throws ContradictionException {
-                    if (bool.isClear()) {
-                        if (to.getUB().contains(refRem)) {
-                            if (findMate(refRem)) {
-                                bool.set();
-                                findMates();
-                            }
+            IntProcedure pruneToOnRefRem = refRem -> {
+                if (bool.isClear()) {
+                    if (to.getUB().contains(refRem)) {
+                        if (findMate(refRem)) {
+                            bool.set();
+                            findMates();
                         }
                     }
                 }
@@ -233,59 +230,51 @@ public class PropJoinFunction extends Propagator<Variable> {
             }
         }
     }
-    private final IntProcedure pruneToOnTakeEnv = new IntProcedure() {
-        @Override
-        public void execute(int takeEnv) throws ContradictionException {
-            assert !take.getUB().contains(takeEnv);
 
-            IntVar ref = refs[takeEnv];
-            int ub = ref.getUB();
-            for (int i = ref.getLB(); i <= ub; i = ref.nextValue(i)) {
-                if (to.getUB().contains(i)) {
-                    if (findMate(i)) {
-                        findMates();
-                        return;
-                    }
+    private void pruneToOnTakeEnv(int takeEnv) throws ContradictionException {
+        assert !take.getUB().contains(takeEnv);
+
+        IntVar ref = refs[takeEnv];
+        int ub = ref.getUB();
+        for (int i = ref.getLB(); i <= ub; i = ref.nextValue(i)) {
+            if (to.getUB().contains(i)) {
+                if (findMate(i)) {
+                    findMates();
+                    return;
                 }
             }
         }
-    };
-    private final IntProcedure pickToAndPruneChildOnTakeKer = new IntProcedure() {
-        @Override
-        public void execute(int takeKer) throws ContradictionException {
-            assert take.getLB().contains(takeKer);
+    }
 
+    private void pickToAndPruneChildOnTakeKer(int takeKer) throws ContradictionException {
+        assert take.getLB().contains(takeKer);
+
+        IntVar ref = refs[takeKer];
+        PropUtil.domSubsetEnv(ref, to, PropJoinFunction.this);
+        if (ref.isInstantiated()) {
+            to.force(ref.getValue(), PropJoinFunction.this);
+        }
+    }
+
+    private void pruneRefOnToEnv(int toEnv) throws ContradictionException {
+        assert !to.getUB().contains(toEnv);
+
+        ISetIterator iter = take.getLB().iterator();
+        while (iter.hasNext()) {
+            int takeKer = iter.nextInt();
             IntVar ref = refs[takeKer];
-            PropUtil.domSubsetEnv(ref, to, PropJoinFunction.this);
-            if (ref.isInstantiated()) {
+            if (ref.removeValue(toEnv, PropJoinFunction.this) && ref.isInstantiated()) {
                 to.force(ref.getValue(), PropJoinFunction.this);
             }
         }
-    };
-    private final IntProcedure pruneRefOnToEnv = new IntProcedure() {
-        @Override
-        public void execute(int toEnv) throws ContradictionException {
-            assert !to.getUB().contains(toEnv);
+    }
 
-            ISetIterator iter = take.getLB().iterator();
-            while (iter.hasNext()) {
-                int takeKer = iter.nextInt();
-                IntVar ref = refs[takeKer];
-                if (ref.removeValue(toEnv, PropJoinFunction.this) && ref.isInstantiated()) {
-                    to.force(ref.getValue(), PropJoinFunction.this);
-                }
-            }
+    private void pickTakeOnToKer(int toVal) throws ContradictionException {
+        assert to.getLB().contains(toVal);
+        if (findMate(toVal)) {
+            findMates();
         }
-    };
-    private final IntProcedure pickTakeOnToKer = new IntProcedure() {
-        @Override
-        public void execute(int toVal) throws ContradictionException {
-            assert to.getLB().contains(toVal);
-            if (findMate(toVal)) {
-                findMates();
-            }
-        }
-    };
+    }
 
     @Override
     public ESat isEntailed() {

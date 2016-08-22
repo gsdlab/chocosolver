@@ -8,7 +8,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
-import org.chocosolver.util.procedure.IntProcedure;
 import org.clafer.common.Check;
 
 /**
@@ -72,71 +71,59 @@ public class PropSetDifference extends Propagator<SetVar> {
             case 0:
                 // minuend
                 minuendD.freeze();
-                minuendD.forEach(pruneDifferenceOnMinuendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-                minuendD.forEach(pickDifferenceOnMinuendKer, SetEventType.ADD_TO_KER);
+                minuendD.forEach(this::pruneDifferenceOnMinuendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                minuendD.forEach(this::pickDifferenceOnMinuendKer, SetEventType.ADD_TO_KER);
                 minuendD.unfreeze();
                 break;
             case 1:
                 // subtrahend
                 subtrahendD.freeze();
-                subtrahendD.forEach(pickMinuendPickDiffrenceOnSubtrahendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-                subtrahendD.forEach(pruneDifferenceOnSubtrahendKer, SetEventType.ADD_TO_KER);
+                subtrahendD.forEach(this::pickMinuendPickDiffrenceOnSubtrahendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                subtrahendD.forEach(this::pruneDifferenceOnSubtrahendKer, SetEventType.ADD_TO_KER);
                 subtrahendD.unfreeze();
                 break;
             case 2:
                 // difference
                 differenceD.freeze();
-                differenceD.forEach(pruneMinuendOnDifferenceEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-                differenceD.forEach(pickMinuendPruneSubtrahendOnDifferenceKer, SetEventType.ADD_TO_KER);
+                differenceD.forEach(this::pruneMinuendOnDifferenceEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+                differenceD.forEach(this::pickMinuendPruneSubtrahendOnDifferenceKer, SetEventType.ADD_TO_KER);
                 differenceD.unfreeze();
                 break;
         }
     }
-    private final IntProcedure pruneDifferenceOnMinuendEnv = new IntProcedure() {
-        @Override
-        public void execute(int minuendEnv) throws ContradictionException {
-            difference.remove(minuendEnv, PropSetDifference.this);
+
+    private void pruneDifferenceOnMinuendEnv(int minuendEnv) throws ContradictionException {
+        difference.remove(minuendEnv, PropSetDifference.this);
+    }
+
+    private void pickDifferenceOnMinuendKer(int minuendKer) throws ContradictionException {
+        if (!subtrahend.getUB().contains(minuendKer)) {
+            difference.force(minuendKer, PropSetDifference.this);
         }
-    };
-    private final IntProcedure pickDifferenceOnMinuendKer = new IntProcedure() {
-        @Override
-        public void execute(int minuendKer) throws ContradictionException {
-            if (!subtrahend.getUB().contains(minuendKer)) {
-                difference.force(minuendKer, PropSetDifference.this);
-            }
+    }
+
+    private void pickMinuendPickDiffrenceOnSubtrahendEnv(int subtrahendEnv) throws ContradictionException {
+        if (minuend.getLB().contains(subtrahendEnv)) {
+            difference.force(subtrahendEnv, PropSetDifference.this);
+        } else if (difference.getLB().contains(subtrahendEnv)) {
+            minuend.force(subtrahendEnv, PropSetDifference.this);
         }
-    };
-    private final IntProcedure pickMinuendPickDiffrenceOnSubtrahendEnv = new IntProcedure() {
-        @Override
-        public void execute(int subtrahendEnv) throws ContradictionException {
-            if (minuend.getLB().contains(subtrahendEnv)) {
-                difference.force(subtrahendEnv, PropSetDifference.this);
-            } else if (difference.getLB().contains(subtrahendEnv)) {
-                minuend.force(subtrahendEnv, PropSetDifference.this);
-            }
+    }
+
+    private void pruneDifferenceOnSubtrahendKer(int subtrahendKer) throws ContradictionException {
+        difference.remove(subtrahendKer, PropSetDifference.this);
+    }
+
+    private void pruneMinuendOnDifferenceEnv(int differenceEnv) throws ContradictionException {
+        if (!subtrahend.getUB().contains(differenceEnv)) {
+            minuend.remove(differenceEnv, PropSetDifference.this);
         }
-    };
-    private final IntProcedure pruneDifferenceOnSubtrahendKer = new IntProcedure() {
-        @Override
-        public void execute(int subtrahendKer) throws ContradictionException {
-            difference.remove(subtrahendKer, PropSetDifference.this);
-        }
-    };
-    private final IntProcedure pruneMinuendOnDifferenceEnv = new IntProcedure() {
-        @Override
-        public void execute(int differenceEnv) throws ContradictionException {
-            if (!subtrahend.getUB().contains(differenceEnv)) {
-                minuend.remove(differenceEnv, PropSetDifference.this);
-            }
-        }
-    };
-    private final IntProcedure pickMinuendPruneSubtrahendOnDifferenceKer = new IntProcedure() {
-        @Override
-        public void execute(int differenceKer) throws ContradictionException {
-            minuend.force(differenceKer, PropSetDifference.this);
-            subtrahend.remove(differenceKer, PropSetDifference.this);
-        }
-    };
+    }
+
+    private void pickMinuendPruneSubtrahendOnDifferenceKer(int differenceKer) throws ContradictionException {
+        minuend.force(differenceKer, PropSetDifference.this);
+        subtrahend.remove(differenceKer, PropSetDifference.this);
+    }
 
     @Override
     public ESat isEntailed() {

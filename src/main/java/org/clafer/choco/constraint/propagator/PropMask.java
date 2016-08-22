@@ -8,7 +8,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
-import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  *
@@ -87,47 +86,39 @@ public class PropMask extends Propagator<SetVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
             setD.freeze();
-            setD.forEach(pickMaskedOnSetKer, SetEventType.ADD_TO_KER);
-            setD.forEach(pruneMaskedOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            setD.forEach(this::pickMaskedOnSetKer, SetEventType.ADD_TO_KER);
+            setD.forEach(this::pruneMaskedOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             setD.unfreeze();
         } else {
             assert isMaskedVar(idxVarInProp);
             maskedD.freeze();
-            maskedD.forEach(pickSetOnMaskedKer, SetEventType.ADD_TO_KER);
-            maskedD.forEach(pruneSetOnMaskedEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            maskedD.forEach(this::pickSetOnMaskedKer, SetEventType.ADD_TO_KER);
+            maskedD.forEach(this::pruneSetOnMaskedEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             maskedD.unfreeze();
         }
     }
-    private final IntProcedure pickMaskedOnSetKer = new IntProcedure() {
-        @Override
-        public void execute(int ker) throws ContradictionException {
-            if (ker >= from && ker < to) {
-                masked.force(ker - from, PropMask.this);
-            }
+
+    private void pickMaskedOnSetKer(int ker) throws ContradictionException {
+        if (ker >= from && ker < to) {
+            masked.force(ker - from, PropMask.this);
         }
-    };
-    private final IntProcedure pruneMaskedOnSetEnv = new IntProcedure() {
-        @Override
-        public void execute(int env) throws ContradictionException {
-            if (env >= from && env < to) {
-                masked.remove(env - from, PropMask.this);
-            }
+    }
+
+    private void pruneMaskedOnSetEnv(int env) throws ContradictionException {
+        if (env >= from && env < to) {
+            masked.remove(env - from, PropMask.this);
         }
-    };
-    private final IntProcedure pickSetOnMaskedKer = new IntProcedure() {
-        @Override
-        public void execute(int ker) throws ContradictionException {
-            assert ker < to - from;
-            set.force(ker + from, PropMask.this);
-        }
-    };
-    private final IntProcedure pruneSetOnMaskedEnv = new IntProcedure() {
-        @Override
-        public void execute(int env) throws ContradictionException {
-            assert env < to - from;
-            set.remove(env + from, PropMask.this);
-        }
-    };
+    }
+
+    private void pickSetOnMaskedKer(int ker) throws ContradictionException {
+        assert ker < to - from;
+        set.force(ker + from, PropMask.this);
+    }
+
+    private void pruneSetOnMaskedEnv(int env) throws ContradictionException {
+        assert env < to - from;
+        set.remove(env + from, PropMask.this);
+    }
 
     @Override
     public ESat isEntailed() {

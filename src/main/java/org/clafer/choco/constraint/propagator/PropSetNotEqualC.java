@@ -9,7 +9,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
-import org.chocosolver.util.procedure.IntProcedure;
 import org.clafer.common.Util;
 
 /**
@@ -40,7 +39,7 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
                 ISetIterator iter = s.getLB().iterator();
                 int i = 0;
                 while (iter.hasNext()) {
-                    if(c[i] != iter.nextInt()) {
+                    if (c[i] != iter.nextInt()) {
                         return;
                     }
                     i++;
@@ -73,27 +72,23 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         sD.freeze();
-        sD.forEach(onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
-        sD.forEach(onS1Ker, SetEventType.ADD_TO_KER);
+        sD.forEach(this::onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
+        sD.forEach(this::onS1Ker, SetEventType.ADD_TO_KER);
         sD.unfreeze();
         checkNotSame();
     }
-    private final IntProcedure onS1Env = new IntProcedure() {
-        @Override
-        public void execute(int s1Env) throws ContradictionException {
-            if (isActive() && Util.in(s1Env, c)) {
-                setPassive();
-            }
+
+    private void onS1Env(int s1Env) throws ContradictionException {
+        if (isActive() && Util.in(s1Env, c)) {
+            setPassive();
         }
-    };
-    private final IntProcedure onS1Ker = new IntProcedure() {
-        @Override
-        public void execute(int s1Ker) throws ContradictionException {
-            if (isActive() && !Util.in(s1Ker, c)) {
-                setPassive();
-            }
+    }
+
+    private void onS1Ker(int s1Ker) throws ContradictionException {
+        if (isActive() && !Util.in(s1Ker, c)) {
+            setPassive();
         }
-    };
+    }
 
     private static boolean isEnvSubsetOf(SetVar s, int[] c) {
         ISetIterator iter = s.getLB().iterator();

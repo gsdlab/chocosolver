@@ -11,7 +11,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
-import org.chocosolver.util.procedure.IntProcedure;
 
 /**
  * <p>
@@ -136,12 +135,12 @@ public class PropJoinRelation extends Propagator<SetVar> {
         if (isTakeVar(idxVarInProp)) {
             takeD.freeze();
             takeD.forEach(this::pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            takeD.forEach(pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
+            takeD.forEach(this::pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
             takeD.unfreeze();
         } else if (isToVar(idxVarInProp)) {
             toD.freeze();
-            toD.forEach(pruneChildOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            toD.forEach(pickTakeOnToKer, SetEventType.ADD_TO_KER);
+            toD.forEach(this::pruneChildOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            toD.forEach(this::pickTakeOnToKer, SetEventType.ADD_TO_KER);
             toD.unfreeze();
             if (SetEventType.isEnvRemoval(mask)) {
                 TIntArrayList removed = null;
@@ -181,9 +180,9 @@ public class PropJoinRelation extends Propagator<SetVar> {
             // idempotence. Otherwise if id is removed from take and val removed
             // from child at the same time is no longer supported, we need to
             // remove val from to as well.
-            childD.forEach(pruneToOnChildEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            childD.forEach(this::pruneToOnChildEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             if (take.getLB().contains(id)) {
-                childD.forEach(pickToOnChildKer, SetEventType.ADD_TO_KER);
+                childD.forEach(this::pickToOnChildKer, SetEventType.ADD_TO_KER);
             } else if (take.getUB().contains(id)) {
                 childD.forEach(childKer -> {
                     if (!to.getUB().contains(childKer)) {
@@ -213,56 +212,45 @@ public class PropJoinRelation extends Propagator<SetVar> {
         }
     }
 
-    private final IntProcedure pickToAndPruneChildOnTakeKer = new IntProcedure() {
-        @Override
-        public void execute(int takeKer) throws ContradictionException {
-            assert take.getLB().contains(takeKer);
+    private void pickToAndPruneChildOnTakeKer(int takeKer) throws ContradictionException {
+        assert take.getLB().contains(takeKer);
 
-            SetVar child = children[takeKer];
-            PropUtil.kerSubsetKer(child, to, PropJoinRelation.this);
-            PropUtil.envSubsetEnv(child, to, PropJoinRelation.this);
-        }
-    };
-    private final IntProcedure pruneToOnChildEnv = new IntProcedure() {
-        @Override
-        public void execute(int childEnv) throws ContradictionException {
+        SetVar child = children[takeKer];
+        PropUtil.kerSubsetKer(child, to, PropJoinRelation.this);
+        PropUtil.envSubsetEnv(child, to, PropJoinRelation.this);
+    }
+
+    private void pruneToOnChildEnv(int childEnv) throws ContradictionException {
             // Note the the child may no longer be in take, but still need to find mate.
-            // For example:
-            //     take = {0,1,2}, child0 = {0}, child1 = {1}, child2 = {2}, to = {0,1,2}
-            //   remove 2 from take and 2 from child2
-            //     take = {0,1}, child0 = {0}, child1 = {1}, child2 = {}, to = {0,1,2}
-            // Need to find mate for 2 on child2 or else to will keep 2, and break
-            // idempotency.
-            if (to.getUB().contains(childEnv)) {
-                findMate(childEnv);
-            }
+        // For example:
+        //     take = {0,1,2}, child0 = {0}, child1 = {1}, child2 = {2}, to = {0,1,2}
+        //   remove 2 from take and 2 from child2
+        //     take = {0,1}, child0 = {0}, child1 = {1}, child2 = {}, to = {0,1,2}
+        // Need to find mate for 2 on child2 or else to will keep 2, and break
+        // idempotency.
+        if (to.getUB().contains(childEnv)) {
+            findMate(childEnv);
         }
-    };
-    private final IntProcedure pickToOnChildKer = new IntProcedure() {
-        @Override
-        public void execute(int childKer) throws ContradictionException {
-            // assert id in ker(take)
-            to.force(childKer, PropJoinRelation.this);
-        }
-    };
-    private final IntProcedure pruneChildOnToEnv = new IntProcedure() {
-        @Override
-        public void execute(int toEnv) throws ContradictionException {
-            assert !to.getUB().contains(toEnv);
+    }
 
-            ISetIterator iter = take.getLB().iterator();
-            while (iter.hasNext()) {
-                children[iter.nextInt()].remove(toEnv, PropJoinRelation.this);
-            }
+    private void pickToOnChildKer(int childKer) throws ContradictionException {
+        // assert id in ker(take)
+        to.force(childKer, PropJoinRelation.this);
+    }
+
+    private void pruneChildOnToEnv(int toEnv) throws ContradictionException {
+        assert !to.getUB().contains(toEnv);
+
+        ISetIterator iter = take.getLB().iterator();
+        while (iter.hasNext()) {
+            children[iter.nextInt()].remove(toEnv, PropJoinRelation.this);
         }
-    };
-    private final IntProcedure pickTakeOnToKer = new IntProcedure() {
-        @Override
-        public void execute(int toVal) throws ContradictionException {
-            assert to.getLB().contains(toVal);
-            findMate(toVal);
-        }
-    };
+    }
+
+    private void pickTakeOnToKer(int toVal) throws ContradictionException {
+        assert to.getLB().contains(toVal);
+        findMate(toVal);
+    }
 
     @Override
     public ESat isEntailed() {

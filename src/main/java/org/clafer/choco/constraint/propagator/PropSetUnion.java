@@ -9,7 +9,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
-import org.chocosolver.util.procedure.IntProcedure;
 import org.clafer.common.Util;
 
 /**
@@ -111,43 +110,35 @@ public class PropSetUnion extends Propagator<SetVar> {
         if (isSetVar(idxVarInProp)) {
             int id = getSetVarIndex(idxVarInProp);
             setsD[id].freeze();
-            setsD[id].forEach(pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            setsD[id].forEach(pickUnionOnSetKer, SetEventType.ADD_TO_KER);
+            setsD[id].forEach(this::pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            setsD[id].forEach(this::pickUnionOnSetKer, SetEventType.ADD_TO_KER);
             setsD[id].unfreeze();
         } else {
             assert isUnionVar(idxVarInProp);
             unionD.freeze();
-            unionD.forEach(pruneSetOnUnionEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            unionD.forEach(pickSetOnUnionKer, SetEventType.ADD_TO_KER);
+            unionD.forEach(this::pruneSetOnUnionEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            unionD.forEach(this::pickSetOnUnionKer, SetEventType.ADD_TO_KER);
             unionD.unfreeze();
         }
     }
-    private final IntProcedure pruneUnionOnSetEnv = new IntProcedure() {
-        @Override
-        public void execute(int setEnv) throws ContradictionException {
-            findMate(setEnv);
+
+    private void pruneUnionOnSetEnv(int setEnv) throws ContradictionException {
+        findMate(setEnv);
+    }
+
+    private void pickUnionOnSetKer(int setKer) throws ContradictionException {
+        union.force(setKer, PropSetUnion.this);
+    }
+
+    private void pruneSetOnUnionEnv(int unionEnv) throws ContradictionException {
+        for (SetVar set : sets) {
+            set.remove(unionEnv, PropSetUnion.this);
         }
-    };
-    private final IntProcedure pickUnionOnSetKer = new IntProcedure() {
-        @Override
-        public void execute(int setKer) throws ContradictionException {
-            union.force(setKer, PropSetUnion.this);
-        }
-    };
-    private final IntProcedure pruneSetOnUnionEnv = new IntProcedure() {
-        @Override
-        public void execute(int unionEnv) throws ContradictionException {
-            for (SetVar set : sets) {
-                set.remove(unionEnv, PropSetUnion.this);
-            }
-        }
-    };
-    private final IntProcedure pickSetOnUnionKer = new IntProcedure() {
-        @Override
-        public void execute(int unionKer) throws ContradictionException {
-            findMate(unionKer);
-        }
-    };
+    }
+
+    private void pickSetOnUnionKer(int unionKer) throws ContradictionException {
+        findMate(unionKer);
+    }
 
     @Override
     public ESat isEntailed() {
