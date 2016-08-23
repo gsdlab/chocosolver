@@ -98,8 +98,16 @@ public class PropSingleton extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        if (s.getLB().size() > 1) {
+        int lb = s.getLB().size();
+        if (lb > 1) {
             return ESat.FALSE;
+        }
+        if (lb == 1) {
+            if (i.contains(s.getLB().min())) {
+                return i.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+            } else {
+                return ESat.FALSE;
+            }
         }
         if (s.getUB().size() < 1) {
             return ESat.FALSE;
