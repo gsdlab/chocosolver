@@ -15,6 +15,9 @@ import org.clafer.common.Util;
 import org.clafer.ir.IrException;
 
 /**
+ * Immutable domain over integers. Internally stored as a list of (low, high)
+ * disjoint pairs of regions.
+ *
  *
  * @author jimmy
  */
@@ -25,11 +28,11 @@ public class Domain {
     /**
      * @param bounds sorted, unique, and immutable integers
      */
-    public Domain(int... bounds) {
+    protected Domain(int... bounds) {
         if (bounds.length % 2 == 1) {
             throw new IllegalArgumentException();
         }
-        assert isStrictSorted(bounds) : Arrays.toString(bounds);
+        assert isStrictSorted(bounds);
         this.bounds = bounds;
     }
 
@@ -77,10 +80,25 @@ public class Domain {
         return new Domain(bounds);
     }
 
+    /**
+     * Checks if this domain is defined as a lower and upper bound. If the
+     * domain is bounded then it contains every value between its lower and
+     * upper bound.
+     *
+     * @return {@code true} if and only if this domain is a single contiguous
+     * region, {@code false} otherwise
+     */
     public boolean isBounded() {
         return bounds.length <= 2;
     }
 
+    /**
+     * Checks if a value is within this domain.
+     *
+     * @param value test this value
+     * @return {@code true} if and only if this domain contains the
+     * {@code value}, {@code false} otherwise
+     */
     public boolean contains(int value) {
         return Util.ordinal(value, bounds) % 2 == 1;
     }
@@ -144,6 +162,12 @@ public class Domain {
         return lowOrdinal != highOrdinal;
     }
 
+    /**
+     * Returns the smallest integer contained in this domain. Undefined if this
+     * domain is empty.
+     *
+     * @return the smallest integer contained in this domain
+     */
     public int getLowBound() {
         if (bounds.length == 0) {
             throw new IrException("Emtpy domain does not have a low bound.");
@@ -151,6 +175,12 @@ public class Domain {
         return bounds[0];
     }
 
+    /**
+     * Returns the largest integer contained in this domain. Undefined if this
+     * domain is empty.
+     *
+     * @return the largest integer contained in this domain
+     */
     public int getHighBound() {
         if (bounds.length == 0) {
             throw new IrException("Emtpy domain does not have a low bound.");
@@ -158,14 +188,31 @@ public class Domain {
         return bounds[bounds.length - 1] - 1;
     }
 
+    /**
+     * Checks if this domain contains no values.
+     *
+     * @return {@code true} if and only if the size of this domain is zero,
+     * {@code false} otherwise
+     */
     public boolean isEmpty() {
         return bounds.length == 0;
     }
 
+    /**
+     * Checks if this domain contains a single value.
+     *
+     * @return {@code true} if and only if the size of this domain is one,
+     * {@code false} otherwise
+     */
     public boolean isConstant() {
         return bounds.length == 2 && bounds[0] + 1 == bounds[1];
     }
 
+    /**
+     * Returns how many values are contained in this domain.
+     *
+     * @return the size of this domain
+     */
     public int size() {
         int size = 0;
         for (int i = 0; i < bounds.length; i += 2) {
@@ -174,6 +221,13 @@ public class Domain {
         return size;
     }
 
+    /**
+     * Check if this domain is a (non-strict) subset of another domain.
+     *
+     * @param superset
+     * @return {@code true} if and only if this domain is a subset of
+     * {@code superset}, {@code false} otherwise
+     */
     public boolean isSubsetOf(Domain superset) {
         if (this == superset) {
             return true;
@@ -186,6 +240,13 @@ public class Domain {
         return true;
     }
 
+    /**
+     * Check if this domain intersects another domain.
+     *
+     * @param other
+     * @return {@code true} if and only if this domain is intersects
+     * {@code other}, {@code false} otherwise
+     */
     public boolean intersects(Domain other) {
         if (this == other && !isEmpty()) {
             return true;
@@ -228,14 +289,32 @@ public class Domain {
         }
     }
 
+    /**
+     * Add an element into this domain.
+     *
+     * @param value
+     * @return {@code this.union({value})}
+     */
     public Domain insert(int value) {
         return insertOrRemove(true, value);
     }
 
+    /**
+     * Remove an element from this domain.
+     *
+     * @param value
+     * @return {@code this.difference({value})}
+     */
     public Domain remove(int value) {
         return insertOrRemove(false, value);
     }
 
+    /**
+     * Remove all elements less than the bound from this domain.
+     *
+     * @param low
+     * @return {@code this.intersection({low, low + 1, ...})}
+     */
     public Domain boundLow(int low) {
         if (isEmpty() || low <= getLowBound()) {
             return this;
@@ -250,6 +329,12 @@ public class Domain {
         return new Domain(newBounds);
     }
 
+    /**
+     * Remove all elements greater than the bound from this domain.
+     *
+     * @param high
+     * @return {@code this.intersection({high, high - 1, ...})}
+     */
     public Domain boundHigh(int high) {
         if (isEmpty() || high >= getHighBound()) {
             return this;
@@ -264,6 +349,14 @@ public class Domain {
         return new Domain(newBounds);
     }
 
+    /**
+     * Remove all elements less than the low bound or greater than the high
+     * bound from this domain.
+     *
+     * @param low
+     * @param high
+     * @return {@code this.intersection({low, low + 1, ..., high})
+     */
     public Domain boundBetween(int low, int high) {
         return boundLow(low).boundHigh(high);
     }
@@ -276,6 +369,12 @@ public class Domain {
         return new Domain(newBounds);
     }
 
+    /**
+     * Subtract this domain with the other domain.
+     *
+     * @param other
+     * @return the difference of this domain with the other domain
+     */
     public Domain difference(Domain other) {
         if (isEmpty() || !intersects(other)) {
             return this;
@@ -321,6 +420,12 @@ public class Domain {
         return new Domain(Arrays.copyOf(newBounds, length));
     }
 
+    /**
+     * Intersect this domain with the other domain.
+     *
+     * @param other
+     * @return the intersection of this domain with the other domain
+     */
     public Domain intersection(Domain other) {
         if (isSubsetOf(other)) {
             return this;
@@ -390,6 +495,12 @@ public class Domain {
         return Arrays.copyOf(bounds, length);
     }
 
+    /**
+     * Union this domain with the other domain.
+     *
+     * @param other
+     * @return the union of this domain with the other domain
+     */
     public Domain union(Domain other) {
         if (isSubsetOf(other)) {
             return other;
@@ -419,6 +530,12 @@ public class Domain {
         return new Domain(mergeRegions(newBounds));
     }
 
+    /**
+     * Shift the elements in this domain.
+     *
+     * @param c
+     * @return the shifted domain
+     */
     public Domain offset(int c) {
         if (c == 0) {
             return this;
@@ -456,6 +573,11 @@ public class Domain {
         return sum;
     }
 
+    /**
+     * Returns all the values contained in this domain.
+     *
+     * @return values contained in this domain
+     */
     public int[] getValues() {
         int[] values = new int[size()];
         int size = 0;
@@ -468,7 +590,12 @@ public class Domain {
         return values;
     }
 
-    void forEachRemaining(IntConsumer action) {
+    /**
+     * Perform the action for every value in this domain in increasing order.
+     *
+     * @param action the action to perform
+     */
+    public void forEach(IntConsumer action) {
         for (int region = 0; region < bounds.length; region += 2) {
             for (int i = bounds[region]; i < bounds[region + 1]; i++) {
                 action.accept(i);
@@ -476,10 +603,21 @@ public class Domain {
         }
     }
 
+    /**
+     * Iterate over the domain in increasing order.
+     *
+     * @return an iterator over the values in this domain in increasing order
+     */
     public PrimitiveIterator.OfInt iterator() {
         return new ForwardIterator();
     }
 
+    /**
+     * Iterate over the domain in the specified order.
+     *
+     * @param increasing increasing or decreasing order
+     * @return an iterator over the values in this domain in the order specified
+     */
     public PrimitiveIterator.OfInt iterator(boolean increasing) {
         return increasing ? new ForwardIterator() : new ReverseIterator();
     }
@@ -492,6 +630,11 @@ public class Domain {
         return StreamSupport.intStream(spliterator, false);
     }
 
+    /**
+     * Put the contents of this domain inside the collection.
+     *
+     * @param collection the collection
+     */
     public void transferTo(TIntCollection collection) {
         for (int region = 0; region < bounds.length; region += 2) {
             for (int i = bounds[region]; i < bounds[region + 1]; i++) {

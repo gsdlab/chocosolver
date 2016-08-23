@@ -1,7 +1,7 @@
 package org.clafer.domain;
 
 /**
- * Boolean domain.
+ * Boolean domain. 0 encodes false and 1 encodes true.
  *
  * @author jimmy
  */
