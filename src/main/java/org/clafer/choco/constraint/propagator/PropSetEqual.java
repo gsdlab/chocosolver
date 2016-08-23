@@ -7,6 +7,7 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * More efficient than the provided PropAllEqual.
@@ -68,7 +69,22 @@ public class PropSetEqual extends Propagator<SetVar> {
         if (!PropUtil.isKerSubsetEnv(s1, s2) || !PropUtil.isKerSubsetEnv(s2, s1)) {
             return ESat.FALSE;
         }
-        return s1.isInstantiated() && s2.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        if (s1.isInstantiated() && s2.isInstantiated()) {
+            return ESat.TRUE;
+        }
+        int setIntersection = 0;
+        ISetIterator iter = s1.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (s2.getUB().contains(i)) {
+                setIntersection++;
+            }
+        }
+        if (setIntersection < s1.getCard().getLB() || setIntersection < s2.getCard().getLB()) {
+            return ESat.FALSE;
+        }
+
+        return ESat.UNDEFINED;
     }
 
     @Override
