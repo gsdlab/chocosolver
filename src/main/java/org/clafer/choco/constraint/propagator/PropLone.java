@@ -53,21 +53,22 @@ public class PropLone extends Propagator<BoolVar> {
 
     @Override
     public ESat isEntailed() {
-        int count = 0;
+        int countOne = 0;
+        int countZero = 0;
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
             if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
-                    count++;
-                    if (count > 1) {
+                    countOne++;
+                    if (countOne > 1) {
                         return ESat.FALSE;
                     }
+                } else {
+                    countZero++;
                 }
-            } else {
-                allInstantiated = false;
             }
         }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        return countZero >= vars.length - 1 ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override
