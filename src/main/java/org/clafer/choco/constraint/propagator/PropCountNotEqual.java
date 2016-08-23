@@ -127,7 +127,7 @@ public class PropCountNotEqual extends Propagator<IntVar> {
                 max++;
             }
         }
-        if (count.getUB() < min || count.getLB() > max) {
+        if (count.nextValue(min - 1) > max) {
             return ESat.FALSE;
         }
         return count.isInstantiated() && min == max ? ESat.TRUE : ESat.UNDEFINED;
