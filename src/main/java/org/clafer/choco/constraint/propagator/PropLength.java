@@ -113,21 +113,45 @@ public class PropLength extends Propagator<IntVar> {
         if (length.getLB() > chars.length || length.getUB() < 0) {
             return ESat.FALSE;
         }
-        for (int i = 0; i < length.getLB(); i++) {
-            if (chars[i].isInstantiatedTo(terminator)) {
-                return ESat.FALSE;
+        int leftMostTerminator = chars.length;
+        // A possible terminator before leftMostTerminator.
+        boolean earlierTerminator = false;
+        // Characters after leftMostTerminator are all termiators.
+        boolean suffixTerminators = true;
+        int rightMostCharacterTerminator = -1;
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i].contains(terminator)) {
+                if (chars[i].isInstantiatedTo(terminator)) {
+                    if (leftMostTerminator == chars.length) {
+                        leftMostTerminator = i;
+                    }
+                    if (i < length.getLB()) {
+                        return ESat.FALSE;
+                    }
+                }
+                earlierTerminator |= leftMostTerminator == chars.length;
+            } else {
+                rightMostCharacterTerminator = i;
+                if (i >= length.getUB()) {
+                    return ESat.FALSE;
+                }
             }
+            suffixTerminators &= leftMostTerminator == chars.length || chars[i].isInstantiatedTo(terminator);
         }
-        for (int i = length.getUB(); i < chars.length; i++) {
-            if (!chars[i].contains(terminator)) {
-                return ESat.FALSE;
-            }
+        if (length.previousValue(leftMostTerminator + 1) < 0) {
+            return ESat.FALSE;
+        }
+        if (length.nextValue(rightMostCharacterTerminator) > leftMostTerminator) {
+            return ESat.FALSE;
+        }
+        if (!earlierTerminator && suffixTerminators && length.isInstantiatedTo(leftMostTerminator)) {
+            return ESat.TRUE;
         }
         return isCompletelyInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override
     public String toString() {
-        return "length(" + Arrays.toString(chars) + ", " + length + ")";
+        return "length(" + Arrays.toString(chars) + ") = " + length;
     }
 }
