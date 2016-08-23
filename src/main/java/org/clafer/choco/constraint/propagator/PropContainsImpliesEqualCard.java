@@ -143,6 +143,22 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
+        if (cond.getLB().contains(z)) {
+            if (!PropUtil.isDomIntersectDom(x, y)) {
+                return ESat.FALSE;
+            }
+            return x.isInstantiated() && y.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        } else if (!cond.getUB().contains(z)) {
+            if (!x.contains(0)) {
+                return ESat.FALSE;
+            }
+            return x.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        }
         return ESat.TRUE;
+    }
+
+    @Override
+    public String toString() {
+        return "if " + z + " in " + cond + " { " + x + " = " + y + " } else { " + x + " = 0}";
     }
 }

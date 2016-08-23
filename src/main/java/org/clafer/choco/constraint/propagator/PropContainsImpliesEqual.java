@@ -130,7 +130,7 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
             if (x.getLB().size() > 0) {
                 return ESat.FALSE;
             }
-            return x.getUB().size() == 0 ? ESat.TRUE : ESat.UNDEFINED;
+            return x.getUB().isEmpty() ? ESat.TRUE : ESat.UNDEFINED;
         }
         return ESat.UNDEFINED;
     }
