@@ -128,7 +128,7 @@ public class PropContinuous extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        if (set.getLB().size() > 0) {
+        if (!set.getLB().isEmpty()) {
             int min = set.getLB().min();
             int max = set.getLB().max();
             for (int i = min + 1; i < max; i++) {
@@ -136,11 +136,40 @@ public class PropContinuous extends Propagator<Variable> {
                     return ESat.FALSE;
                 }
             }
+            if (max - min >= card.getUB()) {
+                return ESat.FALSE;
+            }
         }
+
+        if (!set.getUB().isEmpty()) {
+            int ker = set.getLB().isEmpty() ? 0 : set.getLB().min();
+
+            int[] regionBounds = new int[2 * set.getUB().size()];
+            int regions = iterateRange(set.getUB().iterator(), regionBounds);
+            int maxRegionSize = 0;
+            for (int region = 0; region < regions; region++) {
+                int low = regionBounds[2 * region];
+                int high = regionBounds[2 * region + 1];
+                int size = high - low + 1;
+                if (set.getLB().isEmpty() || (low <= ker && ker <= high)) {
+                    maxRegionSize = Math.max(maxRegionSize, size);
+                }
+            }
+
+            if (card.getLB() > maxRegionSize) {
+                return ESat.FALSE;
+            }
+        } else {
+            if (!card.contains(0)) {
+                return ESat.FALSE;
+            }
+            return card.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        }
+
         return set.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
     }
 
-    private int iterateRange(ISetIterator iter, int[] out) throws ContradictionException {
+    private static int iterateRange(ISetIterator iter, int[] out) {
         assert iter.hasNext();
         int prev = iter.nextInt();
         int size = 1;
