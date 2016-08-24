@@ -335,9 +335,14 @@ public class IrCompiler {
     private SetVar getSetVar(IrSetVar var) {
         SetVar setVar = setVarMap.get(var);
         if (setVar == null) {
-            IntVar setCardVar = getIntVar(var.getCardVar());
-            setVar = setVar(var.getName(), var.getEnv(), var.getKer());
-            setVar.setCard(setCardVar);
+            Domain constant = IrUtil.getConstant(var);
+            if (constant == null) {
+                IntVar setCardVar = getIntVar(var.getCardVar());
+                setVar = setVar(var.getName(), var.getEnv(), var.getKer());
+                setVar.setCard(setCardVar);
+            } else {
+                setVar = setVar(var.getName(), constant, constant);
+            }
             setVarMap.put(var, setVar);
         }
         return setVar;
