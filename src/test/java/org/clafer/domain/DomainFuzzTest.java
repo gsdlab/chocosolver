@@ -24,15 +24,19 @@ public class DomainFuzzTest {
     public final RepeatRule repeatRule = new RepeatRule(100);
 
     private final Random random = new Random();
-    private final int n = 10;
+    private final int n = 11;
 
     int randInt() {
+        return random.nextInt(n) - (n / 2);
+    }
+
+    int randPositiveInt() {
         return random.nextInt(n);
     }
 
     TIntSet randSet() {
         TIntSet set = new TIntHashSet();
-        int c = randInt();
+        int c = randPositiveInt();
         for (int i = 0; i < c; i++) {
             set.add(randInt());
         }
