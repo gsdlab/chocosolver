@@ -14,6 +14,7 @@ import java.util.PrimitiveIterator;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
+import static org.clafer.domain.Domain.constantDomain;
 import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.EmptyDomain;
 import static org.clafer.domain.Domains.NegativeOneDomain;
@@ -1262,13 +1263,8 @@ public class Irs {
             return new IrAdd(new IrIntExpr[]{first}, constants,
                     first.getDomain().offset(constants));
         }
-        int low = constants;
-        int high = constants;
-        for (IrIntExpr addend : filter) {
-            low += addend.getDomain().getLowBound();
-            high += addend.getDomain().getHighBound();
-        }
-        Domain domain = boundDomain(low, high);
+        Domain domain = filter.stream().map(IrIntExpr::getDomain).reduce(
+                constantDomain(constants), Domain::add);
         return new IrAdd(filter.toArray(new IrIntExpr[filter.size()]), constants, domain);
     }
 
