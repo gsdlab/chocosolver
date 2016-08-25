@@ -7,6 +7,7 @@ import org.clafer.ir.IrCompare;
 import static org.clafer.ir.IrCompare.Op.Equal;
 import static org.clafer.ir.IrCompare.Op.NotEqual;
 import org.clafer.ir.IrIfOnlyIf;
+import org.clafer.ir.IrIfThenElse;
 import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrLone;
@@ -19,9 +20,11 @@ import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
 import static org.clafer.ir.Irs.add;
 import static org.clafer.ir.Irs.and;
+import static org.clafer.ir.Irs.equal;
 import static org.clafer.ir.Irs.greaterThan;
 import static org.clafer.ir.Irs.greaterThanEqual;
 import static org.clafer.ir.Irs.ifOnlyIf;
+import static org.clafer.ir.Irs.ifThenElse;
 import static org.clafer.ir.Irs.implies;
 import static org.clafer.ir.Irs.lessThanEqual;
 import static org.clafer.ir.Irs.lone;
@@ -30,6 +33,7 @@ import static org.clafer.ir.Irs.not;
 import static org.clafer.ir.Irs.offset;
 import static org.clafer.ir.Irs.or;
 import static org.clafer.ir.Irs.sub;
+import static org.clafer.ir.Irs.ternary;
 import static org.clafer.ir.Irs.xor;
 
 /**
@@ -163,6 +167,28 @@ public class Optimizer {
             return changed(ir.getAntecedent(), antecedent)
                     || changed(ir.getConsequent(), consequent)
                             ? implies(antecedent, consequent)
+                            : ir;
+        }
+
+        @Override
+        public IrBoolExpr visit(IrIfThenElse ir, Void a) {
+            IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
+            IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
+            IrBoolExpr alternative = rewrite(ir.getAlternative(), a);
+            if (consequent instanceof IrCompare && alternative instanceof IrCompare) {
+                IrCompare compare1 = (IrCompare) consequent;
+                IrCompare compare2 = (IrCompare) alternative;
+                IrBoolExpr opt = optimizeIfThenElseCompare(antecedent,
+                        compare1.getLeft(), compare1.getOp(), compare1.getRight(),
+                        compare2.getLeft(), compare2.getOp(), compare2.getRight());
+                if (opt != null) {
+                    return opt;
+                }
+            }
+            return changed(ir.getAntecedent(), antecedent)
+                    || changed(ir.getConsequent(), consequent)
+                    || changed(ir.getAlternative(), alternative)
+                            ? ifThenElse(antecedent, consequent, alternative)
                             : ir;
         }
 
@@ -382,6 +408,19 @@ public class Optimizer {
                     }
                     break;
             }
+        }
+        return null;
+    }
+
+    /**
+     * Optimize {@code if b then x = y else x = z} to {@code x = b ? y : z}.
+     */
+    private static IrBoolExpr optimizeIfThenElseCompare(
+            IrBoolExpr condition,
+            IrIntExpr left1, IrCompare.Op op1, IrIntExpr right1,
+            IrIntExpr left2, IrCompare.Op op2, IrIntExpr right2) {
+        if (IrCompare.Op.Equal.equals(op1) && IrCompare.Op.Equal.equals(op2) && left1.equals(left2)) {
+            return equal(left1, ternary(condition, right1, right2));
         }
         return null;
     }
