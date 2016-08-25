@@ -61,7 +61,6 @@ import static org.clafer.ir.Irs.transitiveClosure;
 import static org.clafer.ir.Irs.union;
 import static org.clafer.ir.Irs.unreachable;
 import static org.clafer.ir.Irs.within;
-import static org.clafer.ir.Irs.xor;
 
 /**
  *
@@ -301,15 +300,6 @@ public abstract class IrRewriter<T>
         IrBoolExpr right = rewrite(ir.getRight(), a);
         return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
                 ? ifOnlyIf(left, right)
-                : ir;
-    }
-
-    @Override
-    public IrBoolExpr visit(IrXor ir, T a) {
-        IrBoolExpr left = rewrite(ir.getLeft(), a);
-        IrBoolExpr right = rewrite(ir.getRight(), a);
-        return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
-                ? xor(left, right)
                 : ir;
     }
 

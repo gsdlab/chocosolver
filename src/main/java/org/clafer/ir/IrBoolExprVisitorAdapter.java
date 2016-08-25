@@ -58,11 +58,6 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     }
 
     @Override
-    public B visit(IrXor ir, A a) {
-        return null;
-    }
-
-    @Override
     public B visit(IrWithin ir, A a) {
         return null;
     }

@@ -280,11 +280,8 @@ public class Irs {
         if (IrUtil.isFalse(right)) {
             return not(left);
         }
-        if (left instanceof IrNot) {
-            return xor(((IrNot) left).getExpr(), right);
-        }
-        if (right instanceof IrNot) {
-            return xor(left, ((IrNot) right).getExpr());
+        if (left.isNegative() && right.isNegative()) {
+            return new IrIfOnlyIf(left.negate(), right.negate(), TrueFalseDomain);
         }
         return new IrIfOnlyIf(left, right, TrueFalseDomain);
     }
@@ -302,13 +299,13 @@ public class Irs {
         if (IrUtil.isFalse(right)) {
             return left;
         }
-        if (left instanceof IrNot) {
-            return ifOnlyIf(((IrNot) left).getExpr(), right);
+        if (left.isNegative()) {
+            return ifOnlyIf(left.negate(), right);
         }
-        if (right instanceof IrNot) {
-            return ifOnlyIf(left, ((IrNot) right).getExpr());
+        if (right.isNegative()) {
+            return ifOnlyIf(left, right.negate());
         }
-        return new IrXor(left, right, TrueFalseDomain);
+        return new IrIfOnlyIf(left, right.negate(), TrueFalseDomain);
     }
 
     public static IrBoolExpr within(IrIntExpr value, Domain range) {

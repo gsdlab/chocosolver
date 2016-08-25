@@ -31,8 +31,6 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrIfOnlyIf ir, A a);
 
-    public B visit(IrXor ir, A a);
-
     public B visit(IrWithin ir, A a);
 
     public B visit(IrCompare ir, A a);

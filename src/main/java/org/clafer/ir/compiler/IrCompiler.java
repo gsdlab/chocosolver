@@ -111,7 +111,6 @@ import org.clafer.ir.IrUnreachable;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
-import org.clafer.ir.IrXor;
 import org.clafer.ir.Irs;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
@@ -906,12 +905,15 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrIfOnlyIf ir, BoolArg a) {
+            IrBoolExpr left = ir.getLeft();
+            IrBoolExpr right = ir.getRight();
+            if (left.isNegative()) {
+                return compileArithm(ir.getLeft().negate(), Rel.NQ, ir.getRight());
+            }
+            if (right.isNegative()) {
+                return compileArithm(ir.getLeft(), Rel.NQ, ir.getRight().negate());
+            }
             return compileArithm(ir.getLeft(), Rel.EQ, ir.getRight());
-        }
-
-        @Override
-        public Object visit(IrXor ir, BoolArg a) {
-            return compileArithm(ir.getLeft(), Rel.NQ, ir.getRight());
         }
 
         @Override
@@ -1432,11 +1434,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrIfOnlyIf ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrXor ir, IntVar a) {
             return compileBool(ir, a);
         }
 
