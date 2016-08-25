@@ -58,6 +58,7 @@ public class MemberNonemptyTest {
         assertTrue(set.isEmpty() || set.contains(element));
     }
 
+    @ArcConsistent
     @Test(timeout = 60000)
     public Constraint setup(IntVar element, SetVar set) {
         return Constraints.memberNonempty(element, set, set.getCard());

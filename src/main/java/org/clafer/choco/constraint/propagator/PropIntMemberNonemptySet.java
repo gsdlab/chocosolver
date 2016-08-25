@@ -19,80 +19,40 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
     private final SetVar set;
     private final IntVar setCard;
 
-    /**
-     * watch1 and watch2 points are two unique integers in env(set) and
-     * dom(element). As long as these two elements exists, then the intersection
-     * between env(set) and dom(element) is greater than one. When the
-     * intersection is one, then that integer must be the element.
-     */
-    private int watch1, watch2;
-
     public PropIntMemberNonemptySet(IntVar element, SetVar set, IntVar setCard) {
         super(new Variable[]{set, element, setCard}, PropagatorPriority.BINARY, false);
         this.element = element;
         this.set = set;
         this.setCard = setCard;
-        this.watch1 = 0;
-        this.watch2 = 0;
-    }
-
-    /**
-     * @return {@code true} if at most one watch left, {@code false} otherwise
-     */
-    private boolean updateWatches() {
-        watch1 = element.contains(watch1) ? watch1 : Integer.MAX_VALUE;
-        watch2 = element.contains(watch2) ? watch2 : Integer.MAX_VALUE;
-        if (watch1 == Integer.MAX_VALUE || watch2 == Integer.MAX_VALUE) {
-            // watch1 == SetVar.End => watch2 == SetVar.End
-            if (watch1 == Integer.MAX_VALUE) {
-                watch1 = watch2;
-                watch2 = Integer.MAX_VALUE;
-            }
-            ISetIterator iter = set.getUB().iterator();
-            while(iter.hasNext()) {
-                int j = iter.nextInt();
-                if (element.contains(j)) {
-                    if (watch1 == Integer.MAX_VALUE) {
-                        watch1 = j;
-                    } else if (watch1 != j) {
-                        // Found the second watch.
-                        assert (watch2 == Integer.MAX_VALUE);
-                        watch2 = j;
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private void watchFilter() throws ContradictionException {
-        if (updateWatches()) {
-            if (watch1 != Integer.MAX_VALUE && watch2 == Integer.MAX_VALUE) {
-                set.force(watch1, this);
-                element.instantiateTo(watch1, this);
-                setPassive();
-            } else if (watch1 == Integer.MAX_VALUE) {
-                fails();
-            }
-        }
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        if (!PropUtil.isDomIntersectKer(element, set)) {
+            if (setCard.getLB() > 0) {
+                setCard.updateLowerBound(set.getLB().size() + 1, this);
+            }
+            if (setCard.getUB() == set.getLB().size() + 1) {
+                // set can take only one more value, and currently does not intersect element.
+                ISetIterator iter = set.getUB().iterator();
+                while (iter.hasNext()) {
+                    int i = iter.nextInt();
+                    if (!set.getLB().contains(i) && !element.contains(i)) {
+                        set.remove(i, this);
+                    }
+                }
+            }
+        }
         if (setCard.getLB() > 0) {
             PropUtil.domSubsetEnv(element, set, this);
             if (element.isInstantiated()) {
                 set.force(element.getValue(), this);
                 setPassive();
-            } else {
-                watchFilter();
             }
+        } else if (!PropUtil.isDomIntersectEnv(element, set)) {
+            setCard.instantiateTo(0, this);
         } else {
-            if (updateWatches() && watch1 == Integer.MAX_VALUE) {
-                setCard.instantiateTo(0, this);
-            }
+//            PropUtil.domSubsetEnv(element, set, this);
         }
     }
 
@@ -106,7 +66,18 @@ public class PropIntMemberNonemptySet extends Propagator<Variable> {
                 return ESat.TRUE;
             }
             return ESat.UNDEFINED;
+        } else if (setCard.getUB() == 0) {
+            return ESat.TRUE;
+        } else if (setCard.getDomainSize() == 2
+                && set.getUB().size() == setCard.getUB()
+                && PropUtil.isDomSubsetEnv(element, set)) {
+            return ESat.TRUE;
         }
-        return setCard.getUB() <= 0 ? ESat.TRUE : ESat.UNDEFINED;
+        return ESat.UNDEFINED;
+    }
+
+    @Override
+    public String toString() {
+        return element + " in " + set + " with " + setCard + " if not empty";
     }
 }
