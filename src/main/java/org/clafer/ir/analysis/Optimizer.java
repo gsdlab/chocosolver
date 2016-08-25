@@ -1,5 +1,8 @@
 package org.clafer.ir.analysis;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.clafer.domain.Domain;
 import static org.clafer.domain.Domain.boundDomain;
 import org.clafer.ir.IrBoolExpr;
@@ -12,12 +15,15 @@ import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrNot;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOr;
 import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrXor;
+import org.clafer.ir.Irs;
+import static org.clafer.ir.Irs.Zero;
 import static org.clafer.ir.Irs.add;
 import static org.clafer.ir.Irs.and;
 import static org.clafer.ir.Irs.equal;
@@ -54,36 +60,56 @@ public class Optimizer {
     public static IrModule optimize(IrModule module) {
         return optimizer.rewrite(module, null);
     }
+
+    private static Stream<Compare> compares(IrIntExpr expr) {
+        if (expr instanceof IrCompare) {
+            IrCompare compare = (IrCompare) expr;
+            switch (compare.getOp()) {
+                case Equal:
+                case NotEqual:
+                    return Stream.of(
+                            new Compare(compare.getLeft(), compare.getOp(), compare.getRight()),
+                            new Compare(compare.getRight(), compare.getOp(), compare.getLeft()));
+                default:
+                    return Stream.of(
+                            new Compare(compare.getLeft(), compare.getOp(), compare.getRight()));
+            }
+        } else if (expr instanceof IrNot) {
+            IrNot not = (IrNot) expr;
+            return Stream.of(
+                    new Compare(not.getExpr(), IrCompare.Op.Equal, Zero),
+                    new Compare(Irs.Zero, IrCompare.Op.Equal, not.getExpr()));
+        } else if (expr instanceof IrIfOnlyIf) {
+            IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) expr;
+            return Stream.of(
+                    new Compare(ifOnlyIf.getLeft(), IrCompare.Op.Equal, ifOnlyIf.getRight()),
+                    new Compare(ifOnlyIf.getRight(), IrCompare.Op.Equal, ifOnlyIf.getLeft()));
+        } else if (expr instanceof IrXor) {
+            IrXor xor = (IrXor) expr;
+            return Stream.of(
+                    new Compare(xor.getLeft(), IrCompare.Op.NotEqual, xor.getRight()),
+                    new Compare(xor.getRight(), IrCompare.Op.NotEqual, xor.getLeft()));
+        } else if (expr instanceof IrImplies) {
+            IrImplies implies = (IrImplies) expr;
+            return Stream.of(
+                    new Compare(implies.getAntecedent(), IrCompare.Op.LessThanEqual, implies.getConsequent()));
+        }
+        return Stream.empty();
+    }
+
     private static final IrRewriter<Void> optimizer = new IrRewriter<Void>() {
         @Override
         public IrBoolExpr visit(IrLone ir, Void a) {
             IrBoolExpr[] operands = rewrite(ir.getOperands(), a);
             if (operands.length == 2) {
-                if (operands[0] instanceof IrCompare) {
-                    IrBoolExpr antecedent = operands[1];
-                    IrCompare compare = (IrCompare) operands[0];
-                    if (compare.getOp().isEquality()) {
-                        IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                        if (opt == null) {
-                            opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
-                        }
-                        if (opt != null) {
-                            return opt;
-                        }
-                    }
-                }
-                if (operands[1] instanceof IrCompare) {
-                    IrBoolExpr antecedent = operands[0];
-                    IrCompare compare = (IrCompare) operands[1];
-                    if (compare.getOp().isEquality()) {
-                        IrBoolExpr opt = optimizeLoneCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                        if (opt == null) {
-                            opt = optimizeLoneCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
-                        }
-                        if (opt != null) {
-                            return opt;
-                        }
-                    }
+                Optional<IrBoolExpr> opt
+                        = Stream.concat(
+                                compares(operands[0]).map(r -> optimizeLoneCompare(operands[1], r)),
+                                compares(operands[1]).map(r -> optimizeLoneCompare(operands[0], r)))
+                        .filter(Objects::nonNull)
+                        .findFirst();
+                if (opt.isPresent()) {
+                    return opt.get();
                 }
             }
             return changed(ir.getOperands(), operands)
@@ -95,31 +121,14 @@ public class Optimizer {
         public IrBoolExpr visit(IrOr ir, Void a) {
             IrBoolExpr[] operands = rewrite(ir.getOperands(), a);
             if (operands.length == 2) {
-                if (operands[0] instanceof IrCompare) {
-                    IrBoolExpr antecedent = operands[1];
-                    IrCompare compare = (IrCompare) operands[0];
-                    if (compare.getOp().isEquality()) {
-                        IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                        if (opt == null) {
-                            opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
-                        }
-                        if (opt != null) {
-                            return opt;
-                        }
-                    }
-                }
-                if (operands[1] instanceof IrCompare) {
-                    IrBoolExpr antecedent = operands[0];
-                    IrCompare compare = (IrCompare) operands[1];
-                    if (compare.getOp().isEquality()) {
-                        IrBoolExpr opt = optimizeOrCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                        if (opt == null) {
-                            opt = optimizeOrCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
-                        }
-                        if (opt != null) {
-                            return opt;
-                        }
-                    }
+                Optional<IrBoolExpr> opt
+                        = Stream.concat(
+                                compares(operands[0]).map(r -> optimizeOrCompare(operands[1], r)),
+                                compares(operands[1]).map(r -> optimizeOrCompare(operands[0], r)))
+                        .filter(Objects::nonNull)
+                        .findFirst();
+                if (opt.isPresent()) {
+                    return opt.get();
                 }
             }
             return changed(ir.getOperands(), operands)
@@ -152,17 +161,13 @@ public class Optimizer {
             }
             IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
             IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
-            if (consequent instanceof IrCompare) {
-                IrCompare compare = (IrCompare) consequent;
-                if (compare.getOp().isEquality()) {
-                    IrBoolExpr opt = optimizeImplicationCompare(antecedent, compare.getLeft(), compare.getOp(), compare.getRight());
-                    if (opt == null) {
-                        opt = optimizeImplicationCompare(antecedent, compare.getRight(), compare.getOp(), compare.getLeft());
-                    }
-                    if (opt != null) {
-                        return opt;
-                    }
-                }
+
+            Optional<IrBoolExpr> opt
+                    = compares(consequent).map(c -> optimizeImplicationCompare(antecedent, c))
+                    .filter(Objects::nonNull)
+                    .findFirst();
+            if (opt.isPresent()) {
+                return opt.get();
             }
             return changed(ir.getAntecedent(), antecedent)
                     || changed(ir.getConsequent(), consequent)
@@ -175,15 +180,14 @@ public class Optimizer {
             IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
             IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
             IrBoolExpr alternative = rewrite(ir.getAlternative(), a);
-            if (consequent instanceof IrCompare && alternative instanceof IrCompare) {
-                IrCompare compare1 = (IrCompare) consequent;
-                IrCompare compare2 = (IrCompare) alternative;
-                IrBoolExpr opt = optimizeIfThenElseCompare(antecedent,
-                        compare1.getLeft(), compare1.getOp(), compare1.getRight(),
-                        compare2.getLeft(), compare2.getOp(), compare2.getRight());
-                if (opt != null) {
-                    return opt;
-                }
+            Optional<IrBoolExpr> opt
+                    = compares(consequent).flatMap(l
+                            -> compares(alternative).map(r
+                                    -> optimizeIfThenElseCompare(antecedent, l, r)))
+                    .filter(Objects::nonNull)
+                    .findFirst();
+            if (opt.isPresent()) {
+                return opt.get();
             }
             return changed(ir.getAntecedent(), antecedent)
                     || changed(ir.getConsequent(), consequent)
@@ -196,15 +200,14 @@ public class Optimizer {
         public IrBoolExpr visit(IrIfOnlyIf ir, Void a) {
             IrBoolExpr left = rewrite(ir.getLeft(), a);
             IrBoolExpr right = rewrite(ir.getRight(), a);
-            if (right instanceof IrCompare) {
-                IrCompare compare = (IrCompare) right;
-                IrBoolExpr opt = optimizeIfOnlyIfCompare(left, compare.getLeft(), compare.getOp(), compare.getRight());
-                if (opt == null) {
-                    opt = optimizeIfOnlyIfCompare(left, compare.getRight(), compare.getOp(), compare.getLeft());
-                }
-                if (opt != null) {
-                    return opt;
-                }
+            Optional<IrBoolExpr> opt
+                    = Stream.concat(
+                            compares(right).map(r -> optimizeIfOnlyIfCompare(left, r)),
+                            compares(left).map(r -> optimizeIfOnlyIfCompare(right, r)))
+                    .filter(Objects::nonNull)
+                    .findFirst();
+            if (opt.isPresent()) {
+                return opt.get();
             }
             return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
                     ? ifOnlyIf(left, right)
@@ -215,15 +218,14 @@ public class Optimizer {
         public IrBoolExpr visit(IrXor ir, Void a) {
             IrBoolExpr left = rewrite(ir.getLeft(), a);
             IrBoolExpr right = rewrite(ir.getRight(), a);
-            if (right instanceof IrCompare) {
-                IrCompare compare = (IrCompare) right;
-                IrBoolExpr opt = optimizeXorCompare(left, compare.getLeft(), compare.getOp(), compare.getRight());
-                if (opt == null) {
-                    opt = optimizeXorCompare(left, compare.getRight(), compare.getOp(), compare.getLeft());
-                }
-                if (opt != null) {
-                    return opt;
-                }
+            Optional<IrBoolExpr> opt
+                    = Stream.concat(
+                            compares(right).map(r -> optimizeXorCompare(left, r)),
+                            compares(left).map(r -> optimizeXorCompare(right, r)))
+                    .filter(Objects::nonNull)
+                    .findFirst();
+            if (opt.isPresent()) {
+                return opt.get();
             }
             return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
                     ? xor(left, right)
@@ -250,7 +252,10 @@ public class Optimizer {
     /**
      * Optimize {@code lone(antecedent, left `op` right)} where `op` is = or !=.
      */
-    private static IrBoolExpr optimizeLoneCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+    private static IrBoolExpr optimizeLoneCompare(IrBoolExpr antecedent, Compare compare) {
+        IrIntExpr left = compare.left;
+        IrCompare.Op op = compare.op;
+        IrIntExpr right = compare.right;
         Domain domain = left.getDomain();
         Integer constant = IrUtil.getConstant(right);
         if (domain.size() == 2 && constant != null) {
@@ -305,7 +310,10 @@ public class Optimizer {
     /**
      * Optimize {@code antecedent or (left `op` right)} where `op` is = or !=.
      */
-    private static IrBoolExpr optimizeOrCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+    private static IrBoolExpr optimizeOrCompare(IrBoolExpr antecedent, Compare compare) {
+        IrIntExpr left = compare.left;
+        IrCompare.Op op = compare.op;
+        IrIntExpr right = compare.right;
         Domain domain = left.getDomain();
         Integer constant = IrUtil.getConstant(right);
         if (domain.size() == 2 && constant != null) {
@@ -360,7 +368,10 @@ public class Optimizer {
     /**
      * Optimize {@code antecedent => (left `op` right)} where `op` is = or !=.
      */
-    private static IrBoolExpr optimizeImplicationCompare(IrBoolExpr antecedent, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+    private static IrBoolExpr optimizeImplicationCompare(IrBoolExpr antecedent, Compare compare) {
+        IrIntExpr left = compare.left;
+        IrCompare.Op op = compare.op;
+        IrIntExpr right = compare.right;
         Domain domain = left.getDomain();
         Integer constant = IrUtil.getConstant(right);
         if (domain.size() == 2 && constant != null) {
@@ -416,9 +427,13 @@ public class Optimizer {
      * Optimize {@code if b then x = y else x = z} to {@code x = b ? y : z}.
      */
     private static IrBoolExpr optimizeIfThenElseCompare(
-            IrBoolExpr condition,
-            IrIntExpr left1, IrCompare.Op op1, IrIntExpr right1,
-            IrIntExpr left2, IrCompare.Op op2, IrIntExpr right2) {
+            IrBoolExpr condition, Compare compare1, Compare compare2) {
+        IrIntExpr left1 = compare1.left;
+        IrCompare.Op op1 = compare1.op;
+        IrIntExpr right1 = compare1.right;
+        IrIntExpr left2 = compare2.left;
+        IrCompare.Op op2 = compare2.op;
+        IrIntExpr right2 = compare2.right;
         if (IrCompare.Op.Equal.equals(op1) && IrCompare.Op.Equal.equals(op2) && left1.equals(left2)) {
             return equal(left1, ternary(condition, right1, right2));
         }
@@ -427,17 +442,32 @@ public class Optimizer {
 
     /**
      * Optimize {@code reify <=> (left != max)} to
-     * {@code (left <= max - reify) && (left >= max - span * reify)}.
+     * {@code (left <= max - reify) && (left >= max - span * reify)} and
+     * optimize {@code reify <=> (left == min)} to
+     * {@code (left >= min + !reify) && (left <= min + span * !reify)} and .
      */
-    private static IrBoolExpr optimizeIfOnlyIfCompare(IrBoolExpr reify, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+    private static IrBoolExpr optimizeIfOnlyIfCompare(IrBoolExpr reify, Compare compare) {
+        IrIntExpr left = compare.left;
+        IrCompare.Op op = compare.op;
+        IrIntExpr right = compare.right;
         Integer constant = IrUtil.getConstant(right);
-        if (constant != null && constant.equals(left.getHighBound())) {
-            switch (op) {
-                case NotEqual:
-                    int span = constant - left.getLowBound();
-                    IrBoolExpr expr1 = lessThanEqual(left, sub(constant, reify));
-                    IrBoolExpr expr2 = greaterThanEqual(left, sub(constant, mul(span, reify, boundDomain(0, span))));
-                    return and(expr1, expr2);
+        if (constant != null) {
+            if (constant.equals(left.getHighBound())) {
+                switch (op) {
+                    case NotEqual:
+                        int span = constant - left.getLowBound();
+                        IrBoolExpr expr1 = lessThanEqual(left, sub(constant, reify));
+                        IrBoolExpr expr2 = greaterThanEqual(left, sub(constant, mul(span, reify, boundDomain(0, span))));
+                        return and(expr1, expr2);
+                }
+            } else if (constant.equals(left.getLowBound())) {
+                switch (op) {
+                    case Equal:
+                        int span = left.getHighBound() - constant;
+                        IrBoolExpr expr1 = greaterThanEqual(left, add(constant, not(reify)));
+                        IrBoolExpr expr2 = lessThanEqual(left, add(constant, mul(span, not(reify), boundDomain(0, span))));
+                        return and(expr1, expr2);
+                }
             }
         }
         return null;
@@ -447,7 +477,10 @@ public class Optimizer {
      * Optimize {@code reify ^ (left = max)} to
      * {@code (left <= max - reify) && (left >= max - span * reify)}.
      */
-    private static IrBoolExpr optimizeXorCompare(IrBoolExpr reify, IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+    private static IrBoolExpr optimizeXorCompare(IrBoolExpr reify, Compare compare) {
+        IrIntExpr left = compare.left;
+        IrCompare.Op op = compare.op;
+        IrIntExpr right = compare.right;
         Integer constant = IrUtil.getConstant(right);
         if (constant != null && constant.equals(left.getHighBound())) {
             switch (op) {
@@ -459,5 +492,18 @@ public class Optimizer {
             }
         }
         return null;
+    }
+
+    private static class Compare {
+
+        final IrIntExpr left;
+        final IrCompare.Op op;
+        final IrIntExpr right;
+
+        public Compare(IrIntExpr left, IrCompare.Op op, IrIntExpr right) {
+            this.left = left;
+            this.op = op;
+            this.right = right;
+        }
     }
 }
