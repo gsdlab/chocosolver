@@ -1864,6 +1864,16 @@ public class Irs {
         return joinFunction(take, array(refs), globalCardinality);
     }
 
+    private static boolean isIdentityRelation(IrIntArrayExpr refs) {
+        for (int i = 0; i < refs.length(); i++) {
+            Domain domain = refs.getDomains()[i];
+            if (!domain.isConstant() || domain.getLowBound() != i) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static IrSetExpr joinFunction(IrSetExpr take, IrIntArrayExpr refs, Integer globalCardinality) {
         if (take.getEnv().isEmpty()) {
             return EmptySet;
@@ -1878,6 +1888,10 @@ public class Irs {
                 to[i] = get($refs, array[i]);
             }
             return arrayToSet(to, globalCardinality);
+        }
+
+        if (isIdentityRelation($refs)) {
+            return take;
         }
 
         // Compute env
