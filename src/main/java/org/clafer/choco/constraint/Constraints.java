@@ -65,6 +65,7 @@ import org.clafer.choco.constraint.propagator.PropSetMin;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
 import org.clafer.choco.constraint.propagator.PropSetStrictHighBound;
 import org.clafer.choco.constraint.propagator.PropSetSum;
+import org.clafer.choco.constraint.propagator.PropSetTernary;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSingleton;
@@ -281,6 +282,13 @@ public class Constraints {
 
     public static Constraint ternary(BoolVar antecedent, IntVar result, IntVar consequent, IntVar alternative) {
         return new Constraint("Ternary", new PropTernary(antecedent, result, consequent, alternative));
+    }
+
+    public static Constraint ternary(BoolVar antecedent, SetVar result, SetVar consequent, SetVar alternative) {
+        return new Constraint("Ternary",
+                new PropSetTernary(antecedent, result, consequent, alternative),
+                new PropTernary(antecedent, result.getCard(), consequent.getCard(), alternative.getCard())
+        );
     }
 
     /**

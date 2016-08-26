@@ -1687,15 +1687,10 @@ public class IrCompiler {
             SetVar alternative = compile(ir.getAlternative());
             if (reify == null) {
                 SetVar ternary = numSetVar("Ternary", ir.getEnv(), ir.getKer(), ir.getCard());
-                post(_implies(antecedent, _equal(ternary, consequent)));
-                post(_implies(antecedent.not(), _equal(ternary, alternative)));
+                post(Constraints.ternary(antecedent, ternary, consequent, alternative));
                 return ternary;
             }
-            return _arithm(
-                    _implies(antecedent, _equal(reify, consequent)).reify(),
-                    "+",
-                    _implies(antecedent.not(), _equal(reify, alternative)).reify(),
-                    "=", 2);
+            return Constraints.ternary(antecedent, reify, consequent, alternative);
         }
 
         @Override
