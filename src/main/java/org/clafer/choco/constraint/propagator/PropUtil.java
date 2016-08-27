@@ -125,7 +125,7 @@ public class PropUtil {
         if (iter.hasNext()) {
             return iter.nextInt();
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("Cannot retrieve element " + index + " in " + set);
     }
 
     /**
