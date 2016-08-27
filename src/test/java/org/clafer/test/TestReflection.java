@@ -69,16 +69,16 @@ public class TestReflection {
             int envSize = var.getUB().size();
             int kerSize = var.getLB().size();
             if (!var.hasCard()) {
-                return pow2(var.getUB().size() - var.getLB().size());
+                return pow2(envSize - kerSize);
             }
             int lb = var.getCard().getLB();
             int ub = var.getCard().getUB();
             if (kerSize >= lb && envSize <= ub) {
-                return pow2(var.getUB().size() - var.getLB().size());
+                return pow2(envSize - kerSize);
             }
             int count = 0;
             for (int i = lb; i <= ub; i = var.getCard().nextValue(i)) {
-                count += nChooseR(envSize - kerSize, i);
+                count += nChooseR(envSize - kerSize, i - kerSize);
             }
             return count;
         } else if (o instanceof CStringVar) {
