@@ -6,7 +6,7 @@ import org.clafer.domain.BoolDomain;
  *
  * @author jimmy
  */
-public class IrBoolVar extends IrIntVar implements IrBoolExpr, IrVar {
+public class IrBoolVar extends IrIntVar implements IrBoolExpr {
 
     IrBoolVar(String name, BoolDomain domain) {
         super(name, domain);

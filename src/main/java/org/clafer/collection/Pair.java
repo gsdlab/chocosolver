@@ -1,5 +1,6 @@
 package org.clafer.collection;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,8 +17,9 @@ import org.clafer.common.Check;
  * @param <B> the type of snd
  * @author jimmy
  */
-public class Pair<A, B> {
+public class Pair<A, B> implements Serializable {
 
+    private static final long serialVersionUID = 1;
     private final A fst;
     private final B snd;
 

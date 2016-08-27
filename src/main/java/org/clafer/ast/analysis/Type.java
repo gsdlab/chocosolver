@@ -105,7 +105,7 @@ public class Type implements Iterable<ProductType> {
     public boolean equals(Object obj) {
         if (obj instanceof Type) {
             Type other = (Type) obj;
-            return unionType.equals(other);
+            return unionType.equals(other.unionType);
         }
         return false;
     }

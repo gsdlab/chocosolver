@@ -261,16 +261,15 @@ public class PartialIntAnalyzer {
                     return paths;
             }
         } else if (expr instanceof AstBoolArithm) {
-            if (expr instanceof AstBoolArithm) {
-                AstBoolArithm boolArithm = (AstBoolArithm) expr;
-                switch (boolArithm.getOp()) {
-                    case And:
-                        List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>();
-                        for (AstBoolExpr operand : boolArithm.getOperands()) {
-                            paths.addAll(analyzeExpr(operand, context, oracle));
-                        }
-                        return paths;
-                    case Or:
+            AstBoolArithm boolArithm = (AstBoolArithm) expr;
+            switch (boolArithm.getOp()) {
+                case And:
+                    List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>();
+                    for (AstBoolExpr operand : boolArithm.getOperands()) {
+                        paths.addAll(analyzeExpr(operand, context, oracle));
+                    }
+                    return paths;
+                case Or:
 //                        AstBoolExpr[] operands = boolArithm.getOperands();
 //                        List<Pair<Path, Domain>> paths = analyzeExpr(operands[0], context);
 //                        for (int i = 1; i < operands.length && !paths.isEmpty(); i++) {
@@ -282,7 +281,6 @@ public class PartialIntAnalyzer {
 //                        }
 //                        return paths;
                 }
-            }
         }
         return Collections.emptyList();
     }

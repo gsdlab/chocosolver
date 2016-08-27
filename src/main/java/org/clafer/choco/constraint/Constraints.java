@@ -15,6 +15,7 @@ import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
 import org.chocosolver.solver.constraints.binary.PropNotEqualX_Y;
 import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
 import org.chocosolver.solver.constraints.nary.sum.PropSum;
+import org.chocosolver.solver.constraints.set.PropIntEnumMemberSet;
 import org.chocosolver.solver.constraints.set.PropIntersection;
 import org.chocosolver.solver.constraints.set.PropSubsetEq;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
@@ -42,6 +43,8 @@ import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
+import org.clafer.choco.constraint.propagator.PropIntMemberSetCard;
+import org.clafer.choco.constraint.propagator.PropIntMemberSetDefault;
 import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
@@ -905,18 +908,25 @@ public class Constraints {
     }
 
     public static Constraint min(SetVar set, IntVar setCard, IntVar min) {
-        return new Constraint("min", new PropSetMin(set, setCard, min));
+        if (setCard.getUB() <= 1) {
+            return member(min, set);
+        }
+        return new Constraint("min",
+                new PropSetMin(set, setCard, min, 0),
+                new PropIntEnumMemberSet(set, min),
+                new PropIntMemberSetCard(min, set, setCard));
     }
 
     public static Constraint min(SetVar set, IntVar setCard, IntVar min, int d) {
-        if (setCard.getLB() > 0) {
-            return min(set, setCard, min);
-        }
+//        if (setCard.getLB() > 0) {
+//            return min(set, setCard, min);
+//        }
         return new Constraint("min",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
                     set.getModel().arithm(min, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
                 }),
-                new PropSetMin(set, setCard, min));
+                new PropIntMemberSetDefault(min, set, setCard, d),
+                new PropSetMin(set, setCard, min, d));
     }
 
     public static Constraint lowBound(SetVar set, IntVar bound) {

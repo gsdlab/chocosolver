@@ -185,7 +185,7 @@ public class AstUtil {
      * {@code false} otherwise
      */
     public static boolean isTypeRoot(AstAbstractClafer clafer) {
-        return clafer instanceof AstAbstractClafer && !clafer.hasSuperClafer();
+        return !clafer.hasSuperClafer();
     }
 
     /**

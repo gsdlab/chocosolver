@@ -1232,9 +1232,6 @@ public class IrCompiler {
         public Object visit(IrMul ir, IntVar reify) {
             IrIntExpr multiplicand = ir.getMultiplicand();
             IrIntExpr multiplier = ir.getMultiplier();
-            if (reify != null) {
-                return _times(compile(multiplicand), compile(multiplier), reify);
-            }
             Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
             Integer multiplierConstant = IrUtil.getConstant(multiplier);
             if (multiplicandConstant != null) {
@@ -1260,6 +1257,9 @@ public class IrCompiler {
                             return model.intScaleView(compile(multiplicand), multiplierConstant);
                         }
                 }
+            }
+            if (reify != null) {
+                return _times(compile(multiplicand), compile(multiplier), reify);
             }
             IntVar product = numIntVar("Mul", ir.getDomain());
             post(_times(compile(multiplicand), compile(multiplier), product));
@@ -1863,7 +1863,6 @@ public class IrCompiler {
         if (cste == 0) {
             switch (Operator.get(op2)) {
                 case PL:
-                    return model.arithm(var1, op1, var2);
                 case MN:
                     return model.arithm(var1, op1, var2);
             }
