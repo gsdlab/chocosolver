@@ -1524,6 +1524,9 @@ public class Irs {
     }
 
     public static IrIntExpr max(IrSetExpr set, int defaultValue) {
+        if (set.getCard().getHighBound() == 0) {
+            return constant(defaultValue);
+        }
         Domain domain = set.getEnv();
         if (!set.getKer().isEmpty()) {
             domain = domain.boundLow(set.getKer().getHighBound());
@@ -1533,6 +1536,9 @@ public class Irs {
     }
 
     public static IrIntExpr min(IrSetExpr set, int defaultValue) {
+        if (set.getCard().getHighBound() == 0) {
+            return constant(defaultValue);
+        }
         Domain domain = set.getEnv();
         if (!set.getKer().isEmpty()) {
             domain = domain.boundHigh(set.getKer().getLowBound());
@@ -1542,6 +1548,13 @@ public class Irs {
     }
 
     public static IrIntExpr sum(IrSetExpr set) {
+        if (set.getCard().getHighBound() == 0) {
+            return Zero;
+        }
+        if (set.getCard().getHighBound() == 1) {
+            return min(set, 0);
+        }
+
         int sum = set.getKer().stream().sum();
         int count = set.getKer().size();
 
