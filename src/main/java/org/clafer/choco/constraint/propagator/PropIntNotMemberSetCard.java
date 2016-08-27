@@ -7,7 +7,6 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
