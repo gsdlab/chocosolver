@@ -50,7 +50,7 @@ public class LinearEquationOptimizer {
     private static boolean linearFunction(IrIntExpr expr, LinearFunctionBuilder builder, Map<IrIntVar, Variable> map) {
         if (expr instanceof IrIntVar) {
             Domain domain = expr.getDomain();
-            if (domain.size() == 1) {
+            if (domain.isConstant()) {
                 builder.plusConstant(domain.getLowBound());
             } else {
                 IrIntVar var = (IrIntVar) expr;

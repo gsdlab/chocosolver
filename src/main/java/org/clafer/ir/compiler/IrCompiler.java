@@ -229,7 +229,7 @@ public class IrCompiler {
     }
 
     private IntVar intVar(String name, Domain domain) {
-        if (domain.size() == 1) {
+        if (domain.isConstant()) {
             int constant = domain.getLowBound();
             switch (domain.getLowBound()) {
                 case 0:

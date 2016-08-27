@@ -323,7 +323,7 @@ public class Irs {
                 || domain.getHighBound() < range.getLowBound()) {
             return False;
         }
-        if (range.size() == 1) {
+        if (range.isConstant()) {
             return equal(value, range.getLowBound());
         }
         Domain diff = domain.difference(range);
@@ -1207,7 +1207,7 @@ public class Irs {
             return var.getCardVar();
         }
         Domain domain = set.getCard();
-        if (domain.size() == 1) {
+        if (domain.isConstant()) {
             return constant(domain.getLowBound());
         }
         return new IrCard(set, domain);
@@ -2413,9 +2413,9 @@ public class Irs {
         }
 
         Domain length;
-        if (leftLength.size() == 1) {
+        if (leftLength.isConstant()) {
             length = rightLength.offset(leftLength.getLowBound());
-        } else if (rightLength.size() == 1) {
+        } else if (rightLength.isConstant()) {
             length = leftLength.offset(rightLength.getLowBound());
         } else {
             length = boundDomain(

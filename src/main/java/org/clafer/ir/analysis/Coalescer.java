@@ -537,7 +537,7 @@ public class Coalescer {
                 for (int j = 0; j < ints.length; j++) {
                     if (ints[j].getDomain().contains(i)) {
                         env.add(j);
-                        if (ints[j].getDomain().size() == 1) {
+                        if (ints[j].getDomain().isConstant()) {
                             ker.add(j);
                         }
                     }
@@ -566,7 +566,7 @@ public class Coalescer {
         }
 
         private boolean isZero(Domain domain) {
-            return domain.size() == 1 && domain.getLowBound() == 0;
+            return domain.isConstant() && domain.getLowBound() == 0;
         }
 
         @Override
@@ -587,7 +587,7 @@ public class Coalescer {
                 if (!boundary[i + 1].equals(bounds[i])) {
                     propagateEqual(boundary[i + 1], bounds[i]);
                 }
-                if (boundary[i].getDomain().size() == 1) {
+                if (boundary[i].getDomain().isConstant()) {
                     int constant = boundary[i].getDomain().getLowBound();
                     if (sets[i].getCard().getLowBound() > 0 && !sets[i].getKer().contains(constant)) {
                         propagateKer(constantDomain(constant), sets[i]);
@@ -743,7 +743,7 @@ public class Coalescer {
             }
             if (array instanceof IrSubarray) {
                 IrSubarray subarray = (IrSubarray) array;
-                if (subarray.getIndex().getDomain().size() == 1 && index < subarray.getSublength().getLowBound()) {
+                if (subarray.getIndex().getDomain().isConstant() && index < subarray.getSublength().getLowBound()) {
                     return get(subarray.getArray(), subarray.getIndex().getLowBound() + index);
                 }
             }
@@ -926,7 +926,7 @@ public class Coalescer {
                 int mandatories = 0;
                 for (IrIntExpr element : count.getArray()) {
                     if (element.getDomain().contains(value)) {
-                        if (element.getDomain().size() == 1) {
+                        if (element.getDomain().isConstant()) {
                             mandatories++;
                         } else {
                             possibles++;
@@ -994,7 +994,7 @@ public class Coalescer {
         private void propagateSingleton(PartialSet left, IrSingleton right) {
             if (left.isKerMask()) {
                 Domain ker = left.getKer();
-                if (ker.size() == 1) {
+                if (ker.isConstant()) {
                     propagateInt(ker, right.getValue());
                 }
             } else if (left.isEnvMask()) {

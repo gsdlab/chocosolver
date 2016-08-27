@@ -50,28 +50,28 @@ public class IrUtil {
 
     public static boolean isConstant(IrIntExpr i) {
         Domain domain = i.getDomain();
-        return domain.size() == 1;
+        return domain.isConstant();
     }
 
     public static Integer getConstant(IrIntExpr i) {
         Domain domain = i.getDomain();
-        return domain.size() == 1 ? domain.getLowBound() : null;
+        return domain.isConstant() ? domain.getLowBound() : null;
     }
 
     public static Integer getConstant(IrIntArrayExpr is, int index) {
         Domain domain = is.getDomains()[index];
-        return domain.size() == 1 ? domain.getLowBound() : null;
+        return domain.isConstant() ? domain.getLowBound() : null;
     }
 
     public static int[] getConstant(IrIntExpr[] is) {
         if (is.length == 0) {
             return new int[0];
         }
-        if (is[0].getDomain().size() == 1) {
+        if (is[0].getDomain().isConstant()) {
             int[] constant = new int[is.length];
             constant[0] = is[0].getDomain().getLowBound();
             for (int i = 1; i < is.length; i++) {
-                if (is[i].getDomain().size() == 1) {
+                if (is[i].getDomain().isConstant()) {
                     constant[i] = is[i].getDomain().getLowBound();
                 } else {
                     return null;
@@ -84,7 +84,7 @@ public class IrUtil {
 
     public static IrIntVar asConstant(IrIntVar i) {
         Domain domain = i.getDomain();
-        return domain.size() == 1 ? Irs.constant(domain.getLowBound()) : i;
+        return domain.isConstant() ? Irs.constant(domain.getLowBound()) : i;
     }
 
     public static boolean isConstant(IrSetExpr s) {
@@ -106,7 +106,7 @@ public class IrUtil {
             return Irs.constant(ker);
         }
         Domain card = s.getCard();
-        if (card.size() == 1) {
+        if (card.isConstant()) {
             int constantCard = card.getLowBound();
             if (constantCard == ker.size()) {
                 return Irs.constant(ker);
@@ -139,7 +139,7 @@ public class IrUtil {
             return ((IrSingleton) set).getValue();
         }
         Domain constant = getConstant(set);
-        if (constant != null && constant.size() == 1) {
+        if (constant != null && constant.isConstant()) {
             return Irs.constant(constant.getLowBound());
         }
         return null;
@@ -239,7 +239,7 @@ public class IrUtil {
         }
         Domain da = a.getDomain();
         Domain db = b.getDomain();
-        if (da.size() == 1 && db.size() == 1 && da.getLowBound() == db.getLowBound()) {
+        if (da.isConstant() && db.isConstant() && da.getLowBound() == db.getLowBound()) {
             return Ordering.EQ;
         }
         int aLb = da.getLowBound();

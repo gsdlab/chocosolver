@@ -1185,10 +1185,10 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstGlobal ast, Void a) {
             IrSetVar global = sets.get(ast.getType());
-            if (global.getEnv().size() == 1) {
+            if (global.getEnv().isConstant()) {
                 Domain constant = IrUtil.getConstant(global);
                 if (constant != null) {
-                    assert constant.size() == 1;
+                    assert constant.isConstant();
                     // Use an integer representation instead for a singleton set.
                     return constant(constant.getLowBound());
                 }

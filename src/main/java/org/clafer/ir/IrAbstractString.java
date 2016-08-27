@@ -26,7 +26,7 @@ public abstract class IrAbstractString implements IrStringExpr {
             }
         }
         for (int i = 0; i < charDomains.length && i < lengthDomain.getLowBound(); i++) {
-            if (charDomains[i].size() == 1 && charDomains[i].getLowBound() == 0) {
+            if (charDomains[i].isConstant() && charDomains[i].getLowBound() == 0) {
                 throw new IllegalStringException();
             }
         }
