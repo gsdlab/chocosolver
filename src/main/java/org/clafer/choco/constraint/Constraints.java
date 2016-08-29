@@ -935,9 +935,9 @@ public class Constraints {
     }
 
     public static Constraint min(SetVar set, IntVar setCard, IntVar min, int d) {
-//        if (setCard.getLB() > 0) {
-//            return min(set, setCard, min);
-//        }
+        if (setCard.getLB() > 0) {
+            return min(set, setCard, min);
+        }
         return new Constraint("min",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
                     set.getModel().arithm(min, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()

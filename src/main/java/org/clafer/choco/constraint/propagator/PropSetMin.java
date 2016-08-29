@@ -6,8 +6,6 @@ import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
-import org.chocosolver.solver.variables.events.IntEventType;
-import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
@@ -23,88 +21,59 @@ public class PropSetMin extends Propagator<Variable> {
     private final SetVar set;
     private final IntVar setCard;
     private final IntVar min;
+    private final int defaultValue;
 
-    public PropSetMin(SetVar set, IntVar setCard, IntVar min) {
-        super(new Variable[]{set, setCard, min}, PropagatorPriority.UNARY, false);
+    public PropSetMin(SetVar set, IntVar setCard, IntVar min, int defaultValue) {
+        super(new Variable[]{set, setCard, min}, PropagatorPriority.LINEAR, false);
         this.set = set;
         this.setCard = setCard;
         this.min = min;
-    }
-
-    private boolean isSetVar(int idx) {
-        return idx == 0;
-    }
-
-    private boolean isSetCardVar(int idx) {
-        return idx == 1;
-    }
-
-    private boolean isMinVar(int idx) {
-        return idx == 2;
-    }
-
-    @Override
-    public int getPropagationConditions(int vIdx) {
-        if (isSetVar(vIdx)) {
-            return SetEventType.all();
-        }
-        if (isSetCardVar(vIdx)) {
-            return IntEventType.INCLOW.getMask() + IntEventType.instantiation();
-        }
-        assert isMinVar(vIdx);
-        return IntEventType.all();
-    }
-
-    int in() {
-        int in = Integer.MAX_VALUE;
-        ISetIterator iter = set.getUB().iterator();
-        while(iter.hasNext()) {
-            int i = iter.nextInt();
-            if (min.contains(i)) {
-                if (in != Integer.MAX_VALUE) {
-                    return Integer.MAX_VALUE;
-                }
-                in = i;
-            }
-        }
-        return in;
+        this.defaultValue = defaultValue;
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (setCard.getLB() > 0) {
-            if (set.getUB().size() > 0) {
-                min.updateLowerBound(set.getUB().min(), this);
+        if (!set.getLB().isEmpty()) {
+            min.updateUpperBound(set.getLB().min(), this);
+        }
+
+        int lb = min.getLB();
+        while (lb <= min.getUB() && !set.getUB().contains(lb)) {
+            lb = min.nextValue(lb);
+        }
+        ISetIterator iter = set.getUB().iterator();
+        int i;
+        while (iter.hasNext() && (i = iter.nextInt()) < lb) {
+            set.remove(i, this);
+        }
+        if (!set.getLB().isEmpty() && set.getLB().size() + 1 == setCard.getUB()) {
+            iter.reset();
+            int kerMin = set.getLB().min();
+            while (iter.hasNext()) {
+                i = iter.nextInt();
+                if (i < kerMin && !min.contains(i)) {
+                    set.remove(i, this);
+                }
             }
-            int lim = set.getUB().size() - setCard.getLB();
-            if (lim >= 0) {
-                min.updateUpperBound(PropUtil.getEnv(set, lim), this);
-            }
-            if (set.getLB().size() > 0) {
-                min.updateUpperBound(set.getLB().min(), this);
-            }
-            int in = in();
-            if (in != Integer.MAX_VALUE) {
-                min.instantiateTo(in, this);
-            }
-            int lb = min.getLB();
-            ISetIterator iter = set.getUB().iterator();
-            int i;
-            while(iter.hasNext() && (i = iter.nextInt()) < lb) {
-                set.remove(i, this);
-            }
-            if (min.isInstantiated()) {
-                set.force(min.getValue(), this);
-                setPassive();
-            }
-        } else if (setCard.getUB() > 0) {
-            if (!PropUtil.isDomIntersectEnv(min, set)) {
-                setCard.instantiateTo(0, this);
-            } else if (set.getLB().size() > 0) {
-                int m = min.getLB();
-                int k = set.getLB().min();
-                if (m > k) {
-                    setCard.instantiateTo(0, this);
+        }
+
+        if (!set.getUB().isEmpty()) {
+            int nextCard = setCard.nextValue(set.getLB().size());
+            if (nextCard > 0 && nextCard <= setCard.getUB()) {
+                int kerMin = set.getLB().isEmpty() || !setCard.contains(set.getLB().size()) ? Integer.MIN_VALUE : set.getLB().min();
+                int remove = PropUtil.getEnv(set, set.getUB().size() - nextCard);
+                remove = min.nextValue(remove);
+                if (kerMin < remove && (defaultValue < remove || setCard.getLB() > 0)) {
+                    min.updateUpperBound(remove - 1, this);
+                } else {
+                    while (remove <= min.getUB()) {
+                        if (remove != kerMin) {
+                            if (defaultValue != remove || setCard.getLB() > 0) {
+                                min.removeValue(remove, this);
+                            }
+                        }
+                        remove = min.nextValue(remove);
+                    }
                 }
             }
         }
@@ -112,23 +81,45 @@ public class PropSetMin extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        if (setCard.getLB() > 0) {
-            if (!PropUtil.isDomIntersectEnv(min, set)) {
-                return ESat.FALSE;
+        if (setCard.getLB() > 0 || !set.getLB().isEmpty() || !min.contains(defaultValue)) {
+            int kerMin = Integer.MIN_VALUE;
+            int index = set.getUB().size() - setCard.getLB();
+            if (index >= 0 && index < set.getUB().size()) {
+                kerMin = PropUtil.getEnv(set, index);
             }
-            if (set.getLB().size() > 0) {
-                int m = min.getLB();
-                int k = set.getLB().min();
-                if (m > k) {
+            if (!set.getLB().isEmpty()) {
+                kerMin = set.getLB().min();
+            }
+            if (kerMin != Integer.MIN_VALUE) {
+                int prev = min.previousValue(kerMin + 1);
+                int lb = min.getLB();
+                while (prev >= lb && !set.getUB().contains(prev)) {
+                    prev = min.previousValue(prev);
+                }
+                if (!set.getUB().contains(prev)) {
                     return ESat.FALSE;
                 }
-                int e = set.getUB().min();
-                if (min.isInstantiated() && m == e && m == k) {
+                if (min.isInstantiated() && kerMin == set.getUB().min()) {
                     return ESat.TRUE;
                 }
             }
+            if (!set.getUB().isEmpty()) {
+                int nextCard = setCard.getLB();
+                if (nextCard == 0) {
+                    nextCard = setCard.nextValue(nextCard);
+                }
+                if (nextCard > 0 && nextCard <= setCard.getUB()) {
+                    int remove = PropUtil.getEnv(set, set.getUB().size() - nextCard);
+                    if (min.previousValue(remove + 1) < min.getLB()) {
+                        return ESat.FALSE;
+                    }
+                }
+            }
         }
-        return setCard.isInstantiatedTo(0) ? ESat.TRUE : ESat.UNDEFINED;
+        if (setCard.getUB() == 0 && min.isInstantiated()) {
+            return ESat.eval(min.getValue() == defaultValue);
+        }
+        return ESat.UNDEFINED;
     }
 
     @Override
