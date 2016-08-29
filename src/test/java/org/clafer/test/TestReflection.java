@@ -73,7 +73,7 @@ public class TestReflection {
             }
             int lb = var.getCard().getLB();
             int ub = var.getCard().getUB();
-            if (kerSize >= lb && envSize <= ub) {
+            if (kerSize >= lb && envSize <= ub && var.getCard().getDomainSize() == ub - lb + 1) {
                 return pow2(envSize - kerSize);
             }
             int count = 0;
