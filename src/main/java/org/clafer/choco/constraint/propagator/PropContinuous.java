@@ -59,7 +59,7 @@ public class PropContinuous extends Propagator<Variable> {
     public void propagate(int evtmask) throws ContradictionException {
         int kerMax = 0;
         int kerMin = 0;
-        if (set.getLB().size() > 0) {
+        if (!set.getLB().isEmpty()) {
             ISetIterator setKer = set.getLB().iterator();
             assert setKer.hasNext();
             int cur = setKer.nextInt();
@@ -73,12 +73,7 @@ public class PropContinuous extends Propagator<Variable> {
             }
             kerMax = cur;
         }
-        final int kerMaxFinal = kerMax;
-        final int kerMinFinal = kerMin;
-        if (set.getUB().size() > 0) {
-            final int cardLb = card.getLB();
-            final int cardUb = card.getUB();
-
+        if (!set.getUB().isEmpty()) {
             int[] regionBounds = new int[2 * set.getUB().size()];
             int regions = iterateRange(set.getUB().iterator(), regionBounds);
             int survivingRegions = regions;
@@ -90,37 +85,48 @@ public class PropContinuous extends Propagator<Variable> {
 
                 assert !set.getUB().contains(low - 1);
                 assert containsRange(set.getUB(), low, high);
-                assert !set.getUB().contains(high + 1) : set + ", " + low + ", " + high;
+                assert !set.getUB().contains(high + 1);
 
                 int size = high - low + 1;
-                if (size < cardLb
-                        || (!set.getLB().isEmpty() && (kerMinFinal < low || kerMaxFinal > high))) {
+                if (card.previousValue(size + 1) <= 0
+                        || (!set.getLB().isEmpty() && (kerMin < low || kerMax > high))) {
                     for (int i = low; i <= high; i++) {
                         set.remove(i, this);
                     }
                     survivingRegions--;
                 } else {
-                    if (!set.getLB().isEmpty()) {
-                        for (int i = low; i <= kerMaxFinal - cardUb; i++) {
-                            boolean changed = set.remove(i, this);
-                            assert changed;
-                        }
-                        for (int i = high; i >= kerMinFinal + cardUb; i--) {
-                            boolean changed = set.remove(i, this);
-                            assert changed;
-                        }
-                    }
                     maxSize = Math.max(maxSize, size);
                 }
             }
 
             card.updateUpperBound(maxSize, this);
 
+            final int cardLb = card.getLB();
+            final int cardUb = card.getUB();
+
             if (survivingRegions == 1) {
                 int low = set.getUB().min();
                 int high = set.getUB().max();
-                for (int i = high - cardLb + 1; i < low + cardLb; i++) {
+                int start = high - cardLb + 1;
+                if (!set.getLB().isEmpty() && kerMin < start) {
+                    start = kerMin;
+                }
+                int end = low + cardLb - 1;
+                if (!set.getLB().isEmpty() && kerMax > end) {
+                    end = kerMax;
+                }
+                for (int i = start; i <= end; i++) {
                     set.force(i, this);
+                }
+                if (!set.getLB().isEmpty()) {
+                    for (int i = low; i <= end - cardUb; i++) {
+                        boolean changed = set.remove(i, this);
+                        assert changed;
+                    }
+                    for (int i = high; i >= start + cardUb; i--) {
+                        boolean changed = set.remove(i, this);
+                        assert changed;
+                    }
                 }
             }
         }
@@ -158,6 +164,9 @@ public class PropContinuous extends Propagator<Variable> {
 
             if (card.getLB() > maxRegionSize) {
                 return ESat.FALSE;
+            }
+            if (card.getUB() <= 1 && maxRegionSize == 1) {
+                return ESat.TRUE;
             }
         } else {
             if (!card.contains(0)) {
