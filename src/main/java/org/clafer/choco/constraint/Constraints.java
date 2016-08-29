@@ -74,6 +74,7 @@ import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSingleton;
 import org.clafer.choco.constraint.propagator.PropSingletonFilter;
+import org.clafer.choco.constraint.propagator.PropSubsetEqCard;
 import org.clafer.choco.constraint.propagator.PropTernary;
 import org.clafer.choco.constraint.propagator.PropTransitive;
 import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
@@ -444,8 +445,7 @@ public class Constraints {
     public static Constraint subsetEq(SetVar sub, IntVar subCard, SetVar sup, IntVar supCard) {
         return new Constraint("subsetEq",
                 new PropSubsetEq(sub, sup),
-                // Simple cardinality propagation.
-                lessThanEq(subCard, supCard));
+                new PropSubsetEqCard(sub, subCard, sup, supCard));
     }
 
     /**
