@@ -261,7 +261,7 @@ public class ConstraintQuickTest extends Suite {
 
                 Solver solver = model.getSolver();
                 TestUtil.randomizeStrategy(solver);
-                ESat entailed = TestUtil.isEntailed(constraint);
+                ESat entailed = constraint.isSatisfied();
                 if (ESat.FALSE.equals(entailed)) {
                     String initial = null;
                     for (Propagator<?> propagator : constraint.getPropagators()) {

@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Random;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.search.strategy.selectors.values.SetValueSelector;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
@@ -18,7 +16,6 @@ import org.chocosolver.solver.variables.CStringVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
-import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.domain.Domain;
@@ -46,19 +43,6 @@ public class TestUtil {
 
     private static final Random rand = new Random();
     private static int varCount = 0;
-
-    public static ESat isEntailed(Constraint constraint) {
-        boolean undefined = false;
-        for (Propagator<?> propagator : constraint.getPropagators()) {
-            switch (propagator.isEntailed()) {
-                case FALSE:
-                    return ESat.FALSE;
-                case UNDEFINED:
-                    undefined = true;
-            }
-        }
-        return undefined ? ESat.UNDEFINED : ESat.TRUE;
-    }
 
     public static Solver randomizeStrategy(Solver solver) {
         List<IntVar> intVars = new ArrayList<>();
