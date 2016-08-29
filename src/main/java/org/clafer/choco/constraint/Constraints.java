@@ -11,6 +11,7 @@ import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
 import org.chocosolver.solver.constraints.binary.PropEqualX_Y;
 import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
+import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualXY_C;
 import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
 import org.chocosolver.solver.constraints.binary.PropNotEqualX_Y;
 import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
@@ -26,6 +27,7 @@ import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
+import org.chocosolver.util.ESat;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
@@ -40,7 +42,6 @@ import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropElementArraySupport;
 import org.clafer.choco.constraint.propagator.PropElementValueSupport;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
-import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
 import org.clafer.choco.constraint.propagator.PropIntMemberSetCard;
@@ -275,12 +276,28 @@ public class Constraints {
      * {@code antecedent => consequent && !antecedent => alternative}
      */
     public static Constraint ifThenElse(final BoolVar antecedent, final BoolVar consequent, final BoolVar alternative) {
-        return new Constraint("ifThenElse", new PropIfThenElse(antecedent, consequent, alternative)) {
-            @Override
-            public Constraint makeOpposite() {
-                return ifThenElse(antecedent, consequent.not(), alternative.not());
-            }
-        };
+        return new Constraint("ifThenElse",
+                new PropGreaterOrEqualX_Y(new IntVar[]{consequent, antecedent}),
+                new PropGreaterOrEqualXY_C(new IntVar[]{antecedent, alternative}, 1)) {
+                    @Override
+                    public Constraint makeOpposite() {
+                        return ifThenElse(antecedent, consequent.not(), alternative.not());
+                    }
+
+                    @Override
+                    public ESat isSatisfied() {
+                        if (antecedent.isInstantiated()) {
+                            return antecedent.getValue() == 1 ? consequent.getBooleanValue() : alternative.getBooleanValue();
+                        }
+                        if (consequent.isInstantiatedTo(1) && alternative.isInstantiatedTo(1)) {
+                            return ESat.TRUE;
+                        }
+                        if (consequent.isInstantiatedTo(0) && alternative.isInstantiatedTo(0)) {
+                            return ESat.FALSE;
+                        }
+                        return ESat.UNDEFINED;
+                    }
+                };
     }
 
     public static Constraint ternary(BoolVar antecedent, IntVar result, IntVar consequent, IntVar alternative) {
