@@ -15,11 +15,13 @@ import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrModule;
+import org.clafer.ir.IrNot;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOr;
 import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrUtil;
+import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.add;
 import static org.clafer.ir.Irs.and;
 import static org.clafer.ir.Irs.equal;
@@ -80,6 +82,16 @@ public class Optimizer {
                     new Compare(implies.getAntecedent(), IrCompare.Op.LessThanEqual, implies.getConsequent()));
         }
         return Stream.empty();
+    }
+
+    private static Stream<Compare> moreCompares(IrIntExpr expr) {
+        if (expr instanceof IrNot) {
+            IrNot not = (IrNot) expr;
+            return Stream.of(
+                    new Compare(not.getExpr(), IrCompare.Op.Equal, Irs.Zero),
+                    new Compare(Irs.Zero, IrCompare.Op.Equal, not.getExpr()));
+        }
+        return compares(expr);
     }
 
     private static final IrRewriter<Void> optimizer = new IrRewriter<Void>() {
@@ -166,8 +178,8 @@ public class Optimizer {
             IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
             IrBoolExpr alternative = rewrite(ir.getAlternative(), a);
             Optional<IrBoolExpr> opt
-                    = compares(consequent).flatMap(l
-                            -> compares(alternative).map(r
+                    = moreCompares(consequent).flatMap(l
+                            -> moreCompares(alternative).map(r
                                     -> optimizeIfThenElseCompare(antecedent, l, r)))
                     .filter(Objects::nonNull)
                     .findFirst();
