@@ -1691,6 +1691,12 @@ public class AstCompiler {
             IrExpr right = compile(ast.getRight());
 
             if (getCommonSupertype(ast).arity() == 1) {
+                if (Util.pairwise(
+                        getUnionType(ast.getLeft()).stream().map(ProductType::getClaferType),
+                        getUnionType(ast.getRight()).stream().map(ProductType::getClaferType))
+                        .anyMatch(Pair.uncurry(AstUtil::isDisjoint))) {
+                    return unionDisjoint(asSet(left), asSet(right));
+                }
                 return union(asSet(left), asSet(right));
             }
 
@@ -2274,6 +2280,10 @@ public class AstCompiler {
 
     private Type getType(AstExpr expr) {
         return analysis.getType(expr);
+    }
+
+    private Set<ProductType> getUnionType(AstExpr expr) {
+        return analysis.getType(expr).getUnionType();
     }
 
     private ProductType getCommonSupertype(AstExpr expr) {
