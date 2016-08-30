@@ -1310,7 +1310,7 @@ public class AstCompiler {
                         return $intLeft;
                     }
                 }
-                return joinRelation(singleton($intLeft), rightArray, true);
+                return element(rightArray, $intLeft);
             } else if (left instanceof IrSetExpr) {
                 IrSetExpr $setLeft = (IrSetExpr) left;
                 return joinRelation($setLeft, rightArray, true);
