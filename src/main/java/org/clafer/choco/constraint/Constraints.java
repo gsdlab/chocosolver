@@ -39,6 +39,7 @@ import org.clafer.choco.constraint.propagator.PropContainsImpliesEqualCard2;
 import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropContinuousUnion;
 import org.clafer.choco.constraint.propagator.PropCountNotEqual;
+import org.clafer.choco.constraint.propagator.PropElement;
 import org.clafer.choco.constraint.propagator.PropElementArraySupport;
 import org.clafer.choco.constraint.propagator.PropElementValueSupport;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
@@ -957,8 +958,8 @@ public class Constraints {
         return new Constraint("element",
                 new org.chocosolver.solver.constraints.set.PropElement(index, array, 0, value),
                 new org.chocosolver.solver.constraints.set.PropElement(index, array, 0, value),
-                new PropElementV_fast(valueCard, arrayCards, index, 0, true),
-                new PropElementV_fast(valueCard, arrayCards, index, 0, true));
+                new PropElement(valueCard, arrayCards, index, 0),
+                new PropElement(valueCard, arrayCards, index, 0));
     }
 
     /**
