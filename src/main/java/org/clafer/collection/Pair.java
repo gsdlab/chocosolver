@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import org.clafer.common.Check;
 
 /**
@@ -159,6 +161,10 @@ public class Pair<A, B> implements Serializable {
         }
         assert i == pairs.length;
         return pairs;
+    }
+
+    public static <A, B> Predicate<Pair<A, B>> uncurry(BiPredicate<A, B> function) {
+        return p -> function.test(p.fst, p.snd);
     }
 
     @Override
