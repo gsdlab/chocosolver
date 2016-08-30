@@ -117,6 +117,6 @@ public class Type implements Iterable<ProductType> {
 
     @Override
     public String toString() {
-        return unionType.size() == 1 ? commonSupertype.toString() : unionType.toString();
+        return unionType.size() == 1 ? unionType.iterator().next().toString() : unionType.toString();
     }
 }
