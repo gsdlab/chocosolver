@@ -910,15 +910,9 @@ public class Coalescer {
                 }
             } else if (right instanceof IrElement) {
                 IrElement element = (IrElement) right;
-                TIntHashSet domain = new TIntHashSet(element.getIndex().getDomain().size());
-                PrimitiveIterator.OfInt iter = element.getIndex().getDomain().iterator();
-                while (iter.hasNext()) {
-                    int val = iter.next();
-                    if (left.intersects(element.getArray().getDomains()[val])) {
-                        domain.add(val);
-                    }
-                }
-                propagateInt(enumDomain(domain), element.getIndex());
+                Domain dom = element.getIndex().getDomain().retainAll(i
+                        -> left.intersects(element.getArray().getDomains()[i]));
+                propagateInt(dom, element.getIndex());
             } else if (right instanceof IrCount) {
                 IrCount count = (IrCount) right;
                 int value = count.getValue();
