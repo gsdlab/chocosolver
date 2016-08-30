@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.chocosolver.util.iterators.IntIterator;
+import org.clafer.collection.Pair;
 
 /**
  * Various static utility functions.
@@ -63,6 +64,10 @@ public class Util {
             permutation *= n - i;
         }
         return permutation;
+    }
+
+    public static <X> Stream<Pair<X, X>> pairwise(Stream<X> a, Stream<X> b) {
+        return a.flatMap(i -> b.map(j -> new Pair<>(i, j)));
     }
 
     /**
