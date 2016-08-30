@@ -5,6 +5,7 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.PrimitiveIterator;
 import java.util.Random;
+import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
 import org.clafer.common.Util;
 import org.clafer.test.RepeatRule;
@@ -41,6 +42,21 @@ public class DomainFuzzTest {
             set.add(randInt());
         }
         return set;
+    }
+
+    IntPredicate randPredicate() {
+        switch (random.nextInt(5)) {
+            case 0:
+                return x -> true;
+            case 1:
+                return x -> false;
+            case 2:
+                return x -> x > 0;
+            case 3:
+                return x -> x < 0;
+            default:
+                return x -> x % 2 == 0;
+        }
     }
 
     @Test
@@ -168,6 +184,36 @@ public class DomainFuzzTest {
 
         set.remove(insert);
         assertEquals(Domain.enumDomain(set), domain.remove(insert));
+    }
+
+    @Test
+    public void testRemoveAll() {
+        TIntSet set = randSet();
+        Domain domain = Domain.enumDomain(set);
+        IntPredicate predicate = randPredicate();
+
+        TIntIterator iter = set.iterator();
+        while (iter.hasNext()) {
+            if (predicate.test(iter.next())) {
+                iter.remove();
+            }
+        }
+        assertEquals(Domain.enumDomain(set), domain.removeAll(predicate));
+    }
+
+    @Test
+    public void testRetainAll() {
+        TIntSet set = randSet();
+        Domain domain = Domain.enumDomain(set);
+        IntPredicate predicate = randPredicate();
+
+        TIntIterator iter = set.iterator();
+        while (iter.hasNext()) {
+            if (!predicate.test(iter.next())) {
+                iter.remove();
+            }
+        }
+        assertEquals(Domain.enumDomain(set), domain.retainAll(predicate));
     }
 
     @Test

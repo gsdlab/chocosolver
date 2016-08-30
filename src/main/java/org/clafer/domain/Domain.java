@@ -9,6 +9,7 @@ import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import org.clafer.common.Util;
@@ -307,6 +308,38 @@ public class Domain {
      */
     public Domain remove(int value) {
         return insertOrRemove(false, value);
+    }
+
+    /**
+     * Remove all elements from this domain where the predicate evaluates to
+     * {@code true}.
+     *
+     * @param predicate
+     * @return a subset of this domain where the predicate evaluates to
+     * {@code false}.
+     */
+    public Domain removeAll(IntPredicate predicate) {
+        Domain remove = this;
+        for (int region = 0; region < bounds.length; region += 2) {
+            for (int i = bounds[region]; i < bounds[region + 1]; i++) {
+                if (predicate.test(i)) {
+                    remove = remove.remove(i);
+                }
+            }
+        }
+        return remove;
+    }
+
+    /**
+     * Retains all elements from this domain where the predicate evaluates to
+     * {@code true}.
+     *
+     * @param predicate
+     * @return a subset of this domain where the predicate evaluates to
+     * {@code true}.
+     */
+    public Domain retainAll(IntPredicate predicate) {
+        return removeAll(predicate.negate());
     }
 
     /**
