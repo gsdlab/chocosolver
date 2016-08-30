@@ -65,6 +65,7 @@ import org.clafer.ir.IrRegister;
 import org.clafer.ir.IrSelectN;
 import org.clafer.ir.IrSetArrayExpr;
 import org.clafer.ir.IrSetArrayVar;
+import org.clafer.ir.IrSetElement;
 import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetUnion;
@@ -956,6 +957,8 @@ public class Coalescer {
                     propagateSingleton(left, (IrSingleton) right);
                 } else if (right instanceof IrArrayToSet) {
                     propagateArrayToSet(left, (IrArrayToSet) right);
+                } else if (right instanceof IrSetElement) {
+                    propagateSetElement(left, (IrSetElement) right);
                 } else if (right instanceof IrJoinRelation) {
                     propagateJoinRelation(left, (IrJoinRelation) right);
                 } else if (right instanceof IrJoinFunction) {
@@ -1013,6 +1016,16 @@ public class Coalescer {
                                     -> propagateInt(constantDomain(val), index));
                 }
             }
+        }
+
+        private void propagateSetElement(PartialSet left, IrSetElement right) {
+            IrIntExpr index = right.getIndex();
+            IrSetArrayExpr array = right.getArray();
+            Domain dom = index.getDomain().retainAll(
+                    i -> (!left.isEnvMask() || array.getKers()[i].isSubsetOf(left.getEnv()))
+                    && (!left.isKerMask() || left.getKer().isSubsetOf(array.getEnvs()[i]))
+                    && (!left.isCardMask() || left.getCard().intersects(array.getCards()[i])));
+            propagateInt(dom, index);
         }
 
         private void propagateJoinRelation(PartialSet left, IrJoinRelation right) {
