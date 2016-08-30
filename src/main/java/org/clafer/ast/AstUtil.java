@@ -329,6 +329,14 @@ public class AstUtil {
                 && getSupers(from).contains((AstAbstractClafer) to));
     }
 
+    public static boolean intersects(AstClafer clafer1, AstClafer clafer2) {
+        return isAssignable(clafer1, clafer2) || isAssignable(clafer2, clafer1);
+    }
+
+    public static boolean isDisjoint(AstClafer clafer1, AstClafer clafer2) {
+        return !intersects(clafer1, clafer2);
+    }
+
     private static List<AstClafer> getUnionTypeHierarchy(
             List<AstClafer> typeHierarchy1, List<AstClafer> typeHierarchy2) {
         if (typeHierarchy1.size() > typeHierarchy2.size()) {
