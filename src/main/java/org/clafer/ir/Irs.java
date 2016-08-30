@@ -1768,6 +1768,11 @@ public class Irs {
 //        return new IrSetElement($array, index, env, ker, card);
 //    }
     public static IrSetExpr element(IrSetArrayExpr array, IrIntExpr index) {
+        Integer constant = IrUtil.getConstant(index);
+        if (constant != null) {
+            return get(array, constant);
+        }
+
         // TODO bound for other element calls
         PrimitiveIterator.OfInt iter = index.getDomain().boundBetween(0, array.length() - 1).iterator();
         assert iter.hasNext();
