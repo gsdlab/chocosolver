@@ -16,6 +16,7 @@ import java.util.OptionalInt;
 import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Triple;
 import org.clafer.common.UnsatisfiableException;
@@ -24,6 +25,7 @@ import org.clafer.domain.BoolDomain;
 import static org.clafer.domain.BoolDomain.FalseDomain;
 import static org.clafer.domain.BoolDomain.TrueDomain;
 import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.boundDomain;
 import static org.clafer.domain.Domains.constantDomain;
 import static org.clafer.domain.Domains.enumDomain;
@@ -484,10 +486,8 @@ public class Coalescer {
             IrSetExpr set = ir.getSet();
             Domain env = set.getEnv();
             Domain ker = set.getKer();
-            TIntHashSet trues = new TIntHashSet(ker.size());
-            TIntHashSet notFalses = new TIntHashSet(env.size());
-            env.transferTo(notFalses);
-            boolean changed = false;
+            Domain trues = Domains.enumDomain(IntStream.range(0, bools.length).filter(i -> IrUtil.isTrue(bools[i])));
+            Domain notFalses = env.removeAll(i -> i < 0 || i >= bools.length || IrUtil.isFalse(bools[i]));
             for (int i = 0; i < bools.length; i++) {
                 if (bools[i] instanceof IrBoolVar && !IrUtil.isConstant(bools[i])) {
                     if (!env.contains(i)) {
@@ -496,16 +496,8 @@ public class Coalescer {
                         intGraph.union((IrBoolVar) bools[i], True);
                     }
                 }
-                if (IrUtil.isTrue(bools[i])) {
-                    changed |= trues.add(i);
-                }
-                if (IrUtil.isFalse(bools[i])) {
-                    changed |= notFalses.remove(i);
-                }
             }
-            if (changed) {
-                propagateSet(new PartialSet(enumDomain(notFalses), enumDomain(trues), null), set);
-            }
+            propagateSet(new PartialSet(notFalses, trues, null), set);
             return null;
         }
 
@@ -514,7 +506,7 @@ public class Coalescer {
             IrIntExpr[] ints = ir.getInts();
             IrSetExpr[] sets = ir.getSets();
 
-            TIntSet kers = new TIntHashSet();
+            Domain kers = Domains.EmptyDomain;
 
             for (int i = 0; i < ints.length; i++) {
                 TIntSet domain = new TIntHashSet();
@@ -528,27 +520,22 @@ public class Coalescer {
             int lowCards = 0;
             int highCards = 0;
             for (IrSetExpr set : sets) {
-                set.getKer().transferTo(kers);
+                kers = kers.union(set.getKer());
                 lowCards += set.getCard().getLowBound();
                 highCards += set.getCard().getHighBound();
             }
             for (int i = 0; i < sets.length; i++) {
-                TIntSet env = new TIntHashSet();
-                TIntSet ker = new TIntHashSet();
-                for (int j = 0; j < ints.length; j++) {
-                    if (ints[j].getDomain().contains(i)) {
-                        env.add(j);
-                        if (ints[j].getDomain().isConstant()) {
-                            ker.add(j);
-                        }
-                    }
-                }
-                env.removeAll(kers);
-                sets[i].getKer().transferTo(env);
+                int ii = i;
+                Domain env = Domains.enumDomain(
+                        IntStream.range(0, ints.length)
+                        .filter(j -> ints[j].getDomain().contains(ii)));
+                Domain ker = env.retainAll(j -> ints[j].getDomain().isConstant());
+                env = env.difference(kers);
+                env = env.union(sets[i].getKer());
                 Domain card = boundDomain(
                         ints.length - highCards + sets[i].getCard().getHighBound(),
                         ints.length - lowCards + sets[i].getCard().getLowBound());
-                propagateSet(new PartialSet(enumDomain(env), enumDomain(ker), card), sets[i]);
+                propagateSet(new PartialSet(env, ker, card), sets[i]);
             }
             return null;
         }

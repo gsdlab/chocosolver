@@ -699,19 +699,6 @@ public class Domain {
         return StreamSupport.intStream(spliterator, false);
     }
 
-    /**
-     * Put the contents of this domain inside the collection.
-     *
-     * @param collection the collection
-     */
-    public void transferTo(TIntCollection collection) {
-        for (int region = 0; region < bounds.length; region += 2) {
-            for (int i = bounds[region]; i < bounds[region + 1]; i++) {
-                collection.add(i);
-            }
-        }
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Domain) {
