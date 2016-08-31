@@ -21,23 +21,19 @@ public class ArcConsistentCheck implements IMonitorDownBranch, IMonitorContradic
 
     @Override
     public void beforeDownBranch(boolean left) {
-        if (left) {
-            Variable[] vars = solver.getModel().getVars();
-            lastDecision.setLength(0);
-            lastDecision.append("Decision: ").append(solver.getDecisionPath().getLastDecision()).append('\n');
-            lastDecision.append("Variables: ");
-            for (Variable var : vars) {
-                lastDecision.append(var).append(' ');
-            }
-        } else {
-            lastDecision.setLength(0);
+        Variable[] vars = solver.getModel().getVars();
+        lastDecision.setLength(0);
+        lastDecision.append(left ? "Left" : "Right").append(" branch: ").append(solver.getDecisionPath().getLastDecision()).append('\n');
+        lastDecision.append("Variables: ");
+        for (Variable var : vars) {
+            lastDecision.append(var).append(' ');
         }
     }
 
     @Override
     public void onContradiction(ContradictionException cex) {
         if (lastDecision.length() > 0) {
-            throw new Error("Not arc consistent: " + "\n" + lastDecision + "\n" + cex);
+            throw new Error("Not arc consistent: " + "\n" + lastDecision + "\n" + cex, cex);
         }
     }
 }
