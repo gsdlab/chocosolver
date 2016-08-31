@@ -5,16 +5,10 @@ import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import java.util.Random;
 import org.chocosolver.solver.Cause;
-import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
-import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.exception.ContradictionException;
-import org.chocosolver.solver.propagation.IPropagationEngine;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
-import org.chocosolver.solver.variables.Variable;
-import org.chocosolver.solver.variables.events.IEventType;
-import org.chocosolver.solver.variables.events.PropagatorEventType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -590,51 +584,5 @@ public class PropUtilTest {
         int[] kerArray = ker.toArray();
         Arrays.sort(kerArray);
         return model.setVar(name, kerArray, envArray);
-    }
-
-    private static class DummyEngine implements IPropagationEngine {
-
-        @Override
-        public boolean isInitialized() {
-            return false;
-        }
-
-        @Override
-        public void propagate() throws ContradictionException {
-        }
-
-        @Override
-        public void delayedPropagation(Propagator propagator, PropagatorEventType type) throws ContradictionException {
-        }
-
-        @Override
-        public void flush() {
-        }
-
-        @Override
-        public void fails(ICause cause, Variable variable, String message) throws ContradictionException {
-            throw new ContradictionException().set(cause, variable, message);
-        }
-
-        @Override
-        public ContradictionException getContradictionException() {
-            return null;
-        }
-
-        @Override
-        public void clear() {
-        }
-
-        @Override
-        public void onVariableUpdate(Variable variable, IEventType type, ICause cause) {
-        }
-
-        @Override
-        public void onPropagatorExecution(Propagator propagator) {
-        }
-
-        @Override
-        public void desactivatePropagator(Propagator propagator) {
-        }
     }
 }
