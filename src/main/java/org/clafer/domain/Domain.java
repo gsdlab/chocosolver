@@ -24,6 +24,8 @@ import org.clafer.ir.IrException;
  */
 public class Domain {
 
+    public static final Domain EmptyDomain = new Domain();
+
     protected final int[] bounds;
 
     /**
@@ -75,6 +77,40 @@ public class Domain {
             bounds[regions++] = array[prev];
             bounds[regions++] = array[i - 1] + 1;
         }
+        if (regions < bounds.length) {
+            return new Domain(Arrays.copyOf(bounds, regions));
+        }
+        return new Domain(bounds);
+    }
+
+    public static Domain enumDomain(IntStream values) {
+        PrimitiveIterator.OfInt iter = values.sorted().iterator();
+        if (!iter.hasNext()) {
+            return EmptyDomain;
+        }
+        int[] bounds = new int[16];
+        int regions = 0;
+        int start = iter.nextInt();
+        int end = start;
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (i == end + 1) {
+                end = i;
+            } else {
+                if (regions == bounds.length) {
+                    bounds = Arrays.copyOf(bounds, 2 * bounds.length);
+                }
+                bounds[regions++] = start;
+                bounds[regions++] = end + 1;
+                start = i;
+                end = start;
+            }
+        }
+        if (regions == bounds.length) {
+            bounds = Arrays.copyOf(bounds, 2 + bounds.length);
+        }
+        bounds[regions++] = start;
+        bounds[regions++] = end + 1;
         if (regions < bounds.length) {
             return new Domain(Arrays.copyOf(bounds, regions));
         }
