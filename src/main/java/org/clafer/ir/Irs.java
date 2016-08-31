@@ -1527,6 +1527,10 @@ public class Irs {
         if (set.getCard().getHighBound() == 0) {
             return constant(defaultValue);
         }
+        if (set instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) set;
+            return singleton.getValue();
+        }
         Domain domain = set.getEnv();
         if (!set.getKer().isEmpty()) {
             domain = domain.boundLow(set.getKer().getHighBound());
@@ -1538,6 +1542,10 @@ public class Irs {
     public static IrIntExpr min(IrSetExpr set, int defaultValue) {
         if (set.getCard().getHighBound() == 0) {
             return constant(defaultValue);
+        }
+        if (set instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) set;
+            return singleton.getValue();
         }
         Domain domain = set.getEnv();
         if (!set.getKer().isEmpty()) {
@@ -1553,6 +1561,10 @@ public class Irs {
         }
         if (set.getCard().getHighBound() == 1) {
             return min(set, 0);
+        }
+        if (set instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) set;
+            return singleton.getValue();
         }
 
         int sum = set.getKer().stream().sum();
@@ -1822,6 +1834,11 @@ public class Irs {
             return union(to, injective);
         }
 
+        if (take instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) take;
+            return element(children, singleton.getValue());
+        }
+
         Domain takeEnv = take.getEnv();
         Domain takeKer = take.getKer();
 
@@ -1910,6 +1927,11 @@ public class Irs {
 
         if (isIdentityRelation($refs)) {
             return take;
+        }
+
+        if (take instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) take;
+            return singleton(element(refs, singleton.getValue()));
         }
 
         // Compute env
