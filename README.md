@@ -4,16 +4,18 @@
 
 ##### v0.4.4
 
-An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 3.3 constraint programming library. There are two ways to use the project:
+An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 4.0.0b constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
 
 The CLI is used by
 [ClaferIDE](https://github.com/gsdlab/ClaferIDE),
 [ClaferMooVisualizer](https://github.com/gsdlab/ClaferMooVisalizer), and [ClaferConfigurator](https://github.com/gsdlab/ClaferConfigurator).
 
+Note: the name "choco-solver" refers to the [Java library for Constraint Programming](http://choco-solver.org/), whereas "chocosolver" (without the "-") is the name of this project. We might change the name in the future to avoid confusion.
+
 ## Contributors
 
-* [Jimmy Liang](http://gsd.uwaterloo.ca/jliang), MSc. Candidate. Main developer.
+* [Jimmy Liang](http://gsd.uwaterloo.ca/jliang), Ph.D. Candidate. Main developer.
 * [Michal Antkiewicz](http://gsd.uwaterloo.ca/mantkiew), Research Engineer. Release Management, development, testing.
 * [Alexandr Murashkin](http://gsd.uwaterloo.ca/amurashk). CLI, stress testing.
 * [Jordan Ross](http://gsd.uwaterloo.ca/j25ross). Stress testing.
@@ -35,7 +37,7 @@ See [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
 
 ## Prerequisites
 
-* [Choco 3.3+](https://github.com/chocoteam/choco3), v3.3.3.
+* [Choco 4.0](https://github.com/chocoteam/choco-solver), v4.0.0.b.
 * [Java 8+](http://www.oracle.com/technetwork/java/javase/downloads/index.html), 64bit.
 * [Maven 3.2+](http://maven.apache.org/). Required for building the project.
 
