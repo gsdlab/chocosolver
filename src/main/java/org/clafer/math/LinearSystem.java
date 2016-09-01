@@ -331,7 +331,7 @@ public class LinearSystem {
                     }
                     addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
-                } else if (best.getSnd().compareTo(hb) == 0) {
+                } else if (best.getSnd().compareTo(hb) == 0 && best.getFst().size() < 10) {
                     if (best.getFst().add(equation)) {
                         addEquation(equation, positiveOccurrences, negativeOccurrences);
                         changed = true;
@@ -347,7 +347,7 @@ public class LinearSystem {
                     }
                     addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
-                } else if (best.getSnd().compareTo(lb) == 0) {
+                } else if (best.getSnd().compareTo(lb) == 0 && best.getFst().size() < 10) {
                     if (best.getFst().add(equation)) {
                         addEquation(equation, positiveOccurrences, negativeOccurrences);
                         changed = true;
