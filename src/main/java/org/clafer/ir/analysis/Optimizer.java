@@ -295,50 +295,51 @@ public class Optimizer {
         IrIntExpr right = compare.right;
         Domain domain = left.getDomain();
         Integer constant = IrUtil.getConstant(right);
-        if (domain.size() == 2 && constant != null) {
-            switch (op) {
-                case Equal:
-                    // Rewrite
-                    //     bool or int = 888
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) > (-3) - int
-                    //     asInt(bool) + int > (-3)
-                    if (domain.getHighBound() == constant.intValue()) {
-                        return greaterThan(add(antecedent, left),
-                                domain.getLowBound());
-                    }
-                    // Rewrite
-                    //     bool or int = -3
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) > int - 888
-                    if (domain.getLowBound() == constant.intValue()) {
-                        return greaterThan(antecedent,
-                                sub(left, domain.getHighBound()));
-                    }
-                    break;
-                case NotEqual:
-                    // Rewrite
-                    //     bool or int != 888
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) > int - 888
-                    if (domain.getHighBound() == constant.intValue()) {
-                        return greaterThan(antecedent,
-                                sub(left, domain.getHighBound()));
-                    }
-                    // Rewrite
-                    //     bool or int != -3
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) > (-3) - int
-                    //     asInt(bool) + int > (-3)
-                    if (domain.getLowBound() == constant.intValue()) {
-                        return greaterThan(add(antecedent, left),
-                                domain.getLowBound());
-                    }
-                    break;
+        if (constant != null) {
+            if (constant.equals(domain.getHighBound())) {
+                int span = constant - domain.getLowBound();
+                switch (op) {
+                    case Equal:
+                        if (domain.size() == 2) {
+                            // Optimize antecedent || (left == max) to
+                            // antecedent + left > min
+                            return greaterThan(add(antecedent, left), domain.getLowBound());
+                        }
+                        // Optimize antecedent || (left == max) to
+                        // left >= max - span * antecedent
+                        return greaterThanEqual(left, sub(constant, mul(span, antecedent, boundDomain(0, span))));
+                    case NotEqual:
+                        if (domain.size() == 2) {
+                            // Optimize antecedent || (left != max) to
+                            // antecedent > left - max
+                            return greaterThan(antecedent, sub(left, constant));
+                        }
+                        // Optimize antecedent || (left != max) to
+                        // left <= max - !antecedent
+                        return lessThanEqual(left, sub(constant, not(antecedent)));
+                }
+            } else if (constant.equals(left.getLowBound())) {
+                int span = left.getHighBound() - constant;
+                switch (op) {
+                    case Equal:
+                        if (domain.size() == 2) {
+                            // Optimize antecedent || (left == min) to
+                            // antecedent > left - max
+                            return greaterThan(antecedent, sub(left, domain.getHighBound()));
+                        }
+                        // Optimize antecedent || (left == min) to
+                        // left <= min + span * antecedent
+                        return lessThanEqual(left, add(constant, mul(span, antecedent, boundDomain(0, span))));
+                    case NotEqual:
+                        if (domain.size() == 2) {
+                            // Optimize antecedent || (left != min) to
+                            // antecedent + left > min
+                            return greaterThan(add(antecedent, left), constant);
+                        }
+                        // Optimize antecedent || (left != min) to
+                        // left >= min + !antecedent
+                        return greaterThanEqual(left, add(constant, not(antecedent)));
+                }
             }
         }
         return null;
@@ -443,7 +444,7 @@ public class Optimizer {
                         if (left.getDomain().size() == 2) {
                             // Optimize reify <=> (left != max) to
                             // left = max - span * reify.
-                            return equal(left, sub(left.getHighBound(), mul(span, reify, boundDomain(0, span))));
+                            return equal(left, sub(constant, mul(span, reify, boundDomain(0, span))));
                         }
                         // Optimize reify <=> (left != max) to
                         // (left <= max - reify) && (left >= max - span * reify).
@@ -468,7 +469,7 @@ public class Optimizer {
                         if (left.getDomain().size() == 2) {
                             // Optimize reify <=> (left != min) to
                             // left = min + span * reify.
-                            return equal(left, add(left.getLowBound(), mul(span, reify, boundDomain(0, span))));
+                            return equal(left, add(constant, mul(span, reify, boundDomain(0, span))));
                         }
                         // Optimize reify <=> (left != min) to
                         // (left >= min + reify) && (left <= min + span * reify).
