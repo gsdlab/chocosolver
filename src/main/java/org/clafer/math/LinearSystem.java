@@ -453,6 +453,7 @@ public class LinearSystem {
                                         new LinearFunction(newCoefficients, newVariables, Rational.Zero),
                                         LessThanEqual,
                                         a0.mul(bk.minus()).add(b0.mul(ak)));
+                                assert !newEquation.getVariableSet().contains(variable);
                                 BoolDomain entailed = newEquation.isEntailed();
                                 if (entailed.isUnknown()) {
                                     changed |= cost(newEquation, bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);

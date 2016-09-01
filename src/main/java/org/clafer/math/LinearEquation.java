@@ -1,5 +1,6 @@
 package org.clafer.math;
 
+import java.util.Set;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.domain.BoolDomain;
@@ -89,6 +90,10 @@ public class LinearEquation {
 
     public Variable[] getVariables() {
         return left.getVariables();
+    }
+
+    public Set<Variable> getVariableSet() {
+        return left.getVariableSet();
     }
 
     public LinearEquation replace(Variable variable, LinearFunction value) {
