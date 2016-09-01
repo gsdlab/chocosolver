@@ -62,6 +62,22 @@ public class InstanceClafer {
         return typedChildren.toArray(new InstanceClafer[typedChildren.size()]);
     }
 
+    public InstanceClafer getChild(AstConcreteClafer type) {
+        InstanceClafer typedChild = null;
+        for (InstanceClafer child : children) {
+            if (type.equals(child.getType())) {
+                if (typedChild != null) {
+                    throw new IllegalArgumentException("More than one child Clafer with type " + type);
+                }
+                typedChild = child;
+            }
+        }
+        if (typedChild == null) {
+            throw new IllegalArgumentException("No child Clafer with type " + type);
+        }
+        return typedChild;
+    }
+
     /**
      * Print solution to stdout.
      *
