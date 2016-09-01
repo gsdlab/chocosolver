@@ -419,16 +419,6 @@ public class Optimizer {
         return null;
     }
 
-    /**
-     * Optimize {@code reify <=> (left == max)} to
-     * {@code (left <= max - !reify) && (left >= max - span * !reify)} and
-     * optimize {@code reify <=> (left != max)} to
-     * {@code (left <= max - reify) && (left >= max - span * reify)} and
-     * optimize {@code reify <=> (left == min)} to
-     * {@code (left >= min + !reify) && (left <= min + span * !reify)} and
-     * optimize {@code reify <=> (left != min)} to
-     * {@code (left >= min + reify) && (left <= min + span * reify)}.
-     */
     private static IrBoolExpr optimizeIfOnlyIfCompare(IrBoolExpr reify, Compare compare) {
         IrIntExpr left = compare.left;
         IrCompare.Op op = compare.op;
@@ -439,10 +429,24 @@ public class Optimizer {
                 int span = constant - left.getLowBound();
                 switch (op) {
                     case Equal:
+                        if (left.getDomain().size() == 2) {
+                            // Optimize reify <=> (left == max) to
+                            // left = min + span * reify.
+                            return equal(left, add(left.getLowBound(), mul(span, reify, boundDomain(0, span))));
+                        }
+                        // Optimize reify <=> (left == max) to
+                        // (left <= max - !reify) && (left >= max - span * !reify).
                         return and(
                                 lessThanEqual(left, sub(constant, not(reify))),
                                 greaterThanEqual(left, sub(constant, mul(span, not(reify), boundDomain(0, span)))));
                     case NotEqual:
+                        if (left.getDomain().size() == 2) {
+                            // Optimize reify <=> (left != max) to
+                            // left = max - span * reify.
+                            return equal(left, sub(left.getHighBound(), mul(span, reify, boundDomain(0, span))));
+                        }
+                        // Optimize reify <=> (left != max) to
+                        // (left <= max - reify) && (left >= max - span * reify).
                         return and(
                                 lessThanEqual(left, sub(constant, reify)),
                                 greaterThanEqual(left, sub(constant, mul(span, reify, boundDomain(0, span)))));
@@ -451,9 +455,23 @@ public class Optimizer {
                 int span = left.getHighBound() - constant;
                 switch (op) {
                     case Equal:
+                        if (left.getDomain().size() == 2) {
+                            // Optimize reify <=> (left == min) to
+                            // left = max - span * reify.
+                            return equal(left, sub(left.getHighBound(), mul(span, reify, boundDomain(0, span))));
+                        }
+                        // Optimize reify <=> (left == min) to
+                        // (left >= min + !reify) && (left <= min + span * !reify).
                         return and(greaterThanEqual(left, add(constant, not(reify))),
                                 lessThanEqual(left, add(constant, mul(span, not(reify), boundDomain(0, span)))));
                     case NotEqual:
+                        if (left.getDomain().size() == 2) {
+                            // Optimize reify <=> (left != min) to
+                            // left = min + span * reify.
+                            return equal(left, add(left.getLowBound(), mul(span, reify, boundDomain(0, span))));
+                        }
+                        // Optimize reify <=> (left != min) to
+                        // (left >= min + reify) && (left <= min + span * reify).
                         return and(greaterThanEqual(left, add(constant, reify)),
                                 lessThanEqual(left, add(constant, mul(span, reify, boundDomain(0, span)))));
                 }
