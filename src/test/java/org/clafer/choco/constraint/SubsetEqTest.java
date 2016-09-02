@@ -69,13 +69,13 @@ public class SubsetEqTest {
     }
 
     @Check
-    public void check(TIntSet s1, TIntSet s2) {
-        assertTrue(s2.containsAll(s1));
+    public void check(TIntSet subset, TIntSet supset) {
+        assertTrue(supset.containsAll(subset));
     }
 
     @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
-    public Constraint setup(SetVar subset, SetVar superset) {
-        return Constraints.subsetEq(subset, subset.getCard(), superset, superset.getCard());
+    public Constraint setup(SetVar subset, SetVar supset) {
+        return Constraints.subsetEq(subset, subset.getCard(), supset, supset.getCard());
     }
 }

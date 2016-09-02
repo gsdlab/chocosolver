@@ -73,7 +73,23 @@ public class PropSubsetEqCard extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        // TODO
+        int maxIntersection = sizeOfIntersection(sub.getUB(), sup.getUB());
+        if (maxIntersection < subCard.getLB()) {
+            return ESat.FALSE;
+        }
+        int minIntersection = sizeOfIntersection(sub.getLB(), sup.getLB());
+        int needed = sub.getLB().size() - minIntersection;
+        if (sup.getLB().size() + needed > supCard.getUB()) {
+            return ESat.FALSE;
+        }
+        int intersection = sizeOfIntersection(sub.getUB(), sup.getLB());
+        int wastedChoice = sup.getLB().size() - intersection;
+        if (supCard.getUB() < subCard.getLB() + wastedChoice) {
+            return ESat.FALSE;
+        }
+        if (subCard.getLB() > supCard.getUB()) {
+            return ESat.FALSE;
+        }
         return ESat.TRUE;
     }
 }
