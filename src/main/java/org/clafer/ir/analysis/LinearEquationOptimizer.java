@@ -173,7 +173,7 @@ public class LinearEquationOptimizer {
                     new LinearEquation(lte, Op.LessThanEqual, lR.ceil(), false),
                     new LinearEquation(gte, Op.LessThanEqual, -gR.floor(), false)};
             case LessThanEqual:
-                return new LinearEquation[]{new LinearEquation(lte, Op.LessThanEqual, lR.ceil())};
+                return new LinearEquation[]{new LinearEquation(lte, Op.LessThanEqual, lR.ceil(), false),};
             default:
                 throw new IllegalStateException();
         }
