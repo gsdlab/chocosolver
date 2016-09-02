@@ -15,7 +15,12 @@ import java.lang.annotation.Target;
 public @interface ArcConsistent {
 
     /**
-     *
+     * @return {@code} true if isEntailed will return UNDEFINED if there exists
+     * a satisfying and unsatisfying complete solution, {@code false} otherwise
+     */
+    boolean entailed() default false;
+
+    /**
      * @return {@code true} if the opposite constraint is also arc-consistent,
      * {@code false} otherwise
      */

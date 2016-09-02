@@ -262,6 +262,7 @@ public class ConstraintQuickTest extends Suite {
                 Solver solver = model.getSolver();
                 TestUtil.randomizeStrategy(solver);
                 ESat entailed = constraint.isSatisfied();
+                ArcConsistent consistent = testMethod.getAnnotation(ArcConsistent.class);
                 if (ESat.FALSE.equals(entailed)) {
                     String initial = null;
                     for (Propagator<?> propagator : constraint.getPropagators()) {
@@ -284,6 +285,8 @@ public class ConstraintQuickTest extends Suite {
                     } while (solver.solve() && solutions++ < 10);
                 } else if (ESat.TRUE.equals(entailed)) {
                     fail("Expected at least one solution for " + constraint);
+                } else if (consistent != null && consistent.entailed()) {
+                    fail("Entailment is unknown and expected at least one solution for " + constraint);
                 }
             } catch (AssumptionViolatedException e) {
                 // Continue
