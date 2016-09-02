@@ -22,7 +22,6 @@ import static org.clafer.ir.Irs.element;
 import static org.clafer.ir.Irs.equality;
 import static org.clafer.ir.Irs.ifOnlyIf;
 import static org.clafer.ir.Irs.ifThenElse;
-import static org.clafer.ir.Irs.implies;
 import static org.clafer.ir.Irs.intChannel;
 import static org.clafer.ir.Irs.intersection;
 import static org.clafer.ir.Irs.inverse;
@@ -38,7 +37,6 @@ import static org.clafer.ir.Irs.minus;
 import static org.clafer.ir.Irs.mod;
 import static org.clafer.ir.Irs.mul;
 import static org.clafer.ir.Irs.not;
-import static org.clafer.ir.Irs.notImplies;
 import static org.clafer.ir.Irs.notMember;
 import static org.clafer.ir.Irs.offset;
 import static org.clafer.ir.Irs.one;
@@ -260,26 +258,6 @@ public abstract class IrRewriter<T>
         return changed(ir.getOperands(), operands)
                 ? or(operands)
                 : ir;
-    }
-
-    @Override
-    public IrBoolExpr visit(IrImplies ir, T a) {
-        IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
-        IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
-        return changed(ir.getAntecedent(), antecedent)
-                || changed(ir.getConsequent(), consequent)
-                        ? implies(antecedent, consequent)
-                        : ir;
-    }
-
-    @Override
-    public IrBoolExpr visit(IrNotImplies ir, T a) {
-        IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
-        IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
-        return changed(ir.getAntecedent(), antecedent)
-                || changed(ir.getConsequent(), consequent)
-                        ? notImplies(antecedent, consequent)
-                        : ir;
     }
 
     @Override

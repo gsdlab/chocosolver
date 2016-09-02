@@ -122,20 +122,6 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public Void visit(IrImplies ir, T a) {
-        traverse(ir.getAntecedent(), a);
-        traverse(ir.getConsequent(), a);
-        return null;
-    }
-
-    @Override
-    public Void visit(IrNotImplies ir, T a) {
-        traverse(ir.getAntecedent(), a);
-        traverse(ir.getConsequent(), a);
-        return null;
-    }
-
-    @Override
     public Void visit(IrIfThenElse ir, T a) {
         traverse(ir.getAntecedent(), a);
         traverse(ir.getConsequent(), a);

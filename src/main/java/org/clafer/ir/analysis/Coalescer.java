@@ -59,7 +59,6 @@ import org.clafer.ir.IrMember;
 import org.clafer.ir.IrMinus;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
-import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrPrefix;
@@ -87,7 +86,6 @@ import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.False;
-import static org.clafer.ir.Irs.One;
 import static org.clafer.ir.Irs.True;
 import static org.clafer.ir.Irs.Zero;
 import static org.clafer.ir.Irs.add;
@@ -353,13 +351,6 @@ public class Coalescer {
         @Override
         public Void visit(IrNot ir, Void a) {
             propagateInt(FalseDomain, ir.getExpr());
-            return null;
-        }
-
-        @Override
-        public Void visit(IrNotImplies ir, Void a) {
-            propagateEqual(ir.getAntecedent(), One);
-            propagateEqual(ir.getConsequent(), Zero);
             return null;
         }
 

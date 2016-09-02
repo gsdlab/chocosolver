@@ -48,7 +48,6 @@ import org.clafer.ir.IrElement;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIfThenElse;
-import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntArrayExpr;
 import org.clafer.ir.IrIntArrayExprVisitor;
 import org.clafer.ir.IrIntArrayVar;
@@ -69,7 +68,6 @@ import org.clafer.ir.IrMod;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import org.clafer.ir.IrNot;
-import org.clafer.ir.IrNotImplies;
 import org.clafer.ir.IrNotMember;
 import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOne;
@@ -112,6 +110,7 @@ import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.Irs;
+import static org.clafer.ir.Irs.not;
 import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
@@ -879,20 +878,12 @@ public class IrCompiler {
                     // delegate
                     return operands[0].accept(this, a);
                 case 2:
-                    return compileArithm(operands[0], Arithm.ADD, operands[1], Rel.GE, 1);
+                    return operands[1].isNegative()
+                            ? compileArithm(not(operands[1]), Rel.LE, operands[0])
+                            : compileArithm(not(operands[0]), Rel.LE, operands[1]);
                 default:
                     return Constraints.or(compileAsBoolVars(ir.getOperands()));
             }
-        }
-
-        @Override
-        public Object visit(IrImplies ir, BoolArg a) {
-            return compileArithm(ir.getAntecedent(), Rel.LE, ir.getConsequent());
-        }
-
-        @Override
-        public Object visit(IrNotImplies ir, BoolArg a) {
-            return compileArithm(ir.getAntecedent(), Rel.GT, ir.getConsequent());
         }
 
         @Override
@@ -1414,16 +1405,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrOr ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrImplies ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrNotImplies ir, IntVar a) {
             return compileBool(ir, a);
         }
 

@@ -11,7 +11,6 @@ import static org.clafer.ir.IrCompare.Op.Equal;
 import static org.clafer.ir.IrCompare.Op.NotEqual;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIfThenElse;
-import org.clafer.ir.IrImplies;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrLone;
 import org.clafer.ir.IrModule;
@@ -29,7 +28,6 @@ import static org.clafer.ir.Irs.greaterThan;
 import static org.clafer.ir.Irs.greaterThanEqual;
 import static org.clafer.ir.Irs.ifOnlyIf;
 import static org.clafer.ir.Irs.ifThenElse;
-import static org.clafer.ir.Irs.implies;
 import static org.clafer.ir.Irs.lessThanEqual;
 import static org.clafer.ir.Irs.lone;
 import static org.clafer.ir.Irs.mul;
@@ -71,15 +69,21 @@ public class Optimizer {
                     return Stream.of(
                             new Compare(compare.getLeft(), compare.getOp(), compare.getRight()));
             }
+        } else if (expr instanceof IrOr) {
+            IrOr or = (IrOr) expr;
+            if (or.getOperands().length == 2) {
+                IrBoolExpr left = or.getOperands()[0];
+                IrBoolExpr right = or.getOperands()[1];
+                return Stream.of(
+                        new Compare(not(left), IrCompare.Op.LessThanEqual, right),
+                        new Compare(not(right), IrCompare.Op.LessThanEqual, left)
+                );
+            }
         } else if (expr instanceof IrIfOnlyIf) {
             IrIfOnlyIf ifOnlyIf = (IrIfOnlyIf) expr;
             return Stream.of(
                     new Compare(ifOnlyIf.getLeft(), IrCompare.Op.Equal, ifOnlyIf.getRight()),
                     new Compare(ifOnlyIf.getRight(), IrCompare.Op.Equal, ifOnlyIf.getLeft()));
-        } else if (expr instanceof IrImplies) {
-            IrImplies implies = (IrImplies) expr;
-            return Stream.of(
-                    new Compare(implies.getAntecedent(), IrCompare.Op.LessThanEqual, implies.getConsequent()));
         }
         return Stream.empty();
     }
@@ -131,45 +135,6 @@ public class Optimizer {
             return changed(ir.getOperands(), operands)
                     ? or(operands)
                     : ir;
-        }
-
-        @Override
-        public IrBoolExpr visit(IrImplies ir, Void a) {
-            // Rewrite
-            //     !a => !b
-            // to
-            //     b => a
-            if (ir.getAntecedent().isNegative() && ir.getConsequent().isNegative()) {
-                return rewrite(implies(not(ir.getConsequent()), not(ir.getAntecedent())), a);
-            }
-            // Rewrite
-            //     !a => b
-            // to
-            //     a or b
-            if (ir.getAntecedent().isNegative()) {
-                return rewrite(or(not(ir.getAntecedent()), ir.getConsequent()), a);
-            }
-            // Rewrite
-            //     a => !b
-            // to
-            //     a + b <= 1
-            if (ir.getConsequent().isNegative()) {
-                return rewrite(lone(ir.getAntecedent(), not(ir.getConsequent())), a);
-            }
-            IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
-            IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
-
-            Optional<IrBoolExpr> opt
-                    = compares(consequent).map(c -> optimizeImplicationCompare(antecedent, c))
-                    .filter(Objects::nonNull)
-                    .findFirst();
-            if (opt.isPresent()) {
-                return opt.get();
-            }
-            return changed(ir.getAntecedent(), antecedent)
-                    || changed(ir.getConsequent(), consequent)
-                            ? implies(antecedent, consequent)
-                            : ir;
         }
 
         @Override
@@ -340,64 +305,6 @@ public class Optimizer {
                         // left >= min + !antecedent
                         return greaterThanEqual(left, add(constant, not(antecedent)));
                 }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Optimize {@code antecedent => (left `op` right)} where `op` is = or !=.
-     */
-    private static IrBoolExpr optimizeImplicationCompare(IrBoolExpr antecedent, Compare compare) {
-        IrIntExpr left = compare.left;
-        IrCompare.Op op = compare.op;
-        IrIntExpr right = compare.right;
-        Domain domain = left.getDomain();
-        Integer constant = IrUtil.getConstant(right);
-        if (domain.size() == 2 && constant != null) {
-            switch (op) {
-                case Equal:
-                    // Rewrite
-                    //     bool => int = 888
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) <= int - (-3)
-                    if (domain.getHighBound() == constant.intValue()) {
-                        return lessThanEqual(antecedent,
-                                sub(left, domain.getLowBound()));
-                    }
-                    // Rewrite
-                    //     bool => int = -3
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) <= 888 - int
-                    //     asInt(bool) + int <= 888
-                    if (domain.getLowBound() == constant.intValue()) {
-                        return lessThanEqual(add(antecedent, left),
-                                domain.getHighBound());
-                    }
-                    break;
-                case NotEqual:
-                    // Rewrite
-                    //     bool => int != 888
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) <= 888 - int
-                    //     asInt(bool) + int <= 888
-                    if (domain.getHighBound() == constant.intValue()) {
-                        return lessThanEqual(add(antecedent, left),
-                                domain.getHighBound());
-                    }
-                    // Rewrite
-                    //     bool => int != -3
-                    //         where dom(int) = {-3, 888}
-                    // to
-                    //     asInt(bool) <= int - (-3)
-                    if (domain.getLowBound() == constant.intValue()) {
-                        return lessThanEqual(antecedent,
-                                sub(left, domain.getLowBound()));
-                    }
-                    break;
             }
         }
         return null;

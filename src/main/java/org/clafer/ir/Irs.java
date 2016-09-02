@@ -198,48 +198,7 @@ public class Irs {
     }
 
     public static IrBoolExpr implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
-        if (antecedent.equals(consequent)) {
-            return True;
-        }
-        if (IrUtil.isTrue(antecedent)) {
-            return consequent;
-        }
-        if (IrUtil.isFalse(antecedent)) {
-            return True;
-        }
-        if (IrUtil.isTrue(consequent)) {
-            return True;
-        }
-        if (IrUtil.isFalse(consequent)) {
-            return not(antecedent);
-        }
-        if (consequent instanceof IrImplies) {
-            // a => (b => c) <=> !a or !b or c
-            IrImplies consequentImplies = (IrImplies) consequent;
-            return or(not(antecedent),
-                    not(consequentImplies.getAntecedent()),
-                    consequentImplies.getConsequent());
-        }
-        return new IrImplies(antecedent, consequent, TrueFalseDomain);
-    }
-
-    public static IrBoolExpr notImplies(IrBoolExpr antecedent, IrBoolExpr consequent) {
-        if (antecedent.equals(consequent)) {
-            return False;
-        }
-        if (IrUtil.isTrue(antecedent)) {
-            return not(consequent);
-        }
-        if (IrUtil.isFalse(antecedent)) {
-            return False;
-        }
-        if (IrUtil.isTrue(consequent)) {
-            return False;
-        }
-        if (IrUtil.isFalse(consequent)) {
-            return antecedent;
-        }
-        return new IrNotImplies(antecedent, consequent, TrueFalseDomain);
+        return or(not(antecedent), consequent);
     }
 
     public static IrBoolExpr ifThenElse(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolExpr alternative) {
