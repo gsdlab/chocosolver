@@ -28,7 +28,7 @@ public class OffsetTest {
         assertEquals(offsetSet, set2);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(@NoCard SetVar set1, @NoCard SetVar set2, int offset) {
         return set1.getModel().offSet(set1, set2, offset);

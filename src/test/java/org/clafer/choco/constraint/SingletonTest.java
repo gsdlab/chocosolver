@@ -41,7 +41,7 @@ public class SingletonTest {
         assertArrayEquals(new int[]{i}, s);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(IntVar i, SetVar s) {
         return Constraints.singleton(i, s, s.getCard());

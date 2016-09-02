@@ -44,7 +44,7 @@ public class LoneTest {
         assertTrue(Util.sum(bools) <= 1);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint quickTest(@NonEmpty BoolVar[] bools) {
         return Constraints.lone(bools);

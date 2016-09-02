@@ -73,7 +73,7 @@ public class SubsetEqTest {
         assertTrue(s2.containsAll(s1));
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(SetVar subset, SetVar superset) {
         return Constraints.subsetEq(subset, subset.getCard(), superset, superset.getCard());

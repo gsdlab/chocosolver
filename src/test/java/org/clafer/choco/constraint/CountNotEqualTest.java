@@ -43,7 +43,7 @@ public class CountNotEqualTest {
         assertEquals(count, sum);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(int value, IntVar[] array, IntVar count) {
         return Constraints.countNotEqual(value, array, count);

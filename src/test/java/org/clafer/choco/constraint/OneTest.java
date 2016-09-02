@@ -44,7 +44,7 @@ public class OneTest {
         assertEquals(1, Util.sum(bools));
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(@NonEmpty BoolVar[] bools) {
         return Constraints.one(bools);

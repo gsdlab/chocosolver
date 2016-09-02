@@ -50,8 +50,7 @@ public class SetTernaryNoCardTest {
         }
     }
 
-    @ArcConsistent
-    @Idempotent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint quickTest(
             BoolVar antecedent,

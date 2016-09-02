@@ -42,7 +42,7 @@ public class ContinuousTest {
         }
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(SetVar set) {
         return new Constraint("continuous", new PropContinuous(set, set.getCard()));

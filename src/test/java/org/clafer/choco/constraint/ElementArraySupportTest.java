@@ -32,7 +32,7 @@ public class ElementArraySupportTest {
         assertTrue(array[index + offset] == value || array[index + offset] == support);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(IntVar value, @NonEmpty IntVar[] array, IntVar index, int offset, int support) {
         return new Constraint("ElementArraySupport", new PropElementArraySupport(value, array, index, offset, support));

@@ -45,7 +45,7 @@ public class SetLowBoundTest {
         }
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(@NoCard SetVar set, IntVar bound) {
         return Constraints.lowBound(set, bound);

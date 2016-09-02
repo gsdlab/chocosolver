@@ -30,7 +30,7 @@ public class EqualXY_ZTest {
         assertEquals(x + y, sum);
     }
 
-    @ArcConsistent(opposite = true)
+    @ArcConsistent(entailed = true, opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(IntVar x, IntVar y, IntVar sum) {
         return Constraints.equalArcConsistent(x, y, sum);

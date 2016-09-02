@@ -35,7 +35,7 @@ public class TernaryTest {
         }
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint quickTest(BoolVar antecedent, IntVar result, IntVar consequent, IntVar alternative) {
         return Constraints.ternary(antecedent, result, consequent, alternative);

@@ -52,7 +52,7 @@ public class SortedSetTest {
         }
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(@NonEmpty SetVar[] sets, @NonEmpty IntVar[] bounds) {
         assumeTrue(sets.length == bounds.length);

@@ -41,7 +41,7 @@ public class SetEqualTest {
         assertArrayEquals(s1, s2);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(SetVar s1, SetVar s2) {
         return Constraints.equal(s1, s1.getCard(), s2, s2.getCard());

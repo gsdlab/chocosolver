@@ -32,7 +32,7 @@ public class ElementTest {
         assertEquals(value, array[index + offset]);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(IntVar value, @NonEmpty IntVar[] array, IntVar index, int offset) {
         return Constraints.element(value, array, index, offset);

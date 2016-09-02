@@ -43,7 +43,7 @@ public class SingletonFilterTest {
         assertArrayEquals(i == filter ? new int[]{} : new int[]{i}, s);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(IntVar i, SetVar s, int filter) {
         return Constraints.singletonFilter(i, s, s.getCard(), filter);

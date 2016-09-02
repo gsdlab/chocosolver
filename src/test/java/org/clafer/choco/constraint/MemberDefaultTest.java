@@ -55,7 +55,7 @@ public class MemberDefaultTest {
         }
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(IntVar element, SetVar set, int defaultValue) {
         return new Constraint("memberSupport", new PropIntMemberSetDefault(element, set, set.getCard(), defaultValue));
