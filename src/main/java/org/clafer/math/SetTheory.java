@@ -19,14 +19,14 @@ public class SetTheory {
     private final Set<Union> unions = new HashSet<>();
     private final Set<Subset> subsets = new HashSet<>();
 
-    public Equalable union(int... operands) {
+    public void union(int union, int[] operands) {
         switch (operands.length) {
             case 0:
                 throw new IllegalArgumentException();
             case 1:
-                return x -> equal(x, operands[0]);
+                equal(union, operands[0]);
             default:
-                return x -> unions.add(new Union(operands, x));
+                unions.add(new Union(union, operands));
         }
     }
 
@@ -56,7 +56,6 @@ public class SetTheory {
         do {
             changed = false;
             for (Union union : unions) {
-                int output = union.output;
                 int[] operands = union.operands;
                 Domain unionDomain = envs.get(operands[0]);
                 for (int i = 1; i < operands.length && unionDomain != null; i++) {
@@ -64,9 +63,9 @@ public class SetTheory {
                     unionDomain = next == null ? null : unionDomain.union(next);
                 }
                 if (unionDomain != null) {
-                    changed |= retainEnv(output, unionDomain);
+                    changed |= retainEnv(union.union, unionDomain);
                 }
-                unionDomain = envs.get(output);
+                unionDomain = envs.get(union.union);
                 if (unionDomain != null) {
                     for (int i = 0; i < operands.length; i++) {
                         changed |= retainEnv(operands[i], unionDomain);
@@ -84,48 +83,43 @@ public class SetTheory {
         return propagated;
     }
 
-    private boolean retainEnv(int var, Domain retain) {
-        Domain env = envs.get(var);
+    private boolean retainEnv(int v, Domain retain) {
+        Domain env = envs.get(v);
         if (env == null) {
-            envs.put(var, retain);
+            envs.put(v, retain);
             return true;
         }
         Domain intersection = env.intersection(retain);
         if (env.equals(intersection)) {
             return false;
         }
-        envs.put(var, intersection);
+        envs.put(v, intersection);
         return true;
-    }
-
-    public interface Equalable {
-
-        public void equalsTo(int var);
     }
 
     private static class Union {
 
+        private final int union;
         private final int[] operands;
-        private final int output;
 
-        public Union(int[] operands, int output) {
+        public Union(int union, int[] operands) {
+            this.union = union;
             this.operands = operands.clone();
             Arrays.sort(this.operands);
-            this.output = output;
         }
 
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof Union) {
                 Union other = (Union) obj;
-                return output == other.output && Arrays.equals(operands, other.operands);
+                return union == other.union && Arrays.equals(operands, other.operands);
             }
             return false;
         }
 
         @Override
         public int hashCode() {
-            return output ^ Arrays.hashCode(operands);
+            return union ^ Arrays.hashCode(operands);
         }
     }
 
@@ -163,7 +157,7 @@ public class SetTheory {
         }
         result.append("===UNION===\n");
         for (Union union : unions) {
-            result.append("  ").append(mapper.apply(union.output)).append(" = union(");
+            result.append("  ").append(mapper.apply(union.union)).append(" = union(");
             for (int i = 0; i < union.operands.length; i++) {
                 if (i > 0) {
                     result.append(", ");

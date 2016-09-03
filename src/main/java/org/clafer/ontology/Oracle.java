@@ -74,12 +74,12 @@ public class Oracle {
 
     private void unionEqual(int[] union1, int[] union2) {
         if (union1.length == 1) {
-            theory.union(union2).equalsTo(union1[0]);
+            theory.union(union1[0], union2);
         } else if (union2.length == 1) {
-            theory.union(union1).equalsTo(union2[0]);
+            theory.union(union2[0], union1);
         } else {
-            theory.union(union1).equalsTo(tempId);
-            theory.union(union2).equalsTo(tempId);
+            theory.union(tempId, union1);
+            theory.union(tempId, union2);
             tempId--;
         }
     }
@@ -93,10 +93,10 @@ public class Oracle {
         while (cur.length() > 1) {
             Path next = cur.dropPrefix(1);
             theory.
-                    union(aHas.from(next.getContext()).stream()
+                    union(idMap.getId(next),
+                            aHas.from(next.getContext()).stream()
                             .filter(x -> isGround(x, isA))
-                            .map(next::prepend).mapToInt(idMap::getId).toArray())
-                    .equalsTo(idMap.getId(next));
+                            .map(next::prepend).mapToInt(idMap::getId).toArray());
             cur = next;
         }
     }
@@ -121,9 +121,7 @@ public class Oracle {
      */
     public Domain getAssignment(Path path) {
         addPathConstraints(path);
-        theory
-                .union(idMap.getIds(groundPaths(path)))
-                .equalsTo(idMap.getId(path));
+        theory.union(idMap.getId(path), idMap.getIds(groundPaths(path)));
         theory.propagate();
         return theory.getEnv(idMap.getId(path));
     }

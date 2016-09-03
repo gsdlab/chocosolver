@@ -43,7 +43,7 @@ public class SetTheoryTest {
         theory.subset(2, Domains.boundDomain(3, 4));
         theory.subset(3, Domains.boundDomain(4, 6));
         theory.subset(4, Domains.boundDomain(0, 5));
-        theory.union(1, 2, 3).equalsTo(4);
+        theory.union(4, new int[]{1, 2, 3});
 
         assertTrue(theory.propagate());
         assertEquals(theory.getEnv(1), Domains.boundDomain(0, 1));
