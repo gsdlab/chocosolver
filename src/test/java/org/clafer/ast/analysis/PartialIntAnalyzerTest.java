@@ -305,7 +305,6 @@ public class PartialIntAnalyzerTest {
      * [ A = 0 | A = 1 ]
      * </pre>
      */
-    @Ignore
     @Test
     public void testOrKnown() {
         AstModel model = newModel();
@@ -317,7 +316,7 @@ public class PartialIntAnalyzerTest {
         Analysis analysis = analyze(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
 
         assertArrayEquals(new Domain[]{ZeroOneDomain}, analysis.getPartialInts(a.getRef()));
-        assertArrayEquals(new Domain[]{boundDomain(-2, 2)}, analysis.getPartialInts(b.getRef()));
+        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(b.getRef()));
     }
 
     /**

@@ -30,11 +30,11 @@ import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
 import org.clafer.collection.Either;
-import org.clafer.collection.Pair;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
 import org.clafer.ontology.Concept;
+import org.clafer.ontology.ConstraintDatabase;
 import org.clafer.ontology.KnowledgeDatabase;
 import org.clafer.ontology.Oracle;
 import org.clafer.ontology.Path;
@@ -210,46 +210,81 @@ public class PartialIntAnalyzer {
     }
 
     private void analyzeConstraint(AstBoolExpr expr, AstClafer context, Oracle oracle) {
-        analyzeExpr(expr, context, oracle).forEach(x -> addEquality(x.getFst(), x.getSnd(), context, oracle));
-    }
-
-    private void addEquality(Path var, Either<Domain, Path> value, AstClafer context, Oracle oracle) {
-        if (value.isLeft()) {
-            if (var instanceof LocalPath || analysis.getGlobalCard(context).getLow() > 0) {
-                if (oracle == null) {
-                    knowledgeDatabase.newAssignment(var, value.getLeft());
-                } else {
-                    oracle.newAssignment(var, value.getLeft());
-                }
+        Either<Conjunction, Disjunction> conjOrDisj = analyzeExpr(expr, context, oracle);
+        if (conjOrDisj.isLeft()) {
+            if (oracle == null) {
+                conjOrDisj.getLeft().paths.forEach(x -> addEquality(x, context, knowledgeDatabase));
+            } else {
+                conjOrDisj.getLeft().paths.forEach(x -> addEquality(x, context, oracle));
             }
         } else {
-            if (var instanceof LocalPath && value.getRight() instanceof LocalPath) {
-                knowledgeDatabase.newLocalEquality(var, value.getRight());
-            } else if (var instanceof LocalPath || value.getRight() instanceof LocalPath) {
-                Path localPath = var instanceof LocalPath ? var : value.getRight();
-                Path globalPath = var instanceof LocalPath ? value.getRight() : var;
+            addDisjunction(conjOrDisj.getRight(), context);
+        }
+    }
+
+    private void addDisjunction(Disjunction disj, AstClafer context) {
+        ConstraintDatabase[] disjunction = new ConstraintDatabase[disj.conjunctions.size()];
+        int i = 0;
+        for (Conjunction conjunction : disj.conjunctions) {
+            ConstraintDatabase database = KnowledgeDatabase.or();
+            conjunction.paths.forEach(x -> addEquality(x, context, database));
+            disjunction[i] = database;
+            i++;
+        }
+        assert i == disjunction.length;
+        knowledgeDatabase.newDisjunction(disjunction);
+    }
+
+    private void addEquality(Either<Subset, Equal> constraint, AstClafer context, Oracle oracle) {
+        if (constraint.isLeft()) {
+            Subset subset = constraint.getLeft();
+            Path sub = subset.sub;
+            Domain sup = subset.sup;
+            if (sub instanceof LocalPath || analysis.getGlobalCard(context).getLow() > 0) {
+                oracle.newAssignment(sub, sup);
+            }
+        }
+    }
+
+    private void addEquality(Either<Subset, Equal> constraint, AstClafer context, ConstraintDatabase constraintDatabase) {
+        if (constraint.isLeft()) {
+            Subset subset = constraint.getLeft();
+            Path sub = subset.sub;
+            Domain sup = subset.sup;
+            if (sub instanceof LocalPath || analysis.getGlobalCard(context).getLow() > 0) {
+                constraintDatabase.newAssignment(sub, sup);
+            }
+        } else {
+            Equal equal = constraint.getRight();
+            Path p1 = equal.p1;
+            Path p2 = equal.p2;
+            if (p1 instanceof LocalPath && p2 instanceof LocalPath) {
+                constraintDatabase.newLocalEquality(p1, p2);
+            } else if (p1 instanceof LocalPath || p2 instanceof LocalPath) {
+                Path localPath = p1 instanceof LocalPath ? p1 : p2;
+                Path globalPath = p1 instanceof LocalPath ? p2 : p1;
                 for (AstConcreteClafer sub : AstUtil.getConcreteSubs(asClafer(localPath.getContext()))) {
                     if (analysis.getGlobalCard(sub).getLow() > 0) {
-                        knowledgeDatabase.newLocalEquality(
+                        constraintDatabase.newLocalEquality(
                                 localPath.replaceContext(asConcept(sub)),
                                 globalPath);
                     }
                 }
             } else {
                 if (analysis.getGlobalCard(context).getLow() > 0) {
-                    knowledgeDatabase.newLocalEquality(var, value.getRight());
+                    constraintDatabase.newLocalEquality(p1, p2);
                 }
             }
         }
     }
 
-    private List<Pair<Path, Either<Domain, Path>>> analyzeExpr(
+    private Either<Conjunction, Disjunction> analyzeExpr(
             AstBoolExpr expr, AstClafer context, Oracle oracle) {
         if (expr instanceof AstSetTest) {
             AstSetTest compare = (AstSetTest) expr;
             switch (compare.getOp()) {
                 case Equal:
-                    List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>(2);
+                    List<Either<Subset, Equal>> paths = new ArrayList<>(2);
                     if (compare.getLeft() instanceof AstJoinRef) {
                         analyzeEqual((AstJoinRef) compare.getLeft(), compare.getRight(), context, oracle)
                                 .ifPresent(paths::add);
@@ -258,45 +293,48 @@ public class PartialIntAnalyzer {
                         analyzeEqual((AstJoinRef) compare.getRight(), compare.getLeft(), context, oracle)
                                 .ifPresent(paths::add);
                     }
-                    return paths;
+                    return Either.left(new Conjunction(paths));
             }
         } else if (expr instanceof AstBoolArithm) {
             AstBoolArithm boolArithm = (AstBoolArithm) expr;
             switch (boolArithm.getOp()) {
                 case And:
-                    List<Pair<Path, Either<Domain, Path>>> paths = new ArrayList<>();
+                    List<Either<Subset, Equal>> paths = new ArrayList<>();
                     for (AstBoolExpr operand : boolArithm.getOperands()) {
-                        paths.addAll(analyzeExpr(operand, context, oracle));
+                        Either<Conjunction, Disjunction> conjOrDisj = analyzeExpr(operand, context, oracle);
+                        if (conjOrDisj.isLeft()) {
+                            paths.addAll(conjOrDisj.getLeft().paths);
+                        }
                     }
-                    return paths;
+                    return Either.left(new Conjunction(paths));
                 case Or:
-//                        AstBoolExpr[] operands = boolArithm.getOperands();
-//                        List<Pair<Path, Domain>> paths = analyzeExpr(operands[0], context);
-//                        for (int i = 1; i < operands.length && !paths.isEmpty(); i++) {
-//                            List<Pair<Path, Domain>> disjunctionPaths = analyzeExpr(operands[i], context);
-//                            paths.removeIf(x -> disjunctionPaths.stream().map(Pair::getFst).noneMatch(x::equals));
-//                            disjunctionPaths.removeIf(x -> paths.stream().map(Pair::getFst).noneMatch(x::equals));
-//
-//                            paths.addAll(disjunctionPaths);
-//                        }
-//                        return paths;
-                }
+                    List<Conjunction> conjunctions = new ArrayList<>();
+                    for (AstBoolExpr operand : boolArithm.getOperands()) {
+                        Either<Conjunction, Disjunction> conjOrDisj = analyzeExpr(operand, context, oracle);
+                        if (conjOrDisj.isLeft()) {
+                            conjunctions.add(conjOrDisj.getLeft());
+                        } else {
+                            conjunctions.addAll(conjOrDisj.getRight().conjunctions);
+                        }
+                    }
+                    return Either.right(new Disjunction(conjunctions));
+            }
         }
-        return Collections.emptyList();
+        return Either.left(new Conjunction(Collections.emptyList()));
     }
 
-    private Optional<Pair<Path, Either<Domain, Path>>> analyzeEqual(
+    private Optional<Either<Subset, Equal>> analyzeEqual(
             AstJoinRef var, AstSetExpr value, AstClafer context, Oracle oracle) {
         Optional<Path> varPath = asPath(var.getDeref(), context);
         if (varPath.isPresent()) {
             Optional<Domain> valueDomain = asDomain(value, context, oracle);
             if (valueDomain.isPresent()) {
-                return Optional.of(new Pair<>(varPath.get(), Either.left(valueDomain.get())));
+                return Optional.of(Either.left(new Subset(varPath.get(), valueDomain.get())));
             }
             if (value instanceof AstJoinRef) {
                 Optional<Path> valuePath = asPath((AstJoinRef) value, context);
                 if (valuePath.isPresent()) {
-                    return Optional.of(new Pair<>(varPath.get(), Either.right(valuePath.get())));
+                    return Optional.of(Either.right(new Equal(varPath.get(), valuePath.get())));
                 }
             }
         }
@@ -394,6 +432,7 @@ public class PartialIntAnalyzer {
         int[] operands = new int[ast.getOperands().length];
         for (int i = 0; i < operands.length; i++) {
             Optional<Domain> domain = asDomain(ast.getOperands()[i], context, oracle);
+            // TODO handle none constants
             if (!domain.isPresent() || domain.get().size() != 1) {
                 return Optional.empty();
             }
@@ -467,6 +506,45 @@ public class PartialIntAnalyzer {
         @Override
         protected Path newPath(Concept... steps) {
             return new LocalPath(steps);
+        }
+    }
+
+    private static class Conjunction {
+
+        final List<Either<Subset, Equal>> paths;
+
+        Conjunction(List<Either<Subset, Equal>> paths) {
+            this.paths = paths;
+        }
+    }
+
+    private static class Disjunction {
+
+        final List<Conjunction> conjunctions;
+
+        public Disjunction(List<Conjunction> conjunctions) {
+            this.conjunctions = conjunctions;
+        }
+    }
+
+    private static class Subset {
+
+        final Path sub;
+        final Domain sup;
+
+        Subset(Path sub, Domain sup) {
+            this.sub = sub;
+            this.sup = sup;
+        }
+    }
+
+    private static class Equal {
+
+        final Path p1, p2;
+
+        Equal(Path p1, Path p2) {
+            this.p1 = p1;
+            this.p2 = p2;
         }
     }
 }
