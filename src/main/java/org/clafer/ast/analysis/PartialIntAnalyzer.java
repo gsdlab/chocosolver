@@ -21,6 +21,7 @@ import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstJoin;
 import org.clafer.ast.AstJoinRef;
+import org.clafer.ast.AstMinus;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
@@ -400,6 +401,9 @@ public class PartialIntAnalyzer {
         if (ast instanceof AstArithm) {
             return asDomain((AstArithm) ast, context, oracle);
         }
+        if (ast instanceof AstMinus) {
+            return asDomain((AstMinus) ast, context, oracle);
+        }
         if (ast instanceof AstUnion) {
             return asDomain((AstUnion) ast, context, oracle);
         }
@@ -462,6 +466,11 @@ public class PartialIntAnalyzer {
             default:
                 return Optional.empty();
         }
+    }
+
+    private Optional<Domain> asDomain(AstMinus ast, AstClafer context, Oracle oracle) {
+        Optional<Domain> left = asDomain(ast.getExpr(), context, oracle);
+        return left.map(Domain::minus);
     }
 
     private Optional<Domain> asDomain(AstUnion ast, AstClafer context, Oracle oracle) {
