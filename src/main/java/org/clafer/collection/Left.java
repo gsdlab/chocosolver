@@ -55,6 +55,6 @@ public class Left<A, B> extends Either<A, B> {
 
     @Override
     public String toString() {
-        return "Left" + value;
+        return "Left " + value;
     }
 }
