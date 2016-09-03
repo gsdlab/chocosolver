@@ -3,9 +3,8 @@ package org.clafer.math;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.IntFunction;
 import org.clafer.domain.Domain;
 
@@ -13,69 +12,55 @@ import org.clafer.domain.Domain;
  *
  * @author jimmy
  */
-public class SetTheory {
+public class SetTheory extends SetEnvironment {
 
-    private final TIntObjectMap<Domain> envs = new TIntObjectHashMap<>();
-    private final Set<Union> unions = new HashSet<>();
-    private final Set<Subset> subsets = new HashSet<>();
-
-    public void union(int union, int[] operands) {
-        switch (operands.length) {
-            case 0:
-                throw new IllegalArgumentException();
-            case 1:
-                equal(union, operands[0]);
-            default:
-                unions.add(new Union(union, operands));
-        }
-    }
-
-    public void equal(int v1, int v2) {
-        subset(v1, v2);
-        subset(v2, v1);
-    }
-
-    public void subset(int sub, int sup) {
-        if (sub != sup) {
-            subsets.add(new Subset(sub, sup));
-        }
-    }
-
-    public void subset(int sub, Domain domain) {
-        Domain prev = envs.get(sub);
-        envs.put(sub, prev == null ? domain : prev.intersection(domain));
-    }
+    private final BaseDomainMap envs = new BaseDomainMap();
+    private final List<SetEnvironment[]> constructiveDisjunctions = new ArrayList<>();
 
     public Domain getEnv(int v) {
         return envs.get(v);
+    }
+
+    public void constructiveDisjunction(SetEnvironment... disjunction) {
+        if (disjunction.length <= 1) {
+            throw new IllegalArgumentException();
+        }
+        constructiveDisjunctions.add(disjunction);
     }
 
     public boolean propagate() {
         boolean propagated = false;
         boolean changed;
         do {
-            changed = false;
-            for (Union union : unions) {
-                int[] operands = union.operands;
-                Domain unionDomain = envs.get(operands[0]);
-                for (int i = 1; i < operands.length && unionDomain != null; i++) {
-                    Domain next = envs.get(operands[i]);
-                    unionDomain = next == null ? null : unionDomain.union(next);
+            changed = propagate(envs, this);
+            // Handle the constructive conjunctions.
+            for (SetEnvironment[] constructiveDisjunction : constructiveDisjunctions) {
+                assert constructiveDisjunction.length > 0;
+                // The alternate disjunctions.
+                SubDomainMap[] disjunction = new SubDomainMap[constructiveDisjunction.length];
+                int i = 0;
+                for (SetEnvironment conjunction : constructiveDisjunction) {
+                    SubDomainMap conjunctionEnv = new SubDomainMap(envs);
+                    propagate(conjunctionEnv, conjunction, this);
+                    disjunction[i++] = conjunctionEnv;
                 }
-                if (unionDomain != null) {
-                    changed |= retainEnv(union.union, unionDomain);
-                }
-                unionDomain = envs.get(union.union);
-                if (unionDomain != null) {
-                    for (int i = 0; i < operands.length; i++) {
-                        changed |= retainEnv(operands[i], unionDomain);
+                assert i == disjunction.length;
+
+                // Merge the alternate disjunctions by union.
+                TIntObjectIterator<Domain> iterator = disjunction[0].map.iterator();
+                while (iterator.hasNext()) {
+                    iterator.advance();
+
+                    int key = iterator.key();
+                    Domain union = iterator.value();
+                    for (int j = 1; j < disjunction.length && union != null; j++) {
+                        Domain domain = disjunction[j].get(key);
+                        union = domain == null ? null : union.union(domain);
                     }
-                }
-            }
-            for (Subset subset : subsets) {
-                Domain supEnv = envs.get(subset.sup);
-                if (supEnv != null) {
-                    changed |= retainEnv(subset.sub, supEnv);
+                    // Merge back into the main environment by intersection.
+                    if (union != null) {
+                        changed |= envs.put(key, union);
+                    }
                 }
             }
             propagated |= changed;
@@ -83,75 +68,50 @@ public class SetTheory {
         return propagated;
     }
 
-    private boolean retainEnv(int v, Domain retain) {
-        Domain env = envs.get(v);
-        if (env == null) {
-            envs.put(v, retain);
-            return true;
-        }
-        Domain intersection = env.intersection(retain);
-        if (env.equals(intersection)) {
-            return false;
-        }
-        envs.put(v, intersection);
-        return true;
-    }
-
-    private static class Union {
-
-        private final int union;
-        private final int[] operands;
-
-        public Union(int union, int[] operands) {
-            this.union = union;
-            this.operands = operands.clone();
-            Arrays.sort(this.operands);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof Union) {
-                Union other = (Union) obj;
-                return union == other.union && Arrays.equals(operands, other.operands);
+    private static boolean propagate(DomainMap map, SetEnvironment... environments) {
+        boolean propagated = false;
+        for (SetEnvironment environment : environments) {
+            for (SubsetDomain subset : environment.subsetDomains) {
+                propagated |= map.put(subset.sub, subset.sup);
             }
-            return false;
         }
-
-        @Override
-        public int hashCode() {
-            return union ^ Arrays.hashCode(operands);
-        }
-    }
-
-    private static class Subset {
-
-        private final int sub;
-        private final int sup;
-
-        public Subset(int sub, int sup) {
-            this.sub = sub;
-            this.sup = sup;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof Subset) {
-                Subset other = (Subset) obj;
-                return sub == other.sub && sup == other.sup;
+        boolean changed;
+        do {
+            changed = false;
+            for (SetEnvironment environment : environments) {
+                for (Subset subset : environment.subsets) {
+                    Domain supEnv = map.get(subset.sup);
+                    if (supEnv != null) {
+                        changed |= map.put(subset.sub, supEnv);
+                    }
+                }
+                for (Union union : environment.unions) {
+                    int[] operands = union.operands;
+                    Domain unionDomain = map.get(operands[0]);
+                    for (int i = 1; i < operands.length && unionDomain != null; i++) {
+                        Domain next = map.get(operands[i]);
+                        unionDomain = next == null ? null : unionDomain.union(next);
+                    }
+                    if (unionDomain != null) {
+                        changed |= map.put(union.union, unionDomain);
+                    }
+                    unionDomain = map.get(union.union);
+                    if (unionDomain != null) {
+                        for (int i = 0; i < operands.length; i++) {
+                            changed |= map.put(operands[i], unionDomain);
+                        }
+                    }
+                }
             }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return sub ^ sup;
-        }
+            propagated |= changed;
+        } while (changed);
+        return propagated;
     }
 
     public String toString(IntFunction<Object> mapper) {
         StringBuilder result = new StringBuilder();
         result.append("===ENV===\n");
-        for (TIntObjectIterator iter = envs.iterator(); iter.hasNext();) {
+        for (TIntObjectIterator iter = envs.map.iterator(); iter.hasNext();) {
             iter.advance();
             result.append("  ").append(mapper.apply(iter.key())).append(" subset of ").append(iter.value()).append('\n');
         }
@@ -171,5 +131,72 @@ public class SetTheory {
             result.append("  ").append(mapper.apply(subset.sub)).append(" subset of ").append(mapper.apply(subset.sup)).append('\n');
         }
         return result.toString();
+    }
+
+    public static SetEnvironment or() {
+        return new SetEnvironment();
+    }
+
+    private static interface DomainMap {
+
+        Domain get(int v);
+
+        boolean put(int v, Domain domain);
+    }
+
+    private static class BaseDomainMap implements DomainMap {
+
+        final TIntObjectMap<Domain> map = new TIntObjectHashMap<>();
+
+        @Override
+        public Domain get(int v) {
+            return map.get(v);
+        }
+
+        @Override
+        public boolean put(int v, Domain domain) {
+            Domain prev = get(v);
+            if (prev == null) {
+                map.put(v, domain);
+                return true;
+            }
+            Domain intersection = prev.intersection(domain);
+            if (prev.equals(intersection)) {
+                return false;
+            }
+            map.put(v, intersection);
+            return true;
+        }
+    }
+
+    private static class SubDomainMap implements DomainMap {
+
+        final BaseDomainMap baseMap;
+        final TIntObjectMap<Domain> map = new TIntObjectHashMap<>();
+
+        SubDomainMap(BaseDomainMap baseMap) {
+            this.baseMap = baseMap;
+        }
+
+        @Override
+        public Domain get(int v) {
+            Domain domain = map.get(v);
+            return domain == null ? baseMap.get(v) : domain;
+        }
+
+        @Override
+        public boolean put(int v, Domain domain) {
+            Domain prev = get(v);
+            if (prev == null) {
+                map.put(v, domain);
+                return true;
+            }
+            Domain intersection = prev.intersection(domain);
+            if (prev.equals(intersection)) {
+                return false;
+            }
+            map.put(v, intersection);
+            return true;
+        }
     }
 }
