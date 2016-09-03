@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.clafer.domain.Domain;
+import org.clafer.math.SetEnvironment;
 import org.clafer.math.SetTheory;
 
 /**
@@ -28,14 +29,27 @@ public class Oracle {
     public Oracle(
             Relation<Concept> isA,
             Relation<Concept> hasA,
-            Map<Path, Domain> assignments,
-            Relation<Path> equalities,
-            Relation<Path> localEqualities) {
+            ConstraintDatabase constraints,
+            List<ConstraintDatabase[]> disjunctions) {
         this.isA = isA.transitiveClosureWithoutCycles();
         this.hasA = this.isA.compose(hasA);
         this.aHas = this.isA.compose(this.hasA.inverse());
 
-        for (Entry<Path, Domain> assignment : assignments.entrySet()) {
+        compile(constraints, theory);
+        for (ConstraintDatabase[] disjunction : disjunctions) {
+            SetEnvironment[] ors = new SetEnvironment[disjunction.length];
+            for (int i = 0; i < disjunction.length; i++) {
+                ors[i] = SetTheory.or();
+                compile(disjunction[i], ors[i]);
+            }
+            theory.constructiveDisjunction(ors);
+        }
+
+        new ArrayList<>(idMap.keySet()).forEach(this::addPathConstraints);
+    }
+
+    private void compile(ConstraintDatabase database, SetEnvironment theory) {
+        for (Entry<Path, Domain> assignment : database.assignments.entrySet()) {
             Path path = assignment.getKey();
             Domain value = assignment.getValue();
             for (Path groundPath : groundPaths(path)) {
@@ -43,17 +57,17 @@ public class Oracle {
             }
         }
 
-        for (Entry<Path, Set<Path>> equality1 : equalities.entrySet()) {
+        for (Entry<Path, Set<Path>> equality1 : database.equalities.entrySet()) {
             Path path1 = equality1.getKey();
             List<Path> groundPaths1 = groundPaths(path1);
             int[] groundPaths1Id = idMap.getIds(groundPaths1);
             for (Path path2 : equality1.getValue()) {
                 int[] groundPaths2Id = idMap.getIds(groundPaths(path2));
-                unionEqual(groundPaths1Id, groundPaths2Id);
+                unionEqual(theory, groundPaths1Id, groundPaths2Id);
             }
         }
 
-        for (Entry<Path, Set<Path>> equality1 : localEqualities.entrySet()) {
+        for (Entry<Path, Set<Path>> equality1 : database.localEqualities.entrySet()) {
             Path path1 = equality1.getKey();
             List<Path> groundPaths1 = groundPaths(path1);
             Map<Concept, List<Path>> groundPathsMap1
@@ -64,15 +78,14 @@ public class Oracle {
                 for (Concept concept : groundPathsMap1.keySet()) {
                     int[] groundPaths1Id = idMap.getIds(groundPathsMap1.get(concept));
                     int[] groundPaths2Id = idMap.getIds(groundPathsMap2.get(concept));
-                    unionEqual(groundPaths1Id, groundPaths2Id);
+                    unionEqual(theory, groundPaths1Id, groundPaths2Id);
                 }
             }
         }
 
-        new ArrayList<>(idMap.keySet()).forEach(this::addPathConstraints);
     }
 
-    private void unionEqual(int[] union1, int[] union2) {
+    private void unionEqual(SetEnvironment theory, int[] union1, int[] union2) {
         if (union1.length == 1) {
             theory.union(union1[0], union2);
         } else if (union2.length == 1) {

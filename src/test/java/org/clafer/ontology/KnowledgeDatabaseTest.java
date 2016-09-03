@@ -1,6 +1,8 @@
 package org.clafer.ontology;
 
+import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
+import static org.clafer.ontology.KnowledgeDatabase.or;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -575,5 +577,41 @@ public class KnowledgeDatabaseTest {
         assertEquals(Domains.enumDomain(2), o.getAssignment(bird, localWeight));
         assertEquals(Domains.enumDomain(0, 1), o.getAssignment(mammal, globalAge));
         assertEquals(Domains.enumDomain(0, 1), o.getAssignment(bird, globalAge));
+    }
+
+    @Test
+    public void testDisjunction() {
+        KnowledgeDatabase db = new KnowledgeDatabase();
+        Concept animal = db.newConcept("Animal");
+
+        db.newDisjunction(
+                or().newAssignment(new Path(animal), Domains.ZeroDomain),
+                or().newAssignment(new Path(animal), Domains.OneDomain));
+
+        Oracle o = db.oracle();
+
+        assertEquals(Domains.enumDomain(0, 1), o.getAssignment(animal));
+    }
+
+    @Test
+    public void testDisjunctionSubIsA() {
+        KnowledgeDatabase db = new KnowledgeDatabase();
+        Concept animal = db.newConcept("Animal");
+        Concept balloon = db.newConcept("Ballon");
+        Concept cost = db.newConcept("Cost");
+
+        db.newHasA(animal, cost);
+        db.newHasA(balloon, cost);
+
+        db.newDisjunction(
+                or().newAssignment(new Path(cost), Domains.boundDomain(0, 10)),
+                or().newAssignment(new Path(animal, cost), Domains.boundDomain(6, 12))
+                .newAssignment(new Path(balloon, cost), Domain.boundDomain(1, 4)));
+
+        Oracle o = db.oracle();
+
+        assertEquals(Domains.boundDomain(0, 12), o.getAssignment(cost));
+        assertEquals(Domains.boundDomain(0, 12), o.getAssignment(animal, cost));
+        assertEquals(Domains.boundDomain(0, 10), o.getAssignment(balloon, cost));
     }
 }

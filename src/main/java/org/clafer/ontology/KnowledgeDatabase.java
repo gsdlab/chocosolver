@@ -1,22 +1,18 @@
 package org.clafer.ontology;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.clafer.domain.Domain;
-import org.clafer.domain.Domains;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Knowledge database containing facts of is-a and has-a relationships.
  *
  * @author jimmy
  */
-public class KnowledgeDatabase {
+public class KnowledgeDatabase extends ConstraintDatabase {
 
     private final Relation<Concept> isA = new Relation<>();
     private final Relation<Concept> hasA = new Relation<>();
-    private final Map<Path, Domain> assignments = new HashMap<>();
-    private final Relation<Path> equalities = new Relation<>();
-    private final Relation<Path> localEqualities = new Relation<>();
+    private final List<ConstraintDatabase[]> disjunctions = new ArrayList<>();
 
     public Concept newConcept(String name) {
         Concept concept = new Concept(name);
@@ -32,25 +28,18 @@ public class KnowledgeDatabase {
         hasA.add(parent, child);
     }
 
-    public void newAssignment(Path path, int value) {
-        newAssignment(path, Domains.constantDomain(value));
+    public void newDisjunction(ConstraintDatabase... disjunction) {
+        if (disjunction.length <= 1) {
+            throw new IllegalArgumentException();
+        }
+        this.disjunctions.add(disjunction);
     }
 
-    public void newAssignment(Path path, Domain value) {
-        assignments.merge(path, value, Domain::intersection);
-    }
-
-    public void newEquality(Path path1, Path path2) {
-        equalities.add(path1, path2);
-        equalities.add(path2, path1);
-    }
-
-    public void newLocalEquality(Path path1, Path path2) {
-        localEqualities.add(path1, path2);
-        localEqualities.add(path2, path1);
+    public static ConstraintDatabase or() {
+        return new ConstraintDatabase();
     }
 
     public Oracle oracle() {
-        return new Oracle(isA, hasA, assignments, equalities, localEqualities);
+        return new Oracle(isA, hasA, this, disjunctions);
     }
 }
