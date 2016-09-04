@@ -98,7 +98,7 @@ public class ClaferCompiler {
         if (clafer.hasRef()) {
             AstRef ref = clafer.getRef();
             if (ref.getTargetType() instanceof AstStringClafer) {
-                for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref)) {
+                for (IrStringVar stringVar : map.getAstSolution().getRefStrings(ref.getSourceType())) {
                     Either<Integer, IntVar> lengthVar = map.getIrSolution().getVar(stringVar.getLengthVar());
                     if (lengthVar.isRight()) {
                         assert !lengthVar.getRight().isInstantiated();
@@ -113,7 +113,7 @@ public class ClaferCompiler {
                     }
                 }
             } else {
-                for (IrIntVar intVar : map.getAstSolution().getRefVars(ref)) {
+                for (IrIntVar intVar : map.getAstSolution().getRefVars(ref.getSourceType())) {
                     Either<Integer, IntVar> var = map.getIrSolution().getVar(intVar);
                     if (var.isRight()) {
                         assert !var.getRight().isInstantiated();

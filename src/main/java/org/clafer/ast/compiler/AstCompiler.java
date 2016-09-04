@@ -635,7 +635,7 @@ public class AstCompiler {
                     breakableRefIds[i] = analysis.isBreakableRefId(ref, i + refOffset);
                     if (ref.getTargetType() instanceof AstStringClafer) {
                         childIndex.addAll(Arrays.asList(IrUtil.pad(
-                                refStrings.get(ref)[i + refOffset].getCharVars(),
+                                refStrings.get(clafer)[i].getCharVars(),
                                 analysis.getScope().getStringLength())));
                         if (ref.isUnique()) {
                             childIndex.add(members[i]);
@@ -646,7 +646,7 @@ public class AstCompiler {
                         childIndex.add(
                                 breakableRefIds[i]
                                         // The id of the target is the weight.
-                                        ? minus(refPointers.get(ref)[i + refOffset])
+                                        ? minus(refPointers.get(clafer)[i])
                                         // If analysis says that this id does not need breaking
                                         // then give it a constant weight. Any constant is fine.
                                         : Zero);
@@ -655,7 +655,7 @@ public class AstCompiler {
                 if (analysis.isInheritedBreakableTarget(clafer)) {
                     for (Pair<AstClafer, Integer> hierarchy : analysis.getHierarcyIds(clafer, i)) {
                         for (AstRef sourceRef : analysis.getBreakableTarget(hierarchy.getFst())) {
-                            IrIntVar[] sourceRefs = refPointers.get(sourceRef);
+                            IrIntVar[] sourceRefs = refPointers.get(sourceRef.getSourceType());
 
                             IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
                             System.arraycopy(sourceRefs, 0, array, 0, array.length);
@@ -779,8 +779,7 @@ public class AstCompiler {
         if (ref != null) {
             AstClafer tar = ref.getTargetType();
             if (tar instanceof AstStringClafer) {
-                IrStringVar[] strings = Arrays.copyOfRange(refStrings.get(ref),
-                        refOffset, refOffset + getScope(clafer));
+                IrStringVar[] strings = refStrings.get(clafer);
                 if (ref.isUnique()) {
                     if (getCard(clafer).getHigh() > 1) {
                         for (int i = 0; i < strings.length - 1; i++) {
@@ -799,8 +798,7 @@ public class AstCompiler {
                     module.addConstraint(implies(not(members[i]), equal(strings[i], EmptyString)));
                 }
             } else {
-                IrIntVar[] refs = Arrays.copyOfRange(refPointers.get(ref),
-                        refOffset, refOffset + getScope(clafer));
+                IrIntVar[] refs = refPointers.get(clafer);
                 if (ref.isUnique()) {
                     if (getCard(clafer).getHigh() > 1) {
                         for (int i = 0; i < refs.length - 1; i++) {
@@ -857,7 +855,7 @@ public class AstCompiler {
         AstClafer inverse = analysis.getInverse(clafer);
         if (inverse != null) {
             int uninitializedRef = getUninitalizedRef(inverse.getRef().getTargetType());
-            IrIntVar[] inverseRefPointers = refPointers.get(inverse.getRef());
+            IrIntVar[] inverseRefPointers = refPointers.get(inverse);
             module.addConstraint(equal(countNotEqual(uninitializedRef, array(inverseRefPointers)), card(sets.get(clafer))));
             for (int i = 0; i < siblingSet.length; i++) {
                 module.addConstraint(equal(count(i, inverseRefPointers), card(siblingSet[i])));
@@ -1059,7 +1057,26 @@ public class AstCompiler {
         Check.noNulls(members);
         memberships.put(clafer, members);
 
-        buildRef(clafer);
+        AstRef ref = AstUtil.getInheritedRef(clafer);
+        if (ref != null) {
+            if (ref.getTargetType() instanceof AstStringClafer) {
+                IrStringVar[] refs = new IrStringVar[members.length];
+                for (AstClafer sub : clafer.getSubs()) {
+                    IrStringVar[] subRef = refStrings.get(sub);
+                    int offset = getOffset(clafer, sub);
+                    System.arraycopy(subRef, 0, refs, offset, subRef.length);
+                }
+                refStrings.put(clafer, refs);
+            } else {
+                IrIntVar[] refs = new IrIntVar[members.length];
+                for (AstClafer sub : clafer.getSubs()) {
+                    IrIntVar[] subRef = refPointers.get(sub);
+                    int offset = getOffset(clafer, sub);
+                    System.arraycopy(subRef, 0, refs, offset, subRef.length);
+                }
+                refPointers.put(clafer, refs);
+            }
+        }
     }
 
     private void constrainAbstract(AstAbstractClafer clafer) {
@@ -1070,8 +1087,8 @@ public class AstCompiler {
     private final Map<AstClafer, IrIntVar[]> siblingBounds = new HashMap<>();
     private final Map<AstClafer, IrBoolVar[]> memberships = new HashMap<>();
     private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
-    private final Map<AstRef, IrIntVar[]> refPointers = new HashMap<>();
-    private final Map<AstRef, IrStringVar[]> refStrings = new HashMap<>();
+    private final Map<AstClafer, IrIntVar[]> refPointers = new HashMap<>();
+    private final Map<AstClafer, IrStringVar[]> refStrings = new HashMap<>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<>();
     private int countCount = 0;
     private int concatRefsCount = 0;
@@ -1398,22 +1415,22 @@ public class AstCompiler {
                 IrIntExpr $intDeref = (IrIntExpr) $deref;
                 if (ref.getTargetType() instanceof AstStringClafer) {
                     // Why empty string? The "take" var can contain unused.
-                    return element(Util.snoc(refStrings.get(ref), EmptyString), $intDeref);
+                    return element(Util.snoc(refStrings.get(ref.getSourceType()), EmptyString), $intDeref);
                 } else {
                     // Why zero? The "take" var can contain unused.
-                    return element(Util.snoc(refPointers.get(ref), Zero), $intDeref);
+                    return element(Util.snoc(refPointers.get(ref.getSourceType()), Zero), $intDeref);
                 }
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
                 if (ref.getTargetType() instanceof AstStringClafer) {
                     if ($setDeref.getCard().getHighBound() == 1) {
-                        IrStringExpr[] refs = Util.snoc(refStrings.get(ref), EmptyString);
+                        IrStringExpr[] refs = Util.snoc(refStrings.get(ref.getSourceType()), EmptyString);
                         return element(refs, max($setDeref, refs.length - 1));
                     }
                     throw new JoinSetWithStringException(ast, $setDeref.getCard());
                 }
                 // Why zero? The "take" var can contain unused.
-                return joinFunction($setDeref, Util.snoc(refPointers.get(ref), Zero), globalCardinality);
+                return joinFunction($setDeref, Util.snoc(refPointers.get(ref.getSourceType()), Zero), globalCardinality);
             }
             throw new AstException();
         }
@@ -1591,7 +1608,7 @@ public class AstCompiler {
         private IrIntExpr concatRefs(AstSetExpr set, Monoid<IrIntExpr> monoid) {
             AstClafer setType = getCommonSupertype(set).getClaferType();
             assert setType.hasRef();
-            IrIntVar[] refs = refPointers.get(setType.getRef());
+            IrIntVar[] refs = refPointers.get(setType);
             String name = monoid.getClass().getSimpleName();
             int count = concatRefsCount++;
 
@@ -1945,7 +1962,7 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstRefRelation ast, Void a) {
-            return array(refPointers.get(ast.getRef()));
+            return array(refPointers.get(ast.getRef().getSourceType()));
         }
 
         @Override
@@ -2093,13 +2110,13 @@ public class AstCompiler {
         return pointers;
     }
 
-    private void buildRef(AstClafer clafer) {
-        if (clafer.hasRef()) {
-            AstRef ref = clafer.getRef();
+    private void buildRef(AstConcreteClafer clafer) {
+        AstRef ref = AstUtil.getInheritedRef(clafer);
+        if (ref != null) {
             if (ref.getTargetType() instanceof AstStringClafer) {
-                refStrings.put(ref, buildStrings(ref));
+                refStrings.put(clafer, buildStrings(ref, clafer));
             } else {
-                refPointers.put(ref, buildRefPointers(ref));
+                refPointers.put(clafer, buildRefPointers(ref, clafer));
             }
         }
     }
@@ -2110,18 +2127,20 @@ public class AstCompiler {
      * @param ref the reference Clafer
      * @return the variables to represent the reference relation
      */
-    private IrIntVar[] buildRefPointers(AstRef ref) {
+    private IrIntVar[] buildRefPointers(AstRef ref, AstConcreteClafer context) {
         AstClafer src = ref.getSourceType();
         AstClafer tar = ref.getTargetType();
 
         assert !(tar instanceof AstStringClafer);
 
-        PartialSolution partialSolution = getPartialSolution(src);
+        PartialSolution partialSolution = getPartialSolution(context);
         Domain[] partialInts = getPartialInts(ref);
-        IrIntVar[] ivs = new IrIntVar[getScope(src)];
         Domain refRange = getRefRange(ref);
+        int offset = getOffset(src, context);
+        IrIntVar[] ivs = new IrIntVar[getScope(context)];
+
         for (int i = 0; i < ivs.length; i++) {
-            Domain domain = partialInts[i];
+            Domain domain = partialInts[i + offset];
             if (domain == null) {
                 domain = refRange;
             }
@@ -2135,7 +2154,7 @@ public class AstCompiler {
         return ivs;
     }
 
-    private IrStringVar[] buildStrings(AstRef ref) {
+    private IrStringVar[] buildStrings(AstRef ref, AstConcreteClafer context) {
         AstClafer src = ref.getSourceType();
         AstClafer tar = ref.getTargetType();
 
@@ -2145,8 +2164,8 @@ public class AstCompiler {
         char charLow = analysis.getScope().getCharLow();
         char charHigh = analysis.getScope().getCharHigh();
         Domain charDomain = boundDomain(charLow, charHigh).insert(0);
+        IrStringVar[] svs = new IrStringVar[getScope(context)];
 
-        IrStringVar[] svs = new IrStringVar[getScope(src)];
         for (int i = 0; i < svs.length; i++) {
             IrIntVar[] chars = new IrIntVar[stringLength];
             for (int j = 0; j < chars.length; j++) {

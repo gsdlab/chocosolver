@@ -191,4 +191,106 @@ public class RefinementTest {
         }
         assertEquals(1, solver.instanceCount());
     }
+
+    /**
+     * <pre>
+     * abstract Shape
+     * Circle : Shape
+     * Square : Shape
+     *
+     * abstract Sprite
+     *     abstract Hitbox -> Shape
+     *
+     * Ball : Sprite
+     *     BallHitbox : Hitbox -> Circle
+     *
+     * Box : Sprite
+     *     BoxHitbox : Hitbox -> Square
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testReferenceRefinement() {
+        AstModel model = newModel();
+
+        AstAbstractClafer shape = model.addAbstract("Shape");
+        AstConcreteClafer circle = model.addChild("Circle").extending(shape).withCard(Mandatory);
+        AstConcreteClafer square = model.addChild("Square").extending(shape).withCard(Mandatory);
+
+        AstAbstractClafer sprite = model.addAbstract("Sprite");
+        AstAbstractClafer hitbox = sprite.addAbstractChild("Hitbox").refToUnique(shape);
+
+        AstConcreteClafer ball = model.addChild("Ball").extending(sprite).withCard(Mandatory);
+        AstConcreteClafer ballHitbox = ball.addChild("BallHitbox").extending(hitbox).refToUnique(circle).withCard(Mandatory);
+
+        AstConcreteClafer box = model.addChild("Box").extending(sprite).withCard(Mandatory);
+        AstConcreteClafer boxHitbox = box.addChild("BoxHitbox").extending(hitbox).refTo(square).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            InstanceClafer circleInstance = instance.getTopClafer(circle);
+            InstanceClafer squareInstance = instance.getTopClafer(square);
+            InstanceClafer ballInstance = instance.getTopClafer(ball);
+            InstanceClafer ballHitboxInstance = ballInstance.getChild(ballHitbox);
+            assertEquals(circleInstance, ballHitboxInstance.getRef());
+            InstanceClafer boxInstance = instance.getTopClafer(box);
+            InstanceClafer boxHitboxInstance = boxInstance.getChild(boxHitbox);
+            assertEquals(squareInstance, boxHitboxInstance.getRef());
+        }
+        assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * abstract Shape
+     * Circle : Shape
+     *     Radius -> int
+     * Square : Shape
+     *
+     * abstract Sprite
+     *     abstract Hitbox -> Shape
+     *
+     * Ball : Sprite
+     *     BallHitbox : Hitbox -> Circle
+     *     [ this.BallHitbox.dref.Radius.dref = 5 ]
+     *
+     * Box : Sprite
+     *     BoxHitbox : Hitbox -> Square
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinOverReferenceRefinement() {
+        AstModel model = newModel();
+
+        AstAbstractClafer shape = model.addAbstract("Shape");
+        AstConcreteClafer circle = model.addChild("Circle").extending(shape).withCard(Mandatory);
+        AstConcreteClafer radius = circle.addChild("Radius").refToUnique(IntType).withCard(Mandatory);
+        AstConcreteClafer square = model.addChild("Square").extending(shape).withCard(Mandatory);
+
+        AstAbstractClafer sprite = model.addAbstract("Sprite");
+        AstAbstractClafer hitbox = sprite.addAbstractChild("Hitbox").refToUnique(shape);
+
+        AstConcreteClafer ball = model.addChild("Ball").extending(sprite).withCard(Mandatory);
+        AstConcreteClafer ballHitbox = ball.addChild("BallHitbox").extending(hitbox).refToUnique(circle).withCard(Mandatory);
+        ball.addConstraint(equal(joinRef(join(joinRef(join($this(), ballHitbox)), radius)), 5));
+
+        AstConcreteClafer box = model.addChild("Box").extending(sprite).withCard(Mandatory);
+        AstConcreteClafer boxHitbox = box.addChild("BoxHitbox").extending(hitbox).refTo(square).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            InstanceClafer circleInstance = instance.getTopClafer(circle);
+            InstanceClafer radiusInstance = circleInstance.getChild(radius);
+            assertEquals(5, radiusInstance.getRef());
+            InstanceClafer squareInstance = instance.getTopClafer(square);
+            InstanceClafer ballInstance = instance.getTopClafer(ball);
+            InstanceClafer ballHitboxInstance = ballInstance.getChild(ballHitbox);
+            assertEquals(circleInstance, ballHitboxInstance.getRef());
+            InstanceClafer boxInstance = instance.getTopClafer(box);
+            InstanceClafer boxHitboxInstance = boxInstance.getChild(boxHitbox);
+            assertEquals(squareInstance, boxHitboxInstance.getRef());
+        }
+        assertEquals(1, solver.instanceCount());
+    }
 }

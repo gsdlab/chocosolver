@@ -7,7 +7,6 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
-import org.clafer.ast.AstRef;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.common.Check;
 import org.clafer.ir.IrBoolVar;
@@ -26,8 +25,8 @@ public class AstSolutionMap {
     private final Map<AstClafer, IrBoolVar[]> memberVars;
     private final Map<AstClafer, IrSetVar[]> siblingVars;
     private final Map<AstClafer, IrIntVar[]> siblingBounds;
-    private final Map<AstRef, IrIntVar[]> refVars;
-    private final Map<AstRef, IrStringVar[]> refStrings;
+    private final Map<AstClafer, IrIntVar[]> refVars;
+    private final Map<AstClafer, IrStringVar[]> refStrings;
     private final Map<AstConstraint, IrBoolVar> softVars;
     private final IrIntVar sumSoftVar;
     private final Map<Objective, IrIntVar> objectiveVars;
@@ -38,8 +37,8 @@ public class AstSolutionMap {
             Map<AstClafer, IrBoolVar[]> memberVars,
             Map<AstClafer, IrSetVar[]> siblingVars,
             Map<AstClafer, IrIntVar[]> siblingBounds,
-            Map<AstRef, IrIntVar[]> refVars,
-            Map<AstRef, IrStringVar[]> refStrings,
+            Map<AstClafer, IrIntVar[]> refVars,
+            Map<AstClafer, IrStringVar[]> refStrings,
             Map<AstConstraint, IrBoolVar> softVars,
             IrIntVar sumSoftVar,
             Map<Objective, IrIntVar> objectiveVars,
@@ -87,15 +86,15 @@ public class AstSolutionMap {
     /**
      * Returns the reference variables associated to the reference.
      *
-     * @param ref the reference
+     * @param clafer the Clafer
      * @return the reference variables associated to the reference
      */
-    public IrIntVar[] getRefVars(AstRef ref) {
-        return notNull(ref + " not part of the AST solution", refVars.get(ref));
+    public IrIntVar[] getRefVars(AstClafer clafer) {
+        return notNull(clafer + "'s reference not part of the AST solution", refVars.get(clafer));
     }
 
-    public IrStringVar[] getRefStrings(AstRef ref) {
-        return notNull(ref + " not part of the AST solution", refStrings.get(ref));
+    public IrStringVar[] getRefStrings(AstClafer clafer) {
+        return notNull(clafer + "'s reference not part of the AST solution", refStrings.get(clafer));
     }
 
     /**
