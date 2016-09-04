@@ -110,6 +110,9 @@ public class Coalescer {
     }
 
     private static String joinNames(List<String> names) {
+        if (names.size() == 1) {
+            return names.get(0);
+        }
         return names.stream().map(Coalescer::stripParens).collect(Collectors.joining(";", "(", ")"));
     }
 
