@@ -15,7 +15,7 @@ public abstract class AstClafer implements AstVar {
 
     private final String name;
     // The topmost Clafer in the type hierarchy.
-    protected final AstAbstractClafer claferClafer;
+    private final AstAbstractClafer claferClafer;
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard;
@@ -82,6 +82,11 @@ public abstract class AstClafer implements AstVar {
                 throw new IllegalArgumentException(this + " already has a super clafer");
             }
             getSuperClafer().removeSub(this);
+        }
+        if (hasParent()
+                && !AstUtil.isTop(superClafer)
+                && !AstUtil.isAssignable(getParent(), superClafer.getParent())) {
+            throw new IllegalArgumentException(this + " cannot refine " + superClafer);
         }
         superClafer.addSub(this);
         this.superClafer = superClafer;

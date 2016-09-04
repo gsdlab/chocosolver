@@ -196,12 +196,7 @@ public class AstUtil {
      * {@code false} otherwise
      */
     public static boolean isTop(AstClafer clafer) {
-        if (clafer instanceof AstConcreteClafer) {
-            AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-            return concrete.getParent() instanceof AstConcreteClafer
-                    && isRoot((AstConcreteClafer) concrete.getParent());
-        }
-        return clafer instanceof AstAbstractClafer;
+        return clafer.hasParent() && isRoot(clafer.getParent());
     }
 
     /**
