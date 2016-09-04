@@ -2132,15 +2132,15 @@ public class AstCompiler {
         AstClafer tar = ref.getTargetType();
 
         assert !(tar instanceof AstStringClafer);
+        assert ref == AstUtil.getInheritedRef(context);
 
         PartialSolution partialSolution = getPartialSolution(context);
-        Domain[] partialInts = getPartialInts(ref);
+        Domain[] partialInts = getPartialInts(context);
         Domain refRange = getRefRange(ref);
-        int offset = getOffset(src, context);
         IrIntVar[] ivs = new IrIntVar[getScope(context)];
 
         for (int i = 0; i < ivs.length; i++) {
-            Domain domain = partialInts[i + offset];
+            Domain domain = partialInts[i];
             if (domain == null) {
                 domain = refRange;
             }
@@ -2159,6 +2159,7 @@ public class AstCompiler {
         AstClafer tar = ref.getTargetType();
 
         assert tar instanceof AstStringClafer;
+        assert ref == AstUtil.getInheritedRef(context);
 
         int stringLength = analysis.getScope().getStringLength();
         char charLow = analysis.getScope().getCharLow();
@@ -2277,8 +2278,8 @@ public class AstCompiler {
         return getPartialSolution(clafer.getParent());
     }
 
-    private Domain[] getPartialInts(AstRef ref) {
-        return analysis.getPartialInts(ref);
+    private Domain[] getPartialInts(AstConcreteClafer clafer) {
+        return analysis.getPartialInts(clafer);
     }
 
     private int getOffset(AstClafer sup, AstClafer sub) {

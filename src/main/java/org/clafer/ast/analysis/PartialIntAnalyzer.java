@@ -95,7 +95,7 @@ public class PartialIntAnalyzer {
             }
         } while (oracle.propagate());
 
-        Map<AstRef, Domain[]> partialInts = analyzer.partialInts(oracle);
+        Map<AstConcreteClafer, Domain[]> partialInts = analyzer.partialInts(oracle);
         return analysis.setPartialIntsMap(partialInts);
     }
 
@@ -176,12 +176,13 @@ public class PartialIntAnalyzer {
         return pathsToClafers;
     }
 
-    private Map<AstRef, Domain[]> partialInts(Oracle oracle) {
+    private Map<AstConcreteClafer, Domain[]> partialInts(Oracle oracle) {
         Map<AstClafer, Path[][]> pathsToClafers = pathsToClafers();
 
-        Map<AstRef, Domain[]> partialInts = new HashMap<>();
-        for (AstClafer clafer : analysis.getClafers()) {
-            if (clafer.hasRef()) {
+        Map<AstConcreteClafer, Domain[]> partialInts = new HashMap<>();
+        for (AstConcreteClafer clafer : analysis.getConcreteClafers()) {
+            AstRef ref = AstUtil.getInheritedRef(clafer);
+            if (ref != null) {
                 Path[][] paths = pathsToClafers.get(clafer);
                 Domain[] domains = new Domain[paths.length];
                 for (int i = 0; i < paths.length; i++) {
@@ -196,7 +197,7 @@ public class PartialIntAnalyzer {
                     }
                     domains[i] = domain;
                 }
-                partialInts.put(clafer.getRef(), domains);
+                partialInts.put(clafer, domains);
             }
         }
         return partialInts;

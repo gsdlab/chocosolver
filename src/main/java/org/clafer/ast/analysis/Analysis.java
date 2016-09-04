@@ -52,7 +52,7 @@ public class Analysis {
     private Map<AstClafer, Format> formatMap;
     private Map<AstAbstractClafer, Offsets> offsetMap;
     private Map<AstClafer, PartialSolution> partialSolutionMap;
-    private Map<AstRef, Domain[]> partialIntsMap;
+    private Map<AstConcreteClafer, Domain[]> partialIntsMap;
     private Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap;
     private Map<AstRef, int[]> breakableRefsMap;
     private Map<AstClafer, AstRef[]> breakableTargetsMap;
@@ -446,15 +446,15 @@ public class Analysis {
         return this;
     }
 
-    public Domain[] getPartialInts(AstRef ref) {
-        return notNull(ref.getSourceType(), "Partial integer", getPartialIntsMap().get(ref));
+    public Domain[] getPartialInts(AstConcreteClafer clafer) {
+        return notNull(clafer, "Partial integer", getPartialIntsMap().get(clafer));
     }
 
-    public Map<AstRef, Domain[]> getPartialIntsMap() {
+    public Map<AstConcreteClafer, Domain[]> getPartialIntsMap() {
         return notNull("Partial integer", partialIntsMap);
     }
 
-    public Analysis setPartialIntsMap(Map<AstRef, Domain[]> partialIntsMap) {
+    public Analysis setPartialIntsMap(Map<AstConcreteClafer, Domain[]> partialIntsMap) {
         this.partialIntsMap = partialIntsMap;
         return this;
     }

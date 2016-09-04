@@ -16,6 +16,7 @@ import static org.clafer.ast.Asts.joinRef;
 import static org.clafer.ast.Asts.newModel;
 import static org.clafer.ast.Asts.or;
 import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 import static org.clafer.domain.Domains.ZeroOneDomain;
 import static org.clafer.domain.Domains.boundDomain;
 import static org.clafer.domain.Domains.constantDomain;
@@ -65,7 +66,7 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(3));
 
-        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost);
         assertArrayEquals(new Domain[]{constantDomain(3), constantDomain(3), constantDomain(3)}, partialInts);
     }
 
@@ -88,7 +89,7 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(3));
 
-        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost);
         assertArrayEquals(new Domain[]{constantDomain(3), constantDomain(3), constantDomain(3)}, partialInts);
     }
 
@@ -121,7 +122,7 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(3));
 
-        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost);
         assertNotNull(partialInts);
         assertEquals(3, partialInts.length);
         assertEquals(constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
@@ -158,7 +159,7 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(3));
 
-        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost);
         assertNotNull(partialInts);
         assertEquals(3, partialInts.length);
         assertEquals(enumDomain(3, 4, 6), partialInts[analysis.getOffsets(feature).getOffset(b)]);
@@ -197,7 +198,7 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
 
-        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost);
         assertNotNull(partialInts);
         assertEquals(4, partialInts.length);
         assertEquals(constantDomain(3), partialInts[analysis.getOffsets(feature).getOffset(b)]);
@@ -228,7 +229,7 @@ public class PartialIntAnalyzerTest {
         Analysis analysis = analyze(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
 
         assertTrue(analysis.getOffsets(feature).getOffset(a) < analysis.getOffsets(feature).getOffset(b));
-        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost);
         assertNotNull(partialInts);
         assertEquals(4, partialInts.length);
         assertEquals(constantDomain(4), partialInts[0]);
@@ -262,7 +263,7 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(4).intLow(-3).intHigh(3));
 
-        Domain[] partialInts = analysis.getPartialInts(cost.getRef());
+        Domain[] partialInts = analysis.getPartialInts(cost);
         assertArrayEquals(new Domain[]{constantDomain(2), constantDomain(2)}, partialInts);
     }
 
@@ -295,7 +296,7 @@ public class PartialIntAnalyzerTest {
         Analysis analysis = analyze(model, Scope.defaultScope(3).intLow(-3).intHigh(3));
         assertArrayEquals(
                 new Domain[]{boundDomain(1, 2), boundDomain(1, 2), boundDomain(1, 2)},
-                analysis.getPartialInts(c.getRef()));
+                analysis.getPartialInts(c));
     }
 
     /**
@@ -315,8 +316,8 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
 
-        assertArrayEquals(new Domain[]{ZeroOneDomain}, analysis.getPartialInts(a.getRef()));
-        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(b.getRef()));
+        assertArrayEquals(new Domain[]{ZeroOneDomain}, analysis.getPartialInts(a));
+        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(b));
     }
 
     /**
@@ -336,7 +337,38 @@ public class PartialIntAnalyzerTest {
 
         Analysis analysis = analyze(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
 
-        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(a.getRef()));
-        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(b.getRef()));
+        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(a));
+        assertArrayEquals(new Domain[]{null}, analysis.getPartialInts(b));
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     *     abstract B -> int
+     *
+     * X : A
+     *     Y : B
+     *         [ this.dref = 4 ]
+     *     Z : B
+     *         [ this.dref = 3 ]
+     * </pre>
+     */
+    @Test
+    public void testRefRefinement() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstAbstractClafer b = a.addAbstractChild("B").refToUnique(IntType);
+
+        AstConcreteClafer x = model.addChild("X").extending(a).withCard(Mandatory);
+        AstConcreteClafer y = x.addChild("Y").extending(b).withCard(Mandatory);
+        y.addConstraint(equal(joinRef($this()), 4));
+        AstConcreteClafer z = x.addChild("Z").extending(b).withCard(Mandatory);
+        z.addConstraint(equal(joinRef($this()), 3));
+
+        Analysis analysis = analyze(model, Scope.defaultScope(1).intLow(-2).intHigh(2));
+
+        assertArrayEquals(new Domain[]{Domains.constantDomain(4)}, analysis.getPartialInts(y));
+        assertArrayEquals(new Domain[]{Domains.constantDomain(3)}, analysis.getPartialInts(z));
     }
 }
