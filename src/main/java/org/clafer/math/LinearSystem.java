@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -224,12 +225,17 @@ public class LinearSystem {
             }
             assert assignmentKeys.size() == assignmentValues.size();
             if (!assignmentKeys.isEmpty()) {
-                for (int i = 0; i < pool.size(); i++) {
-                    LinearEquation equation = pool.get(i);
+                ListIterator<LinearEquation> listIter = pool.listIterator();
+                while (listIter.hasNext()) {
+                    LinearEquation equation = listIter.next();
                     for (int j = 0; j < assignmentKeys.size(); j++) {
                         equation = equation.replace(assignmentKeys.get(j), assignmentValues.get(j));
                     }
-                    pool.set(i, equation);
+                    if (equation.isEntailed().isTrue()) {
+                        listIter.remove();
+                    } else {
+                        listIter.set(equation);
+                    }
                 }
             }
         } while (!touched.isEmpty());
