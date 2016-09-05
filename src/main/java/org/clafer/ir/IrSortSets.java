@@ -63,4 +63,9 @@ public class IrSortSets extends IrAbstractBool {
     public int hashCode() {
         return Arrays.deepHashCode(sets) ^ Arrays.deepHashCode(bounds);
     }
+
+    @Override
+    public String toString() {
+        return "SortSet " + Arrays.toString(sets) + " with bounds " + Arrays.toString(bounds);
+    }
 }
