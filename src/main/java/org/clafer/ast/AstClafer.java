@@ -122,6 +122,15 @@ public abstract class AstClafer implements AstVar {
         if (hasRef()) {
             throw new IllegalArgumentException(this + " already has a ref");
         }
+        AstRef inheritedRef = AstUtil.getInheritedRef(this);
+        if (inheritedRef != null) {
+            if (!AstUtil.isAssignable(targetType, inheritedRef.getTargetType())) {
+                throw new IllegalArgumentException(this + " cannot refine reference from " + inheritedRef.getTargetType() + " to " + targetType);
+            }
+            if (inheritedRef.isUnique()) {
+                throw new IllegalArgumentException(this + " cannot refine reference uniqueness");
+            }
+        }
         this.ref = new AstRef(this, targetType, false);
         return this;
     }
@@ -136,6 +145,10 @@ public abstract class AstClafer implements AstVar {
     public AstClafer refToUnique(AstClafer targetType) {
         if (hasRef()) {
             throw new IllegalArgumentException(this + " already has a ref");
+        }
+        AstRef inheritedRef = AstUtil.getInheritedRef(this);
+        if (inheritedRef != null && !AstUtil.isAssignable(targetType, inheritedRef.getTargetType())) {
+            throw new IllegalArgumentException(this + " cannot refine reference from " + inheritedRef.getTargetType() + " to " + targetType);
         }
         this.ref = new AstRef(this, targetType, true);
         return this;

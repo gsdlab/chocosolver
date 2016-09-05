@@ -223,7 +223,7 @@ public class RefinementTest {
         AstConcreteClafer ballHitbox = ball.addChild("BallHitbox").extending(hitbox).refToUnique(circle).withCard(Mandatory);
 
         AstConcreteClafer box = model.addChild("Box").extending(sprite).withCard(Mandatory);
-        AstConcreteClafer boxHitbox = box.addChild("BoxHitbox").extending(hitbox).refTo(square).withCard(Mandatory);
+        AstConcreteClafer boxHitbox = box.addChild("BoxHitbox").extending(hitbox).refToUnique(square).withCard(Mandatory);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8));
         while (solver.find()) {
@@ -275,7 +275,7 @@ public class RefinementTest {
         ball.addConstraint(equal(joinRef(join(joinRef(join($this(), ballHitbox)), radius)), 5));
 
         AstConcreteClafer box = model.addChild("Box").extending(sprite).withCard(Mandatory);
-        AstConcreteClafer boxHitbox = box.addChild("BoxHitbox").extending(hitbox).refTo(square).withCard(Mandatory);
+        AstConcreteClafer boxHitbox = box.addChild("BoxHitbox").extending(hitbox).refToUnique(square).withCard(Mandatory);
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(8));
         while (solver.find()) {
