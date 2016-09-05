@@ -75,6 +75,51 @@ public class RefinementTest {
 
     /**
      * <pre>
+     * abstract Wallet
+     *     abstract Coin
+     *         Value -> int
+     *     abstract Loonie : Coin
+     *         [ this.Value.dref = 1 ]
+     *     abstract Toonie : Coin
+     *         [ this.Value.dref = 2 ]
+     * MyWallet : Wallet
+     *     MyLoonie : Loonie
+     *     MyToonie : Toonie
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRefinementInheritsConstraint() {
+        AstModel model = newModel();
+
+        AstAbstractClafer wallet = model.addAbstract("Wallet");
+        AstAbstractClafer coin = wallet.addAbstractChild("Coin");
+        AstConcreteClafer value = coin.addChild("Value").refToUnique(IntType).withCard(Mandatory);
+        AstAbstractClafer loonie = wallet.addAbstractChild("Loonie").extending(coin);
+        loonie.addConstraint(equal(joinRef(join($this(), value)), 1));
+        AstAbstractClafer toonie = wallet.addAbstractChild("Toonie").extending(coin);
+        toonie.addConstraint(equal(joinRef(join($this(), value)), 2));
+
+        AstConcreteClafer myWallet = model.addChild("MyWallet").extending(wallet).withCard(Mandatory);
+        AstConcreteClafer myLoonie = myWallet.addChild("Loonie").extending(loonie).withCard(Mandatory);
+        AstConcreteClafer myToonie = myWallet.addChild("Toonie").extending(toonie).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            InstanceClafer myWalletInstance = instance.getTopClafer(myWallet);
+            InstanceClafer myLoonieInstance = myWalletInstance.getChild(myLoonie);
+            InstanceClafer myLoonieValueInstance = myLoonieInstance.getChild(value);
+            assertEquals(1, myLoonieValueInstance.getRef());
+            InstanceClafer myToonieInstance = myWalletInstance.getChild(myToonie);
+            InstanceClafer myToonieValueInstance = myToonieInstance.getChild(value);
+            assertEquals(2, myToonieValueInstance.getRef());
+        }
+        assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
      * abstract Store
      *     abstract Item -> int
      *
