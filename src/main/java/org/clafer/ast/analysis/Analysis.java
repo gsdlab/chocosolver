@@ -343,31 +343,6 @@ public class Analysis {
         return new Pair<>((AstConcreteClafer) sub, curId);
     }
 
-    public Pair<AstClafer, Integer> getSubId(AstAbstractClafer clafer, int id) {
-        Offsets offsets = getOffsets(clafer);
-        AstClafer sub = offsets.getClafer(id);
-        return new Pair<>(sub, id - offsets.getOffset(sub));
-    }
-
-    public Pair<AstAbstractClafer, Integer> getSuperId(AstClafer clafer, int id) {
-        assert clafer.hasSuperClafer();
-        int offset = getOffsets(clafer.getSuperClafer()).getOffset(clafer);
-        return new Pair<>(clafer.getSuperClafer(), id + offset);
-    }
-
-    public List<Pair<AstAbstractClafer, Integer>> getSuperIds(AstClafer clafer, int id) {
-        List<Pair<AstAbstractClafer, Integer>> superIds = new ArrayList<>();
-        AstClafer sup = clafer;
-        int curId = id;
-        while (sup.hasSuperClafer()) {
-            Pair<AstAbstractClafer, Integer> superId = getSuperId(sup, curId);
-            superIds.add(superId);
-            sup = superId.getFst();
-            curId = superId.getSnd().intValue();
-        }
-        return superIds;
-    }
-
     public List<Pair<AstClafer, Integer>> getHierarcyOffsets(AstClafer clafer) {
         return getHierarcyIds(clafer, 0);
     }
@@ -378,27 +353,11 @@ public class Analysis {
         AstClafer sup = clafer;
         int curId = id;
         while (sup.hasSuperClafer()) {
-            Pair<AstAbstractClafer, Integer> superId = getSuperId(sup, curId);
-            superIds.add(new Pair<>(superId));
-            sup = superId.getFst();
-            curId = superId.getSnd().intValue();
+            curId += getOffset(sup.getSuperClafer(), sup);
+            sup = sup.getSuperClafer();
+            superIds.add(new Pair<>(sup, curId));
         }
         return superIds;
-    }
-
-    public Pair<AstRef, Integer> getInheritedRefId(AstClafer clafer) {
-        AstClafer sup = clafer;
-        int curId = 0;
-        do {
-            if (sup.hasRef()) {
-                return new Pair<>(sup.getRef(), curId);
-            }
-            if (sup.hasSuperClafer()) {
-                curId += getOffsets(sup.getSuperClafer()).getOffset(sup);
-            }
-            sup = sup.getSuperClafer();
-        } while (sup != null);
-        return null;
     }
 
     public int getOffset(AstClafer sup, AstClafer sub) {

@@ -599,9 +599,8 @@ public class AstCompiler {
             }
         }
 
-        Pair<AstRef, Integer> refPair = analysis.getInheritedRefId(clafer);
-        AstRef ref = refPair == null ? null : refPair.getFst();
-        int refOffset = refPair == null ? 0 : refPair.getSnd();
+        AstRef ref = AstUtil.getInheritedRef(clafer);
+        int refOffset = ref == null ? 0 : getOffset(ref.getSourceType(), clafer);
 
         int scope = getScope(clafer);
         IrBoolExpr[] members = memberships.get(clafer);
