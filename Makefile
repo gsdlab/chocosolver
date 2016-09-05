@@ -19,5 +19,5 @@ install:
 
 snapshotInstall:
 	mkdir -p $(to)
-	cp -f README.md $(to)/ClaferChocoIG-README.md
+	cp -f README.md $(to)/chocosolver-README.md
 	cp -f target/chocosolver-0.4.4-SNAPSHOT-jar-with-dependencies.jar $(to)/chocosolver.jar
