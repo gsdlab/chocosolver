@@ -1076,6 +1076,29 @@ public class AstCompiler {
                 refPointers.put(clafer, refs);
             }
         }
+
+        if (!AstUtil.isTop(clafer) && !AstUtil.isTypeRoot(clafer)) {
+            IrSetVar[] siblingSet = new IrSetVar[getScope(clafer.getParent())];
+            List<IrSetExpr>[] unions = new List[siblingSet.length];
+            for (int i = 0; i < unions.length; i++) {
+                unions[i] = new ArrayList<>();
+            }
+            for (AstClafer sub : clafer.getSubs()) {
+                IrSetVar[] subSiblingSet = siblingSets.get(sub);
+                int parentOffset = getOffset(clafer.getParent(), sub.getParent());
+                int offset = getOffset(clafer, sub);
+                for (int i = 0; i < subSiblingSet.length; i++) {
+                    unions[i + parentOffset].add(offset(subSiblingSet[i], offset));
+                }
+            }
+            for (int i = 0; i < siblingSet.length; i++) {
+                IrSetExpr union = unionDisjoint(unions[i].toArray(new IrSetExpr[unions[i].size()]));
+                siblingSet[i] = set(clafer.getName() + "#" + i,
+                        union.getEnv(), union.getKer(), union.getCard());
+                module.addConstraint(equal(siblingSet[i], union));
+            }
+            siblingSets.put(clafer, siblingSet);
+        }
     }
 
     private void constrainAbstract(AstAbstractClafer clafer) {

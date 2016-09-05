@@ -194,6 +194,88 @@ public class RefinementTest {
 
     /**
      * <pre>
+     * abstract Store
+     *     abstract Item -> int
+     *     abstract OnSaleItem : Item
+     *
+     * Market : Store
+     *     Flowers : Item
+     *         [ this.dref = 3 ]
+     *     Food : OnSaleItem
+     *         [ this.dref = 4 ]
+     * BookStore : Store
+     *     Book : Item
+     *         [ this.dref = 5 ]
+     *
+     * TotalCost -> int
+     *     [ this.dref = Store.Item.dref + 2 ]
+     * OnSaleTotalCost -> int
+     *     [ this.dref = Store.OnSaleItem.dref + 1 ]
+     * MarketCost -> int
+     *     [ this.dref = Market.Item.dref + 1 ]
+     * BookStoreCost -> int
+     *     [ this.dref = BookStore.Item.dref + 1 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinOverMultilevelRefinement() {
+        AstModel model = newModel();
+
+        AstAbstractClafer store = model.addAbstract("Store");
+        AstAbstractClafer item = store.addAbstractChild("Item").refToUnique(IntType);
+        AstAbstractClafer onSaleItem = store.addAbstractChild("OnSaleItemItem").extending(item);
+
+        AstConcreteClafer market = model.addChild("Market").extending(store).withCard(Mandatory);
+        AstConcreteClafer flowers = market.addChild("Flowers").extending(item).withCard(Mandatory);
+        flowers.addConstraint(equal(joinRef($this()), 3));
+        AstConcreteClafer food = market.addChild("Food").extending(onSaleItem).withCard(Mandatory);
+        food.addConstraint(equal(joinRef($this()), 4));
+        AstConcreteClafer bookStore = model.addChild("BookStore").extending(store).withCard(Mandatory);
+        AstConcreteClafer book = bookStore.addChild("Book").extending(item).withCard(Mandatory);
+        book.addConstraint(equal(joinRef($this()), 5));
+
+        AstConcreteClafer totalCost = model.addChild("TotalCost").refToUnique(IntType).withCard(Mandatory);
+        totalCost.addConstraint(equal(
+                joinRef($this()),
+                add(joinRef(join(global(store), item)), constant(2))));
+        AstConcreteClafer onSaleTotalCost = model.addChild("OnSaleTotalCost").refToUnique(IntType).withCard(Mandatory);
+        onSaleTotalCost.addConstraint(equal(
+                joinRef($this()),
+                add(joinRef(join(global(store), onSaleItem)), constant(1))));
+        AstConcreteClafer marketCost = model.addChild("MarketCost").refToUnique(IntType).withCard(Mandatory);
+        marketCost.addConstraint(equal(
+                joinRef($this()),
+                add(joinRef(join(global(market), item)), constant(1))));
+        AstConcreteClafer bookStoreCost = model.addChild("BookStoreCost").refToUnique(IntType).withCard(Mandatory);
+        bookStoreCost.addConstraint(equal(
+                joinRef($this()),
+                add(joinRef(join(global(bookStore), item)), constant(1))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            InstanceClafer marketInstance = instance.getTopClafer(market);
+            InstanceClafer flowersInstance = marketInstance.getChild(flowers);
+            assertEquals(3, flowersInstance.getRef());
+            InstanceClafer foodInstance = marketInstance.getChild(food);
+            assertEquals(4, foodInstance.getRef());
+            InstanceClafer bookStoreInstance = instance.getTopClafer(bookStore);
+            InstanceClafer bookInstance = bookStoreInstance.getChild(book);
+            assertEquals(5, bookInstance.getRef());
+            InstanceClafer totalCostInstance = instance.getTopClafer(totalCost);
+            assertEquals(14, totalCostInstance.getRef());
+            InstanceClafer onSaleTotalCostInstance = instance.getTopClafer(onSaleTotalCost);
+            assertEquals(5, onSaleTotalCostInstance.getRef());
+            InstanceClafer marketCostInstance = instance.getTopClafer(marketCost);
+            assertEquals(8, marketCostInstance.getRef());
+            InstanceClafer bookStoreCostInstance = instance.getTopClafer(bookStoreCost);
+            assertEquals(6, bookStoreCostInstance.getRef());
+        }
+        assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
      * abstract Shape
      * Circle : Shape
      * Square : Shape
