@@ -1347,6 +1347,7 @@ public class Coalescer {
     }
 
     private static TempIntVar tint(int low, int high) {
+        failIf(low > high);
         try {
             return new TempIntVar(boundDomain(low, high));
         } catch (IllegalIntException e) {
