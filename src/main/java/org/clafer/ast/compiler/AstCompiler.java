@@ -1078,15 +1078,26 @@ public class AstCompiler {
         }
 
         if (!AstUtil.isTop(clafer) && !AstUtil.isTypeRoot(clafer)) {
+            IrIntVar[] parentPointer = new IrIntVar[members.length];
             IrSetVar[] siblingSet = new IrSetVar[getScope(clafer.getParent())];
             List<IrSetExpr>[] unions = new List[siblingSet.length];
             for (int i = 0; i < unions.length; i++) {
                 unions[i] = new ArrayList<>();
             }
             for (AstClafer sub : clafer.getSubs()) {
-                IrSetVar[] subSiblingSet = siblingSets.get(sub);
-                int parentOffset = getOffset(clafer.getParent(), sub.getParent());
                 int offset = getOffset(clafer, sub);
+                int parentOffset = getOffset(clafer.getParent(), sub.getParent());
+
+                IrIntVar[] subParentPointer = parentPointers.get(sub);
+                for (int i = 0; i < subParentPointer.length; i++) {
+                    IrIntExpr parentExpr = add(subParentPointer[i], parentOffset);
+                    IrIntVar parentVar = domainInt(clafer + "@Parent#" + i, parentExpr.getDomain());
+                    module.addConstraint(equal(parentVar, parentExpr));
+                    assert parentPointer[i + offset] == null;
+                    parentPointer[i + offset] = parentVar;
+                }
+
+                IrSetVar[] subSiblingSet = siblingSets.get(sub);
                 for (int i = 0; i < subSiblingSet.length; i++) {
                     unions[i + parentOffset].add(offset(subSiblingSet[i], offset));
                 }
@@ -1097,6 +1108,7 @@ public class AstCompiler {
                         union.getEnv(), union.getKer(), union.getCard());
                 module.addConstraint(equal(siblingSet[i], union));
             }
+            parentPointers.put(clafer, parentPointer);
             siblingSets.put(clafer, siblingSet);
         }
     }
@@ -1108,7 +1120,7 @@ public class AstCompiler {
     private final Map<AstClafer, IrSetVar[]> siblingSets = new HashMap<>();
     private final Map<AstClafer, IrIntVar[]> siblingBounds = new HashMap<>();
     private final Map<AstClafer, IrBoolVar[]> memberships = new HashMap<>();
-    private final Map<AstConcreteClafer, IrIntVar[]> parentPointers = new HashMap<>();
+    private final Map<AstClafer, IrIntVar[]> parentPointers = new HashMap<>();
     private final Map<AstClafer, IrIntVar[]> refPointers = new HashMap<>();
     private final Map<AstClafer, IrStringVar[]> refStrings = new HashMap<>();
     private final Map<AstClafer, IrIntExpr[][]> indices = new HashMap<>();
@@ -1374,16 +1386,19 @@ public class AstCompiler {
 
         @Override
         public IrExpr visit(AstJoinParent ast, Void a) {
-            AstConcreteClafer childrenType = (AstConcreteClafer) getCommonSupertype(ast.getChildren()).getClaferType();
+            AstClafer childrenType = getCommonSupertype(ast.getChildren()).getClaferType();
 
             IrExpr children = compile(ast.getChildren());
             if (children instanceof IrIntExpr) {
                 IrIntExpr intChildren = (IrIntExpr) children;
                 switch (getFormat(childrenType)) {
                     case ParentGroup:
-                        assert getCard(childrenType).isExact();
-                        int lowCard = getCard(childrenType).getLow();
-                        return div(intChildren, constant(lowCard));
+                        if (childrenType instanceof AstConcreteClafer) {
+                            Card card = getCard((AstConcreteClafer) childrenType);
+                            assert card.isExact();
+                            return div(intChildren, card.getLow());
+                        }
+                    // fallthrough
                     case LowGroup:
                         IrIntVar[] parents = parentPointers.get(childrenType);
                         if (intChildren.getHighBound() >= parents.length) {

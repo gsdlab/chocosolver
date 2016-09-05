@@ -334,12 +334,8 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> children = typeCheck(ast.getChildren());
             if (children.getType().isClaferType()) {
                 AstClafer childrenType = children.getType().getClaferType();
-                if (childrenType instanceof AstConcreteClafer) {
-                    AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
-                    if (!AstUtil.isTop(concreteChildrenType)) {
-                        return put(concreteChildrenType.getParent(),
-                                joinParent(children.getExpr()));
-                    }
+                if (!AstUtil.isTop(childrenType) && !AstUtil.isTypeRoot(childrenType)) {
+                    return put(childrenType.getParent(), joinParent(children.getExpr()));
                 }
             }
             throw new TypeException("Cannot join " + children.getType() + " . parent");

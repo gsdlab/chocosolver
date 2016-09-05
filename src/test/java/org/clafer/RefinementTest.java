@@ -1,7 +1,11 @@
 package org.clafer;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.$this;
 import static org.clafer.ast.Asts.equal;
@@ -9,10 +13,16 @@ import static org.clafer.ast.Asts.IntType;
 import static org.clafer.ast.Asts.Mandatory;
 import static org.clafer.ast.Asts.Many;
 import static org.clafer.ast.Asts.add;
+import static org.clafer.ast.Asts.all;
 import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.decl;
 import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.ifOnlyIf;
+import static org.clafer.ast.Asts.in;
 import static org.clafer.ast.Asts.join;
+import static org.clafer.ast.Asts.joinParent;
 import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.local;
 import static org.clafer.ast.Asts.newModel;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
@@ -163,6 +173,58 @@ public class RefinementTest {
             assertEquals(8, totalCostInstance.getRef());
         }
         assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * <pre>
+     * abstract Store
+     *     abstract Item
+     *     AllItems -> Item *
+     *     [ all i : this.Item | i.parent = this <=> i in this.AllItems.dref ]
+     *
+     * Market : Store
+     *     Flowers : Item
+     *     Food : Item
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinParentOverRefinement() {
+        AstModel model = newModel();
+
+        AstAbstractClafer store = model.addAbstract("Store");
+        AstAbstractClafer item = store.addAbstractChild("Item");
+        AstConcreteClafer allItems = store.addChild("AllItems").refToUnique(item);
+        AstLocal i = local("i");
+        store.addConstraint(all(decl(i, join($this(), item)),
+                ifOnlyIf(
+                        equal(joinParent(i), $this()),
+                        in(i, joinRef(join($this(), allItems)))))
+        );
+
+        AstConcreteClafer market = model.addChild("Market").extending(store).withCard(Mandatory);
+        AstConcreteClafer flowers = market.addChild("Flowers").extending(item).withCard(1, 2);
+        AstConcreteClafer food = market.addChild("Food").extending(item).withCard(1, 2);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            InstanceClafer marketInstance = instance.getTopClafer(market);
+            InstanceClafer[] flowersInstances = marketInstance.getChildren(flowers);
+            assertTrue(flowersInstances.length >= 1);
+            assertTrue(flowersInstances.length <= 2);
+            InstanceClafer[] foodInstances = marketInstance.getChildren(food);
+            assertTrue(foodInstances.length >= 1);
+            assertTrue(foodInstances.length <= 2);
+            InstanceClafer[] allItemsInstances = marketInstance.getChildren(allItems);
+            Set<Object> allItemsDeref = new HashSet<>();
+            for (InstanceClafer allItemInstance : allItemsInstances) {
+                assertTrue(allItemsDeref.add(allItemInstance.getRef()));
+            }
+            assertEquals(allItemsDeref.size(), flowersInstances.length + foodInstances.length);
+            assertTrue(allItemsDeref.containsAll(Arrays.asList(flowersInstances)));
+            assertTrue(allItemsDeref.containsAll(Arrays.asList(foodInstances)));
+        }
+        assertEquals(4, solver.instanceCount());
     }
 
     /**

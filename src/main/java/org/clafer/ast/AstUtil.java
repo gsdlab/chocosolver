@@ -184,7 +184,7 @@ public class AstUtil {
      * @return {@code true} if and only if the Clafer is the type root,
      * {@code false} otherwise
      */
-    public static boolean isTypeRoot(AstAbstractClafer clafer) {
+    public static boolean isTypeRoot(AstClafer clafer) {
         return !clafer.hasSuperClafer();
     }
 
