@@ -71,7 +71,7 @@ public class SimpleConstraintTest {
         person.addConstraint(equal(card(join(join($this(), hand), finger)), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-        assertEquals(3, solver.allInstances().length);
+        assertEquals(6, solver.allInstances().length);
     }
 
     /**

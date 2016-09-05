@@ -1065,8 +1065,14 @@ public class Coalescer {
                     for (i = 0; i < envLbs.length && (kerMinCard < ub || envLbs[i] == 0); i++) {
                         kerMinCard += envLbs[i];
                     }
+                    if (i < envLbs.length) {
+                        kerMinCard += envLbs[i];
+                    }
                     int high = i + take.getKer().size();
                     for (i = envUbs.length - 1; i >= 0 && kerMaxCard < lb; i--) {
+                        kerMaxCard += envUbs[i];
+                    }
+                    if (i >= 0) {
                         kerMaxCard += envUbs[i];
                     }
                     int low = envUbs.length - 1 - i + take.getKer().size();
