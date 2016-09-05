@@ -1,0 +1,9 @@
+abstract Component
+    abstract Port
+    abstract ExceptionPort : Port
+    allPorts -> Port *
+    [ allPorts.dref = this.Port ]
+
+WinController : Component
+    cmd : Port
+    powerOut : ExceptionPort
