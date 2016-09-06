@@ -277,6 +277,10 @@ public class Domain {
         return true;
     }
 
+    public boolean isSupersetOf(Domain subset) {
+        return subset.isSubsetOf(this);
+    }
+
     /**
      * Check if this domain intersects another domain.
      *
@@ -571,11 +575,11 @@ public class Domain {
      * @return the union of this domain with the other domain
      */
     public Domain union(Domain other) {
-        if (isSubsetOf(other)) {
-            return other;
-        }
         if (other.isSubsetOf(this)) {
             return this;
+        }
+        if (isSubsetOf(other)) {
+            return other;
         }
         int[] newBounds = new int[bounds.length + other.bounds.length];
         int length = 0;
