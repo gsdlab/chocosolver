@@ -1126,8 +1126,6 @@ public class Irs {
 
     public static IrIntVar domainInt(String name, Domain domain) {
         switch (domain.size()) {
-            case 0:
-                throw new IllegalArgumentException();
             case 1:
                 return constant(domain.getLowBound());
             case 2:
