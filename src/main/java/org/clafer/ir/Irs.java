@@ -2037,9 +2037,12 @@ public class Irs {
                             : Math.max(low, operandCard.getLowBound());
                     high += operandCard.getHighBound();
                 }
-                Domain card = boundDomain(
-                        Math.max(low, ker.size()),
-                        Math.min(high, env.size()));
+                int cardLow = Math.max(low, ker.size());
+                int cardHigh = Math.min(high, env.size());
+                if (cardLow > cardHigh) {
+                    throw new IllegalSetException();
+                }
+                Domain card = boundDomain(cardLow, cardHigh);
                 return IrUtil.asConstant(new IrSetUnion(ops, env, ker, card, disjoint));
         }
     }
