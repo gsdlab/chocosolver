@@ -40,7 +40,7 @@ class JoinRelationDeducer implements SetDeducer<IrJoinRelation> {
         IrSetArrayExpr children = ir.getChildren();
 
         Domain domain = take.getEnv().retainAll(
-                i -> children.getEnvs()[i].isSubsetOf(env));
+                i -> children.getKers()[i].isSubsetOf(env));
         deduction.envSubsetOf(ir.getTake(), domain);
 
         take.getKer().forEach(
