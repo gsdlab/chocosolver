@@ -1777,7 +1777,7 @@ public class Irs {
 
         IrIntExpr[] ints = IrUtil.asInts(children);
         if (ints != null) {
-            return joinFunction(take, ints, injective ? 1 : 0);
+            return joinFunction(take, ints, injective ? 1 : null);
         }
 
         Domain constant = IrUtil.getConstant(take);
