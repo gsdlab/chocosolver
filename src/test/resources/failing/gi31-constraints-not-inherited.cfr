@@ -1,0 +1,12 @@
+abstract Component
+    abstract Port
+        throughput -> integer // [Mbit/s]
+    abstract Port10Mbit : Port
+        [ throughput = 10 ]
+
+abstract Port100Mbit : Port
+    [ throughput = 100 ]
+
+C1 : Component
+    R1 : Port10Mbit
+    R2 : Port100Mbit

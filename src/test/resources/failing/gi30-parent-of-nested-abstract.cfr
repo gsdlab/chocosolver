@@ -1,0 +1,10 @@
+abstract Component
+    abstract Port
+    allPorts -> Port *
+    // query for all nested ports explicitly
+    [ all p : Component.Port | p.parent=this <=> p in this.allPorts ]   // p.parent causes the error
+
+
+WinController : Component
+    cmd : Port
+    powerOut : Port
