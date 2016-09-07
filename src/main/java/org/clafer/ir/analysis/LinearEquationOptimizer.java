@@ -26,7 +26,6 @@ import static org.clafer.ir.Irs.equal;
 import static org.clafer.ir.Irs.lessThanEqual;
 import static org.clafer.ir.Irs.mul;
 import org.clafer.math.LinearEquation;
-import org.clafer.math.LinearEquation.Op;
 import org.clafer.math.LinearFunction;
 import org.clafer.math.LinearFunctionBuilder;
 import org.clafer.math.LinearSystem;
@@ -39,15 +38,17 @@ import org.clafer.math.Variable;
  */
 public class LinearEquationOptimizer {
 
+    private static boolean lossy = false;
+
     private LinearEquationOptimizer() {
     }
 
-    private static LinearFunction linearFunction(IrIntExpr expr, Map<IrIntVar, Variable> map) {
+    private LinearFunction linearFunction(IrIntExpr expr, Map<IrIntVar, Variable> map) {
         LinearFunctionBuilder builder = new LinearFunctionBuilder();
         return linearFunction(expr, builder, map) ? builder.toFunction() : null;
     }
 
-    private static boolean linearFunction(IrIntExpr expr, LinearFunctionBuilder builder, Map<IrIntVar, Variable> map) {
+    private boolean linearFunction(IrIntExpr expr, LinearFunctionBuilder builder, Map<IrIntVar, Variable> map) {
         if (expr instanceof IrIntVar) {
             Domain domain = expr.getDomain();
             if (domain.isConstant()) {
@@ -93,7 +94,7 @@ public class LinearEquationOptimizer {
         return false;
     }
 
-    private static Triple<LinearEquation, Domain, Domain> linearEquation(IrIntExpr expr, Map<IrIntVar, Variable> map) {
+    private Triple<LinearEquation, Domain, Domain> linearEquation(IrIntExpr expr, Map<IrIntVar, Variable> map) {
         if (expr instanceof IrCompare) {
             IrCompare compare = (IrCompare) expr;
 
@@ -120,7 +121,7 @@ public class LinearEquationOptimizer {
         return null;
     }
 
-    private static LinearEquation[] round(LinearEquation equation) {
+    private LinearEquation[] round(LinearEquation equation) {
         LinearFunction left = equation.getLeft();
         Rational[] cs = left.getCoefficients();
         Variable[] vs = left.getVariables();
@@ -142,44 +143,11 @@ public class LinearEquationOptimizer {
                 new LinearEquation(equation.getLeft().mul(lcm), equation.getOp(), equation.getRight().mul(lcm), false)
             };
         }
-        long multiplier = 50000 / Math.max(Math.abs(max.ceil()), Math.abs(min.floor()));
-        if (multiplier == 0) {
-            multiplier = 1;
-        }
-        long[] lIcs = new long[cs.length];
-        long[] gIcs = new long[cs.length];
-        Rational lR = right.mul(multiplier);
-        Rational gR = lR;
-        for (int i = 0; i < lIcs.length; i++) {
-            Rational c = cs[i].mul(multiplier);
-            assert !c.isZero();
-            if (c.isPositive()) {
-                lIcs[i] = c.floor();
-                gIcs[i] = -c.ceil();
-                lR = lR.add(vs[i].getHighBound());
-                gR = gR.sub(vs[i].getHighBound());
-            } else {
-                lIcs[i] = c.ceil();
-                gIcs[i] = -c.floor();
-                lR = lR.sub(vs[i].getLowBound());
-                gR = gR.add(vs[i].getLowBound());
-            }
-        }
-        LinearFunction lte = new LinearFunction(lIcs, vs, 0);
-        LinearFunction gte = new LinearFunction(gIcs, vs, 0);
-        switch (equation.getOp()) {
-            case Equal:
-                return new LinearEquation[]{
-                    new LinearEquation(lte, Op.LessThanEqual, lR.ceil(), false),
-                    new LinearEquation(gte, Op.LessThanEqual, -gR.floor(), false)};
-            case LessThanEqual:
-                return new LinearEquation[]{new LinearEquation(lte, Op.LessThanEqual, lR.ceil(), false),};
-            default:
-                throw new IllegalStateException();
-        }
+        lossy = true;
+        return new LinearEquation[0];
     }
 
-    private static IrBoolExpr[] boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map, int low, int high) {
+    private IrBoolExpr[] boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map, int low, int high) {
         LinearEquation[] rounds = round(equation);
         IrBoolExpr[] exprs = new IrBoolExpr[rounds.length];
         for (int i = 0; i < exprs.length; i++) {
@@ -217,12 +185,13 @@ public class LinearEquationOptimizer {
         return exprs;
     }
 
-    public static IrModule optimize(IrModule module) {
+    private IrModule optimizeImpl(IrModule module) {
         List<IrBoolExpr> constraints = new ArrayList<>();
         Set<LinearEquation> equations = new HashSet<>();
         Map<IrIntVar, Variable> map = new HashMap<>();
         int low = Integer.MAX_VALUE;
         int high = Integer.MIN_VALUE;
+        Map<LinearEquation, IrBoolExpr> trace = new HashMap<>();
         for (IrBoolExpr constraint : module.getConstraints()) {
             Triple<LinearEquation, Domain, Domain> pair = linearEquation(constraint, map);
             if (pair != null) {
@@ -232,8 +201,8 @@ public class LinearEquationOptimizer {
                 equations.add(equation);
                 low = Math.min(Math.min(low, d1.getLowBound()), d2.getLowBound());
                 high = Math.max(Math.max(high, d1.getHighBound()), d2.getHighBound());
+                trace.put(equation, constraint);
             } else {
-                // TODO: add only if pair is null
                 constraints.add(constraint);
             }
         }
@@ -249,23 +218,34 @@ public class LinearEquationOptimizer {
                 }
             }
             for (Set<Either<LinearEquation, Variable>> component : ds.connectedComponents()) {
-                Set<LinearEquation> componentEquation = Either.filterLeft(component);
-                LinearSystem system = new LinearSystem(componentEquation);
+                Set<LinearEquation> componentEquations = Either.filterLeft(component);
+                LinearSystem system = new LinearSystem(componentEquations);
                 for (LinearEquation equation : system
                         .equalityElimination()
                         .fourierMotzkinElimination()
                         .strengthenInequalities()
                         .gaussJordanElimination()
-                        .addEquations(componentEquation)
+                        // TODO only add back necessary equations
+                        .addEquations(componentEquations)
                         .dominantElimination()
                         .getEquations()) {
                     for (IrBoolExpr constraint : boolExpr(equation, inverse, low, high)) {
                         constraints.add(constraint);
                     }
                 }
+
+                if (lossy) {
+                    for (LinearEquation componentEquation : componentEquations) {
+                        constraints.add(trace.get(componentEquation));
+                    }
+                }
             }
             return new IrModule().addConstraints(constraints);
         }
         return module;
+    }
+
+    public static IrModule optimize(IrModule module) {
+        return new LinearEquationOptimizer().optimizeImpl(module);
     }
 }
