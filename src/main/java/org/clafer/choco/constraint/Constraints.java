@@ -28,6 +28,7 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
@@ -80,6 +81,7 @@ import org.clafer.choco.constraint.propagator.PropTernary;
 import org.clafer.choco.constraint.propagator.PropTransitive;
 import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
+import org.clafer.choco.constraint.propagator.PropUtil;
 import org.clafer.common.Util;
 
 /**
@@ -696,13 +698,63 @@ public class Constraints {
      * @param ivar the integer
      * @param svar the singleton set
      * @param svarCard the cardinality of {@code svar}
+     * @param filter
      * @return constraint
      * {@code if ivar = filter then {} = svar else {ivar} = svar}
      */
     public static Constraint singletonFilter(IntVar ivar, SetVar svar, IntVar svarCard, int filter) {
+        if (!ivar.contains(filter) && !svar.getUB().contains(filter)) {
+            return singleton(ivar, svar, svarCard);
+        }
         return new Constraint("singletonFilter",
                 new PropSingletonFilter(ivar, svar, filter),
-                new PropEqualX_Y(svarCard, ivar.getModel().arithm(ivar, "!=", filter).reify()));
+                new PropEqualX_Y(svarCard, ivar.getModel().arithm(ivar, "!=", filter).reify())) {
+
+                    @Override
+                    public ESat isSatisfied() {
+                        if (svarCard.getLB() > 1) {
+                            return ESat.FALSE;
+                        }
+                        if (svar.getLB().size() == 1) {
+                            if (svar.getLB().min() == filter || ivar.isInstantiatedTo(filter)) {
+                                return ESat.FALSE;
+                            }
+                            if (ivar.contains(svar.getLB().min())) {
+                                return ivar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                            } else {
+                                return ESat.FALSE;
+                            }
+                        }
+                        if (!svar.getCard().contains(1)) {
+                            if (!ivar.contains(filter)) {
+                                return ESat.FALSE;
+                            }
+                            return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                        } else if (!svar.getCard().contains(0)) {
+                            ISetIterator iter = svar.getUB().iterator();
+                            while (iter.hasNext()) {
+                                int env = iter.nextInt();
+                                if (env != filter && ivar.contains(env)) {
+                                    return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                                }
+                            }
+                            return ESat.FALSE;
+                        } else if (ivar.contains(filter)) {
+                            if (ivar.isInstantiated()) {
+                                if (svar.getUB().isEmpty()) {
+                                    return ESat.TRUE;
+                                }
+                                if (!svar.getLB().isEmpty()) {
+                                    return ESat.FALSE;
+                                }
+                            }
+                            return ESat.UNDEFINED;
+                        } else if (PropUtil.isDomIntersectEnv(ivar, svar)) {
+                            return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                        }
+                        return ESat.FALSE;
+                    }
+                };
     }
 
     /**

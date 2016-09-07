@@ -11,7 +11,6 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.procedure.IntProcedure;
 
 /**
@@ -115,49 +114,7 @@ public class PropSingletonFilter extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        int lb = s.getLB().size();
-        if (lb > 1) {
-            return ESat.FALSE;
-        }
-        if (lb == 1) {
-            if (s.getLB().min() == filter || i.isInstantiatedTo(filter)) {
-                return ESat.FALSE;
-            }
-            if (i.contains(s.getLB().min())) {
-                return i.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-            } else {
-                return ESat.FALSE;
-            }
-        }
-        // TODO propagate condition on s.getCard
-        if (!s.getCard().contains(1)) {
-            if (!i.contains(filter)) {
-                return ESat.FALSE;
-            }
-            return i.isInstantiated() && s.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-        } else if (!s.getCard().contains(0)) {
-            ISetIterator iter = s.getUB().iterator();
-            while (iter.hasNext()) {
-                int env = iter.nextInt();
-                if (env != filter && i.contains(env)) {
-                    return i.isInstantiated() && s.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-                }
-            }
-            return ESat.FALSE;
-        } else if (i.contains(filter)) {
-            if (i.isInstantiated()) {
-                if (s.getUB().isEmpty()) {
-                    return ESat.TRUE;
-                }
-                if (!s.getLB().isEmpty()) {
-                    return ESat.FALSE;
-                }
-            }
-            return ESat.UNDEFINED;
-        } else if (PropUtil.isDomIntersectEnv(i, s)) {
-            return i.isInstantiated() && s.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-        }
-        return ESat.FALSE;
+        return ESat.UNDEFINED;
     }
 
     @Override
