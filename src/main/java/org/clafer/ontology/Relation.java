@@ -36,7 +36,7 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
         this(new HashMap<>(), new HashMap<>());
     }
 
-    public Relation(Relation copy) {
+    public Relation(Relation<T> copy) {
         this(new HashMap<>(copy.forwards), new HashMap<>(copy.backwards));
     }
 
@@ -137,7 +137,7 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
         }
     }
 
-    public Relation transitiveClosureWithoutCycles() {
+    public Relation<T> transitiveClosureWithoutCycles() {
         KeyGraph<T> graph = new KeyGraph<>();
         forEach(graph::addEdge);
         List<Set<T>> items = GraphUtil.computeStronglyConnectedComponents(graph);
@@ -165,7 +165,7 @@ public class Relation<T> implements Iterable<Pair<T, T>> {
                 }
             }
         }
-        return new Relation(newForwards, newBackwards);
+        return new Relation<>(newForwards, newBackwards);
     }
 
     public void removeSymmetry() {
