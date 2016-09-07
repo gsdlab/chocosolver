@@ -6,19 +6,23 @@ import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.$this;
 import static org.clafer.ast.Asts.IntType;
 import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.Many;
 import static org.clafer.ast.Asts.Optional;
 import static org.clafer.ast.Asts.card;
 import static org.clafer.ast.Asts.constant;
 import static org.clafer.ast.Asts.equal;
 import static org.clafer.ast.Asts.global;
 import static org.clafer.ast.Asts.ifThenElse;
+import static org.clafer.ast.Asts.implies;
 import static org.clafer.ast.Asts.in;
 import static org.clafer.ast.Asts.join;
 import static org.clafer.ast.Asts.joinParent;
 import static org.clafer.ast.Asts.joinRef;
 import static org.clafer.ast.Asts.lessThanEqual;
 import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.some;
 import static org.clafer.ast.Asts.sum;
+import static org.clafer.ast.Asts.union;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOptimizer;
 import org.clafer.compiler.ClaferSolver;
@@ -452,5 +456,66 @@ public class SymmetryBreakingTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(b, 1).defaultScope(3));
         assertEquals(7, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract LogicalBus
+     *     realizedBy -> PhysicalBus 1..*
+     *         [parent in this.realizes.ref]
+     *
+     * // Physical Connection Mediums
+     * abstract PhysicalBus
+     *     realizes -> LogicalBus 1..*
+     *         [parent in this.realizedBy.ref]
+     *
+     * logBusA : LogicalBus
+     * logBusB : LogicalBus
+     *
+     * physBusA : PhysicalBus ?
+     * physBusB : PhysicalBus ?
+     * physBusC : PhysicalBus ?
+     *
+     * [logBusA => physBusA]
+     * [logBusA => physBusB]
+     * [logBusA.realizedBy = (physBusA, physBusB)]
+     *
+     * [logBusB => physBusC]
+     * [logBusB.realizedBy = (physBusC)]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testInverse() {
+        AstModel m = newModel();
+
+        AstAbstractClafer logicalBus = m.addAbstract("LogicalBus");
+        AstAbstractClafer physicalBus = m.addAbstract("PhysicalBus");
+
+        AstConcreteClafer realizedBy = logicalBus.addChild("realizedBy").refToUnique(physicalBus).withCard(Many);
+        AstConcreteClafer realizes = physicalBus.addChild("realizes").refToUnique(logicalBus).withCard(Many);
+
+        realizedBy.addConstraint(in(joinParent($this()), joinRef(join(joinRef($this()), realizes))));
+        realizes.addConstraint(in(joinParent($this()), joinRef(join(joinRef($this()), realizedBy))));
+
+        AstConcreteClafer logBusA = m.addChild("logBusA").extending(logicalBus).withCard(Mandatory);
+        AstConcreteClafer logBusB = m.addChild("logBusB").extending(logicalBus).withCard(Mandatory);
+
+        AstConcreteClafer physBusA = m.addChild("physBusA").extending(physicalBus).withCard(Mandatory);
+        AstConcreteClafer physBusB = m.addChild("physBusB").extending(physicalBus).withCard(Mandatory);
+        AstConcreteClafer physBusC = m.addChild("physBusC").extending(physicalBus).withCard(Mandatory);
+
+        m.addConstraint(implies(some(logBusA), some(physBusA)));
+        m.addConstraint(implies(some(logBusA), some(physBusB)));
+        m.addConstraint(equal(
+                joinRef(join(global(logBusA), realizedBy)),
+                union(global(physBusA), global(physBusB))));
+
+        m.addConstraint(implies(some(logBusB), some(physBusC)));
+        m.addConstraint(equal(
+                joinRef(join(global(logBusB), realizedBy)),
+                global(physBusC)));
+
+        ClaferSolver solver = ClaferCompiler.compile(m, Scope.defaultScope(10));
+        assertEquals(1, solver.allInstances().length);
     }
 }
