@@ -111,11 +111,11 @@ import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.not;
-import org.clafer.ir.analysis.Coalescer;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
 import org.clafer.ir.analysis.LinearEquationOptimizer;
 import org.clafer.ir.analysis.Optimizer;
+import org.clafer.ir.analysis.deduction.FBBT;
 
 /**
  * Compile from IR to Choco.
@@ -147,13 +147,14 @@ public class IrCompiler {
         Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
         Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
         if (coalesceVariables) {
-            Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple = Coalescer.coalesce(optModule);
+            Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple
+                    = new FBBT().propagate(optModule);
             coalescedIntVars = coalesceTriple.getFst();
             coalescedSetVars = coalesceTriple.getSnd();
             optModule = coalesceTriple.getThd();
             while (!coalesceTriple.getFst().isEmpty()
                     || !coalesceTriple.getSnd().isEmpty()) {
-                coalesceTriple = Coalescer.coalesce(optModule);
+                coalesceTriple = new FBBT().propagate(optModule);
                 coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
                 coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
                 optModule = coalesceTriple.getThd();

@@ -1,11 +1,16 @@
 package org.clafer.ir;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.clafer.domain.BoolDomain;
 import org.clafer.domain.Domain;
+import static org.clafer.ir.Irs.string;
 
 /**
  *
@@ -326,6 +331,39 @@ public class IrUtil {
             Map<IrSetVar, IrSetVar> setRename,
             Map<IrStringVar, IrStringVar> stringRename) {
         return new VariableRenamer(intRename, setRename, stringRename).rewrite(module, null);
+    }
+
+    public static Map<IrStringVar, IrStringVar> stringRenamer(
+            Collection<IrStringVar> stringVars, Map<IrIntVar, IrIntVar> intRenamer) {
+        Map<IrStringVar, IrStringVar> stringRenamer = new HashMap<>();
+        Map<List<IrIntVar>, IrStringVar> stringVarCache = new HashMap<>();
+        for (IrStringVar stringVar : stringVars) {
+            boolean changed = false;
+            IrIntVar[] chars = new IrIntVar[stringVar.getCharVars().length];
+            for (int i = 0; i < chars.length; i++) {
+                chars[i] = intRenamer.get(stringVar.getCharVars()[i]);
+                if (chars[i] == null) {
+                    chars[i] = stringVar.getCharVars()[i];
+                } else {
+                    changed = true;
+                }
+            }
+            IrIntVar length = intRenamer.get(stringVar.getLengthVar());
+            changed |= length != null;
+            if (changed) {
+                length = length == null ? stringVar.getLengthVar() : length;
+                List<IrIntVar> key = new ArrayList<>();
+                key.addAll(Arrays.asList(chars));
+                key.add(length);
+                IrStringVar string = stringVarCache.get(key);
+                if (string == null) {
+                    string = string(stringVar.getName(), chars, length);
+                    stringVarCache.put(key, string);
+                }
+                stringRenamer.put(stringVar, string);
+            }
+        }
+        return stringRenamer;
     }
 
     public static enum Ordering {
