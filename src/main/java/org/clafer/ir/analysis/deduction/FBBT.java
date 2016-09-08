@@ -1,6 +1,7 @@
 package org.clafer.ir.analysis.deduction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +21,7 @@ import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayEquality;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
+import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
@@ -56,8 +58,10 @@ import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
+import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.domainInt;
 import static org.clafer.ir.Irs.set;
+import static org.clafer.ir.Irs.string;
 
 /**
  * Feasibility-based bounds tightening.
@@ -205,13 +209,56 @@ public class FBBT {
             }
         }
 
-        Map<IrStringVar, IrStringVar> coalescedStrings = IrUtil.stringRenamer(
+        Map<IrStringVar, IrStringVar> coalescedStrings = stringRenamer(
                 pendingStringVars, coalescedInts);
 
         return new Triple<>(
                 coalescedInts,
                 coalescedSets,
                 IrUtil.renameVariables(module, coalescedInts, coalescedSets, coalescedStrings));
+    }
+
+    private static Map<IrStringVar, IrStringVar> stringRenamer(
+            Collection<IrStringVar> stringVars, Map<IrIntVar, IrIntVar> intRenamer) {
+        Map<IrStringVar, IrStringVar> stringRenamer = new HashMap<>();
+        Map<List<IrIntVar>, IrStringVar> stringVarCache = new HashMap<>();
+        for (IrStringVar stringVar : stringVars) {
+            boolean changed = false;
+            IrIntVar[] chars = new IrIntVar[stringVar.getCharVars().length];
+            for (int i = 0; i < chars.length; i++) {
+                chars[i] = intRenamer.get(stringVar.getCharVars()[i]);
+                if (chars[i] == null) {
+                    chars[i] = stringVar.getCharVars()[i];
+                } else {
+                    changed = true;
+                }
+            }
+            IrIntVar length = intRenamer.get(stringVar.getLengthVar());
+            if (length != null) {
+                changed = true;
+                if (length.getHighBound() < chars.length) {
+                    for (int i = length.getHighBound(); i < chars.length; i++) {
+                        if (!chars[i].getDomain().isConstant() || chars[i].getLowBound() != 0) {
+                            intRenamer.put(chars[i], Irs.Zero);
+                        }
+                    }
+                    chars = Arrays.copyOf(chars, length.getHighBound());
+                }
+            }
+            if (changed) {
+                length = length == null ? stringVar.getLengthVar() : length;
+                List<IrIntVar> key = new ArrayList<>();
+                key.addAll(Arrays.asList(chars));
+                key.add(length);
+                IrStringVar string = stringVarCache.get(key);
+                if (string == null) {
+                    string = string(stringVar.getName(), chars, length);
+                    stringVarCache.put(key, string);
+                }
+                stringRenamer.put(stringVar, string);
+            }
+        }
+        return stringRenamer;
     }
 
     private static <K, V> V removeOrDefault(Map<K, V> map, K key, V defaultValue) {
