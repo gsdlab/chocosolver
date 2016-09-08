@@ -36,6 +36,9 @@ public class IrIntArrayVar extends IrAbstractIntArray {
 
     @Override
     public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
         if (obj instanceof IrIntArrayVar) {
             IrIntArrayVar other = (IrIntArrayVar) obj;
             return Arrays.equals(array, other.array);

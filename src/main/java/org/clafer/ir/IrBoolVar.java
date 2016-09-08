@@ -1,6 +1,7 @@
 package org.clafer.ir;
 
 import org.clafer.domain.BoolDomain;
+import org.clafer.domain.Domains;
 
 /**
  *
@@ -10,6 +11,10 @@ public class IrBoolVar extends IrIntVar implements IrBoolExpr {
 
     IrBoolVar(String name, BoolDomain domain) {
         super(name, domain);
+    }
+
+    IrBoolVar(boolean constant) {
+        this(Boolean.toString(constant), constant ? Domains.TrueDomain : Domains.FalseDomain);
     }
 
     @Override

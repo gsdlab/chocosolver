@@ -10,8 +10,9 @@ import org.clafer.domain.Domain;
 public abstract class IrAbstractSet implements IrSetExpr {
 
     private final Domain env, ker, card;
+    private final boolean isConstant;
 
-    public IrAbstractSet(Domain env, Domain ker, Domain card) {
+    IrAbstractSet(Domain env, Domain ker, Domain card) {
         this.env = Check.notNull(env);
         this.ker = Check.notNull(ker);
         this.card = Check.notNull(card);
@@ -28,6 +29,7 @@ public abstract class IrAbstractSet implements IrSetExpr {
         if (card.getHighBound() < ker.size()) {
             throw new IllegalSetException(card.getHighBound() + " < " + ker.size());
         }
+        this.isConstant = ker.size() == env.size();
     }
 
     @Override
@@ -43,6 +45,11 @@ public abstract class IrAbstractSet implements IrSetExpr {
     @Override
     public Domain getCard() {
         return card;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return isConstant;
     }
 
     @Override

@@ -27,7 +27,7 @@ public class IrModule {
     }
 
     public IrModule addVariable(IrVar var) {
-        if (!(var instanceof IrConstant)) {
+        if (!var.isConstant()) {
             constraints.add(new IrRegister(var));
         }
         return this;

@@ -16,7 +16,6 @@ import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrCompare;
 import static org.clafer.ir.IrCompare.Op.NotEqual;
-import org.clafer.ir.IrConstant;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
@@ -76,10 +75,10 @@ public class LinearEquationOptimizer {
             IrMul mul = (IrMul) expr;
             int coefficient;
             IrIntExpr variable;
-            if (mul.getMultiplicand() instanceof IrConstant) {
+            if (mul.getMultiplicand().isConstant()) {
                 coefficient = mul.getMultiplicand().getLowBound();
                 variable = mul.getMultiplier();
-            } else if (mul.getMultiplier() instanceof IrConstant) {
+            } else if (mul.getMultiplier().isConstant()) {
                 coefficient = mul.getMultiplier().getLowBound();
                 variable = mul.getMultiplicand();
             } else {

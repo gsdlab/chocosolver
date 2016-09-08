@@ -33,7 +33,7 @@ class CountDeducer implements IntDeducer<IrCount> {
             }
         } else if (mandatories >= domain.getHighBound()) {
             for (IrIntExpr element : ir.getArray()) {
-                if (element.getDomain().contains(value)) {
+                if (!element.getDomain().isConstant()) {
                     deduction.notEqual(element, element);
                 }
             }

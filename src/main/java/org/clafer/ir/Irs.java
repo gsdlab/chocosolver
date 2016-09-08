@@ -45,8 +45,8 @@ public class Irs {
      *
      *******************
      */
-    public static final IrBoolVar True = new IrBoolConstant(true);
-    public static final IrBoolVar False = new IrBoolConstant(false);
+    public static final IrBoolVar True = new IrBoolVar(true);
+    public static final IrBoolVar False = new IrBoolVar(false);
 
     public static IrBoolVar constant(boolean value) {
         return value ? True : False;
@@ -1120,7 +1120,7 @@ public class Irs {
             case 1:
                 return One;
             default:
-                return new IrIntConstant(value);
+                return new IrIntVar(value);
         }
     }
 
@@ -1593,7 +1593,7 @@ public class Irs {
      *
      *******************
      */
-    public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
+    public static final IrSetVar EmptySet = new IrSetVar(EmptyDomain);
 
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
         return set(name, boundDomain(lowEnv, highEnv));
@@ -1651,7 +1651,7 @@ public class Irs {
         if (value.isEmpty()) {
             return EmptySet;
         }
-        return new IrSetConstant(value);
+        return new IrSetVar(value);
     }
 
     public static IrSetExpr singleton(IrIntExpr value) {
@@ -2299,21 +2299,26 @@ public class Irs {
      *
      *******************
      */
-    public static final IrStringVar EmptyString = new IrStringConstant("");
+    public static final IrStringVar EmptyString = new IrStringVar("", new IrIntVar[0], Zero);
 
     public static IrStringVar constant(String value) {
         if (value.length() == 0) {
             return EmptyString;
         }
-        return new IrStringConstant(value);
+        IrIntVar[] chars = new IrIntVar[value.length()];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = constant(value.charAt(i));
+        }
+        IrIntVar length = constant(value.length());
+        return new IrStringVar(value, chars, length);
     }
 
     public static IrStringVar string(String name, IrIntVar[] chars, IrIntVar length) {
-        if (length instanceof IrConstant) {
+        if (length.isConstant()) {
             char[] string = new char[chars.length];
             for (int i = 0; string != null && i < string.length; i++) {
-                if (chars[i] instanceof IrConstant) {
-                    string[i] = (char) IrUtil.getConstant(chars[i]).intValue();
+                if (chars[i].isConstant()) {
+                    string[i] = (char) chars[i].getLowBound();
                 } else {
                     string = null;
                 }

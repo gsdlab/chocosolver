@@ -12,6 +12,7 @@ public abstract class IrAbstractString implements IrStringExpr {
 
     private final Domain[] charDomains;
     private final Domain lengthDomain;
+    private final boolean isConstant;
 
     IrAbstractString(Domain[] charDomains, Domain lengthDomain) {
         this.charDomains = Check.noNulls(charDomains);
@@ -44,6 +45,8 @@ public abstract class IrAbstractString implements IrStringExpr {
         if (lengthDomain.getHighBound() > charDomains.length) {
             throw new IllegalStringException();
         }
+        assert lengthDomain.getHighBound() == charDomains.length : "Correct but not optimized.";
+        this.isConstant = lengthDomain.isConstant() && Arrays.asList(charDomains).stream().allMatch(Domain::isConstant);
     }
 
     @Override
@@ -54,6 +57,11 @@ public abstract class IrAbstractString implements IrStringExpr {
     @Override
     public Domain getLength() {
         return lengthDomain;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return isConstant;
     }
 
     @Override

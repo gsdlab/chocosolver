@@ -39,9 +39,9 @@ public class IrArithmXYCTest {
     @Test(timeout = 60000)
     public IrBoolExpr setup(boolean left, IrCompare.Op op, Term var1, Term var2, Term var3) {
         assumeTrue(
-                var1.getIrVar() instanceof IrConstant
-                || var2.getIrVar() instanceof IrConstant
-                || var3.getIrVar() instanceof IrConstant);
+                var1.getIrVar().isConstant()
+                || var2.getIrVar().isConstant()
+                || var3.getIrVar().isConstant());
         IrIntExpr add = add(var1.toIrExpr(), var2.toIrExpr());
         return left
                 ? compare(add, op, var3.toIrExpr())

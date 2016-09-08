@@ -14,7 +14,7 @@ public class IrStringVar extends IrAbstractString implements IrVar {
     private final IrIntVar[] chars;
     private final IrIntVar length;
 
-    protected IrStringVar(String name, IrIntVar[] chars, IrIntVar length) {
+    IrStringVar(String name, IrIntVar[] chars, IrIntVar length) {
         super(getCharDomains(Check.noNulls(chars)), Check.notNull(length).getDomain());
         this.name = Check.notNull(name);
         this.chars = chars;
@@ -40,18 +40,6 @@ public class IrStringVar extends IrAbstractString implements IrVar {
 
     public IrIntVar getLengthVar() {
         return length;
-    }
-
-    public boolean isConstant() {
-        if (!(length instanceof IrConstant)) {
-            return false;
-        }
-        for (IrIntVar c : chars) {
-            if (!(c instanceof IrConstant)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override

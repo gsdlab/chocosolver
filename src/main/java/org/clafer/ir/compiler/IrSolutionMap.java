@@ -6,11 +6,8 @@ import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.clafer.collection.Either;
-import org.clafer.ir.IrBoolConstant;
 import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntVar;
-import org.clafer.ir.IrSetConstant;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
 
@@ -47,8 +44,8 @@ public class IrSolutionMap {
         if (boolVar == null) {
             boolVar = var;
         }
-        if (boolVar instanceof IrBoolConstant) {
-            return Either.left(((IrBoolConstant) boolVar).getValue());
+        if (boolVar.isConstant()) {
+            return Either.left(boolVar.getLowBound() == 1 ? Boolean.TRUE : Boolean.FALSE);
         }
         return Either.right((BoolVar) intVars.get(boolVar));
     }
@@ -105,11 +102,8 @@ public class IrSolutionMap {
         if (intVar == null) {
             intVar = var;
         }
-        if (intVar instanceof IrIntConstant) {
-            return Either.left(((IrIntConstant) intVar).getValue());
-        }
-        if (intVar instanceof IrBoolConstant) {
-            return Either.left(((IrBoolConstant) intVar).getValue() ? 1 : 0);
+        if (intVar.isConstant()) {
+            return Either.left(intVar.getLowBound());
         }
         return Either.right(intVars.get(intVar));
     }
@@ -147,8 +141,8 @@ public class IrSolutionMap {
         if (setVar == null) {
             setVar = var;
         }
-        if (setVar instanceof IrSetConstant) {
-            return Either.left(((IrSetConstant) setVar).getValue());
+        if (setVar.isConstant()) {
+            return Either.left(setVar.getKer().getValues());
         }
         return Either.right(setVars.get(setVar));
     }

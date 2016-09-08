@@ -52,7 +52,6 @@ import org.clafer.ir.IrIntArrayExpr;
 import org.clafer.ir.IrIntArrayExprVisitor;
 import org.clafer.ir.IrIntArrayVar;
 import org.clafer.ir.IrIntChannel;
-import org.clafer.ir.IrIntConstant;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntExprVisitor;
 import org.clafer.ir.IrIntVar;
@@ -551,15 +550,15 @@ public class IrCompiler {
         if (c == 0) {
             return compileArithm(a, op1, b);
         }
-        if (a instanceof IrIntConstant) {
-            IrIntConstant constant = (IrIntConstant) a;
+        if (a.isConstant()) {
+            int constant = a.getLowBound();
             // a ◁ b + c <=> b ▷ a - c
             // a ◁ b - c <=> b ▷ a + c
-            return compileArithm(b, op1.reverse(), op2.negate().compute(constant.getValue(), c));
+            return compileArithm(b, op1.reverse(), op2.negate().compute(constant, c));
         }
-        if (b instanceof IrIntConstant) {
-            IrIntConstant constant = (IrIntConstant) b;
-            return compileArithm(a, op1, op2.compute(constant.getValue(), c));
+        if (b.isConstant()) {
+            int constant = b.getLowBound();
+            return compileArithm(a, op1, op2.compute(constant, c));
         }
         if (a instanceof IrMinus) {
             IrMinus minus = (IrMinus) a;
@@ -613,19 +612,19 @@ public class IrCompiler {
     }
 
     private Constraint compileArithm(IrIntExpr a, Arithm op1, IrIntExpr b, Rel op2, int c) {
-        if (a instanceof IrIntConstant) {
-            IrIntConstant constant = (IrIntConstant) a;
+        if (a.isConstant()) {
+            int constant = a.getLowBound();
             // a + b ◁ c <=> b ◁ c - a
             // a - b ◁ c <=> b ▷ a - c
             return Arithm.ADD.equals(op1)
-                    ? compileArithm(b, op2, c - constant.getValue())
-                    : compileArithm(b, op2.reverse(), constant.getValue() - c);
+                    ? compileArithm(b, op2, c - constant)
+                    : compileArithm(b, op2.reverse(), constant - c);
         }
-        if (b instanceof IrIntConstant) {
+        if (b.isConstant()) {
             // a + b ◁ c <=> a ◁ c - b
             // a - b ◁ c <=> a ◁ c + b
-            IrIntConstant constant = (IrIntConstant) b;
-            return compileArithm(a, op2, op1.negate().compute(c, constant.getValue()));
+            int constant = b.getLowBound();
+            return compileArithm(a, op2, op1.negate().compute(c, constant));
         }
         if (b instanceof IrMinus) {
             IrMinus minus = (IrMinus) b;

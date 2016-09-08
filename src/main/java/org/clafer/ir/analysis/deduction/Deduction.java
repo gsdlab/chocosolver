@@ -10,7 +10,6 @@ import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
-import org.clafer.ir.IrConstant;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrNot;
@@ -55,12 +54,15 @@ class Deduction {
     boolean checkInvariants() {
         intRetains.forEach((var, domain) -> {
             assert domain.isSubsetOf(var.getDomain()) && !domain.equals(var.getDomain());
+            assert !var.isConstant();
         });
         setContains.forEach((var, domain) -> {
             assert domain.isSupersetOf(var.getKer()) && !domain.equals(var.getKer());
+            assert !var.isConstant();
         });
         setSubsetOf.forEach((var, domain) -> {
             assert domain.isSubsetOf(var.getEnv()) && !domain.equals(var.getEnv()) : domain + " : " + var;
+            assert !var.isConstant();
         });
         return true;
     }
@@ -101,9 +103,9 @@ class Deduction {
     }
 
     public void equal(IrIntExpr left, IrIntExpr right) {
-        if (left instanceof IrConstant) {
+        if (left.isConstant()) {
             within(right, left.getDomain());
-        } else if (right instanceof IrConstant) {
+        } else if (right.isConstant()) {
             within(left, right.getDomain());
         } else {
             if (left instanceof IrIntVar && right instanceof IrIntVar) {
@@ -119,9 +121,9 @@ class Deduction {
     }
 
     public void notEqual(IrIntExpr left, IrIntExpr right) {
-        if (left instanceof IrConstant) {
+        if (left.isConstant()) {
             within(right, right.getDomain().remove(left.getDomain().getLowBound()));
-        } else if (right instanceof IrConstant) {
+        } else if (right.isConstant()) {
             within(left, left.getDomain().remove(right.getDomain().getLowBound()));
         } else if (left instanceof IrIntVar && right instanceof IrIntVar) {
             intNotEquals.union((IrIntVar) left, (IrIntVar) right);
@@ -209,6 +211,7 @@ class Deduction {
                     intRetains.merge(var, domain, Domain::intersection);
                 } else {
                     domain = expr.getDomain().intersection(domain);
+                    failIf(domain.isEmpty());
                     if (domain != expr.getDomain()) {
                         intRetains.put(var, domain);
                     }
@@ -238,10 +241,10 @@ class Deduction {
             IrSetVar leftVar = (IrSetVar) left;
             IrSetVar rightVar = (IrSetVar) right;
             equal(leftVar.getCardVar(), rightVar.getCardVar());
-            if (left instanceof IrConstant) {
+            if (left.isConstant()) {
                 kerContains(right, left.getKer());
                 envSubsetOf(right, left.getEnv());
-            } else if (right instanceof IrConstant) {
+            } else if (right.isConstant()) {
                 kerContains(left, right.getKer());
                 envSubsetOf(left, right.getEnv());
             } else {

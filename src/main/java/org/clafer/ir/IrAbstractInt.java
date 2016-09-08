@@ -25,6 +25,11 @@ public abstract class IrAbstractInt implements IrIntExpr {
     }
 
     @Override
+    public boolean isConstant() {
+        return domain.isConstant();
+    }
+
+    @Override
     public int getLowBound() {
         return domain.getLowBound();
     }

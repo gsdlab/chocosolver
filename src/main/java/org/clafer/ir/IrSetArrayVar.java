@@ -52,6 +52,9 @@ public class IrSetArrayVar extends IrAbstractSetArray {
 
     @Override
     public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
         if (obj instanceof IrSetArrayVar) {
             IrSetArrayVar other = (IrSetArrayVar) obj;
             return Arrays.equals(array, other.array);

@@ -25,7 +25,6 @@ import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
-import org.clafer.ir.IrConstant;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIfOnlyIf;
@@ -146,14 +145,11 @@ public class FBBT {
         Collection<IrSetVar> pendingSetVars = new HashSet<>();
         Collection<IrStringVar> pendingStringVars = new HashSet<>();
         for (IrVar var : module.getVariables()) {
-            if (var instanceof IrSetVar) {
-                if (!(var instanceof IrConstant)) {
+            if (!var.isConstant()) {
+                if (var instanceof IrSetVar) {
                     pendingSetVars.add((IrSetVar) var);
-                }
-            } else if (var instanceof IrStringVar) {
-                IrStringVar stringVar = (IrStringVar) var;
-                if (!stringVar.isConstant()) {
-                    pendingStringVars.add(stringVar);
+                } else if (var instanceof IrStringVar) {
+                    pendingStringVars.add((IrStringVar) var);
                 }
             }
         }

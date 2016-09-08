@@ -2,6 +2,7 @@ package org.clafer.ir;
 
 import org.clafer.common.Check;
 import org.clafer.domain.Domain;
+import org.clafer.domain.Domains;
 
 /**
  *
@@ -11,9 +12,13 @@ public class IrIntVar extends IrAbstractInt implements IrVar {
 
     private final String name;
 
-    protected IrIntVar(String name, Domain domain) {
+    IrIntVar(String name, Domain domain) {
         super(domain);
         this.name = Check.notNull(name);
+    }
+
+    IrIntVar(int constant) {
+        this(Integer.toString(constant), Domains.constantDomain(constant));
     }
 
     @Override
@@ -28,7 +33,16 @@ public class IrIntVar extends IrAbstractInt implements IrVar {
 
     @Override
     public boolean equals(Object obj) {
-        return this == obj;
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof IrIntVar) {
+            IrIntVar other = (IrIntVar) obj;
+            if (isConstant() && other.isConstant()) {
+                return getLowBound() == other.getLowBound();
+            }
+        }
+        return false;
     }
 
     @Override
