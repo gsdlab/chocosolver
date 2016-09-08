@@ -101,15 +101,14 @@ class Deduction {
     }
 
     public void equal(IrIntExpr left, IrIntExpr right) {
-        if (left instanceof IrIntVar && right instanceof IrIntVar) {
-            if (left instanceof IrConstant) {
-                within(right, left.getDomain());
-            } else if (right instanceof IrConstant) {
-                within(left, right.getDomain());
-            } else {
+        if (left instanceof IrConstant) {
+            within(right, left.getDomain());
+        } else if (right instanceof IrConstant) {
+            within(left, right.getDomain());
+        } else {
+            if (left instanceof IrIntVar && right instanceof IrIntVar) {
                 intEquals.union((IrIntVar) left, (IrIntVar) right);
             }
-        } else {
             within(left, right.getDomain());
             within(right, left.getDomain());
         }

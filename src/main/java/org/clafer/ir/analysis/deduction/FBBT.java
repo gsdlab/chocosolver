@@ -22,10 +22,10 @@ import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayEquality;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
-import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
+import org.clafer.ir.IrConstant;
 import org.clafer.ir.IrCount;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIfOnlyIf;
@@ -59,7 +59,6 @@ import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
-import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.domainInt;
 import static org.clafer.ir.Irs.set;
 import static org.clafer.ir.Irs.string;
@@ -148,9 +147,26 @@ public class FBBT {
         Collection<IrStringVar> pendingStringVars = new HashSet<>();
         for (IrVar var : module.getVariables()) {
             if (var instanceof IrSetVar) {
-                pendingSetVars.add((IrSetVar) var);
+                if (!(var instanceof IrConstant)) {
+                    pendingSetVars.add((IrSetVar) var);
+                }
             } else if (var instanceof IrStringVar) {
-                pendingStringVars.add((IrStringVar) var);
+                IrStringVar stringVar = (IrStringVar) var;
+                if (!stringVar.isConstant()) {
+                    pendingStringVars.add(stringVar);
+                }
+            }
+        }
+
+        for (IrStringVar var : pendingStringVars) {
+            IrIntVar[] chars = var.getCharVars();
+            Domain length = intRetains.get(var.getLengthVar());
+            if (length != null) {
+                for (int i = length.getHighBound(); i < chars.length; i++) {
+                    // If the length was reduced, then set the trailing characters to 0.
+                    // Do this before coalescing the integer variables.
+                    deduction.equal(chars[i], 0);
+                }
             }
         }
 
@@ -236,17 +252,7 @@ public class FBBT {
                 }
             }
             IrIntVar length = intRenamer.get(stringVar.getLengthVar());
-            if (length != null) {
-                changed = true;
-                if (length.getHighBound() < chars.length) {
-                    for (int i = length.getHighBound(); i < chars.length; i++) {
-                        if (!chars[i].getDomain().isConstant() || chars[i].getLowBound() != 0) {
-                            intRenamer.put(chars[i], Irs.Zero);
-                        }
-                    }
-                    chars = Arrays.copyOf(chars, length.getHighBound());
-                }
-            }
+            changed |= length != null;
             if (changed) {
                 length = length == null ? stringVar.getLengthVar() : length;
                 List<IrIntVar> key = new ArrayList<>();

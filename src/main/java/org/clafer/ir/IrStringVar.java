@@ -42,6 +42,18 @@ public class IrStringVar extends IrAbstractString implements IrVar {
         return length;
     }
 
+    public boolean isConstant() {
+        if (!(length instanceof IrConstant)) {
+            return false;
+        }
+        for (IrIntVar c : chars) {
+            if (!(c instanceof IrConstant)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public <A, B> B accept(IrStringExprVisitor<A, B> visitor, A a) {
         return visitor.visit(this, a);
