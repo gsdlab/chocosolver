@@ -16,6 +16,7 @@ import org.clafer.domain.Domain;
 import org.clafer.ir.IllegalIntException;
 import org.clafer.ir.IllegalSetException;
 import org.clafer.ir.IllegalStringException;
+import org.clafer.ir.IrAcyclic;
 import org.clafer.ir.IrAdd;
 import org.clafer.ir.IrAllDifferent;
 import org.clafer.ir.IrArrayEquality;
@@ -79,6 +80,7 @@ public class FBBT {
 
     public FBBT() {
         boolDeducers = new HashMap<>();
+        boolDeducers.put(IrAcyclic.class, new AcyclicDeducer());
         boolDeducers.put(IrAllDifferent.class, new AllDifferentDeducer());
         boolDeducers.put(IrArrayEquality.class, new ArrayEqualityDeducer());
         boolDeducers.put(IrBoolChannel.class, new BoolChannelDeducer());
