@@ -34,13 +34,13 @@ class Deduction {
     private final Map<Class<?>, IntDeducer<?>> intDeducers;
     private final Map<Class<?>, SetDeducer<?>> setDeducers;
 
-    private final DisjointSets<IrIntVar> intEquals = new DisjointSets<>();
-    private final DisjointSets<IrIntVar> intNotEquals = new DisjointSets<>();
-    private final Map<IrIntVar, Domain> intRetains = new HashMap<>();
+    private final DisjointSets<IrIntVar> intEquals;
+    private final DisjointSets<IrIntVar> intNotEquals;
+    public final Map<IrIntVar, Domain> intRetains;
 
-    private final DisjointSets<IrSetVar> setEquals = new DisjointSets<>();
-    private final Map<IrSetVar, Domain> setContains = new HashMap<>();
-    private final Map<IrSetVar, Domain> setSubsetOf = new HashMap<>();
+    private final DisjointSets<IrSetVar> setEquals;
+    private final Map<IrSetVar, Domain> setContains;
+    private final Map<IrSetVar, Domain> setSubsetOf;
 
     public Deduction(
             Map<Class<?>, BoolDeducer<?>> boolDeducers,
@@ -49,6 +49,25 @@ class Deduction {
         this.boolDeducers = boolDeducers;
         this.intDeducers = intDeducers;
         this.setDeducers = setDeducers;
+        this.intEquals = new DisjointSets<>();
+        this.intNotEquals = new DisjointSets<>();
+        this.intRetains = new HashMap<>();
+        this.setEquals = new DisjointSets<>();
+        this.setContains = new HashMap<>();
+        this.setSubsetOf = new HashMap<>();
+
+    }
+
+    public Deduction(Deduction deduction) {
+        this.boolDeducers = deduction.boolDeducers;
+        this.intDeducers = deduction.intDeducers;
+        this.setDeducers = deduction.setDeducers;
+        this.intEquals = new DisjointSets<>(deduction.intEquals);
+        this.intNotEquals = new DisjointSets<>(deduction.intNotEquals);
+        this.intRetains = new HashMap<>(deduction.intRetains);
+        this.setEquals = new DisjointSets<>(deduction.setEquals);
+        this.setContains = new HashMap<>(deduction.setContains);
+        this.setSubsetOf = new HashMap<>(deduction.setSubsetOf);
     }
 
     boolean checkInvariants() {
