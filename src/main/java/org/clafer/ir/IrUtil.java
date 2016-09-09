@@ -39,20 +39,12 @@ public class IrUtil {
         return null;
     }
 
+    public static IrIntExpr asConstant(IrIntExpr i) {
+        return i.isConstant() ? Irs.constant(i.getLowBound()) : i;
+    }
+
     public static IrSetExpr asConstant(IrSetExpr s) {
-        Domain env = s.getEnv();
-        Domain ker = s.getKer();
-        if (env.size() == ker.size()) {
-            return Irs.constant(env);
-        }
-        Domain card = s.getCard();
-        if (card.getLowBound() == env.size()) {
-            return Irs.constant(env);
-        }
-        if (card.getHighBound() == ker.size()) {
-            return Irs.constant(ker);
-        }
-        return s;
+        return s.isConstant() ? Irs.constant(s.getKer()) : s;
     }
 
     public static IrIntExpr asInt(IrSetExpr set) {

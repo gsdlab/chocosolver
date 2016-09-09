@@ -1414,7 +1414,7 @@ public class Irs {
                 index.getDomain().stream(), $array.getDomains())
                 .reduce(Domain::union);
         assert domain.isPresent();
-        return new IrElement($array, index, domain.get());
+        return IrUtil.asConstant(new IrElement($array, index, domain.get()));
     }
 
     public static IrIntExpr count(int value, IrIntExpr[] array) {
@@ -1492,8 +1492,8 @@ public class Irs {
         if (!set.getKer().isEmpty()) {
             domain = domain.boundHigh(set.getKer().getLowBound());
         }
-        return new IrSetMin(set, defaultValue, set.getCard().getLowBound() > 0
-                ? domain : domain.insert(defaultValue));
+        return IrUtil.asConstant(new IrSetMin(set, defaultValue, set.getCard().getLowBound() > 0
+                ? domain : domain.insert(defaultValue)));
     }
 
     public static IrIntExpr sum(IrSetExpr set) {
@@ -1735,7 +1735,7 @@ public class Irs {
             ker = ker.intersection(array.getKers()[val]);
             card = card.union(array.getCards()[val]);
         }
-        return new IrSetElement(array, index, env, ker, card);
+        return IrUtil.asConstant(new IrSetElement(array, index, env, ker, card));
     }
 
     /**
@@ -2106,7 +2106,7 @@ public class Irs {
             IrIntArrayVar var = (IrIntArrayVar) expr;
             return var.getArray()[index];
         }
-        return new IrElement(expr, constant(index), expr.getDomains()[index]);
+        return IrUtil.asConstant(new IrElement(expr, constant(index), expr.getDomains()[index]));
     }
 
     public static IrSetExpr get(IrSetArrayExpr expr, int index) {
@@ -2114,7 +2114,7 @@ public class Irs {
             IrSetArrayVar var = (IrSetArrayVar) expr;
             return var.getArray()[index];
         }
-        return new IrSetElement(expr, constant(index), expr.getEnvs()[index], expr.getKers()[index], expr.getCards()[index]);
+        return IrUtil.asConstant(new IrSetElement(expr, constant(index), expr.getEnvs()[index], expr.getKers()[index], expr.getCards()[index]));
     }
 
     public static IrIntArrayExpr subArray(IrIntArrayExpr expr, int from, int to) {
