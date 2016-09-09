@@ -57,10 +57,9 @@ public class Irs {
     }
 
     public static IrBoolExpr not(IrBoolExpr proposition) {
-        Boolean constant = IrUtil.getConstant(proposition);
-        if (constant != null) {
+        if (proposition.isConstant()) {
             // Reverse the boolean
-            return constant ? False : True;
+            return proposition.getDomain().isTrue() ? False : True;
         }
         return proposition.negate();
     }
@@ -81,10 +80,10 @@ public class Irs {
         }
         List<IrBoolExpr> filter = new ArrayList<>(flatten.size());
         for (IrBoolExpr operand : flatten) {
-            if (IrUtil.isFalse(operand)) {
+            if (operand.getDomain().isFalse()) {
                 return False;
             }
-            if (!IrUtil.isTrue(operand)) {
+            if (!operand.getDomain().isTrue()) {
                 filter.add(operand);
             }
         }
@@ -106,12 +105,12 @@ public class Irs {
         List<IrBoolExpr> filter = new ArrayList<>(operands.length);
         int count = 0;
         for (IrBoolExpr operand : operands) {
-            if (IrUtil.isTrue(operand)) {
+            if (operand.getDomain().isTrue()) {
                 count++;
                 if (count > 1) {
                     return False;
                 }
-            } else if (!IrUtil.isFalse(operand)) {
+            } else if (!operand.getDomain().isFalse()) {
                 filter.add(operand);
             }
         }
@@ -137,12 +136,12 @@ public class Irs {
         List<IrBoolExpr> filter = new ArrayList<>(operands.length);
         int count = 0;
         for (IrBoolExpr operand : operands) {
-            if (IrUtil.isTrue(operand)) {
+            if (operand.getDomain().isTrue()) {
                 count++;
                 if (count > 1) {
                     return False;
                 }
-            } else if (!IrUtil.isFalse(operand)) {
+            } else if (!operand.getDomain().isFalse()) {
                 filter.add(operand);
             }
         }
@@ -180,10 +179,10 @@ public class Irs {
         }
         List<IrBoolExpr> filter = new ArrayList<>(flatten.size());
         for (IrBoolExpr operand : flatten) {
-            if (IrUtil.isTrue(operand)) {
+            if (operand.getDomain().isTrue()) {
                 return True;
             }
-            if (!IrUtil.isFalse(operand)) {
+            if (!operand.getDomain().isFalse()) {
                 filter.add(operand);
             }
         }
@@ -202,22 +201,22 @@ public class Irs {
     }
 
     public static IrBoolExpr ifThenElse(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolExpr alternative) {
-        if (IrUtil.isTrue(antecedent)) {
+        if (antecedent.getDomain().isTrue()) {
             return consequent;
         }
-        if (IrUtil.isFalse(antecedent)) {
+        if (antecedent.getDomain().isFalse()) {
             return alternative;
         }
-        if (IrUtil.isTrue(consequent)) {
+        if (consequent.getDomain().isTrue()) {
             return or(antecedent, alternative);
         }
-        if (IrUtil.isFalse(consequent)) {
+        if (consequent.getDomain().isFalse()) {
             return and(antecedent.negate(), alternative);
         }
-        if (IrUtil.isTrue(alternative)) {
+        if (alternative.getDomain().isTrue()) {
             return or(antecedent.negate(), consequent);
         }
-        if (IrUtil.isFalse(alternative)) {
+        if (alternative.getDomain().isFalse()) {
             return and(antecedent, consequent);
         }
         return new IrIfThenElse(antecedent, consequent, alternative, TrueFalseDomain);
@@ -227,16 +226,16 @@ public class Irs {
         if (left.equals(right)) {
             return True;
         }
-        if (IrUtil.isTrue(left)) {
+        if (left.getDomain().isTrue()) {
             return right;
         }
-        if (IrUtil.isFalse(left)) {
+        if (left.getDomain().isFalse()) {
             return not(right);
         }
-        if (IrUtil.isTrue(right)) {
+        if (right.getDomain().isTrue()) {
             return left;
         }
-        if (IrUtil.isFalse(right)) {
+        if (right.getDomain().isFalse()) {
             return not(left);
         }
         if (left.isNegative() && right.isNegative()) {
@@ -246,16 +245,16 @@ public class Irs {
     }
 
     public static IrBoolExpr xor(IrBoolExpr left, IrBoolExpr right) {
-        if (IrUtil.isTrue(left)) {
+        if (left.getDomain().isTrue()) {
             return not(right);
         }
-        if (IrUtil.isFalse(left)) {
+        if (left.getDomain().isFalse()) {
             return right;
         }
-        if (IrUtil.isTrue(right)) {
+        if (right.getDomain().isTrue()) {
             return not(left);
         }
-        if (IrUtil.isFalse(right)) {
+        if (right.getDomain().isFalse()) {
             return left;
         }
         if (left.isNegative()) {
@@ -726,8 +725,7 @@ public class Irs {
             Domain ker = set.getKer();
             boolean entailed = true;
             for (int i = 0; i < bools.length; i++) {
-                Boolean constant = IrUtil.getConstant(bools[i]);
-                if (Boolean.TRUE.equals(constant)) {
+                if (bools[i].getDomain().isTrue()) {
                     if (values != null) {
                         values.add(i);
                     }
@@ -737,7 +735,7 @@ public class Irs {
                     if (!ker.contains(i)) {
                         entailed = false;
                     }
-                } else if (Boolean.FALSE.equals(constant)) {
+                } else if (bools[i].getDomain().isFalse()) {
                     if (ker.contains(i)) {
                         return False;
                     }
@@ -1027,15 +1025,14 @@ public class Irs {
         boolean entailed = true;
         Domain nDomain = n.getDomain();
         for (int i = 0; i < bools.length; i++) {
-            Boolean constant = IrUtil.getConstant(bools[i]);
-            if (Boolean.TRUE.equals(constant)) {
+            if (bools[i].getDomain().isTrue()) {
                 if (i >= nDomain.getHighBound()) {
                     return False;
                 }
                 if (i >= nDomain.getLowBound()) {
                     entailed = false;
                 }
-            } else if (Boolean.FALSE.equals(constant)) {
+            } else if (bools[i].getDomain().isFalse()) {
                 if (i < nDomain.getLowBound()) {
                     return False;
                 }
@@ -1561,10 +1558,10 @@ public class Irs {
     }
 
     public static IrIntExpr ternary(IrBoolExpr antecedent, IrIntExpr consequent, IrIntExpr alternative) {
-        if (IrUtil.isTrue(antecedent)) {
+        if (antecedent.getDomain().isTrue()) {
             return consequent;
         }
-        if (IrUtil.isFalse(antecedent)) {
+        if (antecedent.getDomain().isFalse()) {
             return alternative;
         }
         if (consequent.equals(alternative)) {
@@ -2078,10 +2075,10 @@ public class Irs {
     }
 
     public static IrSetExpr ternary(IrBoolExpr antecedent, IrSetExpr consequent, IrSetExpr alternative) {
-        if (IrUtil.isTrue(antecedent)) {
+        if (antecedent.getDomain().isTrue()) {
             return consequent;
         }
-        if (IrUtil.isFalse(antecedent)) {
+        if (antecedent.getDomain().isFalse()) {
             return alternative;
         }
         if (consequent.equals(alternative)) {

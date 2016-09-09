@@ -27,9 +27,9 @@ class BoolChannelDeducer implements BoolDeducer<IrBoolChannel> {
                 deduction.equal(bools[i], 1);
             }
         }
-        Domain trues = Domains.enumDomain(IntStream.range(0, bools.length).filter(i -> IrUtil.isTrue(bools[i])));
+        Domain trues = Domains.enumDomain(IntStream.range(0, bools.length).filter(i -> bools[i].getDomain().isTrue()));
         deduction.kerContains(set, trues);
-        Domain notFalses = env.removeAll(i -> i < 0 || i >= bools.length || IrUtil.isFalse(bools[i]));
+        Domain notFalses = env.removeAll(i -> i < 0 || i >= bools.length || bools[i].getDomain().isFalse());
         deduction.envSubsetOf(set, notFalses);
     }
 }

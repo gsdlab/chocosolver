@@ -18,9 +18,9 @@ class SelectNDeducer implements BoolDeducer<IrSelectN> {
 
         deduction.lessThanEqual(n, bools.length);
         for (int i = 0; i < bools.length; i++) {
-            if (IrUtil.isTrue(bools[i]) && i >= n.getDomain().getLowBound()) {
+            if (bools[i].getDomain().isTrue() && i >= n.getDomain().getLowBound()) {
                 deduction.greaterThanEqual(n, i + 1);
-            } else if (IrUtil.isFalse(bools[i]) && i < n.getDomain().getHighBound()) {
+            } else if (bools[i].getDomain().isFalse() && i < n.getDomain().getHighBound()) {
                 deduction.lessThanEqual(n, i);
             }
         }

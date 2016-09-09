@@ -16,38 +16,6 @@ public class IrUtil {
     private IrUtil() {
     }
 
-    public static boolean isTrue(IrBoolExpr b) {
-        return BoolDomain.TrueDomain.equals(b.getDomain());
-    }
-
-    public static boolean isFalse(IrBoolExpr b) {
-        return BoolDomain.FalseDomain.equals(b.getDomain());
-    }
-
-    public static boolean isConstant(IrBoolExpr b) {
-        return !BoolDomain.TrueFalseDomain.equals(b.getDomain());
-    }
-
-    public static Boolean getConstant(IrBoolExpr b) {
-        if (b.getDomain().isTrue()) {
-            return Boolean.TRUE;
-        }
-        if (b.getDomain().isFalse()) {
-            return Boolean.FALSE;
-        }
-        return null;
-    }
-
-    public static IrBoolVar asConstant(IrBoolVar b) {
-        if (b.getDomain().isTrue()) {
-            return Irs.True;
-        }
-        if (b.getDomain().isFalse()) {
-            return Irs.False;
-        }
-        return b;
-    }
-
     public static boolean isConstant(IrIntExpr i) {
         Domain domain = i.getDomain();
         return domain.isConstant();

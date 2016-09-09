@@ -1040,10 +1040,10 @@ public class AstCompiler {
             TIntArrayList env = new TIntArrayList();
             TIntArrayList ker = new TIntArrayList();
             for (int i = 0; i < members.length; i++) {
-                if (IrUtil.isTrue(members[i])) {
+                if (members[i].getDomain().isTrue()) {
                     ker.add(i);
                 }
-                if (!IrUtil.isFalse(members[i])) {
+                if (!members[i].getDomain().isFalse()) {
                     env.add(i);
                 }
             }
