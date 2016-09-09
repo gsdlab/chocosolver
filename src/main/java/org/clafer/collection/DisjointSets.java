@@ -15,8 +15,18 @@ import java.util.Set;
  */
 public class DisjointSets<V> {
 
-    private final TObjectIntHashMap<V> nodes = new TObjectIntHashMap<>(16, 0.5f, -1);
-    private final TIntArrayList parents = new TIntArrayList(16);
+    private final TObjectIntHashMap<V> nodes;
+    private final TIntArrayList parents;
+
+    public DisjointSets() {
+        nodes = new TObjectIntHashMap<>(16, 0.5f, -1);
+        parents = new TIntArrayList(16);
+    }
+
+    public DisjointSets(DisjointSets<V> copy) {
+        nodes = new TObjectIntHashMap<>(copy.nodes);
+        parents = new TIntArrayList(copy.parents);
+    }
 
     private int getNode(V i) {
         int n = nodes.size();
