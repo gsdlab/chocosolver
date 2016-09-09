@@ -1,6 +1,5 @@
 package org.clafer.ir;
 
-import org.clafer.common.Check;
 import org.clafer.domain.Domain;
 
 /**
@@ -13,10 +12,6 @@ public abstract class IrAbstractSet implements IrSetExpr {
     private final boolean isConstant;
 
     IrAbstractSet(Domain env, Domain ker, Domain card) {
-        this.env = Check.notNull(env);
-        this.ker = Check.notNull(ker);
-        this.card = Check.notNull(card);
-
         if (!ker.isSubsetOf(env)) {
             throw new IllegalSetException();
         }
@@ -29,7 +24,23 @@ public abstract class IrAbstractSet implements IrSetExpr {
         if (card.getHighBound() < ker.size()) {
             throw new IllegalSetException(card.getHighBound() + " < " + ker.size());
         }
-        this.isConstant = ker.size() == env.size();
+
+        if (ker.size() == env.size() || ker.size() == card.getHighBound()) {
+            this.env = ker;
+            this.ker = ker;
+            this.card = card;
+            this.isConstant = true;
+        } else if (env.size() == card.getLowBound()) {
+            this.env = env;
+            this.ker = env;
+            this.card = card;
+            this.isConstant = true;
+        } else {
+            this.env = env;
+            this.ker = ker;
+            this.card = card;
+            this.isConstant = false;
+        }
     }
 
     @Override

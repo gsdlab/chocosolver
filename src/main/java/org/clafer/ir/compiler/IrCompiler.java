@@ -105,7 +105,6 @@ import org.clafer.ir.IrSuffix;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrTransitiveClosure;
 import org.clafer.ir.IrUnreachable;
-import org.clafer.ir.IrUtil;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 import org.clafer.ir.Irs;
@@ -333,13 +332,12 @@ public class IrCompiler {
     private SetVar getSetVar(IrSetVar var) {
         SetVar setVar = setVarMap.get(var);
         if (setVar == null) {
-            Domain constant = IrUtil.getConstant(var);
-            if (constant == null) {
+            if (var.isConstant()) {
+                setVar = setVar(var.getName(), var.getKer(), var.getKer());
+            } else {
                 IntVar setCardVar = getIntVar(var.getCardVar());
                 setVar = setVar(var.getName(), var.getEnv(), var.getKer());
                 setVar.setCard(setCardVar);
-            } else {
-                setVar = setVar(var.getName(), constant, constant);
             }
             setVarMap.put(var, setVar);
         }

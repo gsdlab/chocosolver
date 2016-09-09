@@ -39,37 +39,6 @@ public class IrUtil {
         return null;
     }
 
-    public static boolean isConstant(IrSetExpr s) {
-        Domain env = s.getEnv();
-        Domain ker = s.getKer();
-        return env.size() == ker.size();
-    }
-
-    public static Domain getConstant(IrSetExpr s) {
-        Domain env = s.getEnv();
-        Domain ker = s.getKer();
-        return env.size() == ker.size() ? ker : null;
-    }
-
-    public static IrSetVar asConstant(IrSetVar s) {
-        Domain env = s.getEnv();
-        Domain ker = s.getKer();
-        if (env.size() == ker.size()) {
-            return Irs.constant(ker);
-        }
-        Domain card = s.getCard();
-        if (card.isConstant()) {
-            int constantCard = card.getLowBound();
-            if (constantCard == ker.size()) {
-                return Irs.constant(ker);
-            }
-            if (constantCard == env.size()) {
-                return Irs.constant(env);
-            }
-        }
-        return s;
-    }
-
     public static IrSetExpr asConstant(IrSetExpr s) {
         Domain env = s.getEnv();
         Domain ker = s.getKer();
@@ -90,9 +59,8 @@ public class IrUtil {
         if (set instanceof IrSingleton) {
             return ((IrSingleton) set).getValue();
         }
-        Domain constant = getConstant(set);
-        if (constant != null && constant.isConstant()) {
-            return Irs.constant(constant.getLowBound());
+        if (set.isConstant() && set.getKer().isConstant()) {
+            return Irs.constant(set.getKer().getLowBound());
         }
         return null;
     }
