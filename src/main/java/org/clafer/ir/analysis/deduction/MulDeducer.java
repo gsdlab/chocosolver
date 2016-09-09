@@ -30,7 +30,7 @@ class MulDeducer implements IntDeducer<IrMul> {
             deduction.lessThanEqual(multiplicand, MathUtils.divFloor(product.getHighBound(), scale));
         } else if (scale < 0) {
             deduction.lessThanEqual(multiplicand, MathUtils.divFloor(product.getLowBound(), scale));
-//            deduction.greaterThanEqual(multiplicand, MathUtils.divFloor(product.getHighBound(), scale));
+            deduction.greaterThanEqual(multiplicand, MathUtils.divCeil(product.getHighBound(), scale));
         }
     }
 }
