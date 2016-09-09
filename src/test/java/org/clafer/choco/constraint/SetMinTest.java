@@ -115,8 +115,8 @@ public class SetMinTest {
         }
     }
 
-    @ArcConsistent(entailed = true)
-    @Test(timeout = 600000)
+    @ArcConsistent
+    @Test(timeout = 60000)
     public Constraint setup(SetVar set, IntVar min) {
         return Constraints.min(set, set.getCard(), min, 0);
     }
