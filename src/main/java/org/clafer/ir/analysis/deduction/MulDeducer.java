@@ -1,13 +1,9 @@
 package org.clafer.ir.analysis.deduction;
 
-import org.chocosolver.solver.Model;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.tools.MathUtils;
 import org.clafer.domain.Domain;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrMul;
-import org.clafer.ir.IrUtil;
 
 /**
  *
@@ -18,13 +14,13 @@ class MulDeducer implements IntDeducer<IrMul> {
     @Override
     public void deduce(IrMul ir, Domain domain, Deduction deduction) {
         // TODO improve
-        Integer multiplicand = IrUtil.getConstant(ir.getMultiplicand());
-        if (multiplicand != null) {
-            propagateMul(domain, multiplicand, ir.getMultiplier(), deduction);
+        IrIntExpr multiplicand = ir.getMultiplicand();
+        IrIntExpr multiplier = ir.getMultiplier();
+        if (multiplicand.isConstant()) {
+            propagateMul(domain, multiplicand.getLowBound(), ir.getMultiplier(), deduction);
         }
-        Integer multiplier = IrUtil.getConstant(ir.getMultiplier());
-        if (multiplier != null) {
-            propagateMul(domain, multiplier, ir.getMultiplicand(), deduction);
+        if (multiplier.isConstant()) {
+            propagateMul(domain, multiplier.getLowBound(), ir.getMultiplicand(), deduction);
         }
     }
 

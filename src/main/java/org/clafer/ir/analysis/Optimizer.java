@@ -19,7 +19,6 @@ import org.clafer.ir.IrOffset;
 import org.clafer.ir.IrOr;
 import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrUtil;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.add;
 import static org.clafer.ir.Irs.and;
@@ -201,8 +200,8 @@ public class Optimizer {
         IrCompare.Op op = compare.op;
         IrIntExpr right = compare.right;
         Domain domain = left.getDomain();
-        Integer constant = IrUtil.getConstant(right);
-        if (domain.size() == 2 && constant != null) {
+        if (domain.size() == 2 && right.isConstant()) {
+            int constant = right.getLowBound();
             switch (op) {
                 case Equal:
                     // Rewrite
@@ -211,7 +210,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) <= 888 - int
                     //     asInt(bool) + int <= 888
-                    if (domain.getHighBound() == constant.intValue()) {
+                    if (domain.getHighBound() == constant) {
                         return lessThanEqual(add(antecedent, left),
                                 domain.getHighBound());
                     }
@@ -220,7 +219,7 @@ public class Optimizer {
                     //         where dom(int) = {-3, 888}
                     // to
                     //     asInt(bool) <= int - (-3)
-                    if (domain.getLowBound() == constant.intValue()) {
+                    if (domain.getLowBound() == constant) {
                         return lessThanEqual(antecedent,
                                 sub(left, domain.getLowBound()));
                     }
@@ -231,7 +230,7 @@ public class Optimizer {
                     //         where dom(int) = {-3, 888}
                     // to
                     //     asInt(bool) <= int - (-3)
-                    if (domain.getHighBound() == constant.intValue()) {
+                    if (domain.getHighBound() == constant) {
                         return lessThanEqual(antecedent,
                                 sub(left, domain.getLowBound()));
                     }
@@ -241,7 +240,7 @@ public class Optimizer {
                     // to
                     //     asInt(bool) <= 888 - int
                     //     asInt(bool) + int <= 888
-                    if (domain.getLowBound() == constant.intValue()) {
+                    if (domain.getLowBound() == constant) {
                         return lessThanEqual(add(antecedent, left),
                                 domain.getHighBound());
                     }
@@ -259,9 +258,9 @@ public class Optimizer {
         IrCompare.Op op = compare.op;
         IrIntExpr right = compare.right;
         Domain domain = left.getDomain();
-        Integer constant = IrUtil.getConstant(right);
-        if (constant != null) {
-            if (constant.equals(domain.getHighBound())) {
+        if (right.isConstant()) {
+            int constant = right.getLowBound();
+            if (constant == domain.getHighBound()) {
                 int span = constant - domain.getLowBound();
                 switch (op) {
                     case Equal:
@@ -283,7 +282,7 @@ public class Optimizer {
                         // left <= max - !antecedent
                         return lessThanEqual(left, sub(constant, not(antecedent)));
                 }
-            } else if (constant.equals(left.getLowBound())) {
+            } else if (constant == left.getLowBound()) {
                 int span = left.getHighBound() - constant;
                 switch (op) {
                     case Equal:
@@ -331,9 +330,9 @@ public class Optimizer {
         IrIntExpr left = compare.left;
         IrCompare.Op op = compare.op;
         IrIntExpr right = compare.right;
-        Integer constant = IrUtil.getConstant(right);
-        if (constant != null) {
-            if (constant.equals(left.getHighBound())) {
+        if (right.isConstant()) {
+            int constant = right.getLowBound();
+            if (constant == left.getHighBound()) {
                 int span = constant - left.getLowBound();
                 switch (op) {
                     case Equal:
@@ -359,7 +358,7 @@ public class Optimizer {
                                 lessThanEqual(left, sub(constant, reify)),
                                 greaterThanEqual(left, sub(constant, mul(span, reify, boundDomain(0, span)))));
                 }
-            } else if (constant.equals(left.getLowBound())) {
+            } else if (constant == left.getLowBound()) {
                 int span = left.getHighBound() - constant;
                 switch (op) {
                     case Equal:

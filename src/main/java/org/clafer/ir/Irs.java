@@ -770,8 +770,8 @@ public class Irs {
         }
         boolean entailed = true;
         for (int i = 0; i < ints.length; i++) {
-            Integer constant = IrUtil.getConstant(ints[i]);
-            if (constant != null) {
+            if (ints[i].isConstant()) {
+                int constant = ints[i].getLowBound();
                 if (constant < 0 || constant >= sets.length) {
                     return False;
                 }
@@ -840,10 +840,10 @@ public class Irs {
         if (sets.length == 0) {
             return True;
         }
-        Integer low = bounds.length == 1 ? Integer.valueOf(0) : IrUtil.getConstant(bounds[bounds.length - 2]);
-        if (low != null) {
-            Integer high = IrUtil.getConstant(bounds[bounds.length - 1]);
-            if (high != null) {
+        if (bounds.length == 1 || bounds[bounds.length - 2].isConstant()) {
+            int low = bounds.length == 1 ? 0 : bounds[bounds.length - 2].getLowBound();
+            if (bounds[bounds.length - 1].isConstant()) {
+                int high = bounds[bounds.length - 1].getLowBound();
                 Domain bound = fromToDomain(low, high);
 
                 IrSetExpr[] filterSets = Arrays.copyOf(sets, sets.length - 1);
@@ -1048,8 +1048,8 @@ public class Irs {
                 && n.getDomain().getHighBound() <= bools.length) {
             return True;
         }
-        Integer constant = IrUtil.getConstant(n);
-        if (constant != null) {
+        if (n.isConstant()) {
+            int constant = n.getLowBound();
             IrBoolExpr[] ands = new IrBoolExpr[bools.length];
             System.arraycopy(bools, 0, ands, 0, constant);
             for (int i = constant; i < bools.length; i++) {
@@ -1143,9 +1143,8 @@ public class Irs {
     }
 
     public static IrIntExpr minus(IrIntExpr expr) {
-        Integer constant = IrUtil.getConstant(expr);
-        if (constant != null) {
-            return constant(-constant);
+        if (expr.isConstant()) {
+            return constant(-expr.getLowBound());
         }
         if (expr instanceof IrMinus) {
             IrMinus minus = (IrMinus) expr;
@@ -1195,9 +1194,8 @@ public class Irs {
                 filter.addAll(Arrays.asList(add.getAddends()));
                 constants += add.getOffset();
             } else {
-                Integer constant = IrUtil.getConstant(addend);
-                if (constant != null) {
-                    constants += constant;
+                if (addend.isConstant()) {
+                    constants += addend.getLowBound();
                 } else {
                     filter.add(addend);
                 }
@@ -1280,10 +1278,8 @@ public class Irs {
     }
 
     public static IrIntExpr mul(IrIntExpr multiplicand, IrIntExpr multiplier, Domain intRange) {
-        Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
-        Integer multiplierConstant = IrUtil.getConstant(multiplier);
-        if (multiplicandConstant != null) {
-            switch (multiplicandConstant) {
+        if (multiplicand.isConstant()) {
+            switch (multiplicand.getLowBound()) {
                 case -1:
                     return minus(multiplier);
                 case 0:
@@ -1292,8 +1288,8 @@ public class Irs {
                     return multiplier;
             }
         }
-        if (multiplierConstant != null) {
-            switch (multiplierConstant) {
+        if (multiplier.isConstant()) {
+            switch (multiplier.getLowBound()) {
                 case -1:
                     return minus(multiplicand);
                 case 0:
@@ -1302,8 +1298,8 @@ public class Irs {
                     return multiplicand;
             }
         }
-        if (multiplicandConstant != null && multiplierConstant != null) {
-            return constant(multiplicandConstant * multiplierConstant);
+        if (multiplicand.isConstant() && multiplier.isConstant()) {
+            return constant(multiplicand.getLowBound() * multiplier.getLowBound());
         }
         Domain domain;
         long m0 = multiplicand.getDomain().size();
@@ -1371,19 +1367,17 @@ public class Irs {
     }
 
     public static IrIntExpr div(IrIntExpr dividend, IrIntExpr divisor) {
-        Integer dividendConstant = IrUtil.getConstant(dividend);
-        Integer divisorConstant = IrUtil.getConstant(divisor);
-        if (dividendConstant != null && dividendConstant == 0) {
+        if (dividend.isConstant() && dividend.getLowBound() == 0) {
             return dividend;
         }
-        if (divisorConstant != null && divisorConstant == 1) {
+        if (divisor.isConstant() && divisor.getLowBound() == 1) {
             return dividend;
         }
-        if (dividendConstant != null && divisorConstant != null) {
-            if (divisorConstant == 0) {
+        if (dividend.isConstant() && divisor.isConstant()) {
+            if (divisor.getLowBound() == 0) {
                 throw new UnsatisfiableException();
             }
-            return constant(dividendConstant / divisorConstant);
+            return constant(dividend.getLowBound() / divisor.getLowBound());
         }
         int low = dividend.getDomain().getLowBound();
         int high = dividend.getDomain().getHighBound();
@@ -1393,16 +1387,14 @@ public class Irs {
     }
 
     public static IrIntExpr mod(IrIntExpr dividend, IrIntExpr divisor) {
-        Integer dividendConstant = IrUtil.getConstant(dividend);
-        Integer divisorConstant = IrUtil.getConstant(divisor);
-        if (dividendConstant != null && dividendConstant == 0) {
+        if (dividend.isConstant() && dividend.getLowBound() == 0) {
             return dividend;
         }
-        if (divisorConstant != null && divisorConstant == 1) {
-            return dividend;
-        }
-        if (dividendConstant != null && divisorConstant != null) {
-            return constant(dividendConstant % divisorConstant);
+        if (dividend.isConstant() && divisor.isConstant()) {
+            if (divisor.getLowBound() == 0) {
+                throw new UnsatisfiableException();
+            }
+            return constant(dividend.getLowBound() % divisor.getLowBound());
         }
         int low = divisor.getDomain().getLowBound();
         int high = divisor.getDomain().getHighBound();
@@ -1418,9 +1410,8 @@ public class Irs {
     public static IrIntExpr element(IrIntArrayExpr array, IrIntExpr index) {
         IrIntArrayExpr $array = subArray(array, 0, index.getDomain().getHighBound() + 1);
 
-        Integer constant = IrUtil.getConstant(index);
-        if (constant != null) {
-            return get($array, constant);
+        if (index.isConstant()) {
+            return get($array, index.getLowBound());
         }
 
         Optional<Domain> domain = Util.mapWithin(
@@ -1567,11 +1558,6 @@ public class Irs {
         if (consequent.equals(alternative)) {
             return consequent;
         }
-        Integer consequentConstant = IrUtil.getConstant(consequent);
-        Integer alternativeConstant = IrUtil.getConstant(alternative);
-        if (consequentConstant != null && consequentConstant.equals(alternativeConstant)) {
-            return constant(consequentConstant);
-        }
         Domain domain = consequent.getDomain().union(alternative.getDomain());
         return new IrTernary(antecedent, consequent, alternative, domain);
     }
@@ -1652,9 +1638,8 @@ public class Irs {
     }
 
     public static IrSetExpr singleton(IrIntExpr value) {
-        Integer constant = IrUtil.getConstant(value);
-        if (constant != null) {
-            return constant(new int[]{constant});
+        if (value.isConstant()) {
+            return constant(constantDomain(value.getLowBound()));
         }
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
@@ -1663,9 +1648,8 @@ public class Irs {
         if (!value.getDomain().contains(filter)) {
             return singleton(value);
         }
-        Integer constant = IrUtil.getConstant(value);
-        if (constant != null) {
-            return constant.equals(filter) ? EmptySet : constant(new int[]{constant});
+        if (value.isConstant()) {
+            return value.getLowBound() == filter ? EmptySet : singleton(value);
         }
         return new IrSingletonFilter(value, filter, value.getDomain().remove(filter), EmptyDomain, ZeroOneDomain);
     }
@@ -1683,9 +1667,8 @@ public class Irs {
                 }
                 TIntSet values = new TIntHashSet();
                 for (IrIntExpr i : array) {
-                    Integer constant = IrUtil.getConstant(i);
-                    if (constant != null) {
-                        values.add(constant);
+                    if (i.isConstant()) {
+                        values.add(i.getLowBound());
                     }
                 }
                 Domain ker = enumDomain(values);
@@ -1734,9 +1717,8 @@ public class Irs {
 //        return new IrSetElement($array, index, env, ker, card);
 //    }
     public static IrSetExpr element(IrSetArrayExpr array, IrIntExpr index) {
-        Integer constant = IrUtil.getConstant(index);
-        if (constant != null) {
-            return get(array, constant);
+        if (index.isConstant()) {
+            return get(array, index.getLowBound());
         }
 
         // TODO bound for other element calls
@@ -2321,7 +2303,7 @@ public class Irs {
                 }
             }
             if (string != null) {
-                return constant(new String(string, 0, IrUtil.getConstant(length)));
+                return constant(new String(string, 0, length.getLowBound()));
             }
         }
         int lengthHigh = length.getDomain().getHighBound();
@@ -2357,9 +2339,8 @@ public class Irs {
             }
         }
 
-        Integer constant = IrUtil.getConstant(index);
-        if (constant != null) {
-            return $array[constant];
+        if (index.isConstant()) {
+            return $array[index.getLowBound()];
         }
         PrimitiveIterator.OfInt iter = index.getDomain().iterator();
         assert iter.hasNext();
@@ -2437,15 +2418,13 @@ public class Irs {
     }
 
     public static IrIntArrayExpr subarray(IrIntArrayExpr array, IrIntExpr index, IrIntExpr sublength) {
-        Integer indexConstant = IrUtil.getConstant(index);
-        if (indexConstant != null) {
-            Integer sublengthConstant = IrUtil.getConstant(sublength);
-            if (sublengthConstant != null) {
+        if (index.isConstant()) {
+            if (sublength.isConstant()) {
                 IrIntExpr[] subarray = new IrIntExpr[array.length()];
-                for (int i = 0; i < sublengthConstant; i++) {
-                    subarray[i] = get(array, indexConstant + i);
+                for (int i = 0; i < sublength.getLowBound(); i++) {
+                    subarray[i] = get(array, index.getLowBound() + i);
                 }
-                for (int i = sublengthConstant; i < subarray.length; i++) {
+                for (int i = sublength.getLowBound(); i < subarray.length; i++) {
                     subarray[i] = constant(-1);
                 }
                 return array(subarray);

@@ -3,7 +3,6 @@ package org.clafer.ir.analysis.deduction;
 import java.util.Arrays;
 import org.clafer.ir.IrAcyclic;
 import org.clafer.ir.IrIntExpr;
-import org.clafer.ir.IrUtil;
 
 /**
  *
@@ -21,7 +20,7 @@ class AcyclicDeducer implements BoolDeducer<IrAcyclic> {
             deduction.notEqual(edges[cur], i);
             while (visited[cur] != i && edges[cur].getDomain().isConstant()) {
                 visited[cur] = i;
-                cur = IrUtil.getConstant(edges[cur]);
+                cur = edges[cur].getLowBound();
                 if (cur < 0 || cur >= edges.length) {
                     break;
                 }

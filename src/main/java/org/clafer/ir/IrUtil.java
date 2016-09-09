@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.clafer.domain.BoolDomain;
 import org.clafer.domain.Domain;
 
 /**
@@ -14,16 +13,6 @@ import org.clafer.domain.Domain;
 public class IrUtil {
 
     private IrUtil() {
-    }
-
-    public static boolean isConstant(IrIntExpr i) {
-        Domain domain = i.getDomain();
-        return domain.isConstant();
-    }
-
-    public static Integer getConstant(IrIntExpr i) {
-        Domain domain = i.getDomain();
-        return domain.isConstant() ? domain.getLowBound() : null;
     }
 
     public static Integer getConstant(IrIntArrayExpr is, int index) {
@@ -48,11 +37,6 @@ public class IrUtil {
             return constant;
         }
         return null;
-    }
-
-    public static IrIntVar asConstant(IrIntVar i) {
-        Domain domain = i.getDomain();
-        return domain.isConstant() ? Irs.constant(domain.getLowBound()) : i;
     }
 
     public static boolean isConstant(IrSetExpr s) {

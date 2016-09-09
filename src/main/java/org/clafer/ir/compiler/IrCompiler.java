@@ -929,9 +929,8 @@ public class IrCompiler {
                     return compileArithm(addends[0], Arithm.MINUS, right, op, -add.getOffset());
                 }
                 if (addends.length == 2) {
-                    Integer constant = IrUtil.getConstant(right);
-                    if (constant != null) {
-                        return compileArithm(addends[0], Arithm.ADD, addends[1], op, constant - add.getOffset());
+                    if (right.isConstant()) {
+                        return compileArithm(addends[0], Arithm.ADD, addends[1], op, right.getLowBound() - add.getOffset());
                     }
                 }
             }
@@ -942,9 +941,8 @@ public class IrCompiler {
                     return compileArithm(left, Arithm.MINUS, addends[0], op, add.getOffset());
                 }
                 if (addends.length == 2) {
-                    Integer constant = IrUtil.getConstant(left);
-                    if (constant != null) {
-                        return compileArithm(constant - add.getOffset(), op, addends[0], Arithm.ADD, addends[1]);
+                    if (left.isConstant()) {
+                        return compileArithm(left.getLowBound() - add.getOffset(), op, addends[0], Arithm.ADD, addends[1]);
                     }
                 }
             }
@@ -1166,13 +1164,11 @@ public class IrCompiler {
                 return new Pair<>(-1, ((IrMinus) e).getExpr());
             } else if (e instanceof IrMul) {
                 IrMul mul = (IrMul) e;
-                Integer constant = IrUtil.getConstant(mul.getMultiplicand());
-                if (constant != null) {
-                    return new Pair<>(constant, mul.getMultiplier());
+                if (mul.getMultiplicand().isConstant()) {
+                    return new Pair<>(mul.getMultiplicand().getLowBound(), mul.getMultiplier());
                 }
-                constant = IrUtil.getConstant(mul.getMultiplier());
-                if (constant != null) {
-                    return new Pair<>(constant, mul.getMultiplicand());
+                if (mul.getMultiplier().isConstant()) {
+                    return new Pair<>(mul.getMultiplier().getLowBound(), mul.getMultiplicand());
                 }
             }
             return new Pair<>(1, e);
@@ -1223,29 +1219,27 @@ public class IrCompiler {
         public Object visit(IrMul ir, IntVar reify) {
             IrIntExpr multiplicand = ir.getMultiplicand();
             IrIntExpr multiplier = ir.getMultiplier();
-            Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
-            Integer multiplierConstant = IrUtil.getConstant(multiplier);
-            if (multiplicandConstant != null) {
-                switch (multiplicandConstant) {
+            if (multiplicand.isConstant()) {
+                switch (multiplicand.getLowBound()) {
                     case 0:
                         return compileAsConstraint(multiplicand, reify);
                     case 1:
                         return compileAsConstraint(multiplier, reify);
                     default:
-                        if (multiplicandConstant >= -1) {
-                            return model.intScaleView(compile(multiplier), multiplicandConstant);
+                        if (multiplicand.getLowBound() >= -1) {
+                            return model.intScaleView(compile(multiplier), multiplicand.getLowBound());
                         }
                 }
             }
-            if (multiplierConstant != null) {
-                switch (multiplierConstant) {
+            if (multiplier.isConstant()) {
+                switch (multiplier.getLowBound()) {
                     case 0:
                         return compileAsConstraint(multiplier, reify);
                     case 1:
                         return compileAsConstraint(multiplicand, reify);
                     default:
-                        if (multiplierConstant >= -1) {
-                            return model.intScaleView(compile(multiplicand), multiplierConstant);
+                        if (multiplier.getLowBound() >= -1) {
+                            return model.intScaleView(compile(multiplicand), multiplier.getLowBound());
                         }
                 }
             }
