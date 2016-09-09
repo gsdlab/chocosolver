@@ -26,6 +26,7 @@ import org.chocosolver.solver.constraints.unary.PropNotEqualXC;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.Var;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
@@ -79,6 +80,7 @@ import org.clafer.choco.constraint.propagator.PropSingletonFilter;
 import org.clafer.choco.constraint.propagator.PropSubsetEqCard;
 import org.clafer.choco.constraint.propagator.PropTernary;
 import org.clafer.choco.constraint.propagator.PropTransitive;
+import org.clafer.choco.constraint.propagator.PropTransitiveCard;
 import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
 import org.clafer.choco.constraint.propagator.PropUtil;
@@ -1287,32 +1289,59 @@ public class Constraints {
         if (relation.length != closure.length) {
             throw new IllegalArgumentException();
         }
-        @SuppressWarnings("unchecked")
-        Propagator<SetVar>[] propagators
-                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 3];
+        Propagators propagators = new Propagators(3 * relation.length + 3);
         for (int i = 0; i < relation.length; i++) {
-            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+            propagators.add(new PropSubsetEq(relation[i], closure[i]));
+            propagators.add(lessThanEq(relation[i].getCard(), closure[i].getCard()));
+            propagators.add(new PropTransitiveCard(closure[i], Var.mapCard(closure)));
         }
-        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, false);
-        propagators[relation.length + 1] = new PropTransitive(closure);
-        propagators[relation.length + 2] = new PropTransitiveUnreachable(closure);
-        return new Constraint("transitive", propagators);
+        propagators.add(new PropAtMostTransitiveClosure(relation, closure, false));
+        propagators.add(new PropTransitive(closure));
+        propagators.add(new PropTransitiveUnreachable(closure));
+        return new Constraint("transitive", propagators.toArray());
     }
 
     public static Constraint transitiveReflexiveClosure(SetVar[] relation, SetVar[] closure) {
         if (relation.length != closure.length) {
             throw new IllegalArgumentException();
         }
-        @SuppressWarnings("unchecked")
-        Propagator<SetVar>[] propagators
-                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 4];
+        Propagators propagators = new Propagators(3 * relation.length + 4);
         for (int i = 0; i < relation.length; i++) {
-            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+            propagators.add(new PropSubsetEq(relation[i], closure[i]));
+            propagators.add(lessThanEq(relation[i].getCard(), closure[i].getCard()));
+            propagators.add(new PropTransitiveCard(closure[i], Var.mapCard(closure)));
         }
-        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, true);
-        propagators[relation.length + 1] = new PropReflexive(closure);
-        propagators[relation.length + 2] = new PropTransitive(closure);
-        propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
-        return new Constraint("transitiveReflexive", propagators);
+        propagators.add(new PropAtMostTransitiveClosure(relation, closure, true));
+        propagators.add(new PropReflexive(closure));
+        propagators.add(new PropTransitive(closure));
+        propagators.add(new PropTransitiveUnreachable(closure));
+        return new Constraint("transitiveReflexive", propagators.toArray());
+    }
+
+    private static class Propagators {
+
+        final Propagator<?>[] propagators;
+        int size = 0;
+
+        Propagators(int capacity) {
+            this.propagators = new Propagator<?>[capacity];
+        }
+
+        Propagators add(Propagator<?> propagator) {
+            propagators[size++] = propagator;
+            return this;
+        }
+
+        Propagators add(Optional<Propagator<?>> propagator) {
+            propagator.ifPresent(this::add);
+            return this;
+        }
+
+        Propagator<?>[] toArray() {
+            if (size == propagators.length) {
+                return propagators;
+            }
+            return Arrays.copyOf(propagators, size);
+        }
     }
 }
