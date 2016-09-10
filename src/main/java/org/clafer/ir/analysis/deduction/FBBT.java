@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.clafer.collection.Triple;
+import org.clafer.collection.Pair;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.domain.Domain;
 import org.clafer.ir.IllegalIntException;
@@ -118,7 +118,7 @@ public class FBBT {
         setDeducers.put(IrSingleton.class, new SingletonDeducer());
     }
 
-    public Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule>
+    public Pair<Coalesce, IrModule>
             propagate(IrModule module) {
         try {
             return propagateImpl(module);
@@ -127,8 +127,7 @@ public class FBBT {
         }
     }
 
-    private Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule>
-            propagateImpl(IrModule module) {
+    private Pair<Coalesce, IrModule> propagateImpl(IrModule module) {
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
         Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
 
@@ -226,9 +225,8 @@ public class FBBT {
         Map<IrStringVar, IrStringVar> coalescedStrings = stringRenamer(
                 pendingStringVars, coalescedInts);
 
-        return new Triple<>(
-                coalescedInts,
-                coalescedSets,
+        return new Pair<>(
+                new Coalesce(coalescedInts, coalescedSets),
                 IrUtil.renameVariables(module, coalescedInts, coalescedSets, coalescedStrings));
     }
 

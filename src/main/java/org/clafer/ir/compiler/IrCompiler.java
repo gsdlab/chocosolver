@@ -2,11 +2,9 @@ package org.clafer.ir.compiler;
 
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.constraints.Constraint;
@@ -21,7 +19,6 @@ import static org.chocosolver.solver.variables.Var.mapLength;
 import org.chocosolver.util.ESat;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.collection.Pair;
-import org.clafer.collection.Triple;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.domain.BoolDomain;
@@ -113,6 +110,7 @@ import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
 import org.clafer.ir.analysis.LinearEquationOptimizer;
 import org.clafer.ir.analysis.Optimizer;
+import org.clafer.ir.analysis.deduction.Coalesce;
 import org.clafer.ir.analysis.deduction.FBBT;
 
 /**
@@ -142,20 +140,15 @@ public class IrCompiler {
 
     private IrSolutionMap compile(IrModule module) {
         IrModule optModule = Optimizer.optimize(module);
-        Map<IrIntVar, IrIntVar> coalescedIntVars = Collections.emptyMap();
-        Map<IrSetVar, IrSetVar> coalescedSetVars = Collections.emptyMap();
+        Coalesce coalesce = new Coalesce();
         if (coalesceVariables) {
-            Triple<Map<IrIntVar, IrIntVar>, Map<IrSetVar, IrSetVar>, IrModule> coalesceTriple
-                    = new FBBT().propagate(optModule);
-            coalescedIntVars = coalesceTriple.getFst();
-            coalescedSetVars = coalesceTriple.getSnd();
-            optModule = coalesceTriple.getThd();
-            while (!coalesceTriple.getFst().isEmpty()
-                    || !coalesceTriple.getSnd().isEmpty()) {
-                coalesceTriple = new FBBT().propagate(optModule);
-                coalescedIntVars = compose(coalescedIntVars, coalesceTriple.getFst());
-                coalescedSetVars = compose(coalescedSetVars, coalesceTriple.getSnd());
-                optModule = coalesceTriple.getThd();
+            Pair<Coalesce, IrModule> coalescePair = new FBBT().propagate(optModule);
+            coalesce = coalescePair.getFst();
+            optModule = coalescePair.getSnd();
+            while (!coalescePair.getFst().isEmpty()) {
+                coalescePair = new FBBT().propagate(optModule);
+                coalesce = coalesce.compose(coalescePair.getFst());
+                optModule = coalescePair.getSnd();
             }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
         }
@@ -175,30 +168,9 @@ public class IrCompiler {
         Map<IrSetVar, SetVar> setVarMapSet = new HashMap<>(setVarMap.size());
         setVarMap.forEach(setVarMapSet::put);
 
-        return new IrSolutionMap(
-                coalescedIntVars, intVarMap,
-                coalescedSetVars, setVarMapSet);
+        return new IrSolutionMap(coalesce, intVarMap, setVarMapSet);
     }
 
-    private static <T> Map<T, T> compose(Map<T, T> f1, Map<T, T> f2) {
-        if (f1.isEmpty()) {
-            return f2;
-        }
-        if (f2.isEmpty()) {
-            return f1;
-        }
-        Map<T, T> composed = new HashMap<>(f1.size() + f2.size());
-        composed.putAll(f2);
-        for (Entry<T, T> e : f1.entrySet()) {
-            T key = e.getKey();
-            T value = f2.get(e.getValue());
-            if (value == null) {
-                value = e.getValue();
-            }
-            composed.put(key, value);
-        }
-        return composed;
-    }
     private final Map<IrIntVar, IntVar> intVarMap = new HashMap<>();
     private final Map<IrSetVar, SetVar> setVarMap = new HashMap<>();
     private final Map<IrStringVar, CStringVar> stringVarMap = new HashMap<>();

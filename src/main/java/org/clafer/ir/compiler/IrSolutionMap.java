@@ -10,6 +10,7 @@ import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
+import org.clafer.ir.analysis.deduction.Coalesce;
 
 /**
  * Maps IR non-constant variables to their translated Choco variables. IR
@@ -23,27 +24,21 @@ import org.clafer.ir.IrStringVar;
  */
 public class IrSolutionMap {
 
-    private final Map<IrIntVar, IrIntVar> coalescedIntVars;
+    private final Coalesce coalesce;
     private final Map<IrIntVar, IntVar> intVars;
-    private final Map<IrSetVar, IrSetVar> coalescedSetVars;
     private final Map<IrSetVar, SetVar> setVars;
 
     IrSolutionMap(
-            Map<IrIntVar, IrIntVar> coalescedIntVars,
+            Coalesce coalesce,
             Map<IrIntVar, IntVar> intVars,
-            Map<IrSetVar, IrSetVar> coalescedSetVars,
             Map<IrSetVar, SetVar> setVars) {
-        this.coalescedIntVars = coalescedIntVars;
+        this.coalesce = coalesce;
         this.intVars = intVars;
-        this.coalescedSetVars = coalescedSetVars;
         this.setVars = setVars;
     }
 
     public Either<Boolean, BoolVar> getVar(IrBoolVar var) {
-        IrBoolVar boolVar = (IrBoolVar) coalescedIntVars.get(var);
-        if (boolVar == null) {
-            boolVar = var;
-        }
+        IrBoolVar boolVar = coalesce.get(var);
         if (boolVar.isConstant()) {
             return Either.left(boolVar.getLowBound() == 1 ? Boolean.TRUE : Boolean.FALSE);
         }
@@ -59,7 +54,7 @@ public class IrSolutionMap {
     }
 
     public IrSolutionMap fromSolution(final Solution solution) {
-        return new IrSolutionMap(coalescedIntVars, intVars, coalescedSetVars, setVars) {
+        return new IrSolutionMap(coalesce, intVars, setVars) {
 
             @Override
             protected int getIntVal(IntVar var) {
@@ -98,10 +93,7 @@ public class IrSolutionMap {
     }
 
     public Either<Integer, IntVar> getVar(IrIntVar var) {
-        IrIntVar intVar = coalescedIntVars.get(var);
-        if (intVar == null) {
-            intVar = var;
-        }
+        IrIntVar intVar = coalesce.get(var);
         if (intVar.isConstant()) {
             return Either.left(intVar.getLowBound());
         }
@@ -137,10 +129,7 @@ public class IrSolutionMap {
     }
 
     public Either<int[], SetVar> getVar(IrSetVar var) {
-        IrSetVar setVar = coalescedSetVars.get(var);
-        if (setVar == null) {
-            setVar = var;
-        }
+        IrSetVar setVar = coalesce.get(var);
         if (setVar.isConstant()) {
             return Either.left(setVar.getKer().getValues());
         }
