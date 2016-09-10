@@ -1,7 +1,10 @@
 package org.clafer.ir.analysis.deduction;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.clafer.collection.Pair;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.ir.IllegalIntException;
@@ -14,6 +17,7 @@ import org.clafer.ir.IrAnd;
 import org.clafer.ir.IrArrayEquality;
 import org.clafer.ir.IrArrayToSet;
 import org.clafer.ir.IrBoolChannel;
+import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrCard;
 import org.clafer.ir.IrCompare;
@@ -37,13 +41,16 @@ import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSetMin;
 import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetUnion;
+import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortSets;
 import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrStringCompare;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
+import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
 
 /**
@@ -105,29 +112,105 @@ public class FBBT {
 
     public Pair<Coalesce, IrModule> propagate(IrModule module) {
         try {
-            Pair<Coalesce, IrModule> coalescePair = propagateImpl(module);
+            Set<IrBoolExpr> changed = new HashSet<>();
+            changed.addAll(module.getConstraints());
+            State state = new State(module);
+
+            Pair<Coalesce, State> coalescePair = propagateImpl(state, changed);
             Coalesce coalesce = coalescePair.getFst();
-            module = coalescePair.getSnd();
+            state = coalescePair.getSnd();
             while (!coalescePair.getFst().isEmpty()) {
-                coalescePair = propagateImpl(module);
+                coalescePair = propagateImpl(state, changed);
                 coalesce = coalesce.compose(coalescePair.getFst());
-                module = coalescePair.getSnd();
+                state = coalescePair.getSnd();
             }
-            return new Pair<>(coalesce, module);
+            return new Pair<>(coalesce, state.toModule());
         } catch (IllegalIntException | IllegalSetException | IllegalStringException e) {
             throw new UnsatisfiableException(e);
         }
     }
 
-    private Pair<Coalesce, IrModule> propagateImpl(IrModule module) {
+    private Pair<Coalesce, State> propagateImpl(State state, Set<IrBoolExpr> changed) {
         Deduction deduction = new Deduction(boolDeducers, intDeducers, setDeducers);
 
-        module.getConstraints().forEach(deduction::tautology);
+        changed.forEach(deduction::tautology);
 
         deduction.checkInvariants();
 
-        Coalesce coalesce = deduction.apply(module);
+        Coalesce coalesce = deduction.apply(state.setVars, state.stringVars);
 
-        return new Pair<>(coalesce, coalesce.rewrite(module, null));
+        if (coalesce.isEmpty()) {
+            return new Pair<>(coalesce, state);
+        }
+
+        changed.clear();
+        state.apply(coalesce, changed);
+
+        return new Pair<>(coalesce, state);
+    }
+
+    private static class State {
+
+        final IrBoolExpr[] constraints;
+        int size;
+        Set<IrSetVar> setVars = new HashSet<>();
+        Set<IrStringVar> stringVars = new HashSet<>();
+        Set<IrSetVar> reuseSetVars = new HashSet<>();
+        Set<IrStringVar> reuseStringVars = new HashSet<>();
+
+        State(IrModule module) {
+            Collection<IrBoolExpr> c = module.getConstraints();
+            this.constraints = c.toArray(new IrBoolExpr[c.size()]);
+            this.size = constraints.length;
+            Set<IrVar> vars = module.getVariables();
+            for (IrVar var : vars) {
+                if (!var.isConstant()) {
+                    if (var instanceof IrSetVar) {
+                        setVars.add((IrSetVar) var);
+                    } else if (var instanceof IrStringVar) {
+                        stringVars.add((IrStringVar) var);
+                    }
+                }
+            }
+        }
+
+        void apply(Coalesce coalesce, Set<IrBoolExpr> changed) {
+            for (int i = 0; i < size;) {
+                IrBoolExpr newConstraint = coalesce.rewrite(constraints[i], null);
+                if (newConstraint.getDomain().isFalse()) {
+                    throw new UnsatisfiableException();
+                } else if (newConstraint.getDomain().isTrue()) {
+                    size--;
+                    constraints[i] = constraints[size];
+                    constraints[size] = null;
+                } else {
+                    if (constraints[i] != newConstraint) {
+                        changed.add(newConstraint);
+                        constraints[i] = newConstraint;
+                    }
+                    i++;
+                }
+            }
+
+            setVars.forEach(x -> reuseSetVars.add((IrSetVar) coalesce.rewrite(x, null)));
+            Set<IrSetVar> tempSetVars = setVars;
+            setVars = reuseSetVars;
+            reuseSetVars = tempSetVars;
+            reuseSetVars.clear();
+
+            stringVars.forEach(x -> reuseStringVars.add((IrStringVar) coalesce.rewrite(x, null)));
+            Set<IrStringVar> tempStringVars = stringVars;
+            stringVars = reuseStringVars;
+            reuseStringVars = tempStringVars;
+            reuseStringVars.clear();
+        }
+
+        IrModule toModule() {
+            IrModule module = new IrModule();
+            for (int i = 0; i < size; i++) {
+                module.addConstraints(constraints[i]);
+            }
+            return module;
+        }
     }
 }

@@ -3,7 +3,6 @@ package org.clafer.ir.analysis.deduction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,6 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
-import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
@@ -29,7 +27,6 @@ import static org.clafer.ir.IrUtil.Ordering.GT;
 import static org.clafer.ir.IrUtil.Ordering.LE;
 import static org.clafer.ir.IrUtil.Ordering.LT;
 import static org.clafer.ir.IrUtil.Ordering.UNKNOWN;
-import org.clafer.ir.IrVar;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.domainInt;
 import static org.clafer.ir.Irs.set;
@@ -463,23 +460,13 @@ class Deduction {
         }
     }
 
-    public Coalesce apply(IrModule module) {
+    public Coalesce apply(Set<IrSetVar> setVariables, Set<IrStringVar> stringVariables) {
         Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
         Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
 
-        Collection<IrSetVar> pendingSetVars = new HashSet<>();
-        Collection<IrStringVar> pendingStringVars = new HashSet<>();
-        for (IrVar var : module.getVariables()) {
-            if (!var.isConstant()) {
-                if (var instanceof IrSetVar) {
-                    pendingSetVars.add((IrSetVar) var);
-                } else if (var instanceof IrStringVar) {
-                    pendingStringVars.add((IrStringVar) var);
-                }
-            }
-        }
+        Collection<IrSetVar> pendingSetVars = new ArrayList<>(setVariables);
 
-        for (IrStringVar var : pendingStringVars) {
+        for (IrStringVar var : stringVariables) {
             IrIntVar[] chars = var.getCharVars();
             Domain length = intRetains.get(var.getLengthVar());
             if (length != null) {
@@ -537,14 +524,16 @@ class Deduction {
             }
         }
         for (IrSetVar var : pendingSetVars) {
-            Domain ker = setContains.get(var);
-            Domain env = setSubsetOf.get(var);
-            IrIntVar card = coalescedInts.get(var.getCardVar());
-            if (ker != null || env != null || card != null) {
-                ker = ker == null ? var.getKer() : ker;
-                env = env == null ? var.getEnv() : env;
-                card = card == null ? var.getCardVar() : card;
-                coalescedSets.put(var, set(var.getName(), env, ker, card));
+            if (!var.isConstant()) {
+                Domain ker = setContains.get(var);
+                Domain env = setSubsetOf.get(var);
+                IrIntVar card = coalescedInts.get(var.getCardVar());
+                if (ker != null || env != null || card != null) {
+                    ker = ker == null ? var.getKer() : ker;
+                    env = env == null ? var.getEnv() : env;
+                    card = card == null ? var.getCardVar() : card;
+                    coalescedSets.put(var, set(var.getName(), env, ker, card));
+                }
             }
         }
         return new Coalesce(coalescedInts, coalescedSets);
