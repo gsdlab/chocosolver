@@ -1,9 +1,14 @@
 package org.clafer.ir.analysis.deduction;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clafer.collection.DisjointSets;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.domain.Domain;
@@ -12,9 +17,11 @@ import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
+import org.clafer.ir.IrModule;
 import org.clafer.ir.IrNot;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrUtil;
 import static org.clafer.ir.IrUtil.Ordering.EQ;
 import static org.clafer.ir.IrUtil.Ordering.GE;
@@ -22,7 +29,10 @@ import static org.clafer.ir.IrUtil.Ordering.GT;
 import static org.clafer.ir.IrUtil.Ordering.LE;
 import static org.clafer.ir.IrUtil.Ordering.LT;
 import static org.clafer.ir.IrUtil.Ordering.UNKNOWN;
+import org.clafer.ir.IrVar;
 import org.clafer.ir.Irs;
+import static org.clafer.ir.Irs.domainInt;
+import static org.clafer.ir.Irs.set;
 
 /**
  *
@@ -451,6 +461,112 @@ class Deduction {
         if (condition) {
             throw new UnsatisfiableException();
         }
+    }
+
+    public Coalesce apply(IrModule module) {
+        Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
+        Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
+
+        Collection<IrSetVar> pendingSetVars = new HashSet<>();
+        Collection<IrStringVar> pendingStringVars = new HashSet<>();
+        for (IrVar var : module.getVariables()) {
+            if (!var.isConstant()) {
+                if (var instanceof IrSetVar) {
+                    pendingSetVars.add((IrSetVar) var);
+                } else if (var instanceof IrStringVar) {
+                    pendingStringVars.add((IrStringVar) var);
+                }
+            }
+        }
+
+        for (IrStringVar var : pendingStringVars) {
+            IrIntVar[] chars = var.getCharVars();
+            Domain length = intRetains.get(var.getLengthVar());
+            if (length != null) {
+                for (int i = length.getHighBound(); i < chars.length; i++) {
+                    // If the length was reduced, then set the trailing characters to 0.
+                    // Do this before coalescing the integer variables.
+                    equal(chars[i], 0);
+                }
+            }
+        }
+
+        for (Set<IrIntVar> component : intEquals.connectedComponents()) {
+            if (component.size() > 1) {
+                Iterator<IrIntVar> iter = component.iterator();
+                IrIntVar var = iter.next();
+                Domain domain = removeOrDefault(intRetains, var, var.getDomain());
+                List<String> names = new ArrayList<>(component.size());
+                names.add(var.getName());
+                while (iter.hasNext()) {
+                    var = iter.next();
+                    domain = domain.intersection(removeOrDefault(intRetains, var, var.getDomain()));
+                    names.add(var.getName());
+                }
+                IrIntVar coalesced = domainInt(joinNames(names), domain);
+                for (IrIntVar coalesce : component) {
+                    coalescedInts.put(coalesce, coalesced);
+                }
+            }
+        }
+        intRetains.forEach(
+                (var, domain) -> coalescedInts.put(var, domainInt(var.getName(), domain))
+        );
+
+        for (Set<IrSetVar> component : setEquals.connectedComponents()) {
+            if (component.size() > 1) {
+                Iterator<IrSetVar> iter = component.iterator();
+                IrSetVar var = iter.next();
+                Domain ker = setContains.getOrDefault(var, var.getKer());
+                Domain env = setSubsetOf.getOrDefault(var, var.getEnv());
+                IrIntVar card = coalescedInts.getOrDefault(var.getCardVar(), var.getCardVar());
+                List<String> names = new ArrayList<>(component.size());
+                names.add(var.getName());
+                while (iter.hasNext()) {
+                    var = iter.next();
+                    ker = ker.union(setContains.getOrDefault(var, var.getKer()));
+                    env = env.intersection(setSubsetOf.getOrDefault(var, var.getEnv()));
+                    assert card.equals(coalescedInts.getOrDefault(var.getCardVar(), var.getCardVar()));
+                    names.add(var.getName());
+                }
+                IrSetVar coalesced = set(joinNames(names), env, ker, card);
+                for (IrSetVar coalesce : component) {
+                    coalescedSets.put(coalesce, coalesced);
+                }
+                pendingSetVars.removeAll(component);
+            }
+        }
+        for (IrSetVar var : pendingSetVars) {
+            Domain ker = setContains.get(var);
+            Domain env = setSubsetOf.get(var);
+            IrIntVar card = coalescedInts.get(var.getCardVar());
+            if (ker != null || env != null || card != null) {
+                ker = ker == null ? var.getKer() : ker;
+                env = env == null ? var.getEnv() : env;
+                card = card == null ? var.getCardVar() : card;
+                coalescedSets.put(var, set(var.getName(), env, ker, card));
+            }
+        }
+        return new Coalesce(coalescedInts, coalescedSets);
+    }
+
+    private static <K, V> V removeOrDefault(Map<K, V> map, K key, V defaultValue) {
+        V value = map.remove(key);
+        return value == null ? defaultValue : value;
+    }
+
+    private static String stripParens(String name) {
+        if (name.startsWith("(") && name.endsWith(")")) {
+            return name.substring(1, name.length() - 1);
+        }
+        return name;
+    }
+
+    private static String joinNames(List<String> names) {
+        if (names.size() == 1) {
+            return names.get(0);
+        }
+        return names.stream().map(Deduction::stripParens).collect(Collectors.joining(";", "(", ")"));
     }
 
     @Override

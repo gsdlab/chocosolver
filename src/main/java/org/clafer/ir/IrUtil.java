@@ -1,14 +1,9 @@
 package org.clafer.ir;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.clafer.domain.Domain;
-import static org.clafer.ir.Irs.string;
 
 /**
  *
@@ -236,13 +231,6 @@ public class IrUtil {
         return variables;
     }
 
-    public static IrModule renameVariables(
-            IrModule module,
-            Map<IrIntVar, IrIntVar> intRename,
-            Map<IrSetVar, IrSetVar> setRename) {
-        return new VariableRenamer(intRename, setRename).rewrite(module, null);
-    }
-
     public static enum Ordering {
 
         LT,
@@ -280,65 +268,4 @@ public class IrUtil {
                     return super.visit(ir, a);
                 }
             };
-
-    private static class VariableRenamer extends IrRewriter<Void> {
-
-        private final Map<IrIntVar, IrIntVar> intRename;
-        private final Map<IrSetVar, IrSetVar> setRename;
-        private final Map<List<IrIntVar>, IrStringVar> stringVarCache = new HashMap<>();
-
-        VariableRenamer(
-                Map<IrIntVar, IrIntVar> intRename,
-                Map<IrSetVar, IrSetVar> setRename) {
-            this.intRename = intRename;
-            this.setRename = setRename;
-        }
-
-        @Override
-        public IrBoolVar visit(IrBoolVar ir, Void a) {
-            IrBoolVar var = (IrBoolVar) intRename.get(ir);
-            return var == null ? ir : var;
-        }
-
-        @Override
-        public IrIntVar visit(IrIntVar ir, Void a) {
-            IrIntVar var = intRename.get(ir);
-            return var == null ? ir : var;
-        }
-
-        @Override
-        public IrSetVar visit(IrSetVar ir, Void a) {
-            IrSetVar var = setRename.get(ir);
-            return var == null ? ir : var;
-        }
-
-        @Override
-        public IrStringVar visit(IrStringVar ir, Void a) {
-            boolean changed = false;
-            IrIntVar[] chars = new IrIntVar[ir.getCharVars().length];
-            for (int i = 0; i < chars.length; i++) {
-                chars[i] = intRename.get(ir.getCharVars()[i]);
-                if (chars[i] == null) {
-                    chars[i] = ir.getCharVars()[i];
-                } else {
-                    changed = true;
-                }
-            }
-            IrIntVar length = intRename.get(ir.getLengthVar());
-            changed |= length != null;
-            if (changed) {
-                length = length == null ? ir.getLengthVar() : length;
-                List<IrIntVar> key = new ArrayList<>();
-                key.addAll(Arrays.asList(chars));
-                key.add(length);
-                IrStringVar string = stringVarCache.get(key);
-                if (string == null) {
-                    string = string(ir.getName(), chars, length);
-                    stringVarCache.put(key, string);
-                }
-                return string;
-            }
-            return ir;
-        }
-    };
 }

@@ -1,20 +1,27 @@
 package org.clafer.ir.analysis.deduction;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
+import org.clafer.ir.IrRewriter;
 import org.clafer.ir.IrSetVar;
+import org.clafer.ir.IrStringVar;
+import static org.clafer.ir.Irs.string;
 
 /**
  *
  * @author jimmy
  */
-public class Coalesce {
+public class Coalesce extends IrRewriter<Void> {
 
     private final Map<IrIntVar, IrIntVar> coalescedInts;
     private final Map<IrSetVar, IrSetVar> coalescedSets;
+    private final Map<List<IrIntVar>, IrStringVar> stringVarCache = new HashMap<>();
 
     public Coalesce() {
         this.coalescedInts = Collections.emptyMap();
@@ -68,5 +75,52 @@ public class Coalesce {
             composed.put(key, value);
         }
         return composed;
+    }
+
+    @Override
+    public IrBoolVar visit(IrBoolVar ir, Void a) {
+        IrBoolVar var = (IrBoolVar) coalescedInts.get(ir);
+        return var == null ? ir : var;
+    }
+
+    @Override
+    public IrIntVar visit(IrIntVar ir, Void a) {
+        IrIntVar var = coalescedInts.get(ir);
+        return var == null ? ir : var;
+    }
+
+    @Override
+    public IrSetVar visit(IrSetVar ir, Void a) {
+        IrSetVar var = coalescedSets.get(ir);
+        return var == null ? ir : var;
+    }
+
+    @Override
+    public IrStringVar visit(IrStringVar ir, Void a) {
+        boolean changed = false;
+        IrIntVar[] chars = new IrIntVar[ir.getCharVars().length];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = coalescedInts.get(ir.getCharVars()[i]);
+            if (chars[i] == null) {
+                chars[i] = ir.getCharVars()[i];
+            } else {
+                changed = true;
+            }
+        }
+        IrIntVar length = coalescedInts.get(ir.getLengthVar());
+        changed |= length != null;
+        if (changed) {
+            length = length == null ? ir.getLengthVar() : length;
+            List<IrIntVar> key = new ArrayList<>();
+            key.addAll(Arrays.asList(chars));
+            key.add(length);
+            IrStringVar string = stringVarCache.get(key);
+            if (string == null) {
+                string = string(ir.getName(), chars, length);
+                stringVarCache.put(key, string);
+            }
+            return string;
+        }
+        return ir;
     }
 }

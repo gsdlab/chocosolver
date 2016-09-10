@@ -1,17 +1,9 @@
 package org.clafer.ir.analysis.deduction;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.clafer.collection.Pair;
 import org.clafer.common.UnsatisfiableException;
-import org.clafer.domain.Domain;
 import org.clafer.ir.IllegalIntException;
 import org.clafer.ir.IllegalSetException;
 import org.clafer.ir.IllegalStringException;
@@ -28,7 +20,6 @@ import org.clafer.ir.IrCount;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntChannel;
-import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrMember;
@@ -45,20 +36,14 @@ import org.clafer.ir.IrSetEquality;
 import org.clafer.ir.IrSetMin;
 import org.clafer.ir.IrSetTernary;
 import org.clafer.ir.IrSetUnion;
-import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrSingleton;
 import org.clafer.ir.IrSortSets;
 import org.clafer.ir.IrSortStrings;
 import org.clafer.ir.IrSortStringsChannel;
 import org.clafer.ir.IrStringCompare;
-import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
-import org.clafer.ir.IrUtil;
-import org.clafer.ir.IrVar;
 import org.clafer.ir.IrWithin;
-import static org.clafer.ir.Irs.domainInt;
-import static org.clafer.ir.Irs.set;
 
 /**
  * Feasibility-based bounds tightening.
@@ -133,121 +118,14 @@ public class FBBT {
     }
 
     private Pair<Coalesce, IrModule> propagateImpl(IrModule module) {
-        Map<IrIntVar, IrIntVar> coalescedInts = new HashMap<>();
-        Map<IrSetVar, IrSetVar> coalescedSets = new HashMap<>();
-
         Deduction deduction = new Deduction(boolDeducers, intDeducers, setDeducers);
 
         module.getConstraints().forEach(deduction::tautology);
 
         deduction.checkInvariants();
 
-        Map<IrIntVar, Domain> intRetains = deduction.getIntRetains();
-        Map<IrSetVar, Domain> setContains = deduction.getSetContains();
-        Map<IrSetVar, Domain> setSubsetOf = deduction.getSetSubsetOf();
+        Coalesce coalesce = deduction.apply(module);
 
-        Collection<IrSetVar> pendingSetVars = new HashSet<>();
-        Collection<IrStringVar> pendingStringVars = new HashSet<>();
-        for (IrVar var : module.getVariables()) {
-            if (!var.isConstant()) {
-                if (var instanceof IrSetVar) {
-                    pendingSetVars.add((IrSetVar) var);
-                } else if (var instanceof IrStringVar) {
-                    pendingStringVars.add((IrStringVar) var);
-                }
-            }
-        }
-
-        for (IrStringVar var : pendingStringVars) {
-            IrIntVar[] chars = var.getCharVars();
-            Domain length = intRetains.get(var.getLengthVar());
-            if (length != null) {
-                for (int i = length.getHighBound(); i < chars.length; i++) {
-                    // If the length was reduced, then set the trailing characters to 0.
-                    // Do this before coalescing the integer variables.
-                    deduction.equal(chars[i], 0);
-                }
-            }
-        }
-
-        for (Set<IrIntVar> component : deduction.getIntEquals()) {
-            if (component.size() > 1) {
-                Iterator<IrIntVar> iter = component.iterator();
-                IrIntVar var = iter.next();
-                Domain domain = removeOrDefault(intRetains, var, var.getDomain());
-                List<String> names = new ArrayList<>(component.size());
-                names.add(var.getName());
-                while (iter.hasNext()) {
-                    var = iter.next();
-                    domain = domain.intersection(removeOrDefault(intRetains, var, var.getDomain()));
-                    names.add(var.getName());
-                }
-                IrIntVar coalesced = domainInt(joinNames(names), domain);
-                for (IrIntVar coalesce : component) {
-                    coalescedInts.put(coalesce, coalesced);
-                }
-            }
-        }
-        intRetains.forEach(
-                (var, domain) -> coalescedInts.put(var, domainInt(var.getName(), domain))
-        );
-
-        for (Set<IrSetVar> component : deduction.getSetEquals()) {
-            if (component.size() > 1) {
-                Iterator<IrSetVar> iter = component.iterator();
-                IrSetVar var = iter.next();
-                Domain ker = setContains.getOrDefault(var, var.getKer());
-                Domain env = setSubsetOf.getOrDefault(var, var.getEnv());
-                IrIntVar card = coalescedInts.getOrDefault(var.getCardVar(), var.getCardVar());
-                List<String> names = new ArrayList<>(component.size());
-                names.add(var.getName());
-                while (iter.hasNext()) {
-                    var = iter.next();
-                    ker = ker.union(setContains.getOrDefault(var, var.getKer()));
-                    env = env.intersection(setSubsetOf.getOrDefault(var, var.getEnv()));
-                    assert card.equals(coalescedInts.getOrDefault(var.getCardVar(), var.getCardVar()));
-                    names.add(var.getName());
-                }
-                IrSetVar coalesced = set(joinNames(names), env, ker, card);
-                for (IrSetVar coalesce : component) {
-                    coalescedSets.put(coalesce, coalesced);
-                }
-                pendingSetVars.removeAll(component);
-            }
-        }
-        for (IrSetVar var : pendingSetVars) {
-            Domain ker = setContains.get(var);
-            Domain env = setSubsetOf.get(var);
-            IrIntVar card = coalescedInts.get(var.getCardVar());
-            if (ker != null || env != null || card != null) {
-                ker = ker == null ? var.getKer() : ker;
-                env = env == null ? var.getEnv() : env;
-                card = card == null ? var.getCardVar() : card;
-                coalescedSets.put(var, set(var.getName(), env, ker, card));
-            }
-        }
-
-        return new Pair<>(
-                new Coalesce(coalescedInts, coalescedSets),
-                IrUtil.renameVariables(module, coalescedInts, coalescedSets));
-    }
-
-    private static <K, V> V removeOrDefault(Map<K, V> map, K key, V defaultValue) {
-        V value = map.remove(key);
-        return value == null ? defaultValue : value;
-    }
-
-    private static String stripParens(String name) {
-        if (name.startsWith("(") && name.endsWith(")")) {
-            return name.substring(1, name.length() - 1);
-        }
-        return name;
-    }
-
-    private static String joinNames(List<String> names) {
-        if (names.size() == 1) {
-            return names.get(0);
-        }
-        return names.stream().map(FBBT::stripParens).collect(Collectors.joining(";", "(", ")"));
+        return new Pair<>(coalesce, coalesce.rewrite(module, null));
     }
 }
