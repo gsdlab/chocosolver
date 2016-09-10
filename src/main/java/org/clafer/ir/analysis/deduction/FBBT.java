@@ -118,10 +118,17 @@ public class FBBT {
         setDeducers.put(IrSingleton.class, new SingletonDeducer());
     }
 
-    public Pair<Coalesce, IrModule>
-            propagate(IrModule module) {
+    public Pair<Coalesce, IrModule> propagate(IrModule module) {
         try {
-            return propagateImpl(module);
+            Pair<Coalesce, IrModule> coalescePair = propagateImpl(module);
+            Coalesce coalesce = coalescePair.getFst();
+            module = coalescePair.getSnd();
+            while (!coalescePair.getFst().isEmpty()) {
+                coalescePair = propagateImpl(module);
+                coalesce = coalesce.compose(coalescePair.getFst());
+                module = coalescePair.getSnd();
+            }
+            return new Pair<>(coalesce, module);
         } catch (IllegalIntException | IllegalSetException | IllegalStringException e) {
             throw new UnsatisfiableException(e);
         }

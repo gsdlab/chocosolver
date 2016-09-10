@@ -145,11 +145,6 @@ public class IrCompiler {
             Pair<Coalesce, IrModule> coalescePair = new FBBT().propagate(optModule);
             coalesce = coalescePair.getFst();
             optModule = coalescePair.getSnd();
-            while (!coalescePair.getFst().isEmpty()) {
-                coalescePair = new FBBT().propagate(optModule);
-                coalesce = coalesce.compose(coalescePair.getFst());
-                optModule = coalescePair.getSnd();
-            }
             optModule = DuplicateConstraints.removeDuplicates(optModule);
         }
         optModule = LinearEquationOptimizer.optimize(optModule);
