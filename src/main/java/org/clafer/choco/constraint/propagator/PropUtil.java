@@ -211,6 +211,17 @@ public class PropUtil {
         return Integer.MAX_VALUE;
     }
 
+    public static int intersectionSize(ISet s1, ISet s2) {
+        ISetIterator iter = s1.iterator();
+        int count = 0;
+        while (iter.hasNext()) {
+            if (s2.contains(iter.nextInt())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     /**
      * Checks if an integer's domain is contained entirely in the set's
      * envelope.

@@ -264,15 +264,9 @@ public class ConstraintQuickTest extends Suite {
                 ESat entailed = constraint.isSatisfied();
                 ArcConsistent consistent = testMethod.getAnnotation(ArcConsistent.class);
                 if (ESat.FALSE.equals(entailed)) {
-                    String initial = null;
-                    for (Propagator<?> propagator : constraint.getPropagators()) {
-                        if (ESat.FALSE.equals(propagator.isEntailed())) {
-                            initial = propagator.toString();
-                        }
-                    }
+                    String initial = constraint.toString();
                     if (solver.solve()) {
                         fail("Did not expect a solution for " + initial + ", found " + constraint + " with arguments " + s);
-
                     }
                 } else if (solver.solve()) {
                     int solutions = 1;
