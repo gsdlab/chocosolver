@@ -658,7 +658,7 @@ public class AstCompiler {
 
                             IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
                             System.arraycopy(sourceRefs, 0, array, 0, array.length);
-                            IrIntExpr count = count(hierarchy.getSnd().intValue(), array);
+                            IrIntExpr count = count(hierarchy.getSnd().intValue(),array(array));
                             IrIntVar countVar = domainInt("CountVar" + countCount++, count.getDomain());
                             module.addConstraint(equal(countVar, count));
                             childIndex.add(countVar);
@@ -857,7 +857,7 @@ public class AstCompiler {
             IrIntVar[] inverseRefPointers = refPointers.get(inverse);
             module.addConstraint(equal(countNotEqual(uninitializedRef, array(inverseRefPointers)), card(sets.get(clafer))));
             for (int i = 0; i < siblingSet.length; i++) {
-                module.addConstraint(equal(count(i, inverseRefPointers), card(siblingSet[i])));
+                module.addConstraint(equal(count(i, array(inverseRefPointers)), card(siblingSet[i])));
             }
             module.addConstraint(equal(card(sets.get(clafer)), card(sets.get(inverse))));
         }

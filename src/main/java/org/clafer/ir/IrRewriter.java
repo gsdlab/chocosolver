@@ -516,7 +516,7 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrIntExpr visit(IrCount ir, T a) {
-        IrIntExpr[] array = rewrite(ir.getArray(), a);
+        IrIntArrayExpr array = rewrite(ir.getArray(), a);
         return changed(ir.getArray(), array)
                 ? count(ir.getValue(), array)
                 : ir;

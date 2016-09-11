@@ -1417,10 +1417,10 @@ public class Irs {
         return IrUtil.asConstant(new IrElement($array, index, domain.get()));
     }
 
-    public static IrIntExpr count(int value, IrIntExpr[] array) {
+    public static IrIntExpr count(int value, IrIntArrayExpr array) {
         List<IrIntExpr> filter = new ArrayList<>();
         int count = 0;
-        for (IrIntExpr i : array) {
+        for (IrIntExpr i : IrUtil.asArray(array)) {
             if (i.equals(constant(value))) {
                 count++;
             } else if (i.getDomain().contains(value)) {
@@ -1434,7 +1434,9 @@ public class Irs {
                 return add(equal(value, filter.get(0)), count);
             default:
                 return add(
-                        new IrCount(value, filter.toArray(new IrIntExpr[filter.size()]), boundDomain(0, filter.size())),
+                        new IrCount(value,
+                                array.length() == filter.size() ? array : intArray(filter),
+                                boundDomain(0, filter.size())),
                         count);
         }
     }

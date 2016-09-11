@@ -17,7 +17,7 @@ public class IrCountTest {
 
     @Test(timeout = 60000)
     public IrBoolExpr setup(int value, IrIntVar[] array, IrIntVar count) {
-        return equal(count(value, array), count);
+        return equal(count(value, Irs.array(array)), count);
     }
 
     @Solution
