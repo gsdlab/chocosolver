@@ -1238,7 +1238,7 @@ public class Irs {
 
     public static IrIntExpr sub(int minuend, IrIntExpr subtrahend) {
         if (minuend == 0) {
-            return subtrahend;
+            return minus(subtrahend);
         }
         return sub(constant(minuend), subtrahend);
     }
