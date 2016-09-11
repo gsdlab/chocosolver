@@ -1124,12 +1124,7 @@ public class IrCompiler {
         @Override
         public IntVar visit(IrMinus ir, IntVar reify) {
             IntVar expr = compile(ir.getExpr());
-            IntVar minus = cachedMinus.get(expr);
-            if (minus == null) {
-                minus = model.intMinusView(compile(ir.getExpr()));
-                cachedMinus.put(expr, minus);
-            }
-            return minus;
+            return _minus(expr);
         }
 
         @Override
@@ -1208,6 +1203,7 @@ public class IrCompiler {
                         if (multiplicand.getLowBound() >= -1) {
                             return _scale(compile(multiplier), multiplicand.getLowBound());
                         }
+                        return _minus(_scale(compile(multiplier), -multiplicand.getLowBound()));
                 }
             }
             if (multiplier.isConstant()) {
@@ -1220,6 +1216,7 @@ public class IrCompiler {
                         if (multiplier.getLowBound() >= -1) {
                             return _scale(compile(multiplicand), multiplier.getLowBound());
                         }
+                        return _minus(_scale(compile(multiplicand), -multiplier.getLowBound()));
                 }
             }
             if (reify != null) {
@@ -1914,6 +1911,15 @@ public class IrCompiler {
 
     private Constraint _offset(SetVar set, SetVar offseted, int offset) {
         return model.offSet(set, offseted, offset);
+    }
+
+    private IntVar _minus(IntVar var) {
+        IntVar minus = cachedMinus.get(var);
+        if (minus == null) {
+            minus = model.intMinusView(var);
+            cachedMinus.put(var, minus);
+        }
+        return minus;
     }
 
     private IntVar _scale(IntVar var, int scale) {
