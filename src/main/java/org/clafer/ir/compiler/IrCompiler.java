@@ -145,6 +145,23 @@ public class IrCompiler {
             Pair<Coalesce, IrModule> coalescePair = new FBBT().propagate(optModule);
             coalesce = coalescePair.getFst();
             optModule = coalescePair.getSnd();
+
+            Set<IrVar> processed = new HashSet<>();
+            for (IrExpr expr : optModule.getConstraints()) {
+                if (expr instanceof IrRegister) {
+                    IrVar var = ((IrRegister) expr).getVariable();
+                    if (var instanceof IrBoolVar) {
+                        IrBoolVar bool = (IrBoolVar) var;
+                        bool = coalesce.get(bool);
+                        if (!bool.isConstant() && processed.add(bool)) {
+                            coalescePair = new FBBT().constructiveDisjunction(bool, bool.negate(), optModule);
+                            coalesce = coalesce.compose(coalescePair.getFst());
+                            optModule = coalescePair.getSnd();
+                        }
+                    }
+                }
+            }
+
             optModule = DuplicateConstraints.removeDuplicates(optModule);
         }
         optModule = LinearEquationOptimizer.optimize(optModule);
@@ -160,10 +177,7 @@ public class IrCompiler {
             }
         }
 
-        Map<IrSetVar, SetVar> setVarMapSet = new HashMap<>(setVarMap.size());
-        setVarMap.forEach(setVarMapSet::put);
-
-        return new IrSolutionMap(coalesce, intVarMap, setVarMapSet);
+        return new IrSolutionMap(coalesce, intVarMap, setVarMap);
     }
 
     private final Map<IrIntVar, IntVar> intVarMap = new HashMap<>();

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import org.clafer.collection.Pair;
 import org.clafer.common.UnsatisfiableException;
+import org.clafer.domain.Domain;
 import org.clafer.ir.IllegalIntException;
 import org.clafer.ir.IllegalSetException;
 import org.clafer.ir.IllegalStringException;
@@ -25,6 +26,7 @@ import org.clafer.ir.IrCount;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrIfOnlyIf;
 import org.clafer.ir.IrIntChannel;
+import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrJoinFunction;
 import org.clafer.ir.IrJoinRelation;
 import org.clafer.ir.IrMember;
@@ -116,13 +118,11 @@ public class FBBT {
             changed.addAll(module.getConstraints());
             State state = new State(module);
 
-            Pair<Coalesce, State> coalescePair = propagateImpl(state, changed);
-            Coalesce coalesce = coalescePair.getFst();
-            state = coalescePair.getSnd();
-            while (!coalescePair.getFst().isEmpty()) {
-                coalescePair = propagateImpl(state, changed);
-                coalesce = coalesce.compose(coalescePair.getFst());
-                state = coalescePair.getSnd();
+            Coalesce coalesce = propagateImpl(state, changed);
+            Coalesce cur = coalesce;
+            while (!cur.isEmpty()) {
+                cur = propagateImpl(state, changed);
+                coalesce = coalesce.compose(cur);
             }
             return new Pair<>(coalesce, state.toModule());
         } catch (IllegalIntException | IllegalSetException | IllegalStringException e) {
@@ -130,23 +130,91 @@ public class FBBT {
         }
     }
 
-    private Pair<Coalesce, State> propagateImpl(State state, Set<IrBoolExpr> changed) {
+    private Coalesce propagate(Deduction deduction, State state) {
+        try {
+            Coalesce coalesce = deduction.apply(state.setVars, state.stringVars);
+
+            if (coalesce.isEmpty()) {
+                return coalesce;
+            }
+
+            Set<IrBoolExpr> changed = new HashSet<>();
+            state.apply(coalesce, changed);
+
+            Coalesce cur = coalesce;
+            while (!cur.isEmpty()) {
+                cur = propagateImpl(state, changed);
+                coalesce = coalesce.compose(cur);
+            }
+            return coalesce;
+        } catch (IllegalIntException | IllegalSetException | IllegalStringException e) {
+            throw new UnsatisfiableException(e);
+        }
+    }
+
+    private Coalesce propagateImpl(State state, Set<IrBoolExpr> changed) {
         Deduction deduction = new Deduction(boolDeducers, intDeducers, setDeducers);
 
         changed.forEach(deduction::tautology);
 
-        deduction.checkInvariants();
+        assert deduction.checkInvariants();
 
         Coalesce coalesce = deduction.apply(state.setVars, state.stringVars);
 
         if (coalesce.isEmpty()) {
-            return new Pair<>(coalesce, state);
+            return coalesce;
         }
 
         changed.clear();
         state.apply(coalesce, changed);
 
-        return new Pair<>(coalesce, state);
+        return coalesce;
+    }
+
+    public Pair<Coalesce, IrModule> constructiveDisjunction(IrBoolExpr case1, IrBoolExpr case2, IrModule module) {
+        Deduction deduction = new Deduction(boolDeducers, intDeducers, setDeducers);
+
+        module.getConstraints().forEach(deduction::tautology);
+
+        assert deduction.checkInvariants();
+
+        try {
+            Deduction case1Deduction = new Deduction(deduction);
+            case1Deduction.tautology(case1);
+            Coalesce coalesce1 = propagate(case1Deduction, new State(module, case1));
+            try {
+                Deduction case2Deduction = new Deduction(deduction);
+                case2Deduction.tautology(case2);
+                Coalesce coalesce2 = propagate(case2Deduction, new State(module, case2));
+
+                coalesce1.forEachIntVar((key, value1) -> {
+                    IrIntVar value2 = coalesce2.get(key);
+                    if (value2 != key) {
+                        Domain combine = value1.getDomain().union(value2.getDomain());
+                        deduction.within(key, combine);
+                    }
+                });
+
+                coalesce1.forEachSetVar((key, value1) -> {
+                    IrSetVar value2 = coalesce2.get(key);
+                    if (value2 != key) {
+                        Domain combineKer = value1.getKer().intersection(value2.getKer());
+                        Domain combineEnv = value1.getEnv().union(value2.getEnv());
+                        Domain combineCard = value1.getCard().union(value2.getCard());
+                        deduction.kerContains(key, combineKer);
+                        deduction.envSubsetOf(key, combineEnv);
+                        deduction.cardWithin(key, combineCard);
+                    }
+                });
+            } catch (UnsatisfiableException e) {
+                deduction.contradiction(case2);
+            }
+        } catch (UnsatisfiableException e) {
+            deduction.contradiction(case1);
+        }
+        State state = new State(module);
+        Coalesce coalesce = propagate(deduction, state);
+        return new Pair<>(coalesce, state.toModule());
     }
 
     private static class State {
@@ -158,9 +226,14 @@ public class FBBT {
         Set<IrSetVar> reuseSetVars = new HashSet<>();
         Set<IrStringVar> reuseStringVars = new HashSet<>();
 
-        State(IrModule module) {
+        State(IrModule module, IrBoolExpr tautology) {
             Collection<IrBoolExpr> c = module.getConstraints();
-            this.constraints = c.toArray(new IrBoolExpr[c.size()]);
+            if (tautology == null) {
+                this.constraints = c.toArray(new IrBoolExpr[c.size()]);
+            } else {
+                this.constraints = c.toArray(new IrBoolExpr[c.size() + 1]);
+                this.constraints[c.size()] = tautology;
+            }
             this.size = constraints.length;
             Set<IrVar> vars = module.getVariables();
             for (IrVar var : vars) {
@@ -172,6 +245,10 @@ public class FBBT {
                     }
                 }
             }
+        }
+
+        State(IrModule module) {
+            this(module, null);
         }
 
         void apply(Coalesce coalesce, Set<IrBoolExpr> changed) {
