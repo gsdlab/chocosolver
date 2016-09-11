@@ -1476,8 +1476,8 @@ public class Irs {
         if (!set.getKer().isEmpty()) {
             domain = domain.boundLow(set.getKer().getHighBound());
         }
-        return new IrSetMax(set, defaultValue, set.getCard().getLowBound() > 0
-                ? domain : domain.insert(defaultValue));
+        return IrUtil.asConstant(new IrSetMax(set, defaultValue, set.getCard().getLowBound() > 0
+                ? domain : domain.insert(defaultValue)));
     }
 
     public static IrIntExpr min(IrSetExpr set, int defaultValue) {
