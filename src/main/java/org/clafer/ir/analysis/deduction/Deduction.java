@@ -281,8 +281,7 @@ class Deduction {
             kerContains(right, left.getKer());
             envSubsetOf(left, right.getEnv());
             envSubsetOf(right, left.getEnv());
-            cardWithin(left, right.getCard());
-            cardWithin(right, left.getCard());
+            equal(Irs.card(left), Irs.card(right));
         }
     }
 

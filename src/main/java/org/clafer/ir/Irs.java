@@ -1154,6 +1154,29 @@ public class Irs {
         if (set instanceof IrSetVar) {
             IrSetVar var = (IrSetVar) set;
             return var.getCardVar();
+        } else if (set instanceof IrJoinFunction) {
+            IrJoinFunction join = (IrJoinFunction) set;
+            if (join.hasGlobalCardinality() && join.getGlobalCardinality().equals(1)) {
+                return card(join.getTake());
+            }
+        } else if (set instanceof IrSetUnion) {
+            IrSetUnion union = (IrSetUnion) set;
+            if (union.isDisjoint()) {
+                IrSetExpr[] operands = union.getOperands();
+                IrIntExpr[] cards = new IrIntExpr[operands.length];
+                for (int i = 0; i < cards.length; i++) {
+                    cards[i] = card(operands[i]);
+                }
+                return add(cards);
+            }
+        } else if (set instanceof IrOffset) {
+            IrOffset offset = (IrOffset) set;
+            return card(offset.getSet());
+        } else if (set instanceof IrSetTernary) {
+            IrSetTernary ternary = (IrSetTernary) set;
+            return ternary(ternary.getAntecedent(),
+                    card(ternary.getConsequent()),
+                    card(ternary.getAlternative()));
         }
         Domain domain = set.getCard();
         if (domain.isConstant()) {
