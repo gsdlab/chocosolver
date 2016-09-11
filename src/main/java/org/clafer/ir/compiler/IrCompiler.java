@@ -185,6 +185,7 @@ public class IrCompiler {
     private final Map<TIntHashSet, SetVar> cachedSetConstants = new HashMap<>();
     private final Map<IntVar, IntVar> cachedMinus = new HashMap<>();
     private final Map<Pair<IntVar, Integer>, IntVar> cachedOffset = new HashMap<>();
+    private final Map<Pair<IntVar, Integer>, IntVar> cachedScale = new HashMap<>();
     private final Set<IrExpr> commonSubexpressions = new HashSet<>();
     private final Map<IrIntExpr, IntVar> cachedCommonIntSubexpressions = new HashMap<>();
     private final Map<IrSetExpr, SetVar> cachedCommonSetSubexpressions = new HashMap<>();
@@ -1205,7 +1206,7 @@ public class IrCompiler {
                         return compileAsConstraint(multiplier, reify);
                     default:
                         if (multiplicand.getLowBound() >= -1) {
-                            return model.intScaleView(compile(multiplier), multiplicand.getLowBound());
+                            return _scale(compile(multiplier), multiplicand.getLowBound());
                         }
                 }
             }
@@ -1217,7 +1218,7 @@ public class IrCompiler {
                         return compileAsConstraint(multiplicand, reify);
                     default:
                         if (multiplier.getLowBound() >= -1) {
-                            return model.intScaleView(compile(multiplicand), multiplier.getLowBound());
+                            return _scale(compile(multiplicand), multiplier.getLowBound());
                         }
                 }
             }
@@ -1913,6 +1914,16 @@ public class IrCompiler {
 
     private Constraint _offset(SetVar set, SetVar offseted, int offset) {
         return model.offSet(set, offseted, offset);
+    }
+
+    private IntVar _scale(IntVar var, int scale) {
+        Pair<IntVar, Integer> pair = new Pair<>(var, scale);
+        IntVar cache = cachedScale.get(pair);
+        if (cache == null) {
+            cache = model.intScaleView(var, scale);
+            cachedScale.put(pair, cache);
+        }
+        return cache;
     }
 
     private static Constraint _mask(SetVar set, SetVar masked, int from, int to) {
