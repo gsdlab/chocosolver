@@ -1431,6 +1431,8 @@ public class Irs {
 
         if (index.isConstant()) {
             return get($array, index.getLowBound());
+        } else if (index instanceof IrBoolExpr) {
+            return ternary((IrBoolExpr) index, get($array, 1), get($array, 0));
         }
 
         Optional<Domain> domain = Util.mapWithin(
@@ -1689,40 +1691,11 @@ public class Irs {
         }
     }
 
-//    public static IrSetExpr element(IrSetExpr[] array, IrIntExpr index) {
-//        IrSetExpr[] $array = index.getDomain().getHighBound() + 1 < array.length
-//                ? Arrays.copyOf(array, index.getDomain().getHighBound() + 1)
-//                : array.clone();
-//        for (int i = 0; i < $array.length; i++) {
-//            if (!index.getDomain().contains(i)) {
-//                $array[i] = EmptySet;
-//            }
-//        }
-//
-//        Integer constant = IrUtil.getConstant(index);
-//        if (constant != null) {
-//            return $array[constant];
-//        }
-//        TIntIterator iter = index.getDomain().iterator();
-//        assert iter.hasNext();
-//
-//        int val = iter.next();
-//        Domain env = $array[val].getEnv();
-//        Domain ker = $array[val].getKer();
-//        Domain card = $array[val].getCard();
-//        while (iter.hasNext()) {
-//            val = iter.next();
-//            if (val < $array.length) {
-//                env = env.union($array[val].getEnv());
-//                ker = ker.intersection($array[val].getKer());
-//                card = card.union($array[val].getCard());
-//            }
-//        }
-//        return new IrSetElement($array, index, env, ker, card);
-//    }
     public static IrSetExpr element(IrSetArrayExpr array, IrIntExpr index) {
         if (index.isConstant()) {
             return get(array, index.getLowBound());
+        } else if (index instanceof IrBoolExpr) {
+            return ternary((IrBoolExpr) index, get(array, 1), get(array, 0));
         }
 
         // TODO bound for other element calls
