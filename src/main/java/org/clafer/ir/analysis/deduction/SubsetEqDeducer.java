@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis.deduction;
 
-import org.clafer.domain.Domain;
 import org.clafer.ir.IrSetExpr;
 import org.clafer.ir.IrSubsetEq;
 

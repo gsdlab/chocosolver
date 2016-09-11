@@ -216,12 +216,12 @@ public class PropJoinRelation extends Propagator<SetVar> {
         assert take.getLB().contains(takeKer);
 
         SetVar child = children[takeKer];
-        PropUtil.kerSubsetKer(child, to, PropJoinRelation.this);
-        PropUtil.envSubsetEnv(child, to, PropJoinRelation.this);
+        PropUtil.kerSubsetKer(child, to, this);
+        PropUtil.envSubsetEnv(child, to, this);
     }
 
     private void pruneToOnChildEnv(int childEnv) throws ContradictionException {
-            // Note the the child may no longer be in take, but still need to find mate.
+        // Note the the child may no longer be in take, but still need to find mate.
         // For example:
         //     take = {0,1,2}, child0 = {0}, child1 = {1}, child2 = {2}, to = {0,1,2}
         //   remove 2 from take and 2 from child2
@@ -235,7 +235,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
 
     private void pickToOnChildKer(int childKer) throws ContradictionException {
         // assert id in ker(take)
-        to.force(childKer, PropJoinRelation.this);
+        to.force(childKer, this);
     }
 
     private void pruneChildOnToEnv(int toEnv) throws ContradictionException {
@@ -243,7 +243,7 @@ public class PropJoinRelation extends Propagator<SetVar> {
 
         ISetIterator iter = take.getLB().iterator();
         while (iter.hasNext()) {
-            children[iter.nextInt()].remove(toEnv, PropJoinRelation.this);
+            children[iter.nextInt()].remove(toEnv, this);
         }
     }
 

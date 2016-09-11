@@ -3,7 +3,6 @@ package org.clafer.ir.analysis.deduction;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrSelectN;
-import org.clafer.ir.IrUtil;
 
 /**
  *

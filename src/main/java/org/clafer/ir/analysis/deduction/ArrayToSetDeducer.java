@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis.deduction;
 
-import org.chocosolver.solver.Model;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
 import static org.clafer.domain.Domains.constantDomain;

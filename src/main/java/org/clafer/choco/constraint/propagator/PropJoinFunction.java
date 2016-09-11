@@ -250,9 +250,9 @@ public class PropJoinFunction extends Propagator<Variable> {
         assert take.getLB().contains(takeKer);
 
         IntVar ref = refs[takeKer];
-        PropUtil.domSubsetEnv(ref, to, PropJoinFunction.this);
+        PropUtil.domSubsetEnv(ref, to, this);
         if (ref.isInstantiated()) {
-            to.force(ref.getValue(), PropJoinFunction.this);
+            to.force(ref.getValue(), this);
         }
     }
 
@@ -263,8 +263,8 @@ public class PropJoinFunction extends Propagator<Variable> {
         while (iter.hasNext()) {
             int takeKer = iter.nextInt();
             IntVar ref = refs[takeKer];
-            if (ref.removeValue(toEnv, PropJoinFunction.this) && ref.isInstantiated()) {
-                to.force(ref.getValue(), PropJoinFunction.this);
+            if (ref.removeValue(toEnv, this) && ref.isInstantiated()) {
+                to.force(ref.getValue(), this);
             }
         }
     }

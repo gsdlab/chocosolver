@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis.deduction;
 
-import org.clafer.domain.Domain;
 import org.clafer.ir.IrSetEquality;
 
 /**
@@ -16,6 +15,7 @@ class SetEqualityDeducer implements BoolDeducer<IrSetEquality> {
                 deduction.equal(ir.getLeft(), ir.getRight());
                 break;
             case NotEqual:
+                break;
         }
     }
 }

@@ -6,7 +6,6 @@ import org.clafer.domain.Domains;
 import org.clafer.ir.IrBoolChannel;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrSetExpr;
-import org.clafer.ir.IrUtil;
 
 /**
  *

@@ -100,24 +100,24 @@ public class PropMask extends Propagator<SetVar> {
 
     private void pickMaskedOnSetKer(int ker) throws ContradictionException {
         if (ker >= from && ker < to) {
-            masked.force(ker - from, PropMask.this);
+            masked.force(ker - from, this);
         }
     }
 
     private void pruneMaskedOnSetEnv(int env) throws ContradictionException {
         if (env >= from && env < to) {
-            masked.remove(env - from, PropMask.this);
+            masked.remove(env - from, this);
         }
     }
 
     private void pickSetOnMaskedKer(int ker) throws ContradictionException {
         assert ker < to - from;
-        set.force(ker + from, PropMask.this);
+        set.force(ker + from, this);
     }
 
     private void pruneSetOnMaskedEnv(int env) throws ContradictionException {
         assert env < to - from;
-        set.remove(env + from, PropMask.this);
+        set.remove(env + from, this);
     }
 
     @Override

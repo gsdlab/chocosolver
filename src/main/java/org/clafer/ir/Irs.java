@@ -1726,10 +1726,14 @@ public class Irs {
      * @return the join expression take.children
      */
     public static IrSetExpr joinRelation(IrSetExpr take, IrSetArrayExpr children, boolean injective) {
-        if (take.getEnv().isEmpty()) {
+        Domain takeEnv = take.getEnv();
+        Domain takeKer = take.getKer();
+        Domain takeCard = take.getCard();
+
+        if (takeEnv.isEmpty()) {
             return EmptySet;
         }
-        IrSetArrayExpr $children = subArray(children, 0, take.getEnv().getHighBound() + 1);
+        IrSetArrayExpr $children = subArray(children, 0, takeEnv.getHighBound() + 1);
 
         IrIntExpr[] ints = IrUtil.asInts(children);
         if (ints != null) {
@@ -1737,7 +1741,7 @@ public class Irs {
         }
 
         if (take.isConstant()) {
-            int[] array = take.getKer().getValues();
+            int[] array = takeKer.getValues();
             IrSetExpr[] to = new IrSetExpr[array.length];
             for (int i = 0; i < to.length; i++) {
                 // TODO optimize
@@ -1751,9 +1755,6 @@ public class Irs {
             return element(children, singleton.getValue());
         }
 
-        Domain takeEnv = take.getEnv();
-        Domain takeKer = take.getKer();
-
         // Compute env
         Domain env = Util.map(
                 takeEnv.stream(), $children.getEnvs())
@@ -1765,7 +1766,6 @@ public class Irs {
                 .reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute card
-        Domain takeCard = take.getCard();
         int index = 0;
         int[] childrenLowCards = new int[takeEnv.size() - takeKer.size()];
         int[] childrenHighCards = new int[takeEnv.size() - takeKer.size()];
@@ -1822,13 +1822,17 @@ public class Irs {
     }
 
     public static IrSetExpr joinFunction(IrSetExpr take, IrIntArrayExpr refs, Integer globalCardinality) {
-        if (take.getEnv().isEmpty()) {
+        Domain takeEnv = take.getEnv();
+        Domain takeKer = take.getKer();
+        Domain takeCard = take.getCard();
+
+        if (takeEnv.isEmpty()) {
             return EmptySet;
         }
-        IrIntArrayExpr $refs = subArray(refs, 0, take.getEnv().getHighBound() + 1);
+        IrIntArrayExpr $refs = subArray(refs, 0, takeEnv.getHighBound() + 1);
 
         if (take.isConstant()) {
-            int[] array = take.getKer().getValues();
+            int[] array = takeKer.getValues();
             IrIntExpr[] to = new IrIntExpr[array.length];
             for (int i = 0; i < to.length; i++) {
                 to[i] = get($refs, array[i]);
@@ -1847,16 +1851,15 @@ public class Irs {
 
         // Compute env
         Domain env = Util.map(
-                take.getEnv().stream(), refs.getDomains())
+                takeEnv.stream(), refs.getDomains())
                 .reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute ker
         Domain ker = Util.map(
-                take.getKer().stream(), refs.getDomains())
+                takeKer.stream(), refs.getDomains())
                 .filter(Domain::isConstant).reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute card
-        Domain takeCard = take.getCard();
         int lowTakeCard = takeCard.getLowBound();
         int highTakeCard = takeCard.getHighBound();
         Domain card;

@@ -21,6 +21,8 @@ class ArrayEqualityDeducer implements BoolDeducer<IrArrayEquality> {
                     deduction.equal(Irs.get(left, i), Irs.get(right, i));
                 }
                 break;
+            case NotEqual:
+                break;
         }
     }
 }

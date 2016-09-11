@@ -93,36 +93,36 @@ public class PropSetDifference extends Propagator<SetVar> {
     }
 
     private void pruneDifferenceOnMinuendEnv(int minuendEnv) throws ContradictionException {
-        difference.remove(minuendEnv, PropSetDifference.this);
+        difference.remove(minuendEnv, this);
     }
 
     private void pickDifferenceOnMinuendKer(int minuendKer) throws ContradictionException {
         if (!subtrahend.getUB().contains(minuendKer)) {
-            difference.force(minuendKer, PropSetDifference.this);
+            difference.force(minuendKer, this);
         }
     }
 
     private void pickMinuendPickDiffrenceOnSubtrahendEnv(int subtrahendEnv) throws ContradictionException {
         if (minuend.getLB().contains(subtrahendEnv)) {
-            difference.force(subtrahendEnv, PropSetDifference.this);
+            difference.force(subtrahendEnv, this);
         } else if (difference.getLB().contains(subtrahendEnv)) {
-            minuend.force(subtrahendEnv, PropSetDifference.this);
+            minuend.force(subtrahendEnv, this);
         }
     }
 
     private void pruneDifferenceOnSubtrahendKer(int subtrahendKer) throws ContradictionException {
-        difference.remove(subtrahendKer, PropSetDifference.this);
+        difference.remove(subtrahendKer, this);
     }
 
     private void pruneMinuendOnDifferenceEnv(int differenceEnv) throws ContradictionException {
         if (!subtrahend.getUB().contains(differenceEnv)) {
-            minuend.remove(differenceEnv, PropSetDifference.this);
+            minuend.remove(differenceEnv, this);
         }
     }
 
     private void pickMinuendPruneSubtrahendOnDifferenceKer(int differenceKer) throws ContradictionException {
-        minuend.force(differenceKer, PropSetDifference.this);
-        subtrahend.remove(differenceKer, PropSetDifference.this);
+        minuend.force(differenceKer, this);
+        subtrahend.remove(differenceKer, this);
     }
 
     @Override

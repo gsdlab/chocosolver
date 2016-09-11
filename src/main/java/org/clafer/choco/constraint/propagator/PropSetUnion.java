@@ -127,12 +127,12 @@ public class PropSetUnion extends Propagator<SetVar> {
     }
 
     private void pickUnionOnSetKer(int setKer) throws ContradictionException {
-        union.force(setKer, PropSetUnion.this);
+        union.force(setKer, this);
     }
 
     private void pruneSetOnUnionEnv(int unionEnv) throws ContradictionException {
         for (SetVar set : sets) {
-            set.remove(unionEnv, PropSetUnion.this);
+            set.remove(unionEnv, this);
         }
     }
 

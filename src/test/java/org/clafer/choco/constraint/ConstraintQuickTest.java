@@ -12,7 +12,6 @@ import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Settings;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.util.ESat;
 import org.clafer.Sample;
 import org.clafer.test.TestReflection;
