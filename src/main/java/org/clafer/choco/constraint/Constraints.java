@@ -39,7 +39,6 @@ import org.clafer.choco.constraint.propagator.PropContainsImpliesEqualCard;
 import org.clafer.choco.constraint.propagator.PropContainsImpliesEqualCard2;
 import org.clafer.choco.constraint.propagator.PropContinuous;
 import org.clafer.choco.constraint.propagator.PropContinuousUnion;
-import org.clafer.choco.constraint.propagator.PropCountNotEqual;
 import org.clafer.choco.constraint.propagator.PropElement;
 import org.clafer.choco.constraint.propagator.PropElementArraySupport;
 import org.clafer.choco.constraint.propagator.PropElementValueSupport;
@@ -325,18 +324,6 @@ public class Constraints {
                 new PropSetTernary(antecedent, result, consequent, alternative),
                 new PropTernary(antecedent, result.getCard(), consequent.getCard(), alternative.getCard())
         );
-    }
-
-    /**
-     * A constraint enforcing {@code count = (Σ_i array[i] != value)}.
-     *
-     * @param value the value
-     * @param array the array
-     * @param count the count
-     * @return constraint {@code count = (Σ_i array[i] != value)}
-     */
-    public static Constraint countNotEqual(int value, IntVar[] array, IntVar count) {
-        return new Constraint("countNotEqual", new PropCountNotEqual(value, array, count));
     }
 
     /**
