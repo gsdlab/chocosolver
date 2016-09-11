@@ -19,13 +19,13 @@ import org.junit.runner.RunWith;
 public class IrJoinRelationTest {
 
     @Test(timeout = 60000)
-    public IrBoolExpr setup(@Positive IrSetVar take, IrSetVar[] children, boolean injective, IrSetVar join) {
+    public IrBoolExpr setup(@Positive IrSetVar take, IrSetVar[] children, IrSetVar join) {
         assumeTrue(take.getEnv().isEmpty() || take.getEnv().getHighBound() < children.length);
         return equal(joinRelation(take, Irs.array(children), false), join);
     }
 
     @Solution
-    public Constraint setup(SetVar take, SetVar[] children, boolean injective, SetVar join) {
+    public Constraint setup(SetVar take, SetVar[] children, SetVar join) {
         return Constraints.joinRelation(take, children, join);
     }
 }
