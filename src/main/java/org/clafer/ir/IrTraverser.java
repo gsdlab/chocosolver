@@ -321,12 +321,6 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public Void visit(IrCountNotEqual ir, T a) {
-        traverse(ir.getArray(), a);
-        return null;
-    }
-
-    @Override
     public Void visit(IrSetMax ir, T a) {
         traverse(ir.getSet(), a);
         return null;

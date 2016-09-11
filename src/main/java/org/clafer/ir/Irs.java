@@ -1442,28 +1442,7 @@ public class Irs {
     }
 
     public static IrIntExpr countNotEqual(int value, IrIntArrayExpr array) {
-        List<IrIntExpr> filter = new ArrayList<>();
-        int count = 0;
-        for (IrIntExpr i : IrUtil.asArray(array)) {
-            if (!i.getDomain().contains(value)) {
-                count++;
-            } else if (!i.equals(constant(value))) {
-                filter.add(i);
-            }
-        }
-        switch (filter.size()) {
-            case 0:
-                return constant(count);
-            case 1:
-                return add(notEqual(value, filter.get(0)), count);
-            default:
-                return add(
-                        new IrCountNotEqual(
-                                value,
-                                array.length() == filter.size() ? array : intArray(filter),
-                                boundDomain(0, filter.size())),
-                        count);
-        }
+        return sub(array.length(), count(value, array));
     }
 
     public static IrIntExpr max(IrSetExpr set, int defaultValue) {

@@ -15,7 +15,6 @@ import static org.clafer.ir.Irs.connected;
 import static org.clafer.ir.Irs.constant;
 import static org.clafer.ir.Irs.containsTernary;
 import static org.clafer.ir.Irs.count;
-import static org.clafer.ir.Irs.countNotEqual;
 import static org.clafer.ir.Irs.difference;
 import static org.clafer.ir.Irs.div;
 import static org.clafer.ir.Irs.element;
@@ -519,14 +518,6 @@ public abstract class IrRewriter<T>
         IrIntArrayExpr array = rewrite(ir.getArray(), a);
         return changed(ir.getArray(), array)
                 ? count(ir.getValue(), array)
-                : ir;
-    }
-
-    @Override
-    public IrIntExpr visit(IrCountNotEqual ir, T a) {
-        IrIntArrayExpr array = rewrite(ir.getArray(), a);
-        return changed(ir.getArray(), array)
-                ? countNotEqual(ir.getValue(), array)
                 : ir;
     }
 

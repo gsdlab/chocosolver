@@ -39,7 +39,6 @@ import org.clafer.ir.IrConcat;
 import org.clafer.ir.IrConnected;
 import org.clafer.ir.IrContainsSetTernary;
 import org.clafer.ir.IrCount;
-import org.clafer.ir.IrCountNotEqual;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrExpr;
@@ -1273,17 +1272,6 @@ public class IrCompiler {
                 return count;
             }
             return model.count(ir.getValue(), array, reify);
-        }
-
-        @Override
-        public Object visit(IrCountNotEqual ir, IntVar reify) {
-            IntVar[] array = compile(ir.getArray());
-            if (reify == null) {
-                IntVar count = numIntVar("CountNotEqual", ir.getDomain());
-                post(Constraints.countNotEqual(ir.getValue(), array, count));
-                return count;
-            }
-            return Constraints.countNotEqual(ir.getValue(), array, reify);
         }
 
         @Override
