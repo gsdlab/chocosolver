@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.clafer.collection.DisjointSets;
 import org.clafer.collection.Either;
 import org.clafer.collection.Triple;
@@ -22,6 +23,7 @@ import org.clafer.ir.IrModule;
 import org.clafer.ir.IrMul;
 import static org.clafer.ir.Irs.add;
 import static org.clafer.ir.Irs.equal;
+import static org.clafer.ir.Irs.greaterThanEqual;
 import static org.clafer.ir.Irs.lessThanEqual;
 import static org.clafer.ir.Irs.mul;
 import org.clafer.math.LinearEquation;
@@ -157,14 +159,15 @@ public class LinearEquationOptimizer {
             Rational right = round.getRight();
 
             IrIntExpr[] addends = new IrIntExpr[cs.length];
+            boolean neg = Stream.of(cs).filter(Rational::isNegative).count() * 2 > addends.length;
             for (int j = 0; j < addends.length; j++) {
                 assert cs[j].isWhole();
                 long coefficient = cs[j].getNumerator();
-                int coefficientI = (int) coefficient;
+                int coefficientI = (int) (neg ? -coefficient : coefficient);
                 IrIntVar var = map.get(vs[j]);
 
-                int a = (int) (coefficient * var.getLowBound());
-                int b = (int) (coefficient * var.getHighBound());
+                int a = coefficientI * var.getLowBound();
+                int b = coefficientI * var.getHighBound();
 
                 addends[j] = mul(coefficientI, var,
                         Domains.boundDomain(Math.min(a, b), Math.max(a, b)));
@@ -172,10 +175,14 @@ public class LinearEquationOptimizer {
             assert right.isWhole();
             switch (round.getOp()) {
                 case Equal:
-                    exprs[i] = equal(add(addends), (int) right.getNumerator());
+                    exprs[i] = equal(add(addends), (int) (neg ? -right.getNumerator() : right.getNumerator()));
                     break;
                 case LessThanEqual:
-                    exprs[i] = lessThanEqual(add(addends), (int) right.getNumerator());
+                    if (neg) {
+                        exprs[i] = greaterThanEqual(add(addends), (int) -right.getNumerator());
+                    } else {
+                        exprs[i] = lessThanEqual(add(addends), (int) right.getNumerator());
+                    }
                     break;
                 default:
                     throw new IllegalStateException();
