@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.clafer.collection.DisjointSets;
@@ -27,6 +28,7 @@ import static org.clafer.ir.Irs.greaterThanEqual;
 import static org.clafer.ir.Irs.lessThanEqual;
 import static org.clafer.ir.Irs.mul;
 import org.clafer.math.LinearEquation;
+import org.clafer.math.LinearEquation.Op;
 import org.clafer.math.LinearFunction;
 import org.clafer.math.LinearFunctionBuilder;
 import org.clafer.math.LinearSystem;
@@ -122,73 +124,89 @@ public class LinearEquationOptimizer {
         return null;
     }
 
-    private LinearEquation[] round(LinearEquation equation) {
+    private Optional<LinearEquation> round(LinearEquation equation) {
         LinearFunction left = equation.getLeft();
         Rational[] cs = left.getCoefficients();
-        Variable[] vs = left.getVariables();
+        Op op = equation.getOp();
         Rational right = equation.getRight();
         Rational min = right;
         Rational max = right;
-        long lcm = right.getDenominator();
-        for (Rational c : cs) {
-            if (min.compareTo(c) > 0) {
-                min = c;
-            }
-            if (max.compareTo(c) < 0) {
-                max = c;
-            }
+        long lcm = cs[0].getDenominator();
+        if (Op.Equal.equals(op)) {
+            lcm = Util.lcm(lcm, right.getDenominator());
+        }
+        min = min.min(cs[0]);
+        max = max.max(cs[0]);
+        for (int i = 1; i < cs.length; i++) {
+            Rational c = cs[i];
+            min = min.min(c);
+            max = max.max(c);
             lcm = Util.lcm(lcm, c.getDenominator());
         }
-        if (max.ceil() * lcm < 50000 && min.floor() * lcm > -50000) {
-            return new LinearEquation[]{
-                new LinearEquation(equation.getLeft().mul(lcm), equation.getOp(), equation.getRight().mul(lcm), false)
-            };
+        Rational multiplier;
+        if (Op.LessThanEqual.equals(op)) {
+            long gcd = cs[0].mul(lcm).getNumerator();
+            for (int i = 1; i < cs.length; i++) {
+                Rational c = cs[i];
+                gcd = Util.gcd(gcd, c.mul(lcm).getNumerator());
+            }
+            gcd = Math.abs(gcd);
+            multiplier = new Rational(lcm, gcd);
+        } else {
+            multiplier = new Rational(lcm);
+        }
+        if (max.mul(multiplier).ceil() < 50000 && min.mul(multiplier).floor() > -50000) {
+            return Optional.of(
+                    new LinearEquation(equation.getLeft().mul(multiplier),
+                            equation.getOp(),
+                            Op.Equal.equals(op)
+                                    ? equation.getRight().mul(multiplier)
+                                    : new Rational(equation.getRight().mul(multiplier).floor()),
+                            false)
+            );
         }
         lossy = true;
-        return new LinearEquation[0];
+        return Optional.empty();
     }
 
-    private IrBoolExpr[] boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map, int low, int high) {
-        LinearEquation[] rounds = round(equation);
-        IrBoolExpr[] exprs = new IrBoolExpr[rounds.length];
-        for (int i = 0; i < exprs.length; i++) {
-            LinearEquation round = rounds[i];
-            LinearFunction left = round.getLeft();
-            Rational[] cs = left.getCoefficients();
-            Variable[] vs = left.getVariables();
-            Rational right = round.getRight();
-
-            IrIntExpr[] addends = new IrIntExpr[cs.length];
-            boolean neg = Stream.of(cs).filter(Rational::isNegative).count() * 2 > addends.length;
-            for (int j = 0; j < addends.length; j++) {
-                assert cs[j].isWhole();
-                long coefficient = cs[j].getNumerator();
-                int coefficientI = (int) (neg ? -coefficient : coefficient);
-                IrIntVar var = map.get(vs[j]);
-
-                int a = coefficientI * var.getLowBound();
-                int b = coefficientI * var.getHighBound();
-
-                addends[j] = mul(coefficientI, var,
-                        Domains.boundDomain(Math.min(a, b), Math.max(a, b)));
-            }
-            assert right.isWhole();
-            switch (round.getOp()) {
-                case Equal:
-                    exprs[i] = equal(add(addends), (int) (neg ? -right.getNumerator() : right.getNumerator()));
-                    break;
-                case LessThanEqual:
-                    if (neg) {
-                        exprs[i] = greaterThanEqual(add(addends), (int) -right.getNumerator());
-                    } else {
-                        exprs[i] = lessThanEqual(add(addends), (int) right.getNumerator());
-                    }
-                    break;
-                default:
-                    throw new IllegalStateException();
-            }
+    private Optional<IrBoolExpr> boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map, int low, int high) {
+        Optional<LinearEquation> roundOpt = round(equation);
+        if (!roundOpt.isPresent()) {
+            return Optional.empty();
         }
-        return exprs;
+        LinearEquation round = roundOpt.get();
+        LinearFunction left = round.getLeft();
+        Rational[] cs = left.getCoefficients();
+        Variable[] vs = left.getVariables();
+        Rational right = round.getRight();
+
+        IrIntExpr[] addends = new IrIntExpr[cs.length];
+        boolean neg = Stream.of(cs).filter(Rational::isNegative).count() * 2 > addends.length;
+        for (int j = 0; j < addends.length; j++) {
+            assert cs[j].isWhole();
+            long coefficient = cs[j].getNumerator();
+            int coefficientI = (int) (neg ? -coefficient : coefficient);
+            IrIntVar var = map.get(vs[j]);
+
+            int a = coefficientI * var.getLowBound();
+            int b = coefficientI * var.getHighBound();
+
+            addends[j] = mul(coefficientI, var,
+                    Domains.boundDomain(Math.min(a, b), Math.max(a, b)));
+        }
+        assert right.isWhole();
+        switch (round.getOp()) {
+            case Equal:
+                return Optional.of(equal(add(addends), (int) (neg ? -right.getNumerator() : right.getNumerator())));
+            case LessThanEqual:
+                if (neg) {
+                    return Optional.of(greaterThanEqual(add(addends), (int) -right.getNumerator()));
+                } else {
+                    return Optional.of(lessThanEqual(add(addends), (int) right.getNumerator()));
+                }
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     private IrModule optimizeImpl(IrModule module) {
@@ -235,9 +253,7 @@ public class LinearEquationOptimizer {
                         .addEquations(componentEquations)
                         .dominantElimination()
                         .getEquations()) {
-                    for (IrBoolExpr constraint : boolExpr(equation, inverse, low, high)) {
-                        constraints.add(constraint);
-                    }
+                    boolExpr(equation, inverse, low, high).ifPresent(constraints::add);
                 }
 
                 if (lossy) {

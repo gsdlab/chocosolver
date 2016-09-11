@@ -53,7 +53,6 @@ public class LinearEquationOptimizerTest {
 
         module = LinearEquationOptimizer.optimize(module);
 
-        assertTrue(module.getConstraints().contains(
-                Irs.lessThanEqual(Irs.One, Irs.mul(4, i0, Domains.boundDomain(0, 16)))));
+        assertTrue(module.getConstraints().contains(Irs.lessThanEqual(Irs.One, i0)));
     }
 }
