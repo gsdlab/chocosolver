@@ -6,6 +6,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrRewriter;
@@ -45,6 +48,14 @@ public class Coalesce extends IrRewriter<Void> {
 
     public IrSetVar get(IrSetVar var) {
         return coalescedSets.getOrDefault(var, var);
+    }
+
+    public void forEachIntVar(BiConsumer<? super IrIntVar, ? super IrIntVar> action) {
+        coalescedInts.forEach(action);
+    }
+
+    public void forEachSetVar(BiConsumer<? super IrSetVar, ? super IrSetVar> action) {
+        coalescedSets.forEach(action);
     }
 
     public boolean isEmpty() {
@@ -122,5 +133,17 @@ public class Coalesce extends IrRewriter<Void> {
             return string;
         }
         return ir;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        coalescedInts.entrySet().stream()
+                .collect(Collectors.groupingBy(Entry::getValue, Collectors.mapping(Entry::getKey, Collectors.toList())))
+                .forEach((newVar, oldVars) -> builder.append(newVar).append(" <--- ").append(oldVars).append('\n'));
+        coalescedSets.entrySet().stream()
+                .collect(Collectors.groupingBy(Entry::getValue, Collectors.mapping(Entry::getKey, Collectors.toList())))
+                .forEach((newVar, oldVars) -> builder.append(newVar).append(" <--- ").append(oldVars).append('\n'));
+        return builder.toString();
     }
 }
