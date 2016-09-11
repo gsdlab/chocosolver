@@ -1,6 +1,5 @@
 package org.clafer.ir.analysis;
 
-import org.clafer.domain.Domains;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.Irs;

@@ -169,6 +169,12 @@ public class LinearEquationOptimizer {
         return Optional.empty();
     }
 
+    private static IrIntExpr scale(int c, IrIntExpr var) {
+        int a = c * var.getLowBound();
+        int b = c * var.getHighBound();
+        return mul(c, var, Domains.boundDomain(Math.min(a, b), Math.max(a, b)));
+    }
+
     private Optional<IrBoolExpr> boolExpr(LinearEquation equation, Map<Variable, IrIntVar> map, int low, int high) {
         Optional<LinearEquation> roundOpt = round(equation);
         if (!roundOpt.isPresent()) {
@@ -180,6 +186,27 @@ public class LinearEquationOptimizer {
         Variable[] vs = left.getVariables();
         Rational right = round.getRight();
 
+        if (right.isZero() && cs.length == 2) {
+            int c0 = (int) cs[0].getNumerator();
+            IrIntVar v0 = map.get(vs[0]);
+            int c1 = (int) cs[1].getNumerator();
+            IrIntVar v1 = map.get(vs[1]);
+            switch (round.getOp()) {
+                case Equal:
+                    if (c0 < 0) {
+                        return Optional.of(equal(scale(-c0, v0), scale(c1, v1)));
+                    }
+                    return Optional.of(equal(scale(c0, v0), scale(-c1, v1)));
+                case LessThanEqual:
+                    if (c0 < 0) {
+                        return Optional.of(greaterThanEqual(scale(-c0, v0), scale(c1, v1)));
+                    }
+                    return Optional.of(lessThanEqual(scale(c0, v0), scale(-c1, v1)));
+                default:
+                    throw new IllegalStateException();
+            }
+        }
+
         IrIntExpr[] addends = new IrIntExpr[cs.length];
         boolean neg = Stream.of(cs).filter(Rational::isNegative).count() * 2 > addends.length;
         for (int j = 0; j < addends.length; j++) {
@@ -188,11 +215,7 @@ public class LinearEquationOptimizer {
             int coefficientI = (int) (neg ? -coefficient : coefficient);
             IrIntVar var = map.get(vs[j]);
 
-            int a = coefficientI * var.getLowBound();
-            int b = coefficientI * var.getHighBound();
-
-            addends[j] = mul(coefficientI, var,
-                    Domains.boundDomain(Math.min(a, b), Math.max(a, b)));
+            addends[j] = scale(coefficientI, var);
         }
         assert right.isWhole();
         switch (round.getOp()) {
