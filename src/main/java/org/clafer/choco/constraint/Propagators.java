@@ -220,6 +220,9 @@ public class Propagators {
                 || set.getLB().max() - set.getLB().min() + 1 == set.getUB().size())) {
             return this;
         }
+        if (card.getUB() == 1) {
+            return this;
+        }
         return post(new PropContinuous(set, card));
     }
 
