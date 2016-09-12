@@ -1434,37 +1434,4 @@ public class Constraints {
         propagators.add(new PropTransitiveUnreachable(closure));
         return new Constraint("transitiveReflexive", propagators.toArray());
     }
-
-    private static class Propagators {
-
-        final Propagator<?>[] propagators;
-        int size = 0;
-
-        Propagators(int capacity) {
-            this.propagators = new Propagator<?>[capacity];
-        }
-
-        Propagators add(Propagator<?> propagator) {
-            propagators[size++] = propagator;
-            return this;
-        }
-
-        Propagators add(Optional<? extends Propagator<?>> propagator) {
-            propagator.ifPresent(this::add);
-            return this;
-        }
-
-        Constraint toConstraint(String name, Model model) {
-            return size == 0
-                    ? model.trueConstraint()
-                    : new Constraint(name, toArray());
-        }
-
-        Propagator<?>[] toArray() {
-            if (size == propagators.length) {
-                return propagators;
-            }
-            return Arrays.copyOf(propagators, size);
-        }
-    }
 }
