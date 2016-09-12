@@ -219,6 +219,61 @@ public class Constraints {
         }
     }
 
+    private static Optional<Propagator<IntVar>> _element(IntVar value, IntVar[] array, IntVar index, int offset) {
+        if (value.isInstantiated()) {
+            int v = value.getValue();
+            int ub = index.getUB();
+            for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
+                int j = i + offset;
+                if (j < 0 || j >= array.length || !array[j].isInstantiatedTo(v)) {
+                    return Optional.of(new PropElement(value, array, index, offset));
+                }
+            }
+            return Optional.empty();
+        }
+        return Optional.of(new PropElement(value, array, index, offset));
+    }
+
+    private static Optional<Propagator<IntVar>> _elementArraySupport(IntVar value, IntVar[] array, IntVar index, int offset, int support) {
+        int ub = index.getUB();
+        for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
+            int j = i + offset;
+            if (j >= 0 && j < array.length && (array[j].contains(support) || PropUtil.isDomIntersectDom(value, array[j]))) {
+                if (index.isInstantiated() && value.isInstantiated() && array[j].isInstantiated()) {
+                    return Optional.empty();
+                }
+            }
+        }
+        return Optional.of(new PropElementArraySupport(value, array, index, offset, support));
+    }
+
+    private static Optional<Propagator<IntVar>> _elementValueSupport(IntVar value, IntVar[] array, IntVar index, int offset, int support) {
+        if (!value.contains(support)) {
+            return _element(value, array, index, offset);
+        } else if (value.isInstantiated()) {
+            return Optional.empty();
+        }
+        return Optional.of(new PropElementValueSupport(value, array, index, offset, support));
+    }
+
+    private static Optional<Propagator<IntVar>> _length(IntVar[] chars, IntVar length, int terminator) {
+        if (length.isInstantiated()) {
+            int l = length.getValue();
+            for (int i = 0; i < l; i++) {
+                if (chars[i].contains(terminator)) {
+                    return Optional.of(new PropLength(chars, length, terminator));
+                }
+            }
+            for (int i = l; i < chars.length; i++) {
+                if (!chars[i].isInstantiatedTo(terminator)) {
+                    return Optional.of(new PropLength(chars, length, terminator));
+                }
+            }
+            return Optional.empty();
+        }
+        return Optional.of(new PropLength(chars, length, terminator));
+    }
+
     private static Optional<Propagator<SetVar>> subsetEq(SetVar subset, SetVar superSet) {
         if (PropUtil.isEnvSubsetKer(subset, superSet)) {
             return Optional.empty();
@@ -1283,7 +1338,7 @@ public class Constraints {
         if (subarray.length == 0) {
             return new Constraint(null, new PropEqualXC(sublength, 0), new PropLessOrEqualXC(index, suparray.length - 1));
         }
-        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        Propagators propagators = new Propagators(subarray.length + suparray.length + 1);
         for (int i = 0; i < subarray.length; i++) {
             IntVar[] pad = new IntVar[suparray.length];
             int j;
@@ -1293,7 +1348,7 @@ public class Constraints {
             for (; j < pad.length; j++) {
                 pad[j] = sublength.getModel().intVar(-1);
             }
-            propagators.add(new PropElementValueSupport(subarray[i], pad, index, 0, -1));
+            propagators.add(_elementValueSupport(subarray[i], pad, index, 0, -1));
         }
         for (int i = 0; i < suparray.length; i++) {
             IntVar[] pad = new IntVar[suparray.length + 1];
@@ -1304,11 +1359,10 @@ public class Constraints {
             for (; j < pad.length; j++) {
                 pad[j] = sublength.getModel().intVar(-1);
             }
-            propagators.add(new PropElementArraySupport(suparray[i], pad, index, 0, -1));
+            propagators.add(_elementArraySupport(suparray[i], pad, index, 0, -1));
         }
-        propagators.add(new PropLength(subarray, sublength, -1));
-        return new Constraint("Substring",
-                propagators.toArray(new Propagator<?>[propagators.size()]));
+        propagators.add(_length(subarray, sublength, -1));
+        return propagators.toConstraint("Substring", index.getModel());
     }
 
     private static IntVar[] pad(IntVar[] chars, int length, IntVar zero) {
@@ -1398,6 +1452,12 @@ public class Constraints {
         Propagators add(Optional<? extends Propagator<?>> propagator) {
             propagator.ifPresent(this::add);
             return this;
+        }
+
+        Constraint toConstraint(String name, Model model) {
+            return size == 0
+                    ? model.trueConstraint()
+                    : new Constraint(name, toArray());
         }
 
         Propagator<?>[] toArray() {
