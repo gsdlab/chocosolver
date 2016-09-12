@@ -27,6 +27,7 @@ import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Var;
+import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
@@ -62,7 +63,6 @@ import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropReflexive;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
-import org.clafer.choco.constraint.propagator.PropSetBounded;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
 import org.clafer.choco.constraint.propagator.PropSetLowBound;
 import org.clafer.choco.constraint.propagator.PropSetMax;
@@ -190,6 +190,36 @@ public class Constraints {
             return Optional.empty();
         }
         return Optional.of(new PropSubsetEq(subset, superSet));
+    }
+
+    private static Optional<Propagator<Variable>> _lowBound(SetVar set, IntVar bound) {
+        if (set.getUB().isEmpty() || bound.getUB() <= set.getUB().min()) {
+            return Optional.empty();
+        }
+        return Optional.of(new PropSetLowBound(set, bound));
+    }
+
+    private static Optional<Propagator<Variable>> _strictHighBound(SetVar set, IntVar bound) {
+        if (set.getUB().isEmpty() || bound.getLB() > set.getUB().max()) {
+            return Optional.empty();
+        }
+        return Optional.of(new PropSetStrictHighBound(set, bound));
+    }
+
+    private static Optional<Propagator<Variable>> _memberNonempty(IntVar element, SetVar set, IntVar setCard) {
+        if (setCard.getUB() == 0 || PropUtil.isDomSubsetKer(element, set)) {
+            return Optional.empty();
+        }
+        return Optional.of(new PropIntMemberNonemptySet(element, set, setCard));
+    }
+
+    private static Optional<Propagator<Variable>> _continuous(SetVar set, IntVar card) {
+        if (set.isInstantiated()
+                && (set.getUB().size() == 0
+                || set.getLB().max() - set.getLB().min() + 1 == set.getUB().size())) {
+            return Optional.empty();
+        }
+        return Optional.of(new PropContinuous(set, card));
     }
 
     /**
@@ -486,7 +516,7 @@ public class Constraints {
         }
         Model model = sets[0].getModel();
 
-        Propagators propagators = new Propagators(6 * sets.length + 1);
+        Propagators propagators = new Propagators(5 * sets.length + 1);
 
         IntVar[] boundary = new IntVar[sets.length + 1];
         boundary[0] = model.intVar(0);
@@ -496,17 +526,16 @@ public class Constraints {
             } else if (setCards[i].isInstantiatedTo(0)) {
                 boundary[i + 1] = boundary[i];
             } else {
-                boundary[i + 1] = bounds[i]; //enumerated(sets[i].getName() + "@Hb", lb, ub, solver);
+                boundary[i + 1] = bounds[i];
                 propagators.add(new PropEqualXY_Z(boundary[i], setCards[i], boundary[i + 1]));
             }
             if (!boundary[i + 1].equals(bounds[i])) {
                 propagators.add(eq(boundary[i + 1], bounds[i]));
             }
-            propagators.add(new PropSetLowBound(sets[i], boundary[i]));
-            propagators.add(new PropIntMemberNonemptySet(boundary[i], sets[i], setCards[i]));
-            propagators.add(new PropSetStrictHighBound(sets[i], boundary[i + 1]));
-            propagators.add(new PropSetBounded(boundary[i], boundary[i + 1], sets[i]));
-            propagators.add(new PropContinuous(sets[i], setCards[i]));
+            propagators.add(_lowBound(sets[i], boundary[i]));
+            propagators.add(_strictHighBound(sets[i], boundary[i + 1]));
+            propagators.add(_memberNonempty(boundary[i], sets[i], setCards[i]));
+            propagators.add(_continuous(sets[i], setCards[i]));
         }
         if (boundary[boundary.length - 1].getUB() < 0) {
             return model.falseConstraint();

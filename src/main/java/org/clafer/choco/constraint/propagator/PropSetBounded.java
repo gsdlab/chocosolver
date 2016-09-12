@@ -14,6 +14,7 @@ import org.chocosolver.util.ESat;
  *
  * @author jimmy
  */
+@Deprecated
 public class PropSetBounded extends Propagator<Variable> {
 
     private final IntVar from, to;
