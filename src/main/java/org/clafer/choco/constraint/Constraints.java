@@ -149,6 +149,40 @@ public class Constraints {
         return leq(l, g);
     }
 
+    private static Optional<Propagator<IntVar>> _add(int x, IntVar y, IntVar z) {
+        if (x == 0) {
+            return eq(y, z);
+        } else if (y.isInstantiated()) {
+            return eq(z, x + y.getValue());
+        } else if (z.isInstantiated()) {
+            return eq(y, z.getValue() - x);
+        } else {
+            return Optional.of(new PropEqualX_YC(new IntVar[]{y, z}, -x));
+        }
+    }
+
+    private static Optional<Propagator<IntVar>> _add(IntVar x, IntVar y, int z) {
+        if (x.isInstantiated()) {
+            return eq(y, z - x.getValue());
+        } else if (y.isInstantiated()) {
+            return eq(x, z - y.getValue());
+        } else {
+            return Optional.of(new PropEqualXY_C(new IntVar[]{x, y}, z));
+        }
+    }
+
+    private static Optional<Propagator<IntVar>> _add(IntVar x, IntVar y, IntVar z) {
+        if (x.isInstantiated()) {
+            return _add(x.getValue(), y, z);
+        } else if (y.isInstantiated()) {
+            return _add(y.getValue(), x, z);
+        } else if (z.isInstantiated()) {
+            return _add(x, y, z.getValue());
+        } else {
+            return Optional.of(new PropEqualXY_Z(x, y, z));
+        }
+    }
+
     private static Propagator<IntVar> sumEq(IntVar[] ints, IntVar sum) {
         List<IntVar> filter = new ArrayList<>(ints.length);
         int constant = 0;
@@ -207,7 +241,8 @@ public class Constraints {
     }
 
     private static Optional<Propagator<Variable>> _memberNonempty(IntVar element, SetVar set, IntVar setCard) {
-        if (setCard.getUB() == 0 || PropUtil.isDomSubsetKer(element, set)) {
+        if (setCard.getUB() == 0 || PropUtil.isDomSubsetKer(element, set)
+                || (set.getUB().size() == 1 && element.isInstantiatedTo(set.getUB().min()))) {
             return Optional.empty();
         }
         return Optional.of(new PropIntMemberNonemptySet(element, set, setCard));
@@ -215,7 +250,7 @@ public class Constraints {
 
     private static Optional<Propagator<Variable>> _continuous(SetVar set, IntVar card) {
         if (set.isInstantiated()
-                && (set.getUB().size() == 0
+                && (set.getUB().isEmpty()
                 || set.getLB().max() - set.getLB().min() + 1 == set.getUB().size())) {
             return Optional.empty();
         }
@@ -527,7 +562,7 @@ public class Constraints {
                 boundary[i + 1] = boundary[i];
             } else {
                 boundary[i + 1] = bounds[i];
-                propagators.add(new PropEqualXY_Z(boundary[i], setCards[i], boundary[i + 1]));
+                propagators.add(_add(boundary[i], setCards[i], boundary[i + 1]));
             }
             if (!boundary[i + 1].equals(bounds[i])) {
                 propagators.add(eq(boundary[i + 1], bounds[i]));
