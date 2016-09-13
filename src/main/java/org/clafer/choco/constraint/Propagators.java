@@ -146,12 +146,14 @@ public class Propagators {
     }
 
     public Propagators elementArraySupport(IntVar value, IntVar[] array, IntVar index, int offset, int support) {
-        int ub = index.getUB();
-        for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
-            int j = i + offset;
-            if (j >= 0 && j < array.length && (array[j].contains(support) || PropUtil.isDomIntersectDom(value, array[j]))) {
-                if (index.isInstantiated() && value.isInstantiated() && array[j].isInstantiated()) {
-                    return this;
+        if (index.getUB() < array.length) {
+            int ub = index.getUB();
+            for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
+                int j = i + offset;
+                if (j >= 0 && j < array.length && (array[j].contains(support) || PropUtil.isDomIntersectDom(value, array[j]))) {
+                    if (index.isInstantiated() && value.isInstantiated() && array[j].isInstantiated()) {
+                        return this;
+                    }
                 }
             }
         }
@@ -161,7 +163,7 @@ public class Propagators {
     public Propagators elementValueSupport(IntVar value, IntVar[] array, IntVar index, int offset, int support) {
         if (!value.contains(support)) {
             return element(value, array, index, offset);
-        } else if (value.isInstantiated()) {
+        } else if (value.isInstantiated() && index.getUB() < array.length) {
             return this;
         }
         return post(new PropElementValueSupport(value, array, index, offset, support));
@@ -170,17 +172,19 @@ public class Propagators {
     public Propagators length(IntVar[] chars, IntVar length, int terminator) {
         if (length.isInstantiated()) {
             int l = length.getValue();
-            for (int i = 0; i < l; i++) {
-                if (chars[i].contains(terminator)) {
-                    return post(new PropLength(chars, length, terminator));
+            if (l < chars.length) {
+                for (int i = 0; i < l; i++) {
+                    if (chars[i].contains(terminator)) {
+                        return post(new PropLength(chars, length, terminator));
+                    }
                 }
-            }
-            for (int i = l; i < chars.length; i++) {
-                if (!chars[i].isInstantiatedTo(terminator)) {
-                    return post(new PropLength(chars, length, terminator));
+                for (int i = l; i < chars.length; i++) {
+                    if (!chars[i].isInstantiatedTo(terminator)) {
+                        return post(new PropLength(chars, length, terminator));
+                    }
                 }
+                return this;
             }
-            return this;
         }
         return post(new PropLength(chars, length, terminator));
     }
