@@ -1889,7 +1889,9 @@ public class IrCompiler {
     }
 
     private static Constraint _intersection(SetVar[] operands, SetVar intersection) {
-        return Constraints.intersection(operands, mapCard(operands), intersection, intersection.getCard());
+        return Constraints.intersection(
+                operands, mapCard(operands),
+                intersection, intersection.getCard());
     }
 
     private static Constraint _union(SetVar[] operands, SetVar union, boolean disjoint) {

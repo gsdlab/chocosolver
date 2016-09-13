@@ -16,6 +16,7 @@ import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
 import org.chocosolver.solver.constraints.nary.sum.PropSum;
 import org.chocosolver.solver.constraints.set.PropIntEnumMemberSet;
 import org.chocosolver.solver.constraints.set.PropIntersection;
+import org.chocosolver.solver.constraints.set.PropIntersectionFilterSets;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
 import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
 import org.chocosolver.solver.variables.BoolVar;
@@ -55,6 +56,7 @@ import org.clafer.choco.constraint.propagator.PropReflexive;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
+import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetLowBound;
 import org.clafer.choco.constraint.propagator.PropSetMax;
 import org.clafer.choco.constraint.propagator.PropSetMin;
@@ -845,12 +847,10 @@ public class Constraints {
         }
 
         Propagators propagators = new Propagators(operandCards.length + 2);
-        // See SCF.intersection(operands, intersection);
-        // TODO: Needs to add the same propagator twice because the implementation
-        // is not guaranteed to be idempotent. If it ever becomes idempotent, then
-        // follow their implementation.
         propagators.post(new PropIntersection(operands, intersection));
-        propagators.post(new PropIntersection(operands, intersection));
+        propagators.post(operands.length == 1
+                ? new PropSetEqual(operands[0], intersection)
+                : new PropIntersectionFilterSets(operands, intersection));
         for (int i = 0; i < operandCards.length; i++) {
             // Simple cardinality propagation.
             propagators.geq(operandCards[i], intersectionCard);
