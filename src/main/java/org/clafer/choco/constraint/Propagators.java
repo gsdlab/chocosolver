@@ -63,17 +63,18 @@ public class Propagators {
     }
 
     public Propagators neq(IntVar l, IntVar r) {
-        if (l.isInstantiated()) {
+        if (!PropUtil.isDomIntersectDom(l, r)) {
+            return this;
+        } else if (l.isInstantiated()) {
             return neq(r, l.getValue());
-        }
-        if (r.isInstantiated()) {
+        } else if (r.isInstantiated()) {
             return neq(l, r.getValue());
         }
         return post(new PropNotEqualX_Y(l, r));
     }
 
     public Propagators neq(IntVar l, int r) {
-        if (!l.isInstantiated() || l.getValue() == r) {
+        if (l.contains(r)) {
             return post(new PropNotEqualXC(l, r));
         }
         return this;
