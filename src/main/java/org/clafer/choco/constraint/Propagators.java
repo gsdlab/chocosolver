@@ -48,18 +48,17 @@ public class Propagators {
     public Propagators eq(IntVar l, IntVar r) {
         if (l.isInstantiated()) {
             return eq(r, l.getValue());
-        }
-        if (r.isInstantiated()) {
+        } else if (r.isInstantiated()) {
             return eq(l, r.getValue());
         }
         return post(new PropEqualX_Y(l, r));
     }
 
     public Propagators eq(IntVar l, int r) {
-        if (!l.isInstantiatedTo(r)) {
-            return post(new PropEqualXC(l, r));
+        if (l.isInstantiatedTo(r)) {
+            return this;
         }
-        return this;
+        return post(new PropEqualXC(l, r));
     }
 
     public Propagators neq(IntVar l, IntVar r) {
@@ -83,11 +82,9 @@ public class Propagators {
     public Propagators leq(IntVar l, IntVar g) {
         if (l.getUB() <= g.getLB()) {
             return this;
-        }
-        if (l.isInstantiated()) {
+        } else if (l.isInstantiated()) {
             return post(new PropGreaterOrEqualXC(g, l.getValue()));
-        }
-        if (g.isInstantiated()) {
+        } else if (g.isInstantiated()) {
             return post(new PropLessOrEqualXC(l, g.getValue()));
         }
         return post(new PropGreaterOrEqualX_Y(new IntVar[]{g, l}));
@@ -224,8 +221,7 @@ public class Propagators {
                 && (set.getUB().isEmpty()
                 || set.getLB().max() - set.getLB().min() + 1 == set.getUB().size())) {
             return this;
-        }
-        if (card.getUB() == 1) {
+        } else if (card.getUB() == 1) {
             return this;
         }
         return post(new PropContinuous(set, card));
@@ -234,8 +230,7 @@ public class Propagators {
     public Constraint toConstraint(String name, Model model) {
         if (size == 0) {
             return model.trueConstraint();
-        }
-        if (size == propagators.length) {
+        } else if (size == propagators.length) {
             return new Constraint(name, propagators);
         }
         return new Constraint(name, Arrays.copyOf(propagators, size));
