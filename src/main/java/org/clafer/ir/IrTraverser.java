@@ -137,12 +137,6 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public Void visit(IrWithin ir, T a) {
-        traverse(ir.getValue(), a);
-        return null;
-    }
-
-    @Override
     public Void visit(IrCompare ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);

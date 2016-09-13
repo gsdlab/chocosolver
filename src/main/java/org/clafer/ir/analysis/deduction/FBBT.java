@@ -53,7 +53,6 @@ import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrSubsetEq;
 import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrVar;
-import org.clafer.ir.IrWithin;
 
 /**
  * Feasibility-based bounds tightening.
@@ -90,7 +89,6 @@ public class FBBT {
         boolDeducers.put(IrSortStrings.class, new SortStringsDeducer());
         boolDeducers.put(IrSortStringsChannel.class, new SortStringsChannelDeducer());
         boolDeducers.put(IrSubsetEq.class, new SubsetEqDeducer());
-        boolDeducers.put(IrWithin.class, new WithinDeducer());
         intDeducers = new HashMap<>();
         intDeducers.put(IrAdd.class, new AddDeducer());
         intDeducers.put(IrCard.class, new CardDeducer());

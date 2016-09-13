@@ -102,7 +102,6 @@ import org.clafer.ir.IrTernary;
 import org.clafer.ir.IrTransitiveClosure;
 import org.clafer.ir.IrUnreachable;
 import org.clafer.ir.IrVar;
-import org.clafer.ir.IrWithin;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.not;
 import org.clafer.ir.analysis.CommonSubexpression;
@@ -887,16 +886,6 @@ public class IrCompiler {
         }
 
         @Override
-        public Object visit(IrWithin ir, BoolArg a) {
-            IntVar var = compile(ir.getValue());
-            Domain range = ir.getRange();
-            if (range.isBounded()) {
-                return _within(var, range.getLowBound(), range.getHighBound());
-            }
-            return _within(var, range.getValues());
-        }
-
-        @Override
         public Object visit(IrCompare ir, BoolArg a) {
             IrCompare.Op op = ir.getOp();
             IrIntExpr left = ir.getLeft();
@@ -1374,11 +1363,6 @@ public class IrCompiler {
 
         @Override
         public Object visit(IrIfOnlyIf ir, IntVar a) {
-            return compileBool(ir, a);
-        }
-
-        @Override
-        public Object visit(IrWithin ir, IntVar a) {
             return compileBool(ir, a);
         }
 

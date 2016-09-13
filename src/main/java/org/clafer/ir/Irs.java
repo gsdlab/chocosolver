@@ -266,35 +266,6 @@ public class Irs {
         return new IrIfOnlyIf(left, right.negate(), TrueFalseDomain);
     }
 
-    public static IrBoolExpr within(IrIntExpr value, Domain range) {
-        Domain domain = value.getDomain();
-        range = domain.intersection(range);
-        if (range.isEmpty()) {
-            return False;
-        }
-        if (range.isBounded()
-                && domain.getLowBound() >= range.getLowBound()
-                && domain.getHighBound() <= range.getHighBound()) {
-            return True;
-        }
-        if (domain.getLowBound() > range.getHighBound()
-                || domain.getHighBound() < range.getLowBound()) {
-            return False;
-        }
-        if (range.isConstant()) {
-            return equal(value, range.getLowBound());
-        }
-        Domain diff = domain.difference(range);
-        switch (diff.size()) {
-            case 0:
-                return True;
-            case 1:
-                return notEqual(value, diff.getLowBound());
-            default:
-                return new IrWithin(value, range, TrueFalseDomain);
-        }
-    }
-
     public static IrBoolExpr compare(int left, IrCompare.Op op, IrIntExpr right) {
         return compare(constant(left), op, right);
     }
@@ -671,12 +642,18 @@ public class Irs {
     public static IrBoolExpr member(IrIntExpr element, IrSetExpr set) {
         if (element.getDomain().isSubsetOf(set.getKer())) {
             return True;
-        }
-        if (!element.getDomain().intersects(set.getEnv())) {
+        } else if (!element.getDomain().intersects(set.getEnv())) {
             return False;
-        }
-        if (set.isConstant()) {
-            return within(element, set.getKer());
+        } else if (set.getEnv().isConstant()) {
+            return equal(element, set.getEnv().getLowBound());
+        } else if (set.isConstant()) {
+            Domain diff = element.getDomain().difference(set.getKer());
+            switch (diff.size()) {
+                case 0:
+                    return True;
+                case 1:
+                    return notEqual(element, diff.getLowBound());
+            }
         }
         return new IrMember(element, set, TrueFalseDomain);
     }
@@ -684,12 +661,18 @@ public class Irs {
     public static IrBoolExpr notMember(IrIntExpr element, IrSetExpr set) {
         if (!element.getDomain().intersects(set.getEnv())) {
             return True;
-        }
-        if (element.getDomain().isSubsetOf(set.getKer())) {
+        } else if (element.getDomain().isSubsetOf(set.getKer())) {
             return False;
-        }
-        if (set.isConstant()) {
-            return within(element, set.getKer()).negate();
+        } else if (set.getEnv().isConstant()) {
+            return notEqual(element, set.getEnv().getLowBound());
+        } else if (set.isConstant()) {
+            Domain diff = element.getDomain().difference(set.getKer());
+            switch (diff.size()) {
+                case 0:
+                    return False;
+                case 1:
+                    return equal(element, diff.getLowBound());
+            }
         }
         return new IrNotMember(element, set, TrueFalseDomain);
     }

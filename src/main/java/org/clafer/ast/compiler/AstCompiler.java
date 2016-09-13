@@ -193,7 +193,6 @@ import static org.clafer.ir.Irs.transitiveClosure;
 import static org.clafer.ir.Irs.union;
 import static org.clafer.ir.Irs.unionDisjoint;
 import static org.clafer.ir.Irs.unreachable;
-import static org.clafer.ir.Irs.within;
 import static org.clafer.ir.Irs.xor;
 import org.clafer.ir.Product;
 import org.clafer.ir.Sum;
@@ -658,7 +657,7 @@ public class AstCompiler {
 
                             IrIntExpr[] array = new IrIntExpr[sourceRefs.length];
                             System.arraycopy(sourceRefs, 0, array, 0, array.length);
-                            IrIntExpr count = count(hierarchy.getSnd().intValue(),array(array));
+                            IrIntExpr count = count(hierarchy.getSnd().intValue(), array(array));
                             IrIntVar countVar = domainInt("CountVar" + countCount++, count.getDomain());
                             module.addConstraint(equal(countVar, count));
                             childIndex.add(countVar);
@@ -2225,7 +2224,7 @@ public class AstCompiler {
             return equal(setCard, card.getLow());
         }
         if (card.hasLow() && card.hasHigh()) {
-            return within(setCard, boundDomain(card.getLow(), card.getHigh()));
+            return member(setCard, constant(boundDomain(card.getLow(), card.getHigh())));
         }
         if (card.hasLow()) {
             return greaterThanEqual(setCard, card.getLow());
