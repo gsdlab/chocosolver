@@ -49,6 +49,6 @@ public class MemberTest {
     @ArcConsistent(entailed = true, opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(IntVar element, @NoCard SetVar set) {
-        return new SetMember(element, set);
+        return Constraints.member(element, set);
     }
 }

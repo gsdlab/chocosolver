@@ -17,6 +17,8 @@ import org.chocosolver.solver.constraints.nary.sum.PropSum;
 import org.chocosolver.solver.constraints.set.PropIntEnumMemberSet;
 import org.chocosolver.solver.constraints.set.PropIntersection;
 import org.chocosolver.solver.constraints.set.PropIntersectionFilterSets;
+import org.chocosolver.solver.constraints.set.PropNotMemberIntSet;
+import org.chocosolver.solver.constraints.set.PropNotMemberSetInt;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
 import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
 import org.chocosolver.solver.variables.BoolVar;
@@ -40,6 +42,7 @@ import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
 import org.clafer.choco.constraint.propagator.PropIntMemberSetCard;
 import org.clafer.choco.constraint.propagator.PropIntMemberSetDefault;
+import org.clafer.choco.constraint.propagator.PropIntNotMemberSetCard;
 import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
@@ -350,7 +353,14 @@ public class Constraints {
      * @return constraint {@code element ∈ set}.
      */
     public static Constraint member(IntVar element, SetVar set) {
-        return new SetMember(element, set);
+        return new Constraint("member",
+                new PropIntEnumMemberSet(set, element),
+                new PropIntMemberSetCard(element, set, set.getCard())) {
+                    @Override
+                    protected Constraint makeOpposite() {
+                        return notMember(element, set);
+                    }
+                };
     }
 
     public static Constraint memberNonempty(IntVar element, SetVar set, IntVar setCard) {
@@ -365,7 +375,15 @@ public class Constraints {
      * @return constraint {@code element ∉ set}.
      */
     public static Constraint notMember(IntVar element, SetVar set) {
-        return new SetNotMember(element, set);
+        return new Constraint("notMember",
+                new PropNotMemberIntSet(element, set),
+                new PropNotMemberSetInt(element, set),
+                new PropIntNotMemberSetCard(element, set, set.getCard())) {
+                    @Override
+                    protected Constraint makeOpposite() {
+                        return member(element, set);
+                    }
+                };
     }
 
     /**
