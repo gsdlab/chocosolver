@@ -631,7 +631,11 @@ public class Irs {
         } else if (!element.getDomain().intersects(set.getEnv())) {
             return False;
         } else if (set.getEnv().isConstant()) {
-            return equal(element, set.getEnv().getLowBound());
+            if (element.isConstant()) {
+                return equal(card(set), 1);
+            } else if (set.isConstant()) {
+                return equal(element, set.getEnv().getLowBound());
+            }
         } else if (set.isConstant()) {
             Domain diff = element.getDomain().difference(set.getKer());
             switch (diff.size()) {
@@ -650,7 +654,11 @@ public class Irs {
         } else if (element.getDomain().isSubsetOf(set.getKer())) {
             return False;
         } else if (set.getEnv().isConstant()) {
-            return notEqual(element, set.getEnv().getLowBound());
+            if (element.isConstant()) {
+                return equal(card(set), 0);
+            } else if (set.isConstant()) {
+                return notEqual(element, set.getEnv().getLowBound());
+            }
         } else if (set.isConstant()) {
             Domain diff = element.getDomain().difference(set.getKer());
             switch (diff.size()) {
