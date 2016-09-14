@@ -40,10 +40,8 @@ public class IrCompare extends IrAbstractBool {
                 return new IrCompare(left, Op.NotEqual, right, getDomain().invert());
             case NotEqual:
                 return new IrCompare(left, Op.Equal, right, getDomain().invert());
-            case LessThan:
-                return new IrCompare(right, Op.LessThanEqual, left, getDomain().invert());
             case LessThanEqual:
-                return new IrCompare(right, Op.LessThan, left, getDomain().invert());
+                return Irs.lessThan(right, left);
             default:
                 throw new IllegalStateException();
         }
@@ -90,7 +88,6 @@ public class IrCompare extends IrAbstractBool {
 
         Equal("="),
         NotEqual("!="),
-        LessThan("<"),
         LessThanEqual("<=");
         private final String syntax;
 

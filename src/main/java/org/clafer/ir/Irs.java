@@ -300,23 +300,6 @@ public class Irs {
                     return xor((IrBoolExpr) left, (IrBoolExpr) right);
                 }
                 break;
-            case LessThan:
-                if (left.equals(right)) {
-                    return False;
-                }
-                if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
-                    return True;
-                }
-                if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
-                    return False;
-                }
-                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
-                    return not(implies((IrBoolExpr) right, (IrBoolExpr) left));
-                }
-                if (left instanceof IrMinus && right instanceof IrMinus) {
-                    return greaterThan(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
-                }
-                break;
             case LessThanEqual:
                 if (left.equals(right)) {
                     return True;
@@ -600,7 +583,10 @@ public class Irs {
     }
 
     public static IrBoolExpr lessThan(IrIntExpr left, IrIntExpr right) {
-        return compare(left, IrCompare.Op.LessThan, right);
+        if (!left.isConstant() && (right.isConstant() || right instanceof IrAdd)) {
+            return compare(left, IrCompare.Op.LessThanEqual, sub(right, 1));
+        }
+        return compare(add(left, 1), IrCompare.Op.LessThanEqual, right);
     }
 
     public static IrBoolExpr lessThanEqual(int left, IrIntExpr right) {
@@ -624,7 +610,7 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThan(IrIntExpr left, IrIntExpr right) {
-        return compare(right, IrCompare.Op.LessThan, left);
+        return lessThan(right, left);
     }
 
     public static IrBoolExpr greaterThanEqual(int left, IrIntExpr right) {
@@ -636,7 +622,7 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, IrIntExpr right) {
-        return compare(right, IrCompare.Op.LessThanEqual, left);
+        return lessThanEqual(right, left);
     }
 
     public static IrBoolExpr member(IrIntExpr element, IrSetExpr set) {

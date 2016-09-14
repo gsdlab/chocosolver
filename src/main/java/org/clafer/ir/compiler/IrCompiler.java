@@ -1950,8 +1950,6 @@ public class IrCompiler {
                     return EQ;
                 case NotEqual:
                     return NQ;
-                case LessThan:
-                    return LT;
                 case LessThanEqual:
                     return LE;
                 default:

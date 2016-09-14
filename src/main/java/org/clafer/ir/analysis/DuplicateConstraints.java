@@ -70,12 +70,6 @@ public class DuplicateConstraints {
                             notEqual.remove(converse);
                         }
                         break;
-                    case LessThan:
-                        notEqual.remove(pair);
-                        notEqual.remove(converse);
-                        lessThanEqual.remove(pair);
-                        lessThan.add(pair);
-                        break;
                     case LessThanEqual:
                         if (notEqual.remove(pair)) {
                             lessThan.add(pair);

@@ -20,9 +20,6 @@ class CompareDeducer implements BoolDeducer<IrCompare> {
             case NotEqual:
                 deduction.notEqual(left, right);
                 break;
-            case LessThan:
-                deduction.lessThan(left, right);
-                break;
             case LessThanEqual:
                 deduction.lessThanEqual(left, right);
                 break;

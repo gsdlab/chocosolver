@@ -58,8 +58,6 @@ public class IrArithmXYCTest {
             case Equal:
             case NotEqual:
                 return op.getSyntax();
-            case LessThan:
-                return ">";
             case LessThanEqual:
                 return ">=";
             default:

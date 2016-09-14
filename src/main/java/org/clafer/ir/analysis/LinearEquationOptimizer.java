@@ -110,9 +110,6 @@ public class LinearEquationOptimizer {
                             case Equal:
                                 return new Triple<>(LinearEquation.equal(left, right),
                                         compare.getLeft().getDomain(), compare.getRight().getDomain());
-                            case LessThan:
-                                return new Triple<>(LinearEquation.lessThan(left, right),
-                                        compare.getLeft().getDomain(), compare.getRight().getDomain());
                             case LessThanEqual:
                                 return new Triple<>(LinearEquation.lessThanEqual(left, right),
                                         compare.getLeft().getDomain(), compare.getRight().getDomain());
