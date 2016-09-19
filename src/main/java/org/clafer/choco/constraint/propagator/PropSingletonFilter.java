@@ -54,17 +54,17 @@ public class PropSingletonFilter extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        s.removeFromEnvelope(filter, this);
-        if (s.getKernelSize() > 1) {
-            contradiction(s, "Singleton cannot have more than 1 element");
-        } else if (s.getKernelSize() == 1) {
-            int val = s.getKernelFirst();
+        s.remove(filter, this);
+        if (s.getLB().size() > 1) {
+            fails();
+        } else if (s.getLB().size() == 1) {
+            int val = s.getLB().min();
             i.instantiateTo(val, this);
             s.instantiateTo(new int[]{val}, this);
         } else {
             int ub = i.getUB();
             for (int val = i.getLB(); val <= ub; val = i.nextValue(val)) {
-                if (val != filter && !s.envelopeContains(val)) {
+                if (val != filter && !s.getUB().contains(val)) {
                     i.removeValue(val, this);
                 }
             }
@@ -84,16 +84,16 @@ public class PropSingletonFilter extends Propagator<Variable> {
                 s.instantiateTo(val == filter ? new int[]{} : new int[]{val}, this);
             } else {
                 iD.freeze();
-                iD.forEachRemVal((IntProcedure) rem -> s.removeFromEnvelope(rem, this));
+                iD.forEachRemVal((IntProcedure) rem -> s.remove(rem, this));
                 iD.unfreeze();
             }
         } else {
             assert isSVar(idxVarInProp);
-            int sKerSize = s.getKernelSize();
+            int sKerSize = s.getLB().size();
             if (sKerSize > 1) {
-                contradiction(s, "Singleton cannot have more than 1 element");
+                fails();
             } else if (sKerSize == 1) {
-                int val = s.getKernelFirst();
+                int val = s.getLB().min();
                 i.instantiateTo(val, this);
                 s.instantiateTo(new int[]{val}, this);
             } else {
@@ -102,8 +102,7 @@ public class PropSingletonFilter extends Propagator<Variable> {
                     if (env != filter) {
                         i.removeValue(env, this);
                     }
-                }, SetEventType.REMOVE_FROM_ENVELOPE
-                );
+                }, SetEventType.REMOVE_FROM_ENVELOPE);
                 sD.unfreeze();
                 if (i.isInstantiated()) {
                     int val = i.getValue();
@@ -115,27 +114,11 @@ public class PropSingletonFilter extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        if (s.getKernelSize() > 1) {
-            return ESat.FALSE;
-        }
-        if (i.contains(filter)) {
-            if (i.isInstantiated()) {
-                if (s.getEnvelopeSize() == 0) {
-                    return ESat.TRUE;
-                }
-                if (s.getKernelSize() > 0) {
-                    return ESat.FALSE;
-                }
-            }
-            return ESat.UNDEFINED;
-        } else if (PropUtil.isDomIntersectEnv(i, s)) {
-            return i.isInstantiated() && s.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-        }
-        return ESat.FALSE;
+        return ESat.UNDEFINED;
     }
 
     @Override
     public String toString() {
-        return "singletonFilter" + filter + "({" + i + "} = " + s + ")";
+        return "singletonFilter" + filter + "({" + i + "} = " + s + ", " + s.getCard() + ")";
     }
 }

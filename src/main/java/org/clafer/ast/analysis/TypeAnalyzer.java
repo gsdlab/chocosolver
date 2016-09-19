@@ -1,6 +1,5 @@
 package org.clafer.ast.analysis;
 
-import org.clafer.ast.ProductType;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -61,7 +60,42 @@ import org.clafer.ast.AstTransitiveClosure;
 import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.BoolType;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.StringType;
+import static org.clafer.ast.Asts.arithm;
+import static org.clafer.ast.Asts.card;
+import static org.clafer.ast.Asts.compare;
+import static org.clafer.ast.Asts.concat;
+import static org.clafer.ast.Asts.connected;
+import static org.clafer.ast.Asts.decl;
+import static org.clafer.ast.Asts.diff;
+import static org.clafer.ast.Asts.domainRestriction;
+import static org.clafer.ast.Asts.downcast;
+import static org.clafer.ast.Asts.ifThenElse;
+import static org.clafer.ast.Asts.inter;
+import static org.clafer.ast.Asts.inverse;
+import static org.clafer.ast.Asts.join;
+import static org.clafer.ast.Asts.joinParent;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.length;
+import static org.clafer.ast.Asts.max;
+import static org.clafer.ast.Asts.membership;
+import static org.clafer.ast.Asts.min;
+import static org.clafer.ast.Asts.minus;
+import static org.clafer.ast.Asts.mod;
+import static org.clafer.ast.Asts.not;
+import static org.clafer.ast.Asts.prefix;
+import static org.clafer.ast.Asts.product;
+import static org.clafer.ast.Asts.quantify;
+import static org.clafer.ast.Asts.rangeRestriction;
+import static org.clafer.ast.Asts.suffix;
+import static org.clafer.ast.Asts.sum;
+import static org.clafer.ast.Asts.test;
+import static org.clafer.ast.Asts.transitiveClosure;
+import static org.clafer.ast.Asts.union;
+import static org.clafer.ast.Asts.upcast;
+import org.clafer.ast.ProductType;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.objective.Objective;
@@ -300,12 +334,8 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> children = typeCheck(ast.getChildren());
             if (children.getType().isClaferType()) {
                 AstClafer childrenType = children.getType().getClaferType();
-                if (childrenType instanceof AstConcreteClafer) {
-                    AstConcreteClafer concreteChildrenType = (AstConcreteClafer) childrenType;
-                    if (!AstUtil.isTop(concreteChildrenType)) {
-                        return put(concreteChildrenType.getParent(),
-                                joinParent(children.getExpr()));
-                    }
+                if (!AstUtil.isTop(childrenType) && !AstUtil.isTypeRoot(childrenType)) {
+                    return put(childrenType.getParent(), joinParent(children.getExpr()));
                 }
             }
             throw new TypeException("Cannot join " + children.getType() + " . parent");
@@ -551,10 +581,6 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> alternative = typeCheck(ast.getAlternative());
             TypedExpr<AstSetExpr> consequent = typeCheck(ast.getConsequent());
             ProductType unionType = getLowestCommonSupertype(alternative.getCommonSupertype(), consequent.getCommonSupertype());
-            if (unionType == null) {
-                throw new TypeException("Cannot if " + antecedent.getType() + " then "
-                        + consequent.getType() + " else " + alternative.getType());
-            }
             return put(new Type(unionType), ifThenElse(antecedent.getExpr(),
                     upcastTo(consequent, unionType), upcastTo(alternative, unionType)));
         }

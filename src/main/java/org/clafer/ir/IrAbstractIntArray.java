@@ -11,9 +11,11 @@ import org.clafer.domain.Domain;
 public abstract class IrAbstractIntArray implements IrIntArrayExpr {
 
     private final Domain[] domains;
+    private final boolean isConstant;
 
     IrAbstractIntArray(Domain[] domains) {
         this.domains = Check.noNulls(domains);
+        this.isConstant = Arrays.asList(domains).stream().allMatch(Domain::isConstant);
     }
 
     @Override
@@ -24,6 +26,11 @@ public abstract class IrAbstractIntArray implements IrIntArrayExpr {
     @Override
     public Domain[] getDomains() {
         return domains;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return isConstant;
     }
 
     @Override

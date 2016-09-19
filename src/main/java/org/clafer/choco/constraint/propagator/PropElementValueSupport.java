@@ -83,30 +83,25 @@ public class PropElementValueSupport extends Propagator<IntVar> {
 
     @Override
     public ESat isEntailed() {
-        int lb = index.getLB();
-        int ub = index.getUB();
-        if (lb + offset >= array.length || ub + offset < 0) {
+        if (value.contains(support)) {
+            if (index.nextValue(-offset - 1) + offset >= array.length
+                    || index.previousValue(array.length - offset) + offset < 0) {
+                return ESat.FALSE;
+            }
+            if (value.isInstantiated()) {
+                return value.isInstantiatedTo(support) ? ESat.TRUE : ESat.FALSE;
+            }
+            return ESat.UNDEFINED;
+        } else {
+            int ub = index.getUB();
+            for (int i = index.getLB(); i <= ub; i = index.nextValue(i)) {
+                int j = i + offset;
+                if (j >= 0 && j < array.length && PropUtil.isDomIntersectDom(value, array[j])) {
+                    return index.isInstantiated() && value.isInstantiated() && array[j].isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                }
+            }
             return ESat.FALSE;
         }
-        if (lb + offset < 0 || ub + offset >= array.length) {
-            return ESat.UNDEFINED;
-        }
-        if (value.isInstantiatedTo(support)) {
-            return ESat.TRUE;
-        }
-        if (index.isInstantiated() && value.isInstantiated() && array[lb + offset].isInstantiatedTo(value.getValue())) {
-            return ESat.TRUE;
-        }
-        if (value.contains(support)) {
-            return ESat.UNDEFINED;
-        }
-        for (int i = lb; i <= ub; i = index.nextValue(i)) {
-            int j = i + offset;
-            if (j >= 0 && j < array.length && PropUtil.isDomIntersectDom(value, array[j])) {
-                return ESat.UNDEFINED;
-            }
-        }
-        return ESat.FALSE;
     }
 
     @Override

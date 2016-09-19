@@ -3,13 +3,33 @@ package org.clafer;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.$this;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.Optional;
+import static org.clafer.ast.Asts.add;
+import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.div;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.greaterThan;
+import static org.clafer.ast.Asts.ifThenElse;
+import static org.clafer.ast.Asts.join;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.lessThan;
+import static org.clafer.ast.Asts.minus;
+import static org.clafer.ast.Asts.mul;
+import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.product;
+import static org.clafer.ast.Asts.some;
+import static org.clafer.ast.Asts.sub;
+import static org.clafer.ast.Asts.sum;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**
@@ -179,7 +199,7 @@ public class ArithmeticTest {
      * <pre>
      * A -> integer
      * B -> integer
-     * [ 12 * A.ref = B.ref]
+     * [ 12 / A.ref = B.ref ]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -227,7 +247,7 @@ public class ArithmeticTest {
      * <pre>
      * A -> integer
      * B -> integer
-     * [ A.ref = -B.ref]
+     * [ A.ref = -B.ref ]
      * </pre>
      */
     @Test(timeout = 60000)

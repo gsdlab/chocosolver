@@ -7,7 +7,7 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * More efficient than the provided PropAllDiff. Idempotent unlike the
@@ -43,33 +43,26 @@ public class PropSetNotEqual extends Propagator<SetVar> {
 
     private void checkNotSame() throws ContradictionException {
         if (s1.isInstantiated() && s2.isInstantiated()) {
-            if (s1.getKernelSize() == s2.getKernelSize()) {
-                int i = s1.getKernelFirst();
-                int j = s2.getKernelFirst();
-                while (i != SetVar.END) {
-                    assert j != SetVar.END;
-                    if (i != j) {
-                        return;
-                    }
-                    i = s1.getKernelNext();
-                    j = s2.getKernelNext();
-                }
-                assert j == SetVar.END;
-                contradiction(s1, "Same");
+            if (PropUtil.equals(s1.getLB(), s2.getLB())) {
+                fails();
             }
         }
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        for (int i = s1.getKernelFirst(); i != SetVar.END; i = s1.getKernelNext()) {
-            if (!s2.envelopeContains(i)) {
+        ISetIterator s1Ker = s1.getLB().iterator();
+        while (s1Ker.hasNext()) {
+            int i = s1Ker.nextInt();
+            if (!s2.getUB().contains(i)) {
                 setPassive();
                 return;
             }
         }
-        for (int i = s2.getKernelFirst(); i != SetVar.END; i = s2.getKernelNext()) {
-            if (!s1.envelopeContains(i)) {
+        ISetIterator s2Ker = s2.getLB().iterator();
+        while (s2Ker.hasNext()) {
+            int i = s2Ker.nextInt();
+            if (!s1.getUB().contains(i)) {
                 setPassive();
                 return;
             }
@@ -81,50 +74,42 @@ public class PropSetNotEqual extends Propagator<SetVar> {
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isS1Var(idxVarInProp)) {
             s1D.freeze();
-            s1D.forEach(onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
-            s1D.forEach(onS1Ker, SetEventType.ADD_TO_KER);
+            s1D.forEach(this::onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
+            s1D.forEach(this::onS1Ker, SetEventType.ADD_TO_KER);
             s1D.unfreeze();
         } else {
             assert isS2Var(idxVarInProp);
             s2D.freeze();
-            s2D.forEach(onS2Env, SetEventType.REMOVE_FROM_ENVELOPE);
-            s2D.forEach(onS2Ker, SetEventType.ADD_TO_KER);
+            s2D.forEach(this::onS2Env, SetEventType.REMOVE_FROM_ENVELOPE);
+            s2D.forEach(this::onS2Ker, SetEventType.ADD_TO_KER);
             s2D.unfreeze();
         }
         checkNotSame();
     }
-    private final IntProcedure onS1Env = new IntProcedure() {
-        @Override
-        public void execute(int s1Env) throws ContradictionException {
-            if (isActive() && s2.kernelContains(s1Env)) {
-                setPassive();
-            }
+
+    private void onS1Env(int s1Env) throws ContradictionException {
+        if (isActive() && s2.getLB().contains(s1Env)) {
+            setPassive();
         }
-    };
-    private final IntProcedure onS1Ker = new IntProcedure() {
-        @Override
-        public void execute(int s1Ker) throws ContradictionException {
-            if (isActive() && !s2.envelopeContains(s1Ker)) {
-                setPassive();
-            }
+    }
+
+    private void onS1Ker(int s1Ker) throws ContradictionException {
+        if (isActive() && !s2.getUB().contains(s1Ker)) {
+            setPassive();
         }
-    };
-    private final IntProcedure onS2Env = new IntProcedure() {
-        @Override
-        public void execute(int s2Env) throws ContradictionException {
-            if (isActive() && s1.kernelContains(s2Env)) {
-                setPassive();
-            }
+    }
+
+    private void onS2Env(int s2Env) throws ContradictionException {
+        if (isActive() && s1.getLB().contains(s2Env)) {
+            setPassive();
         }
-    };
-    private final IntProcedure onS2Ker = new IntProcedure() {
-        @Override
-        public void execute(int s2Ker) throws ContradictionException {
-            if (isActive() && !s1.envelopeContains(s2Ker)) {
-                setPassive();
-            }
+    }
+
+    private void onS2Ker(int s2Ker) throws ContradictionException {
+        if (isActive() && !s1.getUB().contains(s2Ker)) {
+            setPassive();
         }
-    };
+    }
 
     @Override
     public ESat isEntailed() {

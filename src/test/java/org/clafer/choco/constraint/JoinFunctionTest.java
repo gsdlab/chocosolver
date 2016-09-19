@@ -3,17 +3,21 @@ package org.clafer.choco.constraint;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.clafer.common.Util;
-import org.clafer.test.Positive;
-import org.chocosolver.solver.variables.CSetVar;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import org.clafer.common.Util;
+import org.clafer.test.Positive;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *
@@ -23,22 +27,18 @@ import static org.chocosolver.solver.variables.Var.*;
 public class JoinFunctionTest {
 
     @Input(solutions = 512)
-    public Object testJoinFunction(Solver solver) {
+    public Object testJoinFunction(Model model) {
         /*
          * solutions = 2^3*4^3
          */
-        return $(cset("take", 0, 2, solver),
-                new IntVar[]{
-                    enumerated("ref[0]", 0, 3, solver),
-                    enumerated("ref[1]", 0, 3, solver),
-                    enumerated("ref[2]", 0, 3, solver)
-                },
-                cset("to", 0, 3, solver),
+        return $(model.setVar("take", ker(), env(0, 1, 2)),
+                model.intVarArray("ref", 3, 0, 3),
+                model.setVar("to", ker(), env(0, 1, 2, 3)),
                 -1);
     }
 
     @Input(solutions = 168)
-    public Object testJoinFunctionWithGlobalUniqueness(Solver solver) {
+    public Object testJoinFunctionWithGlobalUniqueness(Model model) {
         /*
          * import Control.Monad
          *
@@ -54,18 +54,14 @@ public class JoinFunctionTest {
          *     guard $ isUnique to
          *     return (from, refs, to)
          */
-        return $(cset("take", 0, 2, solver),
-                new IntVar[]{
-                    enumerated("ref[0]", 0, 2, solver),
-                    enumerated("ref[1]", 0, 2, solver),
-                    enumerated("ref[2]", 0, 2, solver)
-                },
-                cset("to", 0, 2, solver),
+        return $(model.setVar("take", ker(), env(0, 1, 2)),
+                model.intVarArray("ref", 3, 0, 2),
+                model.setVar("to", ker(), env(0, 1, 2)),
                 1);
     }
 
     @Input(solutions = 213)
-    public Object testJoinFunctionWithGlobalCardinality(Solver solver) {
+    public Object testJoinFunctionWithGlobalCardinality(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -81,26 +77,21 @@ public class JoinFunctionTest {
          *     guard $ is2Unique to
          *     return (from, refs, to)
          */
-        return $(cset("take", 0, 2, solver),
-                new IntVar[]{
-                    enumerated("ref[0]", 0, 2, solver),
-                    enumerated("ref[1]", 0, 2, solver),
-                    enumerated("ref[2]", 0, 2, solver)
-                },
-                cset("to", 0, 2, solver),
-                2
-        );
+        return $(model.setVar("take", ker(), env(0, 1, 2)),
+                model.intVarArray("ref", 3, 0, 2),
+                model.setVar("to", ker(), env(0, 1, 2)),
+                2);
     }
 
     @Input(solutions = 4)
-    public Object testJoinFunctionFixedRefs(Solver solver) {
-        return $(cset("take", 0, 1, solver),
+    public Object testJoinFunctionFixedRefs(Model model) {
+        return $(model.setVar("take", ker(), env(0, 1)),
                 new IntVar[]{
-                    fixed(5, solver),
-                    fixed(5, solver),
-                    fixed(5, solver)
+                    model.intVar(5),
+                    model.intVar(5),
+                    model.intVar(5)
                 },
-                cset("to", 4, 5, solver),
+                model.setVar("to", ker(), env(4, 5)),
                 -1);
     }
 
@@ -118,15 +109,15 @@ public class JoinFunctionTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(@Positive CSetVar take, IntVar[] refs, CSetVar to, int globalCardinality) {
+    public Constraint setup(@Positive SetVar take, IntVar[] refs, SetVar to, int globalCardinality) {
         return globalCardinality > 0
                 ? Constraints.joinFunction(
-                        take.getSet(), take.getCard(),
+                        take, take.getCard(),
                         refs,
-                        to.getSet(), to.getCard(), globalCardinality)
+                        to, to.getCard(), globalCardinality)
                 : Constraints.joinFunction(
-                        take.getSet(), take.getCard(),
+                        take, take.getCard(),
                         refs,
-                        to.getSet(), to.getCard());
+                        to, to.getCard());
     }
 }

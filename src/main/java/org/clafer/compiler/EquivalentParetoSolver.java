@@ -1,10 +1,9 @@
 package org.clafer.compiler;
 
 import java.util.Arrays;
+import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
@@ -45,18 +44,18 @@ public class EquivalentParetoSolver implements ClaferOptimizer {
             paretoSolution = optimizer.solution();
         } else {
             if (paretoCount == 1) {
-                solver.getEngine().flush();
-                solver.getSearchLoop().reset();
+                solver.reset();
+                solver.getModel().clearObjective();
                 IntVar[] scores = optimizer.getScores();
                 int[] paretoPoint = optimizer.optimalValues();
                 equivalentConstraint = new Constraint[paretoPoint.length];
                 for (int i = 0; i < scores.length; i++) {
-                    equivalentConstraint[i] = ICF.arithm(scores[i], "=", paretoPoint[i]);
-                    solver.post(equivalentConstraint[i]);
+                    equivalentConstraint[i] = solver.getModel().arithm(scores[i], "=", paretoPoint[i]);
+                    equivalentConstraint[i].post();
                 }
             }
-            boolean next = paretoCount == 1 ? solver.findSolution() : solver.nextSolution();
-            if (solver.hasReachedLimit()) {
+            boolean next = solver.solve();
+            if (solver.isStopCriterionMet()) {
                 more = false;
                 throw new ReachedLimitException();
             }
@@ -65,7 +64,7 @@ public class EquivalentParetoSolver implements ClaferOptimizer {
             } else {
                 for (Constraint c : equivalentConstraint) {
                     if (c != null) {
-                        solver.unpost(c);
+                        solver.getModel().unpost(c);
                     }
                 }
                 paretoSolution = null;
@@ -117,7 +116,7 @@ public class EquivalentParetoSolver implements ClaferOptimizer {
         }
         for (SetVar var : optimizer.getSolutionMap().getIrSolution().getSetVars()) {
             if ((var.getTypeAndKind() & Variable.CSTE) == 0) {
-                if (!Arrays.equals(var.getValues(), paretoSolution.getSetVal(var))) {
+                if (!Arrays.equals(var.getLB().toArray(), paretoSolution.getSetVal(var))) {
                     return false;
                 }
             }

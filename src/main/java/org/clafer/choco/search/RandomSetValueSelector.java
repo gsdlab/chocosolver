@@ -1,8 +1,9 @@
 package org.clafer.choco.search;
 
 import java.util.Random;
-import org.chocosolver.solver.search.strategy.selectors.SetValueSelector;
+import org.chocosolver.solver.search.strategy.selectors.values.SetValueSelector;
 import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -18,9 +19,11 @@ public class RandomSetValueSelector implements SetValueSelector {
 
     @Override
     public int selectValue(SetVar s) {
-        int m = rand.nextInt(s.getEnvelopeSize() - s.getKernelSize());
-        for (int i = s.getEnvelopeFirst(); i != SetVar.END; i = s.getEnvelopeNext()) {
-            if (!s.kernelContains(i)) {
+        int m = rand.nextInt(s.getUB().size() - s.getLB().size());
+        ISetIterator iter = s.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
+            if (!s.getLB().contains(i)) {
                 if (m == 0) {
                     return i;
                 }

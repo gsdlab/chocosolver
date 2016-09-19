@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.variables.BoolVar;
 import org.clafer.assertion.Assertion;
@@ -31,7 +32,8 @@ public class ClaferAsserter implements ClaferSearch {
     }
 
     public ClaferAsserter() {
-        this.solver = new Solver();
+        Model model = new Model();
+        this.solver = model.getSolver();
         this.solutionMap = null;
         this.assertions = null;
         this.more = false;
@@ -43,7 +45,7 @@ public class ClaferAsserter implements ClaferSearch {
             return false;
         }
         more &= count == 0 ? solveFirst() : solveNext();
-        if (solver.hasReachedLimit()) {
+        if (solver.isStopCriterionMet()) {
             more = false;
             throw new ReachedLimitException();
         }
@@ -57,7 +59,7 @@ public class ClaferAsserter implements ClaferSearch {
         List<BoolVar> boolVars = new ArrayList<>(assertions.size());
         for (Either<?, BoolVar> assertion : assertions.values()) {
             if (assertion.isLeft() && assertion.getLeft().equals(Boolean.TRUE)) {
-                return solver.findSolution();
+                return solver.solve();
             } else if (assertion.isRight()) {
                 boolVars.add(assertion.getRight());
             }
@@ -65,8 +67,8 @@ public class ClaferAsserter implements ClaferSearch {
         if (boolVars.isEmpty()) {
             return false;
         }
-        solver.post(Constraints.or(boolVars.toArray(new BoolVar[boolVars.size()])));
-        return solver.findSolution();
+        Constraints.or(boolVars.toArray(new BoolVar[boolVars.size()])).post();
+        return solver.solve();
     }
 
     private boolean solveNext() {
@@ -82,8 +84,8 @@ public class ClaferAsserter implements ClaferSearch {
         if (boolVars.isEmpty()) {
             return false;
         }
-        solver.post(Constraints.or(boolVars.toArray(new BoolVar[boolVars.size()])));
-        return solver.nextSolution();
+        Constraints.or(boolVars.toArray(new BoolVar[boolVars.size()])).post();
+        return solver.solve();
     }
 
     public Assertion[] failedAssertions() {

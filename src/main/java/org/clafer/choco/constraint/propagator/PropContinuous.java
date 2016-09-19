@@ -9,6 +9,8 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISet;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -22,7 +24,7 @@ public class PropContinuous extends Propagator<Variable> {
     private final IntVar card;
 
     public PropContinuous(SetVar set, IntVar card) {
-        super(new Variable[]{set}, PropagatorPriority.QUADRATIC, false);
+        super(new Variable[]{set, card}, PropagatorPriority.QUADRATIC, false);
         this.set = set;
         this.card = card;
     }
@@ -41,112 +43,165 @@ public class PropContinuous extends Propagator<Variable> {
             return SetEventType.all();
         }
         assert isCardVar(vIdx);
-        return IntEventType.VOID.getMask();
+        return IntEventType.all();
     }
 
-    public int maxKer(SetVar set) {
-        int max = SetVar.END;
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            max = i;
+    private static boolean containsRange(ISet set, int low, int high) {
+        for (int i = low; i <= high; i++) {
+            if (!set.contains(low)) {
+                return false;
+            }
         }
-        return max;
-    }
-
-    public int maxEnv(SetVar set) {
-        int max = SetVar.END;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            max = i;
-        }
-        return max;
+        return true;
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (set.getKernelSize() > 0) {
-            int cur = set.getKernelFirst();
-            assert cur != SetVar.END;
-            for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
+        int kerMax = 0;
+        int kerMin = 0;
+        if (!set.getLB().isEmpty()) {
+            ISetIterator setKer = set.getLB().iterator();
+            assert setKer.hasNext();
+            int cur = setKer.nextInt();
+            kerMin = cur;
+            while (setKer.hasNext()) {
+                int next = setKer.nextInt();
                 for (int j = cur + 1; j < next; j++) {
-                    set.addToKernel(j, this);
+                    set.force(j, this);
                 }
                 cur = next;
             }
-            if (!set.isInstantiated()) {
-                int min = set.getKernelFirst();
+            kerMax = cur;
+        }
+        if (!set.getUB().isEmpty()) {
+            int[] regionBounds = new int[2 * set.getUB().size()];
+            int regions = iterateRange(set.getUB().iterator(), regionBounds);
+            int survivingRegions = regions;
+            int maxSize = 0;
 
-                int prev = set.getEnvelopeFirst();
-                int[] queue = new int[set.getEnvelopeSize() - set.getKernelSize() + 1];
-                queue[0] = prev;
-                int size = 1;
-                int i;
-                for (i = set.getEnvelopeNext(); prev < min; i = set.getEnvelopeNext()) {
-                    if (i > prev + 1) {
-                        for (int j = 0; j < size; j++) {
-                            set.removeFromEnvelope(queue[j], this);
-                        }
-                        size = 0;
+            for (int region = 0; region < regions; region++) {
+                int low = regionBounds[2 * region];
+                int high = regionBounds[2 * region + 1];
+
+                assert !set.getUB().contains(low - 1);
+                assert containsRange(set.getUB(), low, high);
+                assert !set.getUB().contains(high + 1);
+
+                int size = high - low + 1;
+                if (card.previousValue(size + 1) <= 0
+                        || (!set.getLB().isEmpty() && (kerMin < low || kerMax > high))) {
+                    for (int i = low; i <= high; i++) {
+                        set.remove(i, this);
                     }
-                    prev = i;
-                    queue[size++] = prev;
+                    survivingRegions--;
+                } else {
+                    maxSize = Math.max(maxSize, size);
                 }
-                if (prev != SetVar.END) {
-                    for (; i != SetVar.END && i == prev + 1; i = set.getEnvelopeNext()) {
-                        prev = i;
+            }
+
+            card.updateUpperBound(maxSize, this);
+
+            final int cardLb = card.getLB();
+            final int cardUb = card.getUB();
+
+            if (survivingRegions == 1) {
+                int low = set.getUB().min();
+                int high = set.getUB().max();
+                int start = high - cardLb + 1;
+                if (!set.getLB().isEmpty() && kerMin < start) {
+                    start = kerMin;
+                }
+                int end = low + cardLb - 1;
+                if (!set.getLB().isEmpty() && kerMax > end) {
+                    end = kerMax;
+                }
+                for (int i = start; i <= end; i++) {
+                    set.force(i, this);
+                }
+                if (!set.getLB().isEmpty()) {
+                    for (int i = low; i <= end - cardUb; i++) {
+                        boolean changed = set.remove(i, this);
+                        assert changed;
                     }
-                    if (i != SetVar.END) {
-                        for (; i != SetVar.END; i = set.getEnvelopeNext()) {
-                            set.removeFromEnvelope(i, this);
-                        }
+                    for (int i = high; i >= start + cardUb; i--) {
+                        boolean changed = set.remove(i, this);
+                        assert changed;
                     }
                 }
             }
-        } else if (set.getEnvelopeSize() > 0) {
-            int prev = set.getEnvelopeFirst();
-            int i;
-            int max = 0;
-            int[] region = card.getLB() >= 2 ? new int[card.getLB() - 1] : null;
-            do {
-                if (region != null) {
-                    region[0] = prev;
-                }
-                int size = 1;
-                for (i = set.getEnvelopeNext(); i != SetVar.END && prev + 1 == i; i = set.getEnvelopeNext()) {
-                    prev = i;
-                    if (region != null && size < region.length) {
-                        region[size] = prev;
-                    }
-                    size++;
-                }
-                if (region != null && size <= region.length) {
-                    for (int z = 0; z < size; z++) {
-                        set.removeFromEnvelope(region[z], this);
-                    }
-                }
-                prev = i;
-                max = Math.max(max, size);
-            } while (i != SetVar.END);
-
-            card.updateUpperBound(max, this);
         }
     }
 
     @Override
     public ESat isEntailed() {
-        int cur = set.getKernelFirst();
-        if (cur != SetVar.END) {
-            for (int next = set.getKernelNext(); next != SetVar.END; next = set.getKernelNext()) {
-                for (int j = cur + 1; j < next; j++) {
-                    if (!set.envelopeContains(j)) {
-                        return ESat.FALSE;
-                    }
+        if (!set.getLB().isEmpty()) {
+            int min = set.getLB().min();
+            int max = set.getLB().max();
+            for (int i = min + 1; i < max; i++) {
+                if (!set.getUB().contains(i)) {
+                    return ESat.FALSE;
                 }
             }
+            if (max - min >= card.getUB()) {
+                return ESat.FALSE;
+            }
         }
+
+        if (!set.getUB().isEmpty()) {
+            int ker = set.getLB().isEmpty() ? 0 : set.getLB().min();
+
+            int[] regionBounds = new int[2 * set.getUB().size()];
+            int regions = iterateRange(set.getUB().iterator(), regionBounds);
+            int maxRegionSize = 0;
+            for (int region = 0; region < regions; region++) {
+                int low = regionBounds[2 * region];
+                int high = regionBounds[2 * region + 1];
+                int size = high - low + 1;
+                if (set.getLB().isEmpty() || (low <= ker && ker <= high)) {
+                    maxRegionSize = Math.max(maxRegionSize, size);
+                }
+            }
+
+            if (card.getLB() > maxRegionSize) {
+                return ESat.FALSE;
+            }
+            if (card.getUB() <= 1 && maxRegionSize == 1) {
+                return ESat.TRUE;
+            }
+        } else {
+            if (!card.contains(0)) {
+                return ESat.FALSE;
+            }
+            return card.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        }
+
         return set.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+    }
+
+    private static int iterateRange(ISetIterator iter, int[] out) {
+        assert iter.hasNext();
+        int prev = iter.nextInt();
+        int size = 1;
+        int regions = 0;
+        while (iter.hasNext()) {
+            int next = iter.nextInt();
+            if (next != prev + 1) {
+                out[2 * regions] = prev - size + 1;
+                out[2 * regions + 1] = prev;
+                regions++;
+                size = 0;
+            }
+            prev = next;
+            size++;
+        }
+        out[2 * regions] = prev - size + 1;
+        out[2 * regions + 1] = prev;
+        regions++;
+        return regions;
     }
 
     @Override
     public String toString() {
-        return "continuous(" + set + ")";
+        return "continuous(" + set + ", " + card + ")";
     }
 }

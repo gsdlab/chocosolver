@@ -1,12 +1,11 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.BoolVar;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.ifOnlyIf;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.variables.BoolVar;
 
 /**
  *
@@ -22,6 +21,6 @@ public class IrIfOnlyIfTest {
 
     @Solution
     public Constraint setup(BoolVar left, BoolVar right) {
-        return ICF.arithm(left, "=", right);
+        return left.getModel().arithm(left, "=", right);
     }
 }

@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.clafer.common.Util;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -12,7 +11,9 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.procedure.IntProcedure;
+import org.clafer.common.Util;
 
 /**
  *
@@ -66,8 +67,8 @@ public class PropArrayToSet extends Propagator<Variable> {
     }
 
     private boolean findMate(int sEnv) throws ContradictionException {
-        assert s.envelopeContains(sEnv);
-        boolean inKer = s.kernelContains(sEnv);
+        assert s.getUB().contains(sEnv);
+        boolean inKer = s.getLB().contains(sEnv);
         int mate = -1;
         for (int i = 0; i < as.length; i++) {
             if (as[i].contains(sEnv)) {
@@ -81,7 +82,7 @@ public class PropArrayToSet extends Propagator<Variable> {
         }
         if (mate == -1) {
             // No mates.
-            s.removeFromEnvelope(sEnv, this);
+            s.remove(sEnv, this);
         } else if (mate != -2 && inKer) {
             // One mate.
             return as[mate].instantiateTo(sEnv, this);
@@ -90,7 +91,9 @@ public class PropArrayToSet extends Propagator<Variable> {
     }
 
     private void findMates() throws ContradictionException {
-        for (int i = s.getEnvelopeFirst(); i != SetVar.END; i = s.getEnvelopeNext()) {
+        ISetIterator iter = s.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (findMate(i)) {
                 findMates();
                 return;
@@ -109,7 +112,7 @@ public class PropArrayToSet extends Propagator<Variable> {
         // Pick s
         for (IntVar a : as) {
             if (a.isInstantiated()) {
-                s.addToKernel(a.getValue(), this);
+                s.force(a.getValue(), this);
             }
         }
     }
@@ -121,7 +124,7 @@ public class PropArrayToSet extends Propagator<Variable> {
             sD.forEach(sEnv -> {
                 for (IntVar a : as) {
                     if (a.removeValue(sEnv, this) && a.isInstantiated()) {
-                        s.addToKernel(a.getValue(), this);
+                        s.force(a.getValue(), this);
                     }
                 }
             }, SetEventType.REMOVE_FROM_ENVELOPE);
@@ -136,11 +139,11 @@ public class PropArrayToSet extends Propagator<Variable> {
 
             int id = getAVarIndex(idxVarInProp);
             if (IntEventType.isRemove(mask)
-                    || (IntEventType.isInclow(mask) && as[id].getLB() > s.getEnvelopeFirst())
+                    || IntEventType.isInclow(mask) && as[id].getLB() > s.getUB().min()
                     || IntEventType.isDecupp(mask) || IntEventType.isInstantiate(mask)) {
                 asD[id].freeze();
                 asD[id].forEachRemVal((IntProcedure) aRem -> {
-                    if (s.envelopeContains(aRem)) {
+                    if (s.getUB().contains(aRem)) {
                         if (findMate(aRem)) {
                             findMates();
                         }
@@ -149,14 +152,14 @@ public class PropArrayToSet extends Propagator<Variable> {
                 asD[id].unfreeze();
             }
             if (as[id].isInstantiated()) {
-                s.addToKernel(as[id].getValue(), this);
+                s.force(as[id].getValue(), this);
             }
         }
     }
 
     @Override
     public ESat isEntailed() {
-        if (s.getKernelSize() > as.length) {
+        if (s.getLB().size() > as.length) {
             return ESat.FALSE;
         }
         for (IntVar a : as) {
@@ -164,7 +167,9 @@ public class PropArrayToSet extends Propagator<Variable> {
                 return ESat.FALSE;
             }
         }
-        for (int i = s.getKernelFirst(); i != SetVar.END; i = s.getKernelNext()) {
+        ISetIterator iter = s.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (!PropUtil.domsContain(as, i)) {
                 return ESat.FALSE;
             }

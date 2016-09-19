@@ -1,13 +1,16 @@
 package org.clafer.choco.constraint;
 
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.chocosolver.solver.variables.CSetVar;
-import static org.junit.Assert.*;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import static org.junit.Assert.assertArrayEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -17,7 +20,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class SetEqualTest {
 
     @Input(solutions = 8)
-    public Object testSetEqual(Solver solver) {
+    public Object testSetEqual(Model model) {
         /*
          * import Control.Monad
          *
@@ -29,8 +32,8 @@ public class SetEqualTest {
          *     guard $ s1 == s2
          *     return (s1, s2)
          */
-        return $(cset("s1", -1, 2, solver),
-                cset("s2", -2, 1, solver));
+        return $(model.setVar("s1", ker(), env(-1, 0, 1, 2)),
+                model.setVar("s2", ker(), env(-2, -1, 0, 1)));
     }
 
     @Check
@@ -38,9 +41,9 @@ public class SetEqualTest {
         assertArrayEquals(s1, s2);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar s1, CSetVar s2) {
-        return Constraints.equal(s1.getSet(), s1.getCard(), s2.getSet(), s2.getCard());
+    public Constraint setup(SetVar s1, SetVar s2) {
+        return Constraints.equal(s1, s1.getCard(), s2, s2.getCard());
     }
 }

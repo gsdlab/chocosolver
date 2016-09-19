@@ -1,25 +1,40 @@
 package org.clafer.test;
 
-import org.chocosolver.solver.variables.CSetVar;
-import org.chocosolver.solver.variables.CStringVar;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import static org.clafer.test.TestUtil.*;
-import org.clafer.ir.IrBoolVar;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.CStringVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import org.clafer.domain.Domain;
+import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrSetVar;
 import org.clafer.ir.IrStringVar;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.compiler.IrSolutionMap;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.variables.BoolVar;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
+import static org.clafer.test.TestUtil.randBool;
+import static org.clafer.test.TestUtil.randBoolVar;
+import static org.clafer.test.TestUtil.randDomain;
+import static org.clafer.test.TestUtil.randElement;
+import static org.clafer.test.TestUtil.randInt;
+import static org.clafer.test.TestUtil.randIntVar;
+import static org.clafer.test.TestUtil.randIrBoolVar;
+import static org.clafer.test.TestUtil.randIrIntVar;
+import static org.clafer.test.TestUtil.randIrSetVar;
+import static org.clafer.test.TestUtil.randIrStringVar;
+import static org.clafer.test.TestUtil.randNonEmptyDomain;
+import static org.clafer.test.TestUtil.randNonEmptyIrStringVar;
+import static org.clafer.test.TestUtil.randNonEmptyStringVar;
+import static org.clafer.test.TestUtil.randSetVar;
+import static org.clafer.test.TestUtil.randSetVarNoCard;
+import static org.clafer.test.TestUtil.randStringVar;
+import static org.clafer.test.TestUtil.randTerm;
 
 /**
  *
@@ -51,19 +66,19 @@ public class TestReflection {
             return ((IntVar) o).getDomainSize();
         } else if (o instanceof SetVar) {
             SetVar var = (SetVar) o;
-            return pow2(var.getEnvelopeSize() - var.getKernelSize());
-        } else if (o instanceof CSetVar) {
-            CSetVar var = (CSetVar) o;
-            int envSize = var.getSet().getEnvelopeSize();
-            int kerSize = var.getSet().getKernelSize();
+            int envSize = var.getUB().size();
+            int kerSize = var.getLB().size();
+            if (!var.hasCard()) {
+                return pow2(envSize - kerSize);
+            }
             int lb = var.getCard().getLB();
             int ub = var.getCard().getUB();
-            if (kerSize >= lb && envSize <= ub) {
-                return pow2(var.getSet().getEnvelopeSize() - var.getSet().getKernelSize());
+            if (kerSize >= lb && envSize <= ub && var.getCard().getDomainSize() == ub - lb + 1) {
+                return pow2(envSize - kerSize);
             }
             int count = 0;
             for (int i = lb; i <= ub; i = var.getCard().nextValue(i)) {
-                count += nChooseR(envSize - kerSize, i);
+                count += nChooseR(envSize - kerSize, i - kerSize);
             }
             return count;
         } else if (o instanceof CStringVar) {
@@ -149,25 +164,25 @@ public class TestReflection {
         throw new IllegalStateException("Unexpected type " + type);
     }
 
-    public static Object randVar(String name, Annotation[] annotations, Class<?> type, Solver solver) {
-        return randVar(name, annotations, type, solver, null);
+    public static Object randVar(String name, Annotation[] annotations, Class<?> type, Model model) {
+        return randVar(name, annotations, type, model, null);
     }
 
-    private static Object randVar(String name, Annotation[] annotations, Class<?> type, Solver solver, Integer sameLength) {
+    private static Object randVar(String name, Annotation[] annotations, Class<?> type, Model model, Integer sameLength) {
         int low = hasAnnotation(Positive.class, annotations) ? 0 : -4;
         int high = 4;
         if (BoolVar.class.equals(type)) {
-            return randBoolVar(solver);
+            return randBoolVar(model);
         } else if (IntVar.class.equals(type)) {
-            return randIntVar(name, low, high, solver);
+            return randIntVar(name, low, high, model);
         } else if (SetVar.class.equals(type)) {
-            return randSetVar(low, high, solver);
-        } else if (CSetVar.class.equals(type)) {
-            return randCSetVar(low, high, solver);
+            return hasAnnotation(NoCard.class, annotations)
+                    ? randSetVarNoCard(low, high, model)
+                    : randSetVar(low, high, model);
         } else if (CStringVar.class.equals(type)) {
             return hasAnnotation(NonEmpty.class, annotations)
-                    ? randNonEmptyStringVar(solver)
-                    : randStringVar(solver);
+                    ? randNonEmptyStringVar(model)
+                    : randStringVar(model);
         } else if (boolean.class.equals(type)) {
             return randBool();
         } else if (int.class.equals(type)) {
@@ -187,27 +202,25 @@ public class TestReflection {
             }
             Object array = Array.newInstance(type.getComponentType(), length);
             for (int i = 0; i < length; i++) {
-                Array.set(array, i, randVar(name + "[" + i + "]", annotations, type.getComponentType(), solver, recurSameLength));
+                Array.set(array, i, randVar(name + "[" + i + "]", annotations, type.getComponentType(), model, recurSameLength));
             }
             return array;
         }
         throw new IllegalStateException("Unexpected type " + type);
     }
 
-    public static Object toVar(Object irVar, Class<?> type, Solver solver) {
+    public static Object toVar(Object irVar, Class<?> type, Model model) {
         if (BoolVar.class.equals(type)) {
-            return TestUtil.toVar((IrBoolVar) irVar, solver);
+            return TestUtil.toVar((IrBoolVar) irVar, model);
         } else if (IntVar.class.equals(type)) {
             if (irVar instanceof Term) {
-                return ((Term) irVar).toChocoVar(solver);
+                return ((Term) irVar).toChocoVar(model);
             }
-            return TestUtil.toVar((IrIntVar) irVar, solver);
+            return TestUtil.toVar((IrIntVar) irVar, model);
         } else if (SetVar.class.equals(type)) {
-            return TestUtil.toVar((IrSetVar) irVar, solver).getSet();
-        } else if (CSetVar.class.equals(type)) {
-            return TestUtil.toVar((IrSetVar) irVar, solver);
+            return TestUtil.toVar((IrSetVar) irVar, model);
         } else if (CStringVar.class.equals(type)) {
-            return TestUtil.toVar((IrStringVar) irVar, solver);
+            return TestUtil.toVar((IrStringVar) irVar, model);
         } else if (boolean.class.equals(type)) {
             return irVar;
         } else if (int.class.equals(type)) {
@@ -220,7 +233,7 @@ public class TestReflection {
             Object[] irVars = (Object[]) irVar;
             Object creates = Array.newInstance(type.getComponentType(), irVars.length);
             for (int i = 0; i < irVars.length; i++) {
-                Object create = toVar(irVars[i], type.getComponentType(), solver);
+                Object create = toVar(irVars[i], type.getComponentType(), model);
                 Array.set(creates, i, create);
             }
             return creates;
@@ -262,9 +275,7 @@ public class TestReflection {
         if (var instanceof IntVar) {
             return ((IntVar) var).getValue();
         } else if (var instanceof SetVar) {
-            return new TIntHashSet(((SetVar) var).getValues());
-        } else if (var instanceof CSetVar) {
-            return new TIntHashSet(((CSetVar) var).getSet().getValues());
+            return new TIntHashSet(((SetVar) var).getLB().toArray());
         } else if (var instanceof CStringVar) {
             CStringVar string = (CStringVar) var;
             char[] chars = new char[string.getLength().getValue()];
@@ -300,12 +311,7 @@ public class TestReflection {
         } else if (var instanceof IntVar) {
             return ((IntVar) var).getValue();
         } else if (var instanceof SetVar) {
-            int[] set = ((SetVar) var).getValues();
-            return int[].class.equals(type)
-                    ? set
-                    : new TIntHashSet(set);
-        } else if (var instanceof CSetVar) {
-            int[] set = ((CSetVar) var).getSet().getValues();
+            int[] set = ((SetVar) var).getLB().toArray();
             return int[].class.equals(type)
                     ? set
                     : new TIntHashSet(set);

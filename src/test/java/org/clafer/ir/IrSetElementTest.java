@@ -1,15 +1,16 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.array;
+import static org.clafer.ir.Irs.element;
+import static org.clafer.ir.Irs.equal;
 import org.clafer.test.Positive;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.set.SCF;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.SetVar;
 
 /**
  *
@@ -26,6 +27,6 @@ public class IrSetElementTest {
 
     @Solution
     public Constraint setup(SetVar element, SetVar[] array, IntVar index) {
-        return SCF.element(index, array, 0, element);
+        return element.getModel().element(index, array, 0, element);
     }
 }

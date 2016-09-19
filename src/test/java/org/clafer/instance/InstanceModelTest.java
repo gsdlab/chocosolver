@@ -4,7 +4,7 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.IntType;
 import static org.clafer.ast.Asts.newModel;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**

@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
 import org.clafer.common.Check;
+import org.clafer.domain.Domain;
 
 /**
  *
@@ -12,10 +12,14 @@ public class IrSetVar extends IrAbstractSet implements IrVar {
     private final String name;
     private final IrIntVar card;
 
-    protected IrSetVar(String name, Domain env, Domain ker, IrIntVar card) {
+    IrSetVar(String name, Domain env, Domain ker, IrIntVar card) {
         super(env, ker, card.getDomain());
         this.name = Check.notNull(name);
         this.card = card;
+    }
+
+    IrSetVar(Domain constant) {
+        this(constant.toString(), constant, constant, Irs.constant(constant.size()));
     }
 
     @Override
@@ -34,7 +38,16 @@ public class IrSetVar extends IrAbstractSet implements IrVar {
 
     @Override
     public boolean equals(Object obj) {
-        return this == obj;
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof IrSetVar) {
+            IrSetVar other = (IrSetVar) obj;
+            if (isConstant() && other.isConstant()) {
+                return getKer().equals(other.getKer());
+            }
+        }
+        return false;
     }
 
     @Override

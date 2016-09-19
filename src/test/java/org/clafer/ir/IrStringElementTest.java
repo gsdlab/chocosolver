@@ -1,16 +1,18 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.CStringVar;
+import org.chocosolver.solver.variables.IntVar;
+import static org.chocosolver.solver.variables.Var.mapChars;
+import static org.chocosolver.solver.variables.Var.mapLength;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.element;
+import static org.clafer.ir.Irs.equal;
 import org.clafer.test.Positive;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CStringVar;
-import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *

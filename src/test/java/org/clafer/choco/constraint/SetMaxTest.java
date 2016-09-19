@@ -1,20 +1,17 @@
 package org.clafer.choco.constraint;
 
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import org.clafer.choco.constraint.ConstraintQuickTest.Input;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
-import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.card;
-import static org.chocosolver.solver.variables.Var.cset;
-import static org.chocosolver.solver.variables.Var.env;
-import static org.chocosolver.solver.variables.Var.ker;
-import static org.chocosolver.solver.variables.VariableFactory.enumerated;
-import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 
 /**
  *
@@ -24,7 +21,7 @@ import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 public class SetMaxTest {
 
     @Input(solutions = 37)
-    public Object testSetMax(Solver solver) {
+    public Object testSetMax(Model model) {
         /*
          * import Control.Monad
          *
@@ -37,8 +34,11 @@ public class SetMaxTest {
          *     guard $ if null set then max == 0 else max == maximum set
          *     return (set, max)
          */
-        return $(cset("set", env(-4, -3, -2, -1, 0, 1, 2, 3), ker(), card(0, 1, 2), solver),
-                enumerated("max", -4, 4, solver), 0);
+        SetVar set = model.setVar("set", ker(), env(-4, -3, -2, -1, 0, 1, 2, 3));
+        IntVar card = model.intVar("|set|", 0, 2);
+        set.setCard(card);
+        IntVar max = model.intVar("max", -4, 4);
+        return $(set, max, 0);
     }
 
     @Check
@@ -51,7 +51,7 @@ public class SetMaxTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar set, IntVar max, int d) {
-        return Constraints.max(set.getSet(), set.getCard(), max, d);
+    public Constraint setup(SetVar set, IntVar max, int d) {
+        return Constraints.max(set, set.getCard(), max, d);
     }
 }

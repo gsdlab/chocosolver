@@ -1,12 +1,13 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.add;
+import static org.clafer.ir.Irs.equal;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *
@@ -22,6 +23,7 @@ public class IrAddTest {
 
     @Solution
     public Constraint setup(IntVar[] is, IntVar sum) {
-        return is.length > 0 ? ICF.sum(is, sum) : ICF.arithm(sum, "=", 0);
+        Model model = sum.getModel();
+        return is.length > 0 ? model.sum(is, "=", sum) : model.arithm(sum, "=", 0);
     }
 }

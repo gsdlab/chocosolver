@@ -27,8 +27,6 @@ public interface IrIntExprVisitor<A, B> extends IrBoolExprVisitor<A, B> {
 
     public B visit(IrCount ir, A a);
 
-    public B visit(IrCountNotEqual ir, A a);
-
     public B visit(IrSetMax ir, A a);
 
     public B visit(IrSetMin ir, A a);

@@ -1,7 +1,62 @@
 package org.clafer.ir;
 
 import org.clafer.common.Util;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.acyclic;
+import static org.clafer.ir.Irs.add;
+import static org.clafer.ir.Irs.allDifferent;
+import static org.clafer.ir.Irs.and;
+import static org.clafer.ir.Irs.array;
+import static org.clafer.ir.Irs.arrayToSet;
+import static org.clafer.ir.Irs.boolChannel;
+import static org.clafer.ir.Irs.card;
+import static org.clafer.ir.Irs.compare;
+import static org.clafer.ir.Irs.concat;
+import static org.clafer.ir.Irs.connected;
+import static org.clafer.ir.Irs.constant;
+import static org.clafer.ir.Irs.containsTernary;
+import static org.clafer.ir.Irs.count;
+import static org.clafer.ir.Irs.difference;
+import static org.clafer.ir.Irs.div;
+import static org.clafer.ir.Irs.element;
+import static org.clafer.ir.Irs.equality;
+import static org.clafer.ir.Irs.ifOnlyIf;
+import static org.clafer.ir.Irs.ifThenElse;
+import static org.clafer.ir.Irs.intChannel;
+import static org.clafer.ir.Irs.intersection;
+import static org.clafer.ir.Irs.inverse;
+import static org.clafer.ir.Irs.joinFunction;
+import static org.clafer.ir.Irs.joinRelation;
+import static org.clafer.ir.Irs.length;
+import static org.clafer.ir.Irs.lone;
+import static org.clafer.ir.Irs.mask;
+import static org.clafer.ir.Irs.max;
+import static org.clafer.ir.Irs.member;
+import static org.clafer.ir.Irs.min;
+import static org.clafer.ir.Irs.minus;
+import static org.clafer.ir.Irs.mod;
+import static org.clafer.ir.Irs.mul;
+import static org.clafer.ir.Irs.not;
+import static org.clafer.ir.Irs.notMember;
+import static org.clafer.ir.Irs.offset;
+import static org.clafer.ir.Irs.one;
+import static org.clafer.ir.Irs.or;
+import static org.clafer.ir.Irs.prefix;
+import static org.clafer.ir.Irs.selectN;
+import static org.clafer.ir.Irs.set;
+import static org.clafer.ir.Irs.singleton;
+import static org.clafer.ir.Irs.singletonFilter;
+import static org.clafer.ir.Irs.sort;
+import static org.clafer.ir.Irs.sortChannel;
+import static org.clafer.ir.Irs.sortStrict;
+import static org.clafer.ir.Irs.string;
+import static org.clafer.ir.Irs.subarray;
+import static org.clafer.ir.Irs.subsetEq;
+import static org.clafer.ir.Irs.suffix;
+import static org.clafer.ir.Irs.sum;
+import static org.clafer.ir.Irs.ternary;
+import static org.clafer.ir.Irs.transitiveClosure;
+import static org.clafer.ir.Irs.union;
+import static org.clafer.ir.Irs.unreachable;
 
 /**
  *
@@ -204,26 +259,6 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrImplies ir, T a) {
-        IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
-        IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
-        return changed(ir.getAntecedent(), antecedent)
-                || changed(ir.getConsequent(), consequent)
-                        ? implies(antecedent, consequent)
-                        : ir;
-    }
-
-    @Override
-    public IrBoolExpr visit(IrNotImplies ir, T a) {
-        IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
-        IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
-        return changed(ir.getAntecedent(), antecedent)
-                || changed(ir.getConsequent(), consequent)
-                        ? notImplies(antecedent, consequent)
-                        : ir;
-    }
-
-    @Override
     public IrBoolExpr visit(IrIfThenElse ir, T a) {
         IrBoolExpr antecedent = rewrite(ir.getAntecedent(), a);
         IrBoolExpr consequent = rewrite(ir.getConsequent(), a);
@@ -241,23 +276,6 @@ public abstract class IrRewriter<T>
         IrBoolExpr right = rewrite(ir.getRight(), a);
         return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
                 ? ifOnlyIf(left, right)
-                : ir;
-    }
-
-    @Override
-    public IrBoolExpr visit(IrXor ir, T a) {
-        IrBoolExpr left = rewrite(ir.getLeft(), a);
-        IrBoolExpr right = rewrite(ir.getRight(), a);
-        return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
-                ? xor(left, right)
-                : ir;
-    }
-
-    @Override
-    public IrBoolExpr visit(IrWithin ir, T a) {
-        IrIntExpr value = rewrite(ir.getValue(), a);
-        return changed(ir.getValue(), value)
-                ? within(value, ir.getRange())
                 : ir;
     }
 
@@ -402,18 +420,6 @@ public abstract class IrRewriter<T>
     }
 
     @Override
-    public IrBoolExpr visit(IrFilterString ir, T a) {
-        IrSetExpr set = rewrite(ir.getSet(), a);
-        IrIntExpr[] string = rewrite(ir.getString(), a);
-        IrIntExpr[] result = rewrite(ir.getResult(), a);
-        return changed(ir.getSet(), set)
-                || changed(ir.getString(), string)
-                || changed(ir.getResult(), result)
-                        ? filterString(set, ir.getOffset(), string, result)
-                        : ir;
-    }
-
-    @Override
     public IrIntExpr visit(IrPrefix ir, T a) {
         IrStringExpr prefix = rewrite(ir.getPrefix(), a);
         IrStringExpr word = rewrite(ir.getWord(), a);
@@ -500,17 +506,9 @@ public abstract class IrRewriter<T>
 
     @Override
     public IrIntExpr visit(IrCount ir, T a) {
-        IrIntExpr[] array = rewrite(ir.getArray(), a);
-        return changed(ir.getArray(), array)
-                ? count(ir.getValue(), array)
-                : ir;
-    }
-
-    @Override
-    public IrIntExpr visit(IrCountNotEqual ir, T a) {
         IrIntArrayExpr array = rewrite(ir.getArray(), a);
         return changed(ir.getArray(), array)
-                ? countNotEqual(ir.getValue(), array)
+                ? count(ir.getValue(), array)
                 : ir;
     }
 

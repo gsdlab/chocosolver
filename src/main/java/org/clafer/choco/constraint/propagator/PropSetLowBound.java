@@ -10,6 +10,7 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -48,20 +49,26 @@ public class PropSetLowBound extends Propagator<Variable> {
     private void boundEnv() throws ContradictionException {
         int lb = bound.getLB();
         int ub = bound.getUB();
+        ISetIterator iter = set.getUB().iterator();
         int i;
-        for (i = set.getEnvelopeFirst(); i != SetVar.END && i < lb; i = set.getEnvelopeNext()) {
-            set.removeFromEnvelope(i, this);
-        }
-        if (i != SetVar.END && i >= ub) {
-            // The elements in the set's envelope are at least ub.
-            setPassive();
+        while (iter.hasNext()) {
+            i = iter.nextInt();
+            if (i < lb) {
+                set.remove(i, this);
+            } else {
+                if (i >= ub) {
+                    // The elements in the set's envelope are at least ub.
+                    setPassive();
+                }
+                break;
+            }
         }
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (set.getKernelSize() > 0) {
-            bound.updateUpperBound(set.getKernelFirst(), this);
+        if (set.getLB().size() > 0) {
+            bound.updateUpperBound(set.getLB().min(), this);
         }
         boundEnv();
     }
@@ -80,15 +87,11 @@ public class PropSetLowBound extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
-            if (i < bound.getLB()) {
-                return ESat.FALSE;
-            }
+        if(!set.getLB().isEmpty() && set.getLB().min() < bound.getLB()) {
+            return ESat.FALSE;
         }
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-            if (i < bound.getUB()) {
-                return ESat.UNDEFINED;
-            }
+        if(!set.getUB().isEmpty() && set.getUB().min() < bound.getUB()) {
+            return ESat.UNDEFINED;
         }
         return ESat.TRUE;
     }

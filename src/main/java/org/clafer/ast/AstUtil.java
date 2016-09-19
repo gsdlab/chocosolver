@@ -184,8 +184,8 @@ public class AstUtil {
      * @return {@code true} if and only if the Clafer is the type root,
      * {@code false} otherwise
      */
-    public static boolean isTypeRoot(AstAbstractClafer clafer) {
-        return clafer instanceof AstAbstractClafer && !clafer.hasSuperClafer();
+    public static boolean isTypeRoot(AstClafer clafer) {
+        return !clafer.hasSuperClafer();
     }
 
     /**
@@ -196,12 +196,7 @@ public class AstUtil {
      * {@code false} otherwise
      */
     public static boolean isTop(AstClafer clafer) {
-        if (clafer instanceof AstConcreteClafer) {
-            AstConcreteClafer concrete = (AstConcreteClafer) clafer;
-            return concrete.getParent() instanceof AstConcreteClafer
-                    && isRoot((AstConcreteClafer) concrete.getParent());
-        }
-        return clafer instanceof AstAbstractClafer;
+        return clafer.hasParent() && isRoot(clafer.getParent());
     }
 
     /**
@@ -264,14 +259,21 @@ public class AstUtil {
      */
     public static List<AstConstraint> getNestedConstraints(AstModel model) {
         List<AstConstraint> constraints = new ArrayList<>();
-        for (AstAbstractClafer abstractClafer : model.getAbstracts()) {
-            getNestedConstraints(abstractClafer, constraints);
-        }
         getNestedConstraints(model.getAbstractRoot(), constraints);
         return constraints;
     }
 
-    private static void getNestedConstraints(AstClafer clafer, List<AstConstraint> constraints) {
+    private static void getNestedConstraints(AstAbstractClafer clafer, List<AstConstraint> constraints) {
+        constraints.addAll(clafer.getConstraints());
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
+            getNestedConstraints(child, constraints);
+        }
+        for (AstConcreteClafer child : clafer.getChildren()) {
+            getNestedConstraints(child, constraints);
+        }
+    }
+
+    private static void getNestedConstraints(AstConcreteClafer clafer, List<AstConstraint> constraints) {
         constraints.addAll(clafer.getConstraints());
         for (AstConcreteClafer child : clafer.getChildren()) {
             getNestedConstraints(child, constraints);
@@ -329,6 +331,14 @@ public class AstUtil {
                 && getSupers(from).contains((AstAbstractClafer) to));
     }
 
+    public static boolean intersects(AstClafer clafer1, AstClafer clafer2) {
+        return isAssignable(clafer1, clafer2) || isAssignable(clafer2, clafer1);
+    }
+
+    public static boolean isDisjoint(AstClafer clafer1, AstClafer clafer2) {
+        return !intersects(clafer1, clafer2);
+    }
+
     private static List<AstClafer> getUnionTypeHierarchy(
             List<AstClafer> typeHierarchy1, List<AstClafer> typeHierarchy2) {
         if (typeHierarchy1.size() > typeHierarchy2.size()) {
@@ -377,6 +387,21 @@ public class AstUtil {
      */
     public static AstClafer getLowestCommonSupertype(AstClafer... unionType) {
         return getLowestCommonSupertype(Arrays.asList(unionType));
+    }
+
+    /**
+     * Finds the ancestors of the Clafer, including itself.
+     *
+     * @param clafer the Clafer
+     * @return the ancestors
+     */
+    public static List<AstClafer> getAncestors(AstClafer clafer) {
+        List<AstClafer> ancestors = new ArrayList<>();
+        do {
+            ancestors.add(clafer);
+            clafer = clafer.getParent();
+        } while (clafer != null);
+        return ancestors;
     }
 
     /**

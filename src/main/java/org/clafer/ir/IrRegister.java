@@ -11,7 +11,7 @@ public class IrRegister extends IrAbstractBool {
     private final IrVar variable;
 
     public IrRegister(IrVar variable) {
-        super(variable instanceof IrConstant
+        super(variable.isConstant()
                 ? BoolDomain.TrueDomain
                 : BoolDomain.TrueFalseDomain);
         this.variable = variable;

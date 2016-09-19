@@ -1,13 +1,17 @@
 package org.clafer.choco.constraint;
 
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.CStringVar;
-import static org.junit.Assert.*;
+import static org.chocosolver.solver.variables.Var.chars;
+import static org.chocosolver.solver.variables.Var.cstring;
+import static org.chocosolver.solver.variables.Var.fixed;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -17,7 +21,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class ConcatTest {
 
     @Input(solutions = 49)
-    public Object testConcat(Solver solver) {
+    public Object testConcat(Model model) {
         /*
          * import Control.Monad
          *
@@ -29,13 +33,13 @@ public class ConcatTest {
          *     guard $ left ++ right == cat
          *     return (left, right, cat)
          */
-        return $(cstring("left", chars('a', 'b'), 3, solver),
-                cstring("right", chars('a', 'b'), 3, solver),
-                cstring("concat", chars('a', 'b'), 3, solver));
+        return $(cstring("left", chars('a', 'b'), 3, model),
+                cstring("right", chars('a', 'b'), 3, model),
+                cstring("concat", chars('a', 'b'), 3, model));
     }
 
     @Input(solutions = 15)
-    public Object testEmptyLeft(Solver solver) {
+    public Object testEmptyLeft(Model model) {
         /*
          * import Control.Monad
          *
@@ -47,13 +51,13 @@ public class ConcatTest {
          *     guard $ left ++ right == cat
          *     return (left, right, cat)
          */
-        return $(fixed("", solver),
-                cstring("right", chars('a', 'b'), 3, solver),
-                cstring("concat", chars('a', 'b'), 3, solver));
+        return $(fixed("", model),
+                cstring("right", chars('a', 'b'), 3, model),
+                cstring("concat", chars('a', 'b'), 3, model));
     }
 
     @Input(solutions = 15)
-    public Object testEmptyRight(Solver solver) {
+    public Object testEmptyRight(Model model) {
         /*
          * import Control.Monad
          *
@@ -65,13 +69,13 @@ public class ConcatTest {
          *     guard $ left ++ right == cat
          *     return (left, right, cat)
          */
-        return $(cstring("left", chars('a', 'b'), 3, solver),
-                fixed("", solver),
-                cstring("concat", chars('a', 'b'), 3, solver));
+        return $(cstring("left", chars('a', 'b'), 3, model),
+                fixed("", model),
+                cstring("concat", chars('a', 'b'), 3, model));
     }
 
     @Input(solutions = 1)
-    public Object testEmptyConcat(Solver solver) {
+    public Object testEmptyConcat(Model model) {
         /*
          * import Control.Monad
          *
@@ -83,9 +87,9 @@ public class ConcatTest {
          *     guard $ left ++ right == cat
          *     return (left, right, cat)
          */
-        return $(cstring("left", chars('a', 'b'), 3, solver),
-                cstring("right", chars('a', 'b'), 3, solver),
-                fixed("", solver));
+        return $(cstring("left", chars('a', 'b'), 3, model),
+                cstring("right", chars('a', 'b'), 3, model),
+                fixed("", model));
     }
 
     @Check

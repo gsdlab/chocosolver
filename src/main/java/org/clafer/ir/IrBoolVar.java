@@ -1,15 +1,20 @@
 package org.clafer.ir;
 
 import org.clafer.domain.BoolDomain;
+import org.clafer.domain.Domains;
 
 /**
  *
  * @author jimmy
  */
-public class IrBoolVar extends IrIntVar implements IrBoolExpr, IrVar {
+public class IrBoolVar extends IrIntVar implements IrBoolExpr {
 
     IrBoolVar(String name, BoolDomain domain) {
         super(name, domain);
+    }
+
+    IrBoolVar(boolean constant) {
+        this(Boolean.toString(constant), constant ? Domains.TrueDomain : Domains.FalseDomain);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.clafer.ir;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 import org.clafer.common.Check;
 import org.clafer.domain.Domain;
 
@@ -11,6 +12,7 @@ import org.clafer.domain.Domain;
 public abstract class IrAbstractSetArray implements IrSetArrayExpr {
 
     private final Domain[] envDomains, kerDomains, cardDomains;
+    private final boolean isConstant;
 
     IrAbstractSetArray(Domain[] envDomains, Domain[] kerDomains, Domain[] cardDomains) {
         if (envDomains.length != kerDomains.length) {
@@ -22,6 +24,7 @@ public abstract class IrAbstractSetArray implements IrSetArrayExpr {
         this.envDomains = Check.noNulls(envDomains);
         this.kerDomains = Check.noNulls(kerDomains);
         this.cardDomains = Check.noNulls(cardDomains);
+        this.isConstant = IntStream.range(0, envDomains.length).allMatch(i -> kerDomains[i].size() == envDomains[i].size());
     }
 
     @Override
@@ -42,6 +45,11 @@ public abstract class IrAbstractSetArray implements IrSetArrayExpr {
     @Override
     public Domain[] getCards() {
         return cardDomains;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return isConstant;
     }
 
     @Override

@@ -24,9 +24,17 @@ import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstSetTest;
 import org.clafer.ast.AstThis;
 import org.clafer.ast.AstUpcast;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.compare;
+import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.ifThenElse;
+import static org.clafer.ast.Asts.join;
+import static org.clafer.ast.Asts.membership;
+import static org.clafer.ast.Asts.test;
 import org.clafer.ast.Card;
 import org.clafer.ast.ProductType;
+import org.clafer.common.Util;
 import org.clafer.objective.Objective;
 
 /**
@@ -55,6 +63,15 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
                 .setConstraintExprs(constraintExprs)
                 .setObjectiveExprs(objectiveExprs)
                 .setAssertionExprs(assertionExprs);
+    }
+
+    @Override
+    public AstExpr visit(AstGlobal ast, Analysis a) {
+        Card globalCard = a.getGlobalCard(ast.getType());
+        if (globalCard.isExact() && (a.getFormat(ast.getType()).equals(Format.LowGroup) || globalCard.getLow() == 1)) {
+            return constant(ast.getType(), Util.fromTo(0, globalCard.getLow()));
+        }
+        return ast;
     }
 
     @Override

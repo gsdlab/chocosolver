@@ -7,6 +7,7 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -39,36 +40,44 @@ public class PropMaskCard extends Propagator<Variable> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         int kerBetweenFromTo = 0;
-        for (int i = set.getKernelFirst(); i != SetVar.END && i < to; i = set.getKernelNext()) {
-            if (i >= from) {
+        ISetIterator setKer = set.getLB().iterator();
+        while (setKer.hasNext()) {
+            int i = setKer.nextInt();
+            if (i >= from && i < to) {
                 kerBetweenFromTo++;
             }
         }
-        int kerOutsizeFromTo = set.getKernelSize() - kerBetweenFromTo;
+        int kerOutsizeFromTo = set.getLB().size() - kerBetweenFromTo;
         int envBetweenFromTo = 0;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END && i < to; i = set.getEnvelopeNext()) {
-            if (i >= from) {
+        ISetIterator setEnv = set.getUB().iterator();
+        while (setEnv.hasNext()) {
+            int i = setEnv.nextInt();
+            if (i >= from && i < to) {
                 envBetweenFromTo++;
             }
         }
-        int envOutsizeFromTo = set.getEnvelopeSize() - envBetweenFromTo;
+        int envOutsizeFromTo = set.getUB().size() - envBetweenFromTo;
         maskedCard.updateLowerBound(setCard.getLB() - envOutsizeFromTo, this);
         maskedCard.updateUpperBound(setCard.getUB() - kerOutsizeFromTo, this);
         setCard.updateLowerBound(maskedCard.getLB() + kerOutsizeFromTo, this);
         setCard.updateUpperBound(maskedCard.getUB() + envOutsizeFromTo, this);
 
         if (setCard.getLB() == maskedCard.getUB() + envOutsizeFromTo) {
-            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            setEnv.reset();
+            while (setEnv.hasNext()) {
+                int i = setEnv.nextInt();
                 if (i < from || i >= to) {
-                    set.addToKernel(i, this);
+                    set.force(i, this);
                 }
             }
         }
         if (setCard.getUB() == maskedCard.getLB() + kerOutsizeFromTo) {
-            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+            setEnv.reset();
+            while (setEnv.hasNext()) {
+                int i = setEnv.nextInt();
                 if (i < from || i >= to) {
-                    if (!set.kernelContains(i)) {
-                        set.removeFromEnvelope(i, this);
+                    if (!set.getLB().contains(i)) {
+                        set.remove(i, this);
                     }
                 }
             }

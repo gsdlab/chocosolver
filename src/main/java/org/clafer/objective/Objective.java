@@ -1,5 +1,6 @@
 package org.clafer.objective;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.common.Check;
 
@@ -13,8 +14,8 @@ import org.clafer.common.Check;
  */
 public class Objective {
 
-    private static int idFactory = 0;
-    private final int id = idFactory++;
+    private static final AtomicInteger idFactory = new AtomicInteger();
+    private final int id = idFactory.getAndIncrement();
     // true - maximize
     // false - minimize
     private final boolean maximize;

@@ -6,7 +6,7 @@ import org.clafer.ast.AstModel;
 import org.clafer.ast.Asts;
 import org.clafer.ast.Card;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**

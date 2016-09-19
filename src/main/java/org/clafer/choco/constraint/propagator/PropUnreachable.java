@@ -44,8 +44,8 @@ public class PropUnreachable extends Propagator<IntVar> {
         }
         this.from = from;
         this.to = to;
-        this.position = solver.getEnvironment().makeInt(from);
-        this.toComponent = solver.getEnvironment().makeIntVector(1, to);
+        this.position = edges[0].getEnvironment().makeInt(from);
+        this.toComponent = edges[0].getEnvironment().makeIntVector(1, to);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class PropUnreachable extends Propagator<IntVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         if (from == to) {
-            contradiction(vars[from], "trivial path");
+            fails();
         }
         vars[from].updateLowerBound(0, this);
         vars[from].removeValue(to, this);
@@ -80,20 +80,20 @@ public class PropUnreachable extends Propagator<IntVar> {
         if (position.get() == follower) {
             int cur = leader;
             if (cur < 0) {
-                contradiction(vars[follower], "Reachable");
+                fails();
             }
             int i;
             for (i = 0; i < vars.length && cur < vars.length && vars[cur].isInstantiated(); i++) {
                 if (toComponent.contains(cur)) {
-                    contradiction(vars[follower], "Reachable");
+                    fails();
                 }
                 cur = vars[cur].getValue();
                 if (cur < 0) {
-                    contradiction(vars[follower], "Reachable");
+                    fails();
                 }
             }
             if (toComponent.contains(cur)) {
-                contradiction(vars[follower], "Reachable");
+                fails();
             }
             if (cur >= vars.length || i == vars.length) {
                 setPassive();
@@ -108,7 +108,10 @@ public class PropUnreachable extends Propagator<IntVar> {
         } else if (leader < vars.length && !toComponent.contains(follower) && toComponent.contains(leader)) {
             toComponent.add(follower);
             vars[position.get()].removeValue(follower, this);
-            for (int i = 0; i < vars.length; i++) {
+            if (vars[position.get()].isInstantiated()) {
+                follow(position.get());
+            }
+            for (int i = 0; i < vars.length && isActive(); i++) {
                 if (vars[i].isInstantiatedTo(follower)) {
                     follow(i);
                 }

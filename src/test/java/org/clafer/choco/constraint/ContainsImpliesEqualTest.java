@@ -2,16 +2,16 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
-import static org.chocosolver.solver.variables.Var.*;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.dom;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
 import static org.clafer.choco.constraint.ConstraintQuickTest.$;
 import org.clafer.choco.constraint.ConstraintQuickTest.Check;
 import org.clafer.choco.constraint.ConstraintQuickTest.Input;
-import org.clafer.choco.constraint.propagator.PropContainsImpliesEqual;
-import org.clafer.choco.constraint.propagator.PropContainsImpliesEqualCard;
-import org.clafer.choco.constraint.propagator.PropContainsImpliesEqualCard2;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 public class ContainsImpliesEqualTest {
 
     @Input(solutions = 64)
-    public Object testContainsImpliesEqual(Solver solver) {
+    public Object testContainsImpliesEqual(Model model) {
         /*
          * import Control.Monad
          *
@@ -37,14 +37,14 @@ public class ContainsImpliesEqualTest {
          *     guard $ if 0 `elem` cond then x == y else null x
          *     return (cond, x, y)
          */
-        CSetVar cond = cset("cond", env(0, 1, 2), solver);
-        CSetVar x = cset("x", env(0, 1, 2), solver);
-        CSetVar y = cset("y", env(0, 1, 2), solver);
+        SetVar cond = model.setVar("cond", ker(), env(0, 1, 2));
+        SetVar x = model.setVar("x", ker(), env(0, 1, 2));
+        SetVar y = model.setVar("y", ker(), env(0, 1, 2));
         return $(cond, 0, x, y);
     }
 
     @Input(solutions = 12)
-    public Object testXYDisjointCard(Solver solver) {
+    public Object testXYDisjointCard(Model model) {
         /*
          * import Control.Monad
          *
@@ -59,9 +59,12 @@ public class ContainsImpliesEqualTest {
          *     guard $ if 0 `elem` cond then x == y else null x
          *     return (cond, x, y)
          */
-        CSetVar cond = cset("cond", env(0, 1, 2), solver);
-        CSetVar x = cset("x", env(0, 1, 2), ker(), card(0, 2), solver);
-        CSetVar y = cset("y", env(0, 1, 2), ker(), card(1), solver);
+        SetVar cond = model.setVar("cond", ker(), env(0, 1, 2));
+        SetVar x = model.setVar("x", ker(), env(0, 1, 2));
+        IntVar xCard = model.intVar("|x|", dom(0, 2));
+        x.setCard(xCard);
+        SetVar y = model.setVar("y", ker(), env(0, 1, 2));
+        y.setCard(model.intVar(1));
         return $(cond, 0, x, y);
     }
 
@@ -76,7 +79,7 @@ public class ContainsImpliesEqualTest {
 
     @ArcConsistent
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar cond, int z, CSetVar x, CSetVar y) {
-        return Constraints.containsImpliesEqualTest(cond.getSet(), z, x.getSet(), x.getCard(), y.getSet(), y.getCard());
+    public Constraint setup(SetVar cond, int z, SetVar x, SetVar y) {
+        return Constraints.containsImpliesEqualTest(cond, z, x, x.getCard(), y, y.getCard());
     }
 }

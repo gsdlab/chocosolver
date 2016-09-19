@@ -124,19 +124,32 @@ public class PropSelectN extends Propagator<IntVar> {
     @Override
     public ESat isEntailed() {
         boolean allInstantiated = true;
+        int leftMostZero = bools.length;
+        int rightMostOne = -1;
         for (int i = 0; i < bools.length; i++) {
             if (bools[i].isInstantiated()) {
-                if (bools[i].getValue() == 0 && i < n.getLB()) {
-                    return ESat.FALSE;
+                if (bools[i].getValue() == 0) {
+                    if (leftMostZero == bools.length) {
+                        leftMostZero = i;
+                    }
+                    if (i < n.getLB()) {
+                        return ESat.FALSE;
+                    }
                 }
-                if (bools[i].getValue() == 1 && i >= n.getUB()) {
-                    return ESat.FALSE;
+                if (bools[i].getValue() == 1) {
+                    rightMostOne = i;
+                    if (i >= n.getUB()) {
+                        return ESat.FALSE;
+                    }
                 }
             } else {
                 allInstantiated = false;
             }
         }
-        if (n.getLB() > bools.length || n.getUB() < 0) {
+        if (n.previousValue(leftMostZero + 1) < 0) {
+            return ESat.FALSE;
+        }
+        if (n.nextValue(rightMostOne) > leftMostZero) {
             return ESat.FALSE;
         }
         return allInstantiated && n.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;

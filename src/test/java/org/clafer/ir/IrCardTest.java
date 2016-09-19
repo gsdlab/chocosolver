@@ -1,13 +1,13 @@
 package org.clafer.ir;
 
-import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.set.SCF;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
+import org.clafer.ir.IrQuickTest.Solution;
+import static org.clafer.ir.Irs.card;
+import static org.clafer.ir.Irs.equal;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *
@@ -23,6 +23,6 @@ public class IrCardTest {
 
     @Solution
     public Constraint setup(IntVar card, SetVar set) {
-        return SCF.cardinality(set, card);
+        return card.getModel().arithm(card, "=", set.getCard());
     }
 }

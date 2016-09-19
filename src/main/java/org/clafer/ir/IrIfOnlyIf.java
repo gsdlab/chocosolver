@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
-import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
+import org.clafer.domain.BoolDomain;
 
 /**
  *
@@ -27,7 +27,7 @@ public class IrIfOnlyIf extends IrAbstractBool {
 
     @Override
     public IrBoolExpr negate() {
-        return new IrXor(left, right, getDomain().invert());
+        return new IrIfOnlyIf(left, right.negate(), getDomain().invert());
     }
 
     @Override

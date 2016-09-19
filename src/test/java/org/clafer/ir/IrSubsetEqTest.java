@@ -1,12 +1,11 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.SetVar;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.subsetEq;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.set.SCF;
-import org.chocosolver.solver.variables.SetVar;
 
 /**
  *
@@ -22,6 +21,6 @@ public class IrSubsetEqTest {
 
     @Solution
     public Constraint setup(SetVar subset, SetVar superSet) {
-        return SCF.subsetEq(new SetVar[]{subset, superSet});
+        return subset.getModel().subsetEq(new SetVar[]{subset, superSet});
     }
 }

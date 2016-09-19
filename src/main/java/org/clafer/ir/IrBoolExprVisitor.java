@@ -23,17 +23,9 @@ public interface IrBoolExprVisitor<A, B> {
 
     public B visit(IrOr ir, A a);
 
-    public B visit(IrImplies ir, A a);
-
-    public B visit(IrNotImplies ir, A a);
-
     public B visit(IrIfThenElse ir, A a);
 
     public B visit(IrIfOnlyIf ir, A a);
-
-    public B visit(IrXor ir, A a);
-
-    public B visit(IrWithin ir, A a);
 
     public B visit(IrCompare ir, A a);
 
@@ -66,8 +58,6 @@ public interface IrBoolExprVisitor<A, B> {
     public B visit(IrAcyclic ir, A a);
 
     public B visit(IrUnreachable ir, A a);
-
-    public B visit(IrFilterString ir, A a);
 
     public B visit(IrPrefix ir, A a);
 

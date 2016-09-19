@@ -1,6 +1,5 @@
 package org.clafer.ast.analysis;
 
-import org.clafer.ast.ProductType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,12 +13,14 @@ import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConstraint;
+import org.clafer.ast.AstException;
 import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstSetExpr;
 import org.clafer.ast.AstUtil;
 import org.clafer.ast.Card;
+import org.clafer.ast.ProductType;
 import org.clafer.collection.Pair;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
@@ -51,7 +52,7 @@ public class Analysis {
     private Map<AstClafer, Format> formatMap;
     private Map<AstAbstractClafer, Offsets> offsetMap;
     private Map<AstClafer, PartialSolution> partialSolutionMap;
-    private Map<AstRef, Domain[]> partialIntsMap;
+    private Map<AstConcreteClafer, Domain[]> partialIntsMap;
     private Map<AstClafer, AstConcreteClafer[]> breakableChildrenMap;
     private Map<AstRef, int[]> breakableRefsMap;
     private Map<AstClafer, AstRef[]> breakableTargetsMap;
@@ -342,31 +343,6 @@ public class Analysis {
         return new Pair<>((AstConcreteClafer) sub, curId);
     }
 
-    public Pair<AstClafer, Integer> getSubId(AstAbstractClafer clafer, int id) {
-        Offsets offsets = getOffsets(clafer);
-        AstClafer sub = offsets.getClafer(id);
-        return new Pair<>(sub, id - offsets.getOffset(sub));
-    }
-
-    public Pair<AstAbstractClafer, Integer> getSuperId(AstClafer clafer, int id) {
-        assert clafer.hasSuperClafer();
-        int offset = getOffsets(clafer.getSuperClafer()).getOffset(clafer);
-        return new Pair<>(clafer.getSuperClafer(), id + offset);
-    }
-
-    public List<Pair<AstAbstractClafer, Integer>> getSuperIds(AstClafer clafer, int id) {
-        List<Pair<AstAbstractClafer, Integer>> superIds = new ArrayList<>();
-        AstClafer sup = clafer;
-        int curId = id;
-        while (sup.hasSuperClafer()) {
-            Pair<AstAbstractClafer, Integer> superId = getSuperId(sup, curId);
-            superIds.add(superId);
-            sup = superId.getFst();
-            curId = superId.getSnd().intValue();
-        }
-        return superIds;
-    }
-
     public List<Pair<AstClafer, Integer>> getHierarcyOffsets(AstClafer clafer) {
         return getHierarcyIds(clafer, 0);
     }
@@ -377,27 +353,30 @@ public class Analysis {
         AstClafer sup = clafer;
         int curId = id;
         while (sup.hasSuperClafer()) {
-            Pair<AstAbstractClafer, Integer> superId = getSuperId(sup, curId);
-            superIds.add(new Pair<>(superId));
-            sup = superId.getFst();
-            curId = superId.getSnd().intValue();
+            curId += getOffset(sup.getSuperClafer(), sup);
+            sup = sup.getSuperClafer();
+            superIds.add(new Pair<>(sup, curId));
         }
         return superIds;
     }
 
-    public Pair<AstRef, Integer> getInheritedRefId(AstClafer clafer) {
-        AstClafer sup = clafer;
-        int curId = 0;
-        do {
-            if (sup.hasRef()) {
-                return new Pair<>(sup.getRef(), curId);
+    public int getOffset(AstClafer sup, AstClafer sub) {
+        if (sup instanceof AstConcreteClafer) {
+            assert sup.equals(sub);
+            return 0;
+        }
+        return getOffset((AstAbstractClafer) sup, sub);
+    }
+
+    public int getOffset(AstAbstractClafer sup, AstClafer sub) {
+        int offset = 0;
+        for (AstClafer cur = sub; !sup.equals(cur); cur = cur.getSuperClafer()) {
+            if (!cur.hasSuperClafer()) {
+                throw new AstException(sub + " is not a sub clafer of " + sup);
             }
-            if (sup.hasSuperClafer()) {
-                curId += getOffsets(sup.getSuperClafer()).getOffset(sup);
-            }
-            sup = sup.getSuperClafer();
-        } while (sup != null);
-        return null;
+            offset += getOffsets(cur.getSuperClafer()).getOffset(cur);
+        }
+        return offset;
     }
 
     public Offsets getOffsets(AstAbstractClafer clafer) {
@@ -426,15 +405,15 @@ public class Analysis {
         return this;
     }
 
-    public Domain[] getPartialInts(AstRef ref) {
-        return notNull(ref.getSourceType(), "Partial integer", getPartialIntsMap().get(ref));
+    public Domain[] getPartialInts(AstConcreteClafer clafer) {
+        return notNull(clafer, "Partial integer", getPartialIntsMap().get(clafer));
     }
 
-    public Map<AstRef, Domain[]> getPartialIntsMap() {
+    public Map<AstConcreteClafer, Domain[]> getPartialIntsMap() {
         return notNull("Partial integer", partialIntsMap);
     }
 
-    public Analysis setPartialIntsMap(Map<AstRef, Domain[]> partialIntsMap) {
+    public Analysis setPartialIntsMap(Map<AstConcreteClafer, Domain[]> partialIntsMap) {
         this.partialIntsMap = partialIntsMap;
         return this;
     }

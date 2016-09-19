@@ -1,7 +1,6 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
-import org.clafer.common.Util;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -9,7 +8,8 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
+import org.clafer.common.Util;
 
 /**
  *
@@ -35,32 +35,33 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
 
     private void checkNotSame() throws ContradictionException {
         if (s.isInstantiated()) {
-            if (s.getKernelSize() == c.length) {
-                int i = s.getKernelFirst();
-                int j = 0;
-                while (i != SetVar.END) {
-                    if (i != c[j]) {
+            if (s.getLB().size() == c.length) {
+                ISetIterator iter = s.getLB().iterator();
+                int i = 0;
+                while (iter.hasNext()) {
+                    if (c[i] != iter.nextInt()) {
                         return;
                     }
-                    i = s.getKernelNext();
-                    j++;
+                    i++;
                 }
-                assert j == c.length;
-                contradiction(s, "Same");
+                assert i == c.length;
+                fails();
             }
         }
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        for (int i = s.getKernelFirst(); i != SetVar.END; i = s.getKernelNext()) {
+        ISetIterator iter = s.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (!Util.in(i, c)) {
                 setPassive();
                 return;
             }
         }
         for (int i : c) {
-            if (!s.envelopeContains(i)) {
+            if (!s.getUB().contains(i)) {
                 setPassive();
                 return;
             }
@@ -71,30 +72,28 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         sD.freeze();
-        sD.forEach(onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
-        sD.forEach(onS1Ker, SetEventType.ADD_TO_KER);
+        sD.forEach(this::onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
+        sD.forEach(this::onS1Ker, SetEventType.ADD_TO_KER);
         sD.unfreeze();
         checkNotSame();
     }
-    private final IntProcedure onS1Env = new IntProcedure() {
-        @Override
-        public void execute(int s1Env) throws ContradictionException {
-            if (isActive() && Util.in(s1Env, c)) {
-                setPassive();
-            }
+
+    private void onS1Env(int s1Env) throws ContradictionException {
+        if (isActive() && Util.in(s1Env, c)) {
+            setPassive();
         }
-    };
-    private final IntProcedure onS1Ker = new IntProcedure() {
-        @Override
-        public void execute(int s1Ker) throws ContradictionException {
-            if (isActive() && !Util.in(s1Ker, c)) {
-                setPassive();
-            }
+    }
+
+    private void onS1Ker(int s1Ker) throws ContradictionException {
+        if (isActive() && !Util.in(s1Ker, c)) {
+            setPassive();
         }
-    };
+    }
 
     private static boolean isEnvSubsetOf(SetVar s, int[] c) {
-        for (int i = s.getKernelFirst(); i != SetVar.END; i = s.getKernelNext()) {
+        ISetIterator iter = s.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (!Util.in(i, c)) {
                 return false;
             }
@@ -104,7 +103,7 @@ public class PropSetNotEqualC extends Propagator<SetVar> {
 
     private static boolean isSubsetEnv(int[] c, SetVar s) {
         for (int i : c) {
-            if (!s.envelopeContains(i)) {
+            if (!s.getUB().contains(i)) {
                 return false;
             }
         }

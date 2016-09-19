@@ -1,13 +1,9 @@
 package org.clafer.compiler;
 
-import org.clafer.instance.InstanceModel;
-import org.chocosolver.solver.ResolutionPolicy;
+import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.SolverUtil;
-import org.chocosolver.solver.objective.ObjectiveManager;
-import org.chocosolver.solver.search.loop.monitors.IMonitorSolution;
-import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
+import org.clafer.instance.InstanceModel;
 
 /**
  *
@@ -18,7 +14,7 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
     private int count = 0;
     private boolean more = true;
     private int optimalValue;
-    private final Solution firstSolution = new Solution();
+    private Solution firstSolution = null;
 
     ClaferSingleObjectiveOptimizer(Solver solver, ClaferSolutionMap solutionMap,
             boolean maximize, IntVar score) {
@@ -40,8 +36,8 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
             return false;
         }
         more &= solveFirst();
-        if (solver.hasReachedLimit()) {
-            if (firstSolution.hasBeenFound()) {
+        if (solver.isStopCriterionMet()) {
+            if (firstSolution != null) {
                 InstanceModel bestInstance = solutionMap.getInstance(firstSolution);
                 int bestObjectiveValue = firstSolution.getIntVal(scores[0]);
                 throw new ReachedLimitBestKnownException(
@@ -63,17 +59,8 @@ public class ClaferSingleObjectiveOptimizer extends AbstractImprovementOptimizer
      */
     private boolean solveFirst() {
         IntVar scoreVar = scores[0];
-        solver.set(new ObjectiveManager(
-                scoreVar,
-                isMaximize() ? ResolutionPolicy.MAXIMIZE : ResolutionPolicy.MINIMIZE,
-                true));
-        solver.plugMonitor((IMonitorSolution) () -> {
-            if (count == 0) {
-                firstSolution.record(solver);
-            }
-        });
-        SolverUtil.solve(solver);
-        return firstSolution.hasBeenFound() && !solver.hasReachedLimit();
+        firstSolution = solver.findOptimalSolution(scoreVar, isMaximize());
+        return firstSolution != null && !solver.isStopCriterionMet();
     }
 
     @Override

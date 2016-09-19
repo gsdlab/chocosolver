@@ -1,14 +1,16 @@
 package org.clafer.choco.constraint;
 
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import static org.junit.Assert.*;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import org.clafer.common.Util;
+import static org.junit.Assert.assertArrayEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
-import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -18,7 +20,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class SingletonTest {
 
     @Input(solutions = 5)
-    public Object testSingleton(Solver solver) {
+    public Object testSingleton(Model model) {
         /*
          * import Control.Monad
          *
@@ -30,8 +32,8 @@ public class SingletonTest {
          *     guard $ [i] == s
          *     return (i, s)
          */
-        return $(enumerated("i", -3, 2, solver),
-                cset("s", -2, 3, solver));
+        return $(model.intVar("i", -3, 2),
+                model.setVar("s", new int[0], Util.range(-2, 3)));
     }
 
     @Check
@@ -39,9 +41,9 @@ public class SingletonTest {
         assertArrayEquals(new int[]{i}, s);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
-    public Constraint setup(IntVar i, CSetVar s) {
-        return Constraints.singleton(i, s.getSet(), s.getCard());
+    public Constraint setup(IntVar i, SetVar s) {
+        return Constraints.singleton(i, s, s.getCard());
     }
 }

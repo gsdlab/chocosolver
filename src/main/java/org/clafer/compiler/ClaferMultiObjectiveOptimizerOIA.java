@@ -2,11 +2,9 @@ package org.clafer.compiler;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.constraints.LCF;
-import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
 import org.clafer.instance.InstanceModel;
 
@@ -41,39 +39,37 @@ public class ClaferMultiObjectiveOptimizerOIA extends AbstractImprovementOptimiz
         if (solutions == null) {
             solutions = new ArrayList<>();
             List<Constraint> stack = new ArrayList<>();
-            if (solver.findSolution()) {
-                do {
-                    Solution solution = new Solution();
-                    solution.record(solver);
-                    solutions.removeIf(s -> dominates(solution, s));
-                    solutions.add(solution);
-                    List<Constraint> better = new ArrayList<>(scores.length);
-                    for (int i = 0; i < scores.length; i++) {
-                        better.add(ICF.arithm(
-                                scores[i],
-                                maximizes[i] ? ">" : "<",
-                                scores[i].getValue()));
-                    }
-                    if (!better.isEmpty()) {
-                        Constraint betterConstraint = LCF.or(better.toArray(new Constraint[better.size()]));
-                        stack.add(betterConstraint);
-                        solver.post(betterConstraint);
-                    }
-                } while (solver.nextSolution());
+            Solution solution;
+            while ((solution = solver.findSolution()) != null) {
+                final Solution currentSolution = solution;
+                solutions.removeIf(s -> dominates(currentSolution, s));
+                solutions.add(solution);
+                List<Constraint> better = new ArrayList<>(scores.length);
+                for (int i = 0; i < scores.length; i++) {
+                    better.add(solver.getModel().arithm(
+                            scores[i],
+                            maximizes[i] ? ">" : "<",
+                            scores[i].getValue()));
+                }
+                if (!better.isEmpty()) {
+                    Constraint betterConstraint = solver.getModel().or(better.toArray(new Constraint[better.size()]));
+                    stack.add(betterConstraint);
+                    betterConstraint.post();
+                }
             }
-            stack.forEach(solver::unpost);
-            if (solver.hasReachedLimit()) {
+            stack.forEach(solver.getModel()::unpost);
+            if (solver.isStopCriterionMet()) {
                 if (solutions.isEmpty()) {
                     throw new ReachedLimitException();
                 }
                 InstanceModel[] instances = new InstanceModel[solutions.size()];
                 int[][] optimalValues = new int[solutions.size()][];
                 int i = 0;
-                for (Solution solution : solutions) {
-                    instances[i] = solutionMap.getInstance(solution);
+                for (Solution bestKnown : solutions) {
+                    instances[i] = solutionMap.getInstance(bestKnown);
                     optimalValues[i] = new int[scores.length];
                     for (int j = 0; j < scores.length; j++) {
-                        optimalValues[i][j] = solution.getIntVal(scores[j]);
+                        optimalValues[i][j] = bestKnown.getIntVal(scores[j]);
                     }
                     i++;
                 }

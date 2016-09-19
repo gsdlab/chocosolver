@@ -4,20 +4,15 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
 import java.util.Random;
-import static org.junit.Assert.*;
-import org.junit.Test;
 import org.chocosolver.solver.Cause;
-import org.chocosolver.solver.ICause;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Propagator;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
-import org.chocosolver.solver.propagation.IPropagationEngine;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
-import org.chocosolver.solver.variables.Var;
-import org.chocosolver.solver.variables.Variable;
-import org.chocosolver.solver.variables.events.IEventType;
-import org.chocosolver.solver.variables.events.PropagatorEventType;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import org.junit.Test;
 
 /**
  *
@@ -26,11 +21,23 @@ import org.chocosolver.solver.variables.events.PropagatorEventType;
 public class PropUtilTest {
 
     @Test
-    public void testIsDomIntersectDom() {
-        Solver solver = new Solver();
+    public void testGetEnv() {
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            IntVar i2 = randIntVar("i2" + i, solver);
+            SetVar s = randSetVar("s", model);
+            int[] env = PropUtil.iterateEnv(s);
+            for (int j = 0; j < env.length; j++) {
+                assertEquals(j + " : " + Arrays.toString(env), env[j], PropUtil.getEnv(s, j));
+            }
+        }
+    }
+
+    @Test
+    public void testIsDomIntersectDom() {
+        Model model = new Model();
+        for (int i = 0; i < 100; i++) {
+            IntVar i1 = randIntVar("i1" + i, model);
+            IntVar i2 = randIntVar("i2" + i, model);
 
             assertEquals(
                     isIntersectBruteForce(dom(i1), dom(i2)),
@@ -40,10 +47,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsDomIntersectEnv() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isIntersectBruteForce(dom(i1), env(i2)),
@@ -53,10 +60,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsDomIntersectKer() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isIntersectBruteForce(dom(i1), ker(i2)),
@@ -66,10 +73,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsEnvIntersectEnv() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isIntersectBruteForce(env(i1), env(i2)),
@@ -79,10 +86,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsEnvIntersectKer() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isIntersectBruteForce(env(i1), ker(i2)),
@@ -92,10 +99,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsKerIntersectKer() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isIntersectBruteForce(ker(i1), ker(i2)),
@@ -105,10 +112,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsDomSubsetDom() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            IntVar i2 = randIntVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            IntVar i2 = randIntVar("i2" + i, model);
 
             assertEquals(
                     isSubsetBruteForce(dom(i1), dom(i2)),
@@ -118,10 +125,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsDomSubsetEnv() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(i1 + "," + i2,
                     isSubsetBruteForce(dom(i1), env(i2)),
@@ -131,10 +138,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsDomSubsetKer() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isSubsetBruteForce(dom(i1), ker(i2)),
@@ -144,10 +151,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsEnvSubsetDom() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            IntVar i2 = randIntVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            IntVar i2 = randIntVar("i2" + i, model);
 
             assertEquals(
                     isSubsetBruteForce(env(i1), dom(i2)),
@@ -157,10 +164,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsEnvSubsetEnv() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(i1 + "," + i2,
                     isSubsetBruteForce(env(i1), env(i2)),
@@ -170,10 +177,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsEnvSubsetKer() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isSubsetBruteForce(env(i1), ker(i2)),
@@ -183,10 +190,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsKerSubsetDom() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            IntVar i2 = randIntVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            IntVar i2 = randIntVar("i2" + i, model);
 
             assertEquals(
                     isSubsetBruteForce(ker(i1), dom(i2)),
@@ -196,10 +203,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsKerSubsetEnv() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(i1 + "," + i2,
                     isSubsetBruteForce(ker(i1), env(i2)),
@@ -209,10 +216,10 @@ public class PropUtilTest {
 
     @Test
     public void testIsKerSubsetKer() {
-        Solver solver = new Solver();
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
 
             assertEquals(
                     isSubsetBruteForce(ker(i1), ker(i2)),
@@ -222,10 +229,9 @@ public class PropUtilTest {
 
     @Test
     public void testDomSubsetSet() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
             TIntSet i2 = randSet();
             if (isIntersectBruteForce(dom(i1), set(i2))) {
                 int s = i1.getDomainSize();
@@ -245,11 +251,10 @@ public class PropUtilTest {
 
     @Test
     public void testDomSubsetDom() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            IntVar i2 = randIntVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            IntVar i2 = randIntVar("i2" + i, model);
             if (isIntersectBruteForce(dom(i1), dom(i2))) {
                 int s = i1.getDomainSize();
                 boolean changed = PropUtil.domSubsetDom(i1, i2, Cause.Null);
@@ -268,11 +273,10 @@ public class PropUtilTest {
 
     @Test
     public void testDomSubsetEnv() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
             if (isIntersectBruteForce(dom(i1), env(i2))) {
                 int s = i1.getDomainSize();
                 boolean changed = PropUtil.domSubsetEnv(i1, i2, Cause.Null);
@@ -291,11 +295,10 @@ public class PropUtilTest {
 
     @Test
     public void testDomSubsetKer() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            IntVar i1 = randIntVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            IntVar i1 = randIntVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
             if (isIntersectBruteForce(dom(i1), ker(i2))) {
                 int s = i1.getDomainSize();
                 boolean changed = PropUtil.domSubsetKer(i1, i2, Cause.Null);
@@ -314,15 +317,14 @@ public class PropUtilTest {
 
     @Test
     public void testEnvSubsetSet() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
             TIntSet i2 = randSet();
             if (isSubsetBruteForce(ker(i1), set(i2))) {
-                int s = i1.getEnvelopeSize();
+                int s = i1.getUB().size();
                 boolean changed = PropUtil.envSubsetSet(i1, i2, Cause.Null);
-                assertEquals(s == i1.getEnvelopeSize(), !changed);
+                assertEquals(s == i1.getUB().size(), !changed);
                 assertTrue(isSubsetBruteForce(env(i1), set(i2)));
             } else {
                 try {
@@ -337,15 +339,14 @@ public class PropUtilTest {
 
     @Test
     public void testEnvSubsetDom() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            IntVar i2 = randIntVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            IntVar i2 = randIntVar("i2" + i, model);
             if (isSubsetBruteForce(ker(i1), dom(i2))) {
-                int s = i1.getEnvelopeSize();
+                int s = i1.getUB().size();
                 boolean changed = PropUtil.envSubsetDom(i1, i2, Cause.Null);
-                assertEquals(s == i1.getEnvelopeSize(), !changed);
+                assertEquals(s == i1.getUB().size(), !changed);
                 assertTrue(isSubsetBruteForce(env(i1), dom(i2)));
             } else {
                 try {
@@ -360,15 +361,14 @@ public class PropUtilTest {
 
     @Test
     public void testEnvSubsetEnv() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
             if (isSubsetBruteForce(ker(i1), env(i2))) {
-                int s = i1.getEnvelopeSize();
+                int s = i1.getUB().size();
                 boolean changed = PropUtil.envSubsetEnv(i1, i2, Cause.Null);
-                assertEquals(s == i1.getEnvelopeSize(), !changed);
+                assertEquals(s == i1.getUB().size(), !changed);
                 assertTrue(isSubsetBruteForce(env(i1), env(i2)));
             } else {
                 try {
@@ -383,15 +383,14 @@ public class PropUtilTest {
 
     @Test
     public void testEnvSubsetKer() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
             if (isSubsetBruteForce(ker(i1), ker(i2))) {
-                int s = i1.getEnvelopeSize();
+                int s = i1.getUB().size();
                 boolean changed = PropUtil.envSubsetKer(i1, i2, Cause.Null);
-                assertEquals(s == i1.getEnvelopeSize(), !changed);
+                assertEquals(s == i1.getUB().size(), !changed);
                 assertTrue(isSubsetBruteForce(env(i1), ker(i2)));
             } else {
                 try {
@@ -406,15 +405,14 @@ public class PropUtilTest {
 
     @Test
     public void testKerSubsetKer() throws ContradictionException {
-        Solver solver = new Solver();
-        solver.set(new DummyEngine());
+        Model model = new Model();
         for (int i = 0; i < 100; i++) {
-            SetVar i1 = randSetVar("i1" + i, solver);
-            SetVar i2 = randSetVar("i2" + i, solver);
+            SetVar i1 = randSetVar("i1" + i, model);
+            SetVar i2 = randSetVar("i2" + i, model);
             if (isSubsetBruteForce(ker(i1), env(i2))) {
-                int s = i2.getKernelSize();
+                int s = i2.getLB().size();
                 boolean changed = PropUtil.kerSubsetKer(i1, i2, Cause.Null);
-                assertEquals(s == i2.getKernelSize(), !changed);
+                assertEquals(s == i2.getLB().size(), !changed);
                 assertTrue(isSubsetBruteForce(ker(i1), ker(i2)));
             } else {
                 try {
@@ -498,7 +496,7 @@ public class PropUtilTest {
 
         @Override
         public boolean contains(int i) {
-            return var.envelopeContains(i);
+            return var.getUB().contains(i);
         }
 
         @Override
@@ -517,7 +515,7 @@ public class PropUtilTest {
 
         @Override
         public boolean contains(int i) {
-            return var.kernelContains(i);
+            return var.getLB().contains(i);
         }
 
         @Override
@@ -528,7 +526,7 @@ public class PropUtilTest {
     private final Random rand = new Random();
     private static final int problemSize = 10;
 
-    private boolean isIntersectBruteForce(Domain i1, Domain i2) {
+    private static boolean isIntersectBruteForce(Domain i1, Domain i2) {
         for (int i : i1.values()) {
             if (i2.contains(i)) {
                 return true;
@@ -537,7 +535,7 @@ public class PropUtilTest {
         return false;
     }
 
-    private boolean isSubsetBruteForce(Domain i1, Domain i2) {
+    private static boolean isSubsetBruteForce(Domain i1, Domain i2) {
         for (int i : i1.values()) {
             if (!i2.contains(i)) {
                 return false;
@@ -559,7 +557,7 @@ public class PropUtilTest {
         return set;
     }
 
-    private IntVar randIntVar(String name, Solver solver) {
+    private IntVar randIntVar(String name, Model model) {
         int size = rand.nextInt(problemSize) + 1;
         TIntHashSet domain = new TIntHashSet(size);
         for (int i = 0; i < size; i++) {
@@ -567,10 +565,10 @@ public class PropUtilTest {
         }
         int[] domainArray = domain.toArray();
         Arrays.sort(domainArray);
-        return Var.enumerated(name, domainArray, solver);
+        return model.intVar(name, domainArray);
     }
 
-    private SetVar randSetVar(String name, Solver solver) {
+    private SetVar randSetVar(String name, Model model) {
         int size = rand.nextInt(problemSize) + 1;
         TIntHashSet env = new TIntHashSet(size);
         for (int i = 0; i < size; i++) {
@@ -585,52 +583,6 @@ public class PropUtilTest {
         Arrays.sort(envArray);
         int[] kerArray = ker.toArray();
         Arrays.sort(kerArray);
-        return Var.set(name, envArray, kerArray, solver);
-    }
-
-    private static class DummyEngine implements IPropagationEngine {
-
-        @Override
-        public boolean isInitialized() {
-            return false;
-        }
-
-        @Override
-        public void propagate() throws ContradictionException {
-        }
-
-        @Override
-        public void delayedPropagation(Propagator propagator, PropagatorEventType type) throws ContradictionException {
-        }
-
-        @Override
-        public void flush() {
-        }
-
-        @Override
-        public void fails(ICause cause, Variable variable, String message) throws ContradictionException {
-            throw new ContradictionException().set(cause, variable, message);
-        }
-
-        @Override
-        public ContradictionException getContradictionException() {
-            return null;
-        }
-
-        @Override
-        public void clear() {
-        }
-
-        @Override
-        public void onVariableUpdate(Variable variable, IEventType type, ICause cause) {
-        }
-
-        @Override
-        public void onPropagatorExecution(Propagator propagator) {
-        }
-
-        @Override
-        public void desactivatePropagator(Propagator propagator) {
-        }
+        return model.setVar(name, kerArray, envArray);
     }
 }

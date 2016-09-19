@@ -8,6 +8,7 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -33,19 +34,23 @@ public class PropTransitive extends Propagator<SetVar> {
     public void propagate(int evtmask) throws ContradictionException {
         for (int i = 0; i < vars.length; i++) {
             SetVar var = vars[i];
-            for (int j = var.getEnvelopeFirst(); j != SetVar.END; j = var.getEnvelopeNext()) {
+            ISetIterator ubIter = var.getUB().iterator();
+            while(ubIter.hasNext()) {
+                int j = ubIter.nextInt();
                 if (j < 0 || j >= vars.length) {
-                    var.removeFromEnvelope(j, this);
+                    var.remove(j, this);
                 }
             }
-            for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
+            ISetIterator lbIter = var.getLB().iterator();
+            while(lbIter.hasNext()) {
+                int j = lbIter.nextInt();
                 if (i != j) {
                     PropUtil.kerSubsetKer(vars[j], var, this);
                 }
             }
             for (int j = 0; j < i; j++) {
                 assert i != j;
-                if (vars[j].kernelContains(i)) {
+                if (vars[j].getLB().contains(i)) {
                     PropUtil.kerSubsetKer(var, vars[j], this);
                 }
             }
@@ -60,12 +65,12 @@ public class PropTransitive extends Propagator<SetVar> {
      *   i ---> k
      */
     private void prune(int i, int j, boolean first) throws ContradictionException {
-        assert vars[i].kernelContains(j);
+        assert vars[i].getLB().contains(j);
         if (i != j) {
             if (PropUtil.kerSubsetKer(vars[j], vars[i], this) || first) {
                 for (int k = 0; k < vars.length; k++) {
-                    if (i != k && vars[k].kernelContains(i)) {
-                        if (vars[k].addToKernel(j, this)) {
+                    if (i != k && vars[k].getLB().contains(i)) {
+                        if (vars[k].force(j, this)) {
                             prune(k, j, false);
                         }
                     }
@@ -87,7 +92,9 @@ public class PropTransitive extends Propagator<SetVar> {
         for (int i = 0; i < vars.length; i++) {
             SetVar var = vars[i];
             allInstantiated &= var.isInstantiated();
-            for (int j = var.getKernelFirst(); j != SetVar.END; j = var.getKernelNext()) {
+            ISetIterator iter = var.getLB().iterator();
+            while(iter.hasNext()) {
+                int j = iter.nextInt();
                 if (j < 0 || j >= vars.length) {
                     return ESat.FALSE;
                 }

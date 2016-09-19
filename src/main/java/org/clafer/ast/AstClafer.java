@@ -15,7 +15,7 @@ public abstract class AstClafer implements AstVar {
 
     private final String name;
     // The topmost Clafer in the type hierarchy.
-    protected final AstAbstractClafer claferClafer;
+    private final AstAbstractClafer claferClafer;
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard;
@@ -83,6 +83,11 @@ public abstract class AstClafer implements AstVar {
             }
             getSuperClafer().removeSub(this);
         }
+        if (hasParent()
+                && !AstUtil.isTop(superClafer)
+                && !AstUtil.isAssignable(getParent(), superClafer.getParent())) {
+            throw new IllegalArgumentException(this + " cannot refine " + superClafer);
+        }
         superClafer.addSub(this);
         this.superClafer = superClafer;
         return this;
@@ -117,6 +122,15 @@ public abstract class AstClafer implements AstVar {
         if (hasRef()) {
             throw new IllegalArgumentException(this + " already has a ref");
         }
+        AstRef inheritedRef = AstUtil.getInheritedRef(this);
+        if (inheritedRef != null) {
+            if (!AstUtil.isAssignable(targetType, inheritedRef.getTargetType())) {
+                throw new IllegalArgumentException(this + " cannot refine reference from " + inheritedRef.getTargetType() + " to " + targetType);
+            }
+            if (inheritedRef.isUnique()) {
+                throw new IllegalArgumentException(this + " cannot refine reference uniqueness");
+            }
+        }
         this.ref = new AstRef(this, targetType, false);
         return this;
     }
@@ -131,6 +145,10 @@ public abstract class AstClafer implements AstVar {
     public AstClafer refToUnique(AstClafer targetType) {
         if (hasRef()) {
             throw new IllegalArgumentException(this + " already has a ref");
+        }
+        AstRef inheritedRef = AstUtil.getInheritedRef(this);
+        if (inheritedRef != null && !AstUtil.isAssignable(targetType, inheritedRef.getTargetType())) {
+            throw new IllegalArgumentException(this + " cannot refine reference from " + inheritedRef.getTargetType() + " to " + targetType);
         }
         this.ref = new AstRef(this, targetType, true);
         return this;

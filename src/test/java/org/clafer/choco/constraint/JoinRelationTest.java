@@ -2,15 +2,20 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
+import static org.chocosolver.solver.variables.Var.mapCard;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
 import org.clafer.test.Positive;
-import org.chocosolver.solver.variables.CSetVar;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -20,7 +25,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class JoinRelationTest {
 
     @Input(solutions = 576)
-    public Object testJoinRelation(Solver solver) {
+    public Object testJoinRelation(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -39,19 +44,17 @@ public class JoinRelationTest {
          *     guard $ to == sort (nub $ concat [[child0, child1, child2] !! i | i <- take])
          *     return (take, child0, child1, child2)
          */
-        return $(
-                cset("take", 0, 2, solver),
-                new CSetVar[]{
-                    cset("c1", -1, 1, solver),
-                    cset("c2", 0, 1, solver),
-                    cset("c3", -1, 0, solver)
-                },
-                cset("to", 0, 1, solver),
+        return $(model.setVar("take", ker(), env(0, 1, 2)),
+                new SetVar[]{
+                    model.setVar("c1", ker(), env(-1, 0, 1)),
+                    model.setVar("c2", ker(), env(0, 1)),
+                    model.setVar("c3", ker(), env(-1, 0)),},
+                model.setVar("to", ker(), env(0, 1)),
                 false);
     }
 
     @Input(solutions = 504)
-    public Object testJoinInjectiveRelation(Solver solver) {
+    public Object testJoinInjectiveRelation(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -68,12 +71,12 @@ public class JoinRelationTest {
          *     guard $ to == sort takeSet
          *     return (take, child0, child1, child2)
          */
-        return $(cset("take", 0, 2, solver),
-                new CSetVar[]{
-                    cset("c1", -1, 1, solver),
-                    cset("c2", 0, 1, solver),
-                    cset("c3", -1, 0, solver)
-                }, cset("to", 0, 1, solver),
+        return $(model.setVar("take", ker(), env(0, 1, 2)),
+                new SetVar[]{
+                    model.setVar("c1", ker(), env(-1, 0, 1)),
+                    model.setVar("c2", ker(), env(0, 1)),
+                    model.setVar("c3", ker(), env(-1, 0)),},
+                model.setVar("to", ker(), env(0, 1)),
                 true);
     }
 
@@ -94,11 +97,11 @@ public class JoinRelationTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(@Positive CSetVar take, CSetVar[] children, CSetVar to, boolean injective) {
+    public Constraint setup(@Positive SetVar take, SetVar[] children, SetVar to, boolean injective) {
         return injective
                 ? Constraints.joinInjectiveRelation(
-                        take.getSet(), take.getCard(), mapSet(children), mapCard(children),
-                        to.getSet(), to.getCard())
-                : Constraints.joinRelation(take.getSet(), mapSet(children), to.getSet());
+                        take, take.getCard(), children, mapCard(children),
+                        to, to.getCard())
+                : Constraints.joinRelation(take, children, to);
     }
 }

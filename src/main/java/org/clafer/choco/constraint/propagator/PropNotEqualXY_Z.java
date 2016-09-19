@@ -30,6 +30,9 @@ public class PropNotEqualXY_Z extends Propagator<IntVar> {
     }
 
     private boolean supportForX(int x) {
+        if (z.getDomainSize() > 1) {
+            return true;
+        }
         int yub = y.getUB();
         // todo iterate over whichever var has smaller domain
         for (int i = y.getLB(); i <= yub; i = y.nextValue(i)) {
@@ -41,6 +44,9 @@ public class PropNotEqualXY_Z extends Propagator<IntVar> {
     }
 
     private boolean supportForY(int y) {
+        if (z.getDomainSize() > 1) {
+            return true;
+        }
         int xub = x.getUB();
         for (int i = x.getLB(); i <= xub; i = x.nextValue(i)) {
             if (!z.contains(y + i)) {
@@ -51,6 +57,9 @@ public class PropNotEqualXY_Z extends Propagator<IntVar> {
     }
 
     private boolean supportForZ(int z) {
+        if (x.getDomainSize() > 1 || y.getDomainSize() > 1) {
+            return true;
+        }
         int xub = x.getUB();
         for (int i = x.getLB(); i <= xub; i = x.nextValue(i)) {
             if (!y.contains(z - i)) {
@@ -95,5 +104,10 @@ public class PropNotEqualXY_Z extends Propagator<IntVar> {
             }
         }
         return ESat.FALSE;
+    }
+
+    @Override
+    public String toString() {
+        return x + " + " + y + " != " + z;
     }
 }

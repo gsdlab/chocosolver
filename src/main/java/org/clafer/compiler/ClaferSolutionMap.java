@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.chocosolver.solver.search.solution.Solution;
+import org.chocosolver.solver.Solution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -104,11 +104,11 @@ public class ClaferSolutionMap {
         if (clafer.hasRef()) {
             AstClafer targetType = clafer.getRef().getTargetType();
             if (targetType instanceof AstStringClafer) {
-                IrStringVar refIrVar = astSolution.getRefStrings(clafer.getRef())[id];
+                IrStringVar refIrVar = astSolution.getRefStrings(clafer)[id];
                 String value = irSolution.getValue(refIrVar);
                 ref = new Pair<>(targetType, value);
             } else {
-                IrIntVar refIrVar = astSolution.getRefVars(clafer.getRef())[id];
+                IrIntVar refIrVar = astSolution.getRefVars(clafer)[id];
                 Integer value = irSolution.getValue(refIrVar);
                 if (targetType instanceof AstAbstractClafer) {
                     Pair<AstConcreteClafer, Integer> concreteRef = astSolution.getAnalysis().getConcreteId(

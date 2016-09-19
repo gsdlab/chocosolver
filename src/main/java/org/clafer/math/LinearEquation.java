@@ -1,5 +1,6 @@
 package org.clafer.math;
 
+import java.util.Set;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.domain.BoolDomain;
@@ -91,6 +92,10 @@ public class LinearEquation {
         return left.getVariables();
     }
 
+    public Set<Variable> getVariableSet() {
+        return left.getVariableSet();
+    }
+
     public LinearEquation replace(Variable variable, LinearFunction value) {
         LinearFunction newLeft = left.replace(variable, value);
         return new LinearEquation(
@@ -129,6 +134,16 @@ public class LinearEquation {
             default:
                 throw new IllegalStateException();
         }
+    }
+
+    public boolean subsumes(LinearEquation other) {
+        if (left.getVariableSet().equals(other.left.getVariableSet())
+                && Op.LessThanEqual.equals(other.getOp())) {
+            Rational scale = left.getCoefficients()[0].div(other.left.getCoefficients()[0]);
+            return left.equals(other.left.mul(scale))
+                    && right.isLessThan(other.right.mul(scale));
+        }
+        return false;
     }
 
     @Override

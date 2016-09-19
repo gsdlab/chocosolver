@@ -4,7 +4,28 @@ import java.util.Arrays;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.$this;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.card;
+import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.diff;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.ifThenElse;
+import static org.clafer.ast.Asts.in;
+import static org.clafer.ast.Asts.inter;
+import static org.clafer.ast.Asts.join;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.lessThan;
+import static org.clafer.ast.Asts.max;
+import static org.clafer.ast.Asts.min;
+import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.notIn;
+import static org.clafer.ast.Asts.product;
+import static org.clafer.ast.Asts.some;
+import static org.clafer.ast.Asts.sum;
+import static org.clafer.ast.Asts.union;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceModel;
@@ -527,8 +548,8 @@ public class SetArithmeticTest {
      *     C -> A *
      * D : A
      * E : B
+     *     [this.c = F]
      *     F : A
-     *         [this.parent.C.ref = F]
      * </pre>
      */
     @Test(timeout = 60000)
@@ -542,7 +563,6 @@ public class SetArithmeticTest {
         AstConcreteClafer e = model.addChild("E").extending(b).withCard(Mandatory);
         AstConcreteClafer f = e.addChild("F").extending(a).withCard(Mandatory);
         e.addConstraint(in(joinRef(join($this(), c)), global(f)));
-        f.addConstraint(equal(joinRef(join(joinParent($this()), c)), $this()));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(1, solver.allInstances().length);

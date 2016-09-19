@@ -10,7 +10,7 @@ import org.clafer.compiler.ClaferAsserter;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

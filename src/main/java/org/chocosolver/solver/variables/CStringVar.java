@@ -17,7 +17,7 @@ public class CStringVar {
         this.length = length;
 
         if (!isLengthEntailed(chars, length)) {
-            length.getSolver().post(Constraints.length(chars, length));
+            Constraints.length(chars, length).post();
         }
     }
 

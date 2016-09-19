@@ -30,7 +30,7 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
         this.y = y;
         this.yD = y.monitorDelta(this);
         this.z = z;
-        this.condDecided = cond.getSolver().getEnvironment().makeBool(false);
+        this.condDecided = cond.getEnvironment().makeBool(false);
     }
 
     private boolean isCondVar(int vIdx) {
@@ -48,14 +48,14 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         PropUtil.envSubsetEnv(x, y, this);
-        if (cond.kernelContains(z) || x.getKernelSize() > 0) {
-            cond.addToKernel(z, this);
+        if (cond.getLB().contains(z) || x.getLB().size() > 0) {
+            cond.force(z, this);
             PropUtil.kerSubsetKer(x, y, this);
             PropUtil.envSubsetEnv(y, x, this);
             PropUtil.kerSubsetKer(y, x, this);
             condDecided.set(true);
-        } else if (!cond.envelopeContains(z) || !PropUtil.isKerSubsetEnv(y, x)) {
-            cond.removeFromEnvelope(z, this);
+        } else if (!cond.getUB().contains(z) || !PropUtil.isKerSubsetEnv(y, x)) {
+            cond.remove(z, this);
             x.instantiateTo(new int[]{}, this);
             condDecided.set(true);
             setPassive();
@@ -64,14 +64,14 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
-        if (isCondVar(idxVarInProp) || (x.getKernelSize() > 0 && cond.addToKernel(z, this))) {
+        if (isCondVar(idxVarInProp) || (x.getLB().size() > 0 && cond.force(z, this))) {
             if (!condDecided.get()) {
-                if (cond.kernelContains(z)) {
+                if (cond.getLB().contains(z)) {
                     PropUtil.kerSubsetKer(x, y, this);
                     PropUtil.envSubsetEnv(y, x, this);
                     PropUtil.kerSubsetKer(y, x, this);
                     condDecided.set(true);
-                } else if (!cond.envelopeContains(z)) {
+                } else if (!cond.getUB().contains(z)) {
                     x.instantiateTo(new int[]{}, this);
                     condDecided.set(true);
                     setPassive();
@@ -79,13 +79,13 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
             }
         } else if (isXVar(idxVarInProp)) {
             xD.freeze();
-            if (cond.kernelContains(z)) {
-                xD.forEach(xKer -> y.addToKernel(xKer, this), SetEventType.ADD_TO_KER);
-                xD.forEach(xEnv -> y.removeFromEnvelope(xEnv, this), SetEventType.REMOVE_FROM_ENVELOPE);
+            if (cond.getLB().contains(z)) {
+                xD.forEach(xKer -> y.force(xKer, this), SetEventType.ADD_TO_KER);
+                xD.forEach(xEnv -> y.remove(xEnv, this), SetEventType.REMOVE_FROM_ENVELOPE);
             } else {
                 xD.forEach(xEnv -> {
-                    if (y.kernelContains(xEnv)) {
-                        cond.removeFromEnvelope(z, this);
+                    if (y.getLB().contains(xEnv)) {
+                        cond.remove(z, this);
                         x.instantiateTo(new int[]{}, this);
                         condDecided.set(true);
                     }
@@ -97,12 +97,12 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
             xD.unfreeze();
         } else {
             yD.freeze();
-            if (cond.kernelContains(z)) {
-                yD.forEach(yKer -> x.addToKernel(yKer, this), SetEventType.ADD_TO_KER);
+            if (cond.getLB().contains(z)) {
+                yD.forEach(yKer -> x.force(yKer, this), SetEventType.ADD_TO_KER);
             } else {
                 yD.forEach(yKer -> {
-                    if (!x.envelopeContains(yKer)) {
-                        cond.removeFromEnvelope(z, this);
+                    if (!x.getUB().contains(yKer)) {
+                        cond.remove(z, this);
                         x.instantiateTo(new int[]{}, this);
                         condDecided.set(true);
                     }
@@ -111,26 +111,26 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
                     setPassive();
                 }
             }
-            yD.forEach(yEnv -> x.removeFromEnvelope(yEnv, this), SetEventType.REMOVE_FROM_ENVELOPE);
+            yD.forEach(yEnv -> x.remove(yEnv, this), SetEventType.REMOVE_FROM_ENVELOPE);
             yD.unfreeze();
         }
     }
 
     @Override
     public ESat isEntailed() {
-        if (cond.kernelContains(z) || x.getKernelSize() > 0) {
-            if (!cond.envelopeContains(z) || !PropUtil.isKerSubsetEnv(x, y) || !PropUtil.isKerSubsetEnv(y, x)) {
+        if (cond.getLB().contains(z) || x.getLB().size() > 0) {
+            if (!cond.getUB().contains(z) || !PropUtil.isKerSubsetEnv(x, y) || !PropUtil.isKerSubsetEnv(y, x)) {
                 return ESat.FALSE;
             }
-            if (cond.kernelContains(z) && x.isInstantiated() && y.isInstantiated()) {
-                assert (Arrays.equals(x.getValues(), y.getValues()));
+            if (cond.getLB().contains(z) && x.isInstantiated() && y.isInstantiated()) {
+                assert (Arrays.equals(x.getLB().toArray(), y.getLB().toArray()));
             }
-            return cond.kernelContains(z) && x.isInstantiated() && y.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-        } else if (!cond.envelopeContains(z)) {
-            if (x.getKernelSize() > 0) {
+            return cond.getLB().contains(z) && x.isInstantiated() && y.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+        } else if (!cond.getUB().contains(z)) {
+            if (x.getLB().size() > 0) {
                 return ESat.FALSE;
             }
-            return x.getEnvelopeSize() == 0 ? ESat.TRUE : ESat.UNDEFINED;
+            return x.getUB().isEmpty() ? ESat.TRUE : ESat.UNDEFINED;
         }
         return ESat.UNDEFINED;
     }

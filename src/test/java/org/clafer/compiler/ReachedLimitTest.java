@@ -2,10 +2,20 @@ package org.clafer.compiler;
 
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.add;
+import static org.clafer.ast.Asts.card;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.minus;
+import static org.clafer.ast.Asts.mul;
+import static org.clafer.ast.Asts.newModel;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -45,15 +55,12 @@ public class ReachedLimitTest {
         AstModel model = newModel();
 
         AstConcreteClafer a = model.addChild("A").refTo(IntType);
-        model.addChild("B").refTo(IntType);
-        model.addChild("C").refTo(IntType);
-        model.addChild("D").refTo(IntType);
-        model.addChild("E").refTo(IntType);
-        model.addChild("F").refTo(IntType);
-        model.addChild("G").refTo(IntType);
-        model.addChild("H").refTo(IntType);
-        model.addChild("I").refTo(IntType);
-        model.addChild("J").refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").refTo(IntType);
+        AstConcreteClafer c = model.addChild("C").refTo(IntType);
+        model.addConstraint(equal(
+                add(mul(joinRef(a), joinRef(a), joinRef(a)),
+                        mul(joinRef(b), joinRef(b), joinRef(b))),
+                mul(joinRef(c), joinRef(c), joinRef(c))));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(10), Objective.maximize(joinRef(a)));
         long start = System.currentTimeMillis();
@@ -127,6 +134,8 @@ public class ReachedLimitTest {
         AstConcreteClafer c = model.addChild("C").refToUnique(IntType);
         AstConcreteClafer d = model.addChild("D").refTo(IntType);
         AstConcreteClafer e = model.addChild("E").refToUnique(IntType);
+        AstConcreteClafer f = model.addChild("F").refToUnique(IntType);
+        AstConcreteClafer g = model.addChild("G").refToUnique(IntType);
         model.addConstraint(equal(add(joinRef(a), joinRef(b), minus(joinRef(c)), joinRef(d), minus(joinRef(e))), card(global(a))));
 
         ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(10),

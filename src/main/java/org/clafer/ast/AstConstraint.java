@@ -1,5 +1,6 @@
 package org.clafer.ast;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.clafer.common.Check;
 
 /**
@@ -9,8 +10,8 @@ import org.clafer.common.Check;
  */
 public class AstConstraint {
 
-    private static int idFactory = 0;
-    private final int id = idFactory++;
+    private static final AtomicInteger idFactory = new AtomicInteger();
+    private final int id = idFactory.getAndIncrement();
     private final AstClafer context;
     private AstBoolExpr expr;
     private final boolean soft;

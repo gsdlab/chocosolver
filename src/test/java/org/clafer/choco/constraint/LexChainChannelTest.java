@@ -2,17 +2,18 @@ package org.clafer.choco.constraint;
 
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.Arrays;
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
 import org.clafer.test.NonEmpty;
 import org.clafer.test.SameLength;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.IntVar;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -22,7 +23,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class LexChainChannelTest {
 
     @Input(solutions = 729)
-    public Object testLexChainChannel(Solver solver) {
+    public Object testLexChainChannel(Model model) {
         /*
          * import Control.Monad
          *
@@ -44,9 +45,9 @@ public class LexChainChannelTest {
          */
         IntVar[][] strings = new IntVar[3][];
         for (int i = 0; i < strings.length; i++) {
-            strings[i] = enumeratedArray("string" + i, 2, 0, 2, solver);
+            strings[i] = model.intVarArray("string" + i, 2, 0, 2);
         }
-        IntVar[] ints = enumeratedArray("int", 3, 0, 2, solver);
+        IntVar[] ints = model.intVarArray("int", 3, 0, 2);
         return $(strings, ints);
     }
 

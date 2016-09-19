@@ -7,13 +7,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.PrimitiveIterator;
 import java.util.Random;
+import java.util.Set;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.chocosolver.util.iterators.IntIterator;
+import org.clafer.collection.Pair;
 
 /**
  * Various static utility functions.
@@ -55,6 +64,10 @@ public class Util {
             permutation *= n - i;
         }
         return permutation;
+    }
+
+    public static <X> Stream<Pair<X, X>> pairwise(Stream<X> a, Stream<X> b) {
+        return a.flatMap(i -> b.map(j -> new Pair<>(i, j)));
     }
 
     /**
@@ -229,6 +242,68 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static <T> Optional<T> findUnique(T[] array, Predicate<T> predicate) {
+        Optional<T> i = Optional.empty();
+        for (T t : array) {
+            if (predicate.test(t)) {
+                if (i.isPresent()) {
+                    return Optional.empty();
+                }
+                i = Optional.of(t);
+            }
+        }
+        return i;
+    }
+
+    public static OptionalInt findUnique(PrimitiveIterator.OfInt iter, IntPredicate predicate) {
+        OptionalInt i = OptionalInt.empty();
+        while (iter.hasNext()) {
+            int val = iter.nextInt();
+            if (predicate.test(val)) {
+                if (i.isPresent()) {
+                    return OptionalInt.empty();
+                }
+                i = OptionalInt.of(val);
+            }
+        }
+        return i;
+    }
+
+    public static <T> Stream<T> map(IntStream stream, T[] map) {
+        return stream.mapToObj(x -> map[x]);
+    }
+
+    public static <T> Stream<T> mapWithin(IntStream stream, T[] map) {
+        return stream.filter(x -> x >= 0 && x < map.length)
+                .mapToObj(x -> map[x]);
+    }
+
+    /**
+     * @param item count the number of elements in the array no greater than
+     * this item
+     * @param array the array assumed to be sorted
+     * @return the number of elements in the array no greater than the item
+     */
+    public static int ordinal(int item, int[] array) {
+        int from = 0;
+        int to = array.length;
+
+        while (from < to) {
+            int mid = (from + to) >>> 1;
+            int midVal = array[mid];
+
+            if (midVal < item) {
+                from = mid + 1;
+            } else if (midVal > item) {
+                to = mid;
+            } else {
+                assert item >= array[mid];
+                return mid + 1;
+            }
+        }
+        return from;
     }
 
     /**
@@ -858,5 +933,12 @@ public class Util {
                 : (T[]) Array.newInstance(dest.getClass().getComponentType(), array.length);
         System.arraycopy(array, 0, to, 0, to.length);
         return to;
+    }
+
+    public static <T> Set<T> union(Set<T> a, Set<T> b) {
+        Set<T> union = new HashSet<>();
+        union.addAll(a);
+        union.addAll(b);
+        return union;
     }
 }

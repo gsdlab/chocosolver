@@ -6,12 +6,21 @@ import java.util.Set;
 import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.greaterThan;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.lessThan;
+import static org.clafer.ast.Asts.newModel;
 import org.clafer.compiler.ClaferAsserter;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**

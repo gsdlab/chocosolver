@@ -3,11 +3,31 @@ package org.clafer;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.$this;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.Optional;
+import static org.clafer.ast.Asts.card;
+import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.greaterThan;
+import static org.clafer.ast.Asts.implies;
+import static org.clafer.ast.Asts.in;
+import static org.clafer.ast.Asts.join;
+import static org.clafer.ast.Asts.joinParent;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.lessThan;
+import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.or;
+import static org.clafer.ast.Asts.some;
+import static org.clafer.ast.Asts.union;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -51,7 +71,7 @@ public class SimpleConstraintTest {
         person.addConstraint(equal(card(join(join($this(), hand), finger)), constant(3)));
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
-        assertEquals(3, solver.allInstances().length);
+        assertEquals(6, solver.allInstances().length);
     }
 
     /**
@@ -418,8 +438,8 @@ public class SimpleConstraintTest {
      * <pre>
      * A -> integer 3..4
      * B -> integer 3..4
-     * [this.A.ref = this.B.ref]
-     * [this.A.ref > 5000]
+     * [A.ref = B.ref]
+     * [A.ref > 5000]
      * </pre>
      */
     @Test(timeout = 60000)

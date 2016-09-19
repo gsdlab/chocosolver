@@ -2,12 +2,22 @@ package org.clafer;
 
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
-import static org.clafer.ast.Asts.*;
+import static org.clafer.ast.Asts.$this;
+import static org.clafer.ast.Asts.IntType;
+import static org.clafer.ast.Asts.Mandatory;
+import static org.clafer.ast.Asts.Optional;
+import static org.clafer.ast.Asts.card;
+import static org.clafer.ast.Asts.constant;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.newModel;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOptimizer;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**

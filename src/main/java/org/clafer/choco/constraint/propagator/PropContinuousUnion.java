@@ -10,7 +10,7 @@ import org.chocosolver.solver.variables.Variable;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  *
@@ -64,11 +64,11 @@ public class PropContinuousUnion extends Propagator<Variable> {
             return false;
         }
         int support = supports[value];
-        if (sets[support].envelopeContains(value)) {
+        if (sets[support].getUB().contains(value)) {
             return true;
         }
         for (int i = 0; i < sets.length; i++) {
-            if (sets[i].envelopeContains(value)) {
+            if (sets[i].getUB().contains(value)) {
                 supports[value] = i;
                 return true;
             }
@@ -79,9 +79,9 @@ public class PropContinuousUnion extends Propagator<Variable> {
     private void findMate(int unionKer) throws ContradictionException {
         int mate = -1;
         for (int j = 0; j < sets.length; j++) {
-            if (sets[j].envelopeContains(unionKer)) {
+            if (sets[j].getUB().contains(unionKer)) {
                 // Found a second mate or in kernel.
-                if (mate != -1 || sets[j].kernelContains(unionKer)) {
+                if (mate != -1 || sets[j].getLB().contains(unionKer)) {
                     return;
                 }
                 mate = j;
@@ -89,37 +89,42 @@ public class PropContinuousUnion extends Propagator<Variable> {
         }
         if (mate == -1) {
             // No mates.
-            contradiction(totalCard, "too high");
+            fails();
         } else if (mate != -2) {
             // One mate.
-            sets[mate].addToKernel(unionKer, this);
+            sets[mate].force(unionKer, this);
         }
     }
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        int maxEnv = Integer.MIN_VALUE;
+        int maxKer = Integer.MIN_VALUE;
         for (SetVar set : sets) {
-            for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
-                if (i < 0 || i >= totalCard.getUB()) {
-                    set.removeFromEnvelope(i, this);
-                }
+            if (!set.getUB().isEmpty()) {
+                maxEnv = Math.max(maxEnv, set.getUB().max());
+            }
+            if (!set.getLB().isEmpty()) {
+                maxKer = Math.max(maxKer, set.getLB().max());
             }
         }
-        int maxEnv = PropUtil.maxEnv(sets[sets.length - 1]);
-        int maxKer = PropUtil.maxKer(sets[sets.length - 1]);
-        for (int i = sets.length - 2; i >= 0; i--) {
-            maxEnv = Math.max(maxEnv, PropUtil.maxEnv(sets[i]));
-            maxKer = Math.max(maxKer, PropUtil.maxKer(sets[i]));
-        }
-        totalCard.updateUpperBound(maxEnv == SetVar.END ? 0 : maxEnv + 1, this);
-        if (totalCard.getLB() > 0) {
-            totalCard.updateLowerBound(maxKer == SetVar.END ? 0 : maxKer + 1, this);
-        }
+        totalCard.updateUpperBound(maxEnv == Integer.MIN_VALUE ? 0 : maxEnv + 1, this);
+        totalCard.updateLowerBound(maxKer == Integer.MIN_VALUE ? 0 : maxKer + 1, this);
+
         int ub = totalCard.getUB();
         for (int i = 0; i < ub; i++) {
             if (!support(i)) {
                 totalCard.updateUpperBound(i, this);
                 break;
+            }
+        }
+        for (SetVar set : sets) {
+            ISetIterator iter = set.getUB().iterator();
+            while (iter.hasNext()) {
+                int i = iter.nextInt();
+                if (i < 0 || i >= totalCard.getUB()) {
+                    set.remove(i, this);
+                }
             }
         }
         int lb = totalCard.getLB();
@@ -133,8 +138,8 @@ public class PropContinuousUnion extends Propagator<Variable> {
         if (isSetVar(idxVarInProp)) {
             int id = getSetVarIndex(idxVarInProp);
             setsD[id].freeze();
-            setsD[id].forEach(pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            setsD[id].forEach(pickUnionOnSetKer, SetEventType.ADD_TO_KER);
+            setsD[id].forEach(this::pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            setsD[id].forEach(this::pickUnionOnSetKer, SetEventType.ADD_TO_KER);
             setsD[id].unfreeze();
         } else {
             assert isTotalCardVar(idxVarInProp);
@@ -144,9 +149,11 @@ public class PropContinuousUnion extends Propagator<Variable> {
                 findMate(i);
             }
             for (SetVar set : sets) {
-                for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+                ISetIterator iter = set.getUB().iterator();
+                while (iter.hasNext()) {
+                    int i = iter.nextInt();
                     if (i < 0 || i >= totalCard.getUB()) {
-                        set.removeFromEnvelope(i, this);
+                        set.remove(i, this);
                     }
                 }
             }
@@ -158,46 +165,41 @@ public class PropContinuousUnion extends Propagator<Variable> {
                 }
             }
         }
+        propagate(mask);
     }
 
-    private final IntProcedure pruneUnionOnSetEnv = new IntProcedure() {
-
-        @Override
-        public void execute(int env) throws ContradictionException {
-            int maxEnv = PropUtil.maxEnv(sets[sets.length - 1]);
-            for (int i = sets.length - 2; i >= 0; i--) {
-                maxEnv = Math.max(maxEnv, PropUtil.maxEnv(sets[i]));
-            }
-            totalCard.updateUpperBound(maxEnv == SetVar.END ? 0 : maxEnv + 1, PropContinuousUnion.this);
-            int lb = totalCard.getLB();
-            if (env < lb) {
-                findMate(env);
-            }
-            if (!support(env)) {
-                totalCard.updateUpperBound(env, PropContinuousUnion.this);
+    private void pruneUnionOnSetEnv(int env) throws ContradictionException {
+        int maxEnv = Integer.MIN_VALUE;
+        for (SetVar set : sets) {
+            if (!set.getUB().isEmpty()) {
+                maxEnv = Math.max(maxEnv, set.getUB().max());
             }
         }
-    };
+        totalCard.updateUpperBound(maxEnv == Integer.MIN_VALUE ? 0 : maxEnv + 1, this);
+        int lb = totalCard.getLB();
+        if (env < lb) {
+            findMate(env);
+        }
+        if (!support(env)) {
+            totalCard.updateUpperBound(env, this);
+        }
+    }
 
-    private final IntProcedure pickUnionOnSetKer = new IntProcedure() {
-
-        @Override
-        public void execute(int ker) throws ContradictionException {
-            int f = totalCard.getLB();
-            if (totalCard.updateLowerBound(ker + 1, PropContinuousUnion.this)) {
-                int t = totalCard.getLB();
-                for (int i = f; i < t; i++) {
-                    findMate(i);
-                }
+    private void pickUnionOnSetKer(int ker) throws ContradictionException {
+        int f = totalCard.getLB();
+        if (totalCard.updateLowerBound(ker + 1, this)) {
+            int t = totalCard.getLB();
+            for (int i = f; i < t; i++) {
+                findMate(i);
             }
         }
-    };
+    }
 
     @Override
     public ESat isEntailed() {
         for (SetVar set : sets) {
-            if (set.getKernelSize() > 0) {
-                if (set.getKernelFirst() < 0 || PropUtil.maxKer(set) >= totalCard.getUB()) {
+            if (!set.getLB().isEmpty()) {
+                if (set.getLB().min() < 0 || set.getLB().max() >= totalCard.getUB()) {
                     return ESat.FALSE;
                 }
             }
@@ -206,8 +208,8 @@ public class PropContinuousUnion extends Propagator<Variable> {
             return ESat.UNDEFINED;
         }
         for (SetVar set : sets) {
-            if (set.getEnvelopeSize() > 0) {
-                if (set.getEnvelopeFirst() < 0 || PropUtil.maxEnv(set) >= totalCard.getUB()) {
+            if (!set.getUB().isEmpty()) {
+                if (set.getUB().min() < 0 || set.getUB().max() >= totalCard.getUB()) {
                     return ESat.UNDEFINED;
                 }
             }
@@ -219,11 +221,11 @@ public class PropContinuousUnion extends Propagator<Variable> {
             boolean realized = false;
             boolean support = false;
             for (SetVar set : sets) {
-                if (set.kernelContains(i)) {
+                if (set.getLB().contains(i)) {
                     realized = true;
                     support = true;
                     break;
-                } else if (set.envelopeContains(i)) {
+                } else if (set.getUB().contains(i)) {
                     support = true;
                 }
             }

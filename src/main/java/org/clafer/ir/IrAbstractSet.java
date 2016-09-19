@@ -1,7 +1,6 @@
 package org.clafer.ir;
 
 import org.clafer.domain.Domain;
-import org.clafer.common.Check;
 
 /**
  *
@@ -10,12 +9,9 @@ import org.clafer.common.Check;
 public abstract class IrAbstractSet implements IrSetExpr {
 
     private final Domain env, ker, card;
+    private final boolean isConstant;
 
-    public IrAbstractSet(Domain env, Domain ker, Domain card) {
-        this.env = Check.notNull(env);
-        this.ker = Check.notNull(ker);
-        this.card = Check.notNull(card);
-
+    IrAbstractSet(Domain env, Domain ker, Domain card) {
         if (!ker.isSubsetOf(env)) {
             throw new IllegalSetException();
         }
@@ -27,6 +23,23 @@ public abstract class IrAbstractSet implements IrSetExpr {
         }
         if (card.getHighBound() < ker.size()) {
             throw new IllegalSetException(card.getHighBound() + " < " + ker.size());
+        }
+
+        if (ker.size() == env.size() || ker.size() == card.getHighBound()) {
+            this.env = ker;
+            this.ker = ker;
+            this.card = card;
+            this.isConstant = true;
+        } else if (env.size() == card.getLowBound()) {
+            this.env = env;
+            this.ker = env;
+            this.card = card;
+            this.isConstant = true;
+        } else {
+            this.env = env;
+            this.ker = ker;
+            this.card = card;
+            this.isConstant = false;
         }
     }
 
@@ -43,6 +56,11 @@ public abstract class IrAbstractSet implements IrSetExpr {
     @Override
     public Domain getCard() {
         return card;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return isConstant;
     }
 
     @Override

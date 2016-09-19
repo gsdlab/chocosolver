@@ -1,8 +1,8 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
+import org.clafer.domain.Domain;
 
 /**
  *
@@ -14,7 +14,7 @@ public class IrStringVar extends IrAbstractString implements IrVar {
     private final IrIntVar[] chars;
     private final IrIntVar length;
 
-    protected IrStringVar(String name, IrIntVar[] chars, IrIntVar length) {
+    IrStringVar(String name, IrIntVar[] chars, IrIntVar length) {
         super(getCharDomains(Check.noNulls(chars)), Check.notNull(length).getDomain());
         this.name = Check.notNull(name);
         this.chars = chars;

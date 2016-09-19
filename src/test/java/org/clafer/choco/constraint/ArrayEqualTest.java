@@ -21,7 +21,7 @@ public class ArrayEqualTest {
         assertArrayEquals(a1, a2);
     }
 
-    @ArcConsistent
+    @ArcConsistent(entailed = true)
     @Test(timeout = 60000)
     public Constraint setup(@NonEmpty IntVar[] a1, IntVar[] a2) {
         assumeTrue(a1.length == a2.length);

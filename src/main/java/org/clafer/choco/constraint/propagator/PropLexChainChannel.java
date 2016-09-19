@@ -136,13 +136,13 @@ public class PropLexChainChannel extends Propagator<IntVar> {
     private boolean lessThanString(IntVar[] a, IntVar[] b, int index) throws ContradictionException {
         if (index == a.length) {
             if (index == b.length) {
-                contradiction(a[0], "a = b");
+                fails();
             }
             return false;
         }
         if (index == b.length) {
             assert a.length != b.length;
-            contradiction(a[index], "a > b");
+            fails();
         }
         switch (compare(a[index], b[index])) {
             case EQ:
@@ -150,7 +150,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
             case LT:
                 return false;
             case GT:
-                contradiction(a[index], "a > b");
+                fails();
                 return true;
             case LE:
             case GE:
@@ -188,7 +188,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
         }
         if (index == b.length) {
             assert a.length != b.length;
-            contradiction(a[index], "a > b");
+            fails();
         }
         switch (compare(a[index], b[index])) {
             case EQ:
@@ -196,7 +196,7 @@ public class PropLexChainChannel extends Propagator<IntVar> {
             case LT:
                 return false;
             case GT:
-                contradiction(a[index], "a > b");
+                fails();
                 return true;
             case LE:
             case GE:

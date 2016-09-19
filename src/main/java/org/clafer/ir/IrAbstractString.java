@@ -1,8 +1,8 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
 import java.util.Arrays;
 import org.clafer.common.Check;
+import org.clafer.domain.Domain;
 
 /**
  *
@@ -12,6 +12,7 @@ public abstract class IrAbstractString implements IrStringExpr {
 
     private final Domain[] charDomains;
     private final Domain lengthDomain;
+    private final boolean isConstant;
 
     IrAbstractString(Domain[] charDomains, Domain lengthDomain) {
         this.charDomains = Check.noNulls(charDomains);
@@ -26,7 +27,7 @@ public abstract class IrAbstractString implements IrStringExpr {
             }
         }
         for (int i = 0; i < charDomains.length && i < lengthDomain.getLowBound(); i++) {
-            if (charDomains[i].size() == 1 && charDomains[i].getLowBound() == 0) {
+            if (charDomains[i].isConstant() && charDomains[i].getLowBound() == 0) {
                 throw new IllegalStringException();
             }
         }
@@ -44,6 +45,8 @@ public abstract class IrAbstractString implements IrStringExpr {
         if (lengthDomain.getHighBound() > charDomains.length) {
             throw new IllegalStringException();
         }
+        assert lengthDomain.getHighBound() == charDomains.length : "Correct but not optimized.";
+        this.isConstant = lengthDomain.isConstant() && Arrays.asList(charDomains).stream().allMatch(Domain::isConstant);
     }
 
     @Override
@@ -54,6 +57,11 @@ public abstract class IrAbstractString implements IrStringExpr {
     @Override
     public Domain getLength() {
         return lengthDomain;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return isConstant;
     }
 
     @Override

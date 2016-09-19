@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Denotes an array of variables to not be empty.
  *
  * @author jimmy
  */

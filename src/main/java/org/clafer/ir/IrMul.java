@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
 import org.clafer.common.Check;
+import org.clafer.domain.Domain;
 
 /**
  * multiplicand * multiplier

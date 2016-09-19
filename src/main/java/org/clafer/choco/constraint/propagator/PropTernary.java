@@ -73,4 +73,9 @@ public class PropTernary extends Propagator<IntVar> {
         return PropUtil.isDomIntersectDom(result, consequent) || PropUtil.isDomIntersectDom(result, alternative)
                 ? ESat.UNDEFINED : ESat.FALSE;
     }
+
+    @Override
+    public String toString() {
+        return result + " = " + antecedent + " ? " + consequent + " : " + alternative;
+    }
 }

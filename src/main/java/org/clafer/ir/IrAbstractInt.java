@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
 import org.clafer.common.Check;
+import org.clafer.domain.Domain;
 
 /**
  *
@@ -22,6 +22,11 @@ public abstract class IrAbstractInt implements IrIntExpr {
     @Override
     public Domain getDomain() {
         return domain;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return domain.isConstant();
     }
 
     @Override

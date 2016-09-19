@@ -1,7 +1,7 @@
 package org.clafer.compiler;
 
+import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.search.solution.Solution;
 import org.chocosolver.solver.variables.IntVar;
 
 /**

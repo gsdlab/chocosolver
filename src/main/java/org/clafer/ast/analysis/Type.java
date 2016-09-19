@@ -1,11 +1,11 @@
 package org.clafer.ast.analysis;
 
-import org.clafer.ast.ProductType;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.clafer.ast.AstClafer;
+import org.clafer.ast.ProductType;
 
 /**
  * Sum type.
@@ -22,9 +22,7 @@ public class Type implements Iterable<ProductType> {
             throw new IllegalArgumentException();
         }
         this.unionType = new LinkedHashSet<>(unionType.size());
-        for (AstClafer type : unionType) {
-            this.unionType.add(new ProductType(type));
-        }
+        unionType.stream().map(ProductType::new).forEach(this.unionType::add);
         this.commonSupertype = new ProductType(commonSupertype);
     }
 
@@ -107,7 +105,7 @@ public class Type implements Iterable<ProductType> {
     public boolean equals(Object obj) {
         if (obj instanceof Type) {
             Type other = (Type) obj;
-            return unionType.equals(other);
+            return unionType.equals(other.unionType);
         }
         return false;
     }
@@ -119,6 +117,6 @@ public class Type implements Iterable<ProductType> {
 
     @Override
     public String toString() {
-        return unionType.size() == 1 ? commonSupertype.toString() : unionType.toString();
+        return unionType.size() == 1 ? unionType.iterator().next().toString() : unionType.toString();
     }
 }

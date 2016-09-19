@@ -1,12 +1,12 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.clafer.common.Util;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.util.ESat;
+import org.clafer.common.Util;
 
 /**
  *
@@ -53,21 +53,22 @@ public class PropLone extends Propagator<BoolVar> {
 
     @Override
     public ESat isEntailed() {
-        int count = 0;
+        int countOne = 0;
+        int countZero = 0;
         boolean allInstantiated = true;
         for (BoolVar var : vars) {
             if (var.isInstantiated()) {
                 if (var.getValue() == 1) {
-                    count++;
-                    if (count > 1) {
+                    countOne++;
+                    if (countOne > 1) {
                         return ESat.FALSE;
                     }
+                } else {
+                    countZero++;
                 }
-            } else {
-                allInstantiated = false;
             }
         }
-        return allInstantiated ? ESat.TRUE : ESat.UNDEFINED;
+        return countZero >= vars.length - 1 ? ESat.TRUE : ESat.UNDEFINED;
     }
 
     @Override

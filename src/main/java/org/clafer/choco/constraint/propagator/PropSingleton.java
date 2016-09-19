@@ -51,10 +51,10 @@ public class PropSingleton extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (s.getKernelSize() > 1) {
-            contradiction(s, "Singleton cannot have more than 1 element");
-        } else if (s.getKernelSize() == 1) {
-            int val = s.getKernelFirst();
+        if (s.getLB().size() > 1) {
+            fails();
+        } else if (s.getLB().size() == 1) {
+            int val = s.getLB().min();
             i.instantiateTo(val, this);
             s.instantiateTo(new int[]{val}, this);
         } else {
@@ -73,16 +73,16 @@ public class PropSingleton extends Propagator<Variable> {
                 s.instantiateTo(new int[]{i.getValue()}, this);
             } else {
                 iD.freeze();
-                iD.forEachRemVal((IntProcedure) rem -> s.removeFromEnvelope(rem, this));
+                iD.forEachRemVal((IntProcedure) rem -> s.remove(rem, this));
                 iD.unfreeze();
             }
         } else {
             assert isSVar(idxVarInProp);
-            int sKerSize = s.getKernelSize();
+            int sKerSize = s.getLB().size();
             if (sKerSize > 1) {
-                contradiction(s, "Singleton cannot have more than 1 element");
+                fails();
             } else if (sKerSize == 1) {
-                int val = s.getKernelFirst();
+                int val = s.getLB().min();
                 i.instantiateTo(val, this);
                 s.instantiateTo(new int[]{val}, this);
             } else {
@@ -98,10 +98,18 @@ public class PropSingleton extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        if (s.getKernelSize() > 1) {
+        int lb = s.getLB().size();
+        if (lb > 1) {
             return ESat.FALSE;
         }
-        if (s.getEnvelopeSize() < 1) {
+        if (lb == 1) {
+            if (i.contains(s.getLB().min())) {
+                return i.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+            } else {
+                return ESat.FALSE;
+            }
+        }
+        if (s.getUB().size() < 1) {
             return ESat.FALSE;
         }
         if (PropUtil.isDomIntersectEnv(i, s)) {

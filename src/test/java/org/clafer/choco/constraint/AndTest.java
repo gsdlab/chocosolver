@@ -1,15 +1,16 @@
 package org.clafer.choco.constraint;
 
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.clafer.common.Util;
-import org.clafer.test.NonEmpty;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.BoolVar;
-import static org.chocosolver.solver.variables.Var.*;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import org.clafer.common.Util;
+import org.clafer.test.NonEmpty;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *
@@ -19,23 +20,23 @@ import static org.chocosolver.solver.variables.Var.*;
 public class AndTest {
 
     @Input(solutions = 1)
-    public Object testAnd(Solver solver) {
-        return $(boolArray("bool", 5, solver));
+    public Object testAnd(Model model) {
+        return $(model.boolVarArray("bool", 5));
     }
 
     @Input(solutions = 1)
-    public Object testOneVar(Solver solver) {
-        return $(boolArray("bool", 1, solver));
+    public Object testOneVar(Model model) {
+        return $(model.boolVarArray("bool", 1));
     }
 
     @Input(solutions = 1)
-    public Object testTautology(Solver solver) {
-        return $(new BoolVar[]{solver.ONE(), solver.ONE()});
+    public Object testTautology(Model model) {
+        return $(new BoolVar[]{model.boolVar(true), model.boolVar(true)});
     }
 
     @Input(solutions = 0)
-    public Object testFalseTautology(Solver solver) {
-        return $(new BoolVar[]{solver.ZERO(), bool("bool", solver)});
+    public Object testFalseTautology(Model model) {
+        return $(new BoolVar[]{model.boolVar(false), model.boolVar("bool")});
     }
 
     @Check
@@ -43,7 +44,7 @@ public class AndTest {
         assertTrue(Util.sum(bools) == bools.length);
     }
 
-    @ArcConsistent(opposite = true)
+    @ArcConsistent(entailed = true, opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(@NonEmpty BoolVar[] bools) {
         return Constraints.and(bools);

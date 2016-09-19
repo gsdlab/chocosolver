@@ -1,14 +1,15 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
 import org.clafer.choco.constraint.Constraints;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.arrayToSet;
+import static org.clafer.ir.Irs.equal;
 import org.clafer.test.NonEmpty;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.variables.CSetVar;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *
@@ -23,7 +24,7 @@ public class IrArrayToSetTest {
     }
 
     @Solution
-    public Constraint setup(IntVar[] array, int globalCardinality, CSetVar set) {
-        return Constraints.arrayToSet(array, set.getSet(), set.getCard(), null);
+    public Constraint setup(IntVar[] array, int globalCardinality, SetVar set) {
+        return Constraints.arrayToSet(array, set, set.getCard(), null);
     }
 }

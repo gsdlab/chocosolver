@@ -1,0 +1,21 @@
+scope({c0_Port:2, c0_throughput:2});
+defaultScope(1);
+intRange(-8, 7);
+stringLength(16);
+
+c0_Component = Abstract("c0_Component");
+c0_Port = c0_Component.addAbstractChild("c0_Port");
+c0_throughput = c0_Port.addChild("c0_throughput").withCard(1, 1);
+c0_Port10Mbit = c0_Component.addAbstractChild("c0_Port10Mbit");
+c0_Port100Mbit = c0_Component.addAbstractChild("c0_Port100Mbit");
+c0_C1 = Clafer("c0_C1").withCard(1, 1);
+c0_R1 = c0_C1.addChild("c0_R1").withCard(1, 1);
+c0_R2 = c0_C1.addChild("c0_R2").withCard(1, 1);
+c0_throughput.refTo(Int);
+c0_Port10Mbit.extending(c0_Port);
+c0_Port10Mbit.addConstraint(equal(joinRef(join($this(), c0_throughput)), constant(10)));
+c0_Port100Mbit.extending(c0_Port);
+c0_Port100Mbit.addConstraint(equal(joinRef(join($this(), c0_throughput)), constant(100)));
+c0_C1.extending(c0_Component);
+c0_R1.extending(c0_Port10Mbit);
+c0_R2.extending(c0_Port100Mbit);

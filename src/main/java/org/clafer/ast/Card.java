@@ -9,6 +9,7 @@ import java.io.Serializable;
  */
 public class Card implements Serializable {
 
+    private static final long serialVersionUID = 1;
     private static final int UNBOUNDED_HIGH = Integer.MAX_VALUE;
     private final int low;
     private final int high;

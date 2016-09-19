@@ -1,11 +1,14 @@
 package org.clafer.collection;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import org.clafer.common.Check;
 
 /**
@@ -16,8 +19,9 @@ import org.clafer.common.Check;
  * @param <B> the type of snd
  * @author jimmy
  */
-public class Pair<A, B> {
+public class Pair<A, B> implements Serializable {
 
+    private static final long serialVersionUID = 1;
     private final A fst;
     private final B snd;
 
@@ -157,6 +161,10 @@ public class Pair<A, B> {
         }
         assert i == pairs.length;
         return pairs;
+    }
+
+    public static <A, B> Predicate<Pair<A, B>> uncurry(BiPredicate<A, B> function) {
+        return p -> function.test(p.fst, p.snd);
     }
 
     @Override

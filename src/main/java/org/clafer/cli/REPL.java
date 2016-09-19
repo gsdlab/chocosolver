@@ -7,13 +7,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import joptsimple.OptionSet;
-
-import static org.clafer.ast.Asts.*;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
-import org.clafer.ast.AstGlobal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.sum;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearch;
@@ -23,7 +21,7 @@ import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
-import org.clafer.objective.*;
+import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 
 public class REPL {

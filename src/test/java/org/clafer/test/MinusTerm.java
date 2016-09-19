@@ -1,12 +1,11 @@
 package org.clafer.test;
 
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import static org.clafer.ir.Irs.minus;
 import org.clafer.ir.compiler.IrSolutionMap;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.Var;
 
 /**
  *
@@ -31,8 +30,8 @@ public class MinusTerm implements Term {
     }
 
     @Override
-    public IntVar toChocoVar(Solver solver) {
-        return Var.minus(view.toChocoVar(solver));
+    public IntVar toChocoVar(Model model) {
+        return model.intMinusView(view.toChocoVar(model));
     }
 
     @Override

@@ -2,14 +2,13 @@ package org.clafer.compiler;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.clafer.instance.InstanceModel;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.constraints.LCF;
-import org.chocosolver.solver.search.solution.Solution;
-import org.chocosolver.solver.search.strategy.ISF;
+import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.variables.IntVar;
+import org.clafer.instance.InstanceModel;
 
 /**
  * Implementation of the guided improvement algorithm.
@@ -37,36 +36,37 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
         List<Constraint> strictlyBetter = new ArrayList<>(this.bounds.length);
         for (int i = 0; i < this.bounds.length; i++) {
             IntVar score = scores[i];
-            IntVar bound = score.duplicate();
+            // TODO: copy the domain from score.
+            IntVar bound = solver.getModel().intVar("bound" + i, score.getLB(), score.getUB());
             this.bounds[i] = bound;
             boundVars.add(bound);
-            strictlyBetter.add(ICF.arithm(bound, maximizes[i] ? "<" : ">", score));
+            strictlyBetter.add(solver.getModel().arithm(bound, maximizes[i] ? "<" : ">", score));
         }
-        this.dominate = or(strictlyBetter, solver);
+        this.dominate = or(strictlyBetter, solver.getModel());
         for (int i = 0; i < this.bounds.length; i++) {
-            solver.post(ICF.arithm(this.bounds[i], maximizes[i] ? "<=" : ">=", scores[i]));
+            solver.getModel().arithm(this.bounds[i], maximizes[i] ? "<=" : ">=", scores[i]).post();
         }
         if (!boundVars.isEmpty()) {
-            solver.set(ISF.sequencer(solver.getStrategy(), ISF.minDom_LB(
+            solver.setSearch(Search.sequencer(solver.getSearch(), Search.minDomLBSearch(
                     boundVars.toArray(new IntVar[boundVars.size()])
             )));
         }
     }
 
-    private static Constraint or(List<Constraint> constraints, Solver solver) {
+    private static Constraint or(List<Constraint> constraints, Model model) {
         return constraints.isEmpty()
-                ? solver.FALSE()
-                : LCF.or(constraints.toArray(new Constraint[constraints.size()]));
+                ? model.falseConstraint()
+                : model.or(constraints.toArray(new Constraint[constraints.size()]));
     }
 
     private void push(Constraint constraint) {
         assert !stack.contains(constraint);
-        solver.post(constraint);
+        constraint.post();
         stack.add(constraint);
     }
 
     private void popAll() {
-        stack.forEach(solver::unpost);
+        stack.forEach(solver.getModel()::unpost);
         stack.clear();
     }
 
@@ -75,11 +75,10 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
         if (!more) {
             return false;
         }
-        solution = new Solution();
         more &= count == 0 ? solveFirst() : solveNext();
-        if (solver.hasReachedLimit()) {
+        if (solver.isStopCriterionMet()) {
             more = false;
-            if (solution.hasBeenFound()) {
+            if (solution != null) {
                 InstanceModel bestInstance = solutionMap.getInstance(solution);
                 int[] bestObjectiveValue = new int[scores.length];
                 for (int i = 0; i < bestObjectiveValue.length; i++) {
@@ -105,29 +104,31 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
     private boolean solveFirst() {
         assert stack.isEmpty();
 
-        if (!solver.findSolution()) {
+        solution = solver.findSolution();
+        if (solution == null) {
             return false;
         }
 
         push(dominate);
 
         int[] best = new int[scores.length];
+        Solution nextSolution = solution;
         do {
-            solution.record(solver);
+            solution = nextSolution;
             for (int i = 0; i < best.length; i++) {
                 best[i] = scores[i].getValue();
             }
 
             for (int i = 0; i < bounds.length; i++) {
-                push(ICF.arithm(bounds[i], maximizes[i] ? ">=" : "<=", best[i]));
+                push(solver.getModel().arithm(bounds[i], maximizes[i] ? ">=" : "<=", best[i]));
             }
-        } while (solver.nextSolution());
-        if (solver.hasReachedLimit()) {
+        } while ((nextSolution = solver.findSolution()) != null);
+        if (solver.isStopCriterionMet()) {
             return false;
         }
         popAll();
         for (int i = 0; i < bounds.length; i++) {
-            push(ICF.arithm(bounds[i], "=", scores[i]));
+            push(solver.getModel().arithm(bounds[i], "=", scores[i]));
         }
 
         return true;
@@ -135,14 +136,13 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
 
     private boolean solveNext() {
         popAll();
-        solver.getEngine().flush();
-        solver.getSearchLoop().reset();
+        solver.reset();
 
         List<Constraint> strictlyBetter = new ArrayList<>(bounds.length);
         for (int i = 0; i < bounds.length; i++) {
-            strictlyBetter.add(ICF.arithm(bounds[i], maximizes[i] ? ">" : "<", optimalValues[i]));
+            strictlyBetter.add(solver.getModel().arithm(bounds[i], maximizes[i] ? ">" : "<", optimalValues[i]));
         }
-        solver.post(or(strictlyBetter, solver));
+        or(strictlyBetter, solver.getModel()).post();
         return solveFirst();
     }
 

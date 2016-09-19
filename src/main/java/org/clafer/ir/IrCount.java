@@ -1,8 +1,7 @@
 package org.clafer.ir;
 
+import java.util.Objects;
 import org.clafer.domain.Domain;
-import java.util.Arrays;
-import org.clafer.common.Check;
 
 /**
  *
@@ -11,19 +10,19 @@ import org.clafer.common.Check;
 public class IrCount extends IrAbstractInt {
 
     private final int value;
-    private final IrIntExpr[] array;
+    private final IrIntArrayExpr array;
 
-    public IrCount(int value, IrIntExpr[] array, Domain domain) {
+    public IrCount(int value, IrIntArrayExpr array, Domain domain) {
         super(domain);
-        this.array = Check.noNullsNotEmpty(array);
-        this.value = Check.notNull(value);
-}
+        this.array = Objects.requireNonNull(array);
+        this.value = Objects.requireNonNull(value);
+    }
 
     public int getValue() {
         return value;
     }
 
-    public IrIntExpr[] getArray() {
+    public IrIntArrayExpr getArray() {
         return array;
     }
 
@@ -36,19 +35,18 @@ public class IrCount extends IrAbstractInt {
     public boolean equals(Object obj) {
         if (obj instanceof IrCount) {
             IrCount other = (IrCount) obj;
-            return value == other.value && Arrays.equals(array, other.array)
-                    && super.equals(other);
+            return value == other.value && array.equals(other.array);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return value ^ Arrays.hashCode(array);
+        return value ^ array.hashCode();
     }
 
     @Override
     public String toString() {
-        return "count(" + value + " in " + Arrays.toString(array) + ")";
+        return "count(" + value + " in " + array + ")";
     }
 }

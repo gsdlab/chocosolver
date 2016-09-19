@@ -1,13 +1,14 @@
 package org.clafer.choco.constraint;
 
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.BoolVar;
-import static org.chocosolver.solver.variables.Var.*;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *
@@ -17,10 +18,10 @@ import static org.chocosolver.solver.variables.Var.*;
 public class IfThenElseTest {
 
     @Input(solutions = 4)
-    public Object testIfThenElse(Solver solver) {
-        return $(bool("antecedent", solver),
-                bool("consequent", solver),
-                bool("alternative", solver));
+    public Object testIfThenElse(Model model) {
+        return $(model.boolVar("antecedent"),
+                model.boolVar("consequent"),
+                model.boolVar("alternative"));
     }
 
     @Check
@@ -28,7 +29,7 @@ public class IfThenElseTest {
         assertTrue(antecedent ? consequent : alternative);
     }
 
-    @ArcConsistent(opposite = true)
+    @ArcConsistent(entailed = true, opposite = true)
     @Test(timeout = 60000)
     public Constraint setup(BoolVar antecedent, BoolVar consequent, BoolVar alternative) {
         return Constraints.ifThenElse(antecedent, consequent, alternative);

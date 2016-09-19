@@ -8,20 +8,22 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.Settings;
+import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.util.ESat;
+import org.clafer.Sample;
 import org.clafer.test.TestReflection;
 import org.clafer.test.TestUtil;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.Propagator;
-import org.chocosolver.util.ESat;
-import org.clafer.Sample;
 
 /**
  *
@@ -83,13 +85,23 @@ public class ConstraintQuickTest extends Suite {
         throw new AssertionError("Failed negative check for arguments " + Arrays.deepToString(args));
     }
 
-    Solver newSolver(FrameworkMethod testMethod, boolean positive) {
-        Solver solver = new Solver();
+    Model newModel(FrameworkMethod testMethod, boolean positive) {
+        Model model = new Model();
         ArcConsistent arc = testMethod.getAnnotation(ArcConsistent.class);
         if (arc != null && (positive || arc.opposite())) {
-            solver.plugMonitor(new ArcConsistentCheck(solver));
+            model.getSolver().plugMonitor(new ArcConsistentCheck(model.getSolver()));
         }
-        return solver;
+        Idempotent idem = testMethod.getAnnotation(Idempotent.class);
+        if (idem != null) {
+            model.set(new Settings() {
+
+                @Override
+                public Settings.Idem getIdempotencyStrategy() {
+                    return Settings.Idem.error;
+                }
+            });
+        }
+        return model;
     }
 
     public static Object[] $(Object arg1) {
@@ -149,25 +161,25 @@ public class ConstraintQuickTest extends Suite {
         }
 
         void evaluate(boolean positive) throws Throwable {
-            Solver solver = newSolver(testMethod, positive);
+            Model model = newModel(testMethod, positive);
 
-            Object[] args = (Object[]) parameters.invokeExplosively(target, solver);
+            Object[] args = (Object[]) parameters.invokeExplosively(target, model);
             int expectedNumberOfSolutions = positive
                     ? parameters.getAnnotation(Input.class).solutions()
                     : TestReflection.countSolutions(args) - parameters.getAnnotation(Input.class).solutions();
 
             int count = 0;
             Constraint constraint = (Constraint) testMethod.invokeExplosively(target, args);
-            solver.post(positive ? constraint : constraint.getOpposite());
-            if (TestUtil.randomizeStrategy(solver).findSolution()) {
-                do {
-                    if (positive) {
-                        check(target, args);
-                    } else {
-                        checkNot(target, args);
-                    }
-                    count++;
-                } while (solver.nextSolution());
+            model.post(positive ? constraint : constraint.getOpposite());
+            Solver solver = model.getSolver();
+            TestUtil.randomizeStrategy(solver);
+            while (solver.solve()) {
+                if (positive) {
+                    check(target, args);
+                } else {
+                    checkNot(target, args);
+                }
+                count++;
             }
             assertEquals(positive ? "Wrong number of solutions." : "Wrong number of negative solutions.",
                     expectedNumberOfSolutions, count);
@@ -229,7 +241,7 @@ public class ConstraintQuickTest extends Suite {
         }
 
         void evaluate(boolean positive) throws Throwable {
-            Solver solver = newSolver(testMethod, positive);
+            Model model = newModel(testMethod, positive);
 
             Parameter[] parameters = testMethod.getMethod().getParameters();
             Object[] args = new Object[parameters.length];
@@ -238,27 +250,24 @@ public class ConstraintQuickTest extends Suite {
                         parameters[i].getName(),
                         parameters[i].getAnnotations(),
                         parameters[i].getType(),
-                        solver);
+                        model);
             }
             try {
+                String s = Arrays.toString(args);
                 Constraint constraint = (Constraint) testMethod.invokeExplosively(target, args);
                 constraint = positive ? constraint : constraint.getOpposite();
-                solver.post(constraint);
+                model.post(constraint);
 
+                Solver solver = model.getSolver();
                 TestUtil.randomizeStrategy(solver);
-                ESat entailed = TestUtil.isEntailed(constraint);
+                ESat entailed = constraint.isSatisfied();
+                ArcConsistent consistent = testMethod.getAnnotation(ArcConsistent.class);
                 if (ESat.FALSE.equals(entailed)) {
-                    String initial = null;
-                    for (Propagator<?> propagator : constraint.getPropagators()) {
-                        if (ESat.FALSE.equals(propagator.isEntailed())) {
-                            initial = propagator.toString();
-                        }
+                    String initial = constraint.toString();
+                    if (solver.solve()) {
+                        fail("Did not expect a solution for " + initial + ", found " + constraint + " with arguments " + s);
                     }
-                    if (solver.findSolution()) {
-                        fail("Did not expect a solution for " + initial + ", found " + constraint);
-
-                    }
-                } else if (solver.findSolution()) {
+                } else if (solver.solve()) {
                     int solutions = 1;
                     do {
                         if (positive) {
@@ -266,9 +275,11 @@ public class ConstraintQuickTest extends Suite {
                         } else {
                             checkNot(target, args);
                         }
-                    } while (solver.nextSolution() && solutions++ < 10);
+                    } while (solver.solve() && solutions++ < 10);
                 } else if (ESat.TRUE.equals(entailed)) {
                     fail("Expected at least one solution for " + constraint);
+                } else if (consistent != null && consistent.entailed()) {
+                    fail("Entailment is unknown and expected at least one solution for " + constraint);
                 }
             } catch (AssumptionViolatedException e) {
                 // Continue

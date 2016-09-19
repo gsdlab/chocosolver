@@ -1,8 +1,8 @@
 package org.clafer.ir;
 
-import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
+import org.clafer.domain.BoolDomain;
 
 /**
  *

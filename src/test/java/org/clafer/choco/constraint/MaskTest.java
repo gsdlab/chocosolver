@@ -1,15 +1,18 @@
 package org.clafer.choco.constraint;
 
 import gnu.trove.set.TIntSet;
-import static org.clafer.choco.constraint.ConstraintQuickTest.*;
-import org.chocosolver.solver.variables.CSetVar;
-import static org.junit.Assert.*;
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.SetVar;
+import static org.chocosolver.solver.variables.Var.env;
+import static org.chocosolver.solver.variables.Var.ker;
+import static org.clafer.choco.constraint.ConstraintQuickTest.$;
+import org.clafer.choco.constraint.ConstraintQuickTest.Check;
+import org.clafer.choco.constraint.ConstraintQuickTest.Input;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.constraints.Constraint;
-import static org.chocosolver.solver.variables.Var.*;
 
 /**
  *
@@ -19,7 +22,7 @@ import static org.chocosolver.solver.variables.Var.*;
 public class MaskTest {
 
     @Input(solutions = 64)
-    public Object testMask(Solver solver) {
+    public Object testMask(Model model) {
         /*
          * import Control.Monad
          * import Data.List
@@ -32,8 +35,8 @@ public class MaskTest {
          *     guard $ masked == [s - 2 | s <- set, s >= 2 && s < 5]
          *     return (set, masked)
          */
-        return $(cset("set", 1, 6, solver),
-                cset("masked", 0, 3, solver),
+        return $(model.setVar("set", ker(), env(1, 2, 3, 4, 5, 6)),
+                model.setVar("masked", ker(), env(0, 1, 2, 3)),
                 2, 5);
     }
 
@@ -48,9 +51,8 @@ public class MaskTest {
     }
 
     @Test(timeout = 60000)
-    public Constraint setup(CSetVar set, CSetVar masked, int from, int to) {
+    public Constraint setup(SetVar set, SetVar masked, int from, int to) {
         assumeTrue(from <= to);
-        return Constraints.mask(set.getSet(), set.getCard(),
-                masked.getSet(), masked.getCard(), from, to);
+        return Constraints.mask(set, set.getCard(), masked, masked.getCard(), from, to);
     }
 }

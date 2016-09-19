@@ -1,12 +1,11 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.compare;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *
@@ -22,6 +21,6 @@ public class IrCompareTest {
 
     @Solution
     public Constraint setup(IntVar left, IrCompare.Op op, IntVar right) {
-        return ICF.arithm(left, op.getSyntax(), right);
+        return left.getModel().arithm(left, op.getSyntax(), right);
     }
 }

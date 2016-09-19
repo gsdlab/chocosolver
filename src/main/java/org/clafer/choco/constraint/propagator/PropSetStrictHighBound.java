@@ -10,6 +10,7 @@ import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 
 /**
  * {@code i ∈ set ⇒ i < bound}
@@ -50,9 +51,11 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
         int lb = bound.getLB();
         int ub = bound.getUB();
         boolean smallerThanLb = true;
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+        ISetIterator iter = set.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (i >= ub) {
-                set.removeFromEnvelope(i, this);
+                set.remove(i, this);
             } else if (i >= lb) {
                 smallerThanLb = false;
             }
@@ -65,8 +68,8 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        if (set.getKernelSize() > 0) {
-            bound.updateLowerBound(PropUtil.maxKer(set) + 1, this);
+        if (set.getLB().size() > 0) {
+            bound.updateLowerBound(set.getLB().max() + 1, this);
         }
         boundEnv();
     }
@@ -85,12 +88,16 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
 
     @Override
     public ESat isEntailed() {
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+        ISetIterator setKer = set.getLB().iterator();
+        while (setKer.hasNext()) {
+            int i = setKer.nextInt();
             if (i >= bound.getUB()) {
                 return ESat.FALSE;
             }
         }
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+        ISetIterator setEnv = set.getUB().iterator();
+        while (setEnv.hasNext()) {
+            int i = setEnv.nextInt();
             if (i >= bound.getLB()) {
                 return ESat.UNDEFINED;
             }

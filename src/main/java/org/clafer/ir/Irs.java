@@ -1,10 +1,6 @@
 package org.clafer.ir;
 
-import org.clafer.domain.Domain;
-import static org.clafer.domain.Domains.*;
-import org.clafer.domain.EnumDomain;
 import gnu.trove.TIntCollection;
-import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.TIntStack;
@@ -13,9 +9,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.PrimitiveIterator;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
-import org.clafer.domain.BoolDomain;
+import org.clafer.domain.Domain;
+import static org.clafer.domain.Domain.constantDomain;
+import org.clafer.domain.Domains;
+import static org.clafer.domain.Domains.EmptyDomain;
+import static org.clafer.domain.Domains.NegativeOneDomain;
+import static org.clafer.domain.Domains.TrueFalseDomain;
+import static org.clafer.domain.Domains.ZeroOneDomain;
+import static org.clafer.domain.Domains.boundDomain;
+import static org.clafer.domain.Domains.enumDomain;
+import static org.clafer.domain.Domains.enumDomains;
+import static org.clafer.domain.Domains.fromToDomain;
 
 /**
  * Import this class to access all IR building functions.
@@ -37,8 +45,8 @@ public class Irs {
      *
      *******************
      */
-    public static final IrBoolVar True = new IrBoolConstant(true);
-    public static final IrBoolVar False = new IrBoolConstant(false);
+    public static final IrBoolVar True = new IrBoolVar(true);
+    public static final IrBoolVar False = new IrBoolVar(false);
 
     public static IrBoolVar constant(boolean value) {
         return value ? True : False;
@@ -49,10 +57,9 @@ public class Irs {
     }
 
     public static IrBoolExpr not(IrBoolExpr proposition) {
-        Boolean constant = IrUtil.getConstant(proposition);
-        if (constant != null) {
+        if (proposition.isConstant()) {
             // Reverse the boolean
-            return constant ? False : True;
+            return proposition.getDomain().isTrue() ? False : True;
         }
         return proposition.negate();
     }
@@ -73,10 +80,10 @@ public class Irs {
         }
         List<IrBoolExpr> filter = new ArrayList<>(flatten.size());
         for (IrBoolExpr operand : flatten) {
-            if (IrUtil.isFalse(operand)) {
+            if (operand.getDomain().isFalse()) {
                 return False;
             }
-            if (!IrUtil.isTrue(operand)) {
+            if (!operand.getDomain().isTrue()) {
                 filter.add(operand);
             }
         }
@@ -98,12 +105,12 @@ public class Irs {
         List<IrBoolExpr> filter = new ArrayList<>(operands.length);
         int count = 0;
         for (IrBoolExpr operand : operands) {
-            if (IrUtil.isTrue(operand)) {
+            if (operand.getDomain().isTrue()) {
                 count++;
                 if (count > 1) {
                     return False;
                 }
-            } else if (!IrUtil.isFalse(operand)) {
+            } else if (!operand.getDomain().isFalse()) {
                 filter.add(operand);
             }
         }
@@ -129,12 +136,12 @@ public class Irs {
         List<IrBoolExpr> filter = new ArrayList<>(operands.length);
         int count = 0;
         for (IrBoolExpr operand : operands) {
-            if (IrUtil.isTrue(operand)) {
+            if (operand.getDomain().isTrue()) {
                 count++;
                 if (count > 1) {
                     return False;
                 }
-            } else if (!IrUtil.isFalse(operand)) {
+            } else if (!operand.getDomain().isFalse()) {
                 filter.add(operand);
             }
         }
@@ -172,10 +179,10 @@ public class Irs {
         }
         List<IrBoolExpr> filter = new ArrayList<>(flatten.size());
         for (IrBoolExpr operand : flatten) {
-            if (IrUtil.isTrue(operand)) {
+            if (operand.getDomain().isTrue()) {
                 return True;
             }
-            if (!IrUtil.isFalse(operand)) {
+            if (!operand.getDomain().isFalse()) {
                 filter.add(operand);
             }
         }
@@ -190,67 +197,26 @@ public class Irs {
     }
 
     public static IrBoolExpr implies(IrBoolExpr antecedent, IrBoolExpr consequent) {
-        if (antecedent.equals(consequent)) {
-            return True;
-        }
-        if (IrUtil.isTrue(antecedent)) {
-            return consequent;
-        }
-        if (IrUtil.isFalse(antecedent)) {
-            return True;
-        }
-        if (IrUtil.isTrue(consequent)) {
-            return True;
-        }
-        if (IrUtil.isFalse(consequent)) {
-            return not(antecedent);
-        }
-        if (consequent instanceof IrImplies) {
-            // a => (b => c) <=> !a or !b or c
-            IrImplies consequentImplies = (IrImplies) consequent;
-            return or(not(antecedent),
-                    not(consequentImplies.getAntecedent()),
-                    consequentImplies.getConsequent());
-        }
-        return new IrImplies(antecedent, consequent, TrueFalseDomain);
-    }
-
-    public static IrBoolExpr notImplies(IrBoolExpr antecedent, IrBoolExpr consequent) {
-        if (antecedent.equals(consequent)) {
-            return False;
-        }
-        if (IrUtil.isTrue(antecedent)) {
-            return not(consequent);
-        }
-        if (IrUtil.isFalse(antecedent)) {
-            return False;
-        }
-        if (IrUtil.isTrue(consequent)) {
-            return False;
-        }
-        if (IrUtil.isFalse(consequent)) {
-            return antecedent;
-        }
-        return new IrNotImplies(antecedent, consequent, TrueFalseDomain);
+        return or(not(antecedent), consequent);
     }
 
     public static IrBoolExpr ifThenElse(IrBoolExpr antecedent, IrBoolExpr consequent, IrBoolExpr alternative) {
-        if (IrUtil.isTrue(antecedent)) {
+        if (antecedent.getDomain().isTrue()) {
             return consequent;
         }
-        if (IrUtil.isFalse(antecedent)) {
+        if (antecedent.getDomain().isFalse()) {
             return alternative;
         }
-        if (IrUtil.isTrue(consequent)) {
+        if (consequent.getDomain().isTrue()) {
             return or(antecedent, alternative);
         }
-        if (IrUtil.isFalse(consequent)) {
+        if (consequent.getDomain().isFalse()) {
             return and(antecedent.negate(), alternative);
         }
-        if (IrUtil.isTrue(alternative)) {
+        if (alternative.getDomain().isTrue()) {
             return or(antecedent.negate(), consequent);
         }
-        if (IrUtil.isFalse(alternative)) {
+        if (alternative.getDomain().isFalse()) {
             return and(antecedent, consequent);
         }
         return new IrIfThenElse(antecedent, consequent, alternative, TrueFalseDomain);
@@ -260,76 +226,44 @@ public class Irs {
         if (left.equals(right)) {
             return True;
         }
-        if (IrUtil.isTrue(left)) {
+        if (left.getDomain().isTrue()) {
             return right;
         }
-        if (IrUtil.isFalse(left)) {
+        if (left.getDomain().isFalse()) {
             return not(right);
         }
-        if (IrUtil.isTrue(right)) {
+        if (right.getDomain().isTrue()) {
             return left;
         }
-        if (IrUtil.isFalse(right)) {
+        if (right.getDomain().isFalse()) {
             return not(left);
         }
-        if (left instanceof IrNot) {
-            return xor(((IrNot) left).getExpr(), right);
-        }
-        if (right instanceof IrNot) {
-            return xor(left, ((IrNot) right).getExpr());
+        if (left.isNegative() && right.isNegative()) {
+            return new IrIfOnlyIf(left.negate(), right.negate(), TrueFalseDomain);
         }
         return new IrIfOnlyIf(left, right, TrueFalseDomain);
     }
 
     public static IrBoolExpr xor(IrBoolExpr left, IrBoolExpr right) {
-        if (IrUtil.isTrue(left)) {
+        if (left.getDomain().isTrue()) {
             return not(right);
         }
-        if (IrUtil.isFalse(left)) {
+        if (left.getDomain().isFalse()) {
             return right;
         }
-        if (IrUtil.isTrue(right)) {
+        if (right.getDomain().isTrue()) {
             return not(left);
         }
-        if (IrUtil.isFalse(right)) {
+        if (right.getDomain().isFalse()) {
             return left;
         }
-        if (left instanceof IrNot) {
-            return ifOnlyIf(((IrNot) left).getExpr(), right);
+        if (left.isNegative()) {
+            return ifOnlyIf(left.negate(), right);
         }
-        if (right instanceof IrNot) {
-            return ifOnlyIf(left, ((IrNot) right).getExpr());
+        if (right.isNegative()) {
+            return ifOnlyIf(left, right.negate());
         }
-        return new IrXor(left, right, TrueFalseDomain);
-    }
-
-    public static IrBoolExpr within(IrIntExpr value, Domain range) {
-        Domain domain = value.getDomain();
-        range = domain.intersection(range);
-        if (range.isEmpty()) {
-            return False;
-        }
-        if (range.isBounded()
-                && domain.getLowBound() >= range.getLowBound()
-                && domain.getHighBound() <= range.getHighBound()) {
-            return True;
-        }
-        if (domain.getLowBound() > range.getHighBound()
-                || domain.getHighBound() < range.getLowBound()) {
-            return False;
-        }
-        if (range.size() == 1) {
-            return equal(value, range.getLowBound());
-        }
-        Domain diff = domain.difference(range);
-        switch (diff.size()) {
-            case 0:
-                return True;
-            case 1:
-                return notEqual(value, diff.getLowBound());
-            default:
-                return new IrWithin(value, range, TrueFalseDomain);
-        }
+        return new IrIfOnlyIf(left, right.negate(), TrueFalseDomain);
     }
 
     public static IrBoolExpr compare(int left, IrCompare.Op op, IrIntExpr right) {
@@ -364,23 +298,6 @@ public class Irs {
                 }
                 if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
                     return xor((IrBoolExpr) left, (IrBoolExpr) right);
-                }
-                break;
-            case LessThan:
-                if (left.equals(right)) {
-                    return False;
-                }
-                if (leftDomain.getHighBound() < rightDomain.getLowBound()) {
-                    return True;
-                }
-                if (leftDomain.getLowBound() >= rightDomain.getHighBound()) {
-                    return False;
-                }
-                if (left instanceof IrBoolExpr && right instanceof IrBoolExpr) {
-                    return not(implies((IrBoolExpr) right, (IrBoolExpr) left));
-                }
-                if (left instanceof IrMinus && right instanceof IrMinus) {
-                    return greaterThan(((IrMinus) left).getExpr(), ((IrMinus) right).getExpr());
                 }
                 break;
             case LessThanEqual:
@@ -535,8 +452,8 @@ public class Irs {
                 if (!left.getCard().intersects(right.getCard())) {
                     return False;
                 }
-                Domain constant = IrUtil.getConstant(left);
-                if (constant != null) {
+                if (left.isConstant()) {
+                    Domain constant = left.getKer();
                     /*
                      * The idea is that integer constraints are easier to
                      * optimize than set constraints. If the expression is a top
@@ -551,8 +468,8 @@ public class Irs {
                                 ? equal(card(right), constant.size()) : False;
                     }
                 }
-                constant = IrUtil.getConstant(right);
-                if (constant != null) {
+                if (right.isConstant()) {
+                    Domain constant = right.getKer();
                     if (constant.isEmpty()) {
                         return equal(card(left), 0);
                     }
@@ -580,8 +497,8 @@ public class Irs {
                 if (!left.getCard().intersects(right.getCard())) {
                     return True;
                 }
-                constant = IrUtil.getConstant(left);
-                if (constant != null) {
+                if (left.isConstant()) {
+                    Domain constant = left.getKer();
                     if (constant.isEmpty()) {
                         return notEqual(card(right), 0);
                     }
@@ -590,8 +507,8 @@ public class Irs {
                                 ? notEqual(card(right), constant.size()) : True;
                     }
                 }
-                constant = IrUtil.getConstant(right);
-                if (constant != null) {
+                if (right.isConstant()) {
+                    Domain constant = right.getKer();
                     if (constant.isEmpty()) {
                         return notEqual(card(left), 0);
                     }
@@ -666,7 +583,10 @@ public class Irs {
     }
 
     public static IrBoolExpr lessThan(IrIntExpr left, IrIntExpr right) {
-        return compare(left, IrCompare.Op.LessThan, right);
+        if (!left.isConstant() && (right.isConstant() || right instanceof IrAdd)) {
+            return compare(left, IrCompare.Op.LessThanEqual, sub(right, 1));
+        }
+        return compare(add(left, 1), IrCompare.Op.LessThanEqual, right);
     }
 
     public static IrBoolExpr lessThanEqual(int left, IrIntExpr right) {
@@ -690,7 +610,7 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThan(IrIntExpr left, IrIntExpr right) {
-        return compare(right, IrCompare.Op.LessThan, left);
+        return lessThan(right, left);
     }
 
     public static IrBoolExpr greaterThanEqual(int left, IrIntExpr right) {
@@ -702,18 +622,28 @@ public class Irs {
     }
 
     public static IrBoolExpr greaterThanEqual(IrIntExpr left, IrIntExpr right) {
-        return compare(right, IrCompare.Op.LessThanEqual, left);
+        return lessThanEqual(right, left);
     }
 
     public static IrBoolExpr member(IrIntExpr element, IrSetExpr set) {
         if (element.getDomain().isSubsetOf(set.getKer())) {
             return True;
-        }
-        if (!element.getDomain().intersects(set.getEnv())) {
+        } else if (!element.getDomain().intersects(set.getEnv())) {
             return False;
-        }
-        if (IrUtil.isConstant(set)) {
-            return within(element, set.getEnv());
+        } else if (set.getEnv().isConstant()) {
+            if (element.isConstant()) {
+                return equal(card(set), 1);
+            } else if (set.isConstant()) {
+                return equal(element, set.getEnv().getLowBound());
+            }
+        } else if (set.isConstant()) {
+            Domain diff = element.getDomain().difference(set.getKer());
+            switch (diff.size()) {
+                case 0:
+                    return True;
+                case 1:
+                    return notEqual(element, diff.getLowBound());
+            }
         }
         return new IrMember(element, set, TrueFalseDomain);
     }
@@ -721,12 +651,22 @@ public class Irs {
     public static IrBoolExpr notMember(IrIntExpr element, IrSetExpr set) {
         if (!element.getDomain().intersects(set.getEnv())) {
             return True;
-        }
-        if (element.getDomain().isSubsetOf(set.getKer())) {
+        } else if (element.getDomain().isSubsetOf(set.getKer())) {
             return False;
-        }
-        if (IrUtil.isConstant(set)) {
-            return within(element, set.getEnv()).negate();
+        } else if (set.getEnv().isConstant()) {
+            if (element.isConstant()) {
+                return equal(card(set), 0);
+            } else if (set.isConstant()) {
+                return notEqual(element, set.getEnv().getLowBound());
+            }
+        } else if (set.isConstant()) {
+            Domain diff = element.getDomain().difference(set.getKer());
+            switch (diff.size()) {
+                case 0:
+                    return False;
+                case 1:
+                    return equal(element, diff.getLowBound());
+            }
         }
         return new IrNotMember(element, set, TrueFalseDomain);
     }
@@ -744,26 +684,22 @@ public class Irs {
     public static IrBoolExpr boolChannel(IrBoolExpr[] bools, IrSetExpr set) {
         if (set.getEnv().isEmpty()
                 || (set.getEnv().getLowBound() >= 0 && set.getEnv().getHighBound() < bools.length)) {
-            {
-                Domain constant = IrUtil.getConstant(set);
-                if (constant != null) {
-                    IrBoolExpr[] ands = new IrBoolExpr[bools.length];
-                    for (int i = 0; i < ands.length; i++) {
-                        ands[i] = equal(bools[i], constant.contains(i) ? True : False);
-                    }
-                    return and(ands);
+            if (set.isConstant()) {
+                IrBoolExpr[] ands = new IrBoolExpr[bools.length];
+                for (int i = 0; i < ands.length; i++) {
+                    ands[i] = equal(bools[i], set.getKer().contains(i) ? True : False);
                 }
-                if (bools.length == 1) {
-                    return equal(bools[0], card(set));
-                }
+                return and(ands);
+            }
+            if (bools.length == 1) {
+                return equal(bools[0], card(set));
             }
             TIntHashSet values = new TIntHashSet();
             Domain env = set.getEnv();
             Domain ker = set.getKer();
             boolean entailed = true;
             for (int i = 0; i < bools.length; i++) {
-                Boolean constant = IrUtil.getConstant(bools[i]);
-                if (Boolean.TRUE.equals(constant)) {
+                if (bools[i].getDomain().isTrue()) {
                     if (values != null) {
                         values.add(i);
                     }
@@ -773,7 +709,7 @@ public class Irs {
                     if (!ker.contains(i)) {
                         entailed = false;
                     }
-                } else if (Boolean.FALSE.equals(constant)) {
+                } else if (bools[i].getDomain().isFalse()) {
                     if (ker.contains(i)) {
                         return False;
                     }
@@ -808,8 +744,8 @@ public class Irs {
         }
         boolean entailed = true;
         for (int i = 0; i < ints.length; i++) {
-            Integer constant = IrUtil.getConstant(ints[i]);
-            if (constant != null) {
+            if (ints[i].isConstant()) {
+                int constant = ints[i].getLowBound();
                 if (constant < 0 || constant >= sets.length) {
                     return False;
                 }
@@ -824,9 +760,8 @@ public class Irs {
             }
         }
         for (int i = 0; i < sets.length; i++) {
-            Domain constant = IrUtil.getConstant(sets[i]);
-            if (constant != null) {
-                TIntIterator iter = constant.iterator();
+            if (sets[i].isConstant()) {
+                PrimitiveIterator.OfInt iter = sets[i].getKer().iterator();
                 while (iter.hasNext()) {
                     int j = iter.next();
                     if (j < 0 || j >= ints.length) {
@@ -878,10 +813,10 @@ public class Irs {
         if (sets.length == 0) {
             return True;
         }
-        Integer low = bounds.length == 1 ? Integer.valueOf(0) : IrUtil.getConstant(bounds[bounds.length - 2]);
-        if (low != null) {
-            Integer high = IrUtil.getConstant(bounds[bounds.length - 1]);
-            if (high != null) {
+        if (bounds.length == 1 || bounds[bounds.length - 2].isConstant()) {
+            int low = bounds.length == 1 ? 0 : bounds[bounds.length - 2].getLowBound();
+            if (bounds[bounds.length - 1].isConstant()) {
+                int high = bounds[bounds.length - 1].getLowBound();
                 Domain bound = fromToDomain(low, high);
 
                 IrSetExpr[] filterSets = Arrays.copyOf(sets, sets.length - 1);
@@ -1063,15 +998,14 @@ public class Irs {
         boolean entailed = true;
         Domain nDomain = n.getDomain();
         for (int i = 0; i < bools.length; i++) {
-            Boolean constant = IrUtil.getConstant(bools[i]);
-            if (Boolean.TRUE.equals(constant)) {
+            if (bools[i].getDomain().isTrue()) {
                 if (i >= nDomain.getHighBound()) {
                     return False;
                 }
                 if (i >= nDomain.getLowBound()) {
                     entailed = false;
                 }
-            } else if (Boolean.FALSE.equals(constant)) {
+            } else if (bools[i].getDomain().isFalse()) {
                 if (i < nDomain.getLowBound()) {
                     return False;
                 }
@@ -1087,8 +1021,8 @@ public class Irs {
                 && n.getDomain().getHighBound() <= bools.length) {
             return True;
         }
-        Integer constant = IrUtil.getConstant(n);
-        if (constant != null) {
+        if (n.isConstant()) {
+            int constant = n.getLowBound();
             IrBoolExpr[] ands = new IrBoolExpr[bools.length];
             System.arraycopy(bools, 0, ands, 0, constant);
             for (int i = constant; i < bools.length; i++) {
@@ -1112,54 +1046,6 @@ public class Irs {
 
     public static IrBoolExpr connected(IrSetExpr nodes, IrSetArrayExpr relation, boolean directed) {
         return new IrConnected(nodes, relation, directed, TrueFalseDomain);
-    }
-
-    public static IrBoolExpr filterString(IrSetExpr set, IrIntExpr[] string, IrIntExpr[] result) {
-        if (set.getEnv().isEmpty()) {
-            return filterString(set, 0, new IrIntExpr[0], result);
-        }
-        int offset = set.getEnv().getLowBound();
-        int end = set.getEnv().getHighBound();
-        return filterString(set, offset,
-                Arrays.copyOfRange(string, offset, end + 1),
-                result);
-    }
-
-    public static IrBoolExpr filterString(IrSetExpr set, int offset, IrIntExpr[] string, IrIntExpr[] result) {
-        Domain constant = IrUtil.getConstant(set);
-        if (constant != null) {
-            int[] array = constant.getValues();
-            IrBoolExpr[] ands = new IrBoolExpr[result.length];
-            for (int i = 0; i < array.length; i++) {
-                ands[i] = equal(string[array[i] - offset], result[i]);
-            }
-            for (int i = array.length; i < result.length; i++) {
-                ands[i] = equal(result[i], -1);
-            }
-            return and(ands);
-        }
-        IrIntExpr[] filterString = Arrays.copyOf(string, string.length);
-        IrIntExpr[] filterResult = Arrays.copyOf(result, result.length);
-        TIntIterator iter = set.getEnv().iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            int env = iter.next();
-            int x = env - offset;
-            if (!set.getKer().contains(env) || !filterString[x].equals(filterResult[i])) {
-                break;
-            }
-            filterString[x] = Zero;
-            filterResult[i] = Zero;
-            i++;
-        }
-        int cut = filterResult.length;
-        while (cut > 0 && Integer.valueOf(-1).equals(IrUtil.getConstant(filterResult[cut - 1]))) {
-            cut--;
-        }
-        if (cut != filterResult.length) {
-            filterResult = Arrays.copyOf(filterResult, cut);
-        }
-        return new IrFilterString(set, offset, filterString, filterResult, TrueFalseDomain);
     }
 
     /*
@@ -1194,8 +1080,8 @@ public class Irs {
      *
      *******************
      */
-    public static IrIntVar Zero = False;
-    public static IrIntVar One = True;
+    public static final IrIntVar Zero = False;
+    public static final IrIntVar One = True;
 
     public static IrIntVar constant(int value) {
         switch (value) {
@@ -1204,18 +1090,21 @@ public class Irs {
             case 1:
                 return One;
             default:
-                return new IrIntConstant(value);
+                return new IrIntVar(value);
         }
     }
 
     public static IrIntVar domainInt(String name, Domain domain) {
-        if (domain.size() == 1) {
-            return constant(domain.getLowBound());
+        switch (domain.size()) {
+            case 1:
+                return constant(domain.getLowBound());
+            case 2:
+                if (domain.getLowBound() == 0 && domain.getHighBound() == 1) {
+                    return new IrBoolVar(name, TrueFalseDomain);
+                }
+            default:
+                return new IrIntVar(name, domain);
         }
-        if (domain instanceof BoolDomain) {
-            return new IrBoolVar(name, (BoolDomain) domain);
-        }
-        return new IrIntVar(name, domain);
     }
 
     public static IrIntVar boundInt(String name, int low, int high) {
@@ -1227,9 +1116,8 @@ public class Irs {
     }
 
     public static IrIntExpr minus(IrIntExpr expr) {
-        Integer constant = IrUtil.getConstant(expr);
-        if (constant != null) {
-            return constant(-constant);
+        if (expr.isConstant()) {
+            return constant(-expr.getLowBound());
         }
         if (expr instanceof IrMinus) {
             IrMinus minus = (IrMinus) expr;
@@ -1243,9 +1131,32 @@ public class Irs {
         if (set instanceof IrSetVar) {
             IrSetVar var = (IrSetVar) set;
             return var.getCardVar();
+        } else if (set instanceof IrJoinFunction) {
+            IrJoinFunction join = (IrJoinFunction) set;
+            if (join.hasGlobalCardinality() && join.getGlobalCardinality().equals(1)) {
+                return card(join.getTake());
+            }
+        } else if (set instanceof IrSetUnion) {
+            IrSetUnion union = (IrSetUnion) set;
+            if (union.isDisjoint()) {
+                IrSetExpr[] operands = union.getOperands();
+                IrIntExpr[] cards = new IrIntExpr[operands.length];
+                for (int i = 0; i < cards.length; i++) {
+                    cards[i] = card(operands[i]);
+                }
+                return add(cards);
+            }
+        } else if (set instanceof IrOffset) {
+            IrOffset offset = (IrOffset) set;
+            return card(offset.getSet());
+        } else if (set instanceof IrSetTernary) {
+            IrSetTernary ternary = (IrSetTernary) set;
+            return ternary(ternary.getAntecedent(),
+                    card(ternary.getConsequent()),
+                    card(ternary.getAlternative()));
         }
         Domain domain = set.getCard();
-        if (domain.size() == 1) {
+        if (domain.isConstant()) {
             return constant(domain.getLowBound());
         }
         return new IrCard(set, domain);
@@ -1279,9 +1190,8 @@ public class Irs {
                 filter.addAll(Arrays.asList(add.getAddends()));
                 constants += add.getOffset();
             } else {
-                Integer constant = IrUtil.getConstant(addend);
-                if (constant != null) {
-                    constants += constant;
+                if (addend.isConstant()) {
+                    constants += addend.getLowBound();
                 } else {
                     filter.add(addend);
                 }
@@ -1298,19 +1208,14 @@ public class Irs {
             return new IrAdd(new IrIntExpr[]{first}, constants,
                     first.getDomain().offset(constants));
         }
-        int low = constants;
-        int high = constants;
-        for (IrIntExpr addend : filter) {
-            low += addend.getDomain().getLowBound();
-            high += addend.getDomain().getHighBound();
-        }
-        Domain domain = boundDomain(low, high);
+        Domain domain = filter.stream().map(IrIntExpr::getDomain).reduce(
+                constantDomain(constants), Domain::add);
         return new IrAdd(filter.toArray(new IrIntExpr[filter.size()]), constants, domain);
     }
 
     public static IrIntExpr sub(int minuend, IrIntExpr subtrahend) {
         if (minuend == 0) {
-            return subtrahend;
+            return minus(subtrahend);
         }
         return sub(constant(minuend), subtrahend);
     }
@@ -1369,10 +1274,8 @@ public class Irs {
     }
 
     public static IrIntExpr mul(IrIntExpr multiplicand, IrIntExpr multiplier, Domain intRange) {
-        Integer multiplicandConstant = IrUtil.getConstant(multiplicand);
-        Integer multiplierConstant = IrUtil.getConstant(multiplier);
-        if (multiplicandConstant != null) {
-            switch (multiplicandConstant) {
+        if (multiplicand.isConstant()) {
+            switch (multiplicand.getLowBound()) {
                 case -1:
                     return minus(multiplier);
                 case 0:
@@ -1381,8 +1284,8 @@ public class Irs {
                     return multiplier;
             }
         }
-        if (multiplierConstant != null) {
-            switch (multiplierConstant) {
+        if (multiplier.isConstant()) {
+            switch (multiplier.getLowBound()) {
                 case -1:
                     return minus(multiplicand);
                 case 0:
@@ -1391,18 +1294,19 @@ public class Irs {
                     return multiplicand;
             }
         }
-        if (multiplicandConstant != null && multiplierConstant != null) {
-            return constant(multiplicandConstant * multiplierConstant);
+        if (multiplicand.isConstant() && multiplier.isConstant()) {
+            return constant(multiplicand.getLowBound() * multiplier.getLowBound());
         }
         Domain domain;
         long m0 = multiplicand.getDomain().size();
         long m1 = multiplier.getDomain().size();
         if (m0 * m1 <= 16 || m0 * m1 <= intRange.size()) {
             TIntSet domainSet = new TIntHashSet();
-            TIntIterator iter0 = multiplicand.getDomain().iterator();
+            PrimitiveIterator.OfInt iter0 = multiplicand.getDomain().iterator();
+            // TODO: implement domain.mul
             while (iter0.hasNext()) {
                 long i0 = iter0.next();
-                TIntIterator iter1 = multiplier.getDomain().iterator();
+                PrimitiveIterator.OfInt iter1 = multiplier.getDomain().iterator();
                 while (iter1.hasNext()) {
                     long i1 = iter1.next();
                     long mul = i0 * i1;
@@ -1459,19 +1363,17 @@ public class Irs {
     }
 
     public static IrIntExpr div(IrIntExpr dividend, IrIntExpr divisor) {
-        Integer dividendConstant = IrUtil.getConstant(dividend);
-        Integer divisorConstant = IrUtil.getConstant(divisor);
-        if (dividendConstant != null && dividendConstant == 0) {
+        if (dividend.isConstant() && dividend.getLowBound() == 0) {
             return dividend;
         }
-        if (divisorConstant != null && divisorConstant == 1) {
+        if (divisor.isConstant() && divisor.getLowBound() == 1) {
             return dividend;
         }
-        if (dividendConstant != null && divisorConstant != null) {
-            if (divisorConstant == 0) {
+        if (dividend.isConstant() && divisor.isConstant()) {
+            if (divisor.getLowBound() == 0) {
                 throw new UnsatisfiableException();
             }
-            return constant(dividendConstant / divisorConstant);
+            return constant(dividend.getLowBound() / divisor.getLowBound());
         }
         int low = dividend.getDomain().getLowBound();
         int high = dividend.getDomain().getHighBound();
@@ -1481,16 +1383,14 @@ public class Irs {
     }
 
     public static IrIntExpr mod(IrIntExpr dividend, IrIntExpr divisor) {
-        Integer dividendConstant = IrUtil.getConstant(dividend);
-        Integer divisorConstant = IrUtil.getConstant(divisor);
-        if (dividendConstant != null && dividendConstant == 0) {
+        if (dividend.isConstant() && dividend.getLowBound() == 0) {
             return dividend;
         }
-        if (divisorConstant != null && divisorConstant == 1) {
-            return dividend;
-        }
-        if (dividendConstant != null && divisorConstant != null) {
-            return constant(dividendConstant % divisorConstant);
+        if (dividend.isConstant() && divisor.isConstant()) {
+            if (divisor.getLowBound() == 0) {
+                throw new UnsatisfiableException();
+            }
+            return constant(dividend.getLowBound() % divisor.getLowBound());
         }
         int low = divisor.getDomain().getLowBound();
         int high = divisor.getDomain().getHighBound();
@@ -1506,33 +1406,23 @@ public class Irs {
     public static IrIntExpr element(IrIntArrayExpr array, IrIntExpr index) {
         IrIntArrayExpr $array = subArray(array, 0, index.getDomain().getHighBound() + 1);
 
-        Integer constant = IrUtil.getConstant(index);
-        if (constant != null) {
-            return get($array, constant);
+        if (index.isConstant()) {
+            return get($array, index.getLowBound());
+        } else if (index instanceof IrBoolExpr) {
+            return ternary((IrBoolExpr) index, get($array, 1), get($array, 0));
         }
-        TIntIterator iter = index.getDomain().iterator();
-        assert iter.hasNext();
 
-        Domain domain = $array.getDomains()[iter.next()];
-        int low = domain.getLowBound();
-        int high = domain.getHighBound();
-        while (iter.hasNext()) {
-            int val = iter.next();
-            if (val < $array.length()) {
-                domain = $array.getDomains()[val];
-                // TODO Use IrUtil.union
-                low = Math.min(low, domain.getLowBound());
-                high = Math.max(high, domain.getHighBound());
-            }
-        }
-        domain = boundDomain(low, high);
-        return new IrElement($array, index, domain);
+        Optional<Domain> domain = Util.mapWithin(
+                index.getDomain().stream(), $array.getDomains())
+                .reduce(Domain::union);
+        assert domain.isPresent();
+        return IrUtil.asConstant(new IrElement($array, index, domain.get()));
     }
 
-    public static IrIntExpr count(int value, IrIntExpr[] array) {
+    public static IrIntExpr count(int value, IrIntArrayExpr array) {
         List<IrIntExpr> filter = new ArrayList<>();
         int count = 0;
-        for (IrIntExpr i : array) {
+        for (IrIntExpr i : IrUtil.asArray(array)) {
             if (i.equals(constant(value))) {
                 count++;
             } else if (i.getDomain().contains(value)) {
@@ -1546,62 +1436,68 @@ public class Irs {
                 return add(equal(value, filter.get(0)), count);
             default:
                 return add(
-                        new IrCount(value, filter.toArray(new IrIntExpr[filter.size()]), boundDomain(0, filter.size())),
-                        count);
-        }
-    }
-
-    public static IrIntExpr countNotEqual(int value, IrIntArrayExpr array) {
-        List<IrIntExpr> filter = new ArrayList<>();
-        int count = 0;
-        for (IrIntExpr i : IrUtil.asArray(array)) {
-            if (!i.getDomain().contains(value)) {
-                count++;
-            } else if (!i.equals(constant(value))) {
-                filter.add(i);
-            }
-        }
-        switch (filter.size()) {
-            case 0:
-                return constant(count);
-            case 1:
-                return add(notEqual(value, filter.get(0)), count);
-            default:
-                return add(
-                        new IrCountNotEqual(
-                                value,
+                        new IrCount(value,
                                 array.length() == filter.size() ? array : intArray(filter),
                                 boundDomain(0, filter.size())),
                         count);
         }
     }
 
+    public static IrIntExpr countNotEqual(int value, IrIntArrayExpr array) {
+        return sub(array.length(), count(value, array));
+    }
+
     public static IrIntExpr max(IrSetExpr set, int defaultValue) {
+        if (set.getCard().getHighBound() == 0) {
+            return constant(defaultValue);
+        }
+        if (set instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) set;
+            return singleton.getValue();
+        }
         Domain domain = set.getEnv();
         if (!set.getKer().isEmpty()) {
             domain = domain.boundLow(set.getKer().getHighBound());
         }
-        return new IrSetMax(set, defaultValue, set.getCard().getLowBound() > 0
-                ? domain : domain.insert(defaultValue));
+        return IrUtil.asConstant(new IrSetMax(set, defaultValue, set.getCard().getLowBound() > 0
+                ? domain : domain.insert(defaultValue)));
     }
 
     public static IrIntExpr min(IrSetExpr set, int defaultValue) {
+        if (set.getCard().getHighBound() == 0) {
+            return constant(defaultValue);
+        }
+        if (set instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) set;
+            return singleton.getValue();
+        }
         Domain domain = set.getEnv();
         if (!set.getKer().isEmpty()) {
             domain = domain.boundHigh(set.getKer().getLowBound());
         }
-        return new IrSetMin(set, defaultValue, set.getCard().getLowBound() > 0
-                ? domain : domain.insert(defaultValue));
+        return IrUtil.asConstant(new IrSetMin(set, defaultValue, set.getCard().getLowBound() > 0
+                ? domain : domain.insert(defaultValue)));
     }
 
     public static IrIntExpr sum(IrSetExpr set) {
-        int sum = Util.sum(set.getKer().iterator());
+        if (set.getCard().getHighBound() == 0) {
+            return Zero;
+        }
+        if (set.getCard().getHighBound() == 1) {
+            return min(set, 0);
+        }
+        if (set instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) set;
+            return singleton.getValue();
+        }
+
+        int sum = set.getKer().stream().sum();
         int count = set.getKer().size();
 
         // Calculate low
         int low = sum;
         int lowCount = count;
-        TIntIterator envIter = set.getEnv().iterator();
+        PrimitiveIterator.OfInt envIter = set.getEnv().iterator();
         while (lowCount < set.getCard().getHighBound() && envIter.hasNext()) {
             int env = envIter.next();
             if (env >= 0 && lowCount >= set.getCard().getLowBound()) {
@@ -1632,19 +1528,14 @@ public class Irs {
     }
 
     public static IrIntExpr ternary(IrBoolExpr antecedent, IrIntExpr consequent, IrIntExpr alternative) {
-        if (IrUtil.isTrue(antecedent)) {
+        if (antecedent.getDomain().isTrue()) {
             return consequent;
         }
-        if (IrUtil.isFalse(antecedent)) {
+        if (antecedent.getDomain().isFalse()) {
             return alternative;
         }
         if (consequent.equals(alternative)) {
             return consequent;
-        }
-        Integer consequentConstant = IrUtil.getConstant(consequent);
-        Integer alternativeConstant = IrUtil.getConstant(alternative);
-        if (consequentConstant != null && consequentConstant.equals(alternativeConstant)) {
-            return constant(consequentConstant);
         }
         Domain domain = consequent.getDomain().union(alternative.getDomain());
         return new IrTernary(antecedent, consequent, alternative, domain);
@@ -1664,7 +1555,7 @@ public class Irs {
      *
      *******************
      */
-    public static final IrSetVar EmptySet = new IrSetConstant(EmptyDomain);
+    public static final IrSetVar EmptySet = new IrSetVar(EmptyDomain);
 
     public static IrSetVar set(String name, int lowEnv, int highEnv) {
         return set(name, boundDomain(lowEnv, highEnv));
@@ -1703,7 +1594,11 @@ public class Irs {
     }
 
     public static IrSetVar set(String name, Domain env, Domain ker, IrIntVar card) {
-        return IrUtil.asConstant(new IrSetVar(name, env, ker, card));
+        IrSetVar var = new IrSetVar(name, env, ker, card);
+        if (var.isConstant()) {
+            return constant(var.getKer());
+        }
+        return var;
     }
 
     public static IrSetVar constant(int[] value) {
@@ -1722,13 +1617,12 @@ public class Irs {
         if (value.isEmpty()) {
             return EmptySet;
         }
-        return new IrSetConstant(value);
+        return new IrSetVar(value);
     }
 
     public static IrSetExpr singleton(IrIntExpr value) {
-        Integer constant = IrUtil.getConstant(value);
-        if (constant != null) {
-            return constant(new int[]{constant});
+        if (value.isConstant()) {
+            return constant(constantDomain(value.getLowBound()));
         }
         return new IrSingleton(value, value.getDomain(), EmptyDomain);
     }
@@ -1737,9 +1631,8 @@ public class Irs {
         if (!value.getDomain().contains(filter)) {
             return singleton(value);
         }
-        Integer constant = IrUtil.getConstant(value);
-        if (constant != null) {
-            return constant.equals(filter) ? EmptySet : constant(new int[]{constant});
+        if (value.isConstant()) {
+            return value.getLowBound() == filter ? EmptySet : singleton(value);
         }
         return new IrSingletonFilter(value, filter, value.getDomain().remove(filter), EmptyDomain, ZeroOneDomain);
     }
@@ -1757,9 +1650,8 @@ public class Irs {
                 }
                 TIntSet values = new TIntHashSet();
                 for (IrIntExpr i : array) {
-                    Integer constant = IrUtil.getConstant(i);
-                    if (constant != null) {
-                        values.add(constant);
+                    if (i.isConstant()) {
+                        values.add(i.getLowBound());
                     }
                 }
                 Domain ker = enumDomain(values);
@@ -1776,40 +1668,15 @@ public class Irs {
         }
     }
 
-//    public static IrSetExpr element(IrSetExpr[] array, IrIntExpr index) {
-//        IrSetExpr[] $array = index.getDomain().getHighBound() + 1 < array.length
-//                ? Arrays.copyOf(array, index.getDomain().getHighBound() + 1)
-//                : array.clone();
-//        for (int i = 0; i < $array.length; i++) {
-//            if (!index.getDomain().contains(i)) {
-//                $array[i] = EmptySet;
-//            }
-//        }
-//
-//        Integer constant = IrUtil.getConstant(index);
-//        if (constant != null) {
-//            return $array[constant];
-//        }
-//        TIntIterator iter = index.getDomain().iterator();
-//        assert iter.hasNext();
-//
-//        int val = iter.next();
-//        Domain env = $array[val].getEnv();
-//        Domain ker = $array[val].getKer();
-//        Domain card = $array[val].getCard();
-//        while (iter.hasNext()) {
-//            val = iter.next();
-//            if (val < $array.length) {
-//                env = env.union($array[val].getEnv());
-//                ker = ker.intersection($array[val].getKer());
-//                card = card.union($array[val].getCard());
-//            }
-//        }
-//        return new IrSetElement($array, index, env, ker, card);
-//    }
     public static IrSetExpr element(IrSetArrayExpr array, IrIntExpr index) {
+        if (index.isConstant()) {
+            return get(array, index.getLowBound());
+        } else if (index instanceof IrBoolExpr) {
+            return ternary((IrBoolExpr) index, get(array, 1), get(array, 0));
+        }
+
         // TODO bound for other element calls
-        TIntIterator iter = index.getDomain().boundBetween(0, array.length() - 1).iterator();
+        PrimitiveIterator.OfInt iter = index.getDomain().boundBetween(0, array.length() - 1).iterator();
         assert iter.hasNext();
 
         int val = iter.next();
@@ -1822,7 +1689,7 @@ public class Irs {
             ker = ker.intersection(array.getKers()[val]);
             card = card.union(array.getCards()[val]);
         }
-        return new IrSetElement(array, index, env, ker, card);
+        return IrUtil.asConstant(new IrSetElement(array, index, env, ker, card));
     }
 
     /**
@@ -1836,19 +1703,22 @@ public class Irs {
      * @return the join expression take.children
      */
     public static IrSetExpr joinRelation(IrSetExpr take, IrSetArrayExpr children, boolean injective) {
-        if (take.getEnv().isEmpty()) {
+        Domain takeEnv = take.getEnv();
+        Domain takeKer = take.getKer();
+        Domain takeCard = take.getCard();
+
+        if (takeEnv.isEmpty()) {
             return EmptySet;
         }
-        IrSetArrayExpr $children = subArray(children, 0, take.getEnv().getHighBound() + 1);
+        IrSetArrayExpr $children = subArray(children, 0, takeEnv.getHighBound() + 1);
 
         IrIntExpr[] ints = IrUtil.asInts(children);
         if (ints != null) {
-            return joinFunction(take, ints, injective ? 1 : 0);
+            return joinFunction(take, ints, injective ? 1 : null);
         }
 
-        Domain constant = IrUtil.getConstant(take);
-        if (constant != null) {
-            int[] array = constant.getValues();
+        if (take.isConstant()) {
+            int[] array = takeKer.getValues();
             IrSetExpr[] to = new IrSetExpr[array.length];
             for (int i = 0; i < to.length; i++) {
                 // TODO optimize
@@ -1857,42 +1727,28 @@ public class Irs {
             return union(to, injective);
         }
 
-        // Compute env
-        TIntIterator iter = take.getEnv().iterator();
-        Domain env;
-        if (iter.hasNext()) {
-            Domain domain = $children.getEnvs()[iter.next()];
-            while (iter.hasNext()) {
-                domain = domain.union($children.getEnvs()[iter.next()]);
-            }
-            env = domain;
-        } else {
-            env = EmptyDomain;
+        if (take instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) take;
+            return element(children, singleton.getValue());
         }
+
+        // Compute env
+        Domain env = Util.map(
+                takeEnv.stream(), $children.getEnvs())
+                .reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute ker
-        iter = take.getKer().iterator();
-        Domain ker;
-        if (iter.hasNext()) {
-            Domain domain = $children.getKers()[iter.next()];
-            while (iter.hasNext()) {
-                domain = domain.union($children.getKers()[iter.next()]);
-            }
-            ker = domain;
-        } else {
-            ker = EmptyDomain;
-        }
+        Domain ker = Util.map(
+                takeKer.stream(), $children.getKers())
+                .reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute card
-        Domain takeEnv = take.getEnv();
-        Domain takeKer = take.getKer();
-        Domain takeCard = take.getCard();
         int index = 0;
         int[] childrenLowCards = new int[takeEnv.size() - takeKer.size()];
         int[] childrenHighCards = new int[takeEnv.size() - takeKer.size()];
         int cardLow = 0, cardHigh = 0;
 
-        iter = takeEnv.iterator();
+        PrimitiveIterator.OfInt iter = takeEnv.iterator();
         while (iter.hasNext()) {
             int val = iter.next();
             Domain childDomain = $children.getCards()[val];
@@ -1932,15 +1788,28 @@ public class Irs {
         return joinFunction(take, array(refs), globalCardinality);
     }
 
+    private static boolean isIdentityRelation(IrIntArrayExpr refs) {
+        for (int i = 0; i < refs.length(); i++) {
+            Domain domain = refs.getDomains()[i];
+            if (!domain.isConstant() || domain.getLowBound() != i) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static IrSetExpr joinFunction(IrSetExpr take, IrIntArrayExpr refs, Integer globalCardinality) {
-        if (take.getEnv().isEmpty()) {
+        Domain takeEnv = take.getEnv();
+        Domain takeKer = take.getKer();
+        Domain takeCard = take.getCard();
+
+        if (takeEnv.isEmpty()) {
             return EmptySet;
         }
-        IrIntArrayExpr $refs = subArray(refs, 0, take.getEnv().getHighBound() + 1);
+        IrIntArrayExpr $refs = subArray(refs, 0, takeEnv.getHighBound() + 1);
 
-        Domain constant = IrUtil.getConstant(take);
-        if (constant != null) {
-            int[] array = constant.getValues();
+        if (take.isConstant()) {
+            int[] array = takeKer.getValues();
             IrIntExpr[] to = new IrIntExpr[array.length];
             for (int i = 0; i < to.length; i++) {
                 to[i] = get($refs, array[i]);
@@ -1948,32 +1817,26 @@ public class Irs {
             return arrayToSet(to, globalCardinality);
         }
 
-        // Compute env
-        TIntIterator iter = take.getEnv().iterator();
-        Domain env;
-        if (iter.hasNext()) {
-            Domain domain = $refs.getDomains()[iter.next()];
-            while (iter.hasNext()) {
-                domain = domain.union($refs.getDomains()[iter.next()]);
-            }
-            env = domain;
-        } else {
-            env = EmptyDomain;
+        if (isIdentityRelation($refs)) {
+            return take;
         }
+
+        if (take instanceof IrSingleton) {
+            IrSingleton singleton = (IrSingleton) take;
+            return singleton(element(refs, singleton.getValue()));
+        }
+
+        // Compute env
+        Domain env = Util.map(
+                takeEnv.stream(), refs.getDomains())
+                .reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute ker
-        iter = take.getKer().iterator();
-        TIntHashSet values = new TIntHashSet(0);
-        while (iter.hasNext()) {
-            Integer constantRef = IrUtil.getConstant($refs, iter.next());
-            if (constantRef != null) {
-                values.add(constantRef);
-            }
-        }
-        Domain ker = values.isEmpty() ? EmptyDomain : new EnumDomain(values.toArray());
+        Domain ker = Util.map(
+                takeKer.stream(), refs.getDomains())
+                .filter(Domain::isConstant).reduce(Domain::union).orElse(EmptyDomain);
 
         // Compute card
-        Domain takeCard = take.getCard();
         int lowTakeCard = takeCard.getLowBound();
         int highTakeCard = takeCard.getHighBound();
         Domain card;
@@ -2016,18 +1879,17 @@ public class Irs {
                 flatten.add(operand);
             }
         }
-        TIntSet constants = null;
+        Domain constants = null;
         List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
-            Domain constant = IrUtil.getConstant(operand);
-            if (constant == null) {
-                filter.add(operand);
-            } else {
+            if (operand.isConstant()) {
                 if (constants == null) {
-                    constants = new TIntHashSet(constant.getValues());
+                    constants = operand.getKer();
                 } else {
-                    constants.retainAll(constant.getValues());
+                    constants = constants.intersection(operand.getKer());
                 }
+            } else {
+                filter.add(operand);
             }
         }
         if (constants != null) {
@@ -2074,14 +1936,13 @@ public class Irs {
                 flatten.add(operand);
             }
         }
-        TIntSet constants = new TIntHashSet();
+        Domain constants = Domains.EmptyDomain;
         List<IrSetExpr> filter = new ArrayList<>();
         for (IrSetExpr operand : flatten) {
-            Domain constant = IrUtil.getConstant(operand);
-            if (constant == null) {
-                filter.add(operand);
+            if (operand.isConstant()) {
+                constants = constants.union(operand.getKer());
             } else {
-                constant.transferTo(constants);
+                filter.add(operand);
             }
         }
         if (!constants.isEmpty()) {
@@ -2108,9 +1969,12 @@ public class Irs {
                             : Math.max(low, operandCard.getLowBound());
                     high += operandCard.getHighBound();
                 }
-                Domain card = boundDomain(
-                        Math.max(low, ker.size()),
-                        Math.min(high, env.size()));
+                int cardLow = Math.max(low, ker.size());
+                int cardHigh = Math.min(high, env.size());
+                if (cardLow > cardHigh) {
+                    throw new IllegalSetException();
+                }
+                Domain card = boundDomain(cardLow, cardHigh);
                 return IrUtil.asConstant(new IrSetUnion(ops, env, ker, card, disjoint));
         }
     }
@@ -2146,10 +2010,10 @@ public class Irs {
     }
 
     public static IrSetExpr ternary(IrBoolExpr antecedent, IrSetExpr consequent, IrSetExpr alternative) {
-        if (IrUtil.isTrue(antecedent)) {
+        if (antecedent.getDomain().isTrue()) {
             return consequent;
         }
-        if (IrUtil.isFalse(antecedent)) {
+        if (antecedent.getDomain().isFalse()) {
             return alternative;
         }
         if (consequent.equals(alternative)) {
@@ -2199,7 +2063,7 @@ public class Irs {
             IrIntArrayVar var = (IrIntArrayVar) expr;
             return var.getArray()[index];
         }
-        return new IrElement(expr, constant(index), expr.getDomains()[index]);
+        return IrUtil.asConstant(new IrElement(expr, constant(index), expr.getDomains()[index]));
     }
 
     public static IrSetExpr get(IrSetArrayExpr expr, int index) {
@@ -2207,7 +2071,7 @@ public class Irs {
             IrSetArrayVar var = (IrSetArrayVar) expr;
             return var.getArray()[index];
         }
-        return new IrSetElement(expr, constant(index), expr.getEnvs()[index], expr.getKers()[index], expr.getCards()[index]);
+        return IrUtil.asConstant(new IrSetElement(expr, constant(index), expr.getEnvs()[index], expr.getKers()[index], expr.getCards()[index]));
     }
 
     public static IrIntArrayExpr subArray(IrIntArrayExpr expr, int from, int to) {
@@ -2303,7 +2167,7 @@ public class Irs {
             kers[i] = new TIntHashSet();
         }
         for (int i = 0; i < relation.length(); i++) {
-            TIntIterator iter = relation.getEnvs()[i].iterator();
+            PrimitiveIterator.OfInt iter = relation.getEnvs()[i].iterator();
             while (iter.hasNext()) {
                 int val = iter.next();
                 if (val < envs.length) {
@@ -2339,13 +2203,8 @@ public class Irs {
                 env.add(i);
             }
             do {
-                TIntIterator iter = relation.getEnvs()[q.pop()].iterator();
-                while (iter.hasNext()) {
-                    int j = iter.next();
-                    if (env.add(j)) {
-                        q.push(j);
-                    }
-                }
+                relation.getEnvs()[q.pop()].stream()
+                        .filter(env::add).forEach(q::push);
             } while (q.size() > 0);
 
             q.push(i);
@@ -2354,13 +2213,8 @@ public class Irs {
                 ker.add(i);
             }
             do {
-                TIntIterator iter = relation.getKers()[q.pop()].iterator();
-                while (iter.hasNext()) {
-                    int j = iter.next();
-                    if (ker.add(j)) {
-                        q.push(j);
-                    }
-                }
+                relation.getKers()[q.pop()].stream()
+                        .filter(ker::add).forEach(q::push);
             } while (q.size() > 0);
 
             envs[i] = enumDomain(env);
@@ -2377,27 +2231,32 @@ public class Irs {
      *
      *******************
      */
-    public static IrStringVar EmptyString = new IrStringConstant("");
+    public static final IrStringVar EmptyString = new IrStringVar("", new IrIntVar[0], Zero);
 
     public static IrStringVar constant(String value) {
         if (value.length() == 0) {
             return EmptyString;
         }
-        return new IrStringConstant(value);
+        IrIntVar[] chars = new IrIntVar[value.length()];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = constant(value.charAt(i));
+        }
+        IrIntVar length = constant(value.length());
+        return new IrStringVar(value, chars, length);
     }
 
     public static IrStringVar string(String name, IrIntVar[] chars, IrIntVar length) {
-        if (length instanceof IrConstant) {
+        if (length.isConstant()) {
             char[] string = new char[chars.length];
             for (int i = 0; string != null && i < string.length; i++) {
-                if (chars[i] instanceof IrConstant) {
-                    string[i] = (char) IrUtil.getConstant(chars[i]).intValue();
+                if (chars[i].isConstant()) {
+                    string[i] = (char) chars[i].getLowBound();
                 } else {
                     string = null;
                 }
             }
             if (string != null) {
-                return constant(new String(string, 0, IrUtil.getConstant(length)));
+                return constant(new String(string, 0, length.getLowBound()));
             }
         }
         int lengthHigh = length.getDomain().getHighBound();
@@ -2433,11 +2292,10 @@ public class Irs {
             }
         }
 
-        Integer constant = IrUtil.getConstant(index);
-        if (constant != null) {
-            return $array[constant];
+        if (index.isConstant()) {
+            return $array[index.getLowBound()];
         }
-        TIntIterator iter = index.getDomain().iterator();
+        PrimitiveIterator.OfInt iter = index.getDomain().iterator();
         assert iter.hasNext();
 
         Domain length = EmptyDomain;
@@ -2478,9 +2336,9 @@ public class Irs {
         }
 
         Domain length;
-        if (leftLength.size() == 1) {
+        if (leftLength.isConstant()) {
             length = rightLength.offset(leftLength.getLowBound());
-        } else if (rightLength.size() == 1) {
+        } else if (rightLength.isConstant()) {
             length = leftLength.offset(rightLength.getLowBound());
         } else {
             length = boundDomain(
@@ -2513,15 +2371,13 @@ public class Irs {
     }
 
     public static IrIntArrayExpr subarray(IrIntArrayExpr array, IrIntExpr index, IrIntExpr sublength) {
-        Integer indexConstant = IrUtil.getConstant(index);
-        if (indexConstant != null) {
-            Integer sublengthConstant = IrUtil.getConstant(sublength);
-            if (sublengthConstant != null) {
+        if (index.isConstant()) {
+            if (sublength.isConstant()) {
                 IrIntExpr[] subarray = new IrIntExpr[array.length()];
-                for (int i = 0; i < sublengthConstant; i++) {
-                    subarray[i] = get(array, indexConstant + i);
+                for (int i = 0; i < sublength.getLowBound(); i++) {
+                    subarray[i] = get(array, index.getLowBound() + i);
                 }
-                for (int i = sublengthConstant; i < subarray.length; i++) {
+                for (int i = sublength.getLowBound(); i < subarray.length; i++) {
                     subarray[i] = constant(-1);
                 }
                 return array(subarray);

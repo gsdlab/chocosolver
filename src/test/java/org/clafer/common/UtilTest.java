@@ -2,8 +2,20 @@ package org.clafer.common;
 
 import java.util.Arrays;
 import java.util.List;
-import static org.junit.Assert.*;
-import static org.clafer.common.Util.*;
+import static org.clafer.common.Util.concat;
+import static org.clafer.common.Util.divCeil;
+import static org.clafer.common.Util.divFloor;
+import static org.clafer.common.Util.dropUntil;
+import static org.clafer.common.Util.endsWith;
+import static org.clafer.common.Util.ordinal;
+import static org.clafer.common.Util.permutations;
+import static org.clafer.common.Util.sequence;
+import static org.clafer.common.Util.startsWith;
+import static org.clafer.common.Util.takeUntil;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -18,6 +30,25 @@ public class UtilTest {
 
     private static List<Integer> list(Integer... items) {
         return Arrays.asList(items);
+    }
+
+    @Test
+    public void testOrdinal() {
+        int[] array = new int[]{0, 2, 3, 5, 7, 8, 9, 11};
+        assertEquals(0, ordinal(-1, array));
+        assertEquals(1, ordinal(0, array));
+        assertEquals(1, ordinal(1, array));
+        assertEquals(2, ordinal(2, array));
+        assertEquals(3, ordinal(3, array));
+        assertEquals(3, ordinal(4, array));
+        assertEquals(4, ordinal(5, array));
+        assertEquals(4, ordinal(6, array));
+        assertEquals(5, ordinal(7, array));
+        assertEquals(6, ordinal(8, array));
+        assertEquals(7, ordinal(9, array));
+        assertEquals(7, ordinal(10, array));
+        assertEquals(8, ordinal(11, array));
+        assertEquals(8, ordinal(12, array));
     }
 
     @Test

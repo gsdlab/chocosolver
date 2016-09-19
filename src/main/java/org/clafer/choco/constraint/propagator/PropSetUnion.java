@@ -1,6 +1,5 @@
 package org.clafer.choco.constraint.propagator;
 
-import org.clafer.common.Util;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
@@ -9,7 +8,8 @@ import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.solver.variables.events.SetEventType;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.procedure.IntProcedure;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
+import org.clafer.common.Util;
 
 /**
  * Idempotent version of the one provided by the Choco library.
@@ -50,10 +50,10 @@ public class PropSetUnion extends Propagator<SetVar> {
     }
 
     private void findMate(int unionEnv) throws ContradictionException {
-        boolean inKer = union.kernelContains(unionEnv);
+        boolean inKer = union.getLB().contains(unionEnv);
         int mate = -1;
         for (int j = 0; j < sets.length; j++) {
-            if (sets[j].envelopeContains(unionEnv)) {
+            if (sets[j].getUB().contains(unionEnv)) {
                 // Found a second mate.
                 if (mate != -1 || !inKer) {
                     mate = -2;
@@ -64,15 +64,17 @@ public class PropSetUnion extends Propagator<SetVar> {
         }
         if (mate == -1) {
             // No mates.
-            union.removeFromEnvelope(unionEnv, this);
+            union.remove(unionEnv, this);
         } else if (mate != -2 && inKer) {
             // One mate.
-            sets[mate].addToKernel(unionEnv, this);
+            sets[mate].force(unionEnv, this);
         }
     }
 
     private static boolean isKerSubsetEnvs(SetVar set, SetVar[] envs) {
-        for (int i = set.getKernelFirst(); i != SetVar.END; i = set.getKernelNext()) {
+        ISetIterator iter = set.getLB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (!PropUtil.envsContain(envs, i)) {
                 return false;
             }
@@ -81,9 +83,11 @@ public class PropSetUnion extends Propagator<SetVar> {
     }
 
     private static void envSubsetEnvs(SetVar set, SetVar[] envs, ICause propagator) throws ContradictionException {
-        for (int i = set.getEnvelopeFirst(); i != SetVar.END; i = set.getEnvelopeNext()) {
+        ISetIterator iter = set.getUB().iterator();
+        while (iter.hasNext()) {
+            int i = iter.nextInt();
             if (!PropUtil.envsContain(envs, i)) {
-                set.removeFromEnvelope(i, propagator);
+                set.remove(i, propagator);
             }
         }
     }
@@ -95,8 +99,9 @@ public class PropSetUnion extends Propagator<SetVar> {
             PropUtil.kerSubsetKer(set, union, this);
         }
         envSubsetEnvs(union, sets, this);
-        for (int i = union.getEnvelopeFirst(); i != SetVar.END; i = union.getEnvelopeNext()) {
-            findMate(i);
+        ISetIterator iter = union.getUB().iterator();
+        while (iter.hasNext()) {
+            findMate(iter.nextInt());
         }
     }
 
@@ -105,43 +110,35 @@ public class PropSetUnion extends Propagator<SetVar> {
         if (isSetVar(idxVarInProp)) {
             int id = getSetVarIndex(idxVarInProp);
             setsD[id].freeze();
-            setsD[id].forEach(pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            setsD[id].forEach(pickUnionOnSetKer, SetEventType.ADD_TO_KER);
+            setsD[id].forEach(this::pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            setsD[id].forEach(this::pickUnionOnSetKer, SetEventType.ADD_TO_KER);
             setsD[id].unfreeze();
         } else {
             assert isUnionVar(idxVarInProp);
             unionD.freeze();
-            unionD.forEach(pruneSetOnUnionEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            unionD.forEach(pickSetOnUnionKer, SetEventType.ADD_TO_KER);
+            unionD.forEach(this::pruneSetOnUnionEnv, SetEventType.REMOVE_FROM_ENVELOPE);
+            unionD.forEach(this::pickSetOnUnionKer, SetEventType.ADD_TO_KER);
             unionD.unfreeze();
         }
     }
-    private final IntProcedure pruneUnionOnSetEnv = new IntProcedure() {
-        @Override
-        public void execute(int setEnv) throws ContradictionException {
-            findMate(setEnv);
+
+    private void pruneUnionOnSetEnv(int setEnv) throws ContradictionException {
+        findMate(setEnv);
+    }
+
+    private void pickUnionOnSetKer(int setKer) throws ContradictionException {
+        union.force(setKer, this);
+    }
+
+    private void pruneSetOnUnionEnv(int unionEnv) throws ContradictionException {
+        for (SetVar set : sets) {
+            set.remove(unionEnv, this);
         }
-    };
-    private final IntProcedure pickUnionOnSetKer = new IntProcedure() {
-        @Override
-        public void execute(int setKer) throws ContradictionException {
-            union.addToKernel(setKer, PropSetUnion.this);
-        }
-    };
-    private final IntProcedure pruneSetOnUnionEnv = new IntProcedure() {
-        @Override
-        public void execute(int unionEnv) throws ContradictionException {
-            for (SetVar set : sets) {
-                set.removeFromEnvelope(unionEnv, PropSetUnion.this);
-            }
-        }
-    };
-    private final IntProcedure pickSetOnUnionKer = new IntProcedure() {
-        @Override
-        public void execute(int unionKer) throws ContradictionException {
-            findMate(unionKer);
-        }
-    };
+    }
+
+    private void pickSetOnUnionKer(int unionKer) throws ContradictionException {
+        findMate(unionKer);
+    }
 
     @Override
     public ESat isEntailed() {

@@ -1,12 +1,11 @@
 package org.clafer.test;
 
+import org.chocosolver.solver.Model;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ir.IrIntExpr;
 import org.clafer.ir.IrIntVar;
 import static org.clafer.ir.Irs.add;
 import org.clafer.ir.compiler.IrSolutionMap;
-import org.chocosolver.solver.Solver;
-import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.Var;
 
 /**
  *
@@ -33,8 +32,8 @@ public class OffsetTerm implements Term {
     }
 
     @Override
-    public IntVar toChocoVar(Solver solver) {
-        return Var.offset(view.toChocoVar(solver), offset);
+    public IntVar toChocoVar(Model model) {
+        return model.intOffsetView(view.toChocoVar(model), offset);
     }
 
     @Override

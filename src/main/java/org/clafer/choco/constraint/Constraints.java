@@ -1,43 +1,48 @@
 package org.clafer.choco.constraint;
 
-import org.chocosolver.solver.variables.*;
-import org.clafer.choco.constraint.propagator.*;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
 import org.chocosolver.solver.constraints.Operator;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.binary.PropEqualXY_C;
 import org.chocosolver.solver.constraints.binary.PropEqualX_Y;
 import org.chocosolver.solver.constraints.binary.PropEqualX_YC;
+import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualXY_C;
 import org.chocosolver.solver.constraints.binary.PropGreaterOrEqualX_Y;
-import org.chocosolver.solver.constraints.binary.PropNotEqualX_Y;
 import org.chocosolver.solver.constraints.nary.element.PropElementV_fast;
 import org.chocosolver.solver.constraints.nary.sum.PropSum;
+import org.chocosolver.solver.constraints.set.PropIntEnumMemberSet;
 import org.chocosolver.solver.constraints.set.PropIntersection;
-import org.chocosolver.solver.constraints.set.PropSubsetEq;
+import org.chocosolver.solver.constraints.set.PropIntersectionFilterSets;
+import org.chocosolver.solver.constraints.set.PropNotMemberIntSet;
+import org.chocosolver.solver.constraints.set.PropNotMemberSetInt;
 import org.chocosolver.solver.constraints.unary.PropEqualXC;
-import org.chocosolver.solver.constraints.unary.PropGreaterOrEqualXC;
 import org.chocosolver.solver.constraints.unary.PropLessOrEqualXC;
-import org.chocosolver.solver.constraints.unary.PropNotEqualXC;
+import org.chocosolver.solver.variables.BoolVar;
+import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.Var;
+import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.clafer.choco.constraint.propagator.PropAcyclic;
 import org.clafer.choco.constraint.propagator.PropAnd;
 import org.clafer.choco.constraint.propagator.PropArrayToSet;
 import org.clafer.choco.constraint.propagator.PropArrayToSetCard;
 import org.clafer.choco.constraint.propagator.PropAtMostTransitiveClosure;
-import org.clafer.choco.constraint.propagator.PropContinuous;
-import org.clafer.choco.constraint.propagator.PropCountNotEqual;
+import org.clafer.choco.constraint.propagator.PropContainsImpliesEqual;
+import org.clafer.choco.constraint.propagator.PropContainsImpliesEqualCard;
+import org.clafer.choco.constraint.propagator.PropContainsImpliesEqualCard2;
+import org.clafer.choco.constraint.propagator.PropContinuousUnion;
+import org.clafer.choco.constraint.propagator.PropElement;
 import org.clafer.choco.constraint.propagator.PropEqualXY_Z;
-import org.clafer.choco.constraint.propagator.PropFilterString;
-import org.clafer.choco.constraint.propagator.PropFilterStringCard;
-import org.clafer.choco.constraint.propagator.PropIfThenElse;
 import org.clafer.choco.constraint.propagator.PropIntChannel;
 import org.clafer.choco.constraint.propagator.PropIntMemberNonemptySet;
+import org.clafer.choco.constraint.propagator.PropIntMemberSetCard;
+import org.clafer.choco.constraint.propagator.PropIntMemberSetDefault;
+import org.clafer.choco.constraint.propagator.PropIntNotMemberSetCard;
 import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
@@ -46,25 +51,33 @@ import org.clafer.choco.constraint.propagator.PropLength;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
 import org.clafer.choco.constraint.propagator.PropMask;
+import org.clafer.choco.constraint.propagator.PropMaskCard;
 import org.clafer.choco.constraint.propagator.PropNotEqualXY_Z;
 import org.clafer.choco.constraint.propagator.PropOne;
 import org.clafer.choco.constraint.propagator.PropOr;
 import org.clafer.choco.constraint.propagator.PropReflexive;
 import org.clafer.choco.constraint.propagator.PropSamePrefix;
 import org.clafer.choco.constraint.propagator.PropSelectN;
-import org.clafer.choco.constraint.propagator.PropSetBounded;
 import org.clafer.choco.constraint.propagator.PropSetDifference;
+import org.clafer.choco.constraint.propagator.PropSetEqual;
 import org.clafer.choco.constraint.propagator.PropSetLowBound;
-import org.clafer.choco.constraint.propagator.PropSetStrictHighBound;
 import org.clafer.choco.constraint.propagator.PropSetMax;
 import org.clafer.choco.constraint.propagator.PropSetMin;
 import org.clafer.choco.constraint.propagator.PropSetNotEqualC;
+import org.clafer.choco.constraint.propagator.PropSetStrictHighBound;
 import org.clafer.choco.constraint.propagator.PropSetSum;
+import org.clafer.choco.constraint.propagator.PropSetTernary;
 import org.clafer.choco.constraint.propagator.PropSetUnion;
 import org.clafer.choco.constraint.propagator.PropSetUnionCard;
 import org.clafer.choco.constraint.propagator.PropSingleton;
+import org.clafer.choco.constraint.propagator.PropSingletonFilter;
+import org.clafer.choco.constraint.propagator.PropSubsetEqCard;
+import org.clafer.choco.constraint.propagator.PropTernary;
+import org.clafer.choco.constraint.propagator.PropTransitive;
+import org.clafer.choco.constraint.propagator.PropTransitiveCard;
 import org.clafer.choco.constraint.propagator.PropTransitiveUnreachable;
 import org.clafer.choco.constraint.propagator.PropUnreachable;
+import org.clafer.choco.constraint.propagator.PropUtil;
 import org.clafer.common.Util;
 
 /**
@@ -79,54 +92,6 @@ public class Constraints {
     private static int varNum = 0;
 
     private Constraints() {
-    }
-
-    private static Optional<Propagator<IntVar>> eq(IntVar l, IntVar r) {
-        if (l.isInstantiated()) {
-            return eq(r, l.getValue());
-        }
-        if (r.isInstantiated()) {
-            return eq(l, r.getValue());
-        }
-        return Optional.of(new PropEqualX_Y(l, r));
-    }
-
-    private static Optional<Propagator<IntVar>> eq(IntVar l, int r) {
-        if (l.isInstantiatedTo(r)) {
-            return Optional.empty();
-        }
-        return Optional.of(new PropEqualXC(l, r));
-    }
-
-    private static Optional<Propagator<IntVar>> neq(IntVar l, IntVar r) {
-        if (l.isInstantiated()) {
-            return neq(r, l.getValue());
-        }
-        if (r.isInstantiated()) {
-            return neq(l, r.getValue());
-        }
-        return Optional.of(new PropNotEqualX_Y(l, r));
-    }
-
-    private static Optional<Propagator<IntVar>> neq(IntVar l, int r) {
-        if (l.isInstantiated() && l.getValue() != r) {
-            return Optional.empty();
-        }
-        return Optional.of(new PropNotEqualXC(l, r));
-    }
-
-    private static Propagator<IntVar> lessThanEq(IntVar l, IntVar g) {
-        if (l.isInstantiated()) {
-            return new PropGreaterOrEqualXC(g, l.getValue());
-        }
-        if (g.isInstantiated()) {
-            return new PropLessOrEqualXC(l, g.getValue());
-        }
-        return new PropGreaterOrEqualX_Y(new IntVar[]{g, l});
-    }
-
-    private static Propagator<IntVar> greaterThanEq(IntVar g, IntVar l) {
-        return lessThanEq(l, g);
     }
 
     private static Propagator<IntVar> sumEq(IntVar[] ints, IntVar sum) {
@@ -156,6 +121,8 @@ public class Constraints {
             case 2:
                 if (sum.isInstantiated()) {
                     return new PropEqualXY_C(filtered, sum.getValue() - constant);
+                } else if (constant == 0) {
+                    return new PropEqualXY_Z(filtered[0], filtered[1], sum);
                 }
             // fallthrough
             default:
@@ -225,7 +192,6 @@ public class Constraints {
      */
     public static Constraint or(BoolVar... operands) {
         return new Constraint("or", new PropOr(operands)) {
-
             @Override
             public Constraint makeOpposite() {
                 BoolVar[] nots = new BoolVar[operands.length];
@@ -263,28 +229,39 @@ public class Constraints {
      * {@code antecedent => consequent && !antecedent => alternative}
      */
     public static Constraint ifThenElse(final BoolVar antecedent, final BoolVar consequent, final BoolVar alternative) {
-        return new Constraint("ifThenElse", new PropIfThenElse(antecedent, consequent, alternative)) {
-            @Override
-            public Constraint makeOpposite() {
-                return ifThenElse(antecedent, consequent.not(), alternative.not());
-            }
-        };
+        return new Constraint("ifThenElse",
+                new PropGreaterOrEqualX_Y(new IntVar[]{consequent, antecedent}),
+                new PropGreaterOrEqualXY_C(new IntVar[]{antecedent, alternative}, 1)) {
+                    @Override
+                    public Constraint makeOpposite() {
+                        return ifThenElse(antecedent, consequent.not(), alternative.not());
+                    }
+
+                    @Override
+                    public ESat isSatisfied() {
+                        if (antecedent.isInstantiated()) {
+                            return antecedent.getValue() == 1 ? consequent.getBooleanValue() : alternative.getBooleanValue();
+                        }
+                        if (consequent.isInstantiatedTo(1) && alternative.isInstantiatedTo(1)) {
+                            return ESat.TRUE;
+                        }
+                        if (consequent.isInstantiatedTo(0) && alternative.isInstantiatedTo(0)) {
+                            return ESat.FALSE;
+                        }
+                        return ESat.UNDEFINED;
+                    }
+                };
     }
 
     public static Constraint ternary(BoolVar antecedent, IntVar result, IntVar consequent, IntVar alternative) {
         return new Constraint("Ternary", new PropTernary(antecedent, result, consequent, alternative));
     }
 
-    /**
-     * A constraint enforcing {@code count = (Σ_i array[i] != value)}.
-     *
-     * @param value the value
-     * @param array the array
-     * @param count the count
-     * @return constraint {@code count = (Σ_i array[i] != value)}
-     */
-    public static Constraint countNotEqual(int value, IntVar[] array, IntVar count) {
-        return new Constraint("countNotEqual", new PropCountNotEqual(value, array, count));
+    public static Constraint ternary(BoolVar antecedent, SetVar result, SetVar consequent, SetVar alternative) {
+        return new Constraint("Ternary",
+                new PropSetTernary(antecedent, result, consequent, alternative),
+                new PropTernary(antecedent, result.getCard(), consequent.getCard(), alternative.getCard())
+        );
     }
 
     /**
@@ -345,7 +322,7 @@ public class Constraints {
     }
 
     public static Constraint element(IntVar value, IntVar[] array, IntVar index, int offset) {
-        return new Constraint("element", new org.clafer.choco.constraint.propagator.PropElement(value, array, index, offset));
+        return new Constraint("element", new PropElement(value, array, index, offset));
     }
 
 //    public static Constraint equalSupport(final IntVar x, final IntVar y, final int c) {
@@ -376,7 +353,14 @@ public class Constraints {
      * @return constraint {@code element ∈ set}.
      */
     public static Constraint member(IntVar element, SetVar set) {
-        return new SetMember(element, set);
+        return new Constraint("member",
+                new PropIntEnumMemberSet(set, element),
+                new PropIntMemberSetCard(element, set, set.getCard())) {
+                    @Override
+                    protected Constraint makeOpposite() {
+                        return notMember(element, set);
+                    }
+                };
     }
 
     public static Constraint memberNonempty(IntVar element, SetVar set, IntVar setCard) {
@@ -391,7 +375,15 @@ public class Constraints {
      * @return constraint {@code element ∉ set}.
      */
     public static Constraint notMember(IntVar element, SetVar set) {
-        return new SetNotMember(element, set);
+        return new Constraint("notMember",
+                new PropNotMemberIntSet(element, set),
+                new PropNotMemberSetInt(element, set),
+                new PropIntNotMemberSetCard(element, set, set.getCard())) {
+                    @Override
+                    protected Constraint makeOpposite() {
+                        return member(element, set);
+                    }
+                };
     }
 
     /**
@@ -406,10 +398,10 @@ public class Constraints {
      * @return constraint {@code sub ⊆ sup}
      */
     public static Constraint subsetEq(SetVar sub, IntVar subCard, SetVar sup, IntVar supCard) {
-        return new Constraint("subsetEq",
-                new PropSubsetEq(sub, sup),
-                // Simple cardinality propagation.
-                lessThanEq(subCard, supCard));
+        return new Propagators(2)
+                .subsetEq(sub, sup)
+                .post(new PropSubsetEqCard(sub, subCard, sup, supCard))
+                .toConstraint("subsetEq", sub.getModel());
     }
 
     /**
@@ -445,38 +437,35 @@ public class Constraints {
         if (sets.length != setCards.length) {
             throw new IllegalArgumentException();
         }
-        Solver solver = sets[0].getSolver();
+        Model model = sets[0].getModel();
 
-        List<Propagator<?>> propagators = new ArrayList<>();
+        Propagators propagators = new Propagators(5 * sets.length + 1);
 
         IntVar[] boundary = new IntVar[sets.length + 1];
-        boundary[0] = VF.zero(solver);
+        boundary[0] = model.intVar(0);
         for (int i = 0; i < sets.length; i++) {
             if (boundary[i].isInstantiatedTo(0)) {
                 boundary[i + 1] = setCards[i];
             } else if (setCards[i].isInstantiatedTo(0)) {
                 boundary[i + 1] = boundary[i];
             } else {
-                boundary[i + 1] = bounds[i]; //enumerated(sets[i].getName() + "@Hb", lb, ub, solver);
-                propagators.add(new PropEqualXY_Z(boundary[i], setCards[i], boundary[i + 1]));
+                boundary[i + 1] = bounds[i];
+                propagators.add(boundary[i], setCards[i], boundary[i + 1]);
             }
             if (!boundary[i + 1].equals(bounds[i])) {
-                propagators.add(new PropEqualX_Y(boundary[i + 1], bounds[i]));
+                propagators.eq(boundary[i + 1], bounds[i]);
             }
-            propagators.add(new PropSetLowBound(sets[i], boundary[i]));
-            propagators.add(new PropIntMemberNonemptySet(boundary[i], sets[i], setCards[i]));
-            propagators.add(new PropSetStrictHighBound(sets[i], boundary[i + 1]));
-            propagators.add(new PropSetBounded(boundary[i], boundary[i + 1], sets[i]));
-        }
-        for (int i = 0; i < sets.length; i++) {
-            propagators.add(new PropContinuous(sets[i], setCards[i]));
+            propagators.lowBound(sets[i], boundary[i]);
+            propagators.strictHighBound(sets[i], boundary[i + 1]);
+            propagators.memberNonempty(boundary[i], sets[i], setCards[i]);
+            propagators.continuous(sets[i], setCards[i]);
         }
         if (boundary[boundary.length - 1].getUB() < 0) {
-            return solver.FALSE();
+            return model.falseConstraint();
         }
-        propagators.add(new PropContinuousUnion(sets, boundary[boundary.length - 1]));
+        propagators.post(new PropContinuousUnion(sets, boundary[boundary.length - 1]));
 
-        return new Constraint("sortedSets", propagators.toArray(new Propagator[propagators.size()]));
+        return propagators.toConstraint("sortedSets", model);
     }
 
     /**
@@ -493,7 +482,6 @@ public class Constraints {
         if (strings.length != ints.length) {
             throw new IllegalArgumentException();
         }
-
         return new Constraint("lexChainChannel", new PropLexChainChannel(strings, ints));
     }
 
@@ -520,8 +508,8 @@ public class Constraints {
         return new Constraint("acyclic", new PropAcyclic(edges));
     }
 
-    public static Constraint connected(Solver s, SetVar nodes, SetVar[] edges, boolean directed) {
-        return s.TRUE();
+    public static Constraint connected(SetVar nodes, SetVar[] edges, boolean directed) {
+        return nodes.getModel().trueConstraint();
 //        int nodes_upper = PropUtil.maxEnv(nodes) + 1;
 //        boolean fixed_nodes = nodes.isInstantiated();
 //
@@ -572,27 +560,6 @@ public class Constraints {
      */
     public static Constraint unreachable(IntVar[] edges, int from, int to) {
         return new Constraint("unreachable", new PropUnreachable(edges, from, to));
-    }
-
-    /**
-     * A constraint enforcing
-     * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
-     * where {@code array} is the sorted array representation of the set. Does
-     * not enforce that {@code setCard = |setCard|} because of how the
-     * compilation works, it is already enforced elsewhere.
-     *
-     * @param set the set
-     * @param setCard the cardinality of {@code set}
-     * @param offset the offset
-     * @param string the string
-     * @param result the result
-     * @return constraint
-     * {@code result[i] = if i \u003c array(set).length then string[array(set)[i] - offset] else -1}
-     */
-    public static Constraint filterString(SetVar set, IntVar setCard, int offset, IntVar[] string, IntVar[] result) {
-        return new Constraint("filterString",
-                new PropFilterString(set, setCard, offset, string, result),
-                new PropFilterStringCard(setCard, result));
     }
 
     /**
@@ -666,9 +633,10 @@ public class Constraints {
             return new Constraint("singleton",
                     new PropSingleton(ivar, svar));
         }
-        return new Constraint("singleton",
-                new PropSingleton(ivar, svar),
-                new PropEqualXC(svarCard, 1));
+        return new Propagators(2)
+                .post(new PropSingleton(ivar, svar))
+                .eq(svarCard, 1)
+                .toConstraint("singleton", ivar.getModel());
     }
 
     /**
@@ -680,13 +648,63 @@ public class Constraints {
      * @param ivar the integer
      * @param svar the singleton set
      * @param svarCard the cardinality of {@code svar}
+     * @param filter
      * @return constraint
      * {@code if ivar = filter then {} = svar else {ivar} = svar}
      */
     public static Constraint singletonFilter(IntVar ivar, SetVar svar, IntVar svarCard, int filter) {
+        if (!ivar.contains(filter) && !svar.getUB().contains(filter)) {
+            return singleton(ivar, svar, svarCard);
+        }
         return new Constraint("singletonFilter",
                 new PropSingletonFilter(ivar, svar, filter),
-                new PropEqualX_Y(svarCard, ICF.arithm(ivar, "!=", filter).reif()));
+                new PropEqualX_Y(svarCard, ivar.getModel().arithm(ivar, "!=", filter).reify())) {
+
+                    @Override
+                    public ESat isSatisfied() {
+                        if (svarCard.getLB() > 1) {
+                            return ESat.FALSE;
+                        }
+                        if (svar.getLB().size() == 1) {
+                            if (svar.getLB().min() == filter || ivar.isInstantiatedTo(filter)) {
+                                return ESat.FALSE;
+                            }
+                            if (ivar.contains(svar.getLB().min())) {
+                                return ivar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                            } else {
+                                return ESat.FALSE;
+                            }
+                        }
+                        if (!svar.getCard().contains(1)) {
+                            if (!ivar.contains(filter)) {
+                                return ESat.FALSE;
+                            }
+                            return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                        } else if (!svar.getCard().contains(0)) {
+                            ISetIterator iter = svar.getUB().iterator();
+                            while (iter.hasNext()) {
+                                int env = iter.nextInt();
+                                if (env != filter && ivar.contains(env)) {
+                                    return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                                }
+                            }
+                            return ESat.FALSE;
+                        } else if (ivar.contains(filter)) {
+                            if (ivar.isInstantiated()) {
+                                if (svar.getUB().isEmpty()) {
+                                    return ESat.TRUE;
+                                }
+                                if (!svar.getLB().isEmpty()) {
+                                    return ESat.FALSE;
+                                }
+                            }
+                            return ESat.UNDEFINED;
+                        } else if (PropUtil.isDomIntersectEnv(ivar, svar)) {
+                            return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                        }
+                        return ESat.FALSE;
+                    }
+                };
     }
 
     /**
@@ -818,10 +836,11 @@ public class Constraints {
             SetVar minuend, IntVar minuendCard,
             SetVar subtrahend, IntVar subtrahendCard,
             SetVar difference, IntVar differenceCard) {
-        return new Constraint("difference",
-                new PropSetDifference(minuend, subtrahend, difference),
+        return new Propagators(2)
+                .post(new PropSetDifference(minuend, subtrahend, difference))
                 // Simple cardinality propagation.
-                greaterThanEq(minuendCard, differenceCard));
+                .geq(minuendCard, differenceCard)
+                .toConstraint("difference", minuend.getModel());
     }
 
     /**
@@ -845,19 +864,16 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
 
-        @SuppressWarnings("unchecked")
-        Propagator<? extends Variable>[] propagators = new Propagator<?>[operandCards.length + 2];
-        // See SCF.intersection(operands, intersection);
-        // TODO: Needs to add the same propagator twice because the implementation
-        // is not guaranteed to be idempotent. If it ever becomes idempotent, then
-        // follow their implementation.
-        propagators[0] = new PropIntersection(operands, intersection);
-        propagators[1] = new PropIntersection(operands, intersection);
+        Propagators propagators = new Propagators(operandCards.length + 2);
+        propagators.post(new PropIntersection(operands, intersection));
+        propagators.post(operands.length == 1
+                ? new PropSetEqual(operands[0], intersection)
+                : new PropIntersectionFilterSets(operands, intersection));
         for (int i = 0; i < operandCards.length; i++) {
             // Simple cardinality propagation.
-            propagators[i + 2] = greaterThanEq(operandCards[i], intersectionCard);
+            propagators.geq(operandCards[i], intersectionCard);
         }
-        return new Constraint("intersection", propagators);
+        return propagators.toConstraint("intersection", intersection.getModel());
     }
 
     /**
@@ -900,7 +916,7 @@ public class Constraints {
         }
         return new Constraint("max",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
-                    ICF.arithm(max, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                    set.getModel().arithm(max, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
                 }),
                 new PropSetMax(set, setCard, max));
     }
@@ -910,7 +926,13 @@ public class Constraints {
     }
 
     public static Constraint min(SetVar set, IntVar setCard, IntVar min) {
-        return new Constraint("min", new PropSetMin(set, setCard, min));
+        if (setCard.getUB() <= 1) {
+            return member(min, set);
+        }
+        return new Constraint("min",
+                new PropSetMin(set, setCard, min, 0),
+                new PropIntEnumMemberSet(set, min),
+                new PropIntMemberSetCard(min, set, setCard));
     }
 
     public static Constraint min(SetVar set, IntVar setCard, IntVar min, int d) {
@@ -919,9 +941,10 @@ public class Constraints {
         }
         return new Constraint("min",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
-                    ICF.arithm(min, "=", d).reif(), ICF.arithm(setCard, "=", 0).reif()
+                    set.getModel().arithm(min, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
                 }),
-                new PropSetMin(set, setCard, min));
+                new PropIntMemberSetDefault(min, set, setCard, d),
+                new PropSetMin(set, setCard, min, d));
     }
 
     public static Constraint lowBound(SetVar set, IntVar bound) {
@@ -935,8 +958,7 @@ public class Constraints {
         return new Constraint("element",
                 new org.chocosolver.solver.constraints.set.PropElement(index, array, 0, value),
                 new org.chocosolver.solver.constraints.set.PropElement(index, array, 0, value),
-                new PropElementV_fast(valueCard, arrayCards, index, 0, true),
-                new PropElementV_fast(valueCard, arrayCards, index, 0, true));
+                new PropElement(valueCard, arrayCards, index, 0));
     }
 
     /**
@@ -977,22 +999,18 @@ public class Constraints {
     public static Constraint equal(
             IntVar[] chars1, IntVar length1,
             IntVar[] chars2, IntVar length2) {
-        List<Propagator<IntVar>> propagators = new ArrayList<>();
-        eq(length1, length2).ifPresent(propagators::add);
+        Propagators propagators = new Propagators(chars1.length + chars2.length + 1);
+        propagators.eq(length1, length2);
         for (int i = 0; i < Math.min(chars1.length, chars2.length); i++) {
-            eq(chars1[i], chars2[i]).ifPresent(propagators::add);
+            propagators.eq(chars1[i], chars2[i]);
         }
         for (int i = Math.min(chars1.length, chars2.length); i < chars1.length; i++) {
-            eq(chars1[i], 0).ifPresent(propagators::add);
+            propagators.eq(chars1[i], 0);
         }
         for (int i = Math.min(chars1.length, chars2.length); i < chars2.length; i++) {
-            eq(chars2[i], 0).ifPresent(propagators::add);
+            propagators.eq(chars2[i], 0);
         }
-        if (propagators.isEmpty()) {
-            return length1.getSolver().TRUE();
-        }
-        return new Constraint("arrayEqual",
-                propagators.toArray(new Propagator<?>[propagators.size()]));
+        return propagators.toConstraint("arrayEqual", length1.getModel());
     }
 
     /**
@@ -1011,35 +1029,32 @@ public class Constraints {
         if (chars1.length == 0) {
             throw new IllegalArgumentException();
         }
-        List<Propagator> propagators = new ArrayList<>(chars1.length);
+        Propagators propagators = new Propagators(chars1.length);
         for (int i = 0; i < chars1.length; i++) {
-            eq(chars1[i], chars2[i]).ifPresent(propagators::add);
+            propagators.eq(chars1[i], chars2[i]);
         }
-        if (propagators.isEmpty()) {
-            return chars1[0].getSolver().TRUE();
-        }
-        return new Constraint("ArrayEqual", propagators.toArray(new Propagator[propagators.size()]));
+        return propagators.toConstraint("ArrayEqual", chars1[0].getModel());
     }
 
     public static Constraint lessThan(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
-        return ICF.lex_less(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
+        return chars1[0].getModel().lexLess(
+                pad(chars1, maxLength, chars1[0].getModel().intVar(0)),
+                pad(chars2, maxLength, chars1[0].getModel().intVar(0)));
     }
 
     public static Constraint lessThanEqual(IntVar[] chars1, IntVar[] chars2) {
         int maxLength = Math.max(chars1.length, chars2.length);
-        return ICF.lex_less_eq(
-                pad(chars1, maxLength, chars1[0].getSolver().ZERO()),
-                pad(chars2, maxLength, chars1[0].getSolver().ZERO()));
+        return chars1[0].getModel().lexLessEq(
+                pad(chars1, maxLength, chars1[0].getModel().intVar(0)),
+                pad(chars2, maxLength, chars1[0].getModel().intVar(0)));
     }
 
-    private static IntVar[] charsAt(Solver solver, IntVar[][] strings, int index) {
+    private static IntVar[] charsAt(Model model, IntVar[][] strings, int index) {
         IntVar[] charsAt = new IntVar[strings.length];
         for (int i = 0; i < charsAt.length; i++) {
             charsAt[i] = index < strings[i].length
-                    ? strings[i][index] : solver.ZERO();
+                    ? strings[i][index] : model.intVar(0);
         }
         return charsAt;
     }
@@ -1061,7 +1076,7 @@ public class Constraints {
         propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
         propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
         for (int i = 0; i < value.length; i++) {
-            IntVar[] charsAt = charsAt(index.getSolver(), array, i);
+            IntVar[] charsAt = charsAt(index.getModel(), array, i);
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
             propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
         }
@@ -1076,38 +1091,42 @@ public class Constraints {
             IntVar[] prefix, IntVar prefixLength,
             IntVar[] word, IntVar wordLength) {
         if (prefixLength.getLB() > wordLength.getUB()) {
-            return prefixLength.getSolver().FALSE();
+            return prefixLength.getModel().falseConstraint();
         }
-        return new Constraint("Prefix",
-                lessThanEq(prefixLength, wordLength),
-                new PropSamePrefix(prefixLength, prefix, word));
+        return new Propagators(2)
+                .leq(prefixLength, wordLength)
+                .post(new PropSamePrefix(prefixLength, prefix, word))
+                .toConstraint("Prefix", prefixLength.getModel());
     }
 
     public static Constraint suffix(
             IntVar[] suffix, IntVar suffixLength,
             IntVar[] word, IntVar wordLength) {
-        Solver solver = suffixLength.getSolver();
-        if (suffixLength.getLB() > wordLength.getUB()) {
-            return solver.FALSE();
+        if (suffix.length == 0) {
+            return suffixLength.getModel().trueConstraint();
         }
-        IntVar prefixLength = VF.enumerated("SuffixVar" + varNum++,
+        Model model = suffixLength.getModel();
+        if (suffixLength.getLB() > wordLength.getUB()) {
+            return model.falseConstraint();
+        }
+        IntVar prefixLength = model.intVar("SuffixVar" + varNum++,
                 Math.min(wordLength.getLB() - suffixLength.getUB(), 0),
-                wordLength.getUB() - suffixLength.getLB(), solver);
-        solver.post(new Constraint("SuffixVarSum",
+                wordLength.getUB() - suffixLength.getLB(), false);
+        model.post(new Constraint("SuffixVarSum",
                 sumEq(new IntVar[]{prefixLength, suffixLength}, wordLength)));
-        List<Propagator<IntVar>> propagators = new ArrayList<>();
-        propagators.add(lessThanEq(suffixLength, wordLength));
+
+        Propagators propagators = new Propagators(2 * suffix.length + 1);
+        propagators.leq(suffixLength, wordLength);
         for (int i = 0; i < suffix.length; i++) {
-            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, suffixLength.getSolver().ZERO());
+            IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, model.intVar(0));
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
             // follow their implementation.
-            propagators.add(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
-            propagators.add(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
+            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
+            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
         }
-        return new Constraint("Suffix",
-                propagators.toArray(new Propagator<?>[propagators.size()]));
+        return propagators.toConstraint("Suffix", suffixLength.getModel());
     }
 
     /**
@@ -1118,13 +1137,13 @@ public class Constraints {
             IntVar[] right, IntVar rightLength,
             IntVar[] concat, IntVar concatLength) {
         if (leftLength.getLB() + rightLength.getLB() > concatLength.getUB()) {
-            return leftLength.getSolver().FALSE();
+            return leftLength.getModel().falseConstraint();
         }
         List<Propagator<IntVar>> propagators = new ArrayList<>();
         propagators.add(sumEq(new IntVar[]{leftLength, rightLength}, concatLength));
         propagators.add(new PropSamePrefix(leftLength, left, concat));
         for (int i = 0; i < right.length; i++) {
-            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getSolver().ZERO());
+            IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getModel().intVar(0));
             // See ICF.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
@@ -1138,12 +1157,12 @@ public class Constraints {
 
     public static Constraint subarray(IntVar[] subarray, IntVar sublength, IntVar index, IntVar[] suparray) {
         if (sublength.getUB() < 0 || index.getUB() < 0 || suparray.length == 0) {
-            return sublength.getSolver().FALSE();
+            return sublength.getModel().falseConstraint();
         }
         if (subarray.length == 0) {
             return new Constraint(null, new PropEqualXC(sublength, 0), new PropLessOrEqualXC(index, suparray.length - 1));
         }
-        List<Propagator<IntVar>> propagators = new ArrayList<>();
+        Propagators propagators = new Propagators(subarray.length + suparray.length + 1);
         for (int i = 0; i < subarray.length; i++) {
             IntVar[] pad = new IntVar[suparray.length];
             int j;
@@ -1151,9 +1170,9 @@ public class Constraints {
                 pad[j] = suparray[j + i];
             }
             for (; j < pad.length; j++) {
-                pad[j] = VF.fixed(-1, sublength.getSolver());
+                pad[j] = sublength.getModel().intVar(-1);
             }
-            propagators.add(new PropElementValueSupport(subarray[i], pad, index, 0, -1));
+            propagators.elementValueSupport(subarray[i], pad, index, 0, -1);
         }
         for (int i = 0; i < suparray.length; i++) {
             IntVar[] pad = new IntVar[suparray.length + 1];
@@ -1162,13 +1181,12 @@ public class Constraints {
                 pad[j] = subarray[i - j];
             }
             for (; j < pad.length; j++) {
-                pad[j] = VF.fixed(-1, sublength.getSolver());
+                pad[j] = sublength.getModel().intVar(-1);
             }
-            propagators.add(new PropElementArraySupport(suparray[i], pad, index, 0, -1));
+            propagators.elementArraySupport(suparray[i], pad, index, 0, -1);
         }
-        propagators.add(new PropLength(subarray, sublength, -1));
-        return new Constraint("Substring",
-                propagators.toArray(new Propagator<?>[propagators.size()]));
+        propagators.length(subarray, sublength, -1);
+        return propagators.toConstraint("Substring", index.getModel());
     }
 
     private static IntVar[] pad(IntVar[] chars, int length, IntVar zero) {
@@ -1212,32 +1230,32 @@ public class Constraints {
         if (relation.length != closure.length) {
             throw new IllegalArgumentException();
         }
-        @SuppressWarnings("unchecked")
-        Propagator<SetVar>[] propagators
-                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 3];
+        Propagators propagators = new Propagators(3 * relation.length + 3);
         for (int i = 0; i < relation.length; i++) {
-            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+            propagators.subsetEq(relation[i], closure[i]);
+            propagators.leq(relation[i].getCard(), closure[i].getCard());
+            propagators.post(new PropTransitiveCard(closure[i], Var.mapCard(closure)));
         }
-        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, false);
-        propagators[relation.length + 1] = new PropTransitive(closure);
-        propagators[relation.length + 2] = new PropTransitiveUnreachable(closure);
-        return new Constraint("transitive", propagators);
+        propagators.post(new PropAtMostTransitiveClosure(relation, closure, false));
+        propagators.post(new PropTransitive(closure));
+        propagators.post(new PropTransitiveUnreachable(closure));
+        return propagators.toConstraint("transitive", relation[0].getModel());
     }
 
     public static Constraint transitiveReflexiveClosure(SetVar[] relation, SetVar[] closure) {
         if (relation.length != closure.length) {
             throw new IllegalArgumentException();
         }
-        @SuppressWarnings("unchecked")
-        Propagator<SetVar>[] propagators
-                = (Propagator<SetVar>[]) new Propagator<?>[relation.length + 4];
+        Propagators propagators = new Propagators(3 * relation.length + 4);
         for (int i = 0; i < relation.length; i++) {
-            propagators[i] = new PropSubsetEq(relation[i], closure[i]);
+            propagators.subsetEq(relation[i], closure[i]);
+            propagators.leq(relation[i].getCard(), closure[i].getCard());
+            propagators.post(new PropTransitiveCard(closure[i], Var.mapCard(closure)));
         }
-        propagators[relation.length] = new PropAtMostTransitiveClosure(relation, closure, true);
-        propagators[relation.length + 1] = new PropReflexive(closure);
-        propagators[relation.length + 2] = new PropTransitive(closure);
-        propagators[relation.length + 3] = new PropTransitiveUnreachable(closure);
-        return new Constraint("transitiveReflexive", propagators);
+        propagators.post(new PropAtMostTransitiveClosure(relation, closure, true));
+        propagators.post(new PropReflexive(closure));
+        propagators.post(new PropTransitive(closure));
+        propagators.post(new PropTransitiveUnreachable(closure));
+        return propagators.toConstraint("transitiveReflexive", relation[0].getModel());
     }
 }

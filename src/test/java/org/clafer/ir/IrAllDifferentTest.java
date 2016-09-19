@@ -1,13 +1,12 @@
 package org.clafer.ir;
 
+import org.chocosolver.solver.constraints.Constraint;
+import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ir.IrQuickTest.Solution;
-import static org.clafer.ir.Irs.*;
+import static org.clafer.ir.Irs.allDifferent;
 import org.clafer.test.NonEmpty;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.chocosolver.solver.constraints.Constraint;
-import org.chocosolver.solver.constraints.ICF;
-import org.chocosolver.solver.variables.IntVar;
 
 /**
  *
@@ -23,6 +22,6 @@ public class IrAllDifferentTest {
 
     @Solution
     public Constraint setup(IntVar[] ints) {
-        return ICF.alldifferent(ints);
+        return ints[0].getModel().allDifferent(ints);
     }
 }

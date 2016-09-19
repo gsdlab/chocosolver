@@ -1,8 +1,8 @@
 package org.clafer.ir;
 
-import org.clafer.domain.BoolDomain;
 import java.util.Arrays;
 import org.clafer.common.Check;
+import org.clafer.domain.BoolDomain;
 
 /**
  *
@@ -62,5 +62,10 @@ public class IrSortSets extends IrAbstractBool {
     @Override
     public int hashCode() {
         return Arrays.deepHashCode(sets) ^ Arrays.deepHashCode(bounds);
+    }
+
+    @Override
+    public String toString() {
+        return "SortSet " + Arrays.toString(sets) + " with bounds " + Arrays.toString(bounds);
     }
 }

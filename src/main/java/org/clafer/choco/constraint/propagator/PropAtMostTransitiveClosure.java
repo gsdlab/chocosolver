@@ -10,12 +10,13 @@ import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.clafer.collection.Counter;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.SetVar;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.setDataStructures.ISetIterator;
+import org.clafer.collection.Counter;
 
 /**
  *
@@ -46,9 +47,11 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
         for (SetVar var : relation) {
-            for (int i = var.getEnvelopeFirst(); i != SetVar.END; i = var.getEnvelopeNext()) {
+            ISetIterator iter = var.getUB().iterator();
+            while(iter.hasNext()) {
+                int i = iter.nextInt();
                 if (i < 0 || i >= relation.length) {
-                    var.removeFromEnvelope(i, this);
+                    var.remove(i, this);
                 }
             }
         }
@@ -58,9 +61,11 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
         for (int i = 0; i < closure.length; i++) {
             SetVar var = closure[i];
             TIntSet reachable = maximalClosure[i];
-            for (int k = var.getEnvelopeFirst(); k != SetVar.END; k = var.getEnvelopeNext()) {
+            ISetIterator iter = var.getUB().iterator();
+            while(iter.hasNext()) {
+                int k = iter.nextInt();
                 if ((!reflexive || i != k) && !reachable.contains(k)) {
-                    var.removeFromEnvelope(k, this);
+                    var.remove(k, this);
                 }
             }
         }
@@ -69,7 +74,9 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
     @Override
     public ESat isEntailed() {
         for (SetVar var : relation) {
-            for (int i = var.getKernelFirst(); i != SetVar.END; i = var.getKernelNext()) {
+            ISetIterator iter = var.getLB().iterator();
+            while(iter.hasNext()) {
+                int i = iter.nextInt();
                 if (i < 0 || i >= relation.length) {
                     return ESat.FALSE;
                 }
@@ -81,7 +88,9 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
         for (int i = 0; i < closure.length; i++) {
             SetVar var = closure[i];
             TIntSet reachable = maximalClosure[i];
-            for (int k = var.getKernelFirst(); k != SetVar.END; k = var.getKernelNext()) {
+            ISetIterator iter = var.getLB().iterator();
+            while(iter.hasNext()) {
+                int k = iter.nextInt();
                 if ((!reflexive || i != k) && !reachable.contains(k)) {
                     return ESat.FALSE;
                 }
@@ -109,7 +118,9 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
                 SetVar var = relation[val];
                 assert maximalClosure[val] == null;
                 maximalClosure[val] = reachable;
-                for (int i = var.getEnvelopeFirst(); i != SetVar.END; i = var.getEnvelopeNext()) {
+                ISetIterator varIter= var.getUB().iterator();
+                while(varIter.hasNext()) {
+                    int i = varIter.nextInt();
                     if (i >= 0 && i < relation.length) {
                         reachable.add(i);
                         TIntSet reach = maximalClosure[i];
@@ -146,7 +157,9 @@ public class PropAtMostTransitiveClosure extends Propagator<SetVar> {
         S.add(vertex);
 
         SetVar var = relation[vertex];
-        for (int neighbour = var.getEnvelopeFirst(); neighbour != SetVar.END; neighbour = var.getEnvelopeNext()) {
+        ISetIterator iter = var.getUB().iterator();
+        while(iter.hasNext()) {
+            int neighbour = iter.nextInt();
             if (neighbour >= 0 && neighbour < relation.length) {
                 Index neighbourIndex = vertexIndices.get(neighbour);
                 if (neighbourIndex == null) {

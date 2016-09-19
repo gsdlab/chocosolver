@@ -38,32 +38,12 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
     }
 
     @Override
-    public B visit(IrImplies ir, A a) {
-        return null;
-    }
-
-    @Override
-    public B visit(IrNotImplies ir, A a) {
-        return null;
-    }
-
-    @Override
     public B visit(IrIfThenElse ir, A a) {
         return null;
     }
 
     @Override
     public B visit(IrIfOnlyIf ir, A a) {
-        return null;
-    }
-
-    @Override
-    public B visit(IrXor ir, A a) {
-        return null;
-    }
-
-    @Override
-    public B visit(IrWithin ir, A a) {
         return null;
     }
 
@@ -144,11 +124,6 @@ public abstract class IrBoolExprVisitorAdapter<A, B> implements IrBoolExprVisito
 
     @Override
     public B visit(IrUnreachable ir, A a) {
-        return null;
-    }
-
-    @Override
-    public B visit(IrFilterString ir, A a) {
         return null;
     }
 

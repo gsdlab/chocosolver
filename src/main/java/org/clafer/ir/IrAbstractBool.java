@@ -1,7 +1,7 @@
 package org.clafer.ir;
 
-import org.clafer.domain.BoolDomain;
 import org.clafer.common.Check;
+import org.clafer.domain.BoolDomain;
 
 /**
  *
@@ -18,6 +18,11 @@ public abstract class IrAbstractBool implements IrBoolExpr {
     @Override
     public BoolDomain getDomain() {
         return domain;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return domain.isConstant();
     }
 
     @Override

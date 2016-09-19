@@ -122,20 +122,6 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public Void visit(IrImplies ir, T a) {
-        traverse(ir.getAntecedent(), a);
-        traverse(ir.getConsequent(), a);
-        return null;
-    }
-
-    @Override
-    public Void visit(IrNotImplies ir, T a) {
-        traverse(ir.getAntecedent(), a);
-        traverse(ir.getConsequent(), a);
-        return null;
-    }
-
-    @Override
     public Void visit(IrIfThenElse ir, T a) {
         traverse(ir.getAntecedent(), a);
         traverse(ir.getConsequent(), a);
@@ -147,19 +133,6 @@ public abstract class IrTraverser<T>
     public Void visit(IrIfOnlyIf ir, T a) {
         traverse(ir.getLeft(), a);
         traverse(ir.getRight(), a);
-        return null;
-    }
-
-    @Override
-    public Void visit(IrXor ir, T a) {
-        traverse(ir.getLeft(), a);
-        traverse(ir.getRight(), a);
-        return null;
-    }
-
-    @Override
-    public Void visit(IrWithin ir, T a) {
-        traverse(ir.getValue(), a);
         return null;
     }
 
@@ -271,14 +244,6 @@ public abstract class IrTraverser<T>
     }
 
     @Override
-    public Void visit(IrFilterString ir, T a) {
-        traverse(ir.getSet(), a);
-        traverse(ir.getString(), a);
-        traverse(ir.getResult(), a);
-        return null;
-    }
-
-    @Override
     public Void visit(IrPrefix ir, T a) {
         traverse(ir.getPrefix(), a);
         traverse(ir.getWord(), a);
@@ -345,12 +310,6 @@ public abstract class IrTraverser<T>
 
     @Override
     public Void visit(IrCount ir, T a) {
-        traverse(ir.getArray(), a);
-        return null;
-    }
-
-    @Override
-    public Void visit(IrCountNotEqual ir, T a) {
         traverse(ir.getArray(), a);
         return null;
     }

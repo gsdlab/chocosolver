@@ -29,7 +29,7 @@ public class PropAcyclic extends Propagator<IntVar> {
         super(edges, PropagatorPriority.TERNARY, true);
         this.leaders = new IStateInt[edges.length];
         for (int i = 0; i < this.leaders.length; i++) {
-            this.leaders[i] = solver.getEnvironment().makeInt(i);
+            this.leaders[i] = model.getEnvironment().makeInt(i);
         }
     }
 
@@ -73,7 +73,7 @@ public class PropAcyclic extends Propagator<IntVar> {
         }
         int realLeader = getLeader(leader);
         if (realLeader == follower) {
-            contradiction(vars[follower], "Cycle");
+            fails();
         }
         boolean changed = false;
         for (int i = 0; i < vars.length; i++) {

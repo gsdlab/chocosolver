@@ -1,5 +1,6 @@
 package org.clafer.assertion;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.common.Check;
 
@@ -9,8 +10,8 @@ import org.clafer.common.Check;
  */
 public class Assertion {
 
-    private static int idFactory = 0;
-    private final int id = idFactory++;
+    private static final AtomicInteger idFactory = new AtomicInteger();
+    private final int id = idFactory.getAndIncrement();
     private final AstBoolExpr expr;
 
     public Assertion(AstBoolExpr expr) {

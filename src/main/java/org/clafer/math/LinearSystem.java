@@ -14,14 +14,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.clafer.collection.Pair;
 import org.clafer.common.Check;
+import org.clafer.domain.BoolDomain;
 import org.clafer.math.LinearEquation.Op;
-import static org.clafer.math.LinearEquation.*;
-import static org.clafer.math.LinearEquation.Op.*;
+import static org.clafer.math.LinearEquation.Op.Equal;
+import static org.clafer.math.LinearEquation.Op.LessThanEqual;
 
 /**
  * @author jimmy
@@ -117,13 +119,11 @@ public class LinearSystem {
         for (TIntObjectMap<Rational> row : p.multiply(a.addColumns(b)).getRows()) {
             LinearEquation equation = toEquation(row, id + 1, variableOrder);
             if (equation != null) {
-                switch (equation.isEntailed()) {
-                    case TrueFalseDomain:
-                        optimize.add(equation);
-                        break;
-                    case FalseDomain:
-                    // TODO
+                BoolDomain entailed = equation.isEntailed();
+                if (entailed.isUnknown()) {
+                    optimize.add(equation);
                 }
+                // TODO: if entailed.isFalse
             }
         }
         return new LinearSystem(optimize);
@@ -225,12 +225,17 @@ public class LinearSystem {
             }
             assert assignmentKeys.size() == assignmentValues.size();
             if (!assignmentKeys.isEmpty()) {
-                for (int i = 0; i < pool.size(); i++) {
-                    LinearEquation equation = pool.get(i);
+                ListIterator<LinearEquation> listIter = pool.listIterator();
+                while (listIter.hasNext()) {
+                    LinearEquation equation = listIter.next();
                     for (int j = 0; j < assignmentKeys.size(); j++) {
                         equation = equation.replace(assignmentKeys.get(j), assignmentValues.get(j));
                     }
-                    pool.set(i, equation);
+                    if (equation.isEntailed().isTrue()) {
+                        listIter.remove();
+                    } else {
+                        listIter.set(equation);
+                    }
                 }
             }
         } while (!touched.isEmpty());
@@ -300,7 +305,7 @@ public class LinearSystem {
         return set;
     }
 
-    private int tieBreaker(LinearEquation eq1, LinearEquation eq2) {
+    private static int tieBreaker(LinearEquation eq1, LinearEquation eq2) {
         return eq1.getVariables().length - eq2.getVariables().length;
     }
 
@@ -332,7 +337,7 @@ public class LinearSystem {
                     }
                     addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
-                } else if (best.getSnd().compareTo(hb) == 0) {
+                } else if (best.getSnd().compareTo(hb) == 0 && best.getFst().size() < 10) {
                     if (best.getFst().add(equation)) {
                         addEquation(equation, positiveOccurrences, negativeOccurrences);
                         changed = true;
@@ -348,7 +353,7 @@ public class LinearSystem {
                     }
                     addEquation(equation, positiveOccurrences, negativeOccurrences);
                     changed = true;
-                } else if (best.getSnd().compareTo(lb) == 0) {
+                } else if (best.getSnd().compareTo(lb) == 0 && best.getFst().size() < 10) {
                     if (best.getFst().add(equation)) {
                         addEquation(equation, positiveOccurrences, negativeOccurrences);
                         changed = true;
@@ -454,13 +459,12 @@ public class LinearSystem {
                                         new LinearFunction(newCoefficients, newVariables, Rational.Zero),
                                         LessThanEqual,
                                         a0.mul(bk.minus()).add(b0.mul(ak)));
-                                switch (newEquation.isEntailed()) {
-                                    case TrueFalseDomain:
-                                        changed |= cost(newEquation, bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
-                                        break;
-                                    case FalseDomain:
-                                    // TODO
+                                assert !newEquation.getVariableSet().contains(variable);
+                                BoolDomain entailed = newEquation.isEntailed();
+                                if (entailed.isUnknown()) {
+                                    changed |= cost(newEquation, bestLowBound, bestHighBound, positiveOccurrences, negativeOccurrences);
                                 }
+                                // TODO: if entailed.isFalse
                             }
                         }
                     }
@@ -471,10 +475,10 @@ public class LinearSystem {
         Set<LinearEquation> newEquations = new LinkedHashSet<>(
                 bestLowBound.size() + bestHighBound.size());
         for (Pair<Set<LinearEquation>, ?> b : bestLowBound.values()) {
-            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
+            newEquations.add(Collections.min(b.getFst(), LinearSystem::tieBreaker));
         }
         for (Pair<Set<LinearEquation>, ?> b : bestHighBound.values()) {
-            newEquations.add(Collections.min(b.getFst(), this::tieBreaker));
+            newEquations.add(Collections.min(b.getFst(), LinearSystem::tieBreaker));
         }
         return new LinearSystem(newEquations);
     }
@@ -524,6 +528,7 @@ public class LinearSystem {
                 optimize.remove(new LinearEquation(equation.getLeft(), LessThanEqual, equation.getRight()));
                 optimize.remove(new LinearEquation(equation.getLeft().minus(), LessThanEqual, equation.getRight().minus()));
             }
+            optimize.removeIf(equation::subsumes);
         }
         return optimize.size() == equations.length ? this : new LinearSystem(optimize);
     }
