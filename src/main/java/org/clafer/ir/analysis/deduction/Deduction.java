@@ -77,6 +77,11 @@ class Deduction {
         this.setSubsetOf = new HashMap<>(deduction.setSubsetOf);
     }
 
+    public boolean isEmpty() {
+        return intEquals.isEmpty() && intNotEquals.isEmpty() && intRetains.isEmpty()
+                && setEquals.isEmpty() && setContains.isEmpty() && setSubsetOf.isEmpty();
+    }
+
     boolean checkInvariants() {
         intRetains.forEach((var, domain) -> {
             assert domain.isSubsetOf(var.getDomain()) && !domain.equals(var.getDomain());

@@ -211,6 +211,11 @@ public class FBBT {
         } catch (UnsatisfiableException e) {
             deduction.contradiction(case1);
         }
+
+        if (deduction.isEmpty()) {
+            return new Pair<>(new Coalesce(), module);
+        }
+
         State state = new State(module);
         Coalesce coalesce = propagate(deduction, state);
         return new Pair<>(coalesce, state.toModule());

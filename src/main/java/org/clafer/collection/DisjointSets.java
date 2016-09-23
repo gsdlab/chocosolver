@@ -28,6 +28,10 @@ public class DisjointSets<V> {
         parents = new TIntArrayList(copy.parents);
     }
 
+    public boolean isEmpty() {
+        return parents.isEmpty();
+    }
+
     private int getNode(V i) {
         int n = nodes.size();
         int v = nodes.putIfAbsent(i, n);
