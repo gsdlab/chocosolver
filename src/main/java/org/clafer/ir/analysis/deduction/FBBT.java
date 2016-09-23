@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clafer.collection.Pair;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.domain.Domain;
@@ -221,8 +222,6 @@ public class FBBT {
         int size;
         Set<IrSetVar> setVars = new HashSet<>();
         Set<IrStringVar> stringVars = new HashSet<>();
-        Set<IrSetVar> reuseSetVars = new HashSet<>();
-        Set<IrStringVar> reuseStringVars = new HashSet<>();
 
         State(IrModule module, IrBoolExpr tautology) {
             Collection<IrBoolExpr> c = module.getConstraints();
@@ -233,8 +232,7 @@ public class FBBT {
                 this.constraints[c.size()] = tautology;
             }
             this.size = constraints.length;
-            Set<IrVar> vars = module.getVariables();
-            for (IrVar var : vars) {
+            for (IrVar var : module.getVariables()) {
                 if (!var.isConstant()) {
                     if (var instanceof IrSetVar) {
                         setVars.add((IrSetVar) var);
@@ -267,17 +265,8 @@ public class FBBT {
                 }
             }
 
-            setVars.forEach(x -> reuseSetVars.add((IrSetVar) coalesce.rewrite(x, null)));
-            Set<IrSetVar> tempSetVars = setVars;
-            setVars = reuseSetVars;
-            reuseSetVars = tempSetVars;
-            reuseSetVars.clear();
-
-            stringVars.forEach(x -> reuseStringVars.add((IrStringVar) coalesce.rewrite(x, null)));
-            Set<IrStringVar> tempStringVars = stringVars;
-            stringVars = reuseStringVars;
-            reuseStringVars = tempStringVars;
-            reuseStringVars.clear();
+            setVars = setVars.stream().map(coalesce::get).collect(Collectors.toSet());
+            stringVars = stringVars.stream().map(coalesce::get).collect(Collectors.toSet());
         }
 
         IrModule toModule() {

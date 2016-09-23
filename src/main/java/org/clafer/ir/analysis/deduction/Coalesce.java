@@ -39,15 +39,19 @@ public class Coalesce extends IrRewriter<Void> {
     }
 
     public IrBoolVar get(IrBoolVar var) {
-        return (IrBoolVar) coalescedInts.getOrDefault(var, var);
+        return visit(var, null);
     }
 
     public IrIntVar get(IrIntVar var) {
-        return coalescedInts.getOrDefault(var, var);
+        return visit(var, null);
     }
 
     public IrSetVar get(IrSetVar var) {
-        return coalescedSets.getOrDefault(var, var);
+        return visit(var, null);
+    }
+
+    public IrStringVar get(IrStringVar var) {
+        return visit(var, null);
     }
 
     public void forEachIntVar(BiConsumer<? super IrIntVar, ? super IrIntVar> action) {
@@ -90,20 +94,17 @@ public class Coalesce extends IrRewriter<Void> {
 
     @Override
     public IrBoolVar visit(IrBoolVar ir, Void a) {
-        IrBoolVar var = (IrBoolVar) coalescedInts.get(ir);
-        return var == null ? ir : var;
+        return (IrBoolVar) coalescedInts.getOrDefault(ir, ir);
     }
 
     @Override
     public IrIntVar visit(IrIntVar ir, Void a) {
-        IrIntVar var = coalescedInts.get(ir);
-        return var == null ? ir : var;
+        return coalescedInts.getOrDefault(ir, ir);
     }
 
     @Override
     public IrSetVar visit(IrSetVar ir, Void a) {
-        IrSetVar var = coalescedSets.get(ir);
-        return var == null ? ir : var;
+        return coalescedSets.getOrDefault(ir, ir);
     }
 
     @Override

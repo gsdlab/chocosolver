@@ -1883,7 +1883,7 @@ public class AstCompiler {
                 for (int i = env.getLowBound(); i <= env.getHighBound(); i++) {
                     members[i] = new Pair<>(constant(i),
                             ker.contains(i) ? True
-                                    : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
+                            : bool(Util.intercalate("/", AstUtil.getNames(decl.getLocals())) + "#" + i + "#" + localCount++));
                 }
                 module.addConstraint(boolChannel(Pair.mapSnd(members), setBody));
                 if (decl.isDisjoint() && members.length < decl.getLocals().length) {
@@ -2135,8 +2135,8 @@ public class AstCompiler {
             int[] possibleParents = solution.getPossibleParents(i);
             pointers[i] = enumInt(clafer.getName() + "@Parent#" + i,
                     solution.hasClafer(i) || known
-                            ? possibleParents
-                            : Util.snoc(possibleParents, getScope(clafer.getParent())));
+                    ? possibleParents
+                    : Util.snoc(possibleParents, getScope(clafer.getParent())));
         }
         return pointers;
     }
@@ -2269,27 +2269,27 @@ public class AstCompiler {
      * @param clafer to Clafer referred to
      * @return the integer value for uninitialized.
      */
-    private int getUninitalizedRef(AstClafer clafer) {
+    int getUninitalizedRef(AstClafer clafer) {
         return clafer instanceof AstIntClafer
                 ? analysis.getScope().getIntHigh() + 1
                 : getScope(clafer);
     }
 
-    private int getScope(AstClafer clafer) {
+    int getScope(AstClafer clafer) {
         return analysis.getScope().getScope(clafer);
     }
 
-    private Domain getIntRange() {
+    Domain getIntRange() {
         Scope scope = analysis.getScope();
         return Domains.boundDomain(scope.getIntLow(), scope.getIntHigh());
     }
 
-    private Domain getMulRange() {
+    Domain getMulRange() {
         Scope scope = analysis.getScope();
         return Domains.boundDomain(scope.getMulLow(), scope.getMulHigh());
     }
 
-    private Domain getRefRange(AstRef ref) {
+    Domain getRefRange(AstRef ref) {
         AstClafer target = ref.getTargetType();
         if (target instanceof AstIntClafer) {
             return getIntRange();
@@ -2297,47 +2297,47 @@ public class AstCompiler {
         return fromToDomain(0, getScope(target));
     }
 
-    private Format getFormat(AstClafer clafer) {
+    Format getFormat(AstClafer clafer) {
         return analysis.getFormat(clafer);
     }
 
-    private PartialSolution getPartialSolution(AstClafer clafer) {
+    PartialSolution getPartialSolution(AstClafer clafer) {
         return analysis.getPartialSolution(clafer);
     }
 
-    private PartialSolution getPartialParentSolution(AstConcreteClafer clafer) {
+    PartialSolution getPartialParentSolution(AstConcreteClafer clafer) {
         return getPartialSolution(clafer.getParent());
     }
 
-    private Domain[] getPartialInts(AstConcreteClafer clafer) {
+    Domain[] getPartialInts(AstConcreteClafer clafer) {
         return analysis.getPartialInts(clafer);
     }
 
-    private int getOffset(AstClafer sup, AstClafer sub) {
+    int getOffset(AstClafer sup, AstClafer sub) {
         return analysis.getOffset(sup, sub);
     }
 
-    private int getOffset(AstAbstractClafer sup, AstClafer sub) {
+    int getOffset(AstAbstractClafer sup, AstClafer sub) {
         return analysis.getOffset(sup, sub);
     }
 
-    private Card getCard(AstConcreteClafer clafer) {
+    Card getCard(AstConcreteClafer clafer) {
         return analysis.getCard(clafer);
     }
 
-    private Card getGlobalCard(AstClafer clafer) {
+    Card getGlobalCard(AstClafer clafer) {
         return analysis.getGlobalCard(clafer);
     }
 
-    private Type getType(AstExpr expr) {
+    Type getType(AstExpr expr) {
         return analysis.getType(expr);
     }
 
-    private Set<ProductType> getUnionType(AstExpr expr) {
+    Set<ProductType> getUnionType(AstExpr expr) {
         return analysis.getType(expr).getUnionType();
     }
 
-    private ProductType getCommonSupertype(AstExpr expr) {
+    ProductType getCommonSupertype(AstExpr expr) {
         return analysis.getCommonSupertype(expr);
     }
 

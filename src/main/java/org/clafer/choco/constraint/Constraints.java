@@ -232,25 +232,25 @@ public class Constraints {
         return new Constraint("ifThenElse",
                 new PropGreaterOrEqualX_Y(new IntVar[]{consequent, antecedent}),
                 new PropGreaterOrEqualXY_C(new IntVar[]{antecedent, alternative}, 1)) {
-                    @Override
-                    public Constraint makeOpposite() {
-                        return ifThenElse(antecedent, consequent.not(), alternative.not());
-                    }
+            @Override
+            public Constraint makeOpposite() {
+                return ifThenElse(antecedent, consequent.not(), alternative.not());
+            }
 
-                    @Override
-                    public ESat isSatisfied() {
-                        if (antecedent.isInstantiated()) {
-                            return antecedent.getValue() == 1 ? consequent.getBooleanValue() : alternative.getBooleanValue();
-                        }
-                        if (consequent.isInstantiatedTo(1) && alternative.isInstantiatedTo(1)) {
-                            return ESat.TRUE;
-                        }
-                        if (consequent.isInstantiatedTo(0) && alternative.isInstantiatedTo(0)) {
-                            return ESat.FALSE;
-                        }
-                        return ESat.UNDEFINED;
-                    }
-                };
+            @Override
+            public ESat isSatisfied() {
+                if (antecedent.isInstantiated()) {
+                    return antecedent.getValue() == 1 ? consequent.getBooleanValue() : alternative.getBooleanValue();
+                }
+                if (consequent.isInstantiatedTo(1) && alternative.isInstantiatedTo(1)) {
+                    return ESat.TRUE;
+                }
+                if (consequent.isInstantiatedTo(0) && alternative.isInstantiatedTo(0)) {
+                    return ESat.FALSE;
+                }
+                return ESat.UNDEFINED;
+            }
+        };
     }
 
     public static Constraint ternary(BoolVar antecedent, IntVar result, IntVar consequent, IntVar alternative) {
@@ -356,11 +356,11 @@ public class Constraints {
         return new Constraint("member",
                 new PropIntEnumMemberSet(set, element),
                 new PropIntMemberSetCard(element, set, set.getCard())) {
-                    @Override
-                    protected Constraint makeOpposite() {
-                        return notMember(element, set);
-                    }
-                };
+            @Override
+            protected Constraint makeOpposite() {
+                return notMember(element, set);
+            }
+        };
     }
 
     public static Constraint memberNonempty(IntVar element, SetVar set, IntVar setCard) {
@@ -379,11 +379,11 @@ public class Constraints {
                 new PropNotMemberIntSet(element, set),
                 new PropNotMemberSetInt(element, set),
                 new PropIntNotMemberSetCard(element, set, set.getCard())) {
-                    @Override
-                    protected Constraint makeOpposite() {
-                        return member(element, set);
-                    }
-                };
+            @Override
+            protected Constraint makeOpposite() {
+                return member(element, set);
+            }
+        };
     }
 
     /**
@@ -660,51 +660,51 @@ public class Constraints {
                 new PropSingletonFilter(ivar, svar, filter),
                 new PropEqualX_Y(svarCard, ivar.getModel().arithm(ivar, "!=", filter).reify())) {
 
-                    @Override
-                    public ESat isSatisfied() {
-                        if (svarCard.getLB() > 1) {
-                            return ESat.FALSE;
-                        }
-                        if (svar.getLB().size() == 1) {
-                            if (svar.getLB().min() == filter || ivar.isInstantiatedTo(filter)) {
-                                return ESat.FALSE;
-                            }
-                            if (ivar.contains(svar.getLB().min())) {
-                                return ivar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-                            } else {
-                                return ESat.FALSE;
-                            }
-                        }
-                        if (!svar.getCard().contains(1)) {
-                            if (!ivar.contains(filter)) {
-                                return ESat.FALSE;
-                            }
-                            return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-                        } else if (!svar.getCard().contains(0)) {
-                            ISetIterator iter = svar.getUB().iterator();
-                            while (iter.hasNext()) {
-                                int env = iter.nextInt();
-                                if (env != filter && ivar.contains(env)) {
-                                    return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-                                }
-                            }
-                            return ESat.FALSE;
-                        } else if (ivar.contains(filter)) {
-                            if (ivar.isInstantiated()) {
-                                if (svar.getUB().isEmpty()) {
-                                    return ESat.TRUE;
-                                }
-                                if (!svar.getLB().isEmpty()) {
-                                    return ESat.FALSE;
-                                }
-                            }
-                            return ESat.UNDEFINED;
-                        } else if (PropUtil.isDomIntersectEnv(ivar, svar)) {
-                            return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
-                        }
+            @Override
+            public ESat isSatisfied() {
+                if (svarCard.getLB() > 1) {
+                    return ESat.FALSE;
+                }
+                if (svar.getLB().size() == 1) {
+                    if (svar.getLB().min() == filter || ivar.isInstantiatedTo(filter)) {
                         return ESat.FALSE;
                     }
-                };
+                    if (ivar.contains(svar.getLB().min())) {
+                        return ivar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                    } else {
+                        return ESat.FALSE;
+                    }
+                }
+                if (!svar.getCard().contains(1)) {
+                    if (!ivar.contains(filter)) {
+                        return ESat.FALSE;
+                    }
+                    return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                } else if (!svar.getCard().contains(0)) {
+                    ISetIterator iter = svar.getUB().iterator();
+                    while (iter.hasNext()) {
+                        int env = iter.nextInt();
+                        if (env != filter && ivar.contains(env)) {
+                            return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                        }
+                    }
+                    return ESat.FALSE;
+                } else if (ivar.contains(filter)) {
+                    if (ivar.isInstantiated()) {
+                        if (svar.getUB().isEmpty()) {
+                            return ESat.TRUE;
+                        }
+                        if (!svar.getLB().isEmpty()) {
+                            return ESat.FALSE;
+                        }
+                    }
+                    return ESat.UNDEFINED;
+                } else if (PropUtil.isDomIntersectEnv(ivar, svar)) {
+                    return ivar.isInstantiated() && svar.isInstantiated() ? ESat.TRUE : ESat.UNDEFINED;
+                }
+                return ESat.FALSE;
+            }
+        };
     }
 
     /**
@@ -916,8 +916,8 @@ public class Constraints {
         }
         return new Constraint("max",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
-                    set.getModel().arithm(max, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
-                }),
+            set.getModel().arithm(max, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
+        }),
                 new PropSetMax(set, setCard, max));
     }
 
@@ -941,8 +941,8 @@ public class Constraints {
         }
         return new Constraint("min",
                 new PropGreaterOrEqualX_Y(new IntVar[]{
-                    set.getModel().arithm(min, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
-                }),
+            set.getModel().arithm(min, "=", d).reify(), set.getModel().arithm(setCard, "=", 0).reify()
+        }),
                 new PropIntMemberSetDefault(min, set, setCard, d),
                 new PropSetMin(set, setCard, min, d));
     }
