@@ -32,6 +32,7 @@ import org.clafer.ast.analysis.UnsatAnalyzer;
 import org.clafer.ast.compiler.AstCompiler;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.collection.Either;
+import org.clafer.collection.Pair;
 import org.clafer.common.Check;
 import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
@@ -42,10 +43,14 @@ import org.clafer.ir.IrBoolVar;
 import org.clafer.ir.IrIntVar;
 import org.clafer.ir.IrModule;
 import org.clafer.ir.IrStringVar;
+import org.clafer.ir.analysis.Optimizer;
+import org.clafer.ir.analysis.deduction.Coalesce;
 import org.clafer.ir.compiler.IrCompiler;
 import org.clafer.ir.compiler.IrSolutionMap;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scopable;
+import org.clafer.scope.Scope;
+import org.clafer.scope.ScopeBuilder;
 
 /**
  * Compiles from AST -> Choco
@@ -217,6 +222,45 @@ public class ClaferCompiler {
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
         return compile(in, scope, ClaferOption.Default);
+    }
+
+    /**
+     * Computes a lower and upper scope bounds using feasibility based bounds
+     * tightening. If the {@code scope} parameter contains no feasible
+     * solutions, then the lower and upper scope bounds are arbitrary.
+     *
+     * @param in
+     * @param scope
+     * @return a pair of scope, the first is the lower bound and the second is
+     * the upper bound.
+     */
+    public static Pair<Scope, Scope> fbbt(AstModel in, Scopable scope) {
+        IrModule module = new IrModule();
+
+        AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module, true);
+        Coalesce coalesce = Optimizer.optimize(module, true).getFst();
+
+        ScopeBuilder lbScope = Scope.builder();
+        ScopeBuilder ubScope = Scope.builder();
+
+        for (AstConcreteClafer clafer : AstUtil.getConcreteClafers(in)) {
+            int trues = 0;
+            int unknowns = 0;
+            for (IrBoolVar member : astSolution.getMemberVars(clafer)) {
+                IrBoolVar optMember = coalesce.get(member);
+                if (optMember.isConstant()) {
+                    if (optMember.getLowBound() == 1) {
+                        trues++;
+                    }
+                } else {
+                    unknowns++;
+                }
+            }
+            lbScope.setScope(clafer, trues);
+            ubScope.setScope(clafer, trues + unknowns);
+        }
+
+        return new Pair<>(lbScope.toScope(), ubScope.toScope());
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOption options) {
