@@ -924,4 +924,27 @@ public class SimpleStructureTest {
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(5, solver.allInstances().length);
     }
+
+    /**
+     * <pre>
+     * abstract Node
+     *     Tail :  Node ?
+     *     Remainder :  Node ?
+     * A : Node
+     * B : Node
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testRecursive() {
+        AstModel model = newModel();
+
+        AstAbstractClafer node = model.addAbstract("Node");
+        AstConcreteClafer tail = node.addChild("Tail").extending(node).withCard(Optional);
+        AstConcreteClafer remainder = node.addChild("Remainder").extending(node).withCard(Optional);
+        AstConcreteClafer a = model.addChild("A").extending(node).withCard(Mandatory);
+        AstConcreteClafer b = model.addChild("B").extending(node).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(4).setScope(tail, 3).setScope(remainder, 3));
+        assertEquals(1026, solver.allInstances().length);
+    }
 }

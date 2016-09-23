@@ -3,6 +3,7 @@ package org.clafer.ast.analysis;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
@@ -37,7 +38,10 @@ public class ScopeAnalyzer implements Analyzer {
                         Card globalCard = analysis.getGlobalCard(clafer);
                         optimizedScope.put(clafer, Math.min(scope.getScope(clafer), globalCard.getHigh()));
                     }
-                } else {
+                }
+            }
+            for (AstClafer clafer : component) {
+                if (clafer instanceof AstAbstractClafer) {
                     int subScopes = 0;
                     for (AstClafer sub : ((AstAbstractClafer) clafer).getSubs()) {
                         subScopes += optimizedScope.containsKey(sub) ? optimizedScope.get(sub) : scope.getDefaultScope();
