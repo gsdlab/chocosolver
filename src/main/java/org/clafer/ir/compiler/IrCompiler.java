@@ -107,7 +107,7 @@ import static org.clafer.ir.Irs.not;
 import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.DuplicateConstraints;
 import org.clafer.ir.analysis.LinearEquationOptimizer;
-import org.clafer.ir.analysis.Optimizer;
+import org.clafer.ir.analysis.Simplifier;
 import org.clafer.ir.analysis.deduction.Coalesce;
 import org.clafer.ir.analysis.deduction.FBBT;
 
@@ -137,7 +137,7 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        IrModule optModule = Optimizer.optimize(module);
+        IrModule optModule = Simplifier.optimize(module);
         Coalesce coalesce = new Coalesce();
         if (coalesceVariables) {
             Pair<Coalesce, IrModule> coalescePair = new FBBT().propagate(optModule);

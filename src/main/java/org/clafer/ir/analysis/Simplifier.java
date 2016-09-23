@@ -40,9 +40,9 @@ import static org.clafer.ir.Irs.ternary;
  *
  * @author jimmy
  */
-public class Optimizer {
+public class Simplifier {
 
-    private Optimizer() {
+    private Simplifier() {
     }
 
     /**
