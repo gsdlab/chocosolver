@@ -104,6 +104,7 @@ import org.clafer.ir.IrUnreachable;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.not;
+import org.clafer.ir.analysis.CommonSubexpression;
 import org.clafer.ir.analysis.Optimizer;
 import org.clafer.ir.analysis.deduction.Coalesce;
 
@@ -136,6 +137,7 @@ public class IrCompiler {
         Pair<Coalesce, IrModule> optimizedPair = Optimizer.optimize(module, coalesceVariables);
         Coalesce coalesce = optimizedPair.getFst();
         IrModule optModule = optimizedPair.getSnd();
+        commonSubexpressions.addAll(CommonSubexpression.findCommonSubexpressions(optModule));
 
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             Constraint c = compileAsConstraint(constraint);
