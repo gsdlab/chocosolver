@@ -85,7 +85,7 @@ public class JavascriptContext {
     }
 
     public void setBranchingPriority(List<List<AstClafer>> branchingPriority) {
-        this.branchingPriority = branchingPriority.stream().map(HashSet::new).toArray(x -> new Set[x]);
+        this.branchingPriority = branchingPriority.stream().map(HashSet::new).toArray(Set[]::new);
     }
 
     public ClaferOption getClaferOption() {

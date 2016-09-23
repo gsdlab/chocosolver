@@ -109,8 +109,8 @@ public class GlobalCardAnalyzer implements Analyzer {
                 }
                 if (clafer instanceof AstAbstractClafer) {
                     AstAbstractClafer abstractClafer = (AstAbstractClafer) clafer;
-                    IntVar[] subLowCards = abstractClafer.getSubs().stream().map(getLowCard).toArray(x -> new IntVar[x]);
-                    IntVar[] subHighCards = abstractClafer.getSubs().stream().map(getHighCard).toArray(x -> new IntVar[x]);
+                    IntVar[] subLowCards = abstractClafer.getSubs().stream().map(getLowCard).toArray(IntVar[]::new);
+                    IntVar[] subHighCards = abstractClafer.getSubs().stream().map(getHighCard).toArray(IntVar[]::new);
                     model.sum(subLowCards, "=", lowCard).post();
                     model.sum(subHighCards, "=", highCard).post();
                 }
