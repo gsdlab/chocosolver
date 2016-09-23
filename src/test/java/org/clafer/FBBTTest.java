@@ -1,3 +1,5 @@
+package org.clafer;
+
 
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
