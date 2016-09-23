@@ -934,12 +934,10 @@ public class AstCompiler {
         Card card = getCard(clafer);
         IrSetVar[] childSet = siblingSets.get(clafer);
 
-        if (fullSymmetryBreaking) {
-            module.addConstraint(selectN(members, card(set)));
-            IrIntExpr[] bounds = siblingBounds.get(clafer);
-            if (childSet.length > 1) {
-                module.addConstraint(sort(childSet, bounds));
-            }
+        module.addConstraint(selectN(members, card(set)));
+        IrIntExpr[] bounds = siblingBounds.get(clafer);
+        if (childSet.length > 1) {
+            module.addConstraint(sort(childSet, bounds));
         }
 
         for (int i = 0; i < parentMembership.length; i++) {
