@@ -104,12 +104,8 @@ import org.clafer.ir.IrUnreachable;
 import org.clafer.ir.IrVar;
 import org.clafer.ir.Irs;
 import static org.clafer.ir.Irs.not;
-import org.clafer.ir.analysis.CommonSubexpression;
-import org.clafer.ir.analysis.DuplicateConstraints;
-import org.clafer.ir.analysis.LinearEquationOptimizer;
-import org.clafer.ir.analysis.Simplifier;
+import org.clafer.ir.analysis.Optimizer;
 import org.clafer.ir.analysis.deduction.Coalesce;
-import org.clafer.ir.analysis.deduction.FBBT;
 
 /**
  * Compile from IR to Choco.
@@ -137,33 +133,9 @@ public class IrCompiler {
     }
 
     private IrSolutionMap compile(IrModule module) {
-        IrModule optModule = Simplifier.optimize(module);
-        Coalesce coalesce = new Coalesce();
-        if (coalesceVariables) {
-            Pair<Coalesce, IrModule> coalescePair = new FBBT().propagate(optModule);
-            coalesce = coalescePair.getFst();
-            optModule = coalescePair.getSnd();
-
-            Set<IrVar> processed = new HashSet<>();
-            for (IrExpr expr : optModule.getConstraints()) {
-                if (expr instanceof IrRegister) {
-                    IrVar var = ((IrRegister) expr).getVariable();
-                    if (var instanceof IrBoolVar) {
-                        IrBoolVar bool = (IrBoolVar) var;
-                        bool = coalesce.get(bool);
-                        if (!bool.isConstant() && processed.add(bool)) {
-                            coalescePair = new FBBT().constructiveDisjunction(bool, bool.negate(), optModule);
-                            coalesce = coalesce.compose(coalescePair.getFst());
-                            optModule = coalescePair.getSnd();
-                        }
-                    }
-                }
-            }
-
-            optModule = DuplicateConstraints.removeDuplicates(optModule);
-        }
-        optModule = LinearEquationOptimizer.optimize(optModule);
-        commonSubexpressions.addAll(CommonSubexpression.findCommonSubexpressions(optModule));
+        Pair<Coalesce, IrModule> optimizedPair = Optimizer.optimize(module, coalesceVariables);
+        Coalesce coalesce = optimizedPair.getFst();
+        IrModule optModule = optimizedPair.getSnd();
 
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             Constraint c = compileAsConstraint(constraint);
