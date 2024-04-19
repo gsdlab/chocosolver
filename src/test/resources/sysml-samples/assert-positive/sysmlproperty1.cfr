@@ -1,0 +1,5 @@
+abstract SysmlProperty
+
+abstract Action: SysmlProperty
+
+myClafer: Action

@@ -1,0 +1,5 @@
+abstract SysmlProperty
+
+abstract Part: SysmlProperty
+
+myClafer: Part

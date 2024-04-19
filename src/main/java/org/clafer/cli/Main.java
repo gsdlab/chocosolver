@@ -20,16 +20,20 @@ public class Main
                 accepts( "file", "Input file in .cfr or .js format" ).withRequiredArg().ofType( File.class )
                     .describedAs( "Clafer model file (.cfr) or Clafer Javascript file (.js)." );
                 accepts( "help", "Show help.").forHelp();
+                accepts( "config", "Config file in .toml format" ).withRequiredArg().ofType( File.class );
                 accepts( "maxint", "Specify maximum integer value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "minint", "Specify minimum integer value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "moo", "Run in multi-objective optimization mode." );
                 accepts( "n", "Specify the maximum number of instances." ).withRequiredArg().ofType( Integer.class );
                 accepts( "noprint", "Don't print the instances to the console or a file");
                 accepts( "output", "Output instances to the given file." ).withRequiredArg().ofType( File.class ).describedAs( "text file" );
+                accepts( "plantuml", "Print the clafer model as PlantUML" );
+                accepts( "plantuml-config", "TOML configuration file for Clafer->PlantUML compiler" ).withRequiredArg().ofType( File.class ).describedAs("toml file");
                 accepts( "prettify", "Use simple and pretty output format (not formal)." );
                 accepts( "repl", "Run in REPL (interactive) mode." );
                 accepts( "scope", "Override the default global scope value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "search", "PreferSmallerInstances/PreferLargerInstances/Random" ).withRequiredArg().ofType( ClaferSearchStrategy.class );
+                accepts( "sysml", "Print the instances as SysMLv2" );
                 accepts( "time", "Time how long it takes to find all instances (and print if it is turned on");
                 accepts( "v", "Run in validation mode; checks all assertions." );
                 accepts( "version", "Display the tool version" );

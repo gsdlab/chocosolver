@@ -184,6 +184,10 @@ public class PartialIntAnalyzer {
             AstRef ref = AstUtil.getInheritedRef(clafer);
             if (ref != null) {
                 Path[][] paths = pathsToClafers.get(clafer);
+                // NULL_DEREFERENCE
+                if (paths == null){
+                    return partialInts;
+                }
                 Domain[] domains = new Domain[paths.length];
                 for (int i = 0; i < paths.length; i++) {
                     Domain domain = Domains.EmptyDomain;

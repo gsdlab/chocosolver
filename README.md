@@ -1,4 +1,4 @@
-[![Build Status](https://secure.travis-ci.org/gsdlab/chocosolver.svg)](http://travis-ci.org/gsdlab/chocosolver)
+[![Build Status](https://github.com/EthanJamesLew/chocosolver-sysml/actions/workflows/maven.yml/badge.svg)](https://github.com/EthanJamesLew/chocosolver-sysml/actions/workflows/maven.yml)
 
 # chocosolver
 

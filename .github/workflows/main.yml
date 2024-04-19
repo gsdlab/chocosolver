@@ -1,0 +1,117 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  push:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build_package:
+    name: Builld chocosolver package
+    runs-on: ubuntu-20.04
+    steps:
+      #### This step is only needed for GHA local runner, act: https://github.com/nektos/act
+      ### That is because act ubuntu image does not have mvn installed, but the github one does
+      # - name: Install curl (for nektos/act local CI testing)
+      #   run: apt-get update && apt-get install build-essential curl pkg-config openssl -y
+      # - name: Download Maven
+      #   run: |
+      #     curl -sL https://downloads.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.zip -o maven.zip
+      #     apt-get update
+      #     apt-get -y install unzip
+      #     unzip -d /usr/share maven.zip
+      #     rm maven.zip
+      #     ln -s /usr/share/apache-maven-3.8.8/bin/mvn /usr/bin/mvn
+      #     echo "M2_HOME=/usr/share/apache-maven-3.8.8" | tee -a /etc/environment
+      #     file /usr/bin/mvn
+      #     echo $PATH
+      # Rest of the actions
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+      - run: mvn --batch-mode --update-snapshots verify
+      - run: mkdir staging && cp target/*.jar staging
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chocosolver-release
+          path: staging/*.jar
+          retention-days: 7
+
+  test_sysml_export:
+    name: Test SysMLv2 export
+    needs: build_package
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Chocosolver package
+        uses: actions/download-artifact@v4
+        with:
+          name: chocosolver-release
+          path: /tmp/chocosolver-release
+      - name: Install clafer tools
+        run: |
+          wget --no-check-certificate https://gsd.uwaterloo.ca/clafer-tools-bin/clafer-tools-0.4.5-linux-x86_64.zip
+          unzip clafer-tools-0.4.5-linux-x86_64.zip
+          mv clafer-tools-0.4.5 /opt/clafer-tools-0.4.5
+          echo "/opt/clafer-tools-0.4.5" >> $GITHUB_PATH
+      - name: Process SysML examples
+        shell: bash
+        run: |
+          for f in examples/sysml-samples/*.cfr
+          do
+            echo "Processing $f"
+            java -jar /tmp/chocosolver-release/chocosolver-0.4.4-jar-with-dependencies.jar --sysml --file $f --output $f.sysml
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+            name: SysML_generated
+            path: examples/sysml-samples/*.sysml
+            retention-days: 7
+
+  test_plantuml_export:
+    name: Test PlantUML export
+    needs: build_package
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Chocosolver package
+        uses: actions/download-artifact@v4
+        with:
+          name: chocosolver-release
+          path: /tmp/chocosolver-release
+      - name: Install clafer tools
+        shell: bash
+        run: |
+          wget --no-check-certificate https://gsd.uwaterloo.ca/clafer-tools-bin/clafer-tools-0.4.5-linux-x86_64.zip
+          unzip clafer-tools-0.4.5-linux-x86_64.zip
+          mv clafer-tools-0.4.5 /opt/clafer-tools-0.4.5
+          echo "/opt/clafer-tools-0.4.5" >> $GITHUB_PATH
+      - name: Install PlantUML
+        run: |
+          wget https://github.com/plantuml/plantuml/releases/download/v1.2023.4/plantuml-1.2023.4.jar
+      - name: Install graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install graphviz
+      - name: Process SysML examples
+        run: |
+          for f in examples/**.cfr
+          do
+            echo "Processing $f"
+            java -jar /tmp/chocosolver-release/chocosolver-0.4.4-jar-with-dependencies.jar --plantuml --file $f --output $f.plantuml
+            java -jar /tmp/chocosolver-release/chocosolver-0.4.4-jar-with-dependencies.jar --sysml --file $f --output $f.sysml
+            echo "Rendering $f.plantuml"
+            java -jar plantuml-1.2023.4.jar $f.plantuml
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+            name: PlantUML_generated
+            path: |
+              examples/**.plantuml
+              examples/**.sysml
+              examples/**.png
+            retention-days: 7

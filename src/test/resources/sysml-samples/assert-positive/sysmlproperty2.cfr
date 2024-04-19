@@ -1,0 +1,8 @@
+abstract SysmlProperty
+
+abstract Part: SysmlProperty
+
+abstract Action: SysmlProperty
+
+myClafer: Part
+    myAction: Action

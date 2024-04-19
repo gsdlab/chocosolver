@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.common.Check;
+import org.sysml.ast.SysmlProperty;
+import org.sysml.compiler.InstanceSysmlCompiler;
+import org.sysml.pprinter.SysmlPrinter;
 
 /**
  *
@@ -47,6 +51,28 @@ public class InstanceModel {
             throw new IllegalArgumentException("No top Clafer with type " + type);
         }
         return typedTopClafer;
+    }
+
+    /**
+     * Print solution as SysMLv2
+     *
+     * This is the start of exploring an automated product derivation tool
+     * and the requirements around inferring a system model from clafer are
+     * still tbd
+     * 
+     * 
+     */
+    public void printSysml(Appendable out, String indent) throws IOException {
+
+
+        for (InstanceClafer top : topClafers) {
+            SysmlPrinter pprinter = new SysmlPrinter(out);
+            InstanceSysmlCompiler compiler = new InstanceSysmlCompiler();
+            // model can be null as the clafer model might not reference sysml concepts
+            Object _model = compiler.compile(top, top);
+            if (_model != null)
+                pprinter.visit((SysmlProperty) _model, indent);
+        }
     }
 
     /**
