@@ -19,6 +19,7 @@ import org.clafer.test.TestUtil;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.junit.internal.AssumptionViolatedException;
+import org.junit.runner.Runner;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
@@ -31,8 +32,20 @@ import org.junit.runners.model.Statement;
  */
 public class ConstraintQuickTest extends Suite {
 
+    // Suite.getChildren() is unmodifiable since JUnit 4.12, so keep the
+    // children here. Not initialized in the declaration, because the Suite
+    // constructor may call getChildren() before the field initializers run.
+    private List<Runner> children;
     private final List<FrameworkMethod> parametersMethods;
     private final List<FrameworkMethod> checkMethods;
+
+    @Override
+    protected List<Runner> getChildren() {
+        if (children == null) {
+            children = new ArrayList<>();
+        }
+        return children;
+    }
 
     public ConstraintQuickTest(Class<?> klass) throws Throwable {
         super(klass, new ArrayList<>());
