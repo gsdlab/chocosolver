@@ -1,3 +1,9 @@
+# chocosolver version 0.5.2 released on Oct 9, 2026
+
+Version aligned with Clafer Tools 0.5.2. Requires Java 21 or newer.
+The build works with current JDKs and Maven 3.9 (maven-assembly-plugin 3.7.1,
+maven-compiler-plugin 3.13.0); still based on Choco 4.0.0.
+
 # chocosolver version 0.4.4 released on Sep 19, 2016
 
 [Release](https://github.com/gsdlab/chocosolver/pull/27)
