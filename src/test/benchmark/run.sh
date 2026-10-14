@@ -26,6 +26,8 @@ if [ ${#strategies[@]} -eq 0 ]; then
 fi
 
 out=target/benchmark
+# Start clean, so that models and results of an earlier run do not mix in.
+rm -f "$out"/models/* "$out"/results/*
 mkdir -p "$out/models" "$out/results"
 
 # Models: compile to .js; models the choco backend does not support are skipped.
