@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import org.chocosolver.solver.Model;
-import org.clafer.choco.ResetKeepsLimitsSolver;
 import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
@@ -70,7 +69,7 @@ public class GlobalCardAnalyzer implements Analyzer {
 
         // Step 2. Optimization pass with constraint solver.
         if (insufficientScopes.isEmpty()) {
-            Model model = ResetKeepsLimitsSolver.newModel();
+            Model model = new Model();
             Map<AstClafer, IntVar> lowCards = new HashMap<>();
             Map<AstClafer, IntVar> highCards = new HashMap<>();
             Function<AstClafer, IntVar> getLowCard = clafer -> {
@@ -120,7 +119,6 @@ public class GlobalCardAnalyzer implements Analyzer {
                 model.arithm(lowCards.get(inverse.getKey()), "=", lowCards.get(inverse.getValue())).post();
                 model.arithm(highCards.get(inverse.getKey()), "=", highCards.get(inverse.getValue())).post();
             }
-            model.getSolver().limitTime(5000);
             AbstractStrategy<IntVar> strategy = Search.domOverWDegSearch(intVars);
 
             // Optimize each global cardinality individually.
@@ -143,11 +141,15 @@ public class GlobalCardAnalyzer implements Analyzer {
                             model.post(Constraints.equalArcConsistent(highCard, model.intMinusView(lowCard), objective));
 
                             model.getSolver().setSearch(Search.inputOrderUBSearch(objective), strategy);
+                            // Reset removes the limit, so each optimization gets its own.
+                            model.getSolver().limitTime(5000);
                             Solution solution = model.getSolver().findOptimalSolution(objective, true);
+                            // A solution found before the limit is not proven optimal, its bounds may be too tight.
+                            boolean optimal = !model.getSolver().isStopCriterionMet();
                             // Reset also when there is no solution, the solver is reused for the next clafer.
                             model.getSolver().reset();
 
-                            if (solution == null) {
+                            if (solution == null || !optimal) {
                                 break;
                             }
                             assert solution.getIntVal(lowCard) >= globalCardMap.get(clafer).getLow();
