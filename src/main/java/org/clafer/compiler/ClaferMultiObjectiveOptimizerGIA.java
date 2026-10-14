@@ -43,6 +43,8 @@ public class ClaferMultiObjectiveOptimizerGIA extends AbstractImprovementOptimiz
             strictlyBetter.add(solver.getModel().arithm(bound, maximizes[i] ? "<" : ">", score));
         }
         this.dominate = or(strictlyBetter, solver.getModel());
+        // Posted later, in find(), so that the solver does not report it as free.
+        this.dominate.ignore();
         for (int i = 0; i < this.bounds.length; i++) {
             solver.getModel().arithm(this.bounds[i], maximizes[i] ? "<=" : ">=", scores[i]).post();
         }
