@@ -30,6 +30,7 @@ import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -140,6 +141,30 @@ public class ArithmeticTest {
      * [ A.ref * B.ref = 12]
      * </pre>
      */
+    /**
+     * The product of the bounds overflows an int, which made the product's
+     * domain empty.
+     *
+     * <pre>
+     * A -> integer
+     * B -> integer
+     * C -> integer
+     * [ C.ref = A.ref * B.ref ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testMulLargeIntRange() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer b = model.addChild("B").withCard(1, 1).refTo(IntType);
+        AstConcreteClafer c = model.addChild("C").withCard(1, 1).refTo(IntType);
+        model.addConstraint(equal(joinRef(c), mul(joinRef(a), joinRef(b))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-100001).intHigh(100000));
+        assertTrue(solver.find());
+    }
+
     @Test(timeout = 60000)
     public void testMul() {
         /*
