@@ -1261,8 +1261,9 @@ public class Irs {
         long ma = a;
         long mb = b;
         long mul = ma * mb;
-        if (mul > Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
+        // A Domain cannot have Integer.MAX_VALUE as its high bound (it stores high + 1).
+        if (mul >= Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE - 1;
         } else if (mul < Integer.MIN_VALUE) {
             return Integer.MIN_VALUE;
         }
