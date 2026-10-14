@@ -76,8 +76,13 @@ public class Oracle {
                 Map<Concept, List<Path>> groundPathsMap2
                         = groundPaths(path2).stream().collect(Collectors.groupingBy(Path::getContext));
                 for (Concept concept : groundPathsMap1.keySet()) {
+                    List<Path> groundPaths2 = groundPathsMap2.get(concept);
+                    if (groundPaths2 == null) {
+                        // Nothing to equate in this context.
+                        continue;
+                    }
                     int[] groundPaths1Id = idMap.getIds(groundPathsMap1.get(concept));
-                    int[] groundPaths2Id = idMap.getIds(groundPathsMap2.get(concept));
+                    int[] groundPaths2Id = idMap.getIds(groundPaths2);
                     unionEqual(theory, groundPaths1Id, groundPaths2Id);
                 }
             }
