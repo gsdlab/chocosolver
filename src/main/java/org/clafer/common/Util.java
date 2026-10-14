@@ -19,6 +19,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.chocosolver.util.iterators.IntIterator;
@@ -67,7 +68,9 @@ public class Util {
     }
 
     public static <X> Stream<Pair<X, X>> pairwise(Stream<X> a, Stream<X> b) {
-        return a.flatMap(i -> b.map(j -> new Pair<>(i, j)));
+        // A stream can only be consumed once, but b is paired with every element of a.
+        List<X> bs = b.collect(Collectors.toList());
+        return a.flatMap(i -> bs.stream().map(j -> new Pair<>(i, j)));
     }
 
     /**
