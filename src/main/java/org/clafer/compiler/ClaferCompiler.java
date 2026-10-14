@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.chocosolver.solver.Model;
 import org.clafer.choco.ResetKeepsLimitsSolver;
@@ -54,6 +55,12 @@ import org.clafer.scope.Scopable;
  * @author jimmy
  */
 public class ClaferCompiler {
+
+    /**
+     * For benchmarking only: when set, replaces the integer search strategy of
+     * each branching group, ignoring the strategy of the ClaferOption.
+     */
+    static Function<IntVar[], AbstractStrategy<IntVar>> intStrategyOverride = null;
 
     private ClaferCompiler() {
     }
@@ -174,6 +181,9 @@ public class ClaferCompiler {
     private static Optional<AbstractStrategy<?>> intStrategy(IntVar[] vars, ClaferOption options) {
         if (vars.length == 0) {
             return Optional.empty();
+        }
+        if (intStrategyOverride != null) {
+            return Optional.of(intStrategyOverride.apply(vars));
         }
         switch (options.getStrategy()) {
             case PreferSmallerInstances:
