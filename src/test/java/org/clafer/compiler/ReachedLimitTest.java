@@ -197,7 +197,7 @@ public class ReachedLimitTest {
                         mul(joinRef(b), joinRef(b), joinRef(b)),
                         mul(joinRef(c), joinRef(c), joinRef(c)))));
 
-        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(100));
+        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(1000));
         long start = System.currentTimeMillis();
         solver.limitTime(1000);
         try {
@@ -221,7 +221,7 @@ public class ReachedLimitTest {
                         mul(joinRef(b), joinRef(b), joinRef(b)),
                         mul(joinRef(c), joinRef(c), joinRef(c)))));
 
-        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(100));
+        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(1000));
         long start = System.currentTimeMillis();
         solver.limitTime(1000);
         try {

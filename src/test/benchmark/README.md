@@ -1,8 +1,9 @@
 # Search strategy benchmark
 
 Compares Choco search strategies on Clafer models. The strategy replaces the default
-`minDomLB` search (`PreferSmallerInstances`) in each branching group, through
-`ClaferCompiler.intStrategyOverride`. The rest of the compilation is unchanged.
+search (`PreferSmallerInstances`, `failureRateBased` since 0.5.3, `minDomLB` before) in each
+branching group, through `ClaferCompiler.intStrategyOverride`. The rest of the compilation
+is unchanged. `analyze.py` compares the strategies with `minDomLB`.
 
 Requires `clafer` on the `PATH`, Maven and Java.
 

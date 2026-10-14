@@ -187,7 +187,7 @@ public class ClaferCompiler {
         }
         switch (options.getStrategy()) {
             case PreferSmallerInstances:
-                return firstFailInDomainMin(vars);
+                return failureRateInDomainMin(vars);
             case PreferLargerInstances:
                 return firstFailInDomainMax(vars);
             case Random:
@@ -219,11 +219,17 @@ public class ClaferCompiler {
         return Optional.of(Search.minDomUBSearch(vars));
     }
 
-    private static Optional<AbstractStrategy<?>> firstFailInDomainMin(IntVar[] vars) {
+    /**
+     * Branches first on the variables whose decisions failed most often
+     * recently, smallest value first. Benchmarked faster than first fail
+     * (minDomLB) on hard models and as fast on the others, see
+     * src/test/benchmark.
+     */
+    private static Optional<AbstractStrategy<?>> failureRateInDomainMin(IntVar[] vars) {
         if (vars.length == 0) {
             return Optional.empty();
         }
-        return Optional.of(Search.minDomLBSearch(vars));
+        return Optional.of(Search.failureRateBasedSearch(vars));
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
