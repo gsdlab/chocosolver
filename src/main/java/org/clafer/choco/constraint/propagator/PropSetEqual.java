@@ -46,21 +46,19 @@ public class PropSetEqual extends Propagator<SetVar> {
         PropUtil.envSubsetEnv(s2, s1, this);
         PropUtil.kerSubsetKer(s1, s2, this);
         PropUtil.kerSubsetKer(s2, s1, this);
+        s1D.startMonitoring();
+        s2D.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isS1Var(idxVarInProp)) {
-            s1D.freeze();
             s1D.forEach(s1Env -> s2.remove(s1Env, this), SetEventType.REMOVE_FROM_ENVELOPE);
             s1D.forEach(s1Ker -> s2.force(s1Ker, this), SetEventType.ADD_TO_KER);
-            s1D.unfreeze();
         } else {
             assert isS2Var(idxVarInProp);
-            s2D.freeze();
             s2D.forEach(s2Env -> s1.remove(s2Env, this), SetEventType.REMOVE_FROM_ENVELOPE);
             s2D.forEach(s2Ker -> s1.force(s2Ker, this), SetEventType.ADD_TO_KER);
-            s2D.unfreeze();
         }
     }
 

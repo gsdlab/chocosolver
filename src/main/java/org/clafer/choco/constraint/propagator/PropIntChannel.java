@@ -91,6 +91,8 @@ public class PropIntChannel extends Propagator<Variable> {
                 }
             }
         }
+        PropUtil.startMonitoring(setsD);
+        PropUtil.startMonitoring(intsD);
     }
 
     @Override
@@ -98,7 +100,6 @@ public class PropIntChannel extends Propagator<Variable> {
         if (isSetVar(idxVarInProp)) {
             final int id = getSetVarIndex(idxVarInProp);
 
-            setsD[id].freeze();
             setsD[id].forEach(setKer -> {
                 ints[setKer].instantiateTo(id, this);
                 for (int i = 0; i < sets.length; i++) {
@@ -118,19 +119,16 @@ public class PropIntChannel extends Propagator<Variable> {
                     }
                 }
             }, SetEventType.REMOVE_FROM_ENVELOPE);
-            setsD[id].unfreeze();
         } else {
             assert isIntVar(idxVarInProp);
             final int id = getIntVarIndex(idxVarInProp);
 
-            intsD[id].freeze();
             intsD[id].forEachRemVal((IntProcedure) intRem -> {
                 sets[intRem].remove(id, this);
             });
             if (ints[id].isInstantiated()) {
                 sets[ints[id].getValue()].force(id, this);
             }
-            intsD[id].unfreeze();
         }
     }
 

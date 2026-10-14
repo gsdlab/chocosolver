@@ -103,22 +103,20 @@ public class PropSetUnion extends Propagator<SetVar> {
         while (iter.hasNext()) {
             findMate(iter.nextInt());
         }
+        PropUtil.startMonitoring(setsD);
+        unionD.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
             int id = getSetVarIndex(idxVarInProp);
-            setsD[id].freeze();
             setsD[id].forEach(this::pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             setsD[id].forEach(this::pickUnionOnSetKer, SetEventType.ADD_TO_KER);
-            setsD[id].unfreeze();
         } else {
             assert isUnionVar(idxVarInProp);
-            unionD.freeze();
             unionD.forEach(this::pruneSetOnUnionEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             unionD.forEach(this::pickSetOnUnionKer, SetEventType.ADD_TO_KER);
-            unionD.unfreeze();
         }
     }
 

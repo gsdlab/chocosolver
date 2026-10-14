@@ -119,6 +119,7 @@ public class PropElement extends Propagator<IntVar> {
                 setPassive();
             }
         }
+        PropUtil.startMonitoring(arrayD);
     }
 
     @Override
@@ -144,13 +145,11 @@ public class PropElement extends Propagator<IntVar> {
                 if (!supportForArray(i)) {
                     index.removeValue(i - offset, this);
                 }
-                arrayD[i].freeze();
                 arrayD[i].forEachRemVal((IntProcedure) rem -> {
                     if (!supportForValue(rem)) {
                         value.removeValue(rem, this);
                     }
                 });
-                arrayD[i].unfreeze();
             }
         }
         if (index.isInstantiated()) {

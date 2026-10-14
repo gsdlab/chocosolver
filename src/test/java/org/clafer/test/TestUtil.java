@@ -60,14 +60,16 @@ public class TestUtil {
                 }
             }
         }
-        if (randBool()) {
-            solver.setSearch(
-                    randomSearch(setVars.toArray(new SetVar[setVars.size()])),
-                    randomSearch(intVars.toArray(new IntVar[intVars.size()])));
-        } else {
-            solver.setSearch(
-                    randomSearch(intVars.toArray(new IntVar[intVars.size()])),
-                    randomSearch(setVars.toArray(new SetVar[setVars.size()])));
+        // Choco rejects strategies over no variables.
+        List<AbstractStrategy<?>> strategies = new ArrayList<>();
+        if (!setVars.isEmpty()) {
+            strategies.add(randomSearch(setVars.toArray(new SetVar[setVars.size()])));
+        }
+        if (!intVars.isEmpty()) {
+            strategies.add(randBool() ? strategies.size() : 0, randomSearch(intVars.toArray(new IntVar[intVars.size()])));
+        }
+        if (!strategies.isEmpty()) {
+            solver.setSearch(strategies.toArray(new AbstractStrategy<?>[strategies.size()]));
         }
         return solver;
     }

@@ -1,6 +1,7 @@
 package org.clafer.compiler;
 
 import org.chocosolver.solver.Model;
+import org.clafer.choco.ResetKeepsLimitsSolver;
 import org.chocosolver.solver.Solver;
 import org.clafer.common.Check;
 import org.clafer.instance.InstanceModel;
@@ -18,7 +19,7 @@ public class ClaferSolver implements ClaferSearch {
     private boolean more = true;
 
     ClaferSolver() {
-        Model model = new Model();
+        Model model = ResetKeepsLimitsSolver.newModel();
         model.falseConstraint().post();
         this.solver = model.getSolver();
         this.solutionMap = null;

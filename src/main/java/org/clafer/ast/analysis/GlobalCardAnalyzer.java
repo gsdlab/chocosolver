@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import org.chocosolver.solver.Model;
+import org.clafer.choco.ResetKeepsLimitsSolver;
 import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
@@ -69,7 +70,7 @@ public class GlobalCardAnalyzer implements Analyzer {
 
         // Step 2. Optimization pass with constraint solver.
         if (insufficientScopes.isEmpty()) {
-            Model model = new Model();
+            Model model = ResetKeepsLimitsSolver.newModel();
             Map<AstClafer, IntVar> lowCards = new HashMap<>();
             Map<AstClafer, IntVar> highCards = new HashMap<>();
             Function<AstClafer, IntVar> getLowCard = clafer -> {
@@ -143,6 +144,8 @@ public class GlobalCardAnalyzer implements Analyzer {
 
                             model.getSolver().setSearch(Search.inputOrderUBSearch(objective), strategy);
                             Solution solution = model.getSolver().findOptimalSolution(objective, true);
+                            // Reset also when there is no solution, the solver is reused for the next clafer.
+                            model.getSolver().reset();
 
                             if (solution == null) {
                                 break;
@@ -150,8 +153,6 @@ public class GlobalCardAnalyzer implements Analyzer {
                             assert solution.getIntVal(lowCard) >= globalCardMap.get(clafer).getLow();
                             assert solution.getIntVal(highCard) <= globalCardMap.get(clafer).getHigh();
                             globalCardMap.put(clafer, new Card(solution.getIntVal(lowCard), solution.getIntVal(highCard)));
-
-                            model.getSolver().reset();
                         }
                     } else {
                         analyze((AstAbstractClafer) clafer, analysis, globalCardMap, insufficientScopes);

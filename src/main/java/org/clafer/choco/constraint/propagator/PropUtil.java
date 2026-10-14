@@ -5,6 +5,7 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
+import org.chocosolver.solver.variables.delta.IDeltaMonitor;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.solver.variables.delta.ISetDeltaMonitor;
 import org.chocosolver.util.objects.setDataStructures.ISet;
@@ -48,6 +49,18 @@ public class PropUtil {
             deltas[i] = vars[i].monitorDelta(propagator);
         }
         return deltas;
+    }
+
+    /**
+     * Start monitoring the deltas from now on. Must be called at the end of the
+     * propagator's full propagation.
+     *
+     * @param monitors the delta monitors
+     */
+    public static void startMonitoring(IDeltaMonitor[] monitors) {
+        for (IDeltaMonitor monitor : monitors) {
+            monitor.startMonitoring();
+        }
     }
 
     public static boolean equals(ISet a, ISet b) {

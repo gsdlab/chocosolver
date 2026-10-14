@@ -115,12 +115,13 @@ public class PropArrayToSet extends Propagator<Variable> {
                 s.force(a.getValue(), this);
             }
         }
+        PropUtil.startMonitoring(asD);
+        sD.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSVar(idxVarInProp)) {
-            sD.freeze();
             sD.forEach(sEnv -> {
                 for (IntVar a : as) {
                     if (a.removeValue(sEnv, this) && a.isInstantiated()) {
@@ -133,7 +134,6 @@ public class PropArrayToSet extends Propagator<Variable> {
                     findMates();
                 }
             }, SetEventType.ADD_TO_KER);
-            sD.unfreeze();
         } else {
             assert isAVar(idxVarInProp);
 
@@ -141,7 +141,6 @@ public class PropArrayToSet extends Propagator<Variable> {
             if (IntEventType.isRemove(mask)
                     || IntEventType.isInclow(mask) && as[id].getLB() > s.getUB().min()
                     || IntEventType.isDecupp(mask) || IntEventType.isInstantiate(mask)) {
-                asD[id].freeze();
                 asD[id].forEachRemVal((IntProcedure) aRem -> {
                     if (s.getUB().contains(aRem)) {
                         if (findMate(aRem)) {
@@ -149,7 +148,6 @@ public class PropArrayToSet extends Propagator<Variable> {
                         }
                     }
                 });
-                asD[id].unfreeze();
             }
             if (as[id].isInstantiated()) {
                 s.force(as[id].getValue(), this);

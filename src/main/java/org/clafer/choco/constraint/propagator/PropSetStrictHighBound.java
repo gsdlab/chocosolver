@@ -72,14 +72,13 @@ public class PropSetStrictHighBound extends Propagator<Variable> {
             bound.updateLowerBound(set.getLB().max() + 1, this);
         }
         boundEnv();
+        setD.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
-            setD.freeze();
             setD.forEach(ker -> bound.updateLowerBound(ker + 1, this), SetEventType.ADD_TO_KER);
-            setD.unfreeze();
         } else {
             assert isBoundVar(idxVarInProp);
             boundEnv();

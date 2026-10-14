@@ -80,21 +80,19 @@ public class PropMask extends Propagator<SetVar> {
                 masked.remove(i, this);
             }
         }
+        setD.startMonitoring();
+        maskedD.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
-            setD.freeze();
             setD.forEach(this::pickMaskedOnSetKer, SetEventType.ADD_TO_KER);
             setD.forEach(this::pruneMaskedOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            setD.unfreeze();
         } else {
             assert isMaskedVar(idxVarInProp);
-            maskedD.freeze();
             maskedD.forEach(this::pickSetOnMaskedKer, SetEventType.ADD_TO_KER);
             maskedD.forEach(this::pruneSetOnMaskedEnv, SetEventType.REMOVE_FROM_ENVELOPE);
-            maskedD.unfreeze();
         }
     }
 

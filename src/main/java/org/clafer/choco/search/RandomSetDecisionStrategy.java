@@ -1,7 +1,7 @@
 package org.clafer.choco.search;
 
 import java.util.Random;
-import org.chocosolver.solver.search.strategy.assignments.DecisionOperator;
+import org.chocosolver.solver.search.strategy.assignments.DecisionOperatorFactory;
 import org.chocosolver.solver.search.strategy.decision.Decision;
 import org.chocosolver.solver.search.strategy.decision.SetDecision;
 import org.chocosolver.solver.search.strategy.selectors.values.SetValueSelector;
@@ -49,7 +49,7 @@ public class RandomSetDecisionStrategy extends AbstractStrategy<SetVar> {
         if (d == null) {
             d = new SetDecision(pool);
         }
-        d.set(s, valSelector.selectValue(s), rand.nextBoolean() ? DecisionOperator.set_force : DecisionOperator.set_remove);
+        d.set(s, valSelector.selectValue(s), rand.nextBoolean() ? DecisionOperatorFactory.makeSetForce() : DecisionOperatorFactory.makeSetRemove());
         return d;
     }
 }

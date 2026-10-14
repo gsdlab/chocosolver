@@ -1073,12 +1073,12 @@ public class Constraints {
         // TODO: Needs to add the same propagator twice because the implementation
         // is not guaranteed to be idempotent. If it ever becomes idempotent, then
         // follow their implementation.
-        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
-        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0, true));
+        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0));
+        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0));
         for (int i = 0; i < value.length; i++) {
             IntVar[] charsAt = charsAt(index.getModel(), array, i);
-            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
-            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0, true));
+            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0));
+            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0));
         }
         return new Constraint("Element",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
@@ -1123,8 +1123,8 @@ public class Constraints {
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
             // follow their implementation.
-            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
-            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i, true));
+            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i));
+            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i));
         }
         return propagators.toConstraint("Suffix", suffixLength.getModel());
     }
@@ -1148,8 +1148,8 @@ public class Constraints {
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
             // follow their implementation.
-            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i, true));
-            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i, true));
+            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i));
+            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i));
         }
         return new Constraint("Concat",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
