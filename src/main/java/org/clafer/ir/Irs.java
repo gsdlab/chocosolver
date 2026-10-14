@@ -2376,7 +2376,9 @@ public class Irs {
             if (sublength.isConstant()) {
                 IrIntExpr[] subarray = new IrIntExpr[array.length()];
                 for (int i = 0; i < sublength.getLowBound(); i++) {
-                    subarray[i] = get(array, index.getLowBound() + i);
+                    int j = index.getLowBound() + i;
+                    // Past the end of the array is padding, as in Constraints.subarray.
+                    subarray[i] = j < array.length() ? get(array, j) : constant(-1);
                 }
                 for (int i = sublength.getLowBound(); i < subarray.length; i++) {
                     subarray[i] = constant(-1);
