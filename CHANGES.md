@@ -1,4 +1,4 @@
-# chocosolver version 0.5.3, unreleased
+# chocosolver version 0.5.3, Oct 15, 2026
 
 * Upgrade to choco-solver 4.10.18.
 * Time limits are a deadline for the whole search, including the restarts of optimization.
