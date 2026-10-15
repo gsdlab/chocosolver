@@ -127,21 +127,19 @@ public class PropJoinRelation extends Propagator<SetVar> {
             int i = toEnv.nextInt();
             findMate(i);
         }
-        takeD.unfreeze();
+        takeD.startMonitoring();
+        PropUtil.startMonitoring(childrenD);
+        toD.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isTakeVar(idxVarInProp)) {
-            takeD.freeze();
             takeD.forEach(this::pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             takeD.forEach(this::pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
-            takeD.unfreeze();
         } else if (isToVar(idxVarInProp)) {
-            toD.freeze();
             toD.forEach(this::pruneChildOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             toD.forEach(this::pickTakeOnToKer, SetEventType.ADD_TO_KER);
-            toD.unfreeze();
             if (SetEventType.isEnvRemoval(mask)) {
                 TIntArrayList removed = null;
                 ISetIterator takeEnv = take.getUB().iterator();
@@ -175,7 +173,6 @@ public class PropJoinRelation extends Propagator<SetVar> {
             assert isChildVar(idxVarInProp);
             final int id = getChildVarIndex(idxVarInProp);
             final ISetDeltaMonitor childD = childrenD[id];
-            childD.freeze();
             // Note that we MUST prune even if id is not in env(take) to ensure
             // idempotence. Otherwise if id is removed from take and val removed
             // from child at the same time is no longer supported, we need to
@@ -197,7 +194,6 @@ public class PropJoinRelation extends Propagator<SetVar> {
                     }
                 }, SetEventType.ADD_TO_KER);
             }
-            childD.unfreeze();
         }
     }
 

@@ -8,9 +8,13 @@ import static org.clafer.ast.Asts.card;
 import static org.clafer.ast.Asts.equal;
 import static org.clafer.ast.Asts.global;
 import static org.clafer.ast.Asts.joinRef;
+import static org.clafer.ast.Asts.max;
+import static org.clafer.ast.Asts.min;
 import static org.clafer.ast.Asts.minus;
 import static org.clafer.ast.Asts.mul;
 import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.product;
+import static org.clafer.ast.Asts.sum;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
@@ -125,6 +129,33 @@ public class ReachedLimitTest {
         }
     }
 
+    /**
+     * The optimizer resets the search for every Pareto point. The time limit is
+     * for the whole search, not for each reset.
+     */
+    @Test(timeout = 60000)
+    public void testLimitTimeAcrossResets() {
+        AstModel model = newModel();
+
+        AstConcreteClafer x = model.addChild("x").withCard(3, 3).refTo(IntType);
+
+        ClaferOptimizer solver = ClaferCompiler.compile(model, Scope.defaultScope(10).intLow(-100).intHigh(100),
+                Objective.minimize(max(joinRef(global(x)))),
+                Objective.maximize(min(joinRef(global(x)))),
+                Objective.minimize(sum(global(x))),
+                Objective.maximize(product(global(x))));
+        long start = System.currentTimeMillis();
+        solver.limitTime(1000);
+        try {
+            solver.allInstances();
+            fail("Expected timeout.");
+        } catch (ReachedLimitException rle) {
+            long elapsed = System.currentTimeMillis() - start;
+            assertTrue(elapsed >= 1000);
+            assertTrue("Stopped after " + elapsed + " ms", elapsed < 10000);
+        }
+    }
+
     @Test(timeout = 60000)
     public void testLimitTimeMultipleObjectiveBestKnown() {
         AstModel model = newModel();
@@ -166,7 +197,7 @@ public class ReachedLimitTest {
                         mul(joinRef(b), joinRef(b), joinRef(b)),
                         mul(joinRef(c), joinRef(c), joinRef(c)))));
 
-        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(100));
+        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(1000));
         long start = System.currentTimeMillis();
         solver.limitTime(1000);
         try {
@@ -190,7 +221,7 @@ public class ReachedLimitTest {
                         mul(joinRef(b), joinRef(b), joinRef(b)),
                         mul(joinRef(c), joinRef(c), joinRef(c)))));
 
-        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(100));
+        ClaferUnsat solver = ClaferCompiler.compileUnsat(model, Scope.defaultScope(10).intLow(2).intHigh(1000));
         long start = System.currentTimeMillis();
         solver.limitTime(1000);
         try {

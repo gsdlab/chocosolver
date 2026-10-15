@@ -60,6 +60,8 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
             condDecided.set(true);
             setPassive();
         }
+        xD.startMonitoring();
+        yD.startMonitoring();
     }
 
     @Override
@@ -78,7 +80,6 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
                 }
             }
         } else if (isXVar(idxVarInProp)) {
-            xD.freeze();
             if (cond.getLB().contains(z)) {
                 xD.forEach(xKer -> y.force(xKer, this), SetEventType.ADD_TO_KER);
                 xD.forEach(xEnv -> y.remove(xEnv, this), SetEventType.REMOVE_FROM_ENVELOPE);
@@ -94,9 +95,7 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
                     setPassive();
                 }
             }
-            xD.unfreeze();
         } else {
-            yD.freeze();
             if (cond.getLB().contains(z)) {
                 yD.forEach(yKer -> x.force(yKer, this), SetEventType.ADD_TO_KER);
             } else {
@@ -112,7 +111,6 @@ public class PropContainsImpliesEqual extends Propagator<SetVar> {
                 }
             }
             yD.forEach(yEnv -> x.remove(yEnv, this), SetEventType.REMOVE_FROM_ENVELOPE);
-            yD.unfreeze();
         }
     }
 

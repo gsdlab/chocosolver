@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.chocosolver.solver.Model;
-import org.chocosolver.solver.Settings;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.util.ESat;
@@ -103,16 +102,6 @@ public class ConstraintQuickTest extends Suite {
         ArcConsistent arc = testMethod.getAnnotation(ArcConsistent.class);
         if (arc != null && (positive || arc.opposite())) {
             model.getSolver().plugMonitor(new ArcConsistentCheck(model.getSolver()));
-        }
-        Idempotent idem = testMethod.getAnnotation(Idempotent.class);
-        if (idem != null) {
-            model.set(new Settings() {
-
-                @Override
-                public Settings.Idem getIdempotencyStrategy() {
-                    return Settings.Idem.error;
-                }
-            });
         }
         return model;
     }

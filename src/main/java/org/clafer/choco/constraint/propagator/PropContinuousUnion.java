@@ -131,16 +131,15 @@ public class PropContinuousUnion extends Propagator<Variable> {
         for (int i = 0; i < lb; i++) {
             findMate(i);
         }
+        PropUtil.startMonitoring(setsD);
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isSetVar(idxVarInProp)) {
             int id = getSetVarIndex(idxVarInProp);
-            setsD[id].freeze();
             setsD[id].forEach(this::pruneUnionOnSetEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             setsD[id].forEach(this::pickUnionOnSetKer, SetEventType.ADD_TO_KER);
-            setsD[id].unfreeze();
         } else {
             assert isTotalCardVar(idxVarInProp);
 

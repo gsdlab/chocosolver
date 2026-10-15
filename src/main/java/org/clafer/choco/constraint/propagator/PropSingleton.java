@@ -64,6 +64,8 @@ public class PropSingleton extends Propagator<Variable> {
                 s.instantiateTo(new int[]{i.getValue()}, this);
             }
         }
+        iD.startMonitoring();
+        sD.startMonitoring();
     }
 
     @Override
@@ -72,9 +74,7 @@ public class PropSingleton extends Propagator<Variable> {
             if (i.isInstantiated()) {
                 s.instantiateTo(new int[]{i.getValue()}, this);
             } else {
-                iD.freeze();
                 iD.forEachRemVal((IntProcedure) rem -> s.remove(rem, this));
-                iD.unfreeze();
             }
         } else {
             assert isSVar(idxVarInProp);
@@ -86,9 +86,7 @@ public class PropSingleton extends Propagator<Variable> {
                 i.instantiateTo(val, this);
                 s.instantiateTo(new int[]{val}, this);
             } else {
-                sD.freeze();
                 sD.forEach(env -> i.removeValue(env, this), SetEventType.REMOVE_FROM_ENVELOPE);
-                sD.unfreeze();
                 if (i.isInstantiated()) {
                     s.instantiateTo(new int[]{i.getValue()}, this);
                 }

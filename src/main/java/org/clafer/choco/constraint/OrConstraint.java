@@ -31,7 +31,7 @@ public class OrConstraint extends Constraint {
         for (Constraint constraint : constraints) {
             for (Propagator propagator : constraint.getPropagators()) {
                 vars.addAll(Arrays.asList(propagator.getVars()));
-                propagator.setReifiedSilent();
+                propagator.setReifiedSilent(null);
             }
         }
         return vars.toArray(new Variable[vars.size()]);

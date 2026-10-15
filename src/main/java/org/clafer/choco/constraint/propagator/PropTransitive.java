@@ -55,6 +55,7 @@ public class PropTransitive extends Propagator<SetVar> {
                 }
             }
         }
+        PropUtil.startMonitoring(relationD);
     }
 
     /*
@@ -81,9 +82,7 @@ public class PropTransitive extends Propagator<SetVar> {
 
     @Override
     public void propagate(final int i, int mask) throws ContradictionException {
-        relationD[i].freeze();
         relationD[i].forEach(j -> prune(i, j, true), SetEventType.ADD_TO_KER);
-        relationD[i].unfreeze();
     }
 
     @Override

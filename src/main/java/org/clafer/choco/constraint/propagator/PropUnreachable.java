@@ -1,8 +1,8 @@
 package org.clafer.choco.constraint.propagator;
 
 import java.util.Arrays;
+import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.memory.IStateInt;
-import org.chocosolver.memory.IStateIntVector;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -22,7 +22,7 @@ public class PropUnreachable extends Propagator<IntVar> {
     // The end of the path.
     private final IStateInt position;
     // All the nodes that reach the end node.
-    private final IStateIntVector toComponent;
+    private final IStateBitSet toComponent;
 
     /**
      * Enforce no path from one node to another. {@code edges[i] = j} implies
@@ -45,7 +45,8 @@ public class PropUnreachable extends Propagator<IntVar> {
         this.from = from;
         this.to = to;
         this.position = edges[0].getEnvironment().makeInt(from);
-        this.toComponent = edges[0].getEnvironment().makeIntVector(1, to);
+        this.toComponent = edges[0].getEnvironment().makeBitSet(edges.length);
+        this.toComponent.set(to);
     }
 
     @Override
@@ -67,10 +68,9 @@ public class PropUnreachable extends Propagator<IntVar> {
         }
     }
 
-    private void remove(IntVar var, IStateIntVector remove) throws ContradictionException {
-        int size = remove.size();
-        for (int i = 0; i < size; i++) {
-            var.removeValue(remove.get(i), this);
+    private void remove(IntVar var, IStateBitSet remove) throws ContradictionException {
+        for (int i = remove.nextSetBit(0); i >= 0; i = remove.nextSetBit(i + 1)) {
+            var.removeValue(i, this);
         }
     }
 
@@ -84,7 +84,7 @@ public class PropUnreachable extends Propagator<IntVar> {
             }
             int i;
             for (i = 0; i < vars.length && cur < vars.length && vars[cur].isInstantiated(); i++) {
-                if (toComponent.contains(cur)) {
+                if (toComponent.get(cur)) {
                     fails();
                 }
                 cur = vars[cur].getValue();
@@ -92,7 +92,7 @@ public class PropUnreachable extends Propagator<IntVar> {
                     fails();
                 }
             }
-            if (toComponent.contains(cur)) {
+            if (toComponent.get(cur)) {
                 fails();
             }
             if (cur >= vars.length || i == vars.length) {
@@ -105,8 +105,8 @@ public class PropUnreachable extends Propagator<IntVar> {
                     follow(cur);
                 }
             }
-        } else if (leader < vars.length && !toComponent.contains(follower) && toComponent.contains(leader)) {
-            toComponent.add(follower);
+        } else if (leader < vars.length && !toComponent.get(follower) && toComponent.get(leader)) {
+            toComponent.set(follower);
             vars[position.get()].removeValue(follower, this);
             if (vars[position.get()].isInstantiated()) {
                 follow(position.get());

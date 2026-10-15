@@ -30,8 +30,11 @@ public class ScopeAnalyzer implements Analyzer {
                 if (clafer instanceof AstConcreteClafer) {
                     AstConcreteClafer concreteClafer = (AstConcreteClafer) clafer;
                     Card card = analysis.getCard(concreteClafer);
-                    if (card.isExact() && concreteClafer.hasParent()) {
-                        int parentScope = optimizedScope.get(concreteClafer.getParent());
+                    // In a recursive structure, e.g. abstract A with b : B and abstract B
+                    // with a : A, the parent may be in the same component, not yet analyzed.
+                    Integer parentScope = concreteClafer.hasParent()
+                            ? optimizedScope.get(concreteClafer.getParent()) : null;
+                    if (card.isExact() && parentScope != null) {
                         optimizedScope.put(clafer, parentScope * card.getLow());
                     } else {
                         Card globalCard = analysis.getGlobalCard(clafer);

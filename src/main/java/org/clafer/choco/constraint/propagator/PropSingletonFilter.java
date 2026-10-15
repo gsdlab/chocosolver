@@ -74,6 +74,8 @@ public class PropSingletonFilter extends Propagator<Variable> {
                 s.instantiateTo(val == filter ? new int[]{} : new int[]{val}, this);
             }
         }
+        iD.startMonitoring();
+        sD.startMonitoring();
     }
 
     @Override
@@ -83,9 +85,7 @@ public class PropSingletonFilter extends Propagator<Variable> {
                 int val = i.getValue();
                 s.instantiateTo(val == filter ? new int[]{} : new int[]{val}, this);
             } else {
-                iD.freeze();
                 iD.forEachRemVal((IntProcedure) rem -> s.remove(rem, this));
-                iD.unfreeze();
             }
         } else {
             assert isSVar(idxVarInProp);
@@ -97,13 +97,11 @@ public class PropSingletonFilter extends Propagator<Variable> {
                 i.instantiateTo(val, this);
                 s.instantiateTo(new int[]{val}, this);
             } else {
-                sD.freeze();
                 sD.forEach((IntProcedure) env -> {
                     if (env != filter) {
                         i.removeValue(env, this);
                     }
                 }, SetEventType.REMOVE_FROM_ENVELOPE);
-                sD.unfreeze();
                 if (i.isInstantiated()) {
                     int val = i.getValue();
                     s.instantiateTo(val == filter ? new int[]{} : new int[]{val}, this);

@@ -1261,8 +1261,9 @@ public class Irs {
         long ma = a;
         long mb = b;
         long mul = ma * mb;
-        if (mul > Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
+        // A Domain cannot have Integer.MAX_VALUE as its high bound (it stores high + 1).
+        if (mul >= Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE - 1;
         } else if (mul < Integer.MIN_VALUE) {
             return Integer.MIN_VALUE;
         }
@@ -1997,7 +1998,7 @@ public class Irs {
         if (from > to) {
             throw new IllegalArgumentException();
         }
-        if (from == to) {
+        if (from == to || set.getEnv().isEmpty()) {
             return EmptySet;
         }
         if (from <= set.getEnv().getLowBound() && to > set.getEnv().getHighBound()) {
@@ -2375,7 +2376,9 @@ public class Irs {
             if (sublength.isConstant()) {
                 IrIntExpr[] subarray = new IrIntExpr[array.length()];
                 for (int i = 0; i < sublength.getLowBound(); i++) {
-                    subarray[i] = get(array, index.getLowBound() + i);
+                    int j = index.getLowBound() + i;
+                    // Past the end of the array is padding, as in Constraints.subarray.
+                    subarray[i] = j < array.length() ? get(array, j) : constant(-1);
                 }
                 for (int i = sublength.getLowBound(); i < subarray.length; i++) {
                     subarray[i] = constant(-1);

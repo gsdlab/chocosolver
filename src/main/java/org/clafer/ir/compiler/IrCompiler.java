@@ -168,6 +168,8 @@ public class IrCompiler {
         for (IrBoolExpr constraint : optModule.getConstraints()) {
             Constraint c = compileAsConstraint(constraint);
             if (ESat.TRUE.equals(c.isSatisfied())) {
+                // Not posted, so that the solver does not report it as free.
+                c.ignore();
                 // TODO
 //                assert constraint instanceof IrRegister;
             } else {

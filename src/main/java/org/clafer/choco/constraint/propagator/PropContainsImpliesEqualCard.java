@@ -84,6 +84,8 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
                 setPassive();
             }
         }
+        xD.startMonitoring();
+        yD.startMonitoring();
     }
 
     private boolean xIntersectsY() {
@@ -109,7 +111,6 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
                 }
             }
         } else if (isXVar(idxVarInProp)) {
-            xD.freeze();
             if (!xIntersectsY()) {
                 cond.remove(z, this);
                 x.instantiateTo(0, this);
@@ -118,11 +119,9 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
             } else if (cond.getLB().contains(z)) {
                 xD.forEachRemVal((IntProcedure) xRem -> y.removeValue(xRem, this));
             }
-            xD.unfreeze();
             propagate(mask);
         } else {
             assert isYVar(idxVarInProp);
-            yD.freeze();
             if (cond.getLB().contains(z)) {
                 yD.forEachRemVal((IntProcedure) yRem -> x.removeValue(yRem, this));
             } else {
@@ -132,7 +131,6 @@ public class PropContainsImpliesEqualCard extends Propagator<Variable> {
                     }
                 });
             }
-            yD.unfreeze();
             if (x.isInstantiatedTo(0) && !y.contains(0)) {
                 cond.remove(z, this);
                 condDecided.set(true);

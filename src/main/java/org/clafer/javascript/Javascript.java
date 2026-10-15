@@ -64,7 +64,8 @@ public class Javascript {
                     context.getScope(engine),
                     context.getClaferOption(),
                     context.getObjectives(),
-                    context.getAssertions());
+                    context.getAssertions(),
+                    context.hasIntRange());
         } finally {
             Context.exit();
         }
@@ -89,7 +90,8 @@ public class Javascript {
                     context.getScope(engine),
                     context.getClaferOption(),
                     context.getObjectives(),
-                    context.getAssertions());
+                    context.getAssertions(),
+                    context.hasIntRange());
         } finally {
             Context.exit();
         }

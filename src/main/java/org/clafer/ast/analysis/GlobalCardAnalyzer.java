@@ -119,7 +119,6 @@ public class GlobalCardAnalyzer implements Analyzer {
                 model.arithm(lowCards.get(inverse.getKey()), "=", lowCards.get(inverse.getValue())).post();
                 model.arithm(highCards.get(inverse.getKey()), "=", highCards.get(inverse.getValue())).post();
             }
-            model.getSolver().limitTime(5000);
             AbstractStrategy<IntVar> strategy = Search.domOverWDegSearch(intVars);
 
             // Optimize each global cardinality individually.
@@ -142,16 +141,20 @@ public class GlobalCardAnalyzer implements Analyzer {
                             model.post(Constraints.equalArcConsistent(highCard, model.intMinusView(lowCard), objective));
 
                             model.getSolver().setSearch(Search.inputOrderUBSearch(objective), strategy);
+                            // Reset removes the limit, so each optimization gets its own.
+                            model.getSolver().limitTime(5000);
                             Solution solution = model.getSolver().findOptimalSolution(objective, true);
+                            // A solution found before the limit is not proven optimal, its bounds may be too tight.
+                            boolean optimal = !model.getSolver().isStopCriterionMet();
+                            // Reset also when there is no solution, the solver is reused for the next clafer.
+                            model.getSolver().reset();
 
-                            if (solution == null) {
+                            if (solution == null || !optimal) {
                                 break;
                             }
                             assert solution.getIntVal(lowCard) >= globalCardMap.get(clafer).getLow();
                             assert solution.getIntVal(highCard) <= globalCardMap.get(clafer).getHigh();
                             globalCardMap.put(clafer, new Card(solution.getIntVal(lowCard), solution.getIntVal(highCard)));
-
-                            model.getSolver().reset();
                         }
                     } else {
                         analyze((AstAbstractClafer) clafer, analysis, globalCardMap, insufficientScopes);

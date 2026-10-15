@@ -3,7 +3,8 @@ package org.clafer.math;
 import org.clafer.common.Util;
 
 /**
- * A rational number.
+ * A rational number. Operations throw an {@link ArithmeticException} when the
+ * result does not fit in a long, instead of silently overflowing.
  *
  * @author jimmy
  */
@@ -28,8 +29,8 @@ public class Rational implements Comparable<Rational> {
             n = numerator;
             d = denominator;
         } else {
-            n = -numerator;
-            d = -denominator;
+            n = Math.negateExact(numerator);
+            d = Math.negateExact(denominator);
         }
         long gcd = Util.gcd(Math.abs(n), d);
         assert gcd > 0;
@@ -81,7 +82,7 @@ public class Rational implements Comparable<Rational> {
     }
 
     public Rational minus() {
-        return new Rational(-numerator, denominator, true);
+        return new Rational(Math.negateExact(numerator), denominator, true);
     }
 
     public Rational abs() {
@@ -93,7 +94,7 @@ public class Rational implements Comparable<Rational> {
             return this;
         }
         return new Rational(
-                numerator + denominator * addend,
+                Math.addExact(numerator, Math.multiplyExact(denominator, addend)),
                 denominator
         );
     }
@@ -103,8 +104,9 @@ public class Rational implements Comparable<Rational> {
             return this;
         }
         return new Rational(
-                numerator * addend.denominator + denominator * addend.numerator,
-                denominator * addend.denominator
+                Math.addExact(Math.multiplyExact(numerator, addend.denominator),
+                        Math.multiplyExact(denominator, addend.numerator)),
+                Math.multiplyExact(denominator, addend.denominator)
         );
     }
 
@@ -113,7 +115,7 @@ public class Rational implements Comparable<Rational> {
             return this;
         }
         return new Rational(
-                numerator - denominator * subtrahend,
+                Math.subtractExact(numerator, Math.multiplyExact(denominator, subtrahend)),
                 denominator
         );
     }
@@ -123,8 +125,9 @@ public class Rational implements Comparable<Rational> {
             return this;
         }
         return new Rational(
-                numerator * subtrahend.denominator - denominator * subtrahend.numerator,
-                denominator * subtrahend.denominator
+                Math.subtractExact(Math.multiplyExact(numerator, subtrahend.denominator),
+                        Math.multiplyExact(denominator, subtrahend.numerator)),
+                Math.multiplyExact(denominator, subtrahend.denominator)
         );
     }
 
@@ -133,7 +136,7 @@ public class Rational implements Comparable<Rational> {
             return this;
         }
         return new Rational(
-                numerator * multiplier,
+                Math.multiplyExact(numerator, multiplier),
                 denominator);
     }
 
@@ -142,8 +145,8 @@ public class Rational implements Comparable<Rational> {
             return this;
         }
         return new Rational(
-                numerator * multiplier.numerator,
-                denominator * multiplier.denominator);
+                Math.multiplyExact(numerator, multiplier.numerator),
+                Math.multiplyExact(denominator, multiplier.denominator));
     }
 
     public Rational div(long divisor) {
@@ -162,25 +165,26 @@ public class Rational implements Comparable<Rational> {
             return this;
         }
         return new Rational(
-                numerator * divisor.denominator,
-                denominator * divisor.numerator);
+                Math.multiplyExact(numerator, divisor.denominator),
+                Math.multiplyExact(denominator, divisor.numerator));
     }
 
     public Rational max(Rational m) {
-        return numerator * m.denominator > m.numerator * denominator ? this : m;
+        return compareTo(m) > 0 ? this : m;
     }
 
     public Rational min(Rational m) {
-        return numerator * m.denominator < m.numerator * denominator ? this : m;
+        return compareTo(m) < 0 ? this : m;
     }
 
     public boolean isLessThan(Rational o) {
-        return numerator * o.denominator < o.numerator * denominator;
+        return compareTo(o) < 0;
     }
 
     @Override
     public int compareTo(Rational o) {
-        return Long.compare(numerator * o.denominator, o.numerator * denominator);
+        return Long.compare(Math.multiplyExact(numerator, o.denominator),
+                Math.multiplyExact(o.numerator, denominator));
     }
 
     @Override

@@ -68,21 +68,19 @@ public class PropSetNotEqual extends Propagator<SetVar> {
             }
         }
         checkNotSame();
+        s1D.startMonitoring();
+        s2D.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isS1Var(idxVarInProp)) {
-            s1D.freeze();
             s1D.forEach(this::onS1Env, SetEventType.REMOVE_FROM_ENVELOPE);
             s1D.forEach(this::onS1Ker, SetEventType.ADD_TO_KER);
-            s1D.unfreeze();
         } else {
             assert isS2Var(idxVarInProp);
-            s2D.freeze();
             s2D.forEach(this::onS2Env, SetEventType.REMOVE_FROM_ENVELOPE);
             s2D.forEach(this::onS2Ker, SetEventType.ADD_TO_KER);
-            s2D.unfreeze();
         }
         checkNotSame();
     }

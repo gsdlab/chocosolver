@@ -288,6 +288,12 @@ public class LinearEquationOptimizer {
     }
 
     public static IrModule optimize(IrModule module) {
-        return new LinearEquationOptimizer().optimizeImpl(module);
+        try {
+            return new LinearEquationOptimizer().optimizeImpl(module);
+        } catch (ArithmeticException e) {
+            // The equations are too large for exact arithmetic over longs. The
+            // optimization only tightens bounds, so skip it.
+            return module;
+        }
     }
 }

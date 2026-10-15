@@ -32,6 +32,7 @@ public class JavascriptContext {
     private final List<Objective> objectives = new ArrayList<>(0);
     private final List<Assertion> assertions = new ArrayList<>(0);
     private Set<AstClafer>[] branchingPriority = new Set[0];
+    private boolean hasIntRange = false;
 
     public AstModel getModel() {
         return model;
@@ -50,6 +51,14 @@ public class JavascriptContext {
 
     public void setIntRange(int intLow, int intHigh) {
         scopeBuilder.intLow(intLow).intHigh(intHigh);
+        hasIntRange = true;
+    }
+
+    /**
+     * @return whether the model sets its integer range
+     */
+    public boolean hasIntRange() {
+        return hasIntRange;
     }
 
     public void setMulRange(int mulLow, int mulHigh) {

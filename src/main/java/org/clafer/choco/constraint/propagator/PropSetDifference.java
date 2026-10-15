@@ -63,6 +63,9 @@ public class PropSetDifference extends Propagator<SetVar> {
                 difference.force(i, this);
             }
         }
+        minuendD.startMonitoring();
+        subtrahendD.startMonitoring();
+        differenceD.startMonitoring();
     }
 
     @Override
@@ -70,24 +73,18 @@ public class PropSetDifference extends Propagator<SetVar> {
         switch (idxVarInProp) {
             case 0:
                 // minuend
-                minuendD.freeze();
                 minuendD.forEach(this::pruneDifferenceOnMinuendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
                 minuendD.forEach(this::pickDifferenceOnMinuendKer, SetEventType.ADD_TO_KER);
-                minuendD.unfreeze();
                 break;
             case 1:
                 // subtrahend
-                subtrahendD.freeze();
                 subtrahendD.forEach(this::pickMinuendPickDiffrenceOnSubtrahendEnv, SetEventType.REMOVE_FROM_ENVELOPE);
                 subtrahendD.forEach(this::pruneDifferenceOnSubtrahendKer, SetEventType.ADD_TO_KER);
-                subtrahendD.unfreeze();
                 break;
             case 2:
                 // difference
-                differenceD.freeze();
                 differenceD.forEach(this::pruneMinuendOnDifferenceEnv, SetEventType.REMOVE_FROM_ENVELOPE);
                 differenceD.forEach(this::pickMinuendPruneSubtrahendOnDifferenceKer, SetEventType.ADD_TO_KER);
-                differenceD.unfreeze();
                 break;
         }
     }

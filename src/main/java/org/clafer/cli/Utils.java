@@ -225,6 +225,12 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
 
             scope = scope.toBuilder().intLow(scopeLow).intHigh(scopeHigh).toScope();
         }
+        else if (javascriptFile.hasIntRange()) {
+            /* the integer range of the model, e.g., from clafer's --minint and --maxint */
+            if (options.has("minint")) {
+                scope = scope.toBuilder().intLow((int)options.valueOf("minint")).toScope();
+            }
+        }
         else {
             /* setting the default int range */
             int scopeHighDef = 127;

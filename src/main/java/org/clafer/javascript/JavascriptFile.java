@@ -17,13 +17,19 @@ public class JavascriptFile {
     private final ClaferOption option;
     private final Objective[] objectives;
     private final Assertion[] assertions;
+    private final boolean hasIntRange;
 
     public JavascriptFile(AstModel model, Scope scope, ClaferOption option, Objective[] objectives, Assertion[] assertions) {
+        this(model, scope, option, objectives, assertions, false);
+    }
+
+    public JavascriptFile(AstModel model, Scope scope, ClaferOption option, Objective[] objectives, Assertion[] assertions, boolean hasIntRange) {
         this.model = model;
         this.scope = scope;
         this.option = option;
         this.objectives = objectives;
         this.assertions = assertions;
+        this.hasIntRange = hasIntRange;
     }
 
     public AstModel getModel() {
@@ -44,5 +50,13 @@ public class JavascriptFile {
 
     public Assertion[] getAssertions() {
         return assertions;
+    }
+
+    /**
+     * @return whether the model sets its integer range (intRange), so the scope's
+     * integer range is not the default
+     */
+    public boolean hasIntRange() {
+        return hasIntRange;
     }
 }

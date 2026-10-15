@@ -177,17 +177,16 @@ public class PropTransitiveUnreachable extends Propagator<SetVar> {
             forwardPrune(i);
             backwardPrune(i);
         }
+        PropUtil.startMonitoring(relationD);
     }
 
     @Override
     public void propagate(final int i, int mask) throws ContradictionException {
-        relationD[i].freeze();
         relationD[i].forEach(j -> {
             forwardPruneIJ(i, j);
             backwardPruneJK(i, j);
         }, SetEventType.ADD_TO_KER);
         relationD[i].forEach(k -> onRemoveEnv(i, k), SetEventType.REMOVE_FROM_ENVELOPE);
-        relationD[i].unfreeze();
     }
 
     @Override

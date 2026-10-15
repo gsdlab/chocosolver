@@ -154,21 +154,19 @@ public class PropJoinFunction extends Propagator<Variable> {
 
         // Prune to
         findMates();
-        takeD.unfreeze();
+        takeD.startMonitoring();
+        PropUtil.startMonitoring(refsD);
+        toD.startMonitoring();
     }
 
     @Override
     public void propagate(int idxVarInProp, int mask) throws ContradictionException {
         if (isTakeVar(idxVarInProp)) {
-            takeD.freeze();
             takeD.forEach(this::pruneToOnTakeEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             takeD.forEach(this::pickToAndPruneChildOnTakeKer, SetEventType.ADD_TO_KER);
-            takeD.unfreeze();
         } else if (isToVar(idxVarInProp)) {
-            toD.freeze();
             toD.forEach(this::pruneRefOnToEnv, SetEventType.REMOVE_FROM_ENVELOPE);
             toD.forEach(this::pickTakeOnToKer, SetEventType.ADD_TO_KER);
-            toD.unfreeze();
             if (SetEventType.isEnvRemoval(mask)) {
                 TIntArrayList removed = null;
                 ISetIterator iter = take.getUB().iterator();
@@ -204,7 +202,6 @@ public class PropJoinFunction extends Propagator<Variable> {
             final int id = getRefVarIndex(idxVarInProp);
             final IIntDeltaMonitor refD = refsD[id];
             final MutableBoolean bool = new MutableBoolean();
-            refD.freeze();
             IntProcedure pruneToOnRefRem = refRem -> {
                 if (bool.isClear()) {
                     if (to.getUB().contains(refRem)) {
@@ -216,7 +213,6 @@ public class PropJoinFunction extends Propagator<Variable> {
                 }
             };
             refD.forEachRemVal(pruneToOnRefRem);
-            refD.unfreeze();
             IntVar ref = refs[id];
             if (IntEventType.isRemove(mask)) {
                 if (!PropUtil.isDomIntersectEnv(ref, to)) {

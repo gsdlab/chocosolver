@@ -2,12 +2,16 @@ package org.clafer.common;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.clafer.collection.Pair;
 import static org.clafer.common.Util.concat;
 import static org.clafer.common.Util.divCeil;
 import static org.clafer.common.Util.divFloor;
 import static org.clafer.common.Util.dropUntil;
 import static org.clafer.common.Util.endsWith;
 import static org.clafer.common.Util.ordinal;
+import static org.clafer.common.Util.pairwise;
 import static org.clafer.common.Util.permutations;
 import static org.clafer.common.Util.sequence;
 import static org.clafer.common.Util.startsWith;
@@ -178,5 +182,21 @@ public class UtilTest {
         assertEquals(1, integers[0].intValue());
         assertEquals(2, integers[1].intValue());
         assertEquals(Integer.class, integers.getClass().getComponentType());
+    }
+
+    /**
+     * The second stream is paired with every element of the first, although a
+     * stream can only be consumed once.
+     */
+    @Test
+    public void testPairwise() {
+        assertEquals(
+                listOf(new Pair<>(1, 3), new Pair<>(1, 4), new Pair<>(2, 3), new Pair<>(2, 4)),
+                pairwise(Stream.of(1, 2), Stream.of(3, 4)).collect(Collectors.toList()));
+    }
+
+    @SafeVarargs
+    private static <T> List<T> listOf(T... items) {
+        return Arrays.asList(items);
     }
 }

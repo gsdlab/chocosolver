@@ -11,6 +11,7 @@ import org.clafer.ast.AstArithm;
 import org.clafer.ast.AstBoolArithm;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstCard;
+import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstChildRelation;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstCompare;
@@ -336,6 +337,25 @@ public class TypeAnalyzer implements Analyzer {
                 AstClafer childrenType = children.getType().getClaferType();
                 if (!AstUtil.isTop(childrenType) && !AstUtil.isTypeRoot(childrenType)) {
                     return put(childrenType.getParent(), joinParent(children.getExpr()));
+                }
+                // A top-level abstract Clafer has no parent of its own: the parents of
+                // its instances are those of its subclafers, e.g., for
+                //     abstract Feature
+                //         [ parent in Feature, FeatureModel ]
+                // the parent of a Feature is the union of the parents of the Feature
+                // instances of each subclafer.
+                if (childrenType instanceof AstAbstractClafer
+                        && !((AstAbstractClafer) childrenType).getSubs().isEmpty()) {
+                    AstSetExpr parents = null;
+                    for (AstClafer sub : ((AstAbstractClafer) childrenType).getSubs()) {
+                        if (sub instanceof AstConcreteClafer && AstUtil.isTop(sub)) {
+                            throw new TypeException("Cannot join " + children.getType()
+                                    + " . parent: its subclafer " + sub + " is a top-level clafer");
+                        }
+                        AstSetExpr subParents = joinParent(downcast(ast.getChildren(), new ProductType(sub)));
+                        parents = parents == null ? subParents : union(parents, subParents);
+                    }
+                    return typeCheck(parents);
                 }
             }
             throw new TypeException("Cannot join " + children.getType() + " . parent");

@@ -4,12 +4,19 @@ import java.util.HashSet;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
+import static org.clafer.ast.Asts.$this;
 import static org.clafer.ast.Asts.IntType;
 import static org.clafer.ast.Asts.Mandatory;
 import static org.clafer.ast.Asts.Optional;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.in;
+import static org.clafer.ast.Asts.joinParent;
 import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.union;
 import org.clafer.ast.analysis.InsufficientScopeException;
+import org.clafer.ast.analysis.TypeException;
 import org.clafer.collection.Pair;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
@@ -923,5 +930,117 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(5, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     *     b : B
+     * abstract B
+     *     a : A
+     * x : A
+     * </pre>
+     *
+     * The mandatory recursive structure has no finite instance. The scope
+     * analysis must not crash on the cycle of parents and supers.
+     */
+    private static AstModel mutuallyRecursiveModel() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstAbstractClafer b = model.addAbstract("B");
+        a.addChild("b").withCard(Mandatory).extending(b);
+        b.addChild("a").withCard(Mandatory).extending(a);
+        model.addChild("x").withCard(Mandatory).extending(a);
+        return model;
+    }
+
+    @Test(timeout = 60000, expected = AstException.class)
+    public void testMutuallyRecursiveSmallScope() {
+        AstModel model = mutuallyRecursiveModel();
+        ClaferCompiler.compile(model, Scope.setScope(model.getAbstracts().stream().filter(c -> c.getName().equals("A")).findFirst().get(), 2).defaultScope(1));
+    }
+
+    @Test(timeout = 60000)
+    public void testMutuallyRecursiveLargeScope() {
+        ClaferSolver solver = ClaferCompiler.compile(mutuallyRecursiveModel(), Scope.defaultScope(6));
+        assertFalse(solver.find());
+    }
+    /**
+     * <pre>
+     * abstract FeatureModel
+     * abstract Feature
+     *     [ parent in Feature ++ FeatureModel ]
+     * FM : FeatureModel
+     *     F1 : Feature
+     *         F2 : Feature
+     * </pre>
+     *
+     * The parent of a top-level abstract clafer is the parent of the instance in its
+     * subclafer (https://github.com/gsdlab/clafer/issues/84).
+     */
+    @Test(timeout = 60000)
+    public void testParentOfTopLevelAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer featureModel = model.addAbstract("FeatureModel");
+        AstAbstractClafer feature = model.addAbstract("Feature");
+        feature.addConstraint(in(joinParent($this()), union(global(feature), global(featureModel))));
+        AstConcreteClafer fm = model.addChild("FM").withCard(Mandatory).extending(featureModel);
+        AstConcreteClafer f1 = fm.addChild("F1").withCard(Mandatory).extending(feature);
+        f1.addChild("F2").withCard(Mandatory).extending(feature);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        assertEquals(1, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract FeatureModel
+     * abstract Feature
+     *     [ parent in FeatureModel ]
+     * FM : FeatureModel
+     *     F1 : Feature
+     *         F2 : Feature ?
+     * </pre>
+     *
+     * F2 cannot exist, since its parent is a Feature.
+     */
+    @Test(timeout = 60000)
+    public void testParentOfTopLevelAbstractRestricts() {
+        AstModel model = newModel();
+
+        AstAbstractClafer featureModel = model.addAbstract("FeatureModel");
+        AstAbstractClafer feature = model.addAbstract("Feature");
+        feature.addConstraint(in(joinParent($this()), global(featureModel)));
+        AstConcreteClafer fm = model.addChild("FM").withCard(Mandatory).extending(featureModel);
+        AstConcreteClafer f1 = fm.addChild("F1").withCard(Mandatory).extending(feature);
+        AstConcreteClafer f2 = f1.addChild("F2").withCard(Optional).extending(feature);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        InstanceModel[] instances = solver.allInstances();
+        assertEquals(1, instances.length);
+        InstanceClafer f1Instance = instances[0].getTopClafers(fm)[0].getChildren(f1)[0];
+        assertEquals(0, f1Instance.getChildren(f2).length);
+    }
+
+    /**
+     * <pre>
+     * abstract Feature
+     *     [ parent in Feature ]
+     * Top : Feature
+     * </pre>
+     *
+     * The parent of a top-level subclafer is the root, which is not a Clafer type.
+     */
+    @Test(timeout = 60000, expected = TypeException.class)
+    public void testParentOfTopLevelAbstractWithTopLevelSubclafer() {
+        AstModel model = newModel();
+
+        AstAbstractClafer feature = model.addAbstract("Feature");
+        feature.addConstraint(in(joinParent($this()), global(feature)));
+        model.addChild("Top").withCard(Mandatory).extending(feature);
+
+        ClaferCompiler.compile(model, Scope.defaultScope(2));
     }
 }

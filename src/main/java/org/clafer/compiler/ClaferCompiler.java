@@ -12,8 +12,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.chocosolver.solver.Model;
+import org.clafer.choco.ResetKeepsLimitsSolver;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.limits.NodeCounter;
 import org.chocosolver.solver.search.strategy.Search;
@@ -53,6 +55,12 @@ import org.clafer.scope.Scopable;
  * @author jimmy
  */
 public class ClaferCompiler {
+
+    /**
+     * For benchmarking only: when set, replaces the integer search strategy of
+     * each branching group, ignoring the strategy of the ClaferOption.
+     */
+    static Function<IntVar[], AbstractStrategy<IntVar>> intStrategyOverride = null;
 
     private ClaferCompiler() {
     }
@@ -174,9 +182,12 @@ public class ClaferCompiler {
         if (vars.length == 0) {
             return Optional.empty();
         }
+        if (intStrategyOverride != null) {
+            return Optional.of(intStrategyOverride.apply(vars));
+        }
         switch (options.getStrategy()) {
             case PreferSmallerInstances:
-                return firstFailInDomainMin(vars);
+                return failureRateInDomainMin(vars);
             case PreferLargerInstances:
                 return firstFailInDomainMax(vars);
             case Random:
@@ -197,7 +208,7 @@ public class ClaferCompiler {
     private static void restartPolicy(Solver solver, ClaferOption options) {
         switch (options.getStrategy()) {
             case Random:
-                solver.setLubyRestart(16, 16, new NodeCounter(solver, 16), Integer.MAX_VALUE);
+                solver.setLubyRestart(16, new NodeCounter(solver, 16), Integer.MAX_VALUE);
         }
     }
 
@@ -208,11 +219,17 @@ public class ClaferCompiler {
         return Optional.of(Search.minDomUBSearch(vars));
     }
 
-    private static Optional<AbstractStrategy<?>> firstFailInDomainMin(IntVar[] vars) {
+    /**
+     * Branches first on the variables whose decisions failed most often
+     * recently, smallest value first. Benchmarked faster than first fail
+     * (minDomLB) on hard models and as fast on the others, see
+     * src/test/benchmark.
+     */
+    private static Optional<AbstractStrategy<?>> failureRateInDomainMin(IntVar[] vars) {
         if (vars.length == 0) {
             return Optional.empty();
         }
-        return Optional.of(Search.minDomLBSearch(vars));
+        return Optional.of(Search.failureRateBasedSearch(vars));
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {
@@ -221,7 +238,7 @@ public class ClaferCompiler {
 
     public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOption options) {
         try {
-            Model model = new Model();
+            Model model = ResetKeepsLimitsSolver.newModel();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
@@ -245,7 +262,7 @@ public class ClaferCompiler {
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOption options) {
         Check.noNullsNotEmpty(objectives);
         try {
-            Model model = new Model();
+            Model model = ResetKeepsLimitsSolver.newModel();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(
@@ -300,7 +317,7 @@ public class ClaferCompiler {
     public static ClaferAsserter compile(AstModel in, Scopable scope, Assertion[] assertions, ClaferOption options) {
         Check.noNullsNotEmpty(assertions);
         try {
-            Model model = new Model();
+            Model model = ResetKeepsLimitsSolver.newModel();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(
@@ -328,7 +345,7 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOption options) {
-        Model model = new Model();
+        Model model = ResetKeepsLimitsSolver.newModel();
         IrModule module = new IrModule();
 
         AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
