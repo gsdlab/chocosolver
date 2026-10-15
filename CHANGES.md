@@ -1,3 +1,13 @@
+# chocosolver version 0.5.3, unreleased
+
+* Upgrade to choco-solver 4.10.18.
+* Time limits are a deadline for the whole search, including the restarts of optimization.
+* The default search strategy is failureRateBased; a benchmark of the strategies is in `src/test/benchmark`.
+* The command line uses the integer range of the model (`intRange`, from clafer's `--minint` and `--maxint`); `--minint` and `--maxint` still override it.
+* Fixes: multiplication with integer ranges beyond 46340; constant folding of a subarray past the end; `Util.pairwise` reusing a consumed stream; a null in `Oracle.compile`; silent overflow in `Rational`; the scope and cardinality analysis of mutually recursive clafers.
+
+[Release](https://github.com/gsdlab/chocosolver/pull/36)
+
 # chocosolver version 0.5.2 released on Oct 9, 2026
 
 [Release](https://github.com/gsdlab/chocosolver/pull/35)
