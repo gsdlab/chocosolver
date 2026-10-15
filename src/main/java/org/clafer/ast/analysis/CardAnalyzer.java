@@ -40,10 +40,13 @@ public class CardAnalyzer implements Analyzer {
         int evenlyDistributed = parentlowGlobalCard * low;
         int rest = globalCard.getHigh() - evenlyDistributed;
         int scope = analysis.getScope(clafer);
-        if (low > scope) {
+        int effectiveHigh = Math.min(scope, Math.min(high, low + rest));
+        // The scope cannot fit the lower cardinality, e.g. low > scope, or fewer
+        // instances than the parents need in a recursive structure.
+        if (low > effectiveHigh) {
             cardMap.put(clafer, new Card(0, 0));
         } else {
-            cardMap.put(clafer, new Card(low, Math.min(scope, Math.min(high, low + rest))));
+            cardMap.put(clafer, new Card(low, effectiveHigh));
         }
 
         for (AstConcreteClafer child : clafer.getChildren()) {

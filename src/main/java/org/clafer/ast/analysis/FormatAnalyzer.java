@@ -37,7 +37,9 @@ public class FormatAnalyzer implements Analyzer {
                 analysis.getCard(clafer).isExact()
                 && analysis.getScope(clafer) >= analysis.getCard(clafer).getHigh() * analysis.getScope(clafer.getParent())
                         ? Format.ParentGroup : Format.LowGroup);
-        assert analysis.getCard(clafer).isExact() == formatMap.get(clafer).equals(Format.ParentGroup);
+        // An exact cardinality may need the low group if the scope is too small for
+        // it, e.g. in a recursive structure.
+        assert !formatMap.get(clafer).equals(Format.ParentGroup) || analysis.getCard(clafer).isExact();
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, analysis, formatMap);
         }

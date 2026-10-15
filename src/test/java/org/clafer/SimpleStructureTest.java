@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstException;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.IntType;
 import static org.clafer.ast.Asts.Mandatory;
@@ -923,5 +924,40 @@ public class SimpleStructureTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
         assertEquals(5, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract A
+     *     b : B
+     * abstract B
+     *     a : A
+     * x : A
+     * </pre>
+     *
+     * The mandatory recursive structure has no finite instance. The scope
+     * analysis must not crash on the cycle of parents and supers.
+     */
+    private static AstModel mutuallyRecursiveModel() {
+        AstModel model = newModel();
+
+        AstAbstractClafer a = model.addAbstract("A");
+        AstAbstractClafer b = model.addAbstract("B");
+        a.addChild("b").withCard(Mandatory).extending(b);
+        b.addChild("a").withCard(Mandatory).extending(a);
+        model.addChild("x").withCard(Mandatory).extending(a);
+        return model;
+    }
+
+    @Test(timeout = 60000, expected = AstException.class)
+    public void testMutuallyRecursiveSmallScope() {
+        AstModel model = mutuallyRecursiveModel();
+        ClaferCompiler.compile(model, Scope.setScope(model.getAbstracts().stream().filter(c -> c.getName().equals("A")).findFirst().get(), 2).defaultScope(1));
+    }
+
+    @Test(timeout = 60000)
+    public void testMutuallyRecursiveLargeScope() {
+        ClaferSolver solver = ClaferCompiler.compile(mutuallyRecursiveModel(), Scope.defaultScope(6));
+        assertFalse(solver.find());
     }
 }
