@@ -5,6 +5,7 @@
 * The default search strategy is failureRateBased; a benchmark of the strategies is in `src/test/benchmark`.
 * The command line uses the integer range of the model (`intRange`, from clafer's `--minint` and `--maxint`); `--minint` and `--maxint` still override it.
 * Fixes: multiplication with integer ranges beyond 46340; constant folding of a subarray past the end; `Util.pairwise` reusing a consumed stream; a null in `Oracle.compile`; silent overflow in `Rational`; the scope and cardinality analysis of mutually recursive clafers.
+* `parent` of a top-level abstract clafer is the union of the parents of its subclafers ([clafer#84](https://github.com/gsdlab/clafer/issues/84)).
 
 [Release](https://github.com/gsdlab/chocosolver/pull/36)
 

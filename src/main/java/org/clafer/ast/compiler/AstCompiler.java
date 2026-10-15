@@ -1404,6 +1404,10 @@ public class AstCompiler {
                 }
             } else if (children instanceof IrSetExpr) {
                 IrSetExpr setChildren = (IrSetExpr) children;
+                if (setChildren.getEnv().isEmpty()) {
+                    // e.g., `this` of an abstract clafer downcast to another subclafer
+                    return EmptySet;
+                }
                 IrIntVar[] parents = parentPointers.get(childrenType);
                 if (setChildren.getEnv().getHighBound() >= parents.length) {
                     parents = Util.snoc(parents, constant(parents.length));
@@ -1805,12 +1809,19 @@ public class AstCompiler {
             AstSetExpr base = ast.getBase();
             int offset = getOffset((AstAbstractClafer) getCommonSupertype(base).getClaferType(), ast.getTarget().getClaferType());
 
+            int scope = getScope(ast.getTarget().getClaferType());
             IrExpr $base = compile(ast.getBase());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
-                return sub(intBase, constant(offset));
+                Domain domain = intBase.getDomain();
+                if (domain.getLowBound() >= offset && domain.getHighBound() < offset + scope) {
+                    return sub(intBase, constant(offset));
+                }
+                // The base may be an instance of another subclafer, e.g., `this` of an abstract
+                // clafer downcast to one of its subclafers: the result is a set, empty then.
+                return mask(singleton(intBase), offset, offset + scope);
             }
-            return mask((IrSetExpr) $base, offset, offset + getScope(ast.getTarget().getClaferType()));
+            return mask((IrSetExpr) $base, offset, offset + scope);
         }
 
         @Override

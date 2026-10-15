@@ -1998,7 +1998,7 @@ public class Irs {
         if (from > to) {
             throw new IllegalArgumentException();
         }
-        if (from == to) {
+        if (from == to || set.getEnv().isEmpty()) {
             return EmptySet;
         }
         if (from <= set.getEnv().getLowBound() && to > set.getEnv().getHighBound()) {
