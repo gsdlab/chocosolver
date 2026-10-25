@@ -32,7 +32,7 @@ Binary distributions of the release 0.5.3 of Clafer Tools can be downloaded from
 ### Integration with text editors:
 
 * VS Code: [clafer-vscode](https://github.com/gsdlab/clafer-vscode).
-* Sublime Text 2/3: [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
+* Sublime Text 4: [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
 
 ### Installation from the source code
 
