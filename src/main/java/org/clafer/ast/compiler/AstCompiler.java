@@ -1069,6 +1069,12 @@ public class AstCompiler {
                 IrIntVar[] refs = new IrIntVar[members.length];
                 for (AstClafer sub : clafer.getSubs()) {
                     IrIntVar[] subRef = refPointers.get(sub);
+                    // a sub clafer that refines the reference to a subtype of the target points
+                    // into the subtype; this clafer's pointers point into the target
+                    AstClafer subTarget = AstUtil.getInheritedRef(sub).getTargetType();
+                    if (!subTarget.equals(ref.getTargetType()) && !(subTarget instanceof AstIntClafer)) {
+                        subRef = retargetRefPointers(subRef, subTarget, ref.getTargetType());
+                    }
                     int offset = getOffset(clafer, sub);
                     System.arraycopy(subRef, 0, refs, offset, subRef.length);
                 }
@@ -1398,7 +1404,8 @@ public class AstCompiler {
                     case LowGroup:
                         IrIntVar[] parents = parentPointers.get(childrenType);
                         if (intChildren.getHighBound() >= parents.length) {
-                            parents = Util.snoc(parents, constant(parents.length));
+                            // an unused child has no parent: the parent pointer of an unused child
+                            parents = Util.snoc(parents, constant(getScope(childrenType.getParent())));
                         }
                         return element(parents, intChildren);
                 }
@@ -1410,7 +1417,8 @@ public class AstCompiler {
                 }
                 IrIntVar[] parents = parentPointers.get(childrenType);
                 if (setChildren.getEnv().getHighBound() >= parents.length) {
-                    parents = Util.snoc(parents, constant(parents.length));
+                    // an unused child has no parent: the parent pointer of an unused child
+                    parents = Util.snoc(parents, constant(getScope(childrenType.getParent())));
                 }
                 return joinFunction(setChildren, parents, null);
             }
@@ -2196,6 +2204,35 @@ public class AstCompiler {
         }
 
         return ivs;
+    }
+
+    /**
+     * The pointers of a reference to a subtype of the target as pointers to the target: an
+     * instance of the subtype is at its offset in the target, and an uninitialized pointer is
+     * the target's uninitialized pointer.
+     *
+     * @param pointers the pointers into the subtype
+     * @param subtype the subtype
+     * @param target the target
+     * @return the pointers into the target
+     */
+    private IrIntVar[] retargetRefPointers(IrIntVar[] pointers, AstClafer subtype, AstClafer target) {
+        int offset = getOffset(target, subtype);
+        int uninitialized = getUninitalizedRef(subtype);
+        int targetUninitialized = getUninitalizedRef(target);
+        IrIntExpr[] table = new IrIntExpr[uninitialized + 1];
+        for (int i = 0; i < uninitialized; i++) {
+            table[i] = constant(i + offset);
+        }
+        table[uninitialized] = constant(targetUninitialized);
+        IrIntVar[] retargeted = new IrIntVar[pointers.length];
+        for (int i = 0; i < pointers.length; i++) {
+            Domain domain = enumDomain(pointers[i].getDomain().stream()
+                    .map(value -> value == uninitialized ? targetUninitialized : value + offset));
+            retargeted[i] = domainInt(pointers[i].getName() + "@" + target.getName(), domain);
+            module.addConstraint(equal(retargeted[i], element(table, pointers[i])));
+        }
+        return retargeted;
     }
 
     private IrStringVar[] buildStrings(AstRef ref, AstConcreteClafer context) {
