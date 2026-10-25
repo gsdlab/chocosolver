@@ -67,26 +67,30 @@ public class Main
         // If a .cfr file is given, compile it first and change the input file to the resulting .js file
         if (fileName.endsWith(".cfr")) {
             System.out.println("Compiling the Clafer model...");
-            // compile the file
+            String jsFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".js";
+            new File(jsFileName).delete();
+            // compile the file; clafer's output (its errors) is shown only if there is no .js file
+            String compilerOutput;
+            int exitValue;
             try {
-                Process compilerProcess = Runtime.getRuntime().exec("clafer -k -m choco " + fileName);
-                compilerProcess.waitFor();
-                if (compilerProcess.exitValue() != 0) {
-                    System.out.println("Clafer compilation error: make sure your model is correct. Aborting...");
-                    System.exit(1);
-                }
+                Process compilerProcess = new ProcessBuilder("clafer", "-k", "-m", "choco", fileName)
+                    .redirectErrorStream(true).start();
+                compilerOutput = new String(compilerProcess.getInputStream().readAllBytes());
+                exitValue = compilerProcess.waitFor();
             } catch (Exception e) {
-                    System.out.println("Abnormal Clafer compiler termination. Aborting...");
-                    System.exit(1);
+                System.out.println("Could not run the Clafer compiler (clafer): " + e.getMessage());
+                System.exit(1);
+                return;
             }
-
-            // replace the extension to .js
-            int extPos = fileName.lastIndexOf(".");
-            if(extPos != -1) {
-               fileName = fileName.substring(0, extPos) + ".js";
+            // clafer exits with 0 also when the model has no Choco output (e.g., temporal operators)
+            if (exitValue != 0 || !new File(jsFileName).exists()) {
+                System.out.println(compilerOutput.strip());
+                System.out.println("Clafer compilation failed. Aborting...");
+                System.exit(1);
             }
 
             // change the inputFile to the resulting .js file
+            fileName = jsFileName;
             inputFile = new File(fileName);
         }
 

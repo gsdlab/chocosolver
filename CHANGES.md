@@ -1,3 +1,7 @@
+# chocosolver version 0.5.4, unreleased
+
+* With a `.cfr` model, the command line shows the compiler's errors when the model does not compile, or why there is no Choco output (e.g., temporal operators), instead of "File does not exist: model.js". It no longer uses a `.js` file left over from an earlier compilation, and file names may contain spaces.
+
 # chocosolver version 0.5.3, Oct 15, 2026
 
 * Upgrade to choco-solver 4.10.18.
