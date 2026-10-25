@@ -100,6 +100,10 @@ Option                                  Description
 --file <File: Clafer model file (.cfr)  Input file in .cfr or .js format.
   or Clafer Javascript file (.js)>
 --help                                  Show help.
+--import <Clafer file or URL>           Compile the .cfr model together with the given Clafer
+                                          file or URL, relative to the current directory
+                                          (repeatable); a model also imports files with
+                                          --import in its //# OPTIONS directive.
 --maxint <Integer>                      Specify maximum integer value.
 --minint <Integer>                      Specify minimum integer value.
 --moo                                   Run in multi-objective optimization mode.
@@ -124,6 +128,8 @@ The last mode is selected when no `-v` and `--repl` are given and the model does
 
 If the `.cfr` file is given, the CLI will first call the Clafer compiler using `clafer -k -m choco model.cfr`,
 which will produce `model.js`.
+A model can consist of several files (Clafer 0.5.4): the files that the model imports with `--import` in its `//# OPTIONS` directive are compiled with it, and `--import=FILE` on the command line adds a file (see [Models in several files](https://github.com/gsdlab/clafer#models-in-several-files)).
+The compiler's errors give the file in which they are (`Compile error at lib.cfr:3:11...`).
 Certain features, such as transitive closure, are not yet supported by Clafer,
 so they can only be used directly via API call in the `.js` file.
 We recommend using the so called Choco escapes, as follows:

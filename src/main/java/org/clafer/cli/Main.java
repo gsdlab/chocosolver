@@ -3,6 +3,8 @@ package org.clafer.cli;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -20,6 +22,8 @@ public class Main
                 accepts( "file", "Input file in .cfr or .js format" ).withRequiredArg().ofType( File.class )
                     .describedAs( "Clafer model file (.cfr) or Clafer Javascript file (.js)." );
                 accepts( "help", "Show help.").forHelp();
+                accepts( "import", "Compile the .cfr model together with the given Clafer file or URL, relative to the current directory (repeatable); a model also imports files with --import in its //# OPTIONS directive." )
+                    .withRequiredArg().describedAs( "Clafer file or URL" );
                 accepts( "maxint", "Specify maximum integer value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "minint", "Specify minimum integer value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "moo", "Run in multi-objective optimization mode." );
@@ -73,8 +77,11 @@ public class Main
             String compilerOutput;
             int exitValue;
             try {
-                Process compilerProcess = new ProcessBuilder("clafer", "-k", "-m", "choco", fileName)
-                    .redirectErrorStream(true).start();
+                List<String> command = new ArrayList<>(List.of("clafer", "-k", "-m", "choco"));
+                for (Object importedFile : options.valuesOf("import"))
+                    command.add("--import=" + importedFile);
+                command.add(fileName);
+                Process compilerProcess = new ProcessBuilder(command).redirectErrorStream(true).start();
                 compilerOutput = new String(compilerProcess.getInputStream().readAllBytes());
                 exitValue = compilerProcess.waitFor();
             } catch (Exception e) {
