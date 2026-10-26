@@ -1,6 +1,7 @@
 package org.clafer.compiler;
 
 import org.chocosolver.solver.Solver;
+import org.clafer.choco.ResetKeepsLimits;
 
 /**
  * Search for instances.
@@ -18,7 +19,7 @@ public interface ClaferSearch extends InstanceIterator {
     public boolean find() throws ReachedLimitException;
 
     public default ClaferSearch limitTime(long ms) {
-        getInternalSolver().limitTime(ms);
+        ResetKeepsLimits.limitTime(getInternalSolver(), ms);
         return this;
     }
 

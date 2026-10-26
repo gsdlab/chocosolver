@@ -10,7 +10,7 @@
 
     <name>chocosolver</name>
     <url>http://github.com/gsdlab/chocosolver</url>
-    <description>A backend for Clafer based on the Choco 4 constraint programming library.</description>
+    <description>A backend for Clafer based on the Choco 6 constraint programming library.</description>
 
     <developers>
         <developer>
@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.choco-solver</groupId>
             <artifactId>choco-solver</artifactId>
-            <version>4.10.18</version>
+            <version>6.0.2</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>

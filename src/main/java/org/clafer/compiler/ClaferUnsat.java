@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
+import org.clafer.choco.ResetKeepsLimits;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
 import org.clafer.ast.AstConstraint;
@@ -48,7 +49,7 @@ public class ClaferUnsat {
     }
 
     public ClaferUnsat limitTime(long ms) {
-        getInternalSolver().limitTime(ms);
+        ResetKeepsLimits.limitTime(getInternalSolver(), ms);
         return this;
     }
 
@@ -116,7 +117,7 @@ public class ClaferUnsat {
                         }
                     }
                 }
-                solver.reset();
+                ResetKeepsLimits.reset(solver);
                 for (BoolVar var : minUnsat) {
                     solver.getModel().arithm(var, "=", 1).post();
                 }

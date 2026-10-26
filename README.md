@@ -4,7 +4,7 @@
 
 ##### v0.5.4
 
-An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 4.10.18 constraint programming library. There are two ways to use the project:
+An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 6.0.2 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
 
 The CLI is used by
@@ -38,7 +38,7 @@ Binary distributions of the release 0.5.4 of Clafer Tools can be downloaded from
 
 ## Prerequisites
 
-* [Choco 4.10.18](https://github.com/chocoteam/choco-solver), v4.10.18.
+* [Choco 6.0.2](https://github.com/chocoteam/choco-solver), v6.0.2.
 * [Java 21+](https://adoptium.net/), 64bit.
 * [Maven 3.2+](http://maven.apache.org/). Required for building the project.
 
