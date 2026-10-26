@@ -24,6 +24,8 @@ import static org.clafer.ast.Asts.joinParent;
 import static org.clafer.ast.Asts.joinRef;
 import static org.clafer.ast.Asts.local;
 import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.Optional;
+import static org.clafer.ast.Asts.some;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
 import org.clafer.instance.InstanceClafer;
@@ -481,5 +483,78 @@ public class RefinementTest {
             assertEquals(squareInstance, boxHitboxInstance.getRef());
         }
         assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * A constraint of the abstract clafer over a reference that a sub clafer refines: the
+     * pointers of the sub clafer point into the subtype, those of the abstract clafer into the
+     * target.
+     *
+     * <pre>
+     * abstract Form
+     * Raster : Form
+     * Vector : Form
+     *
+     * abstract Task -> Form
+     *     [ this.dref in Vector ]
+     *
+     * Detection : Task -> Vector
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testConstraintOverReferenceRefinement() {
+        AstModel model = newModel();
+
+        AstAbstractClafer form = model.addAbstract("Form");
+        AstConcreteClafer raster = model.addChild("Raster").extending(form).withCard(Mandatory);
+        AstConcreteClafer vector = model.addChild("Vector").extending(form).withCard(Mandatory);
+
+        AstAbstractClafer task = model.addAbstract("Task").refTo(form);
+        task.addConstraint(in(joinRef($this()), global(vector)));
+
+        AstConcreteClafer detection = model.addChild("Detection").extending(task).refToUnique(vector).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
+        while (solver.find()) {
+            InstanceModel instance = solver.instance();
+            assertEquals(instance.getTopClafer(vector), instance.getTopClafer(detection).getRef());
+        }
+        assertEquals(1, solver.instanceCount());
+    }
+
+    /**
+     * The parent of the parent of an optional child of a nested abstract clafer, whose scope is
+     * larger than the scope of its parent.
+     *
+     * <pre>
+     * abstract System
+     *     abstract Task
+     *         Perception ?
+     *             [ this.parent.parent.Requirement ]
+     *     Requirement ?
+     *
+     * Car : System
+     *     Detection : Task
+     *     Tracking : Task
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinParentOfOptionalChildOfNestedAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer system = model.addAbstract("System");
+        AstAbstractClafer task = system.addAbstractChild("Task");
+        AstConcreteClafer perception = task.addChild("Perception").withCard(Optional);
+        AstConcreteClafer requirement = system.addChild("Requirement").withCard(Optional);
+        perception.addConstraint(some(join(joinParent(joinParent($this())), requirement)));
+
+        AstConcreteClafer car = model.addChild("Car").extending(system).withCard(Mandatory);
+        car.addChild("Detection").extending(task).withCard(Mandatory);
+        car.addChild("Tracking").extending(task).withCard(Mandatory);
+
+        // no Requirement and no Perception, or a Requirement and any Perceptions
+        ClaferSolver solver = ClaferCompiler.compile(model,
+                Scope.setScope(task, 2).setScope(perception, 2).defaultScope(1));
+        assertEquals(5, solver.allInstances().length);
     }
 }

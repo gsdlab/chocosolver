@@ -2,7 +2,7 @@
 
 # chocosolver
 
-##### v0.5.3
+##### v0.5.4
 
 An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 4.10.18 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
@@ -24,7 +24,7 @@ Note: the name "choco-solver" refers to the [Java library for Constraint Program
 
 ### Installation from binaries
 
-Binary distributions of the release 0.5.3 of Clafer Tools can be downloaded from [Clafer Tools - Binary Distributions](http://wiselab.uwaterloo.ca/clafer-tools-binary-distributions).
+Binary distributions of the release 0.5.4 of Clafer Tools can be downloaded from [Clafer Tools - Binary Distributions](http://wiselab.uwaterloo.ca/clafer-tools-binary-distributions).
 
 1. download the binaries and unpack `<target directory>` of your choice
 2. add the `<target directory>` to your system path so that the executables can be found
@@ -32,7 +32,7 @@ Binary distributions of the release 0.5.3 of Clafer Tools can be downloaded from
 ### Integration with text editors:
 
 * VS Code: [clafer-vscode](https://github.com/gsdlab/clafer-vscode).
-* Sublime Text 2/3: [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
+* Sublime Text 4: [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
 
 ### Installation from the source code
 
@@ -44,7 +44,7 @@ Binary distributions of the release 0.5.3 of Clafer Tools can be downloaded from
 
 ## Recommended but optional
 
-* [Clafer compiler](https://github.com/gsdlab/clafer), v0.5.3.
+* [Clafer compiler](https://github.com/gsdlab/clafer), v0.5.4.
   - This backend provides an API for solving Clafer models. The Clafer compiler can compile a Clafer model down to the proper API calls.
   - The API calls can also be written manually quite easily with a bit of extra typing (examples down below).
 
@@ -66,11 +66,11 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.5.3</version>
+    <version>0.5.4</version>
 </dependency>
 ```
 
-The CLI is installed to `target/chocosolver-0.5.3-jar-with-dependencies.jar`;
+The CLI is installed to `target/chocosolver-0.5.4-jar-with-dependencies.jar`;
 however, in the Clafer Tools binary distribution it is called `chocosolver.jar`.
 
 You can deploy the files the same way as in Clafer Tools binary distribution by executing
@@ -100,6 +100,10 @@ Option                                  Description
 --file <File: Clafer model file (.cfr)  Input file in .cfr or .js format.
   or Clafer Javascript file (.js)>
 --help                                  Show help.
+--import <Clafer file or URL>           Compile the .cfr model together with the given Clafer
+                                          file or URL, relative to the current directory
+                                          (repeatable); a model also imports files with
+                                          --import in its //# OPTIONS directive.
 --maxint <Integer>                      Specify maximum integer value.
 --minint <Integer>                      Specify minimum integer value.
 --moo                                   Run in multi-objective optimization mode.
@@ -124,6 +128,8 @@ The last mode is selected when no `-v` and `--repl` are given and the model does
 
 If the `.cfr` file is given, the CLI will first call the Clafer compiler using `clafer -k -m choco model.cfr`,
 which will produce `model.js`.
+A model can consist of several files (Clafer 0.5.4): the files that the model imports with `--import` in its `//# OPTIONS` directive are compiled with it, and `--import=FILE` on the command line adds a file (see [Models in several files](https://github.com/gsdlab/clafer#models-in-several-files)).
+The compiler's errors give the file in which they are (`Compile error at lib.cfr:3:11...`).
 Certain features, such as transitive closure, are not yet supported by Clafer,
 so they can only be used directly via API call in the `.js` file.
 We recommend using the so called Choco escapes, as follows:

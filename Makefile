@@ -15,9 +15,9 @@ clean:
 install:
 	mkdir -p $(to)
 	cp -f README.md $(to)/chocosolver-README.md
-	cp -f target/chocosolver-0.5.3-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f target/chocosolver-0.5.4-jar-with-dependencies.jar $(to)/chocosolver.jar
 
 snapshotInstall:
 	mkdir -p $(to)
 	cp -f README.md $(to)/chocosolver-README.md
-	cp -f target/chocosolver-0.5.3-SNAPSHOT-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f target/chocosolver-0.5.4-SNAPSHOT-jar-with-dependencies.jar $(to)/chocosolver.jar
