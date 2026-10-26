@@ -223,6 +223,10 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
         if (options.has("scope"))
             scope = scope.toBuilder().defaultScope((int) options.valueOf("scope")).toScope();
 
+        /* overrides the model's decimalScale; a decimal literal with more digits is an error */
+        if (options.has("decimal-digits"))
+            scope = scope.toBuilder().decimalScale((int) options.valueOf("decimal-digits")).toScope();
+
         if (options.has("maxint")) {
             int scopeHigh = (int)options.valueOf("maxint");
             int scopeLow = options.has("minint") ? (int)options.valueOf("minint") : -(scopeHigh + 1);

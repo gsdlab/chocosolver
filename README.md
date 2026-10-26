@@ -97,6 +97,8 @@ java -jar chocosolver.jar --help`
 
 Option                                  Description
 ------                                  -----------
+--decimal-digits <Integer>              Specify the number of fractional digits of decimals
+                                          (overrides the model's).
 --file <File: Clafer model file (.cfr)  Input file in .cfr or .js format.
   or Clafer Javascript file (.js)>
 --help                                  Show help.
