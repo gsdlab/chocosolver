@@ -1386,6 +1386,12 @@ public class Irs {
     }
 
     /**
+     * The largest magnitude of the result of a decimal multiplication or
+     * division. Choco rejects domains wider than {@code Integer.MAX_VALUE}.
+     */
+    private static final long DecimalArithmBound = Integer.MAX_VALUE / 2 - 1;
+
+    /**
      * Multiplication or division of decimals scaled by {@code one}, rounded
      * half away from zero.
      *
@@ -1407,10 +1413,9 @@ public class Irs {
                 throw new UnsatisfiableException();
             }
             long value = mul ? Util.divRound(l * r, one) : Util.divRound(l * one, r);
-            if (value < decimalRange.getLowBound() || value > decimalRange.getHighBound()) {
-                throw new UnsatisfiableException();
-            }
-            return constant((int) value);
+            // Not limited to the range of decimals, see below; e.g. the product of
+            // the uninitialized reference of a Clafer that does not exist.
+            return constant((int) Math.max(-DecimalArithmBound, Math.min(DecimalArithmBound, value)));
         }
         if (right.isConstant() && right.getLowBound() == one) {
             return left;
@@ -1455,11 +1460,12 @@ public class Irs {
                 }
             }
         }
-        low = Math.max(low, decimalRange.getLowBound());
-        high = Math.min(high, decimalRange.getHighBound());
-        if (low > high) {
-            throw new UnsatisfiableException();
-        }
+        // The result is not limited to the range of decimals: an operand can be
+        // the uninitialized reference of a Clafer that does not exist, e.g. in
+        // [ all i : Item | i.ref * 1.5 <= 30 ], and the product must not fail
+        // then. Saturated so that Choco accepts the domain.
+        low = Math.max(low, -DecimalArithmBound);
+        high = Math.min(high, DecimalArithmBound);
         return new IrDecimalArithm(op, left, right, one, decimalRange, boundDomain((int) low, (int) high));
     }
 

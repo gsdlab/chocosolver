@@ -9,13 +9,16 @@ import java.util.List;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstBoolExpr;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstLocal;
 import org.clafer.ast.AstModel;
 import org.clafer.ast.AstSetExpr;
 import static org.clafer.ast.Asts.$this;
 import static org.clafer.ast.Asts.DecimalType;
 import static org.clafer.ast.Asts.add;
+import static org.clafer.ast.Asts.all;
 import static org.clafer.ast.Asts.constant;
 import static org.clafer.ast.Asts.decimal;
+import static org.clafer.ast.Asts.decl;
 import static org.clafer.ast.Asts.div;
 import static org.clafer.ast.Asts.equal;
 import static org.clafer.ast.Asts.global;
@@ -25,12 +28,14 @@ import static org.clafer.ast.Asts.ifThenElse;
 import static org.clafer.ast.Asts.in;
 import static org.clafer.ast.Asts.joinRef;
 import static org.clafer.ast.Asts.lessThanEqual;
+import static org.clafer.ast.Asts.local;
 import static org.clafer.ast.Asts.max;
 import static org.clafer.ast.Asts.min;
 import static org.clafer.ast.Asts.minus;
 import static org.clafer.ast.Asts.mod;
 import static org.clafer.ast.Asts.mul;
 import static org.clafer.ast.Asts.newModel;
+import static org.clafer.ast.Asts.notEqual;
 import static org.clafer.ast.Asts.some;
 import static org.clafer.ast.Asts.sub;
 import static org.clafer.ast.Asts.sum;
@@ -372,6 +377,83 @@ public class DecimalTest {
         pen.addConstraint(equal(joinRef($this()), decimal("1.99")));
         s.constrain(equal(s.X, sub(max(joinRef(global(item))), min(joinRef(global(item))))));
         assertEquals(d("10.51"), s.value(scale(2)));
+    }
+
+    /**
+     * A quantified constraint with a rounded product, which is reified for
+     * each Item.
+     * <pre>
+     * abstract Item -> decimal
+     * Book : Item ?
+     *     [ this.ref = 12.5 ]
+     * Pen : Item ?
+     *     [ this.ref = 1.99 ]
+     * Bag : Item ?
+     *     [ this.ref = 30 ]
+     * [ all i : Item | i.ref * 1.5 <= 30 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testQuantifier() {
+        // The products of the Items that do not exist are those of their
+        // uninitialized references, beyond the range of decimals; they must not
+        // exclude the instances.
+        AstLocal i = local("i");
+        assertItems(model -> model.addConstraint(all(decl(i, global(item(model))),
+                lessThanEqual(mul(joinRef(i), decimal("1.5")), constant(30)))));
+        // The same constraint in the context of Item.
+        assertItems(model -> item(model).addConstraint(
+                lessThanEqual(mul(joinRef($this()), decimal("1.5")), constant(30))));
+        // A division: 12.5 / 0.6 = 20.83, 1.99 / 0.6 = 3.32, 30 / 0.6 = 50
+        AstLocal j = local("j");
+        assertItems(model -> model.addConstraint(all(decl(j, global(item(model))),
+                lessThanEqual(div(joinRef(j), decimal("0.6")), constant(25)))));
+    }
+
+    private static AstAbstractClafer item(AstModel model) {
+        return model.getAbstracts().stream().filter(c -> c.getName().equals("Item")).findFirst().get();
+    }
+
+    /**
+     * Items Book (12.5), Pen (1.99) and Bag (30), all optional, and a
+     * constraint that excludes the Bag.
+     */
+    private static void assertItems(java.util.function.Consumer<AstModel> constraint) {
+        AstModel model = newModel();
+        AstAbstractClafer item = model.addAbstract("Item").refTo(DecimalType);
+        AstConcreteClafer book = model.addChild("Book").withCard(0, 1).extending(item);
+        AstConcreteClafer pen = model.addChild("Pen").withCard(0, 1).extending(item);
+        AstConcreteClafer bag = model.addChild("Bag").withCard(0, 1).extending(item);
+        book.addConstraint(equal(joinRef($this()), decimal("12.5")));
+        pen.addConstraint(equal(joinRef($this()), decimal("1.99")));
+        bag.addConstraint(equal(joinRef($this()), constant(30)));
+        constraint.accept(model);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, scale(2));
+        int instances = 0;
+        while (solver.find()) {
+            assertEquals(0, solver.instance().getTopClafers(bag).length);
+            instances++;
+        }
+        // The subsets of Book and Pen.
+        assertEquals(4, instances);
+    }
+
+    /**
+     * <pre>
+     * X -> decimal
+     * [ X >= 1 && X <= 1.2 && X != 1.1 ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testNotEqual() {
+        Single s = single();
+        s.constrain(greaterThanEqual(s.X, constant(1)));
+        s.constrain(lessThanEqual(s.X, decimal("1.2")));
+        s.constrain(notEqual(s.X, decimal("1.1")));
+        List<Object> values = s.values(scale(1));
+        assertEquals(2, values.size());
+        assertTrue(values.containsAll(List.of(d("1.0"), d("1.2"))));
     }
 
     /**
