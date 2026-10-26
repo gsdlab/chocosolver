@@ -2,7 +2,7 @@
 
 # chocosolver
 
-##### v0.5.4
+##### v0.5.5
 
 An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 6.0.2 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
@@ -66,11 +66,11 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 <dependency>
     <groupId>org.clafer</groupId>
     <artifactId>chocosolver</artifactId>
-    <version>0.5.4</version>
+    <version>0.5.5</version>
 </dependency>
 ```
 
-The CLI is installed to `target/chocosolver-0.5.4-jar-with-dependencies.jar`;
+The CLI is installed to `target/chocosolver-0.5.5-jar-with-dependencies.jar`;
 however, in the Clafer Tools binary distribution it is called `chocosolver.jar`.
 
 You can deploy the files the same way as in Clafer Tools binary distribution by executing
