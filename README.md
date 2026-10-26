@@ -459,19 +459,28 @@ Also, check the `eXecute` permission on the `jar` file.
 
 ## Decimals
 
-A prototype in this backend: the Clafer compiler does not generate decimals yet, so models with decimals are written in the Javascript format.
 A `decimal` has a fixed number of fractional digits, the decimal scale of the model, and is solved as an integer: with 2 digits, `19.99` is `1999`.
 `real` (the mathematical reals) and `double` (IEEE 754 floating point) stay unsupported.
+Clafer 0.5.5 compiles decimals to the Javascript format ([clafer#102](https://github.com/gsdlab/clafer/pull/102)), so a `.cfr` model with decimals works with `--file`:
 
 ```
-decimalScale(2);                        // the number of fractional digits
-decimalRange("0", "1000");              // optional; the default is the largest range that fits
+price -> decimal = 19.99
+```
+
+compiles to
+
+```
+defaultScope(1);
+stringLength(16);
+decimalScale(2);
+
 c0_price = Clafer("c0_price").withCard(1, 1);
-c0_price.refTo(Decimal);
-Constraint(equal(joinRef(global(c0_price)), decimal("19.99")));
+c0_price.refToUnique(Decimal);
+Constraint(implies(some(global(c0_price)), equal(joinRef(global(c0_price)), decimal("19.99"))));
 ```
 
-`--decimal-digits` overrides the scale on the command line.
+`decimalScale(2)` is the number of fractional digits: clafer's default is the most fractional digits of the literals, and `--decimal-digits` of either tool overrides it.
+`decimalRange("0", "1000")` limits the decimals; without it, the range is the largest that fits.
 
 * `+`, `-`, comparisons, `%`, `sum`, `min`, `max`, the set operations and `if then else` are exact.
   Integers mix with decimals: `100 * price` is exact.
@@ -484,7 +493,7 @@ Constraint(equal(joinRef(global(c0_price)), decimal("19.99")));
 * An optimization objective over decimals reports the scaled value in `ClaferOptimizer.optimalValues()`, e.g. `1449` for `14.49`.
 * Not supported yet: `product` of decimals, and a set of integers compared with a set of decimals (single values and constants are converted).
 
-`src/test/resources/optimization/decimal_bike.js` is an attributed feature model with decimal costs, a rounded tax and an average weight.
+`src/test/resources/optimization/decimal_bike.js` is an attributed feature model with decimal costs, a rounded tax and an average weight, as compiled by clafer; the model is in its first lines.
 
 ## Semantic Differences with the Alloy backend
 
