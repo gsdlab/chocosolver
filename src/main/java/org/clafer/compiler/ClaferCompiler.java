@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.chocosolver.solver.Model;
-import org.clafer.choco.ResetKeepsLimitsSolver;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.limits.NodeCounter;
 import org.chocosolver.solver.search.strategy.Search;
@@ -238,7 +237,7 @@ public class ClaferCompiler {
 
     public static ClaferSolver compile(AstModel in, Scopable scope, ClaferOption options) {
         try {
-            Model model = ResetKeepsLimitsSolver.newModel();
+            Model model = new Model();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
@@ -262,7 +261,7 @@ public class ClaferCompiler {
     public static ClaferOptimizer compile(AstModel in, Scopable scope, Objective[] objectives, ClaferOption options) {
         Check.noNullsNotEmpty(objectives);
         try {
-            Model model = ResetKeepsLimitsSolver.newModel();
+            Model model = new Model();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(
@@ -317,7 +316,7 @@ public class ClaferCompiler {
     public static ClaferAsserter compile(AstModel in, Scopable scope, Assertion[] assertions, ClaferOption options) {
         Check.noNullsNotEmpty(assertions);
         try {
-            Model model = ResetKeepsLimitsSolver.newModel();
+            Model model = new Model();
             IrModule module = new IrModule();
 
             AstSolutionMap astSolution = AstCompiler.compile(
@@ -345,7 +344,7 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOption options) {
-        Model model = ResetKeepsLimitsSolver.newModel();
+        Model model = new Model();
         IrModule module = new IrModule();
 
         AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,

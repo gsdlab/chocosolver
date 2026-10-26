@@ -1069,16 +1069,16 @@ public class Constraints {
             throw new IllegalArgumentException();
         }
         List<Propagator<IntVar>> propagators = new ArrayList<>();
-        // See ICF.element(value, table, index, offset);
+        // See Model.element(value, table, index, offset);
         // TODO: Needs to add the same propagator twice because the implementation
         // is not guaranteed to be idempotent. If it ever becomes idempotent, then
         // follow their implementation.
-        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0));
-        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index, 0));
+        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index));
+        propagators.add(new PropElementV_fast(valueLength, arrayLengths, index));
         for (int i = 0; i < value.length; i++) {
             IntVar[] charsAt = charsAt(index.getModel(), array, i);
-            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0));
-            propagators.add(new PropElementV_fast(value[i], charsAt, index, 0));
+            propagators.add(new PropElementV_fast(value[i], charsAt, index));
+            propagators.add(new PropElementV_fast(value[i], charsAt, index));
         }
         return new Constraint("Element",
                 propagators.toArray(new Propagator<?>[propagators.size()]));
@@ -1119,12 +1119,13 @@ public class Constraints {
         propagators.leq(suffixLength, wordLength);
         for (int i = 0; i < suffix.length; i++) {
             IntVar[] pad = pad(word, prefixLength.getUB() + i + 1, model.intVar(0));
-            // See ICF.element(value, table, index, offset);
+            IntVar padIndex = model.offset(prefixLength, i);
+            // See Model.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
             // follow their implementation.
-            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i));
-            propagators.post(new PropElementV_fast(suffix[i], pad, prefixLength, -i));
+            propagators.post(new PropElementV_fast(suffix[i], pad, padIndex));
+            propagators.post(new PropElementV_fast(suffix[i], pad, padIndex));
         }
         return propagators.toConstraint("Suffix", suffixLength.getModel());
     }
@@ -1144,12 +1145,13 @@ public class Constraints {
         propagators.add(new PropSamePrefix(leftLength, left, concat));
         for (int i = 0; i < right.length; i++) {
             IntVar[] pad = pad(concat, left.length + i + 1, leftLength.getModel().intVar(0));
-            // See ICF.element(value, table, index, offset);
+            IntVar padIndex = leftLength.getModel().offset(leftLength, i);
+            // See Model.element(value, table, index, offset);
             // TODO: Needs to add the same propagator twice because the implementation
             // is not guaranteed to be idempotent. If it ever becomes idempotent, then
             // follow their implementation.
-            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i));
-            propagators.add(new PropElementV_fast(right[i], pad, leftLength, -i));
+            propagators.add(new PropElementV_fast(right[i], pad, padIndex));
+            propagators.add(new PropElementV_fast(right[i], pad, padIndex));
         }
         return new Constraint("Concat",
                 propagators.toArray(new Propagator<?>[propagators.size()]));

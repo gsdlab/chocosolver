@@ -1,3 +1,8 @@
+# chocosolver version 0.5.5, unreleased
+
+* Upgrade to choco-solver 6.0.2. The instances, Pareto fronts and the search of the default strategy are the same as with 4.10.18, and so are the times; `pickOnDom` and `conflictHistory` finish models that hit the time limit before.
+* Java API: Choco's solver is final, so `ResetKeepsLimitsSolver` is replaced by `ResetKeepsLimits`. Time limits set with `ClaferSearch.limitTime` still hold across the restarts of the search; limits set on the Choco solver directly do not.
+
 # chocosolver version 0.5.4, Oct 25, 2026
 
 * Models in several files: `--import=FILE` compiles the `.cfr` model together with the given file or URL, as the compiler's option does ([clafer#100](https://github.com/gsdlab/clafer/issues/100)); the files that the model imports in its `//# OPTIONS` directive are compiled with it too.

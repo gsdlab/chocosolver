@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.chocosolver.solver.Model;
-import org.clafer.choco.ResetKeepsLimitsSolver;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.variables.BoolVar;
 import org.clafer.assertion.Assertion;
@@ -33,7 +32,7 @@ public class ClaferAsserter implements ClaferSearch {
     }
 
     public ClaferAsserter() {
-        Model model = ResetKeepsLimitsSolver.newModel();
+        Model model = new Model();
         this.solver = model.getSolver();
         this.solutionMap = null;
         this.assertions = null;

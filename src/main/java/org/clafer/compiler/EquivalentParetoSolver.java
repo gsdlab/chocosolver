@@ -3,6 +3,7 @@ package org.clafer.compiler;
 import java.util.Arrays;
 import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
+import org.clafer.choco.ResetKeepsLimits;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.SetVar;
@@ -44,7 +45,7 @@ public class EquivalentParetoSolver implements ClaferOptimizer {
             paretoSolution = optimizer.solution();
         } else {
             if (paretoCount == 1) {
-                solver.reset();
+                ResetKeepsLimits.reset(solver);
                 solver.getModel().clearObjective();
                 IntVar[] scores = optimizer.getScores();
                 int[] paretoPoint = optimizer.optimalValues();
