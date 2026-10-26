@@ -85,6 +85,11 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     @Override
+    public AstExpr visit(AstDecimalConstant ast, T a) {
+        return ast;
+    }
+
+    @Override
     public AstExpr visit(AstJoin ast, T a) {
         return join(rewrite(ast.getLeft(), a), ast.getRight());
     }

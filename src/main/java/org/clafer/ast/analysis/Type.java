@@ -96,6 +96,10 @@ public class Type implements Iterable<ProductType> {
         return unionType.size() == 1 && unionType.iterator().next().isString();
     }
 
+    public boolean isDecimal() {
+        return unionType.size() == 1 && unionType.iterator().next().isDecimal();
+    }
+
     @Override
     public Iterator<ProductType> iterator() {
         return unionType.iterator();

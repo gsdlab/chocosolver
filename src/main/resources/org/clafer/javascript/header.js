@@ -6,6 +6,8 @@ var intRange = rc.setIntRange.bind(rc);
 var mulRange = rc.setMulRange.bind(rc);
 var stringLength = rc.setStringLength.bind(rc);
 var charRange = rc.setCharRange.bind(rc);
+var decimalScale = rc.setDecimalScale.bind(rc);
+var decimalRange = rc.setDecimalRange.bind(rc);
 var Clafer = rc.getModel().addChild.bind(rc.getModel());
 var Abstract = rc.getModel().addAbstract.bind(rc.getModel()); // Some Javascript engine versions has "abstract" as a keyword.
 var Constraint = rc.getModel().addConstraint.bind(rc.getModel());
@@ -17,10 +19,15 @@ var assert = rc.addAssertion.bind(rc);
 var Int = Asts.IntType; // Some Javascript engine versions has "int" as a keyword.
 var Bool = Asts.BoolType;
 var string = Asts.StringType; // Some Javascript engine versions has "String" as a builtin function.
+var Decimal = Asts.DecimalType;
 
 var $this = Asts.$this;
 var global = Asts.global;
 var constant = Asts.constant;
+// A decimal constant as written, e.g. decimal("19.99"), so that it is exact.
+function decimal(value) {
+    return Asts.decimal(String(value));
+}
 var join = Asts.join;
 var joinParent = Asts.joinParent;
 var joinRef = Asts.joinRef;

@@ -1,5 +1,6 @@
 package org.clafer.javascript;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,6 +72,18 @@ public class JavascriptContext {
 
     public void setCharRange(char charLow, char charHigh) {
         scopeBuilder.charLow(charLow).charHigh(charHigh);
+    }
+
+    public void setDecimalScale(int decimalScale) {
+        scopeBuilder.decimalScale(decimalScale);
+    }
+
+    /**
+     * @param decimalLow the lowest decimal, as written, e.g. "-10.5"
+     * @param decimalHigh the highest decimal, as written
+     */
+    public void setDecimalRange(String decimalLow, String decimalHigh) {
+        scopeBuilder.decimalLow(new BigDecimal(decimalLow)).decimalHigh(new BigDecimal(decimalHigh));
     }
 
     public Scope getScope(Scriptable engine) {

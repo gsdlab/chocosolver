@@ -1301,7 +1301,9 @@ public class Irs {
         Domain domain;
         long m0 = multiplicand.getDomain().size();
         long m1 = multiplier.getDomain().size();
-        if (m0 * m1 <= 16 || m0 * m1 <= intRange.size()) {
+        // Enumerate the products of small domains, but not of large ones, e.g.
+        // a decimal times a constant over the default range of decimals.
+        if (m0 * m1 <= 16 || (m0 * m1 <= intRange.size() && m0 * m1 <= 1 << 16)) {
             TIntSet domainSet = new TIntHashSet();
             PrimitiveIterator.OfInt iter0 = multiplicand.getDomain().iterator();
             // TODO: implement domain.mul
@@ -1381,6 +1383,84 @@ public class Irs {
         int min = Util.min(low, -low, high, -high);
         int max = Util.max(low, -low, high, -high);
         return new IrDiv(dividend, divisor, boundDomain(min, max));
+    }
+
+    /**
+     * Multiplication or division of decimals scaled by {@code one}, rounded
+     * half away from zero.
+     *
+     * @param op multiplication or division
+     * @param left the multiplicand or dividend
+     * @param right the multiplier or divisor
+     * @param one the integer representing the decimal 1
+     * @param decimalRange the range of decimals, limits the result
+     * @return {@code round(left * right / one)} or
+     * {@code round(left * one / right)}
+     */
+    public static IrIntExpr decimalArithm(IrDecimalArithm.Op op, IrIntExpr left, IrIntExpr right,
+            int one, Domain decimalRange) {
+        boolean mul = op == IrDecimalArithm.Op.Mul;
+        if (left.isConstant() && right.isConstant()) {
+            long l = left.getLowBound();
+            long r = right.getLowBound();
+            if (!mul && r == 0) {
+                throw new UnsatisfiableException();
+            }
+            long value = mul ? Util.divRound(l * r, one) : Util.divRound(l * one, r);
+            if (value < decimalRange.getLowBound() || value > decimalRange.getHighBound()) {
+                throw new UnsatisfiableException();
+            }
+            return constant((int) value);
+        }
+        if (right.isConstant() && right.getLowBound() == one) {
+            return left;
+        }
+        if (mul && left.isConstant() && left.getLowBound() == one) {
+            return right;
+        }
+        if (mul && ((left.isConstant() && left.getLowBound() == 0)
+                || (right.isConstant() && right.getLowBound() == 0))) {
+            return Zero;
+        }
+        long low = Long.MAX_VALUE;
+        long high = Long.MIN_VALUE;
+        long[] ls = {left.getLowBound(), left.getHighBound()};
+        if (mul) {
+            for (long l : ls) {
+                for (long r : new long[]{right.getLowBound(), right.getHighBound()}) {
+                    long value = Util.divRound(l * r, one);
+                    low = Math.min(low, value);
+                    high = Math.max(high, value);
+                }
+            }
+        } else {
+            // The divisor is not zero: the bounds of each sign of the divisor.
+            List<long[]> parts = new ArrayList<>(2);
+            if (right.getLowBound() < 0) {
+                parts.add(new long[]{right.getLowBound(), Math.min(right.getHighBound(), -1)});
+            }
+            if (right.getHighBound() > 0) {
+                parts.add(new long[]{Math.max(right.getLowBound(), 1), right.getHighBound()});
+            }
+            if (parts.isEmpty()) {
+                throw new UnsatisfiableException();
+            }
+            for (long[] part : parts) {
+                for (long l : ls) {
+                    for (long r : part) {
+                        long value = Util.divRound(l * one, r);
+                        low = Math.min(low, value);
+                        high = Math.max(high, value);
+                    }
+                }
+            }
+        }
+        low = Math.max(low, decimalRange.getLowBound());
+        high = Math.min(high, decimalRange.getHighBound());
+        if (low > high) {
+            throw new UnsatisfiableException();
+        }
+        return new IrDecimalArithm(op, left, right, one, decimalRange, boundDomain((int) low, (int) high));
     }
 
     public static IrIntExpr mod(IrIntExpr dividend, IrIntExpr divisor) {

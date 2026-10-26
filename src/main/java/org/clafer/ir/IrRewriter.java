@@ -4,6 +4,7 @@ import org.clafer.common.Util;
 import static org.clafer.ir.Irs.acyclic;
 import static org.clafer.ir.Irs.add;
 import static org.clafer.ir.Irs.allDifferent;
+import static org.clafer.ir.Irs.decimalArithm;
 import static org.clafer.ir.Irs.and;
 import static org.clafer.ir.Irs.array;
 import static org.clafer.ir.Irs.arrayToSet;
@@ -483,6 +484,15 @@ public abstract class IrRewriter<T>
         IrIntExpr divisor = rewrite(ir.getDivisor(), a);
         return changed(ir.getDividend(), dividend) || changed(ir.getDivisor(), divisor)
                 ? div(dividend, divisor)
+                : ir;
+    }
+
+    @Override
+    public IrIntExpr visit(IrDecimalArithm ir, T a) {
+        IrIntExpr left = rewrite(ir.getLeft(), a);
+        IrIntExpr right = rewrite(ir.getRight(), a);
+        return changed(ir.getLeft(), left) || changed(ir.getRight(), right)
+                ? decimalArithm(ir.getOp(), left, right, ir.getOne(), ir.getDecimalRange())
                 : ir;
     }
 

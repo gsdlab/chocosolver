@@ -56,6 +56,10 @@ public class ProductType implements Iterable<AstClafer> {
         return types.length == 1 && types[0] instanceof AstStringClafer;
     }
 
+    public boolean isDecimal() {
+        return types.length == 1 && types[0] instanceof AstDecimalClafer;
+    }
+
     public static ProductType getLowestCommonSupertype(Collection<ProductType> ts) {
         return getLowestCommonSupertype(ts.toArray(new ProductType[ts.size()]));
     }

@@ -49,15 +49,6 @@ public class ScopeAnalyzer implements Analyzer {
                 }
             }
         }
-        return analysis.setScope(new Scope(
-                optimizedScope,
-                scope.getDefaultScope(),
-                scope.getIntLow(),
-                scope.getIntHigh(),
-                scope.getMulLow(),
-                scope.getMulHigh(),
-                scope.getStringLength(),
-                scope.getCharLow(),
-                scope.getCharHigh()));
+        return analysis.setScope(scope.withScopes(optimizedScope));
     }
 }

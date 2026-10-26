@@ -1,5 +1,6 @@
 package org.clafer.scope;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import org.clafer.ast.AstClafer;
@@ -26,9 +27,13 @@ public class ScopeBuilder implements Scopable {
     private int stringLength = 10;
     private char charLow = 0x20;
     private char charHigh = 0x7e;
+    private int decimalScale = 0;
+    private BigDecimal decimalLow = null;
+    private BigDecimal decimalHigh = null;
 
     ScopeBuilder(Map<AstClafer, Integer> scope, int defaultScope, int intLow, int intHigh,
-            Integer mulLow, Integer mulHigh, int stringLength, char charLow, char charHigh) {
+            Integer mulLow, Integer mulHigh, int stringLength, char charLow, char charHigh,
+            int decimalScale, BigDecimal decimalLow, BigDecimal decimalHigh) {
         this.scope = new HashMap<>(scope);
         this.defaultScope = defaultScope;
         this.intLow = intLow;
@@ -38,6 +43,9 @@ public class ScopeBuilder implements Scopable {
         this.stringLength = stringLength;
         this.charLow = charLow;
         this.charHigh = charHigh;
+        this.decimalScale = decimalScale;
+        this.decimalLow = decimalLow;
+        this.decimalHigh = decimalHigh;
     }
 
     ScopeBuilder() {
@@ -239,6 +247,41 @@ public class ScopeBuilder implements Scopable {
     }
 
     /**
+     * Set the number of fractional digits of decimals.
+     *
+     * @param decimalScale the decimal scale
+     * @return this builder
+     */
+    public ScopeBuilder decimalScale(int decimalScale) {
+        this.decimalScale = decimalScale;
+        return this;
+    }
+
+    /**
+     * Set the lowest (inclusive) decimal used for solving. Without it, the
+     * lowest decimal that fits Choco's integers at the decimal scale.
+     *
+     * @param decimalLow the lowest decimal
+     * @return this builder
+     */
+    public ScopeBuilder decimalLow(BigDecimal decimalLow) {
+        this.decimalLow = decimalLow;
+        return this;
+    }
+
+    /**
+     * Set the highest (inclusive) decimal used for solving. Without it, the
+     * highest decimal that fits Choco's integers at the decimal scale.
+     *
+     * @param decimalHigh the highest decimal
+     * @return this builder
+     */
+    public ScopeBuilder decimalHigh(BigDecimal decimalHigh) {
+        this.decimalHigh = decimalHigh;
+        return this;
+    }
+
+    /**
      * Finalizes all the decisions made in the builder. Further changes to this
      * builder is permitted for building more scopes, but the returned scope
      * will not be affected.
@@ -248,6 +291,7 @@ public class ScopeBuilder implements Scopable {
     @Override
     public Scope toScope() {
         return new Scope(scope, defaultScope, intLow, intHigh,
-                mulLow, mulHigh, stringLength, charLow, charHigh);
+                mulLow, mulHigh, stringLength, charLow, charHigh,
+                decimalScale, decimalLow, decimalHigh);
     }
 }

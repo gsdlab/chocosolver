@@ -47,6 +47,8 @@ import org.clafer.choco.constraint.propagator.PropJoinFunction;
 import org.clafer.choco.constraint.propagator.PropJoinFunctionCard;
 import org.clafer.choco.constraint.propagator.PropJoinInjectiveRelationCard;
 import org.clafer.choco.constraint.propagator.PropJoinRelation;
+import org.clafer.choco.constraint.propagator.PropDecimalDiv;
+import org.clafer.choco.constraint.propagator.PropDecimalMul;
 import org.clafer.choco.constraint.propagator.PropLength;
 import org.clafer.choco.constraint.propagator.PropLexChainChannel;
 import org.clafer.choco.constraint.propagator.PropLone;
@@ -984,6 +986,37 @@ public class Constraints {
         return new Constraint("mask",
                 new PropMask(set, masked, from, to),
                 new PropMaskCard(set, setCard, masked, maskedCard, from, to));
+    }
+
+    /**
+     * A constraint enforcing
+     * {@code product = round(multiplicand * multiplier / one)}, rounded half
+     * away from zero: the product of decimals scaled by {@code one}.
+     *
+     * @param multiplicand the multiplicand
+     * @param multiplier the multiplier
+     * @param product the product
+     * @param one the integer representing the decimal 1
+     * @return constraint {@code product = round(multiplicand * multiplier / one)}
+     */
+    public static Constraint decimalMul(IntVar multiplicand, IntVar multiplier, IntVar product, int one) {
+        return new Constraint("decimalMul", new PropDecimalMul(multiplicand, multiplier, product, one));
+    }
+
+    /**
+     * A constraint enforcing
+     * {@code quotient = round(dividend * one / divisor)}, rounded half away
+     * from zero, and {@code divisor != 0}: the quotient of decimals scaled by
+     * {@code one}.
+     *
+     * @param dividend the dividend
+     * @param divisor the divisor
+     * @param quotient the quotient
+     * @param one the integer representing the decimal 1
+     * @return constraint {@code quotient = round(dividend * one / divisor)}
+     */
+    public static Constraint decimalDiv(IntVar dividend, IntVar divisor, IntVar quotient, int one) {
+        return new Constraint("decimalDiv", new PropDecimalDiv(dividend, divisor, quotient, one));
     }
 
     /**

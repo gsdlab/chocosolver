@@ -1,6 +1,7 @@
 package org.clafer.instance;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -104,6 +105,9 @@ public class InstanceClafer {
             if (getRef() instanceof InstanceClafer) {
                 InstanceClafer refClafer = (InstanceClafer) getRef();
                 out.append(Utils.simpleName(refClafer.getType().getName())).append(Utils.countSuffix(refClafer.getId()));
+            } else if (getRef() instanceof BigDecimal) {
+                // Never scientific notation, e.g. 0.0000001 rather than 1E-7.
+                out.append(((BigDecimal) getRef()).toPlainString());
             } else {
                 out.append(getRef().toString());
             }

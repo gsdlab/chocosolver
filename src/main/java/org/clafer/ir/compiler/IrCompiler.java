@@ -39,6 +39,7 @@ import org.clafer.ir.IrConcat;
 import org.clafer.ir.IrConnected;
 import org.clafer.ir.IrContainsSetTernary;
 import org.clafer.ir.IrCount;
+import org.clafer.ir.IrDecimalArithm;
 import org.clafer.ir.IrDiv;
 import org.clafer.ir.IrElement;
 import org.clafer.ir.IrExpr;
@@ -224,10 +225,18 @@ public class IrCompiler {
             return model.boolVar(name);
         }
         if (domain.isBounded()) {
-            return model.intVar(name, domain.getLowBound(), domain.getHighBound(), false);
+            // An enumerated domain of a large interval, e.g. the default range of
+            // decimals, would take a bitset per variable.
+            return model.intVar(name, domain.getLowBound(), domain.getHighBound(),
+                    domain.size() > LargeDomain);
         }
         return model.intVar(name, domain.getValues());
     }
+
+    /**
+     * Intervals with more values are bounded domains in Choco.
+     */
+    private static final int LargeDomain = 1 << 16;
 
     private SetVar setVar(String name, Domain env, Domain ker) {
         if (env.size() == ker.size()) {
@@ -1228,6 +1237,21 @@ public class IrCompiler {
                 return quotient;
             }
             return _div(compile(dividend), compile(divisor), reify);
+        }
+
+        @Override
+        public Object visit(IrDecimalArithm ir, IntVar reify) {
+            IntVar left = compile(ir.getLeft());
+            IntVar right = compile(ir.getRight());
+            IntVar result = reify == null ? numIntVar("Decimal" + ir.getOp(), ir.getDomain()) : reify;
+            Constraint constraint = ir.getOp() == IrDecimalArithm.Op.Mul
+                    ? Constraints.decimalMul(left, right, result, ir.getOne())
+                    : Constraints.decimalDiv(left, right, result, ir.getOne());
+            if (reify == null) {
+                post(constraint);
+                return result;
+            }
+            return constraint;
         }
 
         @Override

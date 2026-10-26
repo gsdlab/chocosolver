@@ -1,5 +1,6 @@
 package org.clafer.compiler;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,7 @@ import org.chocosolver.solver.Solution;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstDecimalClafer;
 import org.clafer.ast.AstStringClafer;
 import org.clafer.ast.compiler.AstSolutionMap;
 import org.clafer.collection.Pair;
@@ -107,6 +109,10 @@ public class ClaferSolutionMap {
                 IrStringVar refIrVar = astSolution.getRefStrings(clafer)[id];
                 String value = irSolution.getValue(refIrVar);
                 ref = new Pair<>(targetType, value);
+            } else if (targetType instanceof AstDecimalClafer) {
+                IrIntVar refIrVar = astSolution.getRefVars(clafer)[id];
+                int value = irSolution.getValue(refIrVar);
+                ref = new Pair<>(targetType, toDecimal(astSolution.getAnalysis().getScope().unscaleDecimal(value)));
             } else {
                 IrIntVar refIrVar = astSolution.getRefVars(clafer)[id];
                 Integer value = irSolution.getValue(refIrVar);
@@ -124,6 +130,15 @@ public class ClaferSolutionMap {
                     children, referenceMap, irSolution);
         }
         return ref;
+    }
+
+    /**
+     * The decimal in its shortest form with at least one fractional digit,
+     * e.g. 199.0 and 12.5.
+     */
+    private static BigDecimal toDecimal(BigDecimal value) {
+        BigDecimal shortest = value.stripTrailingZeros();
+        return shortest.scale() < 1 ? shortest.setScale(1) : shortest;
     }
 
     public AstSolutionMap getAstSolution() {

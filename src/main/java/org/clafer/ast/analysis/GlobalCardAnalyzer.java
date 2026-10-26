@@ -17,6 +17,7 @@ import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstRef;
 import org.clafer.ast.AstUtil;
+import static org.clafer.ast.Asts.DecimalType;
 import static org.clafer.ast.Asts.IntType;
 import org.clafer.ast.Card;
 import org.clafer.choco.constraint.Constraints;
@@ -53,6 +54,7 @@ public class GlobalCardAnalyzer implements Analyzer {
     public Analysis analyze(Analysis analysis) {
         Map<AstClafer, Card> globalCardMap = new HashMap<>();
         globalCardMap.put(IntType, new Card(0, analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1));
+        globalCardMap.put(DecimalType, new Card(0, analysis.getScope().getDecimalHigh() - analysis.getScope().getDecimalLow() + 1));
         List<Pair<AstClafer, Integer>> insufficientScopes = new ArrayList<>();
 
         // Step 1. Simple pass.
