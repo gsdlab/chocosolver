@@ -457,6 +457,35 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
 If the tool does not start, the reason may be either a syntax error in the `backends.json` file, or the paths specified in it are not correct or lead to an inaccessible `jar` file.
 Also, check the `eXecute` permission on the `jar` file.
 
+## Decimals
+
+A prototype in this backend: the Clafer compiler does not generate decimals yet, so models with decimals are written in the Javascript format.
+A `decimal` has a fixed number of fractional digits, the decimal scale of the model, and is solved as an integer: with 2 digits, `19.99` is `1999`.
+`real` (the mathematical reals) and `double` (IEEE 754 floating point) stay unsupported.
+
+```
+decimalScale(2);                        // the number of fractional digits
+decimalRange("0", "1000");              // optional; the default is the largest range that fits
+c0_price = Clafer("c0_price").withCard(1, 1);
+c0_price.refTo(Decimal);
+Constraint(equal(joinRef(global(c0_price)), decimal("19.99")));
+```
+
+`--decimal-digits` overrides the scale on the command line.
+
+* `+`, `-`, comparisons, `%`, `sum`, `min`, `max`, the set operations and `if then else` are exact.
+  Integers mix with decimals: `100 * price` is exact.
+* `decimal * decimal` and divisions with a decimal round to the scale, half away from zero: `19.99 * 0.13 = 2.5987` is `2.6`, and `20.0 / 3` is `6.67`.
+  A constraint holds only on that grid: `x * x = 2` has no instance with 2 digits.
+  A division of integers stays an integer division: `2 / 3` is `0`.
+* The default range is the largest whose scaled values fit Choco's integers: about ±214748.35 with 2 digits, ±21474835 with 0.
+  A decimal reference cannot be beyond it, so an instance whose total does not fit is excluded.
+* Instances print decimals in their shortest form with at least one fractional digit: `199.0`, `12.5`.
+* An optimization objective over decimals reports the scaled value in `ClaferOptimizer.optimalValues()`, e.g. `1449` for `14.49`.
+* Not supported yet: `product` of decimals, and a set of integers compared with a set of decimals (single values and constants are converted).
+
+`src/test/resources/optimization/decimal_bike.js` is an attributed feature model with decimal costs, a rounded tax and an average weight.
+
 ## Semantic Differences with the Alloy backend
 
 Consider the following constraint.
