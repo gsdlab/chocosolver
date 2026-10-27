@@ -295,6 +295,13 @@ public abstract class IrTraverser<T>
     }
 
     @Override
+    public Void visit(IrDecimalArithm ir, T a) {
+        traverse(ir.getLeft(), a);
+        traverse(ir.getRight(), a);
+        return null;
+    }
+
+    @Override
     public Void visit(IrMod ir, T a) {
         traverse(ir.getDividend(), a);
         traverse(ir.getDivisor(), a);

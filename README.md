@@ -97,6 +97,8 @@ java -jar chocosolver.jar --help`
 
 Option                                  Description
 ------                                  -----------
+--decimal-digits <Integer>              Specify the number of fractional digits of decimals
+                                          (overrides the model's).
 --file <File: Clafer model file (.cfr)  Input file in .cfr or .js format.
   or Clafer Javascript file (.js)>
 --help                                  Show help.
@@ -454,6 +456,45 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
 * If you done your configuration properly, the tool will restart successfully and the backend should be listed in the `Backends` dropdown list.
 If the tool does not start, the reason may be either a syntax error in the `backends.json` file, or the paths specified in it are not correct or lead to an inaccessible `jar` file.
 Also, check the `eXecute` permission on the `jar` file.
+
+## Decimals
+
+A `decimal` has a fixed number of fractional digits, the decimal scale of the model, and is solved as an integer: with 2 digits, `19.99` is `1999`.
+`real` (the mathematical reals) and `double` (IEEE 754 floating point) stay unsupported.
+Clafer 0.5.5 compiles decimals to the Javascript format ([clafer#102](https://github.com/gsdlab/clafer/pull/102)), so a `.cfr` model with decimals works with `--file`:
+
+```
+price -> decimal = 19.99
+```
+
+compiles to
+
+```
+defaultScope(1);
+stringLength(16);
+decimalScale(2);
+
+c0_price = Clafer("c0_price").withCard(1, 1);
+c0_price.refToUnique(Decimal);
+Constraint(implies(some(global(c0_price)), equal(joinRef(global(c0_price)), decimal("19.99"))));
+```
+
+`decimalScale(2)` is the number of fractional digits: clafer's default is the most fractional digits of the literals, and `--decimal-digits` of either tool overrides it.
+`decimalRange("0", "1000")` limits the decimals; without it, the range is the largest that fits.
+
+* `+`, `-`, comparisons, `%`, `sum`, `min`, `max`, the set operations and `if then else` are exact.
+  Integers mix with decimals: `100 * price` is exact.
+* `decimal * decimal` and divisions with a decimal round to the scale, half away from zero: `19.99 * 0.13 = 2.5987` is `2.6`, and `20.0 / 3` is `6.67`.
+  A division of integers stays an integer division: `2 / 3` is `0`.
+* Equality is exact, after rounding, so a constraint holds only on the grid of the scale: `x * x = 2` has no instance with 2 digits, since `1.41 * 1.41` is `1.99` and `1.42 * 1.42` is `2.02`.
+  Either use more digits (with `--decimal-digits=4`, `x` is `±1.4142`), or allow a tolerance with two inequalities: `[ x * x >= 1.98 && x * x <= 2.02 ]` gives `x` is `±1.41` and `±1.42`.
+* The default range is the largest whose scaled values fit Choco's integers: about ±214748.35 with 2 digits, ±21474835 with 0.
+  A decimal reference cannot be beyond it, so an instance whose total does not fit is excluded.
+* Instances print decimals in their shortest form with at least one fractional digit: `199.0`, `12.5`.
+* An optimization objective over decimals reports the scaled value in `ClaferOptimizer.optimalValues()`, e.g. `1449` for `14.49`.
+* Not supported yet: `product` of decimals, and a set of integers compared with a set of decimals (single values and constants are converted).
+
+`src/test/resources/optimization/decimal_bike.js` is an attributed feature model with decimal costs, a rounded tax and an average weight, as compiled by clafer; the model is in its first lines.
 
 ## Semantic Differences with the Alloy backend
 

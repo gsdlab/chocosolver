@@ -58,7 +58,17 @@ public class AstArithm implements AstSetExpr {
         Add("+"),
         Sub("-"),
         Mul("*"),
-        Div("/");
+        Div("/"),
+        /**
+         * Multiplication of decimals, rounded half away from zero to the
+         * decimal scale. Introduced by type analysis.
+         */
+        DecimalMul("*"),
+        /**
+         * Division of decimals, rounded half away from zero to the decimal
+         * scale. Introduced by type analysis.
+         */
+        DecimalDiv("/");
         private final String syntax;
 
         private Op(String syntax) {

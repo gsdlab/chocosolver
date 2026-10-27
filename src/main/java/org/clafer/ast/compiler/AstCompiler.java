@@ -24,6 +24,7 @@ import org.clafer.ast.AstConcat;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConnected;
 import org.clafer.ast.AstConstant;
+import org.clafer.ast.AstDecimalConstant;
 import org.clafer.ast.AstConstraint;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstDifference;
@@ -34,6 +35,7 @@ import org.clafer.ast.AstExpr;
 import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
+import org.clafer.ast.AstDecimalClafer;
 import org.clafer.ast.AstIntClafer;
 import org.clafer.ast.AstIntersection;
 import org.clafer.ast.AstInverse;
@@ -106,6 +108,7 @@ import org.clafer.graph.KeyGraph;
 import org.clafer.graph.Vertex;
 import org.clafer.ir.IrBoolExpr;
 import org.clafer.ir.IrBoolVar;
+import org.clafer.ir.IrDecimalArithm;
 import org.clafer.ir.IrExpr;
 import org.clafer.ir.IrIntArrayExpr;
 import org.clafer.ir.IrIntExpr;
@@ -137,6 +140,7 @@ import static org.clafer.ir.Irs.constant;
 import static org.clafer.ir.Irs.count;
 import static org.clafer.ir.Irs.countNotEqual;
 import static org.clafer.ir.Irs.difference;
+import static org.clafer.ir.Irs.decimalArithm;
 import static org.clafer.ir.Irs.div;
 import static org.clafer.ir.Irs.domainInt;
 import static org.clafer.ir.Irs.domainRestriction;
@@ -812,7 +816,9 @@ public class AstCompiler {
                     IrIntExpr size
                             = ref.getTargetType() instanceof AstIntClafer
                                     ? constant(analysis.getScope().getIntHigh() - analysis.getScope().getIntLow() + 1)
-                                    : card(sets.get(ref.getTargetType()));
+                                    : ref.getTargetType() instanceof AstDecimalClafer
+                                            ? constant(analysis.getScope().getDecimalHigh() - analysis.getScope().getDecimalLow() + 1)
+                                            : card(sets.get(ref.getTargetType()));
                     for (IrSetExpr sibling : siblingSet) {
                         module.addConstraint(lessThanEqual(card(sibling), size));
                     }
@@ -1072,7 +1078,7 @@ public class AstCompiler {
                     // a sub clafer that refines the reference to a subtype of the target points
                     // into the subtype; this clafer's pointers point into the target
                     AstClafer subTarget = AstUtil.getInheritedRef(sub).getTargetType();
-                    if (!subTarget.equals(ref.getTargetType()) && !(subTarget instanceof AstIntClafer)) {
+                    if (!subTarget.equals(ref.getTargetType()) && !subTarget.isPrimitive()) {
                         subRef = retargetRefPointers(subRef, subTarget, ref.getTargetType());
                     }
                     int offset = getOffset(clafer, sub);
@@ -1262,6 +1268,11 @@ public class AstCompiler {
         @Override
         public IrExpr visit(AstStringConstant ast, Void a) {
             return constant(ast.getValue());
+        }
+
+        @Override
+        public IrExpr visit(AstDecimalConstant ast, Void a) {
+            throw new AstException("Decimal " + ast + " not scaled by type analysis");
         }
 
         @Override
@@ -1620,7 +1631,8 @@ public class AstCompiler {
                     return sub(operands);
                 case Mul:
                     IrBoolVar member = memberships.get(thisType)[thisId];
-                    Domain mulRange = getMulRange();
+                    // A decimal times an integer is limited by the range of decimals.
+                    Domain mulRange = getType(ast).isDecimal() ? getDecimalRange() : getMulRange();
                     IrIntExpr product = operands[0];
                     for (int i = 1; i < operands.length; i++) {
                         IrIntExpr operand = operands[i];
@@ -1640,6 +1652,24 @@ public class AstCompiler {
                                 operand.getDomain().contains(0) ? ternary(member, operand, One) : operand);
                     }
                     return quotient;
+                case DecimalMul:
+                    IrIntExpr decimalProduct = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        decimalProduct = decimalArithm(IrDecimalArithm.Op.Mul, decimalProduct, operands[i],
+                                getDecimalOne(), getDecimalRange());
+                    }
+                    return decimalProduct;
+                case DecimalDiv:
+                    member = memberships.get(thisType)[thisId];
+                    IrIntExpr decimalQuotient = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        IrIntExpr operand = operands[i];
+                        // The divisor is 1.0 where this Clafer does not exist.
+                        decimalQuotient = decimalArithm(IrDecimalArithm.Op.Div, decimalQuotient,
+                                operand.getDomain().contains(0) ? ternary(member, operand, constant(getDecimalOne())) : operand,
+                                getDecimalOne(), getDecimalRange());
+                    }
+                    return decimalQuotient;
                 default:
                     throw new AstException();
             }
@@ -2320,6 +2350,9 @@ public class AstCompiler {
      * @return the integer value for uninitialized.
      */
     private int getUninitalizedRef(AstClafer clafer) {
+        if (clafer instanceof AstDecimalClafer) {
+            return analysis.getScope().getDecimalHigh() + 1;
+        }
         return clafer instanceof AstIntClafer
                 ? analysis.getScope().getIntHigh() + 1
                 : getScope(clafer);
@@ -2339,10 +2372,22 @@ public class AstCompiler {
         return Domains.boundDomain(scope.getMulLow(), scope.getMulHigh());
     }
 
+    private Domain getDecimalRange() {
+        Scope scope = analysis.getScope();
+        return Domains.boundDomain(scope.getDecimalLow(), scope.getDecimalHigh());
+    }
+
+    private int getDecimalOne() {
+        return analysis.getScope().getDecimalOne();
+    }
+
     private Domain getRefRange(AstRef ref) {
         AstClafer target = ref.getTargetType();
         if (target instanceof AstIntClafer) {
             return getIntRange();
+        }
+        if (target instanceof AstDecimalClafer) {
+            return getDecimalRange();
         }
         return fromToDomain(0, getScope(target));
     }

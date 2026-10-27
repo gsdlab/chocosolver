@@ -835,6 +835,23 @@ public class Util {
     }
 
     /**
+     * Division rounded half away from zero, e.g. {@code 25 / 10 = 3} and
+     * {@code -25 / 10 = -3}.
+     *
+     * @param a the dividend
+     * @param b the divisor, not zero
+     * @return the rounded quotient
+     */
+    public static long divRound(long a, long b) {
+        long quotient = a / b;
+        long remainder = a % b;
+        if (2 * Math.abs(remainder) >= Math.abs(b)) {
+            quotient += (a < 0) == (b < 0) ? 1 : -1;
+        }
+        return quotient;
+    }
+
+    /**
      * Enumerate the iterator and return the values discovered. The iterator is
      * exhausted on return.
      *

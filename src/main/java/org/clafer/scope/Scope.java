@@ -1,5 +1,8 @@
 package org.clafer.scope;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -74,12 +77,49 @@ import org.clafer.common.Check;
  */
 public class Scope implements Scopable {
 
+    /**
+     * The largest decimal scale (number of fractional digits).
+     */
+    public static final int MaxDecimalScale = 9;
+    /**
+     * The largest magnitude of a scaled decimal: one below Choco's bound for
+     * integer variables ({@code IntVar.MAX_INT_BOUND = Integer.MAX_VALUE / 100}),
+     * which leaves a value for the uninitialized reference.
+     */
+    public static final int MaxScaledDecimal = Integer.MAX_VALUE / 100 - 1;
+
     private final Map<AstClafer, Integer> scopes;
     private final int defaultScope;
     private final int intLow, intHigh;
     private final Integer mulLow, mulHigh;
     private final int stringLength;
     private final char charLow, charHigh;
+    private final int decimalScale;
+    private final int decimalLow, decimalHigh;
+    // The decimal range as given, null for the largest that fits.
+    private final BigDecimal decimalLowBound, decimalHighBound;
+
+    /**
+     * Construct a new scope without decimals. Altering the map has no affect
+     * once the scope is constructed.
+     *
+     * @param scopes a map of Clafers to their scopes
+     * @param defaultScope the scope for unspecified Clafers
+     * @param intLow the lowest (inclusive) integer used for solving
+     * @param intHigh the highest (inclusive) integer used for solving
+     * @param mulLow the lowest (inclusive) integer used for solving
+     * multiplication or null to use {@code intLow}
+     * @param mulHigh the highest (inclusive) integer used for solving
+     * multiplication or null to use {@code intHigh}
+     * @param stringLength the longest (inclusive) string used for solving
+     * @param charLow the lowest (inclusive) character used for solving
+     * @param charHigh the highest (inclusive) character used for solving
+     */
+    public Scope(Map<AstClafer, Integer> scopes, int defaultScope, int intLow, int intHigh,
+            Integer mulLow, Integer mulHigh, int stringLength, char charLow, char charHigh) {
+        this(scopes, defaultScope, intLow, intHigh, mulLow, mulHigh, stringLength, charLow, charHigh,
+                0, null, null);
+    }
 
     /**
      * Construct a new scope. Altering the map has no affect once the scope is
@@ -96,9 +136,15 @@ public class Scope implements Scopable {
      * @param stringLength the longest (inclusive) string used for solving
      * @param charLow the lowest (inclusive) character used for solving
      * @param charHigh the highest (inclusive) character used for solving
+     * @param decimalScale the number of fractional digits of decimals
+     * @param decimalLow the lowest (inclusive) decimal used for solving, or
+     * null for the lowest that fits
+     * @param decimalHigh the highest (inclusive) decimal used for solving, or
+     * null for the highest that fits
      */
     public Scope(Map<AstClafer, Integer> scopes, int defaultScope, int intLow, int intHigh,
-            Integer mulLow, Integer mulHigh, int stringLength, char charLow, char charHigh) {
+            Integer mulLow, Integer mulHigh, int stringLength, char charLow, char charHigh,
+            int decimalScale, BigDecimal decimalLow, BigDecimal decimalHigh) {
         if (defaultScope <= 0) {
             throw new IllegalArgumentException("Default scope must be positive");
         }
@@ -119,6 +165,17 @@ public class Scope implements Scopable {
         }
         if (charLow > charHigh) {
             throw new IllegalArgumentException("charLow(" + charLow + ") > charHigh(" + charHigh + ")");
+        }
+        if (decimalScale < 0 || decimalScale > MaxDecimalScale) {
+            throw new IllegalArgumentException("decimalScale(" + decimalScale + ") must be between 0 and " + MaxDecimalScale);
+        }
+        this.decimalScale = decimalScale;
+        this.decimalLowBound = decimalLow;
+        this.decimalHighBound = decimalHigh;
+        this.decimalLow =decimalLow == null ? -MaxScaledDecimal : scaleDecimal(decimalLow, RoundingMode.CEILING);
+        this.decimalHigh = decimalHigh == null ? MaxScaledDecimal : scaleDecimal(decimalHigh, RoundingMode.FLOOR);
+        if (this.decimalLow > this.decimalHigh) {
+            throw new IllegalArgumentException("decimalLow(" + decimalLow + ") > decimalHigh(" + decimalHigh + ")");
         }
         this.scopes = new HashMap<>(scopes);
         this.defaultScope = defaultScope;
@@ -226,6 +283,82 @@ public class Scope implements Scopable {
     }
 
     /**
+     * Returns the number of fractional digits of decimals.
+     *
+     * @return the decimal scale
+     */
+    public int getDecimalScale() {
+        return decimalScale;
+    }
+
+    /**
+     * Returns {@code 10^decimalScale}, the integer that represents the decimal
+     * 1.
+     *
+     * @return the decimal one
+     */
+    public int getDecimalOne() {
+        int one = 1;
+        for (int i = 0; i < decimalScale; i++) {
+            one *= 10;
+        }
+        return one;
+    }
+
+    /**
+     * Returns the lowest (inclusive) decimal used for solving, scaled by
+     * {@link #getDecimalOne()}.
+     *
+     * @return the lowest scaled decimal
+     */
+    public int getDecimalLow() {
+        return decimalLow;
+    }
+
+    /**
+     * Returns the highest (inclusive) decimal used for solving, scaled by
+     * {@link #getDecimalOne()}.
+     *
+     * @return the highest scaled decimal
+     */
+    public int getDecimalHigh() {
+        return decimalHigh;
+    }
+
+    /**
+     * Scale a decimal to an integer at the decimal scale.
+     *
+     * @param value the decimal
+     * @param rounding how to round digits beyond the decimal scale
+     * @return the scaled decimal
+     * @throws IllegalArgumentException if the scaled decimal is out of the
+     * range Choco supports
+     * @throws ArithmeticException if rounding is
+     * {@link RoundingMode#UNNECESSARY} and the decimal has more fractional
+     * digits than the decimal scale
+     */
+    public int scaleDecimal(BigDecimal value, RoundingMode rounding) {
+        BigDecimal scaled = value.setScale(decimalScale, rounding);
+        if (scaled.unscaledValue().abs().compareTo(BigInteger.valueOf(MaxScaledDecimal)) > 0) {
+            throw new IllegalArgumentException(value.toPlainString() + " is out of the range of decimals with "
+                    + decimalScale + " fractional digits, "
+                    + unscaleDecimal(-MaxScaledDecimal).toPlainString() + ".."
+                    + unscaleDecimal(MaxScaledDecimal).toPlainString());
+        }
+        return scaled.unscaledValue().intValue();
+    }
+
+    /**
+     * The decimal an integer at the decimal scale represents.
+     *
+     * @param scaled the scaled decimal
+     * @return the decimal
+     */
+    public BigDecimal unscaleDecimal(int scaled) {
+        return BigDecimal.valueOf(scaled, decimalScale);
+    }
+
+    /**
      * Construct the scope using the builder pattern.
      *
      * @see ScopeBuilder
@@ -326,6 +459,16 @@ public class Scope implements Scopable {
         return builder().charHigh(charHigh);
     }
 
+    /**
+     * Equivalent to {@code builder().decimalScale(decimalScale)}.
+     *
+     * @param decimalScale the number of fractional digits of decimals
+     * @return a new builder
+     */
+    public static ScopeBuilder decimalScale(int decimalScale) {
+        return builder().decimalScale(decimalScale);
+    }
+
     @Override
     public Scope toScope() {
         return this;
@@ -339,7 +482,20 @@ public class Scope implements Scopable {
      */
     public ScopeBuilder toBuilder() {
         return new ScopeBuilder(scopes, defaultScope, intLow, intHigh,
-                mulLow, mulHigh, stringLength, charLow, charHigh);
+                mulLow, mulHigh, stringLength, charLow, charHigh,
+                decimalScale, decimalLowBound, decimalHighBound);
+    }
+
+    /**
+     * A scope with the same settings but other Clafer scopes.
+     *
+     * @param scopes a map of Clafers to their scopes
+     * @return the new scope
+     */
+    public Scope withScopes(Map<AstClafer, Integer> scopes) {
+        return new Scope(scopes, defaultScope, intLow, intHigh,
+                mulLow, mulHigh, stringLength, charLow, charHigh,
+                decimalScale, decimalLowBound, decimalHighBound);
     }
 
     @Override

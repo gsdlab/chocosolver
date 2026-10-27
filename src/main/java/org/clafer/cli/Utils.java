@@ -3,6 +3,7 @@ package org.clafer.cli;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import joptsimple.OptionSet;
@@ -197,7 +198,10 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
             if (clafer.getRef() instanceof InstanceClafer) {
                 InstanceClafer refClafer = (InstanceClafer) clafer.getRef();
                 out.append(refClafer.getType().getName()).append(countSuffix(refClafer.getId()));
-            } else
+            } else if (clafer.getRef() instanceof BigDecimal)
+                // Never scientific notation, e.g. 0.0000001 rather than 1E-7.
+                out.append(((BigDecimal) clafer.getRef()).toPlainString());
+            else
                 out.append(clafer.getRef().toString());
         }
 
@@ -218,6 +222,10 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
         Scope scope = javascriptFile.getScope();
         if (options.has("scope"))
             scope = scope.toBuilder().defaultScope((int) options.valueOf("scope")).toScope();
+
+        /* overrides the model's decimalScale; a decimal literal with more digits is an error */
+        if (options.has("decimal-digits"))
+            scope = scope.toBuilder().decimalScale((int) options.valueOf("decimal-digits")).toScope();
 
         if (options.has("maxint")) {
             int scopeHigh = (int)options.valueOf("maxint");

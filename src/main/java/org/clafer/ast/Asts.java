@@ -1,5 +1,6 @@
 package org.clafer.ast;
 
+import java.math.BigDecimal;
 import org.clafer.ast.AstQuantify.Quantifier;
 
 /**
@@ -17,6 +18,7 @@ public class Asts {
     public static final AstIntClafer IntType = AstIntClafer.Singleton;
     public static final AstBoolClafer BoolType = AstBoolClafer.Singleton;
     public static final AstStringClafer StringType = AstStringClafer.Singleton;
+    public static final AstDecimalClafer DecimalType = AstDecimalClafer.Singleton;
     // Cardinality keywords
     public static final Card Any = new Card();
     public static final Card Optional = new Card(0, 1);
@@ -65,6 +67,20 @@ public class Asts {
 
     public static AstStringConstant constant(String value) {
         return new AstStringConstant(value);
+    }
+
+    public static AstDecimalConstant decimal(BigDecimal value) {
+        return new AstDecimalConstant(value);
+    }
+
+    /**
+     * A decimal constant, written as in the model, e.g. {@code decimal("19.99")}.
+     *
+     * @param value the decimal
+     * @return the decimal constant
+     */
+    public static AstDecimalConstant decimal(String value) {
+        return decimal(new BigDecimal(value));
     }
 
     public static AstSetExpr join(AstSetExpr left, AstSetExpr right) {

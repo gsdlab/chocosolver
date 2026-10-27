@@ -14,11 +14,16 @@ import org.clafer.javascript.JavascriptFile;
 
 public class Main
 {
-    public static void main(String[] args) throws Exception {
-        OptionParser parser = new OptionParser() {
+    /**
+     * @return the parser of the command line options
+     */
+    static OptionParser optionParser() {
+        return new OptionParser() {
             {
                 accepts( "dataFile", "Text file to store time (in seconds) to find each instance.").withRequiredArg()
                         .ofType( File.class ).describedAs("text file");
+                accepts( "decimal-digits", "Specify the number of fractional digits of decimals (overrides the model's)." )
+                    .withRequiredArg().ofType( Integer.class );
                 accepts( "file", "Input file in .cfr or .js format" ).withRequiredArg().ofType( File.class )
                     .describedAs( "Clafer model file (.cfr) or Clafer Javascript file (.js)." );
                 accepts( "help", "Show help.").forHelp();
@@ -39,7 +44,10 @@ public class Main
                 accepts( "version", "Display the tool version" );
             }
         };
+    }
 
+    public static void main(String[] args) throws Exception {
+        OptionParser parser = optionParser();
         OptionSet options = parser.parse(args);
 
         if (options.has("version")) {

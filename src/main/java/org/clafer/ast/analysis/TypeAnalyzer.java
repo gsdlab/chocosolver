@@ -1,5 +1,6 @@
 package org.clafer.ast.analysis;
 
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -20,6 +21,8 @@ import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstConnected;
 import org.clafer.ast.AstConstant;
 import org.clafer.ast.AstConstraint;
+import org.clafer.ast.AstDecimalClafer;
+import org.clafer.ast.AstDecimalConstant;
 import org.clafer.ast.AstDecl;
 import org.clafer.ast.AstDifference;
 import org.clafer.ast.AstDomainRestriction;
@@ -62,12 +65,14 @@ import org.clafer.ast.AstUnion;
 import org.clafer.ast.AstUpcast;
 import org.clafer.ast.AstUtil;
 import static org.clafer.ast.Asts.BoolType;
+import static org.clafer.ast.Asts.DecimalType;
 import static org.clafer.ast.Asts.IntType;
 import static org.clafer.ast.Asts.StringType;
 import static org.clafer.ast.Asts.arithm;
 import static org.clafer.ast.Asts.card;
 import static org.clafer.ast.Asts.compare;
 import static org.clafer.ast.Asts.concat;
+import static org.clafer.ast.Asts.constant;
 import static org.clafer.ast.Asts.connected;
 import static org.clafer.ast.Asts.decl;
 import static org.clafer.ast.Asts.diff;
@@ -100,6 +105,7 @@ import org.clafer.ast.ProductType;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.objective.Objective;
+import org.clafer.scope.Scope;
 
 /**
  * <p>
@@ -145,19 +151,21 @@ public class TypeAnalyzer implements Analyzer {
     @Override
     public Analysis analyze(Analysis analysis) {
         Map<AstExpr, Type> typeMap = new IdentityHashMap<>();
+        Scope scope = analysis.getScope();
         Map<AstConstraint, AstBoolExpr> typedConstraints = new HashMap<>();
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
-            TypeVisitor visitor = new TypeVisitor(Type.basicType(clafer), typeMap);
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(clafer), typeMap, scope);
             TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(analysis.getExpr(constraint));
             typedConstraints.put(constraint, typedConstraint.getExpr());
         }
         Map<Objective, AstSetExpr> objectives = analysis.getObjectiveExprs();
         Map<Objective, AstSetExpr> typedObjectives = new HashMap<>(objectives.size());
         for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
-            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap);
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap, scope);
             TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(objective.getValue());
-            if (!typedObjective.getCommonSupertype().isInt()) {
+            // A decimal objective optimizes the scaled decimal.
+            if (!typedObjective.getCommonSupertype().isInt() && !typedObjective.getCommonSupertype().isDecimal()) {
                 throw new TypeException("Cannot optimize on " + typedObjective.getType());
             }
             typedObjectives.put(objective.getKey(), typedObjective.getExpr());
@@ -165,7 +173,7 @@ public class TypeAnalyzer implements Analyzer {
         Map<Assertion, AstBoolExpr> assertions = analysis.getAssertionExprs();
         Map<Assertion, AstBoolExpr> typedAssertions = new HashMap<>(assertions.size());
         for (Entry<Assertion, AstBoolExpr> assertion : assertions.entrySet()) {
-            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap);
+            TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap, scope);
             TypedExpr<AstBoolExpr> typedAssertion = visitor.typeCheck(assertion.getValue());
             if (!typedAssertion.getCommonSupertype().isBool()) {
                 throw new TypeException("Cannot assert on " + typedAssertion.getType());
@@ -182,10 +190,76 @@ public class TypeAnalyzer implements Analyzer {
 
         private final Type context;
         private final Map<AstExpr, Type> typeMap;
+        private final Scope scope;
 
-        TypeVisitor(Type context, Map<AstExpr, Type> typeMap) {
+        TypeVisitor(Type context, Map<AstExpr, Type> typeMap, Scope scope) {
             this.context = context;
             this.typeMap = typeMap;
+            this.scope = scope;
+        }
+
+        private static boolean isNumber(TypedExpr<?> expr) {
+            return expr.getType().isInt() || expr.getType().isDecimal();
+        }
+
+        private static boolean isDecimal(TypedExpr<?> expr) {
+            return expr.getType().isDecimal();
+        }
+
+        /**
+         * @return whether one expression is an integer and the other a decimal
+         */
+        private static boolean isMixedNumber(TypedExpr<?> left, TypedExpr<?> right) {
+            return isNumber(left) && isNumber(right) && isDecimal(left) != isDecimal(right);
+        }
+
+        /**
+         * The integer as a decimal: integer constants are scaled, other
+         * integer expressions are multiplied by the decimal 1, which is exact.
+         * Decimals stay as they are, so the lowering is the same when the
+         * types are reanalyzed.
+         *
+         * @param expr an integer or a decimal
+         * @return the decimal
+         */
+        private TypedExpr<AstSetExpr> toDecimal(TypedExpr<AstSetExpr> expr) {
+            if (isDecimal(expr)) {
+                return expr;
+            }
+            if (!expr.getType().isInt()) {
+                throw new TypeException("Cannot convert " + expr.getType() + " to decimal");
+            }
+            if (expr.getExpr() instanceof AstConstant) {
+                int[][] value = ((AstConstant) expr.getExpr()).getValue();
+                if (value.length == 1) {
+                    int[] scaled = new int[value[0].length];
+                    for (int i = 0; i < scaled.length; i++) {
+                        scaled[i] = scaleInt(value[0][i]);
+                    }
+                    return put(DecimalType, (AstSetExpr) constant(DecimalType, scaled));
+                }
+            }
+            AstConstant decimalOne = constant(DecimalType, scope.getDecimalOne());
+            put(DecimalType, decimalOne);
+            return put(DecimalType, arithm(AstArithm.Op.Mul, expr.getExpr(), decimalOne));
+        }
+
+        private int scaleInt(int value) {
+            long scaled = (long) value * scope.getDecimalOne();
+            if (Math.abs(scaled) > Scope.MaxScaledDecimal) {
+                throw new TypeException(value + " is out of the range of decimals with "
+                        + scope.getDecimalScale() + " fractional digits");
+            }
+            return (int) scaled;
+        }
+
+        @SafeVarargs
+        private final AstSetExpr[] toDecimals(TypedExpr<AstSetExpr>... exprs) {
+            AstSetExpr[] decimals = new AstSetExpr[exprs.length];
+            for (int i = 0; i < exprs.length; i++) {
+                decimals[i] = toDecimal(exprs[i]).getExpr();
+            }
+            return decimals;
         }
 
         private <T extends AstExpr> TypedExpr<T> typeCheck(T expr) {
@@ -306,6 +380,20 @@ public class TypeAnalyzer implements Analyzer {
         }
 
         @Override
+        public TypedExpr<?> visit(AstDecimalConstant ast, Void a) {
+            int scaled;
+            try {
+                scaled = scope.scaleDecimal(ast.getValue(), RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException e) {
+                throw new TypeException(ast + " has more fractional digits than the decimal scale "
+                        + scope.getDecimalScale());
+            } catch (IllegalArgumentException e) {
+                throw new TypeException(e.getMessage());
+            }
+            return put(DecimalType, constant(DecimalType, scaled));
+        }
+
+        @Override
         public TypedExpr<AstSetExpr> visit(AstJoin ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
@@ -398,6 +486,9 @@ public class TypeAnalyzer implements Analyzer {
             if (expr.getType().isInt()) {
                 return put(IntType, minus(expr.getExpr()));
             }
+            if (expr.getType().isDecimal()) {
+                return put(DecimalType, minus(expr.getExpr()));
+            }
             throw new TypeException("Cannot -" + expr.getType());
         }
 
@@ -416,6 +507,9 @@ public class TypeAnalyzer implements Analyzer {
             if (set.getType().isInt()) {
                 return put(IntType, max(set.getExpr()));
             }
+            if (set.getType().isDecimal()) {
+                return put(DecimalType, max(set.getExpr()));
+            }
             throw new TypeException("Cannot max " + set.getType() + "|");
         }
 
@@ -425,6 +519,9 @@ public class TypeAnalyzer implements Analyzer {
             if (set.getType().isInt()) {
                 return put(IntType, min(set.getExpr()));
             }
+            if (set.getType().isDecimal()) {
+                return put(DecimalType, min(set.getExpr()));
+            }
             throw new TypeException("Cannot min " + set.getType() + "|");
         }
 
@@ -432,6 +529,10 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<AstBoolExpr> visit(AstSetTest ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (isMixedNumber(left, right)) {
+                left = toDecimal(left);
+                right = toDecimal(right);
+            }
 
             if (isDisjoint(left.getType(), right.getType())) {
                 throw new TypeException("Cannot " + left.getType() + " "
@@ -449,6 +550,9 @@ public class TypeAnalyzer implements Analyzer {
             if (left.getType().isInt() && right.getType().isInt()) {
                 return put(BoolType, compare(left.getExpr(), ast.getOp(), right.getExpr()));
             }
+            if (isNumber(left) && isNumber(right)) {
+                return put(BoolType, compare(toDecimal(left).getExpr(), ast.getOp(), toDecimal(right).getExpr()));
+            }
             throw new TypeException("Cannot " + left.getType() + " "
                     + ast.getOp().getSyntax() + " " + right.getType());
         }
@@ -456,14 +560,62 @@ public class TypeAnalyzer implements Analyzer {
         @Override
         public TypedExpr<AstSetExpr> visit(AstArithm ast, Void a) {
             TypedExpr<AstSetExpr>[] operands = typeCheck(ast.getOperands());
+            boolean decimal = false;
             for (TypedExpr<AstSetExpr> operand : operands) {
-                if (!operand.getType().isInt()) {
+                if (!isNumber(operand)) {
                     throw new TypeException("Cannot "
                             + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
                                     getTypes(operands)));
                 }
+                decimal |= isDecimal(operand);
             }
-            return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
+            switch (ast.getOp()) {
+                case DecimalMul:
+                case DecimalDiv:
+                    return put(DecimalType, arithm(ast.getOp(), toDecimals(operands)));
+                default:
+                    if (!decimal) {
+                        return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
+                    }
+            }
+            switch (ast.getOp()) {
+                case Add:
+                case Sub:
+                    return put(DecimalType, arithm(ast.getOp(), toDecimals(operands)));
+                case Mul:
+                    // A decimal times an integer is exact; a decimal times a
+                    // decimal is rounded to the decimal scale.
+                    TypedExpr<AstSetExpr> product = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        TypedExpr<AstSetExpr> operand = operands[i];
+                        if (isDecimal(product) && isDecimal(operand)) {
+                            product = put(DecimalType, arithm(AstArithm.Op.DecimalMul,
+                                    product.getExpr(), operand.getExpr()));
+                        } else {
+                            product = put(isDecimal(product) || isDecimal(operand) ? DecimalType : IntType,
+                                    arithm(AstArithm.Op.Mul, product.getExpr(), operand.getExpr()));
+                        }
+                    }
+                    return product;
+                case Div:
+                    // A division of integers stays an integer division.
+                    TypedExpr<AstSetExpr> quotient = operands[0];
+                    for (int i = 1; i < operands.length; i++) {
+                        TypedExpr<AstSetExpr> operand = operands[i];
+                        if (isDecimal(quotient) || isDecimal(operand)) {
+                            quotient = put(DecimalType, arithm(AstArithm.Op.DecimalDiv,
+                                    toDecimals(quotient, operand)));
+                        } else {
+                            quotient = put(IntType, arithm(AstArithm.Op.Div,
+                                    quotient.getExpr(), operand.getExpr()));
+                        }
+                    }
+                    return quotient;
+                default:
+                    throw new TypeException("Cannot "
+                            + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
+                                    getTypes(operands)));
+            }
         }
 
         @Override
@@ -472,6 +624,10 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstSetExpr> divisor = typeCheck(ast.getDivisor());
             if (dividend.getType().isInt() && divisor.getType().isInt()) {
                 return put(IntType, mod(dividend.getExpr(), divisor.getExpr()));
+            }
+            if (isNumber(dividend) && isNumber(divisor)) {
+                // The remainder of decimals at the same scale is exact.
+                return put(DecimalType, mod(toDecimal(dividend).getExpr(), toDecimal(divisor).getExpr()));
             }
             throw new TypeException("Cannot " + dividend.getType() + " % " + divisor.getType());
         }
@@ -495,7 +651,8 @@ public class TypeAnalyzer implements Analyzer {
                     throw new TypeException("Cannot sum(" + set.getType() + ")");
                 case 1:
                     AstRef ref = refs.iterator().next();
-                    if (ref.getTargetType() instanceof AstIntClafer) {
+                    if (ref.getTargetType() instanceof AstIntClafer
+                            || ref.getTargetType() instanceof AstDecimalClafer) {
                         return put(ref.getTargetType(), sum(castTo(set, ref.getSourceType())));
                     }
                     throw new TypeException("Cannot sum(" + set.getType() + ")");
@@ -526,6 +683,7 @@ public class TypeAnalyzer implements Analyzer {
                     if (ref.getTargetType() instanceof AstIntClafer) {
                         return put(ref.getTargetType(), product(castTo(set, ref.getSourceType())));
                     }
+                    // A product of decimals would round after each factor.
                     throw new TypeException("Cannot product(" + set.getType() + ")");
                 default:
                     throw new TypeException("Ambiguous product(" + set.getType() + ")");
@@ -542,6 +700,10 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<?> visit(AstDifference ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (isMixedNumber(left, right)) {
+                left = toDecimal(left);
+                right = toDecimal(right);
+            }
 
             if (!isAssignable(right.getType(), left.getType())) {
                 throw new TypeException("Cannot " + left.getType() + " -- " + right.getType());
@@ -557,6 +719,10 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<?> visit(AstIntersection ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (isMixedNumber(left, right)) {
+                left = toDecimal(left);
+                right = toDecimal(right);
+            }
 
             Type intersectionType = intersectionType(left.getType(), right.getType());
 
@@ -570,6 +736,10 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<?> visit(AstUnion ast, Void a) {
             TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
             TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+            if (isMixedNumber(left, right)) {
+                left = toDecimal(left);
+                right = toDecimal(right);
+            }
 
             Type unionType = unionType(left.getType(), right.getType());
 
@@ -585,6 +755,10 @@ public class TypeAnalyzer implements Analyzer {
         public TypedExpr<AstBoolExpr> visit(AstMembership ast, Void a) {
             TypedExpr<AstSetExpr> member = typeCheck(ast.getMember());
             TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+            if (isMixedNumber(member, set)) {
+                member = toDecimal(member);
+                set = toDecimal(set);
+            }
 
             if (isDisjoint(member.getType(), set.getType())) {
                 throw new TypeException("Cannot " + member.getType()
@@ -600,6 +774,10 @@ public class TypeAnalyzer implements Analyzer {
             TypedExpr<AstBoolExpr> antecedent = typeCheck(ast.getAntecedent());
             TypedExpr<AstSetExpr> alternative = typeCheck(ast.getAlternative());
             TypedExpr<AstSetExpr> consequent = typeCheck(ast.getConsequent());
+            if (isMixedNumber(alternative, consequent)) {
+                alternative = toDecimal(alternative);
+                consequent = toDecimal(consequent);
+            }
             ProductType unionType = getLowestCommonSupertype(alternative.getCommonSupertype(), consequent.getCommonSupertype());
             return put(new Type(unionType), ifThenElse(antecedent.getExpr(),
                     upcastTo(consequent, unionType), upcastTo(alternative, unionType)));
