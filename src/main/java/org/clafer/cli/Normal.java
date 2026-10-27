@@ -16,7 +16,7 @@ import org.clafer.scope.Scope;
 
 public class Normal {
     // Running the model itself(instantiating or optimizing)
-    public static void runNormal(JavascriptFile  javascriptFile, OptionSet options, PrintStream outStream) throws Exception {
+    public static void runNormal(File inputFile, JavascriptFile  javascriptFile, OptionSet options, PrintStream outStream) throws Exception {
 
         Objective[] objectives = javascriptFile.getObjectives();
         if (objectives.length == 0)
@@ -25,7 +25,7 @@ public class Normal {
             System.out.println("Optimizing...");
 
         // handle scopes
-        Scope scope = Utils.resolveScopes(javascriptFile, options);
+        Scope scope = Utils.resolveScopes(inputFile, javascriptFile, options);
 
         // handle search strategy
         ClaferOption compilerOption = javascriptFile.getOption();

@@ -114,6 +114,9 @@ Option                                  Description
 --prettify                              Use simple and pretty output format (not formal).
 --repl                                  Run in REPL (interactive) mode.
 --scope <Integer>                       Override the default global scope value.
+--scope-file <File: scope file>         Read the scopes of clafers from the given .cfr-scope
+                                          file (by default, from the model's .cfr-scope file,
+                                          e.g., model.cfr-scope, if it exists).
 --search <ClaferSearchStrategy>         PreferSmallerInstances/PreferLargerInstances/Random.
 -v                                      Run in validation mode; checks all assertions.
 --version                               Display the tool version.
@@ -132,6 +135,21 @@ If the `.cfr` file is given, the CLI will first call the Clafer compiler using `
 which will produce `model.js`.
 A model can consist of several files (Clafer 0.5.4): the files that the model imports with `--import` in its `//# OPTIONS` directive are compiled with it, and `--import=FILE` on the command line adds a file (see [Models in several files](https://github.com/gsdlab/clafer#models-in-several-files)).
 The compiler's errors give the file in which they are (`Compile error at lib.cfr:3:11...`).
+
+The scopes come from the model: the compiler infers a scope for each clafer from the multiplicities.
+A `.cfr-scope` file next to the model (`model.cfr-scope` for `model.cfr` or `model.js`), or the one given by `--scope-file`, sets the scopes of the clafers that it lists, e.g., smaller ones for a faster instance generation:
+
+```
+[
+{"lpqName": "Component::Cfeatures", "scope": 132},
+{"lpqName": "Flow::flowElements", "scope": 234}
+]
+```
+
+A name is a clafer's UID (`c0_Cfeatures`) or a (partially) qualified name (`Cfeatures`, `Component::Cfeatures` or `::Component::Cfeatures`), which sets the scopes of all the clafers whose names, with their parents', end with it.
+This is the format that `clafer --meta-data`, claferIG's and the REPL's `saveScopes` write, and that claferIG reads.
+The CLI prints `Using the scopes from model.cfr-scope` when it uses such a file; a name that is not of a clafer in the model is an error.
+A scope that is too small excludes instances, so the instances with a smaller scope should be checked against those with the inferred one.
 Certain features, such as transitive closure, are not yet supported by Clafer,
 so they can only be used directly via API call in the `.js` file.
 We recommend using the so called Choco escapes, as follows:
