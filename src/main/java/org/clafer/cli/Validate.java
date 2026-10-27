@@ -25,7 +25,7 @@ public class Validate {
             return;
 
         // handle scopes
-        Scope scope = Utils.resolveScopes(javascriptFile, options);
+        Scope scope = Utils.resolveScopes(inputFile, javascriptFile, options);
 
         // handle search strategy
         ClaferOption compilerOption = ClaferOption.Default;

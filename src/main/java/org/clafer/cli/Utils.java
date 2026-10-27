@@ -1,11 +1,15 @@
 package org.clafer.cli;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import joptsimple.OptionSet;
 import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
@@ -15,6 +19,7 @@ import org.clafer.ast.AstUtil;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.javascript.JavascriptFile;
 import org.clafer.scope.Scope;
+import org.clafer.scope.ScopeBuilder;
 
 
 public class Utils {
@@ -246,6 +251,110 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
             scope = scope.toBuilder().intLow(scopeLowDef).intHigh(scopeHighDef).toScope();
         }
         return scope;
+    }
+
+    /**
+     * The scopes of the model, with the scopes of its clafers from its scope file, if it has one.
+     */
+    public static Scope resolveScopes(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws IOException {
+        Scope scope = resolveScopes(javascriptFile, options);
+        File scopeFile = scopeFile(inputFile, options);
+        if (scopeFile == null)
+            return scope;
+        if (!scopeFile.exists())
+            throw new FileNotFoundException("The scope file does not exist: " + scopeFile.getPath());
+        System.out.println("Using the scopes from " + scopeFile.getPath());
+        return applyScopeFile(scope, javascriptFile.getModel(), Files.readString(scopeFile.toPath()), scopeFile.getPath());
+    }
+
+    /**
+     * The scope file given by --scope-file, otherwise the model's .cfr-scope file (model.cfr-scope next to
+     * model.cfr or model.js) if it exists, otherwise null.
+     */
+    public static File scopeFile(File inputFile, OptionSet options) {
+        if (options.has("scope-file"))
+            return (File) options.valueOf("scope-file");
+        String path = inputFile.getPath();
+        int dot = path.lastIndexOf('.');
+        if (dot > path.lastIndexOf(File.separatorChar))
+            path = path.substring(0, dot);
+        File file = new File(path + ".cfr-scope");
+        return file.exists() ? file : null;
+    }
+
+    private static final Pattern ScopeEntry =
+            Pattern.compile("\\{\\s*\"lpqName\"\\s*:\\s*\"([^\"]*)\"\\s*,\\s*\"scope\"\\s*:\\s*(\\d+)\\s*\\}");
+
+    /**
+     * Sets the scopes of the clafers listed in a .cfr-scope file: a JSON array of
+     * {"lpqName": name, "scope": n}, as written by clafer --meta-data, claferIG's and the REPL's saveScopes.
+     * A name is a clafer's UID (c0_Cfeatures) or a (partially) qualified name (Cfeatures, Component::Cfeatures,
+     * ::Component::Cfeatures), which sets the scopes of all the clafers whose containment paths end with it.
+     *
+     * @throws IllegalArgumentException if the file is malformed or a name is not of a clafer in the model
+     */
+    public static Scope applyScopeFile(Scope scope, AstModel model, String json, String fileName) {
+        List<AstClafer> clafers = getAllModelClafers(model);
+        ScopeBuilder builder = scope.toBuilder();
+        Matcher entry = ScopeEntry.matcher(json);
+        StringBuilder rest = new StringBuilder();
+        int end = 0;
+        while (entry.find()) {
+            rest.append(json, end, entry.start());
+            end = entry.end();
+            String name = entry.group(1);
+            // the REPL saves the root clafer #clafer# with an empty name
+            if (name.isEmpty())
+                continue;
+            List<AstClafer> named = claferNamed(clafers, name);
+            if (named.isEmpty())
+                throw new IllegalArgumentException(fileName + ": the model has no clafer " + name);
+            for (AstClafer clafer : named)
+                builder.setScope(clafer, Integer.parseInt(entry.group(2)));
+        }
+        rest.append(json.substring(end));
+        if (!rest.toString().matches("\\s*\\[[\\s,]*\\]\\s*"))
+            throw new IllegalArgumentException(fileName + ": not a list of {\"lpqName\": name, \"scope\": n}");
+        return builder.toScope();
+    }
+
+    /**
+     * The clafers with the given UID, otherwise with the given (partially) qualified name.
+     */
+    static List<AstClafer> claferNamed(List<AstClafer> clafers, String qName) {
+        List<AstClafer> result = new ArrayList<>();
+        for (AstClafer clafer : clafers)
+            if (clafer.getName().equals(qName))
+                result.add(clafer);
+        if (!result.isEmpty())
+            return result;
+        boolean full = qName.startsWith("::");
+        List<String> names = new ArrayList<>();
+        // an apostrophe in a name is __prime__ in the UID
+        for (String name : (full ? qName.substring(2) : qName).split("::"))
+            names.add(name.replace("'", "__prime__"));
+        for (AstClafer clafer : clafers) {
+            List<String> path = containmentPath(clafer);
+            if (full ? path.equals(names)
+                     : path.size() >= names.size() && path.subList(path.size() - names.size(), path.size()).equals(names))
+                result.add(clafer);
+        }
+        return result;
+    }
+
+    /**
+     * The names of a clafer and its ancestors, from the top-level one, e.g., [Component, Cfeatures].
+     */
+    static List<String> containmentPath(AstClafer clafer) {
+        List<String> path = new ArrayList<>();
+        AstClafer current = clafer;
+        while (current != null && !current.getName().startsWith("#")) {
+            path.add(0, simpleName(current.getName()));
+            // an abstract clafer is top-level; a top-level concrete clafer's parent is the model's root
+            AstClafer parent = current instanceof AstConcreteClafer ? ((AstConcreteClafer) current).getParent() : null;
+            current = parent == null || (parent instanceof AstConcreteClafer && !parent.hasParent()) ? null : parent;
+        }
+        return path;
     }
 }
 

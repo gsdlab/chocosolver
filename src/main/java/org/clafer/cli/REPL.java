@@ -99,7 +99,7 @@ public class REPL {
     public static void runREPL(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws Exception {
         String scopesFile = inputFile.getAbsolutePath().substring(0, inputFile.getAbsolutePath().length() - 3) + ".cfr-scope";
 
-        Scope scope = Utils.resolveScopes(javascriptFile, options);
+        Scope scope = Utils.resolveScopes(inputFile, javascriptFile, options);
 
         ClaferOption compilerOption = javascriptFile.getOption();
         if (options.has("search"))
@@ -233,7 +233,7 @@ public class REPL {
 
                 if (javascriptFile != null) {
                     model = javascriptFile.getModel();
-                    scope = Utils.resolveScopes(javascriptFile, options);
+                    scope = Utils.resolveScopes(inputFile, javascriptFile, options);
                     objectives = javascriptFile.getObjectives();
 
                     solver = compileModel(model, scope, objectives, compilerOption);

@@ -38,6 +38,7 @@ public class Main
                 accepts( "prettify", "Use simple and pretty output format (not formal)." );
                 accepts( "repl", "Run in REPL (interactive) mode." );
                 accepts( "scope", "Override the default global scope value." ).withRequiredArg().ofType( Integer.class );
+                accepts( "scope-file", "Read the scopes of clafers from the given .cfr-scope file (by default, from the model's .cfr-scope file, e.g., model.cfr-scope, if it exists)." ).withRequiredArg().ofType( File.class ).describedAs( "scope file" );
                 accepts( "search", "PreferSmallerInstances/PreferLargerInstances/Random" ).withRequiredArg().ofType( ClaferSearchStrategy.class );
                 accepts( "time", "Time how long it takes to find all instances (and print if it is turned on");
                 accepts( "v", "Run in validation mode; checks all assertions." );
@@ -141,6 +142,6 @@ public class Main
         else if (options.has("repl"))
             REPL.runREPL(inputFile, javascriptFile, options);
         else
-            Normal.runNormal(javascriptFile, options, outStream);
+            Normal.runNormal(inputFile, javascriptFile, options, outStream);
     }
 }
