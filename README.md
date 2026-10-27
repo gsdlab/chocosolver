@@ -485,8 +485,9 @@ Constraint(implies(some(global(c0_price)), equal(joinRef(global(c0_price)), deci
 * `+`, `-`, comparisons, `%`, `sum`, `min`, `max`, the set operations and `if then else` are exact.
   Integers mix with decimals: `100 * price` is exact.
 * `decimal * decimal` and divisions with a decimal round to the scale, half away from zero: `19.99 * 0.13 = 2.5987` is `2.6`, and `20.0 / 3` is `6.67`.
-  A constraint holds only on that grid: `x * x = 2` has no instance with 2 digits.
   A division of integers stays an integer division: `2 / 3` is `0`.
+* Equality is exact, after rounding, so a constraint holds only on the grid of the scale: `x * x = 2` has no instance with 2 digits, since `1.41 * 1.41` is `1.99` and `1.42 * 1.42` is `2.02`.
+  Either use more digits (with `--decimal-digits=4`, `x` is `±1.4142`), or allow a tolerance with two inequalities: `[ x * x >= 1.98 && x * x <= 2.02 ]` gives `x` is `±1.41` and `±1.42`.
 * The default range is the largest whose scaled values fit Choco's integers: about ±214748.35 with 2 digits, ±21474835 with 0.
   A decimal reference cannot be beyond it, so an instance whose total does not fit is excluded.
 * Instances print decimals in their shortest form with at least one fractional digit: `199.0`, `12.5`.
