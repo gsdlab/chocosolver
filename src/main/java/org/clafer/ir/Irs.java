@@ -1462,7 +1462,7 @@ public class Irs {
         }
         // The result is not limited to the range of decimals: an operand can be
         // the uninitialized reference of a Clafer that does not exist, e.g. in
-        // [ all i : Item | i.ref * 1.5 <= 30 ], and the product must not fail
+        // [ all i : Item | i.dref * 1.5 <= 30 ], and the product must not fail
         // then. Saturated so that Choco accepts the domain.
         low = Math.max(low, -DecimalArithmBound);
         high = Math.min(high, DecimalArithmBound);

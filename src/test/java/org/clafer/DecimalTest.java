@@ -315,11 +315,11 @@ public class DecimalTest {
      * <pre>
      * abstract Item -> decimal
      * Book : Item ?
-     *     [ this.ref = 12.5 ]
+     *     [ this.dref = 12.5 ]
      * Pen : Item ?
-     *     [ this.ref = 1.99 ]
+     *     [ this.dref = 1.99 ]
      * Bag : Item ?
-     *     [ this.ref = 30 ]
+     *     [ this.dref = 30 ]
      * Total -> decimal = sum Item
      * [ Total <= 20 ]
      * </pre>
@@ -361,10 +361,10 @@ public class DecimalTest {
      * <pre>
      * abstract Item -> decimal
      * Book : Item
-     *     [ this.ref = 12.5 ]
+     *     [ this.dref = 12.5 ]
      * Pen : Item
-     *     [ this.ref = 1.99 ]
-     * X -> decimal = max Item.ref - min Item.ref
+     *     [ this.dref = 1.99 ]
+     * X -> decimal = max Item.dref - min Item.dref
      * </pre>
      */
     @Test(timeout = 60000)
@@ -385,12 +385,12 @@ public class DecimalTest {
      * <pre>
      * abstract Item -> decimal
      * Book : Item ?
-     *     [ this.ref = 12.5 ]
+     *     [ this.dref = 12.5 ]
      * Pen : Item ?
-     *     [ this.ref = 1.99 ]
+     *     [ this.dref = 1.99 ]
      * Bag : Item ?
-     *     [ this.ref = 30 ]
-     * [ all i : Item | i.ref * 1.5 <= 30 ]
+     *     [ this.dref = 30 ]
+     * [ all i : Item | i.dref * 1.5 <= 30 ]
      * </pre>
      */
     @Test(timeout = 60000)
