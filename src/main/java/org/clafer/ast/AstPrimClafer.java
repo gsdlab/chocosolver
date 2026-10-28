@@ -53,6 +53,11 @@ public abstract class AstPrimClafer extends AstClafer {
     }
 
     @Override
+    public AstAbstractClafer addAbstractChild(String name) {
+        throw new UnsupportedOperationException("Cannot add an abstract child under " + getName() + " primitive");
+    }
+
+    @Override
     public AstConstraint addConstraint(AstBoolExpr constraint) {
         throw new UnsupportedOperationException("Cannot add a constraint under " + getName() + " primitive");
     }

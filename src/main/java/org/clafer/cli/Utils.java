@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import joptsimple.OptionSet;
-import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
@@ -23,44 +22,14 @@ import org.clafer.scope.ScopeBuilder;
 
 
 public class Utils {
+    /**
+     * All the clafers of the model, including the nested abstract ones and the
+     * type root #clafer#, except the roots of the model.
+     */
     public static List<AstClafer> getAllModelClafers(AstModel model) {
-
-        List<AstClafer> result = new ArrayList<AstClafer>();
-
-        List<AstAbstractClafer> abstractChildren = model.getAbstracts();
-        result.addAll(abstractChildren);
-
-        for (AstAbstractClafer clafer : abstractChildren)
-        {
-            result.addAll(getAllConcreteClafers(clafer));
-        }
-
-        List<AstConcreteClafer> concreteChildren = model.getChildren();
-        result.addAll(concreteChildren);
-
-        for (AstConcreteClafer clafer : concreteChildren)
-        {
-            result.addAll(getAllConcreteClafers(clafer));
-        }
-
-        return result;
-    }
-
-    public static List<AstConcreteClafer> getAllConcreteClafers(AstClafer root) {
-
-        List<AstConcreteClafer> result = new ArrayList<AstConcreteClafer>();
-        List<AstConcreteClafer> children = root.getChildren();
-
-        result.addAll(children);
-
-        for (AstConcreteClafer clafer : children)
-        {
-            if (clafer.hasChildren())
-            {
-                result.addAll(getAllConcreteClafers(clafer));
-            }
-        }
-
+        List<AstClafer> result = new ArrayList<AstClafer>(AstUtil.getClafers(model));
+        result.remove(model.getAbstractRoot());
+        result.remove(model.getRoot());
         return result;
     }
 
@@ -115,72 +84,10 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
         return null;
     }
 
-    public static AstConcreteClafer getConcreteClaferChildByName(AstClafer root, String name) {
-
-        List<AstConcreteClafer> children = root.getChildren();
-
-        for (AstConcreteClafer clafer : children)
-        {
-            if (clafer.getName().equals(name))
-            {
-                return clafer;
-            }
-        }
-
-        for (AstConcreteClafer clafer : children)
-        {
-            if (clafer.hasChildren())
-            {
-                AstConcreteClafer result = getConcreteClaferChildByName(clafer, name);
-                if (result != null)
-                    return result;
-            }
-        }
-
-        return null;
-    }
-
     public static AstClafer getModelChildByName(AstModel model, String name) {
-
-        List<AstAbstractClafer> abstractChildren = model.getAbstracts();
-
-        for (AstAbstractClafer clafer : abstractChildren)
-        {
+        for (AstClafer clafer : getAllModelClafers(model))
             if (clafer.getName().equals(name))
-            {
                 return clafer;
-            }
-        }
-
-        for (AstAbstractClafer clafer : abstractChildren)
-        {
-            AstClafer foundchild = getConcreteClaferChildByName(clafer, name);
-            if (foundchild != null)
-            {
-                return foundchild;
-            }
-        }
-
-
-        List<AstConcreteClafer> concreteChildren = model.getChildren();
-
-        for (AstConcreteClafer clafer : concreteChildren)
-        {
-            if (clafer.getName().equals(name))
-            {
-                return clafer;
-            }
-        }
-
-        for (AstConcreteClafer clafer : concreteChildren)
-        {
-            AstClafer foundchild = getConcreteClaferChildByName(clafer, name);
-            if (foundchild != null)
-            {
-                return foundchild;
-            }
-        }
-
         return null;
     }
 
@@ -350,8 +257,9 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
         AstClafer current = clafer;
         while (current != null && !current.getName().startsWith("#")) {
             path.add(0, simpleName(current.getName()));
-            // an abstract clafer is top-level; a top-level concrete clafer's parent is the model's root
-            AstClafer parent = current instanceof AstConcreteClafer ? ((AstConcreteClafer) current).getParent() : null;
+            // a top-level clafer's parent is the model's root #root#; an abstract clafer can be
+            // nested, also under a concrete clafer
+            AstClafer parent = current.getParent();
             current = parent == null || (parent instanceof AstConcreteClafer && !parent.hasParent()) ? null : parent;
         }
         return path;
