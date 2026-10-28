@@ -97,6 +97,8 @@ java -jar chocosolver.jar --help`
 
 Option                                  Description
 ------                                  -----------
+--addtypes                              Add the super clafer of each clafer to the prettified
+                                          output (the default output always has them).
 --decimal-digits <Integer>              Specify the number of fractional digits of decimals
                                           (overrides the model's).
 --file <File: Clafer model file (.cfr)  Input file in .cfr or .js format.

@@ -114,10 +114,11 @@ public class REPL {
               solver = ClaferCompiler.compile(model, scope, objectives, compilerOption);
 
         boolean prettify = options.has("prettify");
+        boolean addTypes = options.has("addtypes");
 
         System.out.println("Type 'help' for the list of available REPL commands");
         if (solver != null)
-            nextInstance(solver, prettify);
+            nextInstance(solver, prettify, addTypes);
 
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String s = "";
@@ -196,7 +197,7 @@ public class REPL {
             if (s.equals(commandNext) || commandParts.length == 0) { // next instance
                 if (solver == null)
                     solver = compileModel(model, scope, objectives, compilerOption);
-                nextInstance(solver, prettify);
+                nextInstance(solver, prettify, addTypes);
                 continue;
             }
 
@@ -207,7 +208,7 @@ public class REPL {
                 if (solver == null)
                     solver = compileModel(model, scope, objectives, compilerOption);
 
-                nextInstance(solver, prettify);
+                nextInstance(solver, prettify, addTypes);
             }
             else if (command.equals(commandMinUnsatS) || command.equals(commandMinUnsatL)) { // unsat
                 System.out.println("Min UNSAT command:");
@@ -347,7 +348,7 @@ public class REPL {
                 }
                 solver = ClaferCompiler.compile(model, scope, Objective.maximize(sum(global(clafer))));
 
-                nextInstance(solver, prettify);
+                nextInstance(solver, prettify, addTypes);
             }
             else if (command.equals(commandMinimizeS) || command.equals(commandMinimizeL)) {
                 System.out.println("Minimize: " + s);
@@ -371,7 +372,7 @@ public class REPL {
                 }
                 solver = ClaferCompiler.compile(model, scope, Objective.minimize(sum(global(clafer))));
 
-                nextInstance(solver, prettify);
+                nextInstance(solver, prettify, addTypes);
             }
             else if (command.equals(commandSaveScopesS) || command.equals(commandSaveScopesL)) { // getting list of scopes
                 List<ClaferNameScopePair> claferScopePairs = new ArrayList<ClaferNameScopePair>();
@@ -496,7 +497,7 @@ public class REPL {
         }
     }
 
-    private static void nextInstance(ClaferSearch solver, boolean prettify) throws IOException {
+    private static void nextInstance(ClaferSearch solver, boolean prettify, boolean addTypes) throws IOException {
         if (solver == null) {
             System.out.println("Could not start the instantiation");
             return;
@@ -509,7 +510,7 @@ public class REPL {
             InstanceModel instance = solver.instance();
 
             if (prettify)
-                instance.print(System.out);
+                instance.print(System.out, addTypes);
             else
                 for (InstanceClafer c : instance.getTopClafers())
                     Utils.printClafer(c, System.out);

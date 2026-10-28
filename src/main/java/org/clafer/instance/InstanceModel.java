@@ -65,8 +65,19 @@ public class InstanceModel {
      * @throws IOException an IO error occurred
      */
     public void print(Appendable out) throws IOException {
+        print(out, false);
+    }
+
+    /**
+     * Print solution.
+     *
+     * @param out the stream to print to
+     * @param addTypes whether to print the super clafer of each clafer
+     * @throws IOException an IO error occurred
+     */
+    public void print(Appendable out, boolean addTypes) throws IOException {
         for (InstanceClafer top : topClafers) {
-            top.print(out);
+            top.print(out, addTypes);
         }
     }
 

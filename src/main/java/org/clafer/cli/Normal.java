@@ -39,6 +39,7 @@ public class Normal {
 
         int index = 0; // instance id
         boolean prettify = options.has("prettify");
+        boolean addTypes = options.has("addtypes");
         boolean printOff = options.has("noprint");
         boolean dataTackingOn = options.has("dataFile");
         boolean timeOn = options.has("time");
@@ -74,7 +75,7 @@ public class Normal {
                 outStream.println("=== Instance " + (++index) + " Begin ===\n");
                 InstanceModel instance = solver.instance();
                 if (prettify)
-                    instance.print(outStream);
+                    instance.print(outStream, addTypes);
                 else
                     for (InstanceClafer c : instance.getTopClafers())
                         Utils.printClafer(c, outStream);

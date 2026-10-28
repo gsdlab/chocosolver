@@ -95,11 +95,29 @@ public class InstanceClafer {
      * @throws IOException an IO error occurred
      */
     public void print(Appendable out) throws IOException {
-        print("", out);
+        print(out, false);
     }
 
-    private void print(String indent, Appendable out) throws IOException {
+    /**
+     * Print solution.
+     *
+     * @param out the stream to print to
+     * @param addTypes whether to print the super clafer of each clafer
+     * @throws IOException an IO error occurred
+     */
+    public void print(Appendable out, boolean addTypes) throws IOException {
+        print("", out, addTypes);
+    }
+
+    private void print(String indent, Appendable out, boolean addTypes) throws IOException {
         out.append(indent).append(Utils.simpleName(getType().getName())).append(Utils.countSuffix(getId()));
+        if (addTypes && getType().hasSuperClafer()) {
+            String superName = getType().getSuperClafer().getName();
+            // do not print the default super type "clafer"
+            if (!superName.equals("#clafer#")) {
+                out.append(" : ").append(Utils.simpleName(superName));
+            }
+        }
         if (hasRef()) {
             out.append(" -> ");
             if (getRef() instanceof InstanceClafer) {
@@ -114,7 +132,7 @@ public class InstanceClafer {
         }
         out.append('\n');
         for (InstanceClafer child : getChildren()) {
-            child.print(indent + "  ", out);
+            child.print(indent + "  ", out, addTypes);
         }
     }
 

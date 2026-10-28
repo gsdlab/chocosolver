@@ -20,6 +20,7 @@ public class Main
     static OptionParser optionParser() {
         return new OptionParser() {
             {
+                accepts( "addtypes", "Add the super clafer of each clafer to the prettified output (the default output always has them)." );
                 accepts( "dataFile", "Text file to store time (in seconds) to find each instance.").withRequiredArg()
                         .ofType( File.class ).describedAs("text file");
                 accepts( "decimal-digits", "Specify the number of fractional digits of decimals (overrides the model's)." )
