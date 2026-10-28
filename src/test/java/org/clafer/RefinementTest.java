@@ -1,5 +1,6 @@
 package org.clafer;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -32,6 +33,7 @@ import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -40,6 +42,40 @@ import org.junit.Test;
  * @author jimmy
  */
 public class RefinementTest {
+
+    /**
+     * <pre>
+     * abstract E
+     * e1 : E
+     *
+     * abstract A ->> E
+     *     x
+     *
+     * a1 : A -> e1
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testInheritedChildrenOfRedefinedReference() throws IOException {
+        AstModel model = newModel();
+
+        AstAbstractClafer e = model.addAbstract("E");
+        AstConcreteClafer e1 = model.addChild("e1").extending(e).withCard(Mandatory);
+        AstAbstractClafer a = model.addAbstract("A").refTo(e);
+        AstConcreteClafer x = a.addChild("x").withCard(Mandatory);
+        AstConcreteClafer a1 = model.addChild("a1").extending(a).refToUnique(e1).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(1));
+        assertTrue(solver.find());
+        InstanceModel instance = solver.instance();
+        InstanceClafer a1Instance = instance.getTopClafer(a1);
+        assertEquals(instance.getTopClafer(e1), a1Instance.getRef());
+        assertEquals(1, a1Instance.getChildren(x).length);
+
+        StringBuilder out = new StringBuilder();
+        a1Instance.print(out, true);
+        assertEquals("a1 : A -> e1\n  x\n", out.toString());
+        assertFalse(solver.find());
+    }
 
     /**
      * <pre>

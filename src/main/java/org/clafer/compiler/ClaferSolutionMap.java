@@ -67,7 +67,7 @@ public class ClaferSolutionMap {
     private InstanceClafer getInstanceClaferImpl(AstConcreteClafer clafer, int id,
             final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap, IrSolutionMap irSolution) {
         List<InstanceClafer> children = new ArrayList<>();
-        Pair<AstClafer, Object> ref = getInstanceClaferImpl(clafer, id, children, referenceMap, irSolution);
+        Pair<AstClafer, Object> ref = getInstanceClaferImpl(clafer, id, true, children, referenceMap, irSolution);
         InstanceClafer[] childrenArray = children.toArray(new InstanceClafer[children.size()]);
         if (ref == null) {
             return new InstanceClafer(clafer, id, null, childrenArray);
@@ -93,8 +93,14 @@ public class ClaferSolutionMap {
         };
     }
 
-    private Pair<AstClafer, Object> getInstanceClaferImpl(AstClafer clafer, int id, List<InstanceClafer> children,
-            final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap, IrSolutionMap irSolution) {
+    /**
+     * Adds the children of the clafer and of its super clafers to the list.
+     * Returns the reference of the clafer, or the reference it inherits, if
+     * withRef holds; a reference redefined by a sub clafer overrides the
+     * inherited one, but the inherited children are still added.
+     */
+    private Pair<AstClafer, Object> getInstanceClaferImpl(AstClafer clafer, int id, boolean withRef,
+            List<InstanceClafer> children, final Map<Pair<AstClafer, Integer>, InstanceClafer> referenceMap, IrSolutionMap irSolution) {
         for (AstConcreteClafer child : clafer.getChildren()) {
             IrSetVar childSetIrVar = astSolution.getSiblingVars(child)[id];
             int[] childIds = irSolution.getValue(childSetIrVar);
@@ -103,7 +109,7 @@ public class ClaferSolutionMap {
             }
         }
         Pair<AstClafer, Object> ref = null;
-        if (clafer.hasRef()) {
+        if (withRef && clafer.hasRef()) {
             AstClafer targetType = clafer.getRef().getTargetType();
             if (targetType instanceof AstStringClafer) {
                 IrStringVar refIrVar = astSolution.getRefStrings(clafer)[id];
@@ -124,10 +130,14 @@ public class ClaferSolutionMap {
                 }
                 ref = new Pair<>(targetType, value);
             }
-        } else if (clafer.hasSuperClafer()) {
-            ref = getInstanceClaferImpl(clafer.getSuperClafer(),
+        }
+        if (clafer.hasSuperClafer()) {
+            Pair<AstClafer, Object> superRef = getInstanceClaferImpl(clafer.getSuperClafer(),
                     id + astSolution.getAnalysis().getOffsets(clafer.getSuperClafer()).getOffset(clafer),
-                    children, referenceMap, irSolution);
+                    withRef && ref == null, children, referenceMap, irSolution);
+            if (ref == null) {
+                ref = superRef;
+            }
         }
         return ref;
     }
