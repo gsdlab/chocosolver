@@ -1,3 +1,9 @@
+# chocosolver version 0.5.6, Oct 28, 2026
+
+* `--addtypes`: with `--prettify`, each clafer of an instance is printed with its super clafer, e.g., `a1 : A -> e1`, as with `claferIG --addtypes`, in the normal, validation and REPL modes ([#43](https://github.com/gsdlab/chocosolver/issues/43)).
+* Abstract clafers nested under concrete clafers, e.g., `abstract Port` under `System`, which Clafer compiles to `System.addAbstractChild("Port")` and chocosolver rejected with "Cannot find function addAbstractChild". As in claferIG, the concrete clafer is the parent of the abstract clafer's instances, and the instances are the same as claferIG's ([#23](https://github.com/gsdlab/chocosolver/issues/23)).
+* The instance of a clafer that redefines the reference of its super clafer, e.g., `a1 : A -> e1`, contains the children inherited from the super clafer; they were solved but not printed ([#42](https://github.com/gsdlab/chocosolver/issues/42)).
+
 # chocosolver version 0.5.5, Oct 27, 2026
 
 * Upgrade to choco-solver 6.0.2. The instances, Pareto fronts and the search of the default strategy are the same as with 4.10.18, and so are the times; `pickOnDom` and `conflictHistory` finish models that hit the time limit before.
