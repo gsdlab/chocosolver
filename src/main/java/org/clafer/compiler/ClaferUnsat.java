@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.Solver;
 import org.clafer.choco.ResetKeepsLimits;
@@ -30,6 +31,20 @@ public class ClaferUnsat {
     private final ClaferSolutionMap solutionMap;
     private final Pair<AstConstraint, Either<Boolean, BoolVar>>[] softVars;
     private final Either<Integer, IntVar> score;
+
+    /**
+     * The model is unsatisfiable even without its constraints, which are all
+     * soft: there is no Min-Unsat or Unsat-Core.
+     */
+    @SuppressWarnings("unchecked")
+    ClaferUnsat() {
+        Model model = new Model();
+        model.falseConstraint().post();
+        this.solver = model.getSolver();
+        this.solutionMap = null;
+        this.softVars = new Pair[0];
+        this.score = Either.left(0);
+    }
 
     ClaferUnsat(Solver solver, ClaferSolutionMap solutionMap) {
         this.solver = Check.notNull(solver);

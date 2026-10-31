@@ -214,13 +214,13 @@ public class REPL {
                 System.out.println("Min UNSAT command:");
                 ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
                 // Print the Min-Unsat and near-miss example.
-                System.out.println(unsat.minUnsat());
+                printUnsat(unsat.minUnsat());
             }
             else if (command.equals(commandUnsatCoreS) || command.equals(commandUnsatCoreL)) {// min unsat
                 System.out.println("UNSAT Core command:");
                 ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
                 // Print the Min-Unsat and near-miss example.
-                System.out.println(unsat.unsatCore());
+                printUnsat(unsat.unsatCore());
             }
             else if (command.equals(commandReloadS) || command.equals(commandReloadL)) {// reloading
                 try {
@@ -536,4 +536,12 @@ public class REPL {
         }
         return solver;
     }
+
+    // The result of an unsat command is null when removing constraints cannot make the model satisfiable
+    private static void printUnsat(Object unsat) {
+        System.out.println(unsat == null
+                ? "No constraints to report: the model is unsatisfiable without them. Check the cardinalities or increase the scopes."
+                : unsat);
+    }
 }
+

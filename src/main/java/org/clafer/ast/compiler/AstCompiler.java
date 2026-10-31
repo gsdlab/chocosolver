@@ -96,6 +96,7 @@ import org.clafer.collection.Monoid;
 import org.clafer.collection.Pair;
 import org.clafer.collection.Triple;
 import org.clafer.common.Check;
+import org.clafer.common.UnsatisfiableException;
 import org.clafer.common.Util;
 import org.clafer.domain.Domain;
 import org.clafer.domain.Domains;
@@ -2227,6 +2228,10 @@ public class AstCompiler {
                 domain = refRange;
             }
             if (partialSolution.hasClafer(i)) {
+                if (domain.isEmpty()) {
+                    // the constraints leave no value for a reference that must exist
+                    throw new UnsatisfiableException();
+                }
                 ivs[i] = domainInt(src.getName() + "@Ref" + i, domain);
             } else {
                 ivs[i] = domainInt(src.getName() + "@Ref" + i, domain.insert(getUninitalizedRef(tar)));

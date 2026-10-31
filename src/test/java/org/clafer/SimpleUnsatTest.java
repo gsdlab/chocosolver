@@ -27,6 +27,8 @@ import org.clafer.compiler.ClaferUnsat;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 
 /**
@@ -56,6 +58,47 @@ public class SimpleUnsatTest {
 
         assertEquals(set(bad), ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).minUnsat().getFst());
         assertEquals(set(bad), ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).unsatCore());
+    }
+
+    /**
+     * <pre>
+     * xor G
+     *     A 2
+     *     B 2
+     * [some A]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testUnsatWithoutConstraints() {
+        AstModel model = newModel();
+
+        AstConcreteClafer g = model.addChild("G").withCard(Mandatory).withGroupCard(1, 1);
+        AstConcreteClafer a = g.addChild("A").withCard(2, 2);
+        g.addChild("B").withCard(2, 2);
+        model.addConstraint(some(global(a)));
+
+        assertNull(ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).minUnsat());
+        assertNull(ClaferCompiler.compileUnsat(model, Scope.defaultScope(2)).unsatCore());
+    }
+
+    /**
+     * <pre>
+     * A -> integer
+     * [A.ref = 1]
+     * [A.ref = 2]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testUnsatReferenceValues() {
+        AstModel model = newModel();
+
+        AstConcreteClafer a = model.addChild("A").withCard(Mandatory).refToUnique(IntType);
+        AstConstraint one = model.addConstraint(equal(joinRef(global(a)), constant(1)));
+        AstConstraint two = model.addConstraint(equal(joinRef(global(a)), constant(2)));
+
+        assertFalse(ClaferCompiler.compile(model, Scope.defaultScope(1).intLow(-8).intHigh(7)).find());
+        assertEquals(1, ClaferCompiler.compileUnsat(model, Scope.defaultScope(1).intLow(-8).intHigh(7)).minUnsat().getFst().size());
+        assertEquals(set(one, two), ClaferCompiler.compileUnsat(model, Scope.defaultScope(1).intLow(-8).intHigh(7)).unsatCore());
     }
 
     /**
