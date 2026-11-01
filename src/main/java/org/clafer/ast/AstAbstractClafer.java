@@ -12,8 +12,8 @@ import org.clafer.common.Check;
  */
 public class AstAbstractClafer extends AstClafer {
 
-    private final AstAbstractClafer parent;
-    private final List<AstAbstractClafer> abstractChildren = new ArrayList<>();
+    // An abstract or a concrete Clafer.
+    private final AstClafer parent;
     private final List<AstClafer> subs = new ArrayList<>();
 
     AstAbstractClafer(String name, AstAbstractClafer claferClafer) {
@@ -21,7 +21,7 @@ public class AstAbstractClafer extends AstClafer {
         this.parent = null;
     }
 
-    AstAbstractClafer(String name, AstAbstractClafer parent, AstAbstractClafer claferClafer) {
+    AstAbstractClafer(String name, AstClafer parent, AstAbstractClafer claferClafer) {
         super(name, claferClafer);
         this.parent = Check.notNull(parent);
     }
@@ -42,22 +42,6 @@ public class AstAbstractClafer extends AstClafer {
         return withGroupCard(new Card(low, high));
     }
 
-    public boolean hasAbstractChildren() {
-        return !abstractChildren.isEmpty();
-    }
-
-    public List<AstAbstractClafer> getAbstractChildren() {
-        return Collections.unmodifiableList(abstractChildren);
-    }
-
-    public AstAbstractClafer addAbstractChild(String name) {
-        AstAbstractClafer child = new AstAbstractClafer(name, this, getClaferClafer());
-        if (getClaferClafer() != null) {
-            child.extending(getClaferClafer());
-        }
-        abstractChildren.add(child);
-        return child;
-    }
 
     /**
      * Returns the Clafers that extend this Clafer
@@ -100,7 +84,7 @@ public class AstAbstractClafer extends AstClafer {
     }
 
     @Override
-    public AstAbstractClafer getParent() {
+    public AstClafer getParent() {
         return parent;
     }
 

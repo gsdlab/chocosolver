@@ -33,4 +33,25 @@ public class AstUtilTest {
         assertTrue(clafers.contains(leg));
         assertTrue(clafers.contains(tail));
     }
+
+    @Test
+    public void testGetClafersNestedUnderConcrete() {
+        AstModel model = Asts.newModel();
+
+        AstConcreteClafer system = model.addChild("System");
+        AstAbstractClafer port = system.addAbstractChild("Port");
+        AstConcreteClafer speed = port.addChild("Speed");
+        AstConcreteClafer p1 = system.addChild("p1").extending(port);
+
+        List<AstClafer> clafers = AstUtil.getClafers(model);
+        assertEquals(7, clafers.size());
+        assertTrue(clafers.contains(port));
+        assertTrue(clafers.contains(speed));
+        assertTrue(clafers.contains(p1));
+        assertTrue(AstUtil.getAbstractClafers(model).contains(port));
+        assertTrue(AstUtil.getConcreteClafers(model).contains(speed));
+        assertTrue(AstUtil.getAbstractClafersInSubOrder(model).contains(port));
+        assertEquals(port, port.getSubs().get(0).getSuperClafer());
+        assertEquals(system, port.getParent());
+    }
 }

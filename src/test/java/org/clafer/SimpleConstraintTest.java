@@ -12,6 +12,7 @@ import static org.clafer.ast.Asts.constant;
 import static org.clafer.ast.Asts.equal;
 import static org.clafer.ast.Asts.global;
 import static org.clafer.ast.Asts.greaterThan;
+import static org.clafer.ast.Asts.ifOnlyIf;
 import static org.clafer.ast.Asts.implies;
 import static org.clafer.ast.Asts.in;
 import static org.clafer.ast.Asts.join;
@@ -24,6 +25,7 @@ import static org.clafer.ast.Asts.some;
 import static org.clafer.ast.Asts.union;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.instance.InstanceClafer;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -640,5 +642,110 @@ public class SimpleConstraintTest {
 
         ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(0).intHigh(1));
         assertEquals(7, solver.allInstances().length);
+    }
+
+    /**
+     * The same as {@link #testNestedAbstract()}, with Content nested under the
+     * concrete Mail.
+     *
+     * <pre>
+     * Mail ?
+     *     abstract Content -> int
+     *     Letter : Content
+     *     Gift : Content *
+     *     [ 1 in this.Content.ref ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testAbstractNestedUnderConcrete() {
+        AstModel model = newModel();
+
+        AstConcreteClafer mail = model.addChild("Mail").withCard(Optional);
+        AstAbstractClafer content = mail.addAbstractChild("Content").refToUnique(IntType);
+        AstConcreteClafer letter = mail.addChild("Letter").extending(content).withCard(Mandatory);
+        AstConcreteClafer gift = mail.addChild("Gift").extending(content);
+        mail.addConstraint(in(constant(1), joinRef(join($this(), content))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2).intLow(0).intHigh(1));
+        assertEquals(7, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * abstract Component
+     *     abstract Port
+     *         v ?
+     *
+     * WinController : Component
+     *     cmd : Port
+     *     abstract ExceptionPort : Port
+     *         e ?
+     *     powerOut : ExceptionPort
+     *     other : ExceptionPort ?
+     *     [ #this.Port = 3 ]
+     *     [ #this.ExceptionPort = 2 ]
+     *     [ powerOut.v ]
+     *     [ powerOut.e ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testAbstractNestedUnderConcreteExtendsNestedAbstract() {
+        AstModel model = newModel();
+
+        AstAbstractClafer component = model.addAbstract("Component");
+        AstAbstractClafer port = component.addAbstractChild("Port");
+        AstConcreteClafer v = port.addChild("v").withCard(Optional);
+        AstConcreteClafer winController = model.addChild("WinController").extending(component).withCard(Mandatory);
+        winController.addChild("cmd").extending(port).withCard(Mandatory);
+        AstAbstractClafer exceptionPort = winController.addAbstractChild("ExceptionPort").extending(port);
+        AstConcreteClafer e = exceptionPort.addChild("e").withCard(Optional);
+        AstConcreteClafer powerOut = winController.addChild("powerOut").extending(exceptionPort).withCard(Mandatory);
+        winController.addChild("other").extending(exceptionPort).withCard(Optional);
+        winController.addConstraint(equal(card(join($this(), port)), constant(3)));
+        winController.addConstraint(equal(card(join($this(), exceptionPort)), constant(2)));
+        winController.addConstraint(some(join(join($this(), powerOut), v)));
+        winController.addConstraint(some(join(join($this(), powerOut), e)));
+
+        // other exists; cmd.v, other.v and other.e are free
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        assertEquals(8, solver.allInstances().length);
+    }
+
+    /**
+     * <pre>
+     * System
+     *     flag ?
+     *     abstract Port
+     *         on ?
+     *         [ on <=> this.parent.flag ]
+     *     p1 : Port
+     *     p2 : Port
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testParentOfAbstractNestedUnderConcrete() {
+        AstModel model = newModel();
+
+        AstConcreteClafer system = model.addChild("System").withCard(Mandatory);
+        AstConcreteClafer flag = system.addChild("flag").withCard(Optional);
+        AstAbstractClafer port = system.addAbstractChild("Port");
+        AstConcreteClafer on = port.addChild("on").withCard(Optional);
+        port.addConstraint(ifOnlyIf(some(join($this(), on)), some(join(joinParent($this()), flag))));
+        system.addChild("p1").extending(port).withCard(Mandatory);
+        system.addChild("p2").extending(port).withCard(Mandatory);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(2));
+        int instances = 0;
+        while (solver.find()) {
+            InstanceClafer systemInstance = solver.instance().getTopClafer(system);
+            boolean hasFlag = systemInstance.getChildren(flag).length == 1;
+            for (InstanceClafer child : systemInstance.getChildren()) {
+                if (!child.getType().equals(flag)) {
+                    assertEquals(hasFlag, child.getChildren(on).length == 1);
+                }
+            }
+            instances++;
+        }
+        assertEquals(2, instances);
     }
 }

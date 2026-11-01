@@ -52,5 +52,8 @@ public class CardAnalyzer implements Analyzer {
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, globalCard.getLow(), cardMap, analysis);
         }
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
+            analyze(child, cardMap, analysis);
+        }
     }
 }

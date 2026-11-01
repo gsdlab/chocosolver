@@ -344,21 +344,25 @@ public class ClaferCompiler {
     }
 
     public static ClaferUnsat compileUnsat(AstModel in, Scopable scope, ClaferOption options) {
-        Model model = new Model();
-        IrModule module = new IrModule();
+        try {
+            Model model = new Model();
+            IrModule module = new IrModule();
 
-        AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
-                Util.cons(new UnsatAnalyzer(), AstCompiler.DefaultAnalyzers),
-                options.isFullSymmetryBreaking());
-        IrSolutionMap irSolution = IrCompiler.compile(module, model, options.isFullOptimizations());
-        ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
+            AstSolutionMap astSolution = AstCompiler.compile(in, scope.toScope(), module,
+                    Util.cons(new UnsatAnalyzer(), AstCompiler.DefaultAnalyzers),
+                    options.isFullSymmetryBreaking());
+            IrSolutionMap irSolution = IrCompiler.compile(module, model, options.isFullOptimizations());
+            ClaferSolutionMap solution = new ClaferSolutionMap(astSolution, irSolution);
 
-        Solver solver = model.getSolver();
-        set(solver,
-                Util.maybeCons(firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
-                        intStrategies(getDecisionVars(in, options, solution), options)));
-        restartPolicy(solver, options);
-        return new ClaferUnsat(solver, solution);
+            Solver solver = model.getSolver();
+            set(solver,
+                    Util.maybeCons(firstFailInDomainMax(Either.filterRight(irSolution.getVars(astSolution.getSoftVars()))),
+                            intStrategies(getDecisionVars(in, options, solution), options)));
+            restartPolicy(solver, options);
+            return new ClaferUnsat(solver, solution);
+        } catch (UnsatisfiableException e) {
+            return new ClaferUnsat();
+        }
     }
 
 //    public static ClaferSolver compilePartial(AstModel in, ScopeBuilder scope, AstConcreteClafer... concretize) {

@@ -52,6 +52,9 @@ public class AstUtil {
         for (AstConcreteClafer child : concreteClafer.getChildren()) {
             getNestedClafers(child, clafers);
         }
+        for (AstAbstractClafer child : concreteClafer.getAbstractChildren()) {
+            getNestedClafers(child, clafers);
+        }
     }
 
     /**
@@ -78,6 +81,12 @@ public class AstUtil {
     }
 
     private static void getNestedAbstractClafers(AstConcreteClafer concreteClafer, List<AstAbstractClafer> clafers) {
+        for (AstConcreteClafer child : concreteClafer.getChildren()) {
+            getNestedAbstractClafers(child, clafers);
+        }
+        for (AstAbstractClafer child : concreteClafer.getAbstractChildren()) {
+            getNestedAbstractClafers(child, clafers);
+        }
     }
 
     /**
@@ -105,6 +114,9 @@ public class AstUtil {
     private static void getNestedConcreteClafers(AstConcreteClafer concreteClafer, List<AstConcreteClafer> clafers) {
         clafers.add(concreteClafer);
         for (AstConcreteClafer child : concreteClafer.getChildren()) {
+            getNestedConcreteClafers(child, clafers);
+        }
+        for (AstAbstractClafer child : concreteClafer.getAbstractChildren()) {
             getNestedConcreteClafers(child, clafers);
         }
     }
@@ -143,6 +155,12 @@ public class AstUtil {
     public static List<AstAbstractClafer> getAbstractClafersInSubOrder(AstModel model) {
         List<AstAbstractClafer> clafers = new ArrayList<>(model.getAbstracts());
         getAbstractClafers(model.getAbstractRoot(), clafers);
+        // the abstract Clafers nested under concrete Clafers
+        for (AstConcreteClafer concreteClafer : getConcreteClafers(model)) {
+            for (AstAbstractClafer child : concreteClafer.getAbstractChildren()) {
+                getAbstractClafers(child, clafers);
+            }
+        }
         Collections.sort(clafers, Comparator.comparing(a -> AstUtil.getSuperHierarchy(a).size()));
         return clafers;
     }
@@ -217,10 +235,8 @@ public class AstUtil {
             clafers.add(child);
             getNestedChildClafers(child, clafers);
         }
-        if (clafer instanceof AstAbstractClafer) {
-            for (AstAbstractClafer child : ((AstAbstractClafer) clafer).getAbstractChildren()) {
-                getNestedChildClafers(child, clafers);
-            }
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
+            getNestedChildClafers(child, clafers);
         }
     }
 
@@ -276,6 +292,9 @@ public class AstUtil {
     private static void getNestedConstraints(AstConcreteClafer clafer, List<AstConstraint> constraints) {
         constraints.addAll(clafer.getConstraints());
         for (AstConcreteClafer child : clafer.getChildren()) {
+            getNestedConstraints(child, constraints);
+        }
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
             getNestedConstraints(child, constraints);
         }
     }

@@ -37,6 +37,7 @@ public class Validate {
 
         int index = 0; // optimal instance id
         boolean prettify = options.has("prettify");
+        boolean addTypes = options.has("addtypes");
 
         while (solver.find()) {
             System.out.println("Failed assertion(s):");
@@ -46,7 +47,7 @@ public class Validate {
             InstanceModel instance = solver.instance();
 
             if (prettify)
-                instance.print(outStream);
+                instance.print(outStream, addTypes);
             else {
                 for (InstanceClafer c : instance.getTopClafers())
                     Utils.printClafer(c, outStream);

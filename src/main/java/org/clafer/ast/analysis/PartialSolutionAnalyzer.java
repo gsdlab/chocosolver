@@ -106,6 +106,10 @@ public class PartialSolutionAnalyzer implements Analyzer {
         for (AstConcreteClafer child : clafer.getChildren()) {
             analyze(child, analysis, partialSolutionMap);
         }
+        // after the concrete children, which include their subs
+        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
+            analyze(child, analysis, partialSolutionMap);
+        }
     }
 
     private static int[][] toArray(TIntArrayList[] list) {

@@ -78,7 +78,7 @@ public class PartialIntAnalyzer {
             AstConstraint constraint = constraintExpr.getKey();
             AstBoolExpr expr = constraintExpr.getValue();
 
-            if (constraint.isHard()) {
+            if (analysis.isHard(constraint)) {
                 analyzer.analyzeConstraint(expr, constraint.getContext(), null);
             }
         }
@@ -89,7 +89,7 @@ public class PartialIntAnalyzer {
                 AstConstraint constraint = constraintExpr.getKey();
                 AstBoolExpr expr = constraintExpr.getValue();
 
-                if (constraint.isHard()) {
+                if (analysis.isHard(constraint)) {
                     analyzer.analyzeConstraint(expr, constraint.getContext(), oracle);
                 }
             }

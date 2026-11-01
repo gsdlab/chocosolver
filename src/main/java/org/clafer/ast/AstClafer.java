@@ -20,6 +20,7 @@ public abstract class AstClafer implements AstVar {
     private AstRef ref;
     private Card groupCard;
     private final List<AstConcreteClafer> children = new ArrayList<>();
+    private final List<AstAbstractClafer> abstractChildren = new ArrayList<>();
     private final List<AstConstraint> constraints = new ArrayList<>();
 
     AstClafer(String name, AstAbstractClafer claferClafer) {
@@ -227,6 +228,43 @@ public abstract class AstClafer implements AstVar {
      */
     public List<AstConcreteClafer> getChildren() {
         return Collections.unmodifiableList(children);
+    }
+
+    /**
+     * Checks if this Clafer has any abstract children.
+     *
+     * @return {@code true} if and only if this Clafer has abstract children,
+     * {@code false} otherwise
+     */
+    public boolean hasAbstractChildren() {
+        return !abstractChildren.isEmpty();
+    }
+
+    /**
+     * Returns this Clafer's abstract children. A concrete Clafer can have
+     * abstract children too, e.g. {@code abstract Port} nested under the
+     * concrete {@code System}; their subs are nested under {@code System} as
+     * well.
+     *
+     * @return this Clafer's abstract children
+     */
+    public List<AstAbstractClafer> getAbstractChildren() {
+        return Collections.unmodifiableList(abstractChildren);
+    }
+
+    /**
+     * Add a new abstract child under this Clafer.
+     *
+     * @param name the name of the abstract child
+     * @return the new abstract child
+     */
+    public AstAbstractClafer addAbstractChild(String name) {
+        AstAbstractClafer child = new AstAbstractClafer(name, this, getClaferClafer());
+        if (getClaferClafer() != null) {
+            child.extending(getClaferClafer());
+        }
+        abstractChildren.add(child);
+        return child;
     }
 
     protected AstAbstractClafer getClaferClafer() {
