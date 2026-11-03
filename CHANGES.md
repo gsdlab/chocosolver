@@ -1,3 +1,7 @@
+# chocosolver version 0.5.7, unreleased
+
+* Minor release with Clafer 0.5.7.
+
 # chocosolver version 0.5.6, Nov 1, 2026
 
 * `--addtypes`: with `--prettify`, each clafer of an instance is printed with its super clafer, e.g., `a1 : A -> e1`, as with `claferIG --addtypes`, in the normal, validation and REPL modes ([#43](https://github.com/gsdlab/chocosolver/issues/43)).
