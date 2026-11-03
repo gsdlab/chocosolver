@@ -1364,7 +1364,8 @@ public class AstCompiler {
                                 offset(subSiblingSet[i], offset));
                     }
                 }
-                rightArray = array(array);
+                // Why empty set? The "take" var can contain unused, as for a concrete clafer.
+                rightArray = snoc(array(array), EmptySet);
             }
             if (left instanceof IrIntExpr) {
                 IrIntExpr $intLeft = (IrIntExpr) left;

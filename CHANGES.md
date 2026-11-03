@@ -1,6 +1,7 @@
 # chocosolver version 0.5.7, unreleased
 
 * Minor release with Clafer 0.5.7.
+* A join into a nested abstract clafer from a clafer that can be unused, e.g., `[ some this.parent.Task ]` under an optional child of `abstract System` with `abstract Task`, crashed with an `ArrayIndexOutOfBoundsException` when the abstract clafer's parent has several instances, e.g., two systems in one model.
 
 # chocosolver version 0.5.6, Nov 1, 2026
 
