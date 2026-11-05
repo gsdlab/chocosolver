@@ -16,11 +16,13 @@ import static org.clafer.ast.Asts.join;
 import static org.clafer.ast.Asts.joinParent;
 import static org.clafer.ast.Asts.joinRef;
 import static org.clafer.ast.Asts.local;
+import static org.clafer.ast.Asts.minus;
 import static org.clafer.ast.Asts.newModel;
 import static org.clafer.ast.Asts.not;
 import static org.clafer.ast.Asts.or;
 import static org.clafer.ast.Asts.product;
 import static org.clafer.ast.Asts.some;
+import static org.clafer.ast.Asts.sub;
 import static org.clafer.ast.Asts.sum;
 import static org.clafer.ast.Asts.transitiveClosure;
 import static org.clafer.ast.Asts.union;
@@ -41,11 +43,13 @@ public class AstPrinterTest {
         model.addConstraint(some(global(phone)));
         assertEquals(""
                 + "[(#Phone) >= 1]\n"
-                + "abstract 0..* Feature 0..*\n"
-                + "  0..* cost -> int 1..1\n"
-                + "1..1 Phone : Feature 2..2\n"
-                + "  abstract 0..* Port 0..*\n"
-                + "  0..* apps ->> Feature 0..*\n",
+                + "abstract 0..* Feature 0..* {\n"
+                + "  0..* cost -> int 1..1 {}\n"
+                + "}\n"
+                + "1..1 Phone : Feature 2..2 {\n"
+                + "  abstract 0..* Port 0..* {}\n"
+                + "  0..* apps ->> Feature 0..* {}\n"
+                + "}\n",
                 AstPrinter.print(model));
     }
 
@@ -59,9 +63,9 @@ public class AstPrinterTest {
         model.addChild("Phone").extending(device).withCard(1, 1);
         model.addChild("Tablet").extending(device).withCard(1, 1).withGroupCard(0, 2);
         assertEquals(""
-                + "abstract 1..1 Device 0..*\n"
-                + "1..1 Phone : Device 1..1\n"
-                + "0..2 Tablet : Device 1..1\n",
+                + "abstract 1..1 Device 0..* {}\n"
+                + "1..1 Phone : Device 1..1 {}\n"
+                + "0..2 Tablet : Device 1..1 {}\n",
                 AstPrinter.print(model));
     }
 
@@ -75,9 +79,9 @@ public class AstPrinterTest {
         model.addChild("A").extending(t).withCard(1, 1);
         model.addChild("B").extending(t).withCard(1, 1).refToUnique(IntType);
         assertEquals(""
-                + "abstract 0..* T ->> int 0..*\n"
-                + "0..* A : T ->> int 1..1\n"
-                + "0..* B : T -> int 1..1\n",
+                + "abstract 0..* T ->> int 0..* {}\n"
+                + "0..* A : T ->> int 1..1 {}\n"
+                + "0..* B : T -> int 1..1 {}\n",
                 AstPrinter.print(model));
     }
 
@@ -92,6 +96,17 @@ public class AstPrinterTest {
         assertEquals("sum Phone . cost . dref", AstPrinter.print(sum(join(global(phone), cost))));
         assertEquals("product Phone . cost . dref", AstPrinter.print(product(join(global(phone), cost))));
         assertEquals("sum Phone . cost . dref . dref", AstPrinter.print(sum(joinRef(join(global(phone), cost)))));
+    }
+
+    /**
+     * A negative constant and the negation of a number print differently.
+     */
+    @Test
+    public void testNegativeNumbers() {
+        assertEquals("-1", AstPrinter.print(constant(-1)));
+        assertEquals("-(1)", AstPrinter.print(minus(constant(1))));
+        assertEquals("-(-1)", AstPrinter.print(minus(constant(-1))));
+        assertEquals("2 - -1", AstPrinter.print(sub(constant(2), constant(-1))));
     }
 
     @Test

@@ -22,6 +22,10 @@ import org.clafer.scope.Scope;
  * scope line, sorted by name, whether its scope was given or is the default.
  * Source spans are not printed.
  * <p>
+ * Nesting is in braces, as in Clafer without layout: every clafer has its
+ * block, {@code {}} if it is empty. The indentation is only for reading;
+ * whitespace and line breaks carry no meaning.
+ * <p>
  * What applies is printed, not what is written: a clafer without its own group
  * card has its super clafer's, as chocosolver solves it, and {@code 0..*} if
  * no super clafer has one; a clafer without its own reference has its super
@@ -93,10 +97,11 @@ public class AstPrinter {
         // Constraints directly under root, as opposed to the top level, are
         // possible in the Java API.
         if (model.getRoot().hasConstraints()) {
-            out.append("root\n");
+            out.append("root {\n");
             for (AstConstraint constraint : model.getRoot().getConstraints()) {
                 printConstraint(constraint, Indent, out);
             }
+            out.append("}\n");
         }
         return out.toString();
     }
@@ -136,7 +141,11 @@ public class AstPrinter {
         // An abstract clafer has no card of its own: its instances are those
         // of the clafers that extend it.
         out.append(' ').append(clafer instanceof AstConcreteClafer concrete ? card(concrete.getCard()) : "0..*");
-        out.append('\n');
+        if (!clafer.hasConstraints() && !clafer.hasAbstractChildren() && !clafer.hasChildren()) {
+            out.append(" {}\n");
+            return;
+        }
+        out.append(" {\n");
         String inner = indent + Indent;
         for (AstConstraint constraint : clafer.getConstraints()) {
             printConstraint(constraint, inner, out);
@@ -147,6 +156,7 @@ public class AstPrinter {
         for (AstConcreteClafer child : clafer.getChildren()) {
             printClafer(child, model, inner, out);
         }
+        out.append(indent).append("}\n");
     }
 
     private static void printConstraint(AstConstraint constraint, String indent, StringBuilder out) {
@@ -179,7 +189,10 @@ public class AstPrinter {
             case AstJoinParent e -> operand(e.children()) + " . parent";
             case AstJoinRef e -> operand(e.deref()) + " . dref";
             case AstNot e -> "!" + operand(e.expr());
-            case AstMinus e -> "-" + operand(e.expr());
+            // -1 is a constant, so the negation of a number is -(1), and of
+            // -1 is -(-1) rather than --1, which reads as the difference --.
+            case AstMinus e -> "-" + (e.expr() instanceof AstConstant || e.expr() instanceof AstDecimalConstant
+                    ? "(" + print(e.expr()) + ")" : operand(e.expr()));
             case AstCard e -> "#" + operand(e.set());
             case AstSum e -> "sum " + operand(e.set()) + " . dref";
             case AstProduct e -> "product " + operand(e.set()) + " . dref";
