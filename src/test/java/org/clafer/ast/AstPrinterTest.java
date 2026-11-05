@@ -47,8 +47,8 @@ public class AstPrinterTest {
                 + "  0..* cost -> int 1..1 {}\n"
                 + "}\n"
                 + "1..1 Phone : Feature 2..2 {\n"
-                + "  abstract 0..* Port 0..* {}\n"
                 + "  0..* apps ->> Feature 0..* {}\n"
+                + "  abstract 0..* Port 0..* {}\n"
                 + "}\n",
                 AstPrinter.print(model));
     }

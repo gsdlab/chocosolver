@@ -1,8 +1,13 @@
 package org.clafer.ast;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.clafer.assertion.Assertion;
 import org.clafer.objective.Objective;
@@ -18,7 +23,8 @@ import org.clafer.scope.Scope;
  * priorities) are not printed.
  * <p>
  * The clafers, their children and their constraints are printed in the order
- * they were added, which is the order of the instances. Every clafer has a
+ * they were added, which is the order of the source and of the instances,
+ * abstract and concrete clafers interleaved (see {@link #sourceOrder}). Every clafer has a
  * scope line, sorted by name, whether its scope was given or is the default.
  * Source spans are not printed.
  * <p>
@@ -86,12 +92,9 @@ public class AstPrinter {
         for (AstConstraint constraint : top.getConstraints()) {
             printConstraint(constraint, "", out);
         }
-        for (AstAbstractClafer clafer : top.getAbstractChildren()) {
-            if (clafer != model.getTypeRoot()) {
-                printClafer(clafer, model, "", out);
-            }
-        }
-        for (AstConcreteClafer clafer : top.getChildren()) {
+        List<AstAbstractClafer> abstracts = top.getAbstractChildren().stream()
+                .filter(c -> c != model.getTypeRoot()).collect(Collectors.toList());
+        for (AstClafer clafer : sourceOrder(abstracts, top.getChildren())) {
             printClafer(clafer, model, "", out);
         }
         // Constraints directly under root, as opposed to the top level, are
@@ -150,13 +153,115 @@ public class AstPrinter {
         for (AstConstraint constraint : clafer.getConstraints()) {
             printConstraint(constraint, inner, out);
         }
-        for (AstAbstractClafer child : clafer.getAbstractChildren()) {
-            printClafer(child, model, inner, out);
-        }
-        for (AstConcreteClafer child : clafer.getChildren()) {
+        for (AstClafer child : sourceOrder(clafer.getAbstractChildren(), clafer.getChildren())) {
             printClafer(child, model, inner, out);
         }
         out.append(indent).append("}\n");
+    }
+
+    /**
+     * The abstract and concrete children of a clafer, which the model keeps
+     * apart, merged in the order of the source model. The order matters to
+     * the solver: a sub clafer's place among the subs of its super clafer
+     * numbers its instances. The model built from the source adds the subs in
+     * the order of the source, and a clafer without a super clafer stays among
+     * the subs of {@code #clafer#} in the order of creation; so a list of subs
+     * that holds clafers from the subtrees of two children tells which child
+     * came first. Without one, the order is not seen by the solver, and the
+     * abstract child comes first.
+     */
+    private static List<AstClafer> sourceOrder(List<AstAbstractClafer> abstracts, List<AstConcreteClafer> concretes) {
+        if (abstracts.isEmpty() || concretes.isEmpty()) {
+            List<AstClafer> one = new ArrayList<>(abstracts);
+            one.addAll(concretes);
+            return one;
+        }
+        // A topological sort of the siblings: each list keeps its order, and
+        // a list of subs orders an abstract and a concrete child. Without an
+        // order between two, the abstract child comes first.
+        List<AstClafer> siblings = new ArrayList<>(abstracts);
+        siblings.addAll(concretes);
+        int n = siblings.size();
+        List<List<Integer>> after = new ArrayList<>();
+        int[] before = new int[n];
+        for (int k = 0; k < n; k++) {
+            after.add(new ArrayList<>());
+        }
+        int a = abstracts.size();
+        for (int k = 0; k + 1 < n; k++) {
+            if (k + 1 != a) {
+                after.get(k).add(k + 1);
+                before[k + 1]++;
+            }
+        }
+        for (int i = 0; i < a; i++) {
+            for (int j = a; j < n; j++) {
+                Boolean abstractFirst = before(siblings.get(i), siblings.get(j));
+                if (abstractFirst != null) {
+                    int from = abstractFirst ? i : j, to = abstractFirst ? j : i;
+                    after.get(from).add(to);
+                    before[to]++;
+                }
+            }
+        }
+        List<AstClafer> sorted = new ArrayList<>(n);
+        boolean[] placed = new boolean[n];
+        while (sorted.size() < n) {
+            // The first sibling, in the default order, that nothing must
+            // precede; if the orders contradict each other, the first left.
+            int next = -1;
+            for (int k = 0; k < n && next < 0; k++) {
+                if (!placed[k] && before[k] == 0) {
+                    next = k;
+                }
+            }
+            for (int k = 0; k < n && next < 0; k++) {
+                if (!placed[k]) {
+                    next = k;
+                }
+            }
+            placed[next] = true;
+            sorted.add(siblings.get(next));
+            for (int k : after.get(next)) {
+                before[k]--;
+            }
+        }
+        return sorted;
+    }
+
+    /**
+     * @return whether the subtree of a comes before the subtree of b in a list
+     * of subs that has clafers of both, or null if no list has
+     */
+    private static Boolean before(AstClafer a, AstClafer b) {
+        Map<AstClafer, Integer> firstOfB = new HashMap<>();
+        for (AstClafer y : subtree(b)) {
+            if (y.hasSuperClafer()) {
+                firstOfB.merge(y.getSuperClafer(), y.getSuperClafer().getSubs().indexOf(y), Math::min);
+            }
+        }
+        for (AstClafer x : subtree(a)) {
+            if (x.hasSuperClafer()) {
+                Integer other = firstOfB.get(x.getSuperClafer());
+                if (other != null) {
+                    return x.getSuperClafer().getSubs().indexOf(x) < other;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static List<AstClafer> subtree(AstClafer clafer) {
+        List<AstClafer> subtree = new ArrayList<>();
+        Deque<AstClafer> todo = new ArrayDeque<>();
+        todo.push(clafer);
+        while (!todo.isEmpty()) {
+            AstClafer c = todo.pop();
+            subtree.add(c);
+            c.getAbstractChildren().forEach(todo::push);
+            c.getChildren().forEach(todo::push);
+        }
+        return subtree;
     }
 
     private static void printConstraint(AstConstraint constraint, String indent, StringBuilder out) {
