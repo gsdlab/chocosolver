@@ -24,6 +24,18 @@
         <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- choco-solver brings slf4j-api 1.7 (via org.ehcache:sizeof); slf4j-jdk14 2 needs the
+                 API of the same version, and Maven otherwise keeps 1.7 -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>2.0.20</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.choco-solver</groupId>
@@ -38,12 +50,13 @@
         <dependency>
             <groupId>org.mozilla</groupId>
             <artifactId>rhino</artifactId>
-            <version>1.9.1</version>
+            <version>1.9.2</version>
         </dependency>
+        <!-- sends the SLF4J messages of choco-solver's dependencies to java.util.logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>1.7.21</version>
+            <version>2.0.20</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

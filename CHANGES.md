@@ -3,6 +3,7 @@
 * Minor release with Clafer 0.5.7.
 * A join into a nested abstract clafer from a clafer that can be unused, e.g., `[ some this.parent.Task ]` under an optional child of `abstract System` with `abstract Task`, crashed with an `ArrayIndexOutOfBoundsException` when the abstract clafer's parent has several instances, e.g., two systems in one model.
 * jopt-simple 5.0.4 (was 5.0.2), which parses the command line, and maven-assembly-plugin 3.8.0 (was 3.7.1), which builds the jar with dependencies. choco-solver 6.0.2 is already the latest release.
+* Rhino 1.9.2 (was 1.9.1), which runs the JavaScript that Clafer generates, and SLF4J 2.0.20 (was slf4j-jdk14 1.7.21 from 2016, with slf4j-api 1.7.36), which passes the log messages of choco-solver's dependencies to `java.util.logging`.
 
 # chocosolver version 0.5.6, Nov 1, 2026
 
