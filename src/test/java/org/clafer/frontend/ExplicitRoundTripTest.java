@@ -17,6 +17,8 @@ import org.clafer.compiler.ClaferSearch;
 import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
 import org.clafer.compiler.ClaferOption;
+import org.clafer.scope.Scope;
+import org.clafer.scope.ScopeFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeNoException;
@@ -27,8 +29,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 /**
- * The round trip {@code .js} → model → explicit form → {@link ExplicitParser}
- * → model: the parsed model prints the same, and chocosolver solves it the
+ * The round trip {@code .js} → model → explicit form and scope file →
+ * {@link ExplicitParser} and {@link ScopeFile} → model and scope: the parsed
+ * model and scope print the same, and chocosolver solves them the
  * same, i.e., the first instances (optimal instances, counterexamples) are the
  * same in the same order, or both fail with the same error.
  * <p>
@@ -75,14 +78,18 @@ public class ExplicitRoundTripTest {
             assumeNoException(e);
             return;
         }
-        String printed = AstPrinter.print(js.getModel(), js.getScope(), js.getObjectives(), js.getAssertions());
+        String printed = AstPrinter.print(js.getModel(), js.getObjectives(), js.getAssertions());
+        String scopes = ScopeFile.print(js.getModel(), js.getScope());
 
         ExplicitParser.Result parsed = ExplicitParser.parse(printed);
         assertEquals(List.of(), parsed.diagnostics());
-        assertEquals(printed, AstPrinter.print(parsed.model(), parsed.scope(), parsed.objectives(), parsed.assertions()));
+        assertEquals(printed, AstPrinter.print(parsed.model(), parsed.objectives(), parsed.assertions()));
+        // Every scope is in the file, so the defaults it starts from do not matter.
+        Scope scope = ScopeFile.parse(scopes, "model.cfr-scope").applyTo(Scope.defaultScope(7).toScope(), parsed.model());
+        assertEquals(scopes, ScopeFile.print(parsed.model(), scope));
 
         List<String> loaded = solve(js, js.getModel(), js.getScope(), js.getObjectives(), js.getAssertions());
-        List<String> reparsed = solve(js, parsed.model(), parsed.scope(), parsed.objectives(), parsed.assertions());
+        List<String> reparsed = solve(js, parsed.model(), scope, parsed.objectives(), parsed.assertions());
         if (subs(js.getModel()).equals(subs(parsed.model()))) {
             assertEquals(loaded, reparsed);
         } else {
@@ -111,7 +118,7 @@ public class ExplicitRoundTripTest {
     /**
      * The first instances, or the error, as text.
      */
-    private static List<String> solve(JavascriptFile js, AstModel model, org.clafer.scope.Scope scope,
+    private static List<String> solve(JavascriptFile js, AstModel model, Scope scope,
             org.clafer.objective.Objective[] objectives, org.clafer.assertion.Assertion[] assertions) {
         List<String> result = new ArrayList<>();
         try {

@@ -10,6 +10,8 @@ import org.clafer.ast.analysis.TypeAnalyzer;
 import org.clafer.ast.analysis.TypeException;
 import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferSolver;
+import org.clafer.scope.Scope;
+import org.clafer.scope.ScopeFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -24,8 +26,6 @@ public class ExplicitParserTest {
     @Test
     public void testSolve() {
         ExplicitParser.Result result = ExplicitParser.parse("""
-                scope c0_A 1
-                scope c0_b 3
                 abstract 0..* c0_T -> int 0..* {}
                 0..* c0_A 1..1 {
                   [(#this . c0_b) = 2]
@@ -35,7 +35,10 @@ public class ExplicitParserTest {
                 }
                 """);
         assertEquals(List.of(), result.diagnostics());
-        ClaferSolver solver = ClaferCompiler.compile(result.model(), result.scope());
+        Scope scope = ScopeFile.parse("""
+                [{"lpqName": "c0_A", "scope": 1}, {"lpqName": "c0_b", "scope": 3}, {"int": [-4, 3]}]
+                """, "test.cfr-scope").applyTo(Scope.builder().toScope(), result.model());
+        ClaferSolver solver = ClaferCompiler.compile(result.model(), scope);
         assertTrue(solver.find());
         assertEquals(2, solver.instance().getTopClafers()[0].getChildren().length);
     }
@@ -56,7 +59,7 @@ public class ExplicitParserTest {
         ExplicitParser.Result result = ExplicitParser.parse("0..* c0_A 1..1 {\n  [this . dref = 1]\n}\n");
         assertEquals(List.of(), result.diagnostics());
         try {
-            Analysis.analyze(result.model(), result.scope(), new TypeAnalyzer());
+            Analysis.analyze(result.model(), Scope.builder().toScope(), new TypeAnalyzer());
             fail("Expected a type error: c0_A has no reference");
         } catch (TypeException e) {
             assertTrue(e.getMessage(), e.getMessage().startsWith("2:3: "));

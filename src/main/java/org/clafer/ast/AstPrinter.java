@@ -3,7 +3,6 @@ package org.clafer.ast;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -11,21 +10,22 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.clafer.assertion.Assertion;
 import org.clafer.objective.Objective;
-import org.clafer.scope.Scope;
 
 /**
  * Prints a model in a Clafer-like syntax with nothing left implicit: the
  * clafers by their names (the compiler's UIDs), every card and group card,
- * every {@code this}, {@code parent} and {@code dref}, and the scopes. Two
- * models print the same when they have the same clafers, constraints, scopes,
- * objectives and assertions, so the output can be compared, e.g., between two
- * compilers of the same Clafer model. The solver options (e.g., branching
+ * every {@code this}, {@code parent} and {@code dref}. The output is a Clafer
+ * model, which the Clafer compiler reads with {@code -f} (the names are already
+ * UIDs) and {@code -l} (no layout). Two models print the same when they have
+ * the same clafers, constraints, objectives and assertions, so the output can
+ * be compared, e.g., between two compilers of the same Clafer model. The
+ * scopes, all of them, go to the model's {@code .cfr-scope} file
+ * ({@link org.clafer.scope.ScopeFile}). The solver options (e.g., branching
  * priorities) are not printed.
  * <p>
  * The clafers, their children and their constraints are printed in the order
  * they were added, which is the order of the source and of the instances,
- * abstract and concrete clafers interleaved (see {@link #sourceOrder}). Every clafer has a
- * scope line, sorted by name, whether its scope was given or is the default.
+ * abstract and concrete clafers interleaved (see {@link #sourceOrder}).
  * Source spans are not printed.
  * <p>
  * Nesting is in braces, as in Clafer without layout: every clafer has its
@@ -53,19 +53,17 @@ public class AstPrinter {
     }
 
     /**
-     * Prints a model with its scopes, objectives and assertions.
+     * Prints a model with its objectives and assertions. Its scopes go to a
+     * separate file, see {@link org.clafer.scope.ScopeFile#print}.
      *
      * @param model the model
-     * @param scope the scope
      * @param objectives the objectives
      * @param assertions the assertions
-     * @return the model as text, one line per clafer, constraint, scope,
-     * objective and assertion
+     * @return the model as text, one line per clafer, constraint, objective
+     * and assertion
      */
-    public static String print(AstModel model, Scope scope, Objective[] objectives, Assertion[] assertions) {
+    public static String print(AstModel model, Objective[] objectives, Assertion[] assertions) {
         StringBuilder out = new StringBuilder();
-        printScope(model, scope, out);
-        out.append('\n');
         out.append(print(model));
         if (objectives.length > 0 || assertions.length > 0) {
             out.append('\n');
@@ -107,23 +105,6 @@ public class AstPrinter {
             out.append("}\n");
         }
         return out.toString();
-    }
-
-    private static void printScope(AstModel model, Scope scope, StringBuilder out) {
-        // Every clafer's scope, the default included; root's is always 1.
-        List<AstClafer> clafers = AstUtil.getClafers(model).stream()
-                .filter(c -> c != model.getAbstractRoot() && c != model.getRoot() && c != model.getTypeRoot())
-                .sorted(Comparator.comparing(AstClafer::getName))
-                .collect(Collectors.toList());
-        for (AstClafer clafer : clafers) {
-            out.append("scope ").append(clafer.getName()).append(' ').append(scope.getScope(clafer)).append('\n');
-        }
-        out.append("int ").append(scope.getIntLow()).append("..").append(scope.getIntHigh()).append('\n');
-        out.append("mul ").append(scope.getMulLow()).append("..").append(scope.getMulHigh()).append('\n');
-        out.append("string length ").append(scope.getStringLength())
-                .append(", chars ").append((int) scope.getCharLow()).append("..").append((int) scope.getCharHigh()).append('\n');
-        out.append("decimal digits ").append(scope.getDecimalScale())
-                .append(", scaled ").append(scope.getDecimalLow()).append("..").append(scope.getDecimalHigh()).append('\n');
     }
 
     private static void printClafer(AstClafer clafer, AstModel model, String indent, StringBuilder out) {
@@ -330,14 +311,14 @@ public class AstPrinter {
             case AstIfThenElse e -> "if " + operand(e.antecedent()) + " then " + operand(e.consequent())
                     + " else " + operand(e.alternative());
             case AstQuantify e -> e.quantifier().getSyntax() + " "
-                    + Arrays.stream(e.decls()).map(AstPrinter::decl).collect(Collectors.joining("; "))
+                    + Arrays.stream(e.decls()).map(AstPrinter::decl).collect(Collectors.joining(", "))
                     + " | " + print(e.body());
         };
     }
 
     private static String decl(AstDecl decl) {
         return (decl.isDisjoint() ? "disj " : "")
-                + Arrays.stream(decl.getLocals()).map(AstLocal::getName).collect(Collectors.joining(", "))
+                + Arrays.stream(decl.getLocals()).map(AstLocal::getName).collect(Collectors.joining("; "))
                 + " : " + print(decl.getBody());
     }
 
@@ -398,7 +379,15 @@ public class AstPrinter {
         return "{" + tuples + "} :: " + constant.type();
     }
 
+    /**
+     * A string from Clafer is its literal, quotes and escapes included, e.g.,
+     * {@code "John"}, and chocosolver solves and prints it so; it is printed
+     * as it is. Other strings, from the Java API, are quoted and escaped.
+     */
     private static String string(String value) {
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+            return value;
+        }
         StringBuilder out = new StringBuilder("\"");
         for (char c : value.toCharArray()) {
             switch (c) {

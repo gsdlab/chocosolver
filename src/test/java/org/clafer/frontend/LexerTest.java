@@ -109,7 +109,7 @@ public class LexerTest {
             File[] files = new File(LexerTest.class.getResource(dir).toURI()).listFiles((d, n) -> n.endsWith(".js"));
             for (File file : files) {
                 JavascriptFile js = Javascript.readModel(file);
-                String source = AstPrinter.print(js.getModel(), js.getScope(), js.getObjectives(), js.getAssertions());
+                String source = AstPrinter.print(js.getModel(), js.getObjectives(), js.getAssertions());
                 Lexer.Result result = Lexer.lex(source);
                 assertEquals(file.getName(), List.of(), result.diagnostics());
                 List<String> lines = lines(source);

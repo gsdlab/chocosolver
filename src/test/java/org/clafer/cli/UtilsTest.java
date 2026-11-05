@@ -125,6 +125,14 @@ public class UtilsTest {
             Files.writeString(dir.resolve("other.cfr-scope"), "[{\"lpqName\": \"Cfeatures\", \"scope\": 4}]");
             assertEquals(List.of(4, 4), cfeaturesScopes(javascriptFile, Utils.resolveScopes(model, javascriptFile,
                     Main.optionParser().parse("--scope-file=" + dir.resolve("other.cfr-scope")))));
+            // the file's integers replace the default -128..127, and the command line's replace the file's
+            Files.writeString(dir.resolve("model.cfr-scope"), "[{\"int\": [-8, 7]}]");
+            Scope scope = Utils.resolveScopes(model, javascriptFile, Main.optionParser().parse());
+            assertEquals(List.of(-8, 7), List.of(scope.getIntLow(), scope.getIntHigh()));
+            scope = Utils.resolveScopes(model, javascriptFile, Main.optionParser().parse("--minint=-2"));
+            assertEquals(List.of(-2, 7), List.of(scope.getIntLow(), scope.getIntHigh()));
+            scope = Utils.resolveScopes(model, javascriptFile, Main.optionParser().parse("--maxint=3"));
+            assertEquals(List.of(-4, 3), List.of(scope.getIntLow(), scope.getIntHigh()));
         } finally {
             for (File file : dir.toFile().listFiles())
                 file.delete();

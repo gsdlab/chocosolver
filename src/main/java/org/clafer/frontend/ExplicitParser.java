@@ -68,13 +68,13 @@ import org.clafer.ast.Card;
 import org.clafer.ast.ProductType;
 import org.clafer.ast.SourceSpan;
 import org.clafer.objective.Objective;
-import org.clafer.scope.Scope;
 
 /**
  * Reads the explicit form of a Clafer model, as
  * {@link org.clafer.ast.AstPrinter} prints it, into chocosolver's
- * {@link AstModel} with its scope, objectives and assertions. Printing the
- * result gives the same text back.
+ * {@link AstModel} with its objectives and assertions. Printing the result
+ * gives the same text back. The scopes are not in the model: they are in its
+ * {@code .cfr-scope} file, see {@link org.clafer.scope.ScopeFile}.
  * <p>
  * The explicit form has no sugar and no defaults: every card and group card
  * is given, every name is a UID, nesting is in braces, and expressions are
@@ -97,12 +97,11 @@ public final class ExplicitParser {
      * A parsed model.
      *
      * @param model the model
-     * @param scope the scope
      * @param objectives the objectives
      * @param assertions the assertions
      * @param diagnostics the errors, empty if the model is complete
      */
-    public record Result(AstModel model, Scope scope, Objective[] objectives, Assertion[] assertions,
+    public record Result(AstModel model, Objective[] objectives, Assertion[] assertions,
             List<Diagnostic> diagnostics) {
     }
 
@@ -140,9 +139,6 @@ public final class ExplicitParser {
     private record ObjectiveDecl(boolean maximize, ExprRange expr) {
     }
 
-    private record ScopeDecl(Token name, int scope) {
-    }
-
     private static final Set<String> Quantifiers = Set.of("all", "some", "no", "lone", "one");
     private static final Map<String, AstArithm.Op> ArithmOps = Map.of(
             "+", AstArithm.Op.Add, "-", AstArithm.Op.Sub, "*", AstArithm.Op.Mul, "/", AstArithm.Op.Div,
@@ -161,8 +157,6 @@ public final class ExplicitParser {
     private int pos = 0;
 
     // Read by the first pass.
-    private final List<ScopeDecl> scopes = new ArrayList<>();
-    private final Map<String, Object> ranges = new HashMap<>();
     private final List<Element> topLevel = new ArrayList<>();
     private final List<ExprRange> rootConstraints = new ArrayList<>();
     private final List<ObjectiveDecl> objectives = new ArrayList<>();
@@ -188,8 +182,8 @@ public final class ExplicitParser {
      * Parses the explicit form of a model.
      *
      * @param source the text
-     * @return the model, its scope, objectives and assertions, and the errors
-     * of the lexer and the parser
+     * @return the model, its objectives and assertions, and the errors of the
+     * lexer and the parser
      */
     public static Result parse(String source) {
         Lexer.Result lexed = Lexer.lex(source);
@@ -198,12 +192,11 @@ public final class ExplicitParser {
         parser.diagnostics.addAll(lexed.diagnostics());
         parser.readDeclarations();
         parser.build();
-        Scope scope = parser.buildScope();
         List<Diagnostic> diagnostics = new ArrayList<>(parser.diagnostics);
         diagnostics.sort((a, b) -> a.span().line() != b.span().line()
                 ? Integer.compare(a.span().line(), b.span().line())
                 : Integer.compare(a.span().column(), b.span().column()));
-        return new Result(parser.model, scope,
+        return new Result(parser.model,
                 parser.builtObjectives.toArray(new Objective[0]),
                 parser.builtAssertions.toArray(new Assertion[0]),
                 Collections.unmodifiableList(diagnostics));
@@ -247,13 +240,6 @@ public final class ExplicitParser {
     private Token expectSymbol(String symbol) {
         if (!atSymbol(symbol)) {
             throw error(peek(), "Expected '" + symbol + "' but found " + show(peek()));
-        }
-        return next();
-    }
-
-    private Token expectWord(String word) {
-        if (!atWord(word)) {
-            throw error(peek(), "Expected '" + word + "' but found " + show(peek()));
         }
         return next();
     }
@@ -343,39 +329,12 @@ public final class ExplicitParser {
 
     private boolean startsTopLevel(Token t) {
         return t.kind() == TokenKind.INT || t.isSymbol("[") || t.isSymbol("<<")
-                || (t.kind() == TokenKind.WORD && Set.of("abstract", "scope", "int", "mul", "string", "decimal", "root", "assert").contains(t.text()));
+                || (t.kind() == TokenKind.WORD && Set.of("abstract", "root", "assert").contains(t.text()));
     }
 
     private void readTopLevel() {
         Token t = peek();
-        if (t.isWord("scope")) {
-            next();
-            Token name = expectName("a clafer name");
-            scopes.add(new ScopeDecl(name, expectInt()));
-        } else if (t.isWord("int") || t.isWord("mul")) {
-            next();
-            int low = expectInt();
-            expectSymbol("..");
-            ranges.put(t.text(), new int[]{low, expectInt()});
-        } else if (t.isWord("string")) {
-            next();
-            expectWord("length");
-            ranges.put("length", expectInt());
-            expectSymbol(",");
-            expectWord("chars");
-            int low = expectInt();
-            expectSymbol("..");
-            ranges.put("chars", new int[]{low, expectInt()});
-        } else if (t.isWord("decimal")) {
-            next();
-            expectWord("digits");
-            ranges.put("digits", expectInt());
-            expectSymbol(",");
-            expectWord("scaled");
-            int low = expectInt();
-            expectSymbol("..");
-            ranges.put("scaled", new int[]{low, expectInt()});
-        } else if (t.isWord("root")) {
+        if (t.isWord("root")) {
             next();
             expectSymbol("{");
             while (atSymbol("[")) {
@@ -450,7 +409,7 @@ public final class ExplicitParser {
             isAbstract = true;
         }
         if (peek().kind() != TokenKind.INT && !atSymbol("-")) {
-            throw error(peek(), "Expected a clafer, a constraint, a scope, an objective or an assertion but found " + show(peek()));
+            throw error(peek(), "Expected a clafer, a constraint, an objective or an assertion but found " + show(peek()));
         }
         Card groupCard = expectCard();
         Token name = expectName("the name of a clafer");
@@ -667,36 +626,6 @@ public final class ExplicitParser {
             context.addConstraint(bool, range.span());
         } else if (expr != null) {
             diagnostics.add(new Diagnostic(range.span(), "A constraint must be true or false, not a set or a number"));
-        }
-    }
-
-    private Scope buildScope() {
-        Scope defaults = Scope.builder().toScope();
-        Map<AstClafer, Integer> map = new HashMap<>();
-        for (ScopeDecl decl : scopes) {
-            AstClafer clafer = clafers.get(decl.name().text());
-            if (clafer == null || clafer.isPrimitive()) {
-                diagnostics.add(new Diagnostic(decl.name().span(), "No clafer named " + decl.name().text()));
-            } else if (decl.scope() < 0) {
-                diagnostics.add(new Diagnostic(decl.name().span(), "A scope cannot be negative"));
-            } else {
-                map.put(clafer, decl.scope());
-            }
-        }
-        int[] ints = (int[]) ranges.getOrDefault("int", new int[]{defaults.getIntLow(), defaults.getIntHigh()});
-        int[] mul = (int[]) ranges.getOrDefault("mul", new int[]{defaults.getMulLow(), defaults.getMulHigh()});
-        int length = (Integer) ranges.getOrDefault("length", defaults.getStringLength());
-        int[] chars = (int[]) ranges.getOrDefault("chars", new int[]{defaults.getCharLow(), defaults.getCharHigh()});
-        int digits = (Integer) ranges.getOrDefault("digits", defaults.getDecimalScale());
-        int[] scaled = (int[]) ranges.get("scaled");
-        try {
-            return new Scope(map, defaults.getDefaultScope(), ints[0], ints[1], mul[0], mul[1], length,
-                    (char) chars[0], (char) chars[1], digits,
-                    scaled == null ? null : BigDecimal.valueOf(scaled[0], digits),
-                    scaled == null ? null : BigDecimal.valueOf(scaled[1], digits));
-        } catch (IllegalArgumentException e) {
-            diagnostics.add(new Diagnostic(tokens.get(0).span(), "Invalid scope: " + e.getMessage()));
-            return defaults;
         }
     }
 
@@ -973,7 +902,8 @@ public final class ExplicitParser {
             }
             case STRING -> {
                 pos++;
-                return new AstStringConstant(Lexer.unescape(t.text()));
+                // As from Clafer's JavaScript: the literal, with its quotes.
+                return new AstStringConstant(t.text());
             }
             case SYMBOL -> {
                 switch (t.text()) {
@@ -1160,7 +1090,7 @@ public final class ExplicitParser {
                     throw error(name, "Expected the name of a variable but found " + show(name));
                 }
                 names.add(Asts.local(name.text()));
-            } while (at(end).isSymbol(",") && take(end) != null);
+            } while (at(end).isSymbol(";") && take(end) != null);
             expect(end, ":");
             // The body of a declaration sees the variables declared before it.
             locals.push(scope);
@@ -1174,7 +1104,7 @@ public final class ExplicitParser {
             for (AstLocal local : names) {
                 scope.put(local.getName(), local);
             }
-        } while (at(end).isSymbol(";") && take(end) != null);
+        } while (at(end).isSymbol(",") && take(end) != null);
         expect(end, "|");
         locals.push(scope);
         try {
