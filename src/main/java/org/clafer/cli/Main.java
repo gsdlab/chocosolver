@@ -6,8 +6,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
 import org.clafer.compiler.ClaferSearchStrategy;
 import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
@@ -48,9 +50,27 @@ public class Main
         };
     }
 
+    /**
+     * Reports a wrong command line, e.g., an unknown option, without a stack trace, and exits with 1.
+     */
+    private static void usageError(String message) {
+        System.err.println("chocosolver: " + message);
+        System.err.println("Run chocosolver --help to see the options.");
+        System.exit(1);
+    }
+
     public static void main(String[] args) throws Exception {
         OptionParser parser = optionParser();
-        OptionSet options = parser.parse(args);
+        OptionSet options;
+        try {
+            options = parser.parse(args);
+            // jopt-simple converts the values only when they are read, e.g., "-n abc"
+            for (OptionSpec<?> spec : options.specs())
+                options.valuesOf(spec);
+        } catch (OptionException e) { // unknown option, missing or wrong argument
+            usageError(e.getMessage());
+            return;
+        }
 
         if (options.has("version")) {
             Properties configFile = new Properties();
@@ -69,13 +89,17 @@ public class Main
             parser.printHelpOn(System.out);
             return;
         }
-        if (!options.has( "file" ))
-            throw new Exception("Use --file to provide the input file");
+        if (!options.has( "file" )) {
+            usageError("use --file to provide the input file");
+            return;
+        }
 
         File inputFile = (File) options.valueOf("file");
 
-        if (!inputFile.exists())
-            throw new Exception("The provided input file does not exist: " + inputFile.getPath());
+        if (!inputFile.exists()) {
+            usageError("the input file does not exist: " + inputFile.getPath());
+            return;
+        }
 
         String fileName = inputFile.toString();
         // If a .cfr file is given, compile it first and change the input file to the resulting .js file
