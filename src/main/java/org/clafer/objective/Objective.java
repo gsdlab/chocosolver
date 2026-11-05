@@ -2,6 +2,7 @@ package org.clafer.objective;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.clafer.ast.AstSetExpr;
+import org.clafer.ast.SourceSpan;
 import org.clafer.common.Check;
 
 /**
@@ -20,10 +21,12 @@ public class Objective {
     // false - minimize
     private final boolean maximize;
     private final AstSetExpr expr;
+    private final SourceSpan span;
 
-    private Objective(boolean maximize, AstSetExpr expr) {
+    private Objective(boolean maximize, AstSetExpr expr, SourceSpan span) {
         this.maximize = maximize;
         this.expr = Check.notNull(expr);
+        this.span = span;
     }
 
     /**
@@ -62,7 +65,19 @@ public class Objective {
      * @return maximize the expression
      */
     public static Objective maximize(AstSetExpr expression) {
-        return new Objective(true, expression);
+        return maximize(expression, null);
+    }
+
+    /**
+     * Create a new maximization objective.
+     *
+     * @param expression the expression
+     * @param span where the objective is in the source model, or {@code null}
+     * if unknown
+     * @return maximize the expression
+     */
+    public static Objective maximize(AstSetExpr expression, SourceSpan span) {
+        return new Objective(true, expression, span);
     }
 
     /**
@@ -72,7 +87,32 @@ public class Objective {
      * @return minimize the expression
      */
     public static Objective minimize(AstSetExpr expression) {
-        return new Objective(false, expression);
+        return minimize(expression, null);
+    }
+
+    /**
+     * Create a new minimization objective.
+     *
+     * @param expression the expression
+     * @param span where the objective is in the source model, or {@code null}
+     * if unknown
+     * @return minimize the expression
+     */
+    public static Objective minimize(AstSetExpr expression, SourceSpan span) {
+        return new Objective(false, expression, span);
+    }
+
+    public boolean hasSpan() {
+        return span != null;
+    }
+
+    /**
+     * Returns where the objective is in the source model.
+     *
+     * @return the source span, or {@code null} if unknown
+     */
+    public SourceSpan getSpan() {
+        return span;
     }
 
     @Override
@@ -87,6 +127,6 @@ public class Objective {
 
     @Override
     public String toString() {
-        return "<<" + (maximize ? "max " : "min ") + expr + ">>";
+        return "<<" + (maximize ? "max " : "min ") + expr + ">>" + (span == null ? "" : " at " + span);
     }
 }

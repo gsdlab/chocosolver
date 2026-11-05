@@ -32,7 +32,6 @@ import org.clafer.ast.AstDomainRestriction;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstException;
 import org.clafer.ast.AstExpr;
-import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstDecimalClafer;
@@ -324,11 +323,11 @@ public class AstCompiler {
         }
         if (expr instanceof AstDowncast) {
             AstDowncast cast = (AstDowncast) expr;
-            return isThis(cast.getBase());
+            return isThis(cast.base());
         }
         if (expr instanceof AstUpcast) {
             AstUpcast cast = (AstUpcast) expr;
-            return isThis(cast.getBase());
+            return isThis(cast.base());
         }
         return false;
     }
@@ -345,15 +344,15 @@ public class AstCompiler {
         // this not in ___
         if (expr instanceof AstMembership) {
             AstMembership membership = (AstMembership) expr;
-            switch (membership.getOp()) {
+            switch (membership.op()) {
                 case NotIn:
-                    return !isThis(membership.getMember());
+                    return !isThis(membership.member());
             }
         } else if (expr instanceof AstSetTest) {
             AstSetTest membership = (AstSetTest) expr;
-            switch (membership.getOp()) {
+            switch (membership.op()) {
                 case NotEqual:
-                    return !isThis(membership.getLeft()) && !isThis(membership.getRight());
+                    return !isThis(membership.left()) && !isThis(membership.right());
             }
         }
         return true;
@@ -1140,7 +1139,7 @@ public class AstCompiler {
     private int concatRefsCount = 0;
     private int localCount = 0;
 
-    private class ExpressionCompiler implements AstExprVisitor<Void, IrExpr> {
+    private class ExpressionCompiler {
 
         private final AstClafer thisType;
         private final int thisId;
@@ -1152,7 +1151,50 @@ public class AstCompiler {
         }
 
         private IrExpr compile(AstExpr expr) {
-            return expr.accept(this, null);
+            return switch (expr) {
+                case AstArithm e -> visit(e);
+                case AstBoolArithm e -> visit(e);
+                case AstCard e -> visit(e);
+                case AstChildRelation e -> visit(e);
+                case AstCompare e -> visit(e);
+                case AstConcat e -> visit(e);
+                case AstConnected e -> visit(e);
+                case AstConstant e -> visit(e);
+                case AstDecimalConstant e -> visit(e);
+                case AstDifference e -> visit(e);
+                case AstDomainRestriction e -> visit(e);
+                case AstDowncast e -> visit(e);
+                case AstGlobal e -> visit(e);
+                case AstIfThenElse e -> visit(e);
+                case AstIntersection e -> visit(e);
+                case AstInverse e -> visit(e);
+                case AstJoin e -> visit(e);
+                case AstJoinParent e -> visit(e);
+                case AstJoinRef e -> visit(e);
+                case AstLength e -> visit(e);
+                case AstLocal e -> visit(e);
+                case AstMax e -> visit(e);
+                case AstMembership e -> visit(e);
+                case AstMin e -> visit(e);
+                case AstMinus e -> visit(e);
+                case AstMod e -> visit(e);
+                case AstNot e -> visit(e);
+                case AstParentRelation e -> visit(e);
+                case AstPrefix e -> visit(e);
+                case AstProduct e -> visit(e);
+                case AstQuantify e -> visit(e);
+                case AstRangeRestriction e -> visit(e);
+                case AstRefRelation e -> visit(e);
+                case AstSetTest e -> visit(e);
+                case AstStringConstant e -> visit(e);
+                case AstSuffix e -> visit(e);
+                case AstSum e -> visit(e);
+                case AstTernary e -> visit(e);
+                case AstThis e -> visit(e);
+                case AstTransitiveClosure e -> visit(e);
+                case AstUnion e -> visit(e);
+                case AstUpcast e -> visit(e);
+            };
         }
 
         private IrExpr[] compile(AstExpr[] exprs) {
@@ -1240,14 +1282,12 @@ public class AstCompiler {
             return strings;
         }
 
-        @Override
-        public IrExpr visit(AstThis ast, Void a) {
+        private IrExpr visit(AstThis ast) {
             return constant(thisId);
         }
 
-        @Override
-        public IrExpr visit(AstGlobal ast, Void a) {
-            IrSetVar global = sets.get(ast.getType());
+        private IrExpr visit(AstGlobal ast) {
+            IrSetVar global = sets.get(ast.type());
             IrIntExpr single = IrUtil.asInt(global);
             if (single != null) {
                 // Use an integer representation instead for a singleton set.
@@ -1256,9 +1296,8 @@ public class AstCompiler {
             return global;
         }
 
-        @Override
-        public IrExpr visit(AstConstant ast, Void a) {
-            int[][] value = ast.getValue();
+        private IrExpr visit(AstConstant ast) {
+            int[][] value = ast.value();
             if (value.length == 1) {
                 int[] set = value[0];
                 return set.length == 1 ? constant(set[0]) : constant(set);
@@ -1266,23 +1305,20 @@ public class AstCompiler {
             throw new UnsupportedOperationException("TODO");
         }
 
-        @Override
-        public IrExpr visit(AstStringConstant ast, Void a) {
-            return constant(ast.getValue());
+        private IrExpr visit(AstStringConstant ast) {
+            return constant(ast.value());
         }
 
-        @Override
-        public IrExpr visit(AstDecimalConstant ast, Void a) {
+        private IrExpr visit(AstDecimalConstant ast) {
             throw new AstException("Decimal " + ast + " not scaled by type analysis");
         }
 
-        @Override
-        public IrExpr visit(AstJoin ast, Void a) {
-            IrExpr left = compile(ast.getLeft());
-            if (ast.getRight() instanceof AstChildRelation) {
-                return doJoin(left, ((AstChildRelation) ast.getRight()).getChildType());
+        private IrExpr visit(AstJoin ast) {
+            IrExpr left = compile(ast.left());
+            if (ast.right() instanceof AstChildRelation) {
+                return doJoin(left, ((AstChildRelation) ast.right()).childType());
             }
-            IrExpr right = compile(ast.getRight());
+            IrExpr right = compile(ast.right());
             if (right instanceof IrIntArrayExpr) {
                 IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
                 if (left instanceof IrIntExpr) {
@@ -1399,11 +1435,10 @@ public class AstCompiler {
             throw new AstException();
         }
 
-        @Override
-        public IrExpr visit(AstJoinParent ast, Void a) {
-            AstClafer childrenType = getCommonSupertype(ast.getChildren()).getClaferType();
+        private IrExpr visit(AstJoinParent ast) {
+            AstClafer childrenType = getCommonSupertype(ast.children()).getClaferType();
 
-            IrExpr children = compile(ast.getChildren());
+            IrExpr children = compile(ast.children());
             if (children instanceof IrIntExpr) {
                 IrIntExpr intChildren = (IrIntExpr) children;
                 switch (getFormat(childrenType)) {
@@ -1438,9 +1473,8 @@ public class AstCompiler {
             throw new AstException();
         }
 
-        @Override
-        public IrExpr visit(AstJoinRef ast, Void a) {
-            AstSetExpr deref = ast.getDeref();
+        private IrExpr visit(AstJoinRef ast) {
+            AstSetExpr deref = ast.deref();
             AstClafer derefType = getCommonSupertype(deref).getClaferType();
 
             Integer globalCardinality = null;
@@ -1448,9 +1482,9 @@ public class AstCompiler {
             if (derefType.getRef().isUnique()) {
                 if (deref instanceof AstJoin) {
                     AstJoin join = (AstJoin) deref;
-                    if (join.getRight() instanceof AstChildRelation) {
-                        IrExpr left = compile(join.getLeft());
-                        $deref = doJoin(left, ((AstChildRelation) join.getRight()).getChildType());
+                    if (join.right() instanceof AstChildRelation) {
+                        IrExpr left = compile(join.left());
+                        $deref = doJoin(left, ((AstChildRelation) join.right()).childType());
 
                         globalCardinality = left instanceof IrSetExpr
                                 ? ((IrSetExpr) left).getCard().getHighBound()
@@ -1493,16 +1527,15 @@ public class AstCompiler {
             throw new AstException();
         }
 
-        @Override
-        public IrExpr visit(AstCard ast, Void a) {
-            IrExpr set = compile(ast.getSet());
+        private IrExpr visit(AstCard ast) {
+            IrExpr set = compile(ast.set());
             if (set instanceof IrIntExpr) {
                 return One;
             } else if (set instanceof IrSetExpr) {
                 return card((IrSetExpr) set);
             } else if (set instanceof IrIntArrayExpr) {
                 IrIntArrayExpr array = (IrIntArrayExpr) set;
-                Type type = getType(ast.getSet());
+                Type type = getType(ast.set());
                 assert type.getCommonSupertype().arity() == 2;
                 return countNotEqual(getUninitalizedRef(type.getCommonSupertype().get(1)), array);
             }
@@ -1514,43 +1547,38 @@ public class AstCompiler {
             return add(cards);
         }
 
-        @Override
-        public IrExpr visit(AstMax ast, Void a) {
-            IrExpr set = compile(ast.getSet());
+        private IrExpr visit(AstMax ast) {
+            IrExpr set = compile(ast.set());
             if (set instanceof IrIntExpr) {
                 return set;
             }
             return max((IrSetExpr) set, 0);
         }
 
-        @Override
-        public IrExpr visit(AstMin ast, Void a) {
-            IrExpr set = compile(ast.getSet());
+        private IrExpr visit(AstMin ast) {
+            IrExpr set = compile(ast.set());
             if (set instanceof IrIntExpr) {
                 return set;
             }
             return min((IrSetExpr) set, 0);
         }
 
-        @Override
-        public IrExpr visit(AstNot ast, Void a) {
-            return not(compile(ast.getExpr()));
+        private IrExpr visit(AstNot ast) {
+            return not(compile(ast.expr()));
         }
 
-        @Override
-        public IrExpr visit(AstMinus ast, Void a) {
-            return minus(asInt(compile(ast.getExpr())));
+        private IrExpr visit(AstMinus ast) {
+            return minus(asInt(compile(ast.expr())));
         }
 
-        @Override
-        public IrExpr visit(AstSetTest ast, Void a) {
-            IrExpr left = compile(ast.getLeft());
-            IrExpr right = compile(ast.getRight());
+        private IrExpr visit(AstSetTest ast) {
+            IrExpr left = compile(ast.left());
+            IrExpr right = compile(ast.right());
 
             if (left instanceof IrIntExpr && right instanceof IrIntExpr) {
                 IrIntExpr intLeft = (IrIntExpr) left;
                 IrIntExpr intRight = (IrIntExpr) right;
-                switch (ast.getOp()) {
+                switch (ast.op()) {
                     case Equal:
                         return equal(intLeft, intRight);
                     case NotEqual:
@@ -1561,7 +1589,7 @@ public class AstCompiler {
             if (left instanceof IrStringExpr && right instanceof IrStringExpr) {
                 IrStringExpr stringLeft = (IrStringExpr) left;
                 IrStringExpr stringRight = (IrStringExpr) right;
-                switch (ast.getOp()) {
+                switch (ast.op()) {
                     case Equal:
                         return equal(stringLeft, stringRight);
                     case NotEqual:
@@ -1575,7 +1603,7 @@ public class AstCompiler {
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
                     return equal(leftArray, rightArray);
                 } else if (right instanceof IrSetArrayExpr) {
-                    Type type = getType(ast.getLeft());
+                    Type type = getType(ast.left());
                     AstClafer returnType = type.getCommonSupertype().get(1);
                     IrSetArrayExpr rightArray = (IrSetArrayExpr) right;
                     // TODO use asRelation
@@ -1584,7 +1612,7 @@ public class AstCompiler {
             } else if (left instanceof IrSetArrayExpr) {
                 IrSetArrayExpr leftArray = (IrSetArrayExpr) left;
                 if (right instanceof IrIntArrayExpr) {
-                    Type type = getType(ast.getRight());
+                    Type type = getType(ast.right());
                     AstClafer returnType = type.getCommonSupertype().get(1);
                     IrIntArrayExpr rightArray = (IrIntArrayExpr) right;
                     // TODO use asRelation
@@ -1595,7 +1623,7 @@ public class AstCompiler {
                 }
             }
 
-            switch (ast.getOp()) {
+            switch (ast.op()) {
                 case Equal:
                     return equal(asSet(left), asSet(right));
                 case NotEqual:
@@ -1605,11 +1633,10 @@ public class AstCompiler {
             }
         }
 
-        @Override
-        public IrExpr visit(AstCompare ast, Void a) {
-            IrIntExpr left = asInt(compile(ast.getLeft()));
-            IrIntExpr right = asInt(compile(ast.getRight()));
-            switch (ast.getOp()) {
+        private IrExpr visit(AstCompare ast) {
+            IrIntExpr left = asInt(compile(ast.left()));
+            IrIntExpr right = asInt(compile(ast.right()));
+            switch (ast.op()) {
                 case LessThan:
                     return lessThan(left, right);
                 case LessThanEqual:
@@ -1623,10 +1650,9 @@ public class AstCompiler {
             }
         }
 
-        @Override
-        public IrExpr visit(AstArithm ast, Void a) {
-            IrIntExpr[] operands = asInts(compile(ast.getOperands()));
-            switch (ast.getOp()) {
+        private IrExpr visit(AstArithm ast) {
+            IrIntExpr[] operands = asInts(compile(ast.operands()));
+            switch (ast.op()) {
                 case Add:
                     return add(operands);
                 case Sub:
@@ -1677,9 +1703,8 @@ public class AstCompiler {
             }
         }
 
-        @Override
-        public IrExpr visit(AstMod ast, Void a) {
-            return mod(asInt(compile(ast.getDividend())), asInt(compile(ast.getDivisor())));
+        private IrExpr visit(AstMod ast) {
+            return mod(asInt(compile(ast.dividend())), asInt(compile(ast.divisor())));
         }
 
         private IrIntExpr concatRefs(AstSetExpr set, Monoid<IrIntExpr> monoid) {
@@ -1724,20 +1749,17 @@ public class AstCompiler {
             return monoid.concat(score);
         }
 
-        @Override
-        public IrExpr visit(AstSum ast, Void a) {
-            return concatRefs(ast.getSet(), Sum.Singleton);
+        private IrExpr visit(AstSum ast) {
+            return concatRefs(ast.set(), Sum.Singleton);
         }
 
-        @Override
-        public IrExpr visit(AstProduct ast, Void a) {
-            return concatRefs(ast.getSet(), new Product(getMulRange()));
+        private IrExpr visit(AstProduct ast) {
+            return concatRefs(ast.set(), new Product(getMulRange()));
         }
 
-        @Override
-        public IrExpr visit(AstBoolArithm ast, Void a) {
-            IrBoolExpr[] operands = compile(ast.getOperands());
-            switch (ast.getOp()) {
+        private IrExpr visit(AstBoolArithm ast) {
+            IrBoolExpr[] operands = compile(ast.operands());
+            switch (ast.op()) {
                 case And:
                     return and(operands);
                 case IfOnlyIf:
@@ -1765,37 +1787,34 @@ public class AstCompiler {
             }
         }
 
-        @Override
-        public IrExpr visit(AstDifference ast, Void a) {
+        private IrExpr visit(AstDifference ast) {
             return difference(
-                    asSet(compile(ast.getLeft())),
-                    asSet(compile(ast.getRight())));
+                    asSet(compile(ast.left())),
+                    asSet(compile(ast.right())));
         }
 
-        @Override
-        public IrExpr visit(AstIntersection ast, Void a) {
+        private IrExpr visit(AstIntersection ast) {
             return intersection(
-                    asSet(compile(ast.getLeft())),
-                    asSet(compile(ast.getRight())));
+                    asSet(compile(ast.left())),
+                    asSet(compile(ast.right())));
         }
 
-        @Override
-        public IrExpr visit(AstUnion ast, Void a) {
-            IrExpr left = compile(ast.getLeft());
-            IrExpr right = compile(ast.getRight());
+        private IrExpr visit(AstUnion ast) {
+            IrExpr left = compile(ast.left());
+            IrExpr right = compile(ast.right());
 
             if (getCommonSupertype(ast).arity() == 1) {
                 if (Util.pairwise(
-                        getUnionType(ast.getLeft()).stream().map(ProductType::getClaferType),
-                        getUnionType(ast.getRight()).stream().map(ProductType::getClaferType))
+                        getUnionType(ast.left()).stream().map(ProductType::getClaferType),
+                        getUnionType(ast.right()).stream().map(ProductType::getClaferType))
                         .anyMatch(Pair.uncurry(AstUtil::isDisjoint))) {
                     return unionDisjoint(asSet(left), asSet(right));
                 }
                 return union(asSet(left), asSet(right));
             }
 
-            IrSetExpr[] leftArray = IrUtil.asArray(asRelation(left, getCommonSupertype(ast.getLeft())));
-            IrSetExpr[] rightArray = IrUtil.asArray(asRelation(right, getCommonSupertype(ast.getLeft())));
+            IrSetExpr[] leftArray = IrUtil.asArray(asRelation(left, getCommonSupertype(ast.left())));
+            IrSetExpr[] rightArray = IrUtil.asArray(asRelation(right, getCommonSupertype(ast.left())));
             assert leftArray.length == rightArray.length;
             IrSetExpr[] union = new IrSetExpr[leftArray.length];
             for (int i = 0; i < union.length; i++) {
@@ -1804,53 +1823,49 @@ public class AstCompiler {
             return array(union);
         }
 
-        @Override
-        public IrExpr visit(AstMembership ast, Void a) {
-            IrExpr member = compile(ast.getMember());
-            IrExpr set = compile(ast.getSet());
+        private IrExpr visit(AstMembership ast) {
+            IrExpr member = compile(ast.member());
+            IrExpr set = compile(ast.set());
             if (member instanceof IrIntExpr && set instanceof IrIntExpr) {
-                return AstMembership.Op.In.equals(ast.getOp())
+                return AstMembership.Op.In.equals(ast.op())
                         ? equal((IrIntExpr) member, (IrIntExpr) set)
                         : notEqual((IrIntExpr) member, (IrIntExpr) set);
             }
             if (member instanceof IrIntExpr && set instanceof IrSetExpr) {
-                return AstMembership.Op.In.equals(ast.getOp())
+                return AstMembership.Op.In.equals(ast.op())
                         ? member((IrIntExpr) member, (IrSetExpr) set)
                         : notMember((IrIntExpr) member, (IrSetExpr) set);
             }
             if (member instanceof IrSetExpr && set instanceof IrIntExpr) {
-                return AstMembership.Op.In.equals(ast.getOp())
+                return AstMembership.Op.In.equals(ast.op())
                         ? equal((IrSetExpr) member, singleton((IrIntExpr) set))
                         : notEqual((IrSetExpr) member, singleton((IrIntExpr) set));
             }
-            return AstMembership.Op.In.equals(ast.getOp())
+            return AstMembership.Op.In.equals(ast.op())
                     ? subsetEq(asSet(member), asSet(set))
                     : not(subsetEq(asSet(member), asSet(set)));
         }
 
-        @Override
-        public IrExpr visit(AstTernary ast, Void a) {
-            IrBoolExpr antecedent = compile(ast.getAntecedent());
-            IrExpr consequent = compile(ast.getConsequent());
-            IrExpr alternative = compile(ast.getAlternative());
+        private IrExpr visit(AstTernary ast) {
+            IrBoolExpr antecedent = compile(ast.antecedent());
+            IrExpr consequent = compile(ast.consequent());
+            IrExpr alternative = compile(ast.alternative());
             if (consequent instanceof IrIntExpr && alternative instanceof IrIntExpr) {
                 return ternary(antecedent, (IrIntExpr) consequent, (IrIntExpr) alternative);
             }
             return ternary(antecedent, asSet(consequent), asSet(alternative));
         }
 
-        @Override
-        public IrExpr visit(AstIfThenElse ast, Void a) {
-            return ifThenElse(compile(ast.getAntecedent()), compile(ast.getConsequent()), compile(ast.getAlternative()));
+        private IrExpr visit(AstIfThenElse ast) {
+            return ifThenElse(compile(ast.antecedent()), compile(ast.consequent()), compile(ast.alternative()));
         }
 
-        @Override
-        public IrExpr visit(AstDowncast ast, Void a) {
-            AstSetExpr base = ast.getBase();
-            int offset = getOffset((AstAbstractClafer) getCommonSupertype(base).getClaferType(), ast.getTarget().getClaferType());
+        private IrExpr visit(AstDowncast ast) {
+            AstSetExpr base = ast.base();
+            int offset = getOffset((AstAbstractClafer) getCommonSupertype(base).getClaferType(), ast.target().getClaferType());
 
-            int scope = getScope(ast.getTarget().getClaferType());
-            IrExpr $base = compile(ast.getBase());
+            int scope = getScope(ast.target().getClaferType());
+            IrExpr $base = compile(ast.base());
             if ($base instanceof IrIntExpr) {
                 IrIntExpr intBase = (IrIntExpr) $base;
                 Domain domain = intBase.getDomain();
@@ -1864,20 +1879,19 @@ public class AstCompiler {
             return mask((IrSetExpr) $base, offset, offset + scope);
         }
 
-        @Override
-        public IrExpr visit(AstUpcast ast, Void a) {
-            IrExpr base = compile(ast.getBase());
+        private IrExpr visit(AstUpcast ast) {
+            IrExpr base = compile(ast.base());
             if (base instanceof IrIntExpr) {
-                int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(ast.getBase()).getClaferType());
+                int offset = getOffset((AstAbstractClafer) ast.target().getClaferType(), getCommonSupertype(ast.base()).getClaferType());
                 return add((IrIntExpr) base, constant(offset));
             } else if (base instanceof IrSetExpr) {
-                int offset = getOffset((AstAbstractClafer) ast.getTarget().getClaferType(), getCommonSupertype(ast.getBase()).getClaferType());
+                int offset = getOffset((AstAbstractClafer) ast.target().getClaferType(), getCommonSupertype(ast.base()).getClaferType());
                 return offset((IrSetExpr) base, offset);
             } else if (base instanceof IrIntArrayExpr) {
-                int paramOffset = getOffset(ast.getTarget().get(0), getCommonSupertype(ast.getBase()).get(0));
-                int returnOffset = getOffset(ast.getTarget().get(1), getCommonSupertype(ast.getBase()).get(1));
-                int scope = getScope(ast.getTarget().get(0));
-                int uninitializedRef = getUninitalizedRef(ast.getTarget().get(1));
+                int paramOffset = getOffset(ast.target().get(0), getCommonSupertype(ast.base()).get(0));
+                int returnOffset = getOffset(ast.target().get(1), getCommonSupertype(ast.base()).get(1));
+                int scope = getScope(ast.target().get(0));
+                int uninitializedRef = getUninitalizedRef(ast.target().get(1));
                 IrIntArrayExpr baseArray = (IrIntArrayExpr) base;
                 IrIntExpr[] array = new IrIntExpr[scope];
                 Arrays.fill(array, constant(uninitializedRef));
@@ -1886,9 +1900,9 @@ public class AstCompiler {
                 }
                 return array(array);
             } else if (base instanceof IrSetArrayExpr) {
-                int paramOffset = getOffset(ast.getTarget().get(0), getCommonSupertype(ast.getBase()).get(0));
-                int returnOffset = getOffset(ast.getTarget().get(1), getCommonSupertype(ast.getBase()).get(1));
-                int scope = getScope(ast.getTarget().get(0));
+                int paramOffset = getOffset(ast.target().get(0), getCommonSupertype(ast.base()).get(0));
+                int returnOffset = getOffset(ast.target().get(1), getCommonSupertype(ast.base()).get(1));
+                int scope = getScope(ast.target().get(0));
                 IrSetArrayExpr baseArray = (IrSetArrayExpr) base;
                 IrSetExpr[] array = new IrSetExpr[scope];
                 Arrays.fill(array, EmptySet);
@@ -1900,8 +1914,7 @@ public class AstCompiler {
             throw new AstException();
         }
 
-        @Override
-        public IrExpr visit(AstLocal ast, Void a) {
+        private IrExpr visit(AstLocal ast) {
             return locals.get(ast);
         }
 
@@ -1963,9 +1976,8 @@ public class AstCompiler {
         }
 
         // TODO optimize SOME
-        @Override
-        public IrExpr visit(AstQuantify ast, Void a) {
-            AstDecl decls[] = ast.getDecls();
+        private IrExpr visit(AstQuantify ast) {
+            AstDecl decls[] = ast.decls();
             @SuppressWarnings("unchecked")
             Triple<AstLocal, IrIntExpr, IrBoolExpr>[][][] compiledDecls = new Triple[decls.length][][];
             for (int i = 0; i < compiledDecls.length; i++) {
@@ -1986,8 +1998,8 @@ public class AstCompiler {
                         locals.put(quantLocals.getFst(), quantLocals.getSnd());
                     }
                 }
-                IrBoolExpr compiledBody = compile(ast.getBody());
-                if (Quantifier.All.equals(ast.getQuantifier())) {
+                IrBoolExpr compiledBody = compile(ast.body());
+                if (Quantifier.All.equals(ast.quantifier())) {
                     compiled.add(implies(and(constraints), compiledBody));
                 } else {
                     constraints.add(compiledBody);
@@ -1995,7 +2007,7 @@ public class AstCompiler {
                 }
             }
 
-            switch (ast.getQuantifier()) {
+            switch (ast.quantifier()) {
                 case All:
                     return and(compiled);
                 case Lone:
@@ -2011,63 +2023,53 @@ public class AstCompiler {
             }
         }
 
-        @Override
-        public IrExpr visit(AstLength ast, Void a) {
-            return length(asString(compile(ast.getString())));
+        private IrExpr visit(AstLength ast) {
+            return length(asString(compile(ast.string())));
         }
 
-        @Override
-        public IrExpr visit(AstConcat ast, Void a) {
-            return concat(asString(compile(ast.getLeft())),
-                    asString(compile(ast.getRight())));
+        private IrExpr visit(AstConcat ast) {
+            return concat(asString(compile(ast.left())),
+                    asString(compile(ast.right())));
         }
 
-        @Override
-        public IrExpr visit(AstPrefix ast, Void a) {
-            return prefix(asString(compile(ast.getPrefix())),
-                    asString(compile(ast.getWord())));
+        private IrExpr visit(AstPrefix ast) {
+            return prefix(asString(compile(ast.prefix())),
+                    asString(compile(ast.word())));
         }
 
-        @Override
-        public IrExpr visit(AstSuffix ast, Void a) {
-            return suffix(asString(compile(ast.getSuffix())),
-                    asString(compile(ast.getWord())));
+        private IrExpr visit(AstSuffix ast) {
+            return suffix(asString(compile(ast.suffix())),
+                    asString(compile(ast.word())));
         }
 
-        @Override
-        public IrExpr visit(AstChildRelation ast, Void a) {
-            return array(siblingSets.get(ast.getChildType()));
+        private IrExpr visit(AstChildRelation ast) {
+            return array(siblingSets.get(ast.childType()));
         }
 
-        @Override
-        public IrExpr visit(AstParentRelation ast, Void a) {
-            return array(parentPointers.get(ast.getParentRelation()));
+        private IrExpr visit(AstParentRelation ast) {
+            return array(parentPointers.get(ast.parentRelation()));
         }
 
-        @Override
-        public IrExpr visit(AstRefRelation ast, Void a) {
-            return array(refPointers.get(ast.getRef().getSourceType()));
+        private IrExpr visit(AstRefRelation ast) {
+            return array(refPointers.get(ast.ref().getSourceType()));
         }
 
-        @Override
-        public IrExpr visit(AstDomainRestriction ast, Void a) {
-            IrSetExpr domain = asSet(compile(ast.getDomain()));
-            IrExpr relation = compile(ast.getRelation());
-            return domainRestriction(domain, asRelation(relation, getCommonSupertype(ast.getRelation())));
+        private IrExpr visit(AstDomainRestriction ast) {
+            IrSetExpr domain = asSet(compile(ast.domain()));
+            IrExpr relation = compile(ast.relation());
+            return domainRestriction(domain, asRelation(relation, getCommonSupertype(ast.relation())));
         }
 
-        @Override
-        public IrExpr visit(AstRangeRestriction ast, Void a) {
-            IrExpr relation = compile(ast.getRelation());
-            IrSetExpr range = asSet(compile(ast.getRange()));
-            return rangeRestriction(asRelation(relation, getCommonSupertype(ast.getRelation())), range);
+        private IrExpr visit(AstRangeRestriction ast) {
+            IrExpr relation = compile(ast.relation());
+            IrSetExpr range = asSet(compile(ast.range()));
+            return rangeRestriction(asRelation(relation, getCommonSupertype(ast.relation())), range);
         }
 
-        @Override
-        public IrExpr visit(AstInverse ast, Void a) {
-            Type type = getType(ast.getRelation());
+        private IrExpr visit(AstInverse ast) {
+            Type type = getType(ast.relation());
             AstClafer returnType = type.getCommonSupertype().get(1);
-            IrExpr relation = compile(ast.getRelation());
+            IrExpr relation = compile(ast.relation());
             if (relation instanceof IrIntArrayExpr) {
                 // TODO use asRelation
                 return inverse(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), getScope(returnType));
@@ -2079,34 +2081,32 @@ public class AstCompiler {
             throw new AstException("Should not have passed type checking.");
         }
 
-        @Override
-        public IrExpr visit(AstTransitiveClosure ast, Void a) {
-            IrExpr relation = compile(ast.getRelation());
+        private IrExpr visit(AstTransitiveClosure ast) {
+            IrExpr relation = compile(ast.relation());
             if (relation instanceof IrIntArrayExpr) {
-                Type type = getType(ast.getRelation());
+                Type type = getType(ast.relation());
                 AstClafer returnType = type.getCommonSupertype().get(1);
                 // TODO use asRelation
-                return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.isReflexive());
+                return transitiveClosure(filterNotEqual((IrIntArrayExpr) relation, getUninitalizedRef(returnType)), ast.reflexive());
             }
             if (relation instanceof IrSetArrayExpr) {
-                return transitiveClosure((IrSetArrayExpr) relation, ast.isReflexive());
+                return transitiveClosure((IrSetArrayExpr) relation, ast.reflexive());
             }
             // Bug.
             throw new AstException("Should not have passed type checking.");
         }
 
-        @Override
-        public IrExpr visit(AstConnected ast, Void a) {
+        private IrExpr visit(AstConnected ast) {
             // TODO node instanceof IrIntExpr
-            IrSetExpr nodes = (IrSetExpr) compile(ast.getNodes());
-            IrExpr relation = compile(ast.getRelation());
+            IrSetExpr nodes = (IrSetExpr) compile(ast.nodes());
+            IrExpr relation = compile(ast.relation());
 
             IrBoolExpr[] membership = null;
-            if (ast.getNodes() instanceof AstGlobal) {
-                membership = memberships.get(((AstGlobal) ast.getNodes()).getType());
+            if (ast.nodes() instanceof AstGlobal) {
+                membership = memberships.get(((AstGlobal) ast.nodes()).type());
             }
 
-            IrSetArrayExpr transitiveClosure = transitiveClosure(asRelation(relation, getCommonSupertype(ast.getRelation())), !ast.isDirected());
+            IrSetArrayExpr transitiveClosure = transitiveClosure(asRelation(relation, getCommonSupertype(ast.relation())), !ast.directed());
             IrBoolExpr[] connectedClosure = new IrBoolExpr[transitiveClosure.length()];
             for (int i = 0; i < connectedClosure.length; i++) {
                 connectedClosure[i] = implies(

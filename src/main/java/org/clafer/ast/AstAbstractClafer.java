@@ -27,6 +27,12 @@ public class AstAbstractClafer extends AstClafer {
     }
 
     @Override
+    public AstAbstractClafer at(SourceSpan span) {
+        super.at(span);
+        return this;
+    }
+
+    @Override
     public AstAbstractClafer withGroupCard(Card groupCard) {
         super.withGroupCard(groupCard);
         return this;

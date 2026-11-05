@@ -8,35 +8,25 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstConstant implements AstSetExpr {
+public record AstConstant(ProductType type, int[]... value) implements AstSetExpr {
 
-    private final ProductType type;
-    private final int[][] value;
-
-    /**
-     *
-     * @param type the type
-     * @param value the value, must be sorted
-     */
-    AstConstant(ProductType type, int[]... value) {
+    public AstConstant {
+        Check.notNull(type);
+        Check.notNull(value);
         if (type.arity() != value.length) {
             throw new IllegalArgumentException();
         }
-        this.type = Check.notNull(type);
-        this.value = Check.notNull(value);
-    }
-
-    public ProductType getType() {
-        return type;
-    }
-
-    public int[][] getValue() {
-        return value;
     }
 
     @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public boolean equals(Object obj) {
+        return obj instanceof AstConstant other
+                && type.equals(other.type) && Arrays.deepEquals(value, other.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return type.hashCode() ^ Arrays.deepHashCode(value);
     }
 
     @Override

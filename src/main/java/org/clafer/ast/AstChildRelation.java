@@ -6,39 +6,14 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstChildRelation implements AstSetExpr {
+public record AstChildRelation(AstClafer childType) implements AstSetExpr {
 
-    private final AstClafer childRelation;
-
-    AstChildRelation(AstClafer childRelation) {
-        this.childRelation = Check.notNull(childRelation);
-    }
-
-    public AstClafer getChildType() {
-        return childRelation;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof AstChildRelation) {
-            AstChildRelation other = (AstChildRelation) obj;
-            return childRelation.equals(other.childRelation);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return 1311 * childRelation.hashCode();
+    public AstChildRelation {
+        childType = Check.notNull(childType);
     }
 
     @Override
     public String toString() {
-        return childRelation.toString();
+        return childType.toString();
     }
 }

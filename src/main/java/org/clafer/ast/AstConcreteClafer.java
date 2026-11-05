@@ -87,6 +87,12 @@ public class AstConcreteClafer extends AstClafer {
     }
 
     @Override
+    public AstConcreteClafer at(SourceSpan span) {
+        super.at(span);
+        return this;
+    }
+
+    @Override
     public AstConcreteClafer withGroupCard(Card groupCard) {
         super.withGroupCard(groupCard);
         return this;

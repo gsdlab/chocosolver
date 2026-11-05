@@ -6,25 +6,14 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstRefRelation implements AstSetExpr {
+public record AstRefRelation(AstRef ref) implements AstSetExpr {
 
-    private final AstRef refRelation;
-
-    public AstRefRelation(AstRef refRelation) {
-        this.refRelation = Check.notNull(refRelation);
-    }
-
-    public AstRef getRef() {
-        return refRelation;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public AstRefRelation {
+        ref = Check.notNull(ref);
     }
 
     @Override
     public String toString() {
-        return "ref(" + refRelation.getSourceType() + ")";
+        return "ref(" + ref.getSourceType() + ")";
     }
 }

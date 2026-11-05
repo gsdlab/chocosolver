@@ -9,36 +9,17 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class AstBoolArithm implements AstBoolExpr {
+public record AstBoolArithm(Op op, AstBoolExpr[] operands) implements AstBoolExpr {
 
-    private final Op op;
-    private final AstBoolExpr[] operands;
-
-    AstBoolArithm(Op op, AstBoolExpr[] operands) {
-        this.op = Check.notNull(op);
-        this.operands = Check.noNullsNotEmpty(operands);
-    }
-
-    public Op getOp() {
-        return op;
-    }
-
-    public AstBoolExpr[] getOperands() {
-        return operands;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public AstBoolArithm {
+        op = Check.notNull(op);
+        operands = Check.noNullsNotEmpty(operands);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof AstBoolArithm) {
-            AstBoolArithm other = (AstBoolArithm) obj;
-            return op.equals(other.op) && Arrays.equals(operands, other.operands);
-        }
-        return false;
+        return obj instanceof AstBoolArithm other
+                && op == other.op && Arrays.equals(operands, other.operands);
     }
 
     @Override

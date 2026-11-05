@@ -5,10 +5,13 @@ import org.clafer.common.Check;
 /**
  * A local is a binding of a value to a name in quantifiers. For example, x, y,
  * and z are the locals in the expression {@code all x;y:A, z:B | ...}.
+ * <p>
+ * Not a record: two locals with the same name, such as the x of two
+ * quantifiers, are different variables, so a local equals only itself.
  *
  * @author jimmy
  */
-public class AstLocal implements AstSetExpr, AstVar {
+public final class AstLocal implements AstSetExpr, AstVar {
 
     private final String name;
 
@@ -19,11 +22,6 @@ public class AstLocal implements AstSetExpr, AstVar {
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
     }
 
     @Override
