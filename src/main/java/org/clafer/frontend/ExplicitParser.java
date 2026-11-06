@@ -692,7 +692,9 @@ public final class ExplicitParser {
             if (consequent instanceof AstBoolExpr c && alternative instanceof AstBoolExpr a) {
                 return new AstIfThenElse(antecedent, c, a);
             }
-            return new AstTernary(antecedent, set(t, consequent), set(t, alternative));
+            AstSetExpr c = set(t, consequent);
+            AstSetExpr a = set(t, alternative);
+            return new AstTernary(antecedent, typedBeside(c, a), typedBeside(a, c));
         }
         AstExpr unary = parseUnary(end, relation);
         if (unary != null) {
@@ -811,8 +813,10 @@ public final class ExplicitParser {
         if (operands.size() > 2) {
             throw error(op, "Parenthesize: '" + symbol + "' takes two operands");
         }
-        AstSetExpr left = set(op, operands.get(0));
-        AstSetExpr right = set(op, operands.get(1));
+        AstSetExpr left0 = set(op, operands.get(0));
+        AstSetExpr right0 = set(op, operands.get(1));
+        AstSetExpr left = typedBeside(left0, right0);
+        AstSetExpr right = typedBeside(right0, left0);
         return switch (symbol) {
             case "<", "<=", ">", ">=" -> new AstCompare(left, CompareOps.get(symbol), right);
             case "=" -> new AstSetTest(left, AstSetTest.Op.Equal, right);
@@ -923,6 +927,10 @@ public final class ExplicitParser {
                 if (t.isWord("this")) {
                     pos++;
                     return new AstThis();
+                }
+                if (t.isWord("noclafer")) {
+                    pos++;
+                    return noClafer(null);
                 }
                 if (isCall(end)) {
                     return parseCall(end);
@@ -1132,5 +1140,71 @@ public final class ExplicitParser {
             return bool;
         }
         throw error(at, "Expected a constraint, not a set or a number");
+    }
+
+    // ------------------------------------------------------------------
+    // noclafer, the empty set
+    // ------------------------------------------------------------------
+    /**
+     * The noclafers parsed, by identity: each is an empty set of the model's
+     * first clafer until a set beside it gives it its type.
+     */
+    private final Set<AstConstant> noClafers = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    /**
+     * Clafer's {@code noclafer}: an empty set of the given clafer, as the
+     * Clafer compiler writes it ({@code constant(c0_a)}), or, without one, of
+     * the model's first clafer, as for {@code #noclafer}.
+     */
+    private AstConstant noClafer(AstClafer type) {
+        AstClafer t = type != null ? type
+                : declOf.keySet().stream().findFirst().orElse(Asts.IntType);
+        AstConstant empty = Asts.constant(t);
+        noClafers.add(empty);
+        return empty;
+    }
+
+    /**
+     * A noclafer beside another set, e.g., in {@code a ++ noclafer} or
+     * {@code if c then a else noclafer}, is an empty set of that set's clafer.
+     */
+    private AstSetExpr typedBeside(AstSetExpr expr, AstSetExpr other) {
+        if (expr instanceof AstConstant c && noClafers.contains(c) && !noClafers.contains(other)) {
+            AstClafer type = claferOf(other);
+            if (type != null) {
+                return noClafer(type);
+            }
+        }
+        return expr;
+    }
+
+    /**
+     * The clafer whose instances a set is of, as far as the expression shows
+     * it, or null.
+     */
+    private static AstClafer claferOf(AstSetExpr expr) {
+        return switch (expr) {
+            case AstGlobal e -> e.type();
+            case AstJoin e when e.right() instanceof AstChildRelation r -> r.childType();
+            case AstJoinRef e -> {
+                AstClafer c = claferOf(e.deref());
+                AstRef ref = c == null ? null : AstUtil.getInheritedRef(c);
+                yield ref == null ? null : ref.getTargetType();
+            }
+            case AstJoinParent e -> {
+                AstClafer c = claferOf(e.children());
+                yield c == null || !c.hasParent() ? null : c.getParent();
+            }
+            case AstConstant e -> e.type().arity() == 1 ? e.type().get(0) : null;
+            case AstUnion e -> firstNonNull(claferOf(e.left()), claferOf(e.right()));
+            case AstIntersection e -> firstNonNull(claferOf(e.right()), claferOf(e.left()));
+            case AstDifference e -> claferOf(e.left());
+            case AstTernary e -> firstNonNull(claferOf(e.consequent()), claferOf(e.alternative()));
+            default -> null;
+        };
+    }
+
+    private static AstClafer firstNonNull(AstClafer a, AstClafer b) {
+        return a != null ? a : b;
     }
 }

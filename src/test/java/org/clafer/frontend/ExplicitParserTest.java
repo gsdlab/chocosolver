@@ -65,6 +65,66 @@ public class ExplicitParserTest {
         assertTrue(b.getRef() != a.getSuperClafer().getRef());
     }
 
+    /**
+     * noclafer, the empty set, prints and parses back, with the type of the
+     * set beside it, or of the model's first clafer when it stands alone.
+     */
+    @Test
+    public void testNoClafer() {
+        String source = """
+                [(if ((#c0_A) >= 1) then c0_B else noclafer) = c0_B]
+                [(c0_B ++ noclafer) = c0_B]
+                [(#noclafer) = 0]
+                0..* c0_A 0..2 {}
+                0..* c0_B 0..1 {}
+                """;
+        ExplicitParser.Result result = ExplicitParser.parse(source);
+        assertEquals(List.of(), result.diagnostics());
+        assertEquals(source, org.clafer.ast.AstPrinter.print(result.model()));
+        // typed by the set beside it: an empty set of c0_B
+        AstConstraintTypes types = new AstConstraintTypes(result);
+        assertEquals("c0_B", types.emptyOf(0));
+        assertEquals("c0_B", types.emptyOf(1));
+        // alone: of the model's first clafer
+        assertEquals("c0_A", types.emptyOf(2));
+        ClaferSolver solver = ClaferCompiler.compile(result.model(), Scope.defaultScope(2).toScope());
+        assertTrue(solver.find());
+    }
+
+    /**
+     * The type of the empty constant in each top-level constraint.
+     */
+    private record AstConstraintTypes(ExplicitParser.Result result) {
+
+        String emptyOf(int constraint) {
+            org.clafer.ast.AstExpr expr = result.model().getAbstractRoot().getConstraints().get(constraint).getExpr();
+            return find(expr);
+        }
+
+        private static String find(Object node) {
+            if (node instanceof org.clafer.ast.AstConstant c && c.value()[0].length == 0) {
+                return c.type().get(0).getName();
+            }
+            if (node instanceof Record r) {
+                for (java.lang.reflect.RecordComponent rc : r.getClass().getRecordComponents()) {
+                    try {
+                        Object value = rc.getAccessor().invoke(r);
+                        Object[] children = value instanceof Object[] array ? array : new Object[]{value};
+                        for (Object child : children) {
+                            String found = find(child);
+                            if (found != null) {
+                                return found;
+                            }
+                        }
+                    } catch (ReflectiveOperationException e) {
+                        throw new AssertionError(e);
+                    }
+                }
+            }
+            return null;
+        }
+    }
+
     @Test
     public void testSpans() {
         ExplicitParser.Result result = ExplicitParser.parse("0..* c0_A 1..1 {\n  [this . dref = 1]\n}\n");

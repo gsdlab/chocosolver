@@ -376,6 +376,10 @@ public class AstPrinter {
 
     private static String constant(AstConstant constant) {
         int[][] value = constant.value();
+        // The empty set, of any type, is Clafer's noclafer.
+        if (Arrays.stream(value).allMatch(column -> column.length == 0)) {
+            return "noclafer";
+        }
         if (constant.type().isInt() && value.length == 1 && value[0].length == 1) {
             return Integer.toString(value[0][0]);
         }
