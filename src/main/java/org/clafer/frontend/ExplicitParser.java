@@ -153,6 +153,10 @@ public final class ExplicitParser {
             ">", AstCompare.Op.GreaterThan, ">=", AstCompare.Op.GreaterThanEqual);
     private static final Set<String> BinaryOps = Set.of(
             "<", "<=", ">", ">=", "=", "!=", "in", "not", "%", "++", "--", "**", "<:", ":>");
+    // The temporal modifiers and operators of the explicit form of a temporal model, which
+    // chocosolver does not solve.
+    private static final Set<String> TemporalModifiers = Set.of("initial", "final", "finalref", "finaltarget");
+    private static final Set<String> TemporalOperators = Set.of("F", "G", "X", "U", "W", "initially", "finally");
 
     private final List<Token> tokens;
     private final List<Diagnostic> diagnostics = new ArrayList<>();
@@ -194,7 +198,7 @@ public final class ExplicitParser {
         parser.diagnostics.addAll(lexed.diagnostics());
         parser.readDeclarations();
         parser.build();
-        List<Diagnostic> diagnostics = new ArrayList<>(parser.diagnostics);
+        List<Diagnostic> diagnostics = new ArrayList<>(parser.temporalOr(parser.diagnostics));
         diagnostics.sort((a, b) -> a.span().line() != b.span().line()
                 ? Integer.compare(a.span().line(), b.span().line())
                 : Integer.compare(a.span().column(), b.span().column()));
@@ -202,6 +206,35 @@ public final class ExplicitParser {
                 parser.builtObjectives.toArray(new Objective[0]),
                 parser.builtAssertions.toArray(new Assertion[0]),
                 Collections.unmodifiableList(diagnostics));
+    }
+
+    /**
+     * The errors of a temporal model are those of its temporal modifiers and
+     * operators, one for each line, since the other errors follow from them,
+     * e.g., an unknown clafer after a clafer that could not be read.
+     *
+     * @param errors the errors of the lexer and the parser
+     * @return the errors of the temporal modifiers and operators, if any, or
+     * the errors
+     */
+    private List<Diagnostic> temporalOr(List<Diagnostic> errors) {
+        if (errors.isEmpty()) {
+            return errors;
+        }
+        List<Diagnostic> temporal = new ArrayList<>();
+        int line = -1;
+        for (Token t : tokens) {
+            if (t.kind() == TokenKind.WORD && !clafers.containsKey(t.text()) && t.span().line() != line) {
+                String what = TemporalModifiers.contains(t.text()) ? "temporal modifier"
+                        : TemporalOperators.contains(t.text()) ? "temporal operator" : null;
+                if (what != null) {
+                    temporal.add(new Diagnostic(t.span(), "Chocosolver does not solve temporal models: "
+                            + t.text() + " is a " + what + "; Alloy solves them (claferIG)"));
+                    line = t.span().line();
+                }
+            }
+        }
+        return temporal.isEmpty() ? errors : temporal;
     }
 
     // ------------------------------------------------------------------

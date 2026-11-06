@@ -177,4 +177,24 @@ public class ExplicitParserTest {
         // The other constraint is kept.
         assertEquals(1, ((AstConcreteClafer) result.model().getChildren().get(0)).getConstraints().size());
     }
+
+    @Test
+    public void testTemporalModelIsRefused() {
+        // the explicit form of a temporal model, as clafer -m clafer prints it: its errors are
+        // its temporal modifiers and operators, one for each line
+        assertEquals(List.of(
+                "3:3: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)",
+                "4:25: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)",
+                "8:9: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)"),
+                diagnostics("""
+                        //# OPTIONS --explicit --tl=10
+                        1..1 s 1..1 {
+                          initial 0..* a 0..1 {
+                            [((#this) >= 1) => (X ((#this . parent . b) >= 1))]
+                          }
+                          0..* b 0..1 {}
+                        }
+                        assert [G ((#s) >= 1)]
+                        """));
+    }
 }
