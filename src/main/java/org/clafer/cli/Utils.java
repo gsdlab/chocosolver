@@ -168,9 +168,6 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
     public static String countSuffix(int count) {
         return count == 0 ? "" : "$" + Integer.toString(count);
     }
-    public static String simpleName(String fullName) {
-        return fullName.substring(fullName.indexOf('_')+1);
-    }
 
     public static Scope resolveScopes(JavascriptFile javascriptFile, OptionSet options) {
         return resolveScopes(javascriptFile.getScope(), javascriptFile.hasIntRange(), options);

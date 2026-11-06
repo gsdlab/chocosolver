@@ -110,19 +110,19 @@ public class InstanceClafer {
     }
 
     private void print(String indent, Appendable out, boolean addTypes) throws IOException {
-        out.append(indent).append(Utils.simpleName(getType().getName())).append(Utils.countSuffix(getId()));
+        out.append(indent).append(getType().getName()).append(Utils.countSuffix(getId()));
         if (addTypes && getType().hasSuperClafer()) {
             String superName = getType().getSuperClafer().getName();
             // do not print the default super type "clafer"
             if (!superName.equals("#clafer#")) {
-                out.append(" : ").append(Utils.simpleName(superName));
+                out.append(" : ").append(superName);
             }
         }
         if (hasRef()) {
             out.append(" -> ");
             if (getRef() instanceof InstanceClafer) {
                 InstanceClafer refClafer = (InstanceClafer) getRef();
-                out.append(Utils.simpleName(refClafer.getType().getName())).append(Utils.countSuffix(refClafer.getId()));
+                out.append(refClafer.getType().getName()).append(Utils.countSuffix(refClafer.getId()));
             } else if (getRef() instanceof BigDecimal) {
                 // Never scientific notation, e.g. 0.0000001 rather than 1E-7.
                 out.append(((BigDecimal) getRef()).toPlainString());

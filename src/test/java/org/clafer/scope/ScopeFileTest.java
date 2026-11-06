@@ -13,9 +13,9 @@ import org.junit.Test;
 public class ScopeFileTest {
 
     private final AstModel model = newModel();
-    private final AstAbstractClafer t = model.addAbstract("c0_T");
-    private final AstConcreteClafer a = model.addChild("c0_A").withCard(1, 1);
-    private final AstConcreteClafer b = a.addChild("c0_b").extending(t);
+    private final AstAbstractClafer t = model.addAbstract("T");
+    private final AstConcreteClafer a = model.addChild("A").withCard(1, 1);
+    private final AstConcreteClafer b = a.addChild("b").extending(t);
 
     private Scope apply(String json) {
         return ScopeFile.parse(json, "test.cfr-scope").applyTo(Scope.defaultScope(2).toScope(), model);
@@ -27,9 +27,9 @@ public class ScopeFileTest {
                 .decimalScale(2).decimalLow(new BigDecimal("-100.5")).decimalHigh(new BigDecimal("100.25")).toScope();
         assertEquals("""
                 [
-                {"lpqName": "c0_A", "scope": 1},
-                {"lpqName": "c0_T", "scope": 1},
-                {"lpqName": "c0_b", "scope": 3},
+                {"lpqName": "A", "scope": 1},
+                {"lpqName": "T", "scope": 1},
+                {"lpqName": "b", "scope": 3},
                 {"defaultScope": 1},
                 {"int": [-4, 3]},
                 {"mul": [-4, 3]},
@@ -63,7 +63,7 @@ public class ScopeFileTest {
 
     @Test
     public void testNames() {
-        assertEquals(5, apply("[{\"lpqName\": \"c0_b\", \"scope\": 5}]").getScope(b));
+        assertEquals(5, apply("[{\"lpqName\": \"b\", \"scope\": 5}]").getScope(b));
         assertEquals(5, apply("[{\"lpqName\": \"A::b\", \"scope\": 5}]").getScope(b));
         // the root, as the REPL saves it
         assertEquals(2, apply("[{\"lpqName\": \"\", \"scope\": 1}]").getScope(b));
@@ -81,9 +81,9 @@ public class ScopeFileTest {
 
     @Test
     public void testMalformed() {
-        assertMalformed("[{\"lpqName\": \"c0_b\", \"scope\": two}]", "expected a number");
-        assertMalformed("[{\"lpqName\": \"c0_b\", \"scope\": -1}]", "natural number");
-        assertMalformed("[{\"lpqName\": \"c0_b\"}]", "\"lpqName\": name");
+        assertMalformed("[{\"lpqName\": \"b\", \"scope\": two}]", "expected a number");
+        assertMalformed("[{\"lpqName\": \"b\", \"scope\": -1}]", "natural number");
+        assertMalformed("[{\"lpqName\": \"b\"}]", "\"lpqName\": name");
         assertMalformed("[{\"int\": [3, 1]}]", "empty");
         assertMalformed("[{\"int\": [1.5, 2]}]", "an integer");
         assertMalformed("[{\"ints\": [1, 2]}]", "unknown entry \"ints\"");

@@ -1,6 +1,8 @@
 # chocosolver version 0.5.7, unreleased
 
 * Minor release with Clafer 0.5.7.
+* The names of clafers are their UIDs, which are their names since Clafer 0.5.7, qualified only where a name is not unique (`x__size`): the instances, also with `--prettify`, show them as they are. They cut a UID after its first `_` (`c0_size` was `size`, and `x__size` would have been `_size`).
+* A name in a scope file or a REPL command is a UID or a qualified name with `__`, e.g., `Cfeatures` for all the clafers named so, `Component__Cfeatures` for those in a `Component`, and `root__Component__Cfeatures` for the one in a top-level `Component`; the older form `Component::Cfeatures` and `::Component::Cfeatures` is read too. The names are matched with the UIDs of the clafer and its ancestors, which no longer have a prefix to cut off.
 * A join into a nested abstract clafer from a clafer that can be unused, e.g., `[ some this.parent.Task ]` under an optional child of `abstract System` with `abstract Task`, crashed with an `ArrayIndexOutOfBoundsException` when the abstract clafer's parent has several instances, e.g., two systems in one model.
 * A wrong command line, i.e., an unknown option, an option without its argument or with a wrong one (e.g., `-n abc`, `--search Fastest`), no `--file` or an input file that does not exist, prints one line, e.g., `chocosolver: bogus is not a recognized option`, and a pointer to `--help`, and exits with 1. It ended with a Java stack trace, and a wrong argument only after compiling the model.
 * jopt-simple 5.0.4 (was 5.0.2), which parses the command line, and maven-assembly-plugin 3.8.0 (was 3.7.1), which builds the jar with dependencies. choco-solver 6.0.2 is already the latest release.

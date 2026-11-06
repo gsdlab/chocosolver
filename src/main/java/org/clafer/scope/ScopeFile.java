@@ -162,8 +162,21 @@ public final class ScopeFile {
     }
 
     /**
-     * The clafers with the given UID, otherwise with the given (partially)
-     * qualified name.
+     * The clafer with the given UID, otherwise the clafers with the given
+     * (partially) qualified name. A UID is the clafer's least-partially-qualified
+     * name, with {@code __} between the names, e.g., {@code size}, {@code x__size}
+     * or {@code root__size} (a top-level {@code size} when another one exists).
+     * A qualified name names the clafers whose paths of names end with it:
+     * {@code size} names every clafer named {@code size}, {@code x__size} every
+     * {@code size} in an {@code x}, and {@code root__x__size} only the one in a
+     * top-level {@code x}. The older form with {@code ::} is read too:
+     * {@code x::size} is {@code x__size}, and {@code ::x::size} is
+     * {@code root__x__size}. An apostrophe is {@code _prime}, as in the UIDs.
+     * <p>
+     * The names are matched from the end, a UID at a time: the clafer's UID
+     * ends with the names, e.g., {@code x__size} with {@code size}, or is the
+     * last names, e.g., {@code size} of {@code x__size}, and the names before
+     * them are its parent's, and so on.
      *
      * @param clafers the clafers to look in
      * @param qName a UID or a (partially) qualified name
@@ -179,16 +192,12 @@ public final class ScopeFile {
         if (!result.isEmpty()) {
             return result;
         }
-        boolean full = qName.startsWith("::");
-        List<String> names = new ArrayList<>();
-        // an apostrophe in a name is __prime__ in the UID
-        for (String name : (full ? qName.substring(2) : qName).split("::")) {
-            names.add(name.replace("'", "__prime__"));
-        }
+        String name = (qName.startsWith("::") ? "root__" + qName.substring(2) : qName)
+                .replace("::", "__").replace("'", "_prime");
+        List<String> names = List.of(name.split("__", -1));
+        boolean fromRoot = names.size() > 1 && names.get(0).equals("root");
         for (AstClafer clafer : clafers) {
-            List<String> path = containmentPath(clafer);
-            if (full ? path.equals(names)
-                    : path.size() >= names.size() && path.subList(path.size() - names.size(), path.size()).equals(names)) {
+            if (endsWith(clafer, names, fromRoot)) {
                 result.add(clafer);
             }
         }
@@ -196,21 +205,53 @@ public final class ScopeFile {
     }
 
     /**
-     * The names of a clafer and its ancestors, from the top-level one, e.g.,
-     * [Component, Cfeatures].
+     * Whether the path of names of a clafer ends with the given names, or is
+     * them, from the root.
      */
-    private static List<String> containmentPath(AstClafer clafer) {
-        List<String> path = new ArrayList<>();
-        AstClafer current = clafer;
-        while (current != null && !current.getName().startsWith("#")) {
-            // the name without the UID's prefix, e.g., Cfeatures for c0_Cfeatures
-            path.add(0, current.getName().substring(current.getName().indexOf('_') + 1));
-            // a top-level clafer's parent is the model's root #root#; an abstract clafer can be
-            // nested, also under a concrete clafer
-            AstClafer parent = current.getParent();
-            current = parent == null || (parent instanceof AstConcreteClafer && !parent.hasParent()) ? null : parent;
+    private static boolean endsWith(AstClafer clafer, List<String> names, boolean fromRoot) {
+        // the clafer and its ancestors, from the top level
+        List<AstClafer> chain = new ArrayList<>();
+        for (AstClafer c = clafer; c != null; c = parentOf(c)) {
+            chain.add(0, c);
         }
-        return path;
+        return endsWith(chain, chain.size() - 1, names, fromRoot);
+    }
+
+    /**
+     * Whether the names end the path of the clafers up to chain[i]. A UID is
+     * the last names of a clafer's path, its own and its ancestors', e.g.,
+     * Device__Cfeatures, or root__size for a top-level size: it covers that
+     * many places, the root's at -1.
+     */
+    private static boolean endsWith(List<AstClafer> chain, int i, List<String> names, boolean fromRoot) {
+        String uid = chain.get(i).getName();
+        // the names end within the UID, e.g., size in x__size
+        if (!fromRoot && uid.endsWith("__" + String.join("__", names))) {
+            return true;
+        }
+        for (int k = 1; k <= names.size(); k++) {
+            if (String.join("__", names.subList(names.size() - k, names.size())).equals(uid)) {
+                List<String> rest = names.subList(0, names.size() - k);
+                int next = i - k;
+                if (rest.isEmpty() ? !fromRoot || next == -2
+                        : next == -1 ? fromRoot && rest.equals(List.of("root"))
+                        : next >= 0 && endsWith(chain, next, rest, fromRoot)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The parent of a clafer in the model's text, or null for a top-level one:
+     * its parent is the model's root, or #root# or #clafer# for an abstract one;
+     * an abstract clafer can be nested, also under a concrete clafer.
+     */
+    private static AstClafer parentOf(AstClafer clafer) {
+        AstClafer parent = clafer.getParent();
+        return parent == null || parent.getName().startsWith("#")
+                || (parent instanceof AstConcreteClafer && !parent.hasParent()) ? null : parent;
     }
 
     private static String quote(String s) {

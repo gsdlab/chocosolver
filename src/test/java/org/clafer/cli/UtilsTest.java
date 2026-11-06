@@ -60,21 +60,21 @@ public class UtilsTest {
      *     Cfeatures -> Feature *
      */
     private static final String ScopeFileModel
-            = "scope({c0_Cfeatures:6, c0_Component:2, c0_Device:2, c0_Feature:3, c0_Port:3, c1_Cfeatures:6});\n"
+            = "scope({$Component:2, $Component__Cfeatures:6, $Device:2, $Device__Cfeatures:6, $Feature:3, $Port:3});\n"
             + "defaultScope(1);\n"
-            + "c0_Feature = Abstract(\"c0_Feature\");\n"
-            + "c0_Port = Clafer(\"c0_Port\").withCard(3, 3);\n"
-            + "c0_Component = Abstract(\"c0_Component\");\n"
-            + "c0_Cfeatures = c0_Component.addChild(\"c0_Cfeatures\");\n"
-            + "c0_Device = Clafer(\"c0_Device\").withCard(2, 2);\n"
-            + "c1_Cfeatures = c0_Device.addChild(\"c1_Cfeatures\");\n"
-            + "c0_Port.extending(c0_Feature);\n"
-            + "c0_Cfeatures.refToUnique(c0_Feature);\n"
-            + "c0_Device.extending(c0_Component);\n"
-            + "c1_Cfeatures.refToUnique(c0_Feature);\n";
+            + "$Feature = Abstract(\"Feature\");\n"
+            + "$Port = Clafer(\"Port\").withCard(3, 3);\n"
+            + "$Component = Abstract(\"Component\");\n"
+            + "$Component__Cfeatures = $Component.addChild(\"Component__Cfeatures\");\n"
+            + "$Device = Clafer(\"Device\").withCard(2, 2);\n"
+            + "$Device__Cfeatures = $Device.addChild(\"Device__Cfeatures\");\n"
+            + "$Port.extending($Feature);\n"
+            + "$Component__Cfeatures.refToUnique($Feature);\n"
+            + "$Device.extending($Component);\n"
+            + "$Device__Cfeatures.refToUnique($Feature);\n";
 
     /**
-     * The scopes of c0_Cfeatures and c1_Cfeatures after applying the given scope file.
+     * The scopes of Component__Cfeatures and Device__Cfeatures after applying the given scope file.
      */
     private static List<Integer> cfeaturesScopes(String scopeFile) throws IOException {
         JavascriptFile javascriptFile = Javascript.readModel(ScopeFileModel);
@@ -84,18 +84,23 @@ public class UtilsTest {
 
     private static List<Integer> cfeaturesScopes(JavascriptFile javascriptFile, Scope scope) {
         List<AstClafer> clafers = Utils.getAllModelClafers(javascriptFile.getModel());
-        return List.of(scope.getScope(Utils.claferNamed(clafers, "c0_Cfeatures").get(0)),
-                       scope.getScope(Utils.claferNamed(clafers, "c1_Cfeatures").get(0)));
+        return List.of(scope.getScope(Utils.claferNamed(clafers, "Component__Cfeatures").get(0)),
+                       scope.getScope(Utils.claferNamed(clafers, "Device__Cfeatures").get(0)));
     }
 
     @Test
     public void testScopeFileNames() throws IOException {
         // a name sets the scopes of all the clafers whose containment paths end with it
         assertEquals(List.of(2, 2), cfeaturesScopes("[{\"lpqName\": \"Cfeatures\", \"scope\": 2}]"));
+        assertEquals(List.of(2, 6), cfeaturesScopes("[{\"lpqName\": \"Component__Cfeatures\", \"scope\": 2}]"));
+        assertEquals(List.of(6, 2), cfeaturesScopes("[{\"lpqName\": \"root__Device__Cfeatures\", \"scope\": 2}]"));
+        // the older form with ::
         assertEquals(List.of(2, 6), cfeaturesScopes("[{\"lpqName\": \"Component::Cfeatures\", \"scope\": 2}]"));
         assertEquals(List.of(6, 2), cfeaturesScopes("[\n{\n\"lpqName\": \"::Device::Cfeatures\",\n\"scope\": 2\n}\n]"));
+        // a qualified name of a clafer whose UID is its name: Port in the root
+        assertEquals(1, Utils.claferNamed(Utils.getAllModelClafers(Javascript.readModel(ScopeFileModel).getModel()), "root__Port").size());
         // UIDs, as the REPL saves them, also with the root's empty name
-        assertEquals(List.of(6, 2), cfeaturesScopes("[{\"lpqName\": \"\", \"scope\": 1},\n{\"lpqName\": \"c1_Cfeatures\", \"scope\": 2}]"));
+        assertEquals(List.of(6, 2), cfeaturesScopes("[{\"lpqName\": \"\", \"scope\": 1},\n{\"lpqName\": \"Device__Cfeatures\", \"scope\": 2}]"));
         assertEquals(List.of(6, 6), cfeaturesScopes("[]"));
     }
 

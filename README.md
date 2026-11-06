@@ -153,12 +153,15 @@ A `.cfr-scope` file next to the model (`model.cfr-scope` for `model.cfr` or `mod
 
 ```
 [
-{"lpqName": "Component::Cfeatures", "scope": 132},
-{"lpqName": "Flow::flowElements", "scope": 234}
+{"lpqName": "Component__Cfeatures", "scope": 132},
+{"lpqName": "Flow__flowElements", "scope": 234}
 ]
 ```
 
-A name is a clafer's UID (`c0_Cfeatures`) or a (partially) qualified name (`Cfeatures`, `Component::Cfeatures` or `::Component::Cfeatures`), which sets the scopes of all the clafers whose names, with their parents', end with it.
+A name is a clafer's UID or a (partially) qualified name, which sets the scopes of all the clafers whose names, with their parents', end with it.
+Since Clafer 0.5.7, the UID of a clafer is its least-partially-qualified name, with `__` between the names: `Cfeatures` if no other clafer is named so, `Component__Cfeatures` for the one in `Component` otherwise, and `root__Cfeatures` for a top-level one that is the end of another clafer's path.
+So `Cfeatures` names all of them, `Component__Cfeatures` those in a `Component`, and `root__Component__Cfeatures` the one in a top-level `Component`.
+The older form with `::` is read too: `Component::Cfeatures` is `Component__Cfeatures`, and `::Component::Cfeatures` is `root__Component__Cfeatures`.
 This is the format that `clafer --meta-data`, claferIG's and the REPL's `saveScopes` write, and that claferIG reads.
 The CLI prints `Using the scopes from model.cfr-scope` when it uses such a file; a name that is not of a clafer in the model is an error.
 A scope that is too small excludes instances, so the instances with a smaller scope should be checked against those with the inferred one.
@@ -504,9 +507,9 @@ defaultScope(1);
 stringLength(16);
 decimalScale(2);
 
-c0_price = Clafer("c0_price").withCard(1, 1);
-c0_price.refToUnique(Decimal);
-Constraint(implies(some(global(c0_price)), equal(joinRef(global(c0_price)), decimal("19.99"))));
+$price = Clafer("price").withCard(1, 1);
+$price.refToUnique(Decimal);
+Constraint(implies(some(global($price)), equal(joinRef(global($price)), decimal("19.99"))));
 ```
 
 `decimalScale(2)` is the number of fractional digits: clafer's default is the most fractional digits of the literals, and `--decimal-digits` of either tool overrides it.
