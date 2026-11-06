@@ -101,8 +101,13 @@ Option                                  Description
                                           output (the default output always has them).
 --decimal-digits <Integer>              Specify the number of fractional digits of decimals
                                           (overrides the model's).
---file <File: Clafer model file (.cfr)  Input file in .cfr or .js format.
-  or Clafer Javascript file (.js)>
+--explicit                              The .cfr model is an explicit model (as 'clafer -m
+                                          clafer' prints it): read it directly, without the
+                                          Clafer compiler. A model whose first line is '//#
+                                          OPTIONS --explicit' is one without this option.
+--file <File: Clafer model file (.cfr), Input file in .cfr or .js format.
+  explicit or not, or Clafer Javascript
+  file (.js)>
 --help                                  Show help.
 --import <Clafer file or URL>           Compile the .cfr model together with the given Clafer
                                           file or URL, relative to the current directory
@@ -135,6 +140,11 @@ The last mode is selected when no `-v` and `--repl` are given and the model does
 
 If the `.cfr` file is given, the CLI will first call the Clafer compiler using `clafer -k -m choco model.cfr`,
 which will produce `model.js`.
+
+An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7).
+It is a Clafer model with nothing left implicit, as `clafer -m clafer --meta-data model.cfr` writes it to `model.des.cfr`, with every scope in `model.des.cfr-scope`: every name is a UID, every card and group card, `this`, `parent` and `dref` are written out, and nesting is in braces.
+Its first line, `//# OPTIONS --explicit`, marks it, for chocosolver and for the Clafer compiler (for which it means `-f -k -l --ss=none`), so the file can have any name; `--explicit` marks a model without that line.
+chocosolver gives the same instances for the explicit model and its scope file as for `model.cfr`, and reports the errors of an edited one with their positions, e.g., `model.des.cfr:3:5: ...`.
 A model can consist of several files (Clafer 0.5.4): the files that the model imports with `--import` in its `//# OPTIONS` directive are compiled with it, and `--import=FILE` on the command line adds a file (see [Models in several files](https://github.com/gsdlab/clafer#models-in-several-files)).
 The compiler's errors give the file in which they are (`Compile error at lib.cfr:3:11...`).
 

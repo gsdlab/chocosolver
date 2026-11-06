@@ -56,8 +56,16 @@ public class AstPrinter {
     }
 
     /**
-     * Prints a model with its objectives and assertions. Its scopes go to a
-     * separate file, see {@link org.clafer.scope.ScopeFile#print}.
+     * The first line of an explicit model, which declares it to the Clafer
+     * compiler (its options -f -k -l --ss=none) and to chocosolver (read with
+     * {@link org.clafer.frontend.ExplicitParser}, not compiled by clafer).
+     */
+    public static final String ExplicitHeader = "//# OPTIONS --explicit";
+
+    /**
+     * Prints a model with its objectives and assertions, as an explicit model:
+     * {@link #ExplicitHeader}, then the model. Its scopes go to a separate
+     * file, see {@link org.clafer.scope.ScopeFile#print}.
      *
      * @param model the model
      * @param objectives the objectives
@@ -67,6 +75,7 @@ public class AstPrinter {
      */
     public static String print(AstModel model, Objective[] objectives, Assertion[] assertions) {
         StringBuilder out = new StringBuilder();
+        out.append(ExplicitHeader).append('\n');
         out.append(print(model));
         if (objectives.length > 0 || assertions.length > 0) {
             out.append('\n');

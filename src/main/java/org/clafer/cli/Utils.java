@@ -1,5 +1,6 @@
 package org.clafer.cli;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,18 +8,62 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import joptsimple.OptionSet;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstPrinter;
+import org.clafer.compiler.ClaferOption;
+import org.clafer.frontend.ExplicitParser;
 import org.clafer.ast.AstUtil;
 import org.clafer.instance.InstanceClafer;
+import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
 import org.clafer.scope.Scope;
 import org.clafer.scope.ScopeFile;
 
 
 public class Utils {
+    /**
+     * Whether a model file is an explicit model, to be read by
+     * {@link ExplicitParser} rather than compiled by clafer: given with
+     * --explicit, or a .cfr file whose first line is
+     * {@link AstPrinter#ExplicitHeader} (or another {@code //# OPTIONS} line
+     * with --explicit).
+     */
+    public static boolean isExplicitModel(File file, OptionSet options) throws IOException {
+        if (options.has("explicit"))
+            return true;
+        if (!file.getName().endsWith(".cfr"))
+            return false;
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String firstLine = reader.readLine();
+            return firstLine != null && firstLine.startsWith("//# OPTIONS ")
+                    && Arrays.asList(firstLine.substring(12).trim().split("\\s+")).contains("--explicit");
+        }
+    }
+
+    /**
+     * Reads a model: an explicit model with {@link ExplicitParser}, otherwise
+     * a .js file. An explicit model starts from the default scope (its scopes
+     * are in its scope file, see {@link #resolveScopes(File, JavascriptFile, OptionSet)}).
+     *
+     * @throws IllegalArgumentException with the diagnostics, if the explicit
+     * model has errors
+     */
+    public static JavascriptFile readModel(File file, OptionSet options) throws Exception {
+        if (!isExplicitModel(file, options))
+            return Javascript.readModel(file);
+        ExplicitParser.Result parsed = ExplicitParser.parse(Files.readString(file.toPath()));
+        if (!parsed.diagnostics().isEmpty())
+            throw new IllegalArgumentException(parsed.diagnostics().stream()
+                    .map(d -> file.getPath() + ":" + d).collect(Collectors.joining("\n")));
+        return new JavascriptFile(parsed.model(), Scope.builder().toScope(), ClaferOption.Default,
+                parsed.objectives(), parsed.assertions());
+    }
+
     /**
      * All the clafers of the model, including the nested abstract ones and the
      * type root #clafer#, except the roots of the model.

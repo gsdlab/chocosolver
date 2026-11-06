@@ -19,7 +19,6 @@ import org.clafer.compiler.ClaferSearchStrategy;
 import org.clafer.compiler.ClaferUnsat;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
-import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
@@ -97,7 +96,9 @@ public class REPL {
     public static String commandQuitS             = "q";
 
     public static void runREPL(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws Exception {
-        String scopesFile = inputFile.getAbsolutePath().substring(0, inputFile.getAbsolutePath().length() - 3) + ".cfr-scope";
+        // the model's scope file, e.g., model.cfr-scope for model.js, model.des.cfr-scope for model.des.cfr
+        String path = inputFile.getAbsolutePath();
+        String scopesFile = path.substring(0, path.lastIndexOf('.')) + ".cfr-scope";
 
         Scope scope = Utils.resolveScopes(inputFile, javascriptFile, options);
 
@@ -224,7 +225,7 @@ public class REPL {
             }
             else if (command.equals(commandReloadS) || command.equals(commandReloadL)) {// reloading
                 try {
-                    javascriptFile = Javascript.readModel(inputFile);
+                    javascriptFile = Utils.readModel(inputFile, options);
                 }
                 catch(Exception e) {
                     System.out.println("Unhandled compilation error occured. Please report this problem.");

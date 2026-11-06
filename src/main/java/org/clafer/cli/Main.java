@@ -11,7 +11,6 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.clafer.compiler.ClaferSearchStrategy;
-import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
 
 public class Main
@@ -27,8 +26,9 @@ public class Main
                         .ofType( File.class ).describedAs("text file");
                 accepts( "decimal-digits", "Specify the number of fractional digits of decimals (overrides the model's)." )
                     .withRequiredArg().ofType( Integer.class );
+                accepts( "explicit", "The .cfr model is an explicit model (as 'clafer -m clafer' prints it): read it directly, without the Clafer compiler. A model whose first line is '//# OPTIONS --explicit' is one without this option." );
                 accepts( "file", "Input file in .cfr or .js format" ).withRequiredArg().ofType( File.class )
-                    .describedAs( "Clafer model file (.cfr) or Clafer Javascript file (.js)." );
+                    .describedAs( "Clafer model file (.cfr), explicit or not, or Clafer Javascript file (.js)." );
                 accepts( "help", "Show help.").forHelp();
                 accepts( "import", "Compile the .cfr model together with the given Clafer file or URL, relative to the current directory (repeatable); a model also imports files with --import in its //# OPTIONS directive." )
                     .withRequiredArg().describedAs( "Clafer file or URL" );
@@ -102,8 +102,10 @@ public class Main
         }
 
         String fileName = inputFile.toString();
-        // If a .cfr file is given, compile it first and change the input file to the resulting .js file
-        if (fileName.endsWith(".cfr")) {
+        // If a .cfr file is given, compile it first and change the input file to the resulting .js file,
+        // unless it is an explicit model, which is read directly
+        boolean explicit = Utils.isExplicitModel(inputFile, options);
+        if (fileName.endsWith(".cfr") && !explicit) {
             System.out.println("Compiling the Clafer model...");
             String jsFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".js";
             new File(jsFileName).delete();
@@ -154,7 +156,15 @@ public class Main
         try {
             if (options.has( "v"))
                 System.out.println("=========== Parsing+Typechecking " + fileName + "  =============");
-            javascriptFile = Javascript.readModel(inputFile);
+            javascriptFile = Utils.readModel(inputFile, options);
+        }
+        catch(IllegalArgumentException e) {
+            if (!explicit)
+                throw e;
+            // the errors of an explicit model, with their positions
+            System.out.println(e.getMessage());
+            System.exit(1);
+            return;
         }
         catch(Exception e) {
             System.out.println("Unhandled compilation error occured. Please report this problem.");
