@@ -70,7 +70,8 @@ public class AstPrinterTest {
     }
 
     /**
-     * A clafer without its own reference has its super clafer's.
+     * A reference is printed where it is declared or redefined: A inherits T's,
+     * B redefines it, C redefines it with the same target.
      */
     @Test
     public void testInheritedRef() {
@@ -78,10 +79,12 @@ public class AstPrinterTest {
         AstAbstractClafer t = model.addAbstract("T").refTo(IntType);
         model.addChild("A").extending(t).withCard(1, 1);
         model.addChild("B").extending(t).withCard(1, 1).refToUnique(IntType);
+        model.addChild("C").extending(t).withCard(1, 1).refTo(IntType);
         assertEquals(""
                 + "abstract 0..* T ->> int 0..* {}\n"
-                + "0..* A : T ->> int 1..1 {}\n"
-                + "0..* B : T -> int 1..1 {}\n",
+                + "0..* A : T 1..1 {}\n"
+                + "0..* B : T -> int 1..1 {}\n"
+                + "0..* C : T ->> int 1..1 {}\n",
                 AstPrinter.print(model));
     }
 

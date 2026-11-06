@@ -32,11 +32,14 @@ import org.clafer.objective.Objective;
  * block, {@code {}} if it is empty. The indentation is only for reading;
  * whitespace and line breaks carry no meaning.
  * <p>
- * What applies is printed, not what is written: a clafer without its own group
+ * Values are printed as they apply, declarations where they are declared. A
+ * group card and a multiplicity are values: a clafer without its own group
  * card has its super clafer's, as chocosolver solves it, and {@code 0..*} if
- * no super clafer has one; a clafer without its own reference has its super
- * clafer's; an abstract clafer's multiplicity is {@code 0..*}. Inherited
- * children and constraints stay under the clafer that declares them.
+ * no super clafer has one; an abstract clafer's multiplicity is {@code 0..*}.
+ * Children, constraints and references are declarations: they stay under the
+ * clafer that declares them. A reference is printed only where it is declared
+ * or redefined, since in Clafer a reference written on a sub clafer redefines
+ * the inherited one, even with the same target.
  * <p>
  * Expressions are fully parenthesized, except for navigation ({@code .}),
  * which binds tightest. {@code sum} and {@code product} take a set of clafers
@@ -118,7 +121,8 @@ public class AstPrinter {
         if (clafer.hasSuperClafer() && clafer.getSuperClafer() != model.getTypeRoot()) {
             out.append(" : ").append(clafer.getSuperClafer().getName());
         }
-        AstRef ref = AstUtil.getInheritedRef(clafer);
+        // Only the clafer's own reference: an inherited one written here would redefine it.
+        AstRef ref = clafer.getRef();
         if (ref != null) {
             out.append(ref.isUnique() ? " -> " : " ->> ").append(ref.getTargetType().getName());
         }

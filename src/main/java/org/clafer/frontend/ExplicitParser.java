@@ -83,8 +83,10 @@ import org.clafer.objective.Objective;
  * after all clafers exist.
  * <p>
  * What the printer writes because it applies, the parser sets only where it
- * is not inherited: a group card or reference equal to the super clafer's is
- * the super clafer's, as in the model the printer printed.
+ * is not inherited: a group card equal to the super clafer's is the super
+ * clafer's, as in the model the printer printed. A reference is a declaration,
+ * printed only where it is declared or redefined, so a written reference is
+ * the clafer's own.
  * <p>
  * Clafers, constraints, objectives and assertions get the spans of their
  * source, so chocosolver's errors name their positions. Errors do not stop
@@ -573,8 +575,8 @@ public final class ExplicitParser {
     }
 
     /**
-     * Sets the reference and the group card of a clafer where they differ
-     * from what it inherits, after its super clafer's.
+     * Sets the reference of a clafer, if it has one written, and its group
+     * card where it differs from what it inherits, after its super clafer's.
      */
     private void setInherited(AstClafer clafer, Set<AstClafer> done, Set<AstClafer> visiting) {
         if (done.contains(clafer) || !declOf.containsKey(clafer)) {
@@ -589,24 +591,17 @@ public final class ExplicitParser {
             setInherited(sup, done, visiting);
         }
         ClaferDecl decl = declOf.get(clafer);
+        // A written reference is the clafer's own, as in Clafer: on a sub
+        // clafer it redefines the inherited one, even with the same target.
         if (decl.refTarget() != null) {
             AstClafer target = clafers.get(decl.refTarget().text());
             if (target == null) {
                 diagnostics.add(new Diagnostic(decl.refTarget().span(), "No clafer named " + decl.refTarget().text()));
+            } else if (decl.refArrow().text().equals("->")) {
+                clafer.refToUnique(target);
             } else {
-                boolean unique = decl.refArrow().text().equals("->");
-                AstRef inherited = sup == null ? null : AstUtil.getInheritedRef(sup);
-                if (inherited == null || inherited.getTargetType() != target || inherited.isUnique() != unique) {
-                    if (unique) {
-                        clafer.refToUnique(target);
-                    } else {
-                        clafer.refTo(target);
-                    }
-                }
+                clafer.refTo(target);
             }
-        } else if (sup != null && AstUtil.getInheritedRef(sup) != null) {
-            diagnostics.add(new Diagnostic(decl.name().span(),
-                    clafer.getName() + " inherits a reference from " + sup.getName() + ", which is not shown"));
         }
         Card inheritedGroupCard = sup == null ? null : AstUtil.getInheritedGroupCard(sup);
         Card groupCard = decl.groupCard();

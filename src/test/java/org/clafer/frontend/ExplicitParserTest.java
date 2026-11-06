@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstConcreteClafer;
+import org.clafer.ast.AstUtil;
 import org.clafer.ast.SourceSpan;
 import org.clafer.ast.analysis.Analysis;
 import org.clafer.ast.analysis.TypeAnalyzer;
@@ -41,6 +42,27 @@ public class ExplicitParserTest {
         ClaferSolver solver = ClaferCompiler.compile(result.model(), scope);
         assertTrue(solver.find());
         assertEquals(2, solver.instance().getTopClafers()[0].getChildren().length);
+    }
+
+    /**
+     * A clafer without a written reference inherits its super clafer's; a
+     * written one is its own, a redefinition even with the same target.
+     */
+    @Test
+    public void testReferences() {
+        ExplicitParser.Result result = ExplicitParser.parse("""
+                abstract 0..* c0_T ->> int 0..* {}
+                0..* c0_A : c0_T 1..1 {}
+                0..* c0_B : c0_T ->> int 1..1 {}
+                """);
+        assertEquals(List.of(), result.diagnostics());
+        List<AstConcreteClafer> clafers = result.model().getChildren();
+        AstConcreteClafer a = clafers.get(0);
+        AstConcreteClafer b = clafers.get(1);
+        assertTrue(!a.hasRef());
+        assertEquals(a.getSuperClafer().getRef(), AstUtil.getInheritedRef(a));
+        assertTrue(b.hasRef());
+        assertTrue(b.getRef() != a.getSuperClafer().getRef());
     }
 
     @Test
