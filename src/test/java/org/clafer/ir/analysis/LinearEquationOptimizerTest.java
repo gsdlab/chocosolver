@@ -25,6 +25,23 @@ public class LinearEquationOptimizerTest {
         assertEquals(1, module.getConstraints().size());
     }
 
+    /**
+     * Whether an optimization was lossy belongs to that optimization. It was
+     * static and never reset, so a lossy optimization made every later one
+     * keep its original constraints too.
+     */
+    @Test
+    public void testLossyDoesNotCarryOver() {
+        IrModule lossy = new IrModule();
+        IrIntVar x = Irs.boundInt("x", 0, 100000);
+        IrIntVar y = Irs.boundInt("y", 0, 100000);
+        lossy.addConstraint(Irs.lessThanEqual(Irs.add(x, y), 60000));
+        LinearEquationOptimizer.optimize(lossy);
+
+        testNotOptimizable();
+        testEqualitySubsumesInequality();
+    }
+
     @Test
     public void testEqualitySubsumesInequality() {
         IrModule module = new IrModule();
