@@ -169,6 +169,7 @@ public class Main
         catch(Exception e) {
             System.out.println("Unhandled compilation error occured. Please report this problem.");
             System.out.println(e.getMessage());
+            System.exit(1);
             return;
         }
 
