@@ -96,9 +96,9 @@ public class AstPrinterTest {
         AstModel model = newModel();
         AstConcreteClafer phone = model.addChild("Phone");
         AstConcreteClafer cost = phone.addChild("cost").refToUnique(IntType);
-        assertEquals("sum Phone . cost . dref", AstPrinter.print(sum(join(global(phone), cost))));
-        assertEquals("product Phone . cost . dref", AstPrinter.print(product(join(global(phone), cost))));
-        assertEquals("sum Phone . cost . dref . dref", AstPrinter.print(sum(joinRef(join(global(phone), cost)))));
+        assertEquals("sum Phone.cost.dref", AstPrinter.print(sum(join(global(phone), cost))));
+        assertEquals("product Phone.cost.dref", AstPrinter.print(product(join(global(phone), cost))));
+        assertEquals("sum Phone.cost.dref.dref", AstPrinter.print(sum(joinRef(join(global(phone), cost)))));
     }
 
     /**
@@ -117,11 +117,11 @@ public class AstPrinterTest {
         AstModel model = newModel();
         AstConcreteClafer a = model.addChild("A");
         AstConcreteClafer b = a.addChild("B").refToUnique(IntType);
-        assertEquals("this . B . dref + 1",
+        assertEquals("this.B.dref + 1",
                 AstPrinter.print(add(joinRef(join($this(), b)), constant(1))));
-        assertEquals("#this . parent", AstPrinter.print(card(joinParent($this()))));
-        assertEquals("A . (B ++ B)", AstPrinter.print(join(global(a), union(new AstChildRelation(b), new AstChildRelation(b)))));
-        assertEquals("!(this . B . dref = 1)", AstPrinter.print(not(equal(joinRef(join($this(), b)), constant(1)))));
+        assertEquals("#this.parent", AstPrinter.print(card(joinParent($this()))));
+        assertEquals("A.(B ++ B)", AstPrinter.print(join(global(a), union(new AstChildRelation(b), new AstChildRelation(b)))));
+        assertEquals("!(this.B.dref = 1)", AstPrinter.print(not(equal(joinRef(join($this(), b)), constant(1)))));
         assertEquals("((#A) = 1) || ((#A) = 2)",
                 AstPrinter.print(or(equal(card(global(a)), constant(1)), equal(card(global(a)), constant(2)))));
     }
@@ -132,7 +132,7 @@ public class AstPrinterTest {
         AstConcreteClafer a = model.addChild("A");
         AstConcreteClafer next = a.addChild("next").refTo(a);
         AstLocal x = local("x");
-        assertEquals("all x : A | (#x . next) >= 1", AstPrinter.print(all(decl(x, global(a)), some(join(x, next)))));
+        assertEquals("all x : A | (#x.next) >= 1", AstPrinter.print(all(decl(x, global(a)), some(join(x, next)))));
         assertEquals("^dref(next)", AstPrinter.print(transitiveClosure(new AstRefRelation(next.getRef()))));
         assertEquals("*dref(next)", AstPrinter.print(transitiveClosure(new AstRefRelation(next.getRef()), true)));
         assertEquals("concat(\"a\\\"b\\n\", \"\\u00e9\")", AstPrinter.print(concat(constant("a\"b\n"), constant("\u00e9"))));

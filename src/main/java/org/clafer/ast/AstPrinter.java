@@ -45,8 +45,8 @@ import org.clafer.objective.Objective;
  * which binds tightest. {@code sum} and {@code product} take a set of clafers
  * and add (multiply) the {@code dref} of each instance, so two instances with
  * the same value count twice; this is printed as in Clafer, e.g.,
- * {@code sum c0_Phone . c0_cost . dref}. An explicit dereference inside would
- * print as {@code . dref . dref}.
+ * {@code sum c0_Phone.c0_cost.dref}. An explicit dereference inside would
+ * print as {@code .dref.dref}.
  */
 public class AstPrinter {
 
@@ -284,17 +284,17 @@ public class AstPrinter {
             case AstConstant e -> constant(e);
             case AstDecimalConstant e -> e.value().toPlainString();
             case AstStringConstant e -> string(e.value());
-            case AstJoin e -> operand(e.left()) + " . " + step(e.right());
-            case AstJoinParent e -> operand(e.children()) + " . parent";
-            case AstJoinRef e -> operand(e.deref()) + " . dref";
+            case AstJoin e -> operand(e.left()) + "." + step(e.right());
+            case AstJoinParent e -> operand(e.children()) + ".parent";
+            case AstJoinRef e -> operand(e.deref()) + ".dref";
             case AstNot e -> "!" + operand(e.expr());
             // -1 is a constant, so the negation of a number is -(1), and of
             // -1 is -(-1) rather than --1, which reads as the difference --.
             case AstMinus e -> "-" + (e.expr() instanceof AstConstant || e.expr() instanceof AstDecimalConstant
                     ? "(" + print(e.expr()) + ")" : operand(e.expr()));
             case AstCard e -> "#" + operand(e.set());
-            case AstSum e -> "sum " + operand(e.set()) + " . dref";
-            case AstProduct e -> "product " + operand(e.set()) + " . dref";
+            case AstSum e -> "sum " + operand(e.set()) + ".dref";
+            case AstProduct e -> "product " + operand(e.set()) + ".dref";
             case AstMax e -> "max " + operand(e.set());
             case AstMin e -> "min " + operand(e.set());
             case AstLength e -> "length " + operand(e.string());
