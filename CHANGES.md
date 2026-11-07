@@ -1,4 +1,4 @@
-# chocosolver version 0.5.7, unreleased
+# chocosolver version 0.5.7, Nov 8, 2026
 
 * Minor release with Clafer 0.5.7.
 * The names of clafers are their UIDs, which are their names since Clafer 0.5.7, qualified only where a name is not unique (`x__size`): the instances, also with `--prettify`, show them as they are. They cut a UID after its first `_` (`c0_size` was `size`, and `x__size` would have been `_size`).
