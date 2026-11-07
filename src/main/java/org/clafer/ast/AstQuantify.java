@@ -1,5 +1,6 @@
 package org.clafer.ast;
 
+import java.util.Arrays;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 
@@ -7,41 +8,29 @@ import org.clafer.common.Util;
  *
  * @author jimmy
  */
-public class AstQuantify implements AstBoolExpr {
+public record AstQuantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpr body) implements AstBoolExpr {
 
-    private final Quantifier quantifier;
-    private final AstDecl[] decls;
-    private final AstBoolExpr body;
-
-    public AstQuantify(Quantifier quantifier, AstDecl[] decls, AstBoolExpr body) {
-        this.quantifier = Check.notNull(quantifier);
-        this.decls = Check.noNullsNotEmpty(decls);
-        this.body = Check.notNull(body);
-    }
-
-    public Quantifier getQuantifier() {
-        return quantifier;
-    }
-
-    public AstDecl[] getDecls() {
-        return decls;
-    }
-
-    public AstBoolExpr getBody() {
-        return body;
+    public AstQuantify {
+        quantifier = Check.notNull(quantifier);
+        decls = Check.noNullsNotEmpty(decls);
+        body = Check.notNull(body);
     }
 
     @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public boolean equals(Object obj) {
+        return obj instanceof AstQuantify other && quantifier == other.quantifier
+                && Arrays.equals(decls, other.decls) && body.equals(other.body);
+    }
+
+    @Override
+    public int hashCode() {
+        return quantifier.ordinal() ^ Arrays.hashCode(decls) ^ body.hashCode();
     }
 
     @Override
     public String toString() {
         return quantifier.getSyntax() + " " + Util.commaSeparate(decls) + " | " + body;
     }
-    
-    
 
     public static enum Quantifier {
 

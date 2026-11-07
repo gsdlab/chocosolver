@@ -19,6 +19,7 @@ public abstract class AstClafer implements AstVar {
     private AstAbstractClafer superClafer;
     private AstRef ref;
     private Card groupCard;
+    private SourceSpan span;
     private final List<AstConcreteClafer> children = new ArrayList<>();
     private final List<AstAbstractClafer> abstractChildren = new ArrayList<>();
     private final List<AstConstraint> constraints = new ArrayList<>();
@@ -207,6 +208,36 @@ public abstract class AstClafer implements AstVar {
         return withGroupCard(new Card(low, high));
     }
 
+    /**
+     * Check if this Clafer has a position in the source model.
+     *
+     * @return {@code true} if and only if this Clafer has a source span,
+     * {@code false} otherwise
+     */
+    public boolean hasSpan() {
+        return span != null;
+    }
+
+    /**
+     * Returns where this Clafer is declared in the source model.
+     *
+     * @return the source span, or {@code null} if unknown
+     */
+    public SourceSpan getSpan() {
+        return span;
+    }
+
+    /**
+     * Set where this Clafer is declared in the source model.
+     *
+     * @param span the source span
+     * @return this Clafer
+     */
+    public AstClafer at(SourceSpan span) {
+        this.span = Check.notNull(span);
+        return this;
+    }
+
     public abstract boolean hasParent();
 
     public abstract AstClafer getParent();
@@ -309,7 +340,19 @@ public abstract class AstClafer implements AstVar {
      * @return the constraint
      */
     public AstConstraint addConstraint(AstBoolExpr expr) {
-        AstConstraint constraint = new AstConstraint(this, expr);
+        return addConstraint(expr, null);
+    }
+
+    /**
+     * Add a new constraint under this Clafer.
+     *
+     * @param expr a tautology
+     * @param span where the constraint is in the source model, or {@code null}
+     * if unknown
+     * @return the constraint
+     */
+    public AstConstraint addConstraint(AstBoolExpr expr, SourceSpan span) {
+        AstConstraint constraint = new AstConstraint(this, expr, false, span);
         constraints.add(constraint);
         return constraint;
     }

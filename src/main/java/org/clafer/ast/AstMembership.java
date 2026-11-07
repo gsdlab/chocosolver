@@ -6,33 +6,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstMembership implements AstBoolExpr {
+public record AstMembership(AstSetExpr member, Op op, AstSetExpr set) implements AstBoolExpr {
 
-    private final AstSetExpr member;
-    private final Op op;
-    private final AstSetExpr set;
-
-    AstMembership(AstSetExpr member, Op op, AstSetExpr set) {
-        this.member = Check.notNull(member);
-        this.op = Check.notNull(op);
-        this.set = Check.notNull(set);
-    }
-
-    public AstSetExpr getMember() {
-        return member;
-    }
-
-    public Op getOp() {
-        return op;
-    }
-
-    public AstSetExpr getSet() {
-        return set;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public AstMembership {
+        member = Check.notNull(member);
+        op = Check.notNull(op);
+        set = Check.notNull(set);
     }
 
     @Override

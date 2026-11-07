@@ -593,4 +593,38 @@ public class RefinementTest {
                 Scope.setScope(task, 2).setScope(perception, 2).defaultScope(1));
         assertEquals(5, solver.allInstances().length);
     }
+
+    /**
+     * A join into a nested abstract clafer from an optional clafer, whose parent can be
+     * unused, with two instances of the parent.
+     *
+     * <pre>
+     * abstract System
+     *     abstract Task
+     *     Requirement ?
+     *         [ some this.parent.Task ]
+     *
+     * Car : System
+     *     Detection : Task
+     * Truck : System
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testJoinNestedAbstractFromUnused() {
+        AstModel model = newModel();
+
+        AstAbstractClafer system = model.addAbstract("System");
+        AstAbstractClafer task = system.addAbstractChild("Task");
+        AstConcreteClafer requirement = system.addChild("Requirement").withCard(Optional);
+        requirement.addConstraint(some(join(joinParent($this()), task)));
+
+        AstConcreteClafer car = model.addChild("Car").extending(system).withCard(Mandatory);
+        car.addChild("Detection").extending(task).withCard(Mandatory);
+        model.addChild("Truck").extending(system).withCard(Mandatory);
+
+        // the Requirement of the Car, or none; the Truck has no Task, so no Requirement
+        ClaferSolver solver = ClaferCompiler.compile(model,
+                Scope.setScope(system, 2).setScope(requirement, 2).defaultScope(1));
+        assertEquals(2, solver.allInstances().length);
+    }
 }

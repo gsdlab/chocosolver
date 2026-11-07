@@ -13,17 +13,30 @@ public class AstConstraint {
     private static final AtomicInteger idFactory = new AtomicInteger();
     private final int id = idFactory.getAndIncrement();
     private final AstClafer context;
-    private AstBoolExpr expr;
+    private final AstBoolExpr expr;
     private final boolean soft;
+    private final SourceSpan span;
 
     public AstConstraint(AstClafer context, AstBoolExpr expr) {
         this(context, expr, false);
     }
 
     public AstConstraint(AstClafer context, AstBoolExpr expr, boolean soft) {
+        this(context, expr, soft, null);
+    }
+
+    /**
+     * @param context the Clafer the constraint is under
+     * @param expr the constraint
+     * @param soft whether the constraint is soft
+     * @param span where the constraint is in the source model, or {@code null}
+     * if unknown
+     */
+    public AstConstraint(AstClafer context, AstBoolExpr expr, boolean soft, SourceSpan span) {
         this.context = Check.notNull(context);
         this.expr = Check.notNull(expr);
         this.soft = soft;
+        this.span = span;
     }
 
     public AstClafer getContext() {
@@ -42,6 +55,18 @@ public class AstConstraint {
         return expr;
     }
 
+    public boolean hasSpan() {
+        return span != null;
+    }
+
+    /**
+     * @return where the constraint is in the source model, or {@code null} if
+     * unknown
+     */
+    public SourceSpan getSpan() {
+        return span;
+    }
+
     @Override
     public boolean equals(Object obj) {
         return this == obj;
@@ -54,6 +79,7 @@ public class AstConstraint {
 
     @Override
     public String toString() {
-        return isHard() ? "[" + expr + "]" : "(" + expr + ")";
+        String constraint = isHard() ? "[" + expr + "]" : "(" + expr + ")";
+        return span == null ? constraint : constraint + " at " + span;
     }
 }
