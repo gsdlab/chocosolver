@@ -1,5 +1,6 @@
 package org.clafer.cli;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,21 +8,62 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import joptsimple.OptionSet;
 import org.clafer.ast.AstClafer;
-import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
+import org.clafer.ast.AstPrinter;
+import org.clafer.compiler.ClaferOption;
+import org.clafer.frontend.ExplicitParser;
 import org.clafer.ast.AstUtil;
 import org.clafer.instance.InstanceClafer;
+import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
 import org.clafer.scope.Scope;
-import org.clafer.scope.ScopeBuilder;
+import org.clafer.scope.ScopeFile;
 
 
 public class Utils {
+    /**
+     * Whether a model file is an explicit model, to be read by
+     * {@link ExplicitParser} rather than compiled by clafer: given with
+     * --explicit, or a .cfr file whose first line is
+     * {@link AstPrinter#ExplicitHeader} (or another {@code //# OPTIONS} line
+     * with --explicit).
+     */
+    public static boolean isExplicitModel(File file, OptionSet options) throws IOException {
+        if (options.has("explicit"))
+            return true;
+        if (!file.getName().endsWith(".cfr"))
+            return false;
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String firstLine = reader.readLine();
+            return firstLine != null && firstLine.startsWith("//# OPTIONS ")
+                    && Arrays.asList(firstLine.substring(12).trim().split("\\s+")).contains("--explicit");
+        }
+    }
+
+    /**
+     * Reads a model: an explicit model with {@link ExplicitParser}, otherwise
+     * a .js file. An explicit model starts from the default scope (its scopes
+     * are in its scope file, see {@link #resolveScopes(File, JavascriptFile, OptionSet)}).
+     *
+     * @throws IllegalArgumentException with the diagnostics, if the explicit
+     * model has errors
+     */
+    public static JavascriptFile readModel(File file, OptionSet options) throws Exception {
+        if (!isExplicitModel(file, options))
+            return Javascript.readModel(file);
+        ExplicitParser.Result parsed = ExplicitParser.parse(Files.readString(file.toPath()));
+        if (!parsed.diagnostics().isEmpty())
+            throw new IllegalArgumentException(parsed.diagnostics().stream()
+                    .map(d -> file.getPath() + ":" + d).collect(Collectors.joining("\n")));
+        return new JavascriptFile(parsed.model(), Scope.builder().toScope(), ClaferOption.Default,
+                parsed.objectives(), parsed.assertions());
+    }
+
     /**
      * All the clafers of the model, including the nested abstract ones and the
      * type root #clafer#, except the roots of the model.
@@ -126,12 +168,18 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
     public static String countSuffix(int count) {
         return count == 0 ? "" : "$" + Integer.toString(count);
     }
-    public static String simpleName(String fullName) {
-        return fullName.substring(fullName.indexOf('_')+1);
-    }
 
     public static Scope resolveScopes(JavascriptFile javascriptFile, OptionSet options) {
-        Scope scope = javascriptFile.getScope();
+        return resolveScopes(javascriptFile.getScope(), javascriptFile.hasIntRange(), options);
+    }
+
+    /**
+     * The scope with the command line's scopes and ranges, which override the given ones.
+     *
+     * @param hasIntRange whether the scope's integers were given, by the model or its scope file;
+     * otherwise they are -128..127
+     */
+    private static Scope resolveScopes(Scope scope, boolean hasIntRange, OptionSet options) {
         if (options.has("scope"))
             scope = scope.toBuilder().defaultScope((int) options.valueOf("scope")).toScope();
 
@@ -145,8 +193,8 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
 
             scope = scope.toBuilder().intLow(scopeLow).intHigh(scopeHigh).toScope();
         }
-        else if (javascriptFile.hasIntRange()) {
-            /* the integer range of the model, e.g., from clafer's --minint and --maxint */
+        else if (hasIntRange) {
+            /* the integer range of the model, e.g., from clafer's --minint and --maxint, or of its scope file */
             if (options.has("minint")) {
                 scope = scope.toBuilder().intLow((int)options.valueOf("minint")).toScope();
             }
@@ -161,17 +209,18 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
     }
 
     /**
-     * The scopes of the model, with the scopes of its clafers from its scope file, if it has one.
+     * The scopes of the model: the model's, then its scope file's, if it has one, then the command line's.
      */
     public static Scope resolveScopes(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws IOException {
-        Scope scope = resolveScopes(javascriptFile, options);
         File scopeFile = scopeFile(inputFile, options);
         if (scopeFile == null)
-            return scope;
+            return resolveScopes(javascriptFile, options);
         if (!scopeFile.exists())
             throw new FileNotFoundException("The scope file does not exist: " + scopeFile.getPath());
         System.out.println("Using the scopes from " + scopeFile.getPath());
-        return applyScopeFile(scope, javascriptFile.getModel(), Files.readString(scopeFile.toPath()), scopeFile.getPath());
+        ScopeFile file = ScopeFile.parse(Files.readString(scopeFile.toPath()), scopeFile.getPath());
+        return resolveScopes(file.applyTo(javascriptFile.getScope(), javascriptFile.getModel()),
+                javascriptFile.hasIntRange() || file.hasIntRange(), options);
     }
 
     /**
@@ -189,80 +238,20 @@ public static InstanceClafer getInstanceValueByName(InstanceClafer[] topClafers,
         return file.exists() ? file : null;
     }
 
-    private static final Pattern ScopeEntry =
-            Pattern.compile("\\{\\s*\"lpqName\"\\s*:\\s*\"([^\"]*)\"\\s*,\\s*\"scope\"\\s*:\\s*(\\d+)\\s*\\}");
-
     /**
-     * Sets the scopes of the clafers listed in a .cfr-scope file: a JSON array of
-     * {"lpqName": name, "scope": n}, as written by clafer --meta-data, claferIG's and the REPL's saveScopes.
-     * A name is a clafer's UID (c0_Cfeatures) or a (partially) qualified name (Cfeatures, Component::Cfeatures,
-     * ::Component::Cfeatures), which sets the scopes of all the clafers whose containment paths end with it.
+     * Applies a .cfr-scope file (see {@link ScopeFile}) to a scope.
      *
      * @throws IllegalArgumentException if the file is malformed or a name is not of a clafer in the model
      */
     public static Scope applyScopeFile(Scope scope, AstModel model, String json, String fileName) {
-        List<AstClafer> clafers = getAllModelClafers(model);
-        ScopeBuilder builder = scope.toBuilder();
-        Matcher entry = ScopeEntry.matcher(json);
-        StringBuilder rest = new StringBuilder();
-        int end = 0;
-        while (entry.find()) {
-            rest.append(json, end, entry.start());
-            end = entry.end();
-            String name = entry.group(1);
-            // the REPL saves the root clafer #clafer# with an empty name
-            if (name.isEmpty())
-                continue;
-            List<AstClafer> named = claferNamed(clafers, name);
-            if (named.isEmpty())
-                throw new IllegalArgumentException(fileName + ": the model has no clafer " + name);
-            for (AstClafer clafer : named)
-                builder.setScope(clafer, Integer.parseInt(entry.group(2)));
-        }
-        rest.append(json.substring(end));
-        if (!rest.toString().matches("\\s*\\[[\\s,]*\\]\\s*"))
-            throw new IllegalArgumentException(fileName + ": not a list of {\"lpqName\": name, \"scope\": n}");
-        return builder.toScope();
+        return ScopeFile.parse(json, fileName).applyTo(scope, model);
     }
 
     /**
      * The clafers with the given UID, otherwise with the given (partially) qualified name.
      */
     static List<AstClafer> claferNamed(List<AstClafer> clafers, String qName) {
-        List<AstClafer> result = new ArrayList<>();
-        for (AstClafer clafer : clafers)
-            if (clafer.getName().equals(qName))
-                result.add(clafer);
-        if (!result.isEmpty())
-            return result;
-        boolean full = qName.startsWith("::");
-        List<String> names = new ArrayList<>();
-        // an apostrophe in a name is __prime__ in the UID
-        for (String name : (full ? qName.substring(2) : qName).split("::"))
-            names.add(name.replace("'", "__prime__"));
-        for (AstClafer clafer : clafers) {
-            List<String> path = containmentPath(clafer);
-            if (full ? path.equals(names)
-                     : path.size() >= names.size() && path.subList(path.size() - names.size(), path.size()).equals(names))
-                result.add(clafer);
-        }
-        return result;
-    }
-
-    /**
-     * The names of a clafer and its ancestors, from the top-level one, e.g., [Component, Cfeatures].
-     */
-    static List<String> containmentPath(AstClafer clafer) {
-        List<String> path = new ArrayList<>();
-        AstClafer current = clafer;
-        while (current != null && !current.getName().startsWith("#")) {
-            path.add(0, simpleName(current.getName()));
-            // a top-level clafer's parent is the model's root #root#; an abstract clafer can be
-            // nested, also under a concrete clafer
-            AstClafer parent = current.getParent();
-            current = parent == null || (parent instanceof AstConcreteClafer && !parent.hasParent()) ? null : parent;
-        }
-        return path;
+        return ScopeFile.claferNamed(clafers, qName);
     }
 }
 

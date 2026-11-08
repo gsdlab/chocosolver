@@ -6,21 +6,10 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstJoinParent implements AstSetExpr {
+public record AstJoinParent(AstSetExpr children) implements AstSetExpr {
 
-    private final AstSetExpr children;
-
-    public AstJoinParent(AstSetExpr children) {
-        this.children = Check.notNull(children);
-    }
-
-    public AstSetExpr getChildren() {
-        return children;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public AstJoinParent {
+        children = Check.notNull(children);
     }
 
     @Override

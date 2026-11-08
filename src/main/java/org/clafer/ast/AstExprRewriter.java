@@ -38,10 +38,64 @@ import static org.clafer.ast.Asts.upcast;
  * @param <T> the parameter type
  * @author jimmy
  */
-public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
+public abstract class AstExprRewriter<T> {
+
+    /**
+     * Rewrites an expression by the method for its kind.
+     *
+     * @param expr the expression
+     * @param t the parameter
+     * @return the rewritten expression
+     */
+    public AstExpr rewrite(AstExpr expr, T t) {
+        return switch (expr) {
+            case AstArithm e -> visit(e, t);
+            case AstBoolArithm e -> visit(e, t);
+            case AstCard e -> visit(e, t);
+            case AstChildRelation e -> visit(e, t);
+            case AstCompare e -> visit(e, t);
+            case AstConcat e -> visit(e, t);
+            case AstConnected e -> visit(e, t);
+            case AstConstant e -> visit(e, t);
+            case AstDecimalConstant e -> visit(e, t);
+            case AstDifference e -> visit(e, t);
+            case AstDomainRestriction e -> visit(e, t);
+            case AstDowncast e -> visit(e, t);
+            case AstGlobal e -> visit(e, t);
+            case AstIfThenElse e -> visit(e, t);
+            case AstIntersection e -> visit(e, t);
+            case AstInverse e -> visit(e, t);
+            case AstJoin e -> visit(e, t);
+            case AstJoinParent e -> visit(e, t);
+            case AstJoinRef e -> visit(e, t);
+            case AstLength e -> visit(e, t);
+            case AstLocal e -> visit(e, t);
+            case AstMax e -> visit(e, t);
+            case AstMembership e -> visit(e, t);
+            case AstMin e -> visit(e, t);
+            case AstMinus e -> visit(e, t);
+            case AstMod e -> visit(e, t);
+            case AstNot e -> visit(e, t);
+            case AstParentRelation e -> visit(e, t);
+            case AstPrefix e -> visit(e, t);
+            case AstProduct e -> visit(e, t);
+            case AstQuantify e -> visit(e, t);
+            case AstRangeRestriction e -> visit(e, t);
+            case AstRefRelation e -> visit(e, t);
+            case AstSetTest e -> visit(e, t);
+            case AstStringConstant e -> visit(e, t);
+            case AstSuffix e -> visit(e, t);
+            case AstSum e -> visit(e, t);
+            case AstTernary e -> visit(e, t);
+            case AstThis e -> visit(e, t);
+            case AstTransitiveClosure e -> visit(e, t);
+            case AstUnion e -> visit(e, t);
+            case AstUpcast e -> visit(e, t);
+        };
+    }
 
     public AstBoolExpr rewrite(AstBoolExpr expr, T t) {
-        return (AstBoolExpr) expr.accept(this, t);
+        return (AstBoolExpr) rewrite((AstExpr) expr, t);
     }
 
     public AstBoolExpr[] rewrite(AstBoolExpr[] exprs, T t) {
@@ -53,7 +107,7 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
     }
 
     public AstSetExpr rewrite(AstSetExpr expr, T t) {
-        return (AstSetExpr) expr.accept(this, t);
+        return (AstSetExpr) rewrite((AstExpr) expr, t);
     }
 
     public AstSetExpr[] rewrite(AstSetExpr[] exprs, T t) {
@@ -64,224 +118,182 @@ public abstract class AstExprRewriter<T> implements AstExprVisitor<T, AstExpr> {
         return rewritten;
     }
 
-    @Override
     public AstExpr visit(AstThis ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstGlobal ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstConstant ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstStringConstant ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstDecimalConstant ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstJoin ast, T a) {
-        return join(rewrite(ast.getLeft(), a), ast.getRight());
+        return join(rewrite(ast.left(), a), ast.right());
     }
 
-    @Override
     public AstExpr visit(AstJoinParent ast, T a) {
-        return joinParent(rewrite(ast.getChildren(), a));
+        return joinParent(rewrite(ast.children(), a));
     }
 
-    @Override
     public AstExpr visit(AstJoinRef ast, T a) {
-        return joinRef(rewrite(ast.getDeref(), a));
+        return joinRef(rewrite(ast.deref(), a));
     }
 
-    @Override
     public AstExpr visit(AstNot ast, T a) {
-        return not(rewrite(ast.getExpr(), a));
+        return not(rewrite(ast.expr(), a));
     }
 
-    @Override
     public AstExpr visit(AstMinus ast, T a) {
-        return minus(rewrite(ast.getExpr(), a));
+        return minus(rewrite(ast.expr(), a));
     }
 
-    @Override
     public AstExpr visit(AstCard ast, T a) {
-        return card(rewrite(ast.getSet(), a));
+        return card(rewrite(ast.set(), a));
     }
 
-    @Override
     public AstExpr visit(AstMax ast, T a) {
-        return max(rewrite(ast.getSet(), a));
+        return max(rewrite(ast.set(), a));
     }
 
-    @Override
     public AstExpr visit(AstMin ast, T a) {
-        return min(rewrite(ast.getSet(), a));
+        return min(rewrite(ast.set(), a));
     }
 
-    @Override
     public AstExpr visit(AstSetTest ast, T a) {
-        return test(rewrite(ast.getLeft(), a), ast.getOp(), rewrite(ast.getRight(), a));
+        return test(rewrite(ast.left(), a), ast.op(), rewrite(ast.right(), a));
     }
 
-    @Override
     public AstExpr visit(AstCompare ast, T a) {
-        return compare(rewrite(ast.getLeft(), a), ast.getOp(), rewrite(ast.getRight(), a));
+        return compare(rewrite(ast.left(), a), ast.op(), rewrite(ast.right(), a));
     }
 
-    @Override
     public AstExpr visit(AstArithm ast, T a) {
-        return arithm(ast.getOp(), rewrite(ast.getOperands(), a));
+        return arithm(ast.op(), rewrite(ast.operands(), a));
     }
 
-    @Override
     public AstExpr visit(AstMod ast, T a) {
-        return mod(rewrite(ast.getDividend(), a), rewrite(ast.getDivisor(), a));
+        return mod(rewrite(ast.dividend(), a), rewrite(ast.divisor(), a));
     }
 
-    @Override
     public AstExpr visit(AstSum ast, T a) {
-        return sum(rewrite(ast.getSet(), a));
+        return sum(rewrite(ast.set(), a));
     }
 
-    @Override
     public AstExpr visit(AstProduct ast, T a) {
-        return product(rewrite(ast.getSet(), a));
+        return product(rewrite(ast.set(), a));
     }
 
-    @Override
     public AstExpr visit(AstBoolArithm ast, T a) {
-        return arithm(ast.getOp(), rewrite(ast.getOperands(), a));
+        return arithm(ast.op(), rewrite(ast.operands(), a));
     }
 
-    @Override
     public AstExpr visit(AstDifference ast, T a) {
-        return diff(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+        return diff(rewrite(ast.left(), a), rewrite(ast.right(), a));
     }
 
-    @Override
     public AstExpr visit(AstIntersection ast, T a) {
-        return inter(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+        return inter(rewrite(ast.left(), a), rewrite(ast.right(), a));
     }
 
-    @Override
     public AstExpr visit(AstUnion ast, T a) {
-        return union(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+        return union(rewrite(ast.left(), a), rewrite(ast.right(), a));
     }
 
-    @Override
     public AstExpr visit(AstMembership ast, T a) {
-        return membership(rewrite(ast.getMember(), a), ast.getOp(), rewrite(ast.getSet(), a));
+        return membership(rewrite(ast.member(), a), ast.op(), rewrite(ast.set(), a));
     }
 
-    @Override
     public AstExpr visit(AstTernary ast, T a) {
-        return ifThenElse(rewrite(ast.getAntecedent(), a), rewrite(ast.getConsequent(), a), rewrite(ast.getAlternative(), a));
+        return ifThenElse(rewrite(ast.antecedent(), a), rewrite(ast.consequent(), a), rewrite(ast.alternative(), a));
     }
 
-    @Override
     public AstExpr visit(AstIfThenElse ast, T a) {
-        return ifThenElse(rewrite(ast.getAntecedent(), a), rewrite(ast.getConsequent(), a), rewrite(ast.getAlternative(), a));
+        return ifThenElse(rewrite(ast.antecedent(), a), rewrite(ast.consequent(), a), rewrite(ast.alternative(), a));
     }
 
-    @Override
     public AstExpr visit(AstDowncast ast, T a) {
-        return downcast(rewrite(ast.getBase(), a), ast.getTarget());
+        return downcast(rewrite(ast.base(), a), ast.target());
     }
 
-    @Override
     public AstExpr visit(AstUpcast ast, T a) {
-        return upcast(rewrite(ast.getBase(), a), ast.getTarget());
+        return upcast(rewrite(ast.base(), a), ast.target());
     }
 
-    @Override
     public AstExpr visit(AstLocal ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstQuantify ast, T a) {
-        AstDecl[] decls = new AstDecl[ast.getDecls().length];
+        AstDecl[] decls = new AstDecl[ast.decls().length];
         for (int i = 0; i < decls.length; i++) {
-            AstDecl decl = ast.getDecls()[i];
+            AstDecl decl = ast.decls()[i];
             AstLocal[] locals = new AstLocal[decl.getLocals().length];
             for (int j = 0; j < locals.length; j++) {
                 locals[j] = (AstLocal) rewrite(decl.getLocals()[j], a);
             }
             decls[i] = decl(decl.isDisjoint(), locals, rewrite(decl.getBody(), a));
         }
-        return quantify(ast.getQuantifier(), decls, rewrite(ast.getBody(), a));
+        return quantify(ast.quantifier(), decls, rewrite(ast.body(), a));
     }
 
-    @Override
     public AstExpr visit(AstLength ast, T a) {
-        return length(rewrite(ast.getString(), a));
+        return length(rewrite(ast.string(), a));
     }
 
-    @Override
     public AstExpr visit(AstConcat ast, T a) {
-        return concat(rewrite(ast.getLeft(), a), rewrite(ast.getRight(), a));
+        return concat(rewrite(ast.left(), a), rewrite(ast.right(), a));
     }
 
-    @Override
     public AstExpr visit(AstPrefix ast, T a) {
-        return prefix(rewrite(ast.getPrefix(), a), rewrite(ast.getWord(), a));
+        return prefix(rewrite(ast.prefix(), a), rewrite(ast.word(), a));
     }
 
-    @Override
     public AstExpr visit(AstSuffix ast, T a) {
-        return suffix(rewrite(ast.getSuffix(), a), rewrite(ast.getWord(), a));
+        return suffix(rewrite(ast.suffix(), a), rewrite(ast.word(), a));
     }
 
-    @Override
     public AstExpr visit(AstChildRelation ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstParentRelation ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstRefRelation ast, T a) {
         return ast;
     }
 
-    @Override
     public AstExpr visit(AstDomainRestriction ast, T a) {
-        return domainRestriction(rewrite(ast.getDomain(), a), rewrite(ast.getRelation(), a));
+        return domainRestriction(rewrite(ast.domain(), a), rewrite(ast.relation(), a));
     }
 
-    @Override
     public AstExpr visit(AstRangeRestriction ast, T a) {
-        return rangeRestriction(rewrite(ast.getRelation(), a), rewrite(ast.getRange(), a));
+        return rangeRestriction(rewrite(ast.relation(), a), rewrite(ast.range(), a));
     }
 
-    @Override
     public AstExpr visit(AstInverse ast, T a) {
-        return inverse(rewrite(ast.getRelation(), a));
+        return inverse(rewrite(ast.relation(), a));
     }
 
-    @Override
     public AstExpr visit(AstTransitiveClosure ast, T a) {
-        return transitiveClosure(rewrite(ast.getRelation(), a), ast.isReflexive());
+        return transitiveClosure(rewrite(ast.relation(), a), ast.reflexive());
     }
 
-    @Override
     public AstExpr visit(AstConnected ast, T a) {
-        AstSetExpr e = rewrite(ast.getRelation(), a);
-        AstSetExpr n = rewrite(ast.getNodes(), a);
-        return connected(n, e, ast.isDirected());
+        AstSetExpr e = rewrite(ast.relation(), a);
+        AstSetExpr n = rewrite(ast.nodes(), a);
+        return connected(n, e, ast.directed());
     }
 }

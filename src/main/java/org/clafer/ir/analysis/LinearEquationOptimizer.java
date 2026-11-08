@@ -41,7 +41,7 @@ import org.clafer.math.Variable;
  */
 public class LinearEquationOptimizer {
 
-    private static boolean lossy = false;
+    private boolean lossy = false;
 
     private LinearEquationOptimizer() {
     }

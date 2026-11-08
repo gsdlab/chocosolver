@@ -6,33 +6,12 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstIfThenElse implements AstBoolExpr {
+public record AstIfThenElse(AstBoolExpr antecedent, AstBoolExpr consequent, AstBoolExpr alternative) implements AstBoolExpr {
 
-    private final AstBoolExpr antecedent;
-    private final AstBoolExpr consequent;
-    private final AstBoolExpr alternative;
-
-    AstIfThenElse(AstBoolExpr antecedent, AstBoolExpr consequent, AstBoolExpr alternative) {
-        this.antecedent = Check.notNull(antecedent);
-        this.consequent = Check.notNull(consequent);
-        this.alternative = Check.notNull(alternative);
-    }
-
-    public AstBoolExpr getAntecedent() {
-        return antecedent;
-    }
-
-    public AstBoolExpr getConsequent() {
-        return consequent;
-    }
-
-    public AstBoolExpr getAlternative() {
-        return alternative;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
+    public AstIfThenElse {
+        antecedent = Check.notNull(antecedent);
+        consequent = Check.notNull(consequent);
+        alternative = Check.notNull(alternative);
     }
 
     @Override

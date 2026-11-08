@@ -8,40 +8,10 @@ import org.clafer.common.Check;
  *
  * @author jimmy
  */
-public class AstGlobal implements AstSetExpr {
+public record AstGlobal(AstClafer type) implements AstSetExpr {
 
-    private final AstClafer type;
-
-    AstGlobal(AstClafer type) {
-        this.type = Check.notNull(type);
-    }
-
-    /**
-     * The type of this expression.
-     *
-     * @return the type of this expression
-     */
-    public AstClafer getType() {
-        return type;
-    }
-
-    @Override
-    public <A, B> B accept(AstExprVisitor<A, B> visitor, A a) {
-        return visitor.visit(this, a);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof AstGlobal) {
-            AstGlobal other = (AstGlobal) obj;
-            return type.equals(other.getType());
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return type.hashCode() + 91;
+    public AstGlobal {
+        type = Check.notNull(type);
     }
 
     @Override

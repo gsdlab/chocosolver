@@ -25,7 +25,7 @@ import org.clafer.collection.Pair;
 public class InverseAnalyzer implements Analyzer {
 
     private static boolean isZero(AstConstant constant) {
-        return constant.getValue().length == 1 && constant.getValue()[0].length == 1 && constant.getValue()[0][0] == 0;
+        return constant.value().length == 1 && constant.value()[0].length == 1 && constant.value()[0][0] == 0;
     }
 
     private static boolean refTypeIsUnique(AstClafer clafer, Analysis analysis) {
@@ -34,23 +34,23 @@ public class InverseAnalyzer implements Analyzer {
     }
 
     private static boolean thisJoinParent(AstExpr expr, Analysis analysis) {
-        return expr instanceof AstJoinParent && ((AstJoinParent) expr).getChildren() instanceof AstThis
-                || (expr instanceof AstConstant && isZero((AstConstant) expr) && analysis.getScope(((AstConstant) expr).getType().getClaferType()) == 1);
+        return expr instanceof AstJoinParent && ((AstJoinParent) expr).children() instanceof AstThis
+                || (expr instanceof AstConstant && isZero((AstConstant) expr) && analysis.getScope(((AstConstant) expr).type().getClaferType()) == 1);
     }
 
     private static Optional<Pair<AstClafer, AstClafer>> thisJoinRefJoinChildJoinRef(AstExpr expr, Analysis analysis) {
         if (expr instanceof AstJoinRef) {
             AstJoinRef set = (AstJoinRef) expr;
 
-            if (refTypeIsUnique(analysis.getType(set.getDeref()).getClaferType(), analysis)) {
-                AstClafer type1 = analysis.getType(set.getDeref()).getClaferType();
-                if (set.getDeref() instanceof AstJoin) {
-                    AstJoin join = (AstJoin) set.getDeref();
-                    if (join.getLeft() instanceof AstJoinRef && join.getRight() instanceof AstChildRelation) {
-                        AstJoinRef joinRef = (AstJoinRef) join.getLeft();
+            if (refTypeIsUnique(analysis.getType(set.deref()).getClaferType(), analysis)) {
+                AstClafer type1 = analysis.getType(set.deref()).getClaferType();
+                if (set.deref() instanceof AstJoin) {
+                    AstJoin join = (AstJoin) set.deref();
+                    if (join.left() instanceof AstJoinRef && join.right() instanceof AstChildRelation) {
+                        AstJoinRef joinRef = (AstJoinRef) join.left();
 
-                        if (joinRef.getDeref() instanceof AstThis && refTypeIsUnique(analysis.getType(joinRef.getDeref()).getClaferType(), analysis)) {
-                            AstClafer type2 = analysis.getType(joinRef.getDeref()).getClaferType();
+                        if (joinRef.deref() instanceof AstThis && refTypeIsUnique(analysis.getType(joinRef.deref()).getClaferType(), analysis)) {
+                            AstClafer type2 = analysis.getType(joinRef.deref()).getClaferType();
                             return Optional.of(new Pair<>(type1, type2));
                         }
                     }
@@ -70,18 +70,18 @@ public class InverseAnalyzer implements Analyzer {
 
             if (expr instanceof AstMembership) {
                 AstMembership membership = (AstMembership) expr;
-                if (membership.getOp().equals(AstMembership.Op.In)) {
-                    if (thisJoinParent(membership.getMember(), analysis)) {
-                        thisJoinRefJoinChildJoinRef(membership.getSet(), analysis).ifPresent(direction::add);
+                if (membership.op().equals(AstMembership.Op.In)) {
+                    if (thisJoinParent(membership.member(), analysis)) {
+                        thisJoinRefJoinChildJoinRef(membership.set(), analysis).ifPresent(direction::add);
                     }
                 }
             } else if (expr instanceof AstSetTest) {
                 AstSetTest setTest = (AstSetTest) expr;
-                if (setTest.getOp().equals(AstSetTest.Op.Equal)) {
-                    if (thisJoinParent(setTest.getLeft(), analysis)) {
-                        thisJoinRefJoinChildJoinRef(setTest.getRight(), analysis).ifPresent(direction::add);
-                    } else if (thisJoinParent(setTest.getRight(), analysis)) {
-                        thisJoinRefJoinChildJoinRef(setTest.getLeft(), analysis).ifPresent(direction::add);
+                if (setTest.op().equals(AstSetTest.Op.Equal)) {
+                    if (thisJoinParent(setTest.left(), analysis)) {
+                        thisJoinRefJoinChildJoinRef(setTest.right(), analysis).ifPresent(direction::add);
+                    } else if (thisJoinParent(setTest.right(), analysis)) {
+                        thisJoinRefJoinChildJoinRef(setTest.left(), analysis).ifPresent(direction::add);
                     }
                 }
             }

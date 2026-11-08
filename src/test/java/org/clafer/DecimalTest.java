@@ -566,13 +566,13 @@ public class DecimalTest {
                 "defaultScope(1);\n"
                 + "stringLength(16);\n"
                 + "decimalScale(2);\n"
-                + "c0_rate = Clafer(\"c0_rate\").withCard(1, 1);\n"
-                + "c0_interest = Clafer(\"c0_interest\").withCard(1, 1);\n"
-                + "c0_rate.refToUnique(Decimal);\n"
-                + "Constraint(equal(joinRef(global(c0_rate)), decimal(\"1.99\")));\n"
-                + "c0_interest.refToUnique(Decimal);\n"
-                + "Constraint(implies(some(global(c0_interest)), equal(joinRef(global(c0_interest)), "
-                + "mul(constant(100), joinRef(global(c0_rate))))));\n");
+                + "$rate = Clafer(\"rate\").withCard(1, 1);\n"
+                + "$interest = Clafer(\"interest\").withCard(1, 1);\n"
+                + "$rate.refToUnique(Decimal);\n"
+                + "Constraint(equal(joinRef(global($rate)), decimal(\"1.99\")));\n"
+                + "$interest.refToUnique(Decimal);\n"
+                + "Constraint(implies(some(global($interest)), equal(joinRef(global($interest)), "
+                + "mul(constant(100), joinRef(global($rate))))));\n");
         ClaferSearch solver = ClaferCompiler.compile(js.getModel(), js.getScope());
         assertTrue(solver.find());
         StringBuilder out = new StringBuilder();

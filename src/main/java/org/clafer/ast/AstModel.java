@@ -94,4 +94,8 @@ public class AstModel {
     public AstConstraint addConstraint(AstBoolExpr expr) {
         return abstractRootClafer.addConstraint(expr);
     }
+
+    public AstConstraint addConstraint(AstBoolExpr expr, SourceSpan span) {
+        return abstractRootClafer.addConstraint(expr, span);
+    }
 }

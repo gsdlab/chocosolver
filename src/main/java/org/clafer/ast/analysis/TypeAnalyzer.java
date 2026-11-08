@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Supplier;
 import java.util.Set;
 import org.clafer.assertion.Assertion;
 import org.clafer.ast.AstArithm;
@@ -28,7 +29,6 @@ import org.clafer.ast.AstDifference;
 import org.clafer.ast.AstDomainRestriction;
 import org.clafer.ast.AstDowncast;
 import org.clafer.ast.AstExpr;
-import org.clafer.ast.AstExprVisitor;
 import org.clafer.ast.AstGlobal;
 import org.clafer.ast.AstIfThenElse;
 import org.clafer.ast.AstIntClafer;
@@ -102,6 +102,7 @@ import static org.clafer.ast.Asts.transitiveClosure;
 import static org.clafer.ast.Asts.union;
 import static org.clafer.ast.Asts.upcast;
 import org.clafer.ast.ProductType;
+import org.clafer.ast.SourceSpan;
 import org.clafer.common.Check;
 import org.clafer.common.Util;
 import org.clafer.objective.Objective;
@@ -156,17 +157,19 @@ public class TypeAnalyzer implements Analyzer {
         for (AstConstraint constraint : analysis.getConstraints()) {
             AstClafer clafer = constraint.getContext();
             TypeVisitor visitor = new TypeVisitor(Type.basicType(clafer), typeMap, scope);
-            TypedExpr<AstBoolExpr> typedConstraint = visitor.typeCheck(analysis.getExpr(constraint));
+            TypedExpr<AstBoolExpr> typedConstraint = at(constraint.getSpan(),
+                    () -> visitor.typeCheck(analysis.getExpr(constraint)));
             typedConstraints.put(constraint, typedConstraint.getExpr());
         }
         Map<Objective, AstSetExpr> objectives = analysis.getObjectiveExprs();
         Map<Objective, AstSetExpr> typedObjectives = new HashMap<>(objectives.size());
         for (Entry<Objective, AstSetExpr> objective : objectives.entrySet()) {
             TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap, scope);
-            TypedExpr<AstSetExpr> typedObjective = visitor.typeCheck(objective.getValue());
+            SourceSpan span = objective.getKey().getSpan();
+            TypedExpr<AstSetExpr> typedObjective = at(span, () -> visitor.typeCheck(objective.getValue()));
             // A decimal objective optimizes the scaled decimal.
             if (!typedObjective.getCommonSupertype().isInt() && !typedObjective.getCommonSupertype().isDecimal()) {
-                throw new TypeException("Cannot optimize on " + typedObjective.getType());
+                throw new TypeException(at(span, "Cannot optimize on " + typedObjective.getType()));
             }
             typedObjectives.put(objective.getKey(), typedObjective.getExpr());
         }
@@ -174,9 +177,10 @@ public class TypeAnalyzer implements Analyzer {
         Map<Assertion, AstBoolExpr> typedAssertions = new HashMap<>(assertions.size());
         for (Entry<Assertion, AstBoolExpr> assertion : assertions.entrySet()) {
             TypeVisitor visitor = new TypeVisitor(Type.basicType(analysis.getModel().getAbstractRoot()), typeMap, scope);
-            TypedExpr<AstBoolExpr> typedAssertion = visitor.typeCheck(assertion.getValue());
+            SourceSpan span = assertion.getKey().getSpan();
+            TypedExpr<AstBoolExpr> typedAssertion = at(span, () -> visitor.typeCheck(assertion.getValue()));
             if (!typedAssertion.getCommonSupertype().isBool()) {
-                throw new TypeException("Cannot assert on " + typedAssertion.getType());
+                throw new TypeException(at(span, "Cannot assert on " + typedAssertion.getType()));
             }
             typedAssertions.put(assertion.getKey(), typedAssertion.getExpr());
         }
@@ -186,7 +190,25 @@ public class TypeAnalyzer implements Analyzer {
                 .setAssertionExprs(typedAssertions);
     }
 
-    private static class TypeVisitor implements AstExprVisitor<Void, TypedExpr<?>> {
+    private static String at(SourceSpan span, String message) {
+        return span == null ? message : span.format(message);
+    }
+
+    /**
+     * Type checks, prefixing a type error with the source position.
+     */
+    private static <T> T at(SourceSpan span, Supplier<T> typeCheck) {
+        try {
+            return typeCheck.get();
+        } catch (TypeException e) {
+            if (span == null) {
+                throw e;
+            }
+            throw new TypeException(span.format(e.getMessage()), e);
+        }
+    }
+
+    private static class TypeVisitor {
 
         private final Type context;
         private final Map<AstExpr, Type> typeMap;
@@ -230,7 +252,7 @@ public class TypeAnalyzer implements Analyzer {
                 throw new TypeException("Cannot convert " + expr.getType() + " to decimal");
             }
             if (expr.getExpr() instanceof AstConstant) {
-                int[][] value = ((AstConstant) expr.getExpr()).getValue();
+                int[][] value = ((AstConstant) expr.getExpr()).value();
                 if (value.length == 1) {
                     int[] scaled = new int[value[0].length];
                     for (int i = 0; i < scaled.length; i++) {
@@ -264,7 +286,50 @@ public class TypeAnalyzer implements Analyzer {
 
         private <T extends AstExpr> TypedExpr<T> typeCheck(T expr) {
             @SuppressWarnings("unchecked")
-            TypedExpr<T> typedExpr = (TypedExpr<T>) expr.accept(this, null);
+            TypedExpr<T> typedExpr = (TypedExpr<T>) switch (expr) {
+                case AstArithm e -> visit(e);
+                case AstBoolArithm e -> visit(e);
+                case AstCard e -> visit(e);
+                case AstChildRelation e -> visit(e);
+                case AstCompare e -> visit(e);
+                case AstConcat e -> visit(e);
+                case AstConnected e -> visit(e);
+                case AstConstant e -> visit(e);
+                case AstDecimalConstant e -> visit(e);
+                case AstDifference e -> visit(e);
+                case AstDomainRestriction e -> visit(e);
+                case AstDowncast e -> visit(e);
+                case AstGlobal e -> visit(e);
+                case AstIfThenElse e -> visit(e);
+                case AstIntersection e -> visit(e);
+                case AstInverse e -> visit(e);
+                case AstJoin e -> visit(e);
+                case AstJoinParent e -> visit(e);
+                case AstJoinRef e -> visit(e);
+                case AstLength e -> visit(e);
+                case AstLocal e -> visit(e);
+                case AstMax e -> visit(e);
+                case AstMembership e -> visit(e);
+                case AstMin e -> visit(e);
+                case AstMinus e -> visit(e);
+                case AstMod e -> visit(e);
+                case AstNot e -> visit(e);
+                case AstParentRelation e -> visit(e);
+                case AstPrefix e -> visit(e);
+                case AstProduct e -> visit(e);
+                case AstQuantify e -> visit(e);
+                case AstRangeRestriction e -> visit(e);
+                case AstRefRelation e -> visit(e);
+                case AstSetTest e -> visit(e);
+                case AstStringConstant e -> visit(e);
+                case AstSuffix e -> visit(e);
+                case AstSum e -> visit(e);
+                case AstTernary e -> visit(e);
+                case AstThis e -> visit(e);
+                case AstTransitiveClosure e -> visit(e);
+                case AstUnion e -> visit(e);
+                case AstUpcast e -> visit(e);
+            };
             return typedExpr;
         }
 
@@ -359,31 +424,26 @@ public class TypeAnalyzer implements Analyzer {
             return new TypedExpr<>(type, expr);
         }
 
-        @Override
-        public TypedExpr<AstThis> visit(AstThis ast, Void a) {
+        private TypedExpr<AstThis> visit(AstThis ast) {
             return put(context, ast);
         }
 
-        @Override
-        public TypedExpr<AstGlobal> visit(AstGlobal ast, Void a) {
-            return put(Type.basicType(ast.getType()), ast);
+        private TypedExpr<AstGlobal> visit(AstGlobal ast) {
+            return put(Type.basicType(ast.type()), ast);
         }
 
-        @Override
-        public TypedExpr<AstConstant> visit(AstConstant ast, Void a) {
-            return put(new Type(ast.getType()), ast);
+        private TypedExpr<AstConstant> visit(AstConstant ast) {
+            return put(new Type(ast.type()), ast);
         }
 
-        @Override
-        public TypedExpr<?> visit(AstStringConstant ast, Void a) {
+        private TypedExpr<?> visit(AstStringConstant ast) {
             return put(Type.basicType(AstStringClafer.Singleton), ast);
         }
 
-        @Override
-        public TypedExpr<?> visit(AstDecimalConstant ast, Void a) {
+        private TypedExpr<?> visit(AstDecimalConstant ast) {
             int scaled;
             try {
-                scaled = scope.scaleDecimal(ast.getValue(), RoundingMode.UNNECESSARY);
+                scaled = scope.scaleDecimal(ast.value(), RoundingMode.UNNECESSARY);
             } catch (ArithmeticException e) {
                 throw new TypeException(ast + " has more fractional digits than the decimal scale "
                         + scope.getDecimalScale());
@@ -393,10 +453,9 @@ public class TypeAnalyzer implements Analyzer {
             return put(DecimalType, constant(DecimalType, scaled));
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstJoin ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+        private TypedExpr<AstSetExpr> visit(AstJoin ast) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.left());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.right());
             if (right.getCommonSupertype().arity() == 2) {
                 AstClafer rightParamType = right.getCommonSupertype().get(0);
                 AstClafer rightReturnType = right.getCommonSupertype().get(1);
@@ -418,9 +477,8 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException("Cannot join " + left.getType() + " . " + right.getType());
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstJoinParent ast, Void a) {
-            TypedExpr<AstSetExpr> children = typeCheck(ast.getChildren());
+        private TypedExpr<AstSetExpr> visit(AstJoinParent ast) {
+            TypedExpr<AstSetExpr> children = typeCheck(ast.children());
             if (children.getType().isClaferType()) {
                 AstClafer childrenType = children.getType().getClaferType();
                 if (!AstUtil.isTop(childrenType) && !AstUtil.isTypeRoot(childrenType)) {
@@ -440,7 +498,7 @@ public class TypeAnalyzer implements Analyzer {
                             throw new TypeException("Cannot join " + children.getType()
                                     + " . parent: its subclafer " + sub + " is a top-level clafer");
                         }
-                        AstSetExpr subParents = joinParent(downcast(ast.getChildren(), new ProductType(sub)));
+                        AstSetExpr subParents = joinParent(downcast(ast.children(), new ProductType(sub)));
                         parents = parents == null ? subParents : union(parents, subParents);
                     }
                     return typeCheck(parents);
@@ -449,9 +507,8 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException("Cannot join " + children.getType() + " . parent");
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstJoinRef ast, Void a) {
-            TypedExpr<AstSetExpr> deref = typeCheck(ast.getDeref());
+        private TypedExpr<AstSetExpr> visit(AstJoinRef ast) {
+            TypedExpr<AstSetExpr> deref = typeCheck(ast.deref());
 
             Set<AstRef> refs = new HashSet<>();
             for (ProductType type : deref.getUnionType()) {
@@ -474,15 +531,13 @@ public class TypeAnalyzer implements Analyzer {
             }
         }
 
-        @Override
-        public TypedExpr<AstBoolExpr> visit(AstNot ast, Void a) {
-            TypedExpr<AstBoolExpr> expr = typeCheck(ast.getExpr());
+        private TypedExpr<AstBoolExpr> visit(AstNot ast) {
+            TypedExpr<AstBoolExpr> expr = typeCheck(ast.expr());
             return put(BoolType, not(expr.getExpr()));
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstMinus ast, Void a) {
-            TypedExpr<AstSetExpr> expr = typeCheck(ast.getExpr());
+        private TypedExpr<AstSetExpr> visit(AstMinus ast) {
+            TypedExpr<AstSetExpr> expr = typeCheck(ast.expr());
             if (expr.getType().isInt()) {
                 return put(IntType, minus(expr.getExpr()));
             }
@@ -492,18 +547,16 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException("Cannot -" + expr.getType());
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstCard ast, Void a) {
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+        private TypedExpr<AstSetExpr> visit(AstCard ast) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.set());
             if (set.getType().isPrimitive()) {
                 throw new TypeException("Cannot |" + set.getType() + "|");
             }
             return put(IntType, card(set.getExpr()));
         }
 
-        @Override
-        public TypedExpr<?> visit(AstMax ast, Void a) {
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+        private TypedExpr<?> visit(AstMax ast) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.set());
             if (set.getType().isInt()) {
                 return put(IntType, max(set.getExpr()));
             }
@@ -513,9 +566,8 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException("Cannot max " + set.getType() + "|");
         }
 
-        @Override
-        public TypedExpr<?> visit(AstMin ast, Void a) {
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+        private TypedExpr<?> visit(AstMin ast) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.set());
             if (set.getType().isInt()) {
                 return put(IntType, min(set.getExpr()));
             }
@@ -525,10 +577,9 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException("Cannot min " + set.getType() + "|");
         }
 
-        @Override
-        public TypedExpr<AstBoolExpr> visit(AstSetTest ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+        private TypedExpr<AstBoolExpr> visit(AstSetTest ast) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.left());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.right());
             if (isMixedNumber(left, right)) {
                 left = toDecimal(left);
                 right = toDecimal(right);
@@ -536,52 +587,50 @@ public class TypeAnalyzer implements Analyzer {
 
             if (isDisjoint(left.getType(), right.getType())) {
                 throw new TypeException("Cannot " + left.getType() + " "
-                        + ast.getOp().getSyntax() + " " + right.getType());
+                        + ast.op().getSyntax() + " " + right.getType());
             }
 
             ProductType commonType = getLowestCommonSupertype(left.getCommonSupertype(), right.getCommonSupertype());
-            return put(BoolType, test(upcastTo(left, commonType), ast.getOp(), upcastTo(right, commonType)));
+            return put(BoolType, test(upcastTo(left, commonType), ast.op(), upcastTo(right, commonType)));
         }
 
-        @Override
-        public TypedExpr<AstBoolExpr> visit(AstCompare ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+        private TypedExpr<AstBoolExpr> visit(AstCompare ast) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.left());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.right());
             if (left.getType().isInt() && right.getType().isInt()) {
-                return put(BoolType, compare(left.getExpr(), ast.getOp(), right.getExpr()));
+                return put(BoolType, compare(left.getExpr(), ast.op(), right.getExpr()));
             }
             if (isNumber(left) && isNumber(right)) {
-                return put(BoolType, compare(toDecimal(left).getExpr(), ast.getOp(), toDecimal(right).getExpr()));
+                return put(BoolType, compare(toDecimal(left).getExpr(), ast.op(), toDecimal(right).getExpr()));
             }
             throw new TypeException("Cannot " + left.getType() + " "
-                    + ast.getOp().getSyntax() + " " + right.getType());
+                    + ast.op().getSyntax() + " " + right.getType());
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstArithm ast, Void a) {
-            TypedExpr<AstSetExpr>[] operands = typeCheck(ast.getOperands());
+        private TypedExpr<AstSetExpr> visit(AstArithm ast) {
+            TypedExpr<AstSetExpr>[] operands = typeCheck(ast.operands());
             boolean decimal = false;
             for (TypedExpr<AstSetExpr> operand : operands) {
                 if (!isNumber(operand)) {
                     throw new TypeException("Cannot "
-                            + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
+                            + Util.intercalate(" " + ast.op().getSyntax() + " ",
                                     getTypes(operands)));
                 }
                 decimal |= isDecimal(operand);
             }
-            switch (ast.getOp()) {
+            switch (ast.op()) {
                 case DecimalMul:
                 case DecimalDiv:
-                    return put(DecimalType, arithm(ast.getOp(), toDecimals(operands)));
+                    return put(DecimalType, arithm(ast.op(), toDecimals(operands)));
                 default:
                     if (!decimal) {
-                        return put(IntType, arithm(ast.getOp(), getSetExprs(operands)));
+                        return put(IntType, arithm(ast.op(), getSetExprs(operands)));
                     }
             }
-            switch (ast.getOp()) {
+            switch (ast.op()) {
                 case Add:
                 case Sub:
-                    return put(DecimalType, arithm(ast.getOp(), toDecimals(operands)));
+                    return put(DecimalType, arithm(ast.op(), toDecimals(operands)));
                 case Mul:
                     // A decimal times an integer is exact; a decimal times a
                     // decimal is rounded to the decimal scale.
@@ -613,15 +662,14 @@ public class TypeAnalyzer implements Analyzer {
                     return quotient;
                 default:
                     throw new TypeException("Cannot "
-                            + Util.intercalate(" " + ast.getOp().getSyntax() + " ",
+                            + Util.intercalate(" " + ast.op().getSyntax() + " ",
                                     getTypes(operands)));
             }
         }
 
-        @Override
-        public TypedExpr<?> visit(AstMod ast, Void a) {
-            TypedExpr<AstSetExpr> dividend = typeCheck(ast.getDividend());
-            TypedExpr<AstSetExpr> divisor = typeCheck(ast.getDivisor());
+        private TypedExpr<?> visit(AstMod ast) {
+            TypedExpr<AstSetExpr> dividend = typeCheck(ast.dividend());
+            TypedExpr<AstSetExpr> divisor = typeCheck(ast.divisor());
             if (dividend.getType().isInt() && divisor.getType().isInt()) {
                 return put(IntType, mod(dividend.getExpr(), divisor.getExpr()));
             }
@@ -632,9 +680,8 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException("Cannot " + dividend.getType() + " % " + divisor.getType());
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstSum ast, Void a) {
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+        private TypedExpr<AstSetExpr> visit(AstSum ast) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.set());
 
             Set<AstRef> refs = new HashSet<>();
             for (ProductType product : set.getType()) {
@@ -661,9 +708,8 @@ public class TypeAnalyzer implements Analyzer {
             }
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstProduct ast, Void a) {
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+        private TypedExpr<AstSetExpr> visit(AstProduct ast) {
+            TypedExpr<AstSetExpr> set = typeCheck(ast.set());
 
             Set<AstRef> refs = new HashSet<>();
             for (ProductType product : set.getType()) {
@@ -690,16 +736,14 @@ public class TypeAnalyzer implements Analyzer {
             }
         }
 
-        @Override
-        public TypedExpr<?> visit(AstBoolArithm ast, Void a) {
-            TypedExpr<AstBoolExpr>[] operands = typeCheck(ast.getOperands());
-            return put(BoolType, arithm(ast.getOp(), getBoolExprs(operands)));
+        private TypedExpr<?> visit(AstBoolArithm ast) {
+            TypedExpr<AstBoolExpr>[] operands = typeCheck(ast.operands());
+            return put(BoolType, arithm(ast.op(), getBoolExprs(operands)));
         }
 
-        @Override
-        public TypedExpr<?> visit(AstDifference ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+        private TypedExpr<?> visit(AstDifference ast) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.left());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.right());
             if (isMixedNumber(left, right)) {
                 left = toDecimal(left);
                 right = toDecimal(right);
@@ -715,10 +759,9 @@ public class TypeAnalyzer implements Analyzer {
                     castTo(right, left.getCommonSupertype())));
         }
 
-        @Override
-        public TypedExpr<?> visit(AstIntersection ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+        private TypedExpr<?> visit(AstIntersection ast) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.left());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.right());
             if (isMixedNumber(left, right)) {
                 left = toDecimal(left);
                 right = toDecimal(right);
@@ -732,10 +775,9 @@ public class TypeAnalyzer implements Analyzer {
                     downcastTo(right, intersectionType.getCommonSupertype())));
         }
 
-        @Override
-        public TypedExpr<?> visit(AstUnion ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+        private TypedExpr<?> visit(AstUnion ast) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.left());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.right());
             if (isMixedNumber(left, right)) {
                 left = toDecimal(left);
                 right = toDecimal(right);
@@ -751,10 +793,9 @@ public class TypeAnalyzer implements Analyzer {
                     upcastTo(right, unionType.getCommonSupertype())));
         }
 
-        @Override
-        public TypedExpr<AstBoolExpr> visit(AstMembership ast, Void a) {
-            TypedExpr<AstSetExpr> member = typeCheck(ast.getMember());
-            TypedExpr<AstSetExpr> set = typeCheck(ast.getSet());
+        private TypedExpr<AstBoolExpr> visit(AstMembership ast) {
+            TypedExpr<AstSetExpr> member = typeCheck(ast.member());
+            TypedExpr<AstSetExpr> set = typeCheck(ast.set());
             if (isMixedNumber(member, set)) {
                 member = toDecimal(member);
                 set = toDecimal(set);
@@ -762,18 +803,17 @@ public class TypeAnalyzer implements Analyzer {
 
             if (isDisjoint(member.getType(), set.getType())) {
                 throw new TypeException("Cannot " + member.getType()
-                        + " " + ast.getOp().getSyntax() + " " + set.getType());
+                        + " " + ast.op().getSyntax() + " " + set.getType());
             }
 
             ProductType commonType = getLowestCommonSupertype(member.getCommonSupertype(), set.getCommonSupertype());
-            return put(BoolType, membership(upcastTo(member, commonType), ast.getOp(), upcastTo(set, commonType)));
+            return put(BoolType, membership(upcastTo(member, commonType), ast.op(), upcastTo(set, commonType)));
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstTernary ast, Void a) {
-            TypedExpr<AstBoolExpr> antecedent = typeCheck(ast.getAntecedent());
-            TypedExpr<AstSetExpr> alternative = typeCheck(ast.getAlternative());
-            TypedExpr<AstSetExpr> consequent = typeCheck(ast.getConsequent());
+        private TypedExpr<AstSetExpr> visit(AstTernary ast) {
+            TypedExpr<AstBoolExpr> antecedent = typeCheck(ast.antecedent());
+            TypedExpr<AstSetExpr> alternative = typeCheck(ast.alternative());
+            TypedExpr<AstSetExpr> consequent = typeCheck(ast.consequent());
             if (isMixedNumber(alternative, consequent)) {
                 alternative = toDecimal(alternative);
                 consequent = toDecimal(consequent);
@@ -783,36 +823,32 @@ public class TypeAnalyzer implements Analyzer {
                     upcastTo(consequent, unionType), upcastTo(alternative, unionType)));
         }
 
-        @Override
-        public TypedExpr<AstBoolExpr> visit(AstIfThenElse ast, Void a) {
-            TypedExpr<AstBoolExpr> antecedent = typeCheck(ast.getAntecedent());
-            TypedExpr<AstBoolExpr> alternative = typeCheck(ast.getAlternative());
-            TypedExpr<AstBoolExpr> consequent = typeCheck(ast.getConsequent());
+        private TypedExpr<AstBoolExpr> visit(AstIfThenElse ast) {
+            TypedExpr<AstBoolExpr> antecedent = typeCheck(ast.antecedent());
+            TypedExpr<AstBoolExpr> alternative = typeCheck(ast.alternative());
+            TypedExpr<AstBoolExpr> consequent = typeCheck(ast.consequent());
             return put(BoolType, ifThenElse(antecedent.getExpr(), consequent.getExpr(), alternative.getExpr()));
         }
 
-        @Override
-        public TypedExpr<?> visit(AstDowncast ast, Void a) {
-            TypedExpr<AstSetExpr> base = typeCheck(ast.getBase());
-            ProductType to = ast.getTarget();
+        private TypedExpr<?> visit(AstDowncast ast) {
+            TypedExpr<AstSetExpr> base = typeCheck(ast.base());
+            ProductType to = ast.target();
             if (isAnyAssignable(to, base.getUnionType())) {
                 return put(new Type(to), downcast(base.getExpr(), to));
             }
             throw new TypeException("Cannot downcast from " + base.getType() + " to " + to);
         }
 
-        @Override
-        public TypedExpr<AstSetExpr> visit(AstUpcast ast, Void a) {
-            TypedExpr<AstSetExpr> base = typeCheck(ast.getBase());
-            ProductType to = ast.getTarget();
+        private TypedExpr<AstSetExpr> visit(AstUpcast ast) {
+            TypedExpr<AstSetExpr> base = typeCheck(ast.base());
+            ProductType to = ast.target();
             if (isAssignable(base.getCommonSupertype(), to)) {
                 return put(new Type(base.getUnionType(), to), upcast(base.getExpr(), to));
             }
             throw new TypeException("Cannot upcast from " + base.getType() + " to " + to);
         }
 
-        @Override
-        public TypedExpr<AstLocal> visit(AstLocal ast, Void a) {
+        private TypedExpr<AstLocal> visit(AstLocal ast) {
             Type localType = typeMap.get(ast);
             if (localType == null) {
                 throw new AnalysisException(ast + " type not analyzed yet.");
@@ -820,88 +856,79 @@ public class TypeAnalyzer implements Analyzer {
             return put(localType, ast);
         }
 
-        @Override
-        public TypedExpr<AstBoolExpr> visit(AstQuantify ast, Void a) {
-            AstDecl[] decls = new AstDecl[ast.getDecls().length];
-            for (int i = 0; i < ast.getDecls().length; i++) {
-                AstDecl decl = ast.getDecls()[i];
+        private TypedExpr<AstBoolExpr> visit(AstQuantify ast) {
+            AstDecl[] decls = new AstDecl[ast.decls().length];
+            for (int i = 0; i < ast.decls().length; i++) {
+                AstDecl decl = ast.decls()[i];
                 TypedExpr<AstSetExpr> body = typeCheck(decl.getBody());
                 for (AstLocal local : decl.getLocals()) {
                     put(body.getType(), local);
                 }
                 decls[i] = decl(decl.isDisjoint(), decl.getLocals(), body.getExpr());
             }
-            TypedExpr<AstBoolExpr> body = typeCheck(ast.getBody());
-            return put(BoolType, quantify(ast.getQuantifier(), decls, body.getExpr()));
+            TypedExpr<AstBoolExpr> body = typeCheck(ast.body());
+            return put(BoolType, quantify(ast.quantifier(), decls, body.getExpr()));
         }
 
-        @Override
-        public TypedExpr<?> visit(AstLength ast, Void a) {
-            TypedExpr<AstSetExpr> string = typeCheck(ast.getString());
+        private TypedExpr<?> visit(AstLength ast) {
+            TypedExpr<AstSetExpr> string = typeCheck(ast.string());
             if (string.getType().isString()) {
-                return put(IntType, length(ast.getString()));
+                return put(IntType, length(ast.string()));
             }
             throw new TypeException("Cannot length(" + string.getType() + ")");
         }
 
-        @Override
-        public TypedExpr<?> visit(AstConcat ast, Void a) {
-            TypedExpr<AstSetExpr> left = typeCheck(ast.getLeft());
-            TypedExpr<AstSetExpr> right = typeCheck(ast.getRight());
+        private TypedExpr<?> visit(AstConcat ast) {
+            TypedExpr<AstSetExpr> left = typeCheck(ast.left());
+            TypedExpr<AstSetExpr> right = typeCheck(ast.right());
             if (left.getType().isString() && right.getType().isString()) {
                 return put(StringType, concat(left.getExpr(), right.getExpr()));
             }
             throw new TypeException("Cannot " + left.getType() + " ++ " + right.getType());
         }
 
-        @Override
-        public TypedExpr<?> visit(AstPrefix ast, Void a) {
-            TypedExpr<AstSetExpr> prefix = typeCheck(ast.getPrefix());
-            TypedExpr<AstSetExpr> word = typeCheck(ast.getWord());
+        private TypedExpr<?> visit(AstPrefix ast) {
+            TypedExpr<AstSetExpr> prefix = typeCheck(ast.prefix());
+            TypedExpr<AstSetExpr> word = typeCheck(ast.word());
             if (prefix.getType().isString() && word.getType().isString()) {
                 return put(BoolType, prefix(prefix.getExpr(), word.getExpr()));
             }
             throw new TypeException("Cannot " + prefix.getType() + " prefix " + word.getType());
         }
 
-        @Override
-        public TypedExpr<?> visit(AstSuffix ast, Void a) {
-            TypedExpr<AstSetExpr> suffix = typeCheck(ast.getSuffix());
-            TypedExpr<AstSetExpr> word = typeCheck(ast.getWord());
+        private TypedExpr<?> visit(AstSuffix ast) {
+            TypedExpr<AstSetExpr> suffix = typeCheck(ast.suffix());
+            TypedExpr<AstSetExpr> word = typeCheck(ast.word());
             if (suffix.getType().isString() && word.getType().isString()) {
                 return put(BoolType, suffix(suffix.getExpr(), word.getExpr()));
             }
             throw new TypeException("Cannot " + suffix.getType() + " suffix " + word.getType());
         }
 
-        @Override
-        public TypedExpr<?> visit(AstChildRelation ast, Void a) {
-            AstClafer child = ast.getChildType();
+        private TypedExpr<?> visit(AstChildRelation ast) {
+            AstClafer child = ast.childType();
             if (!child.hasParent()) {
                 throw new TypeException(child + " does not have a parent");
             }
             return put(child.getParent(), child, ast);
         }
 
-        @Override
-        public TypedExpr<?> visit(AstParentRelation ast, Void a) {
-            AstConcreteClafer child = ast.getParentRelation();
+        private TypedExpr<?> visit(AstParentRelation ast) {
+            AstConcreteClafer child = ast.parentRelation();
             if (!child.hasParent()) {
                 throw new TypeException(child + " does not have a parent");
             }
             return put(child, child.getParent(), ast);
         }
 
-        @Override
-        public TypedExpr<?> visit(AstRefRelation ast, Void a) {
-            AstRef ref = ast.getRef();
+        private TypedExpr<?> visit(AstRefRelation ast) {
+            AstRef ref = ast.ref();
             return put(ref.getSourceType(), ref.getTargetType(), ast);
         }
 
-        @Override
-        public TypedExpr<?> visit(AstDomainRestriction ast, Void a) {
-            TypedExpr<AstSetExpr> domain = typeCheck(ast.getDomain());
-            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+        private TypedExpr<?> visit(AstDomainRestriction ast) {
+            TypedExpr<AstSetExpr> domain = typeCheck(ast.domain());
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.relation());
             if (relation.getCommonSupertype().arity() == 2
                     && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(0)), domain.getType())) {
                 return put(relation.getType(), domainRestriction(domain.getExpr(), relation.getExpr()));
@@ -909,10 +936,9 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException(relation + " cannot " + domain.getType() + " <: " + relation.getType());
         }
 
-        @Override
-        public TypedExpr<?> visit(AstRangeRestriction ast, Void a) {
-            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
-            TypedExpr<AstSetExpr> range = typeCheck(ast.getRange());
+        private TypedExpr<?> visit(AstRangeRestriction ast) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.relation());
+            TypedExpr<AstSetExpr> range = typeCheck(ast.range());
             if (relation.getCommonSupertype().arity() == 2
                     && !isDisjoint(Type.basicType(relation.getCommonSupertype().get(1)), range.getType())) {
                 return put(relation.getType(), rangeRestriction(relation.getExpr(), range.getExpr()));
@@ -920,9 +946,8 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException(relation + " cannot " + relation.getType() + " :> " + range.getType());
         }
 
-        @Override
-        public TypedExpr<?> visit(AstInverse ast, Void a) {
-            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+        private TypedExpr<?> visit(AstInverse ast) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.relation());
             if (relation.getCommonSupertype().arity() == 2) {
                 AstClafer paramType = relation.getCommonSupertype().get(0);
                 AstClafer returnType = relation.getCommonSupertype().get(1);
@@ -931,24 +956,22 @@ public class TypeAnalyzer implements Analyzer {
             throw new TypeException(relation + " cannot be inversed");
         }
 
-        @Override
-        public TypedExpr<?> visit(AstTransitiveClosure ast, Void a) {
-            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
+        private TypedExpr<?> visit(AstTransitiveClosure ast) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.relation());
             if (relation.getCommonSupertype().arity() == 2) {
                 if (relation.getCommonSupertype().get(0).equals(relation.getCommonSupertype().get(1))) {
-                    return put(relation.getType(), transitiveClosure(relation.getExpr(), ast.isReflexive()));
+                    return put(relation.getType(), transitiveClosure(relation.getExpr(), ast.reflexive()));
                 }
             }
             throw new TypeException(relation + " cannot be transitively closed");
         }
 
-        @Override
-        public TypedExpr<?> visit(AstConnected ast, Void a) {
-            TypedExpr<AstSetExpr> relation = typeCheck(ast.getRelation());
-            TypedExpr<AstSetExpr> nodes = typeCheck(ast.getNodes());
+        private TypedExpr<?> visit(AstConnected ast) {
+            TypedExpr<AstSetExpr> relation = typeCheck(ast.relation());
+            TypedExpr<AstSetExpr> nodes = typeCheck(ast.nodes());
             if (relation.getCommonSupertype().arity() == 2) {
                 if (relation.getCommonSupertype().get(0).equals(relation.getCommonSupertype().get(1))) {
-                    return put(BoolType, connected(nodes.getExpr(), relation.getExpr(), ast.isDirected()));
+                    return put(BoolType, connected(nodes.getExpr(), relation.getExpr(), ast.directed()));
                 }
             }
             throw new TypeException(relation + " cannot be checked for connectivity");

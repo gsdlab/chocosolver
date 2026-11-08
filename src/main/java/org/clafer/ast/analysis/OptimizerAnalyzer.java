@@ -67,18 +67,18 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     @Override
     public AstExpr visit(AstGlobal ast, Analysis a) {
-        Card globalCard = a.getGlobalCard(ast.getType());
-        if (globalCard.isExact() && (a.getFormat(ast.getType()).equals(Format.LowGroup) || globalCard.getLow() == 1)) {
-            return constant(ast.getType(), Util.fromTo(0, globalCard.getLow()));
+        Card globalCard = a.getGlobalCard(ast.type());
+        if (globalCard.isExact() && (a.getFormat(ast.type()).equals(Format.LowGroup) || globalCard.getLow() == 1)) {
+            return constant(ast.type(), Util.fromTo(0, globalCard.getLow()));
         }
         return ast;
     }
 
     @Override
     public AstExpr visit(AstJoin ast, Analysis a) {
-        if (ast.getRight() instanceof AstChildRelation) {
-            AstSetExpr left = rewrite(ast.getLeft(), a);
-            AstClafer right = ((AstChildRelation) ast.getRight()).getChildType();
+        if (ast.right() instanceof AstChildRelation) {
+            AstSetExpr left = rewrite(ast.left(), a);
+            AstClafer right = ((AstChildRelation) ast.right()).childType();
             if (left instanceof AstGlobal) {
                 return global(right);
             } else if (left instanceof AstConstant && right instanceof AstConcreteClafer) {
@@ -86,11 +86,11 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
                 Card childCard = a.getCard((AstConcreteClafer) right);
                 if (Format.ParentGroup.equals(a.getFormat(right))) {
                     AstConstant constant = (AstConstant) left;
-                    if (constant.getType().arity() == 1) {
-                        int[] value = constant.getValue()[0];
+                    if (constant.type().arity() == 1) {
+                        int[] value = constant.value()[0];
                         assert childCard.isExact();
                         int[] childConstant = new int[value.length * childCard.getLow()];
-                        for (int i = 0; i < constant.getValue().length; i++) {
+                        for (int i = 0; i < constant.value().length; i++) {
                             for (int j = 0; j < childCard.getLow(); j++) {
                                 childConstant[i * childCard.getLow() + j]
                                         = i * value[i] + j;
@@ -102,21 +102,21 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
                 assert childCard.getLow() != a.getScope(right) :
                         "Didn't run scope analysis before format analysis?";
             }
-            return join(left, ast.getRight());
+            return join(left, ast.right());
         }
         return ast;
     }
 
     @Override
     public AstExpr visit(AstJoinParent ast, Analysis a) {
-        AstSetExpr children = rewrite(ast.getChildren(), a);
+        AstSetExpr children = rewrite(ast.children(), a);
         if (children instanceof AstThis) {
             ProductType type = a.getCommonSupertype(ast);
             if (a.getScope(type) == 1) {
                 return constant(type, 0);
             }
         } else if (children instanceof AstGlobal) {
-            ProductType childType = a.getCommonSupertype(ast.getChildren());
+            ProductType childType = a.getCommonSupertype(ast.children());
             if (childType.isClaferType()) {
                 AstClafer childClafer = childType.getClaferType();
                 if (childClafer instanceof AstConcreteClafer) {
@@ -129,7 +129,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
         } else if (children instanceof AstConstant) {
             AstConstant constant = (AstConstant) children;
             ProductType type = a.getCommonSupertype(ast);
-            if (constant.getValue().length > 0 && a.getScope(type) == 1) {
+            if (constant.value().length > 0 && a.getScope(type) == 1) {
                 return constant(type, 0);
             }
         }
@@ -139,19 +139,19 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     @Override
     public AstExpr visit(AstNot ast, Analysis a) {
-        AstBoolExpr expr = ast.getExpr();
+        AstBoolExpr expr = ast.expr();
         if (expr instanceof AstNot) {
             AstNot not = (AstNot) expr;
-            return not.getExpr();
+            return not.expr();
         } else if (expr instanceof AstSetTest) {
             AstSetTest test = (AstSetTest) expr;
-            return test(test.getLeft(), test.getOp().negate(), test.getRight());
+            return test(test.left(), test.op().negate(), test.right());
         } else if (expr instanceof AstCompare) {
             AstCompare compare = (AstCompare) expr;
-            return compare(compare.getLeft(), compare.getOp().negate(), compare.getRight());
+            return compare(compare.left(), compare.op().negate(), compare.right());
         } else if (expr instanceof AstMembership) {
             AstMembership membership = (AstMembership) expr;
-            return membership(membership.getMember(), membership.getOp().negate(), membership.getSet());
+            return membership(membership.member(), membership.op().negate(), membership.set());
         }
         return ast;
     }
@@ -159,9 +159,9 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
     private boolean isZero(AstSetExpr expr) {
         if (expr instanceof AstConstant) {
             AstConstant constant = (AstConstant) expr;
-            if (constant.getType().isInt()) {
-                if (constant.getValue().length == 1) {
-                    return constant.getValue()[0].length == 1 && constant.getValue()[0][0] == 0;
+            if (constant.type().isInt()) {
+                if (constant.value().length == 1) {
+                    return constant.value()[0].length == 1 && constant.value()[0][0] == 0;
                 }
             }
         }
@@ -170,7 +170,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     private AstSetExpr removeUpCast(AstSetExpr expr) {
         if (expr instanceof AstUpcast) {
-            return removeUpCast(((AstUpcast) expr).getBase());
+            return removeUpCast(((AstUpcast) expr).base());
         }
         return expr;
     }
@@ -194,7 +194,7 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
             AstJoinRef joinRef = (AstJoinRef) consequentLeft;
             if (alternativeLeft instanceof AstCard && isZero(alternativeRight)) {
                 AstCard card = (AstCard) alternativeLeft;
-                if (removeUpCast(joinRef.getDeref()).equals(removeUpCast(card.getSet()))) {
+                if (removeUpCast(joinRef.deref()).equals(removeUpCast(card.set()))) {
                     return equal(consequentLeft,
                             ifThenElse(antecedent,
                                     consequentRight,
@@ -209,24 +209,24 @@ public class OptimizerAnalyzer extends AstExprRewriter<Analysis> implements Anal
 
     @Override
     public AstExpr visit(AstIfThenElse ast, Analysis a) {
-        if (ast.getConsequent() instanceof AstSetTest && ast.getAlternative() instanceof AstSetTest) {
-            AstBoolExpr antecedent = ast.getAntecedent();
-            AstSetTest consequent = (AstSetTest) ast.getConsequent();
-            AstSetTest alternative = (AstSetTest) ast.getAlternative();
+        if (ast.consequent() instanceof AstSetTest && ast.alternative() instanceof AstSetTest) {
+            AstBoolExpr antecedent = ast.antecedent();
+            AstSetTest consequent = (AstSetTest) ast.consequent();
+            AstSetTest alternative = (AstSetTest) ast.alternative();
 
-            AstExpr rewrite = rewriteIfThenElse(antecedent, consequent.getLeft(), consequent.getRight(), alternative.getLeft(), alternative.getRight(), a);
+            AstExpr rewrite = rewriteIfThenElse(antecedent, consequent.left(), consequent.right(), alternative.left(), alternative.right(), a);
             if (rewrite != null) {
                 return rewrite;
             }
-            rewrite = rewriteIfThenElse(antecedent, consequent.getLeft(), consequent.getRight(), alternative.getRight(), alternative.getLeft(), a);
+            rewrite = rewriteIfThenElse(antecedent, consequent.left(), consequent.right(), alternative.right(), alternative.left(), a);
             if (rewrite != null) {
                 return rewrite;
             }
-            rewrite = rewriteIfThenElse(antecedent, consequent.getRight(), consequent.getLeft(), alternative.getLeft(), alternative.getRight(), a);
+            rewrite = rewriteIfThenElse(antecedent, consequent.right(), consequent.left(), alternative.left(), alternative.right(), a);
             if (rewrite != null) {
                 return rewrite;
             }
-            rewrite = rewriteIfThenElse(antecedent, consequent.getRight(), consequent.getLeft(), alternative.getRight(), alternative.getLeft(), a);
+            rewrite = rewriteIfThenElse(antecedent, consequent.right(), consequent.left(), alternative.right(), alternative.left(), a);
             if (rewrite != null) {
                 return rewrite;
             }
