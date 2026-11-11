@@ -18,6 +18,8 @@ import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.limits.NodeCounter;
 import org.chocosolver.solver.search.strategy.Search;
+import org.chocosolver.solver.search.strategy.selectors.values.IntDomainMin;
+import org.chocosolver.solver.search.strategy.selectors.variables.FailureBased;
 import org.chocosolver.solver.search.strategy.strategy.AbstractStrategy;
 import org.chocosolver.solver.variables.BoolVar;
 import org.chocosolver.solver.variables.IntVar;
@@ -228,7 +230,19 @@ public class ClaferCompiler {
         if (vars.length == 0) {
             return Optional.empty();
         }
-        return Optional.of(Search.failureRateBasedSearch(vars));
+        return Optional.of(failureRateBasedSearch(vars));
+    }
+
+    /**
+     * Choco's failureRateBased search (FRBA), but with the ties broken by the
+     * first variable instead of at random. Choco breaks the ties with a seeded
+     * random choice, and before any failure all variables of the same domain
+     * size tie, so the first decisions are random. On some models a random first
+     * decision leads into a huge subtree without instances, where the first
+     * variable, as in minDomLB, finds one right away (gsdlab/chocosolver#46).
+     */
+    static AbstractStrategy<IntVar> failureRateBasedSearch(IntVar[] vars) {
+        return Search.intVarSearch(new FailureBased<>(vars, -1, 2), new IntDomainMin(), vars);
     }
 
     public static ClaferSolver compile(AstModel in, Scopable scope) {

@@ -966,6 +966,37 @@ public class SimpleStructureTest {
         ClaferSolver solver = ClaferCompiler.compile(mutuallyRecursiveModel(), Scope.defaultScope(6));
         assertFalse(solver.find());
     }
+
+    /**
+     * <pre>
+     * abstract Element
+     *     clip : Clip ?
+     * abstract Group : Element
+     * abstract Clip : Group
+     * scope({clip:2})
+     * </pre>
+     *
+     * The shape of the graphical elements of the OMG Diagram Definition
+     * metamodel (the wiki model ecore/omgdd), as {@code clafer -k} compiles
+     * it. The scope of an abstract clafer is the sum of the scopes of its sub
+     * clafers. The four clafers depend on each other, and the scope of
+     * {@code Element} was computed before that of {@code Group}, with the
+     * default scope for it, so it was smaller than {@code clip}'s: the
+     * compiler crashed with an {@code ArrayIndexOutOfBoundsException}
+     * (https://github.com/gsdlab/chocosolver/issues/48).
+     */
+    @Test(timeout = 60000)
+    public void testAbstractScopeInRecursiveHierarchy() {
+        AstModel model = newModel();
+
+        AstAbstractClafer element = model.addAbstract("Element");
+        AstAbstractClafer group = model.addAbstract("Group").extending(element);
+        AstAbstractClafer clipType = model.addAbstract("Clip").extending(group);
+        AstConcreteClafer clip = element.addChild("clip").withCard(Optional).extending(clipType);
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.setScope(clip, 2).defaultScope(1));
+        assertEquals(1, solver.allInstances().length);
+    }
     /**
      * <pre>
      * abstract FeatureModel

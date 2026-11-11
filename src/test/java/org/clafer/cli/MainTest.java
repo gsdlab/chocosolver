@@ -71,6 +71,34 @@ public class MainTest {
         assertTrue(run.output(), run.output().contains("age"));
     }
 
+    // 28 bubbles map one-to-one onto 28 products: up to symmetry, there is one instance
+    private static final String BUBBLES
+            = "scope({$Bubble:28, $Product:28, $bubbles:28, $prod:28, $prods:28});\n"
+            + "defaultScope(1);\n"
+            + "stringLength(16);\n"
+            + "\n"
+            + "$Product = Abstract(\"Product\");\n"
+            + "$Bubble = Abstract(\"Bubble\");\n"
+            + "$prod = $Bubble.addChild(\"prod\").withCard(1, 1);\n"
+            + "$prods = Clafer(\"prods\").withCard(28, 28);\n"
+            + "$bubbles = Clafer(\"bubbles\").withCard(28, 28);\n"
+            + "$prods.extending($Product);\n"
+            + "$bubbles.extending($Bubble);\n"
+            + "$prod.refToUnique($Product);\n"
+            + "Constraint(all([disjDecl([$_b1 = local(\"b1\"), $_b2 = local(\"b2\")], global($Bubble))], "
+            + "notEqual(joinRef(join($_b1, $prod)), joinRef(join($_b2, $prod)))));\n";
+
+    // After the n-th instance, -n n searched for one more and dropped it: proving that the
+    // bubbles have no second instance takes much longer than finding the first, so -n 1 printed
+    // the instance and then did not end (gsdlab/chocosolver#46).
+    @Test(timeout = 60000)
+    public void testNInstancesStopsSearching() throws Exception {
+        Run run = chocosolver("--file", model(BUBBLES).getPath(), "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("--- Instance 1 End ---"));
+        assertTrue(run.output(), run.output().contains("Generated 1 instance(s) within the scope"));
+    }
+
     // jopt-simple's OptionException ended in a stack trace
     @Test
     public void testUnknownOption() throws Exception {
