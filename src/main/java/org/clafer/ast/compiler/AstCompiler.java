@@ -1503,26 +1503,34 @@ public class AstCompiler {
             }
 
             AstRef ref = derefType.getRef();
+            if (ref.getTargetType() instanceof AstStringClafer) {
+                return derefString(ref, $deref, ast);
+            }
             if ($deref instanceof IrIntExpr) {
-                IrIntExpr $intDeref = (IrIntExpr) $deref;
-                if (ref.getTargetType() instanceof AstStringClafer) {
-                    // Why empty string? The "take" var can contain unused.
-                    return element(Util.snoc(refStrings.get(ref.getSourceType()), EmptyString), $intDeref);
-                } else {
-                    // Why zero? The "take" var can contain unused.
-                    return element(Util.snoc(refPointers.get(ref.getSourceType()), Zero), $intDeref);
-                }
+                // Why zero? The "take" var can contain unused.
+                return element(Util.snoc(refPointers.get(ref.getSourceType()), Zero), (IrIntExpr) $deref);
+            } else if ($deref instanceof IrSetExpr) {
+                // Why zero? The "take" var can contain unused.
+                return joinFunction((IrSetExpr) $deref, Util.snoc(refPointers.get(ref.getSourceType()), Zero), globalCardinality);
+            }
+            throw new AstException();
+        }
+
+        /*
+         * The string of a string reference joined over at most one clafer. A set of strings is
+         * only supported as an operand of a comparison (compileComparand).
+         */
+        private IrStringExpr derefString(AstRef ref, IrExpr $deref, AstJoinRef ast) {
+            // Why empty string? The "take" var can contain unused.
+            IrStringExpr[] refs = Util.snoc(refStrings.get(ref.getSourceType()), EmptyString);
+            if ($deref instanceof IrIntExpr) {
+                return element(refs, (IrIntExpr) $deref);
             } else if ($deref instanceof IrSetExpr) {
                 IrSetExpr $setDeref = (IrSetExpr) $deref;
-                if (ref.getTargetType() instanceof AstStringClafer) {
-                    if ($setDeref.getCard().getHighBound() == 1) {
-                        IrStringExpr[] refs = Util.snoc(refStrings.get(ref.getSourceType()), EmptyString);
-                        return element(refs, max($setDeref, refs.length - 1));
-                    }
-                    throw new JoinSetWithStringException(ast, $setDeref.getCard());
+                if ($setDeref.getCard().getHighBound() == 1) {
+                    return element(refs, max($setDeref, refs.length - 1));
                 }
-                // Why zero? The "take" var can contain unused.
-                return joinFunction($setDeref, Util.snoc(refPointers.get(ref.getSourceType()), Zero), globalCardinality);
+                throw new JoinSetWithStringException(ast, $setDeref.getCard());
             }
             throw new AstException();
         }
@@ -1571,9 +1579,75 @@ public class AstCompiler {
             return minus(asInt(compile(ast.expr())));
         }
 
+        /*
+         * A set of strings, e.g. names.ref for names -> string 2: each string with whether it
+         * is in the set. Choco has no sets of strings, so a comparison of sets of strings is
+         * compiled string by string (https://github.com/gsdlab/chocosolver/issues/49).
+         */
+        private record StringSet(IrBoolExpr[] members, IrStringExpr[] strings) {
+
+            static StringSet of(IrStringExpr string) {
+                return new StringSet(new IrBoolExpr[]{True}, new IrStringExpr[]{string});
+            }
+
+            /*
+             * Every string of this set is in the other set.
+             */
+            IrBoolExpr subsetEq(StringSet other) {
+                IrBoolExpr[] subset = new IrBoolExpr[strings.length];
+                for (int i = 0; i < strings.length; i++) {
+                    IrBoolExpr[] in = new IrBoolExpr[other.strings.length];
+                    for (int j = 0; j < in.length; j++) {
+                        in[j] = and(other.members[j], equal(strings[i], other.strings[j]));
+                    }
+                    subset[i] = implies(members[i], or(in));
+                }
+                return and(subset);
+            }
+        }
+
+        /*
+         * The operand of a comparison: a set of strings if it is the join of a string
+         * reference over a set that can have more than one element, otherwise as compiled.
+         */
+        private Object compileComparand(AstSetExpr ast) {
+            if (ast instanceof AstJoinRef joinRef) {
+                AstRef ref = getCommonSupertype(joinRef.deref()).getClaferType().getRef();
+                if (ref != null && ref.getTargetType() instanceof AstStringClafer) {
+                    IrExpr $deref = compile(joinRef.deref());
+                    if ($deref instanceof IrSetExpr $setDeref && $setDeref.getCard().getHighBound() != 1) {
+                        IrStringExpr[] refs = refStrings.get(ref.getSourceType());
+                        int[] env = $setDeref.getEnv().getValues();
+                        IrBoolExpr[] members = new IrBoolExpr[env.length];
+                        IrStringExpr[] strings = new IrStringExpr[env.length];
+                        for (int i = 0; i < env.length; i++) {
+                            members[i] = member(constant(env[i]), $setDeref);
+                            strings[i] = refs[env[i]];
+                        }
+                        return new StringSet(members, strings);
+                    }
+                    return derefString(ref, $deref, joinRef);
+                }
+            }
+            return compile(ast);
+        }
+
+        private StringSet asStringSet(Object comparand) {
+            return comparand instanceof StringSet stringSet
+                    ? stringSet : StringSet.of((IrStringExpr) comparand);
+        }
+
         private IrExpr visit(AstSetTest ast) {
-            IrExpr left = compile(ast.left());
-            IrExpr right = compile(ast.right());
+            Object leftComparand = compileComparand(ast.left());
+            Object rightComparand = compileComparand(ast.right());
+            if (leftComparand instanceof StringSet || rightComparand instanceof StringSet) {
+                StringSet leftSet = asStringSet(leftComparand);
+                StringSet rightSet = asStringSet(rightComparand);
+                IrBoolExpr equal = and(leftSet.subsetEq(rightSet), rightSet.subsetEq(leftSet));
+                return AstSetTest.Op.Equal.equals(ast.op()) ? equal : not(equal);
+            }
+            IrExpr left = (IrExpr) leftComparand;
+            IrExpr right = (IrExpr) rightComparand;
 
             if (left instanceof IrIntExpr && right instanceof IrIntExpr) {
                 IrIntExpr intLeft = (IrIntExpr) left;
@@ -1824,8 +1898,14 @@ public class AstCompiler {
         }
 
         private IrExpr visit(AstMembership ast) {
-            IrExpr member = compile(ast.member());
-            IrExpr set = compile(ast.set());
+            Object memberComparand = compileComparand(ast.member());
+            Object setComparand = compileComparand(ast.set());
+            if (memberComparand instanceof StringSet || setComparand instanceof StringSet) {
+                IrBoolExpr in = asStringSet(memberComparand).subsetEq(asStringSet(setComparand));
+                return AstMembership.Op.In.equals(ast.op()) ? in : not(in);
+            }
+            IrExpr member = (IrExpr) memberComparand;
+            IrExpr set = (IrExpr) setComparand;
             if (member instanceof IrIntExpr && set instanceof IrIntExpr) {
                 return AstMembership.Op.In.equals(ast.op())
                         ? equal((IrIntExpr) member, (IrIntExpr) set)

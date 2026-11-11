@@ -2,6 +2,7 @@
 
 * Minor release with Clafer 0.5.8.
 * The scope of an abstract clafer in a recursive hierarchy, e.g., `abstract Element` with `clip : Clip ?`, `abstract Group : Element` and `abstract Clip : Group`, could be computed before the scopes of its sub clafers, with the default scope for them, and be smaller than their scopes together: the solver crashed with an `ArrayIndexOutOfBoundsException` in `AstCompiler.initAbstract`, e.g., on the wiki model of the OMG Diagram Definition metamodel compiled with `clafer -k`. The scope analysis now computes each clafer of such a hierarchy after the clafers its scope depends on ([#48](https://github.com/gsdlab/chocosolver/issues/48)).
+* Comparisons of sets of strings: `=`, `!=`, `in` and `not in` with a string reference joined over a set of more than one clafer, e.g., `[ "ada" in names ]` for `names -> string 2`, `[ A.ref = "abc" ]` for `A -> string 0..2`, or `[ A.ref in B.ref ]`, are compiled string by string, as their quantified forms, e.g., `some n : names | n = "ada"`. They were rejected with a `JoinSetWithStringException` ("Cannot join a non-singleton set with strings"), which is still the error for other uses of such a set, e.g., `length(A.ref)`. The wiki model `oclBench/b1` has instances ([#49](https://github.com/gsdlab/chocosolver/issues/49)).
 
 # chocosolver version 0.5.7, Nov 8, 2026
 
