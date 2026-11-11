@@ -1,3 +1,7 @@
+# chocosolver version 0.5.8, unreleased
+
+* Minor release with Clafer 0.5.8.
+
 # chocosolver version 0.5.7, Nov 8, 2026
 
 * Minor release with Clafer 0.5.7.
