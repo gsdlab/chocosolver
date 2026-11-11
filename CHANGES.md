@@ -1,6 +1,7 @@
 # chocosolver version 0.5.8, unreleased
 
 * Minor release with Clafer 0.5.8.
+* The scope of an abstract clafer in a recursive hierarchy, e.g., `abstract Element` with `clip : Clip ?`, `abstract Group : Element` and `abstract Clip : Group`, could be computed before the scopes of its sub clafers, with the default scope for them, and be smaller than their scopes together: the solver crashed with an `ArrayIndexOutOfBoundsException` in `AstCompiler.initAbstract`, e.g., on the wiki model of the OMG Diagram Definition metamodel compiled with `clafer -k`. The scope analysis now computes each clafer of such a hierarchy after the clafers its scope depends on ([#48](https://github.com/gsdlab/chocosolver/issues/48)).
 
 # chocosolver version 0.5.7, Nov 8, 2026
 
