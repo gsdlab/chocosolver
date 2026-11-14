@@ -60,14 +60,13 @@ public class Normal {
         else
             n = -1;
 
-        while (solver.find()) {
+        // Stop at n instances before searching for another one: proving that there is
+        // no other instance can take much longer than finding the first (#46).
+        while ((n < 0 || index < n) && solver.find()) {
             if (dataTackingOn) {
                 elapsedTime = (double) (System.nanoTime() - startTime) / 1000000000;
                 dataStream.println(elapsedTime + ", " + (index + 1));
             }
-
-            if (n >= 0 && index == n)
-                break;
 
             if (printOff) {
                 ++index;

@@ -43,6 +43,8 @@ public class StrategyBenchmark {
         STRATEGIES.put("activityBased", Search::activityBasedSearch);
         STRATEGIES.put("conflictHistory", Search::conflictHistorySearch);
         STRATEGIES.put("failureRateBased", Search::failureRateBasedSearch);
+        // the default since 0.5.8: failureRateBased with the ties broken by the first variable
+        STRATEGIES.put("failureRateBasedFirst", ClaferCompiler::failureRateBasedSearch);
         STRATEGIES.put("failureLengthBased", Search::failureLengthBasedSearch);
         STRATEGIES.put("pickOnDom", Search::pickOnDom);
     }

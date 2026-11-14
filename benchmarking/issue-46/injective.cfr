@@ -1,0 +1,6 @@
+abstract Product
+abstract Bubble
+    prod -> Product
+[ all disj b1; b2 : Bubble | b1.prod != b2.prod ]
+prods : Product 28
+bubbles : Bubble 28

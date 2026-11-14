@@ -1,0 +1,30 @@
+abstract Viz
+    url -> string
+    xor state
+        init
+        ready
+
+v1 : Viz
+    [ url = "wiselab.uwaterloo.ca/clafervisualizer/" ]
+    [ init ]
+v2 : Viz
+    [ url = "wiselab.uwaterloo.ca/clafervisualizer/" ]
+v3 : Viz
+    [ url = "wiselab.uwaterloo.ca/clafervisualizer/" ]
+
+abstract Product
+abstract Bubble
+    x -> integer
+    y -> integer
+    opacity -> integer
+    size -> integer
+    prod -> Product
+
+[ all disj b1; b2 : Bubble | b1.prod != b2.prod ]
+prods : Product 5
+bubbles : Bubble 5
+
+abstract Graph
+    bubble -> Bubble 0..5
+g1 : Graph
+    [ bubble = bubbles ]

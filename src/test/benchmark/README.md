@@ -1,7 +1,9 @@
 # Search strategy benchmark
 
 Compares Choco search strategies on Clafer models. The strategy replaces the default
-search (`PreferSmallerInstances`, `failureRateBased` since 0.5.3, `minDomLB` before) in each
+search (`PreferSmallerInstances`: `failureRateBasedFirst` since 0.5.8, i.e., `failureRateBased`
+with the ties broken by the first variable instead of at random; `failureRateBased` since 0.5.3,
+`minDomLB` before) in each
 branching group, through `ClaferCompiler.intStrategyOverride`. The rest of the compilation
 is unchanged. `analyze.py` compares the strategies with `minDomLB`.
 

@@ -1,0 +1,107 @@
+abstract ClaferMooVisualizer
+    deployedAtURL -> string
+    xor state
+        `init
+        `loadingAndProcessing
+        `error
+        `ready
+    views
+        `graph
+        `matrix
+        `spiderChart
+        `parallelCoordinates
+        `comparer
+viz1 : ClaferMooVisualizer
+    [ deployedAtURL = "wiselab.uwaterloo.ca/clafervisualizer/" ]
+    [ init ]
+abstract mux init
+    claferFileURL -> string
+    claferFileUpload -> string
+viz2 : ClaferMooVisualizer
+    [ deployedAtURL = "wiselab.uwaterloo.ca/clafervisualizer/" ]
+    [ init ]
+    [ no claferFileURL ]
+    [ no claferFileUpload ]
+viz3 : ClaferMooVisualizer
+    [ deployedAtURL = "wiselab.uwaterloo.ca/clafervisualizer/" ]
+    [ claferFileURL = "https://wiselab.uwaterloo.ca/modelwiki/clafer/MOO/Android4.cfr" ]
+viz4 : ClaferMooVisualizer
+    [ deployedAtURL = "wiselab.uwaterloo.ca/clafervisualizer/" ]
+    [ claferFileUpload = "model.cfr" ]
+abstract loadingAndProcessing
+abstract xor error
+    xor loading
+        invalidClaferFileURL -> string
+        parseError -> string
+        compileError -> string
+        missingGoals
+        temporalModel
+    xor processing
+        optimizationError -> string
+        timeout
+        outOfMemory
+abstract Dimension
+
+abstract Goal
+    dimension -> Dimension
+    xor kind
+        minimizee
+        maximizee
+performance : Dimension
+energy : Dimension
+security : Dimension
+mass : Dimension
+maxPerformance : Goal
+    [ dimension = performance ]
+    [ maximizee ]
+
+minEnergy : Goal
+    [ dimension = energy ]
+    [ minimizee ]
+
+maxSecurity : Goal
+    [ dimension = security ]
+    [ maximizee ]
+
+minMass : Goal
+    [ dimension = mass ]
+    [ minimizee ]
+abstract ready
+   goals -> Goal +
+r1 : ready
+    [ goals = maxPerformance, minEnergy, maxSecurity, minMass ]
+abstract Product
+
+abstract Bubble
+    x -> integer
+    y -> integer
+    opacity -> integer
+    size -> integer
+    prod -> Product
+
+[ all disj b1; b2 : Bubble | b1.prod != b2.prod ]   // disjoint
+[ # Bubble = # Product ]                            // cover
+prods : Product 5
+bubbles : Bubble 5
+abstract graph
+    xAxis -> Dimension
+    yAxis -> Dimension
+    opacity -> Dimension
+    size -> Dimension
+    [ xAxis != yAxis && xAxis != opacity && xAxis != size ]
+    [ yAxis != opacity && yAxis != size ]
+    [ opacity != size ]
+    bubble -> Bubble 0..5
+g1 : graph
+    [ xAxis = performance ]
+    [ yAxis = energy ]
+    [ opacity = security ]
+    [ size = mass ]
+    [ bubble = bubbles ]
+abstract matrix
+
+abstract spiderChart
+
+abstract parallelCoordinates
+
+abstract comparer
