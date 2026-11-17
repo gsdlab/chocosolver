@@ -6,6 +6,11 @@ import org.clafer.ast.AstAbstractClafer;
 import org.clafer.ast.AstConcreteClafer;
 import org.clafer.ast.AstModel;
 import static org.clafer.ast.Asts.$this;
+import static org.clafer.ast.Asts.Optional;
+import static org.clafer.ast.Asts.equal;
+import static org.clafer.ast.Asts.global;
+import static org.clafer.ast.Asts.none;
+import org.clafer.ast.Card;
 import static org.clafer.ast.Asts.Mandatory;
 import static org.clafer.ast.Asts.in;
 import static org.clafer.ast.Asts.join;
@@ -22,6 +27,7 @@ import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.scope.Scope;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -95,5 +101,51 @@ public class TransitiveTest {
         assertEquals(36, solver.instanceCount());
     }
 
+
+
+    /**
+     * The closure follows the relation more than one step (gsdlab/chocosolver#47).
+     *
+     * <pre>
+     * abstract Node
+     *     succ -> Node ?
+     * N1 : Node
+     *     [ succ = N2 ]
+     * N2 : Node
+     *     [ succ = N3 ]
+     * N3 : Node
+     *     [ no succ ]
+     * reach -> Node *
+     * [ reach = N1.(Node -> succ . succ -> ref)* ]
+     * </pre>
+     */
+    @Test(timeout = 60000)
+    public void testChain() {
+        AstModel model = newModel();
+
+        AstAbstractClafer node = model.addAbstract("Node");
+        AstConcreteClafer succ = node.addChild("succ").refToUnique(node).withCard(Optional);
+        AstConcreteClafer n1 = model.addChild("N1").extending(node).withCard(Mandatory);
+        AstConcreteClafer n2 = model.addChild("N2").extending(node).withCard(Mandatory);
+        AstConcreteClafer n3 = model.addChild("N3").extending(node).withCard(Mandatory);
+        n1.addConstraint(equal(joinRef(join($this(), succ)), global(n2)));
+        n2.addConstraint(equal(joinRef(join($this(), succ)), global(n3)));
+        n3.addConstraint(none(join($this(), succ)));
+        AstConcreteClafer reach = model.addChild("reach").refToUnique(node).withCard(new Card(0));
+        model.addConstraint(equal(joinRef(global(reach)), join(global(n1), transitiveClosure(join(relation(succ), ref(succ))))));
+
+        ClaferSolver solver = ClaferCompiler.compile(model, Scope.defaultScope(3));
+        assertTrue(solver.find());
+        InstanceModel instance = solver.instance();
+        Set<Object> targets = new HashSet<>();
+        for (InstanceClafer r : instance.getTopClafers(reach)) {
+            targets.add(r.getRef());
+        }
+        Set<Object> expected = new HashSet<>();
+        expected.add(instance.getTopClafer(n2));
+        expected.add(instance.getTopClafer(n3));
+        assertEquals(expected, targets);
+        assertFalse(solver.find());
+    }
 
 }

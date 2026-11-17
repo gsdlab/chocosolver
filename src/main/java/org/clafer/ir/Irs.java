@@ -2283,32 +2283,34 @@ public class Irs {
         Domain[] cards = new Domain[n];
 
         for (int i = 0; i < n; i++) {
-            TIntStack q = new TIntArrayStack(n);
-            q.push(i);
-            TIntSet env = new TIntHashSet(relation.getEnvs()[i].getValues());
-            if (reflexive) {
-                env.add(i);
-            }
-            do {
-                relation.getEnvs()[q.pop()].stream()
-                        .filter(env::add).forEach(q::push);
-            } while (q.size() > 0);
-
-            q.push(i);
-            TIntSet ker = new TIntHashSet(relation.getKers()[i].getValues());
-            if (reflexive) {
-                ker.add(i);
-            }
-            do {
-                relation.getKers()[q.pop()].stream()
-                        .filter(ker::add).forEach(q::push);
-            } while (q.size() > 0);
-
+            TIntSet env = reachable(relation.getEnvs(), i, reflexive);
+            TIntSet ker = reachable(relation.getKers(), i, reflexive);
             envs[i] = enumDomain(env);
             kers[i] = enumDomain(ker);
             cards[i] = boundDomain(kers[i].size(), envs[i].size());
         }
         return new IrTransitiveClosure(relation, reflexive, envs, kers, cards);
+    }
+
+    /**
+     * The nodes reachable from the node in one or more steps of the relation, and the node
+     * itself if reflexive. A node is visited when it is first reached, so the search continues
+     * past the direct successors (gsdlab/chocosolver#47).
+     */
+    private static TIntSet reachable(Domain[] relation, int from, boolean reflexive) {
+        TIntSet reached = new TIntHashSet();
+        if (reflexive) {
+            reached.add(from);
+        }
+        TIntStack q = new TIntArrayStack(relation.length);
+        q.push(from);
+        while (q.size() > 0) {
+            int node = q.pop();
+            if (node < relation.length) {
+                relation[node].stream().filter(reached::add).forEach(q::push);
+            }
+        }
+        return reached;
     }
 
     /**
