@@ -70,7 +70,7 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 </dependency>
 ```
 
-The CLI is installed to `target/chocosolver-0.6.0-jar-with-dependencies.jar`;
+The CLI is installed to `solver/target/chocosolver-0.6.0-jar-with-dependencies.jar`;
 however, in the Clafer Tools binary distribution it is called `chocosolver.jar`.
 
 You can deploy the files the same way as in Clafer Tools binary distribution by executing
@@ -141,7 +141,7 @@ The last mode is selected when no `-v` and `--repl` are given and the model does
 If the `.cfr` file is given, the CLI will first call the Clafer compiler using `clafer -k -m choco model.cfr`,
 which will produce `model.js`.
 
-An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7).
+An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7), by the frontend module (`frontend/`, see [Clafer's rich and core explicit models](https://github.com/gsdlab/clafer/blob/master/doc/rich-and-core-explicit.md)): chocosolver solves the static explicit core model, `clafer -m clafer --core --meta-data model.cfr`, and a rich one without the rich constructs.
 It is a Clafer model with nothing left implicit, as `clafer -m clafer --meta-data model.cfr` writes it to `model.des.cfr`, with every scope in `model.des.cfr-scope`: every name is a UID, every card and group card, `this`, `parent` and `dref` are written out, and nesting is in braces.
 Its first line, `//# OPTIONS --explicit`, marks it, for chocosolver and for the Clafer compiler (for which it means `-f -k -l --ss=none`), so the file can have any name; `--explicit` marks a model without that line.
 chocosolver gives the same instances for the explicit model and its scope file as for `model.cfr`, and reports the errors of an edited one with their positions, e.g., `model.des.cfr:3:5: ...`.
@@ -229,11 +229,11 @@ The CLI is case sensitive, that is, `i` is for `incScope` command, whereas, `I` 
 
 In general, the CLI classes are good examples of using the API:
 
-* [Main.java](src/main/java/org/clafer/cli/Main.java) - this is the main class of the `chocosolver.jar`.
-* [Validate.java](src/main/java/org/clafer/cli/Validate.java) - checks assertions (run with `-v`).
-* [REPL.java](src/main/java/org/clafer/cli/REPL.java) - read, eval, print loop (interactive interface, run with `--repl`).
-* [Normal.java](src/main/java/org/clafer/cli/Normal.java) - runs batch instance generation or multi-objective optimization up to the given limit of instances (provided using `-n`) or unlimited (by default).
-* [Util.java](src/main/java/org/clafer/cli/Util.java) - various shared utils.
+* [Main.java](solver/src/main/java/org/clafer/cli/Main.java) - this is the main class of the `chocosolver.jar`.
+* [Validate.java](solver/src/main/java/org/clafer/cli/Validate.java) - checks assertions (run with `-v`).
+* [REPL.java](solver/src/main/java/org/clafer/cli/REPL.java) - read, eval, print loop (interactive interface, run with `--repl`).
+* [Normal.java](solver/src/main/java/org/clafer/cli/Normal.java) - runs batch instance generation or multi-objective optimization up to the given limit of instances (provided using `-n`) or unlimited (by default).
+* [Util.java](solver/src/main/java/org/clafer/cli/Util.java) - various shared utils.
 
 Consider the following Clafer model.
 
