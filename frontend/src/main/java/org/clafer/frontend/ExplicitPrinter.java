@@ -140,7 +140,7 @@ public final class ExplicitPrinter {
             case Quantified e -> e.quantifier().keyword() + " "
                     + e.decls().stream().map(ExplicitPrinter::decl).collect(Collectors.joining(", "))
                     + " | " + print(e.body());
-            case AllOf e -> "all " + operand(e.set());
+            case QuantifiedSet e -> e.quantifier().keyword() + " " + operand(e.set());
             case Call e -> e.function() + "(" + e.args().stream().map(ExplicitPrinter::print)
                     .collect(Collectors.joining(", ")) + ")";
             case RelationOf e -> (e.isDref() ? "dref(" : "parent(") + e.clafer().text() + ")";

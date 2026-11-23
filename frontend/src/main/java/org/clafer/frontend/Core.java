@@ -121,7 +121,7 @@ public final class Core {
                 c.addAll(e.decls());
                 c.add(e.body());
             }
-            case AllOf e -> c.add(e.set());
+            case QuantifiedSet e -> c.add(e.set());
             case Call e -> c.addAll(e.args());
             case RelationOf e -> c.add(e.clafer());
             case Cast e -> {

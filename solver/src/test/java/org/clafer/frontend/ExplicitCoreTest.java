@@ -31,9 +31,10 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 /**
- * chocosolver on the explicit core models of Clafer's positive tests
- * ({@code test/regression/*.core.cfr.reg}, in a Clafer checkout next to
- * chocosolver or at {@code -Dclafer.dir}): every static core model builds
+ * chocosolver on the explicit core and rich models of Clafer's positive tests
+ * ({@code test/regression/*.core.cfr.reg} and {@code *.des.cfr.reg}, in a
+ * Clafer checkout next to chocosolver or at {@code -Dclafer.dir}): every
+ * static model, the rich ones lowered by {@link ToCore}, builds
  * without errors, and solves as the compiler's Choco output of the same model
  * ({@code *.js.reg}) does: the same first instances (optimal instances,
  * counterexamples) in the same order, or both the same error, with the scopes
@@ -53,7 +54,7 @@ public class ExplicitCoreTest {
 
     @Parameters(name = "{0}")
     public static List<File[]> files() {
-        File[] files = regressions().listFiles((d, n) -> n.endsWith(".core.cfr.reg"));
+        File[] files = regressions().listFiles((d, n) -> n.endsWith(".core.cfr.reg") || n.endsWith(".des.cfr.reg"));
         List<File[]> parameters = new ArrayList<>();
         if (files != null) {
             Arrays.sort(files);
@@ -65,7 +66,7 @@ public class ExplicitCoreTest {
     }
 
     private File jsFile() {
-        return new File(coreFile.getParentFile(), coreFile.getName().replace(".core.cfr.reg", ".js.reg"));
+        return new File(coreFile.getParentFile(), coreFile.getName().replaceFirst("\\.(core|des)\\.cfr\\.reg$", ".js.reg"));
     }
 
     @Test

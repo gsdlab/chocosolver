@@ -373,7 +373,7 @@ public final class Ir {
      * not an atom or a navigation, so the tree has no precedence to keep.
      */
     public sealed interface Exp extends Node permits This, NameExp, IntLit, DecimalLit, DoubleLit, StringLit,
-            NoClafer, Join, Dref, ParentOf, Unary, Binary, IfThenElse, Quantified, AllOf, Call, RelationOf, Cast,
+            NoClafer, Join, Dref, ParentOf, Unary, Binary, IfThenElse, Quantified, QuantifiedSet, Call, RelationOf, Cast,
             Connected, ConstantSet, Temporal, Anchor, Pattern, Transition {
     }
 
@@ -548,10 +548,12 @@ public final class Ir {
     }
 
     /**
-     * {@code all set}, the quantifier without declarations, which the
-     * compiler prints as it is (the others it prints as the size of the set).
+     * A quantifier over a set, without variables: {@code some x}, {@code no x},
+     * {@code lone x}, {@code one x}, {@code all x}. It is a formula on the set
+     * as a whole, e.g., {@code some x} holds if x has an element, which needs
+     * no count.
      */
-    public record AllOf(SourceSpan span, Exp set) implements Exp {
+    public record QuantifiedSet(SourceSpan span, Quantifier quantifier, Exp set) implements Exp {
     }
 
     /**

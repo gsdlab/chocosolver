@@ -1046,20 +1046,17 @@ public final class ExplicitParser {
     }
 
     /**
-     * {@code q [disj] x; y : e, z : f | body}, or {@code all e}
+     * {@code q [disj] x; y : e, z : f | body}, or {@code q e}
      */
     private Exp parseQuantified(int end) {
         Token q = take(end);
         Quantifier quantifier = Quantifiers.get(q.text());
-        // all e, without declarations
+        // some e, without variables
         boolean declares = at(end).isWord("disj") || (at(end).kind() == TokenKind.WORD && pos + 1 < end
                 && (tokens.get(pos + 1).isSymbol(":") || tokens.get(pos + 1).isSymbol(";")));
         if (!declares) {
-            if (quantifier != Quantifier.ALL) {
-                throw error(at(end), "Expected the variables of '" + q.text() + "' but found " + show(at(end)));
-            }
             Exp set = parseOperand(end);
-            return new AllOf(from(q), set);
+            return new QuantifiedSet(from(q), quantifier, set);
         }
         List<Decl> decls = new ArrayList<>();
         do {

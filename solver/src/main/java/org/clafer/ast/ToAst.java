@@ -16,6 +16,7 @@ import org.clafer.assertion.Assertion;
 import org.clafer.frontend.Core;
 import org.clafer.frontend.Diagnostic;
 import org.clafer.frontend.ExplicitParser;
+import org.clafer.frontend.ToCore;
 import org.clafer.frontend.Ir;
 import org.clafer.frontend.Ir.BinaryOp;
 import org.clafer.frontend.Ir.ClaferDecl;
@@ -28,7 +29,8 @@ import org.clafer.objective.Objective;
 /**
  * Builds chocosolver's {@link AstModel} from a static explicit model of the
  * {@link Ir explicit IR}: the core explicit model that {@code clafer -m clafer
- * --core} prints, a rich one without rich constructs, or what
+ * --core} prints, a static rich one, which it lowers to the core with
+ * {@link ToCore}, or what
  * {@link AstPrinter} prints. It resolves the names: the clafers, which may be
  * used before they are declared, and the variables of the quantifiers.
  * <p>
@@ -41,10 +43,7 @@ import org.clafer.objective.Objective;
  * <p>
  * A nested abstract clafer's multiplicity counts the instances of its
  * subclafers in each parent, so it becomes a constraint of the parent on
- * {@code #this.A}, as the compiler gives it to chocosolver. The rich
- * constructs (enumerations, initializers, modifiers, the multiplicity of a
- * top-level abstract clafer, anchors, patterns, transitions) are lowered by
- * the compiler's core; a model with one has a diagnostic at each. A temporal
+ * {@code #this.A}, as the compiler gives it to chocosolver. A temporal
  * model has a diagnostic on each line with a temporal construct, since
  * chocosolver solves only static models. {@code real} and {@code double} have
  * no solver.
@@ -136,18 +135,16 @@ public final class ToAst {
 
     private static Result toAst(Ir.Model tree, List<Diagnostic> parseErrors) {
         ToAst builder = new ToAst();
-        List<Diagnostic> refused = new ArrayList<>(temporal(tree));
+        List<Diagnostic> refused = temporal(tree);
         if (refused.isEmpty()) {
-            for (Node rich : Core.richNodes(tree)) {
-                refused.add(new Diagnostic(rich.span(), "Chocosolver reads the core: the "
-                        + Core.describe(rich) + " is lowered by the Clafer compiler (clafer -m clafer --core)"));
-            }
+            // the rich constructs of a static model: its enumerations,
+            // initializers and top-level abstract multiplicities
+            tree = ToCore.toCore(tree);
+            // := in a model with a trace length gives an initial value
+            refused = temporal(tree);
         }
-        if (!temporal(tree).isEmpty()) {
+        if (!refused.isEmpty()) {
             // the other errors of a temporal model follow from its temporal constructs
-            builder.diagnostics.addAll(refused);
-        } else if (!refused.isEmpty()) {
-            builder.diagnostics.addAll(parseErrors);
             builder.diagnostics.addAll(refused);
         } else {
             // what could be read, so that its errors are reported too
@@ -434,7 +431,16 @@ public final class ToAst {
                 yield new AstTernary(antecedent, typedBeside(c, a), typedBeside(a, c));
             }
             case Ir.Quantified e -> quantified(e);
-            case Ir.AllOf e -> throw error(e, "Chocosolver has no 'all' without variables");
+            case Ir.QuantifiedSet e -> {
+                AstSetExpr set = set(e, convert(e.set(), false));
+                yield switch (e.quantifier()) {
+                    case SOME -> Asts.some(set);
+                    case NO -> Asts.none(set);
+                    case LONE -> Asts.lone(set);
+                    case ONE -> Asts.one(set);
+                    case ALL -> throw error(e, "Chocosolver has no 'all' without variables");
+                };
+            }
             case Ir.Call e -> {
                 AstSetExpr first = set(e, convert(e.args().get(0), false));
                 AstSetExpr second = set(e, convert(e.args().get(1), false));
