@@ -1,6 +1,6 @@
-# chocosolver version 0.5.9, unreleased
+# chocosolver version 0.6.0, unreleased
 
-* Minor release with Clafer 0.5.9.
+* Minor release with Clafer 0.6.0.
 * `transitiveClosure` and `transitiveReflexiveClosure` follow the relation more than one step ([#47](https://github.com/gsdlab/chocosolver/issues/47)). The search for the nodes that a node reaches started with the node's direct successors already marked as reached, so it never went past them: the domain of the closure had only the first step. With a relation that the model fixes, e.g., `N1.succ = N2`, `N2.succ = N3`, the closure was that first step, `N1.(succ.ref)^` was `N2` instead of `N2`, `N3`; otherwise the model had no instance that needs a longer path. `connected` uses the same closure. Test case `TransitiveTest.testChain`.
 
 # chocosolver version 0.5.8, Nov 15, 2026
