@@ -16,6 +16,13 @@
     <url>http://github.com/gsdlab/chocosolver</url>
     <description>A backend for Clafer based on the Choco 6 constraint programming library.</description>
 
+    <properties>
+        <!-- the build date that the version option of chocosolver prints, in UTC: the day of the build, or the
+             day of SOURCE_DATE_EPOCH, which the Makefile and the Dockerfiles pass as -Dbuild.date -->
+        <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+        <build.date>${maven.build.timestamp}</build.date>
+    </properties>
+
     <developers>
         <developer>
             <name>Jimmy Liang</name>
@@ -67,6 +74,23 @@
     </dependencies>
 
     <build>
+        <!-- version.properties gets the version of the pom and the build date -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>version.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>version.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -1,5 +1,9 @@
+# the build date that chocosolver --version prints: the day of SOURCE_DATE_EPOCH if it is set,
+# e.g. to the release date, otherwise the day of the build (solver/pom.xml)
+BUILD_DATE := $(if $(SOURCE_DATE_EPOCH),-Dbuild.date=$(shell date -u -d @$(SOURCE_DATE_EPOCH) +%F))
+
 all:
-	mvn install
+	mvn install $(BUILD_DATE)
 
 javadoc:
 	mvn javadoc:javadoc -Dlinksource=true
