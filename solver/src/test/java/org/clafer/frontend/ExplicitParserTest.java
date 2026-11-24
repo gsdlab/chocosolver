@@ -198,4 +198,57 @@ public class ExplicitParserTest {
                         assert [G ((#s) >= 1)]
                         """));
     }
+
+    /**
+     * A model that declares itself the core has no rich construct, at the
+     * positions the compiler gives, temporal or not; the same model without
+     * --core is a rich explicit model.
+     */
+    @Test
+    public void testRichConstructsInTheCore() {
+        assertEquals(List.of(
+                "2:1: The core has no enumeration: the model declares itself the core (--core)",
+                "3:1: The core has no multiplicity of a top-level abstract clafer: the model declares itself the core (--core)",
+                "4:20: The core has no initializer =: the model declares itself the core (--core)"),
+                diagnostics("""
+                        //# OPTIONS --explicit --core
+                        enum Color = red | green
+                        abstract 0..* T 2..3 {}
+                        0..* x -> int 1..1 = 1 {}
+                        """));
+        assertEquals(List.of(
+                "2:1: The core has no temporal modifier final: the model declares itself the core (--core)",
+                "3:2: The core has no behavioral pattern never before: the model declares itself the core (--core)",
+                "4:4: The core has no transition: the model declares itself the core (--core)",
+                "5:2: The core has no anchor initially: the model declares itself the core (--core)"),
+                diagnostics("""
+                        //# OPTIONS --explicit --core --tl=3
+                        final 0..* a 0..1 {}
+                        [never ((#a) >= 1) before ((#a) = 0)]
+                        [((#a) >= 1) --> ((#a) = 0)]
+                        [initially ((#a) >= 1)]
+                        """));
+        // the nested abstract multiplicities stay in the core
+        assertEquals(List.of(), diagnostics("""
+                //# OPTIONS --explicit --core
+                0..* b 0..1 {
+                  abstract 0..* T 2..3 {}
+                }
+                """));
+    }
+
+    /**
+     * A broken initializer is reported, and its clafer is still declared, so
+     * that its name is found: one error, not two.
+     */
+    @Test
+    public void testBrokenInitializerKeepsTheClafer() {
+        assertEquals(List.of(
+                "2:34: Expected 'each' or 'together' after ':=' but found '1'"),
+                diagnostics("""
+                        //# OPTIONS --explicit
+                        abstract 0..* Val -> int 2..2 := 1 {}
+                        0..* v : Val 1..1 {}
+                        """));
+    }
 }

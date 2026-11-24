@@ -363,7 +363,7 @@ public final class ToCore {
      * an infix expression is at its first operand, inside its parentheses,
      * and so on down.
      */
-    private static SourceSpan position(Node n) {
+    static SourceSpan position(Node n) {
         return switch (n) {
             case Pattern p when p.kind().arity() == 2 -> position(p.args().get(0));
             case Transition t -> position(t.from());
@@ -393,7 +393,7 @@ public final class ToCore {
      * The keywords of a pattern as written, e.g., {@code must precede between and} for
      * {@code s must precede p between q and r}.
      */
-    private static String patternOp(Pattern p) {
+    static String patternOp(Pattern p) {
         String kind = p.kind().arity() == 2 ? "must " + p.kind().keyword() : p.kind().keyword();
         return kind + switch (p.scope()) {
             case GLOBALLY -> "";

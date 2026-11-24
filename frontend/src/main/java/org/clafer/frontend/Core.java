@@ -1,7 +1,9 @@
 package org.clafer.frontend;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.clafer.frontend.Ir.*;
 
@@ -32,12 +34,40 @@ public final class Core {
     public static List<Diagnostic> richInCore(Model model) {
         List<Diagnostic> diagnostics = new ArrayList<>();
         if (model.options().core()) {
+            Map<Node, ClaferDecl> owners = new IdentityHashMap<>();
+            ownersOf(model, owners);
             for (Node node : richNodes(model)) {
-                diagnostics.add(new Diagnostic(node.span(), "The core has no " + describe(node)
+                diagnostics.add(new Diagnostic(positionOf(node, owners), "The core has no " + describe(node)
                         + ": the model declares itself the core (--core)"));
             }
         }
         return diagnostics;
+    }
+
+    /**
+     * The position of a rich construct, as the compiler gives it: a
+     * multiplicity of an abstract clafer at its clafer, a pattern or a
+     * transition at its first operand, as in the provenance comments.
+     */
+    private static SourceSpan positionOf(Node node, Map<Node, ClaferDecl> owners) {
+        return switch (node) {
+            case AbstractMultiplicity a -> owners.get(a).span();
+            case Pattern p -> ToCore.position(p);
+            case Transition t -> ToCore.position(t);
+            default -> node.span();
+        };
+    }
+
+    /**
+     * The clafer of each abstract multiplicity.
+     */
+    private static void ownersOf(Node node, Map<Node, ClaferDecl> owners) {
+        if (node instanceof ClaferDecl d) {
+            d.abstractMultiplicity().ifPresent(a -> owners.put(a, d));
+        }
+        for (Node child : children(node)) {
+            ownersOf(child, owners);
+        }
     }
 
     /**
@@ -51,7 +81,7 @@ public final class Core {
             case Initializer i -> "initializer " + i.kind().syntax();
             case AbstractMultiplicity a -> "multiplicity of a top-level abstract clafer";
             case Anchor a -> "anchor " + (a.initially() ? "initially" : "finally");
-            case Pattern p -> "behavioral pattern " + p.kind().keyword();
+            case Pattern p -> "behavioral pattern " + ToCore.patternOp(p);
             case Transition t -> "transition";
             default -> node.getClass().getSimpleName();
         };

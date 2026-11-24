@@ -135,7 +135,12 @@ public final class ToAst {
 
     private static Result toAst(Ir.Model tree, List<Diagnostic> parseErrors) {
         ToAst builder = new ToAst();
-        List<Diagnostic> refused = temporal(tree);
+        // a model that declares itself the core but has rich constructs is not an explicit
+        // core model, temporal or not: those are its errors
+        List<Diagnostic> refused = Core.richInCore(tree);
+        if (refused.isEmpty()) {
+            refused = temporal(tree);
+        }
         if (refused.isEmpty()) {
             // the rich constructs of a static model: its enumerations,
             // initializers and top-level abstract multiplicities

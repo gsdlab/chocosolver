@@ -105,6 +105,8 @@ public final class ExplicitParser {
         parser.diagnostics.addAll(lexed.diagnostics());
         Options options = parser.readOptions(lexed.comments());
         Model model = parser.readModel(options);
+        // a model that declares itself the core (--core) has no rich construct, as in the compiler
+        parser.diagnostics.addAll(Core.richInCore(model));
         List<Diagnostic> diagnostics = new ArrayList<>(parser.diagnostics);
         diagnostics.sort((a, b) -> a.span().line() != b.span().line()
                 ? Integer.compare(a.span().line(), b.span().line())
@@ -461,26 +463,16 @@ public final class ExplicitParser {
         }
         Optional<Initializer> initializer = Optional.empty();
         if (atSymbol("=") || atSymbol(":=")) {
-            Token op = next();
-            InitKind kind = InitKind.FIXED;
-            if (op.text().equals(":=")) {
-                if (atWord("each")) {
-                    kind = InitKind.EACH;
-                } else if (atWord("together")) {
-                    kind = InitKind.TOGETHER;
-                } else {
-                    throw error(peek(), "Expected 'each' or 'together' after ':=' but found " + show(peek()));
-                }
-                next();
+            int initStart = pos;
+            try {
+                initializer = Optional.of(readInitializer());
+            } catch (ParseError e) {
+                // Go on with the clafer without its initializer, so that it is
+                // declared and its name is found.
+                diagnostics.add(e.diagnostic);
+                pos = initStart + 1;
+                pos = endOfValue();
             }
-            int valueStart = pos;
-            int valueEnd = endOfValue();
-            if (valueEnd == valueStart) {
-                throw error(peek(), "Expected the value of the initializer but found " + show(peek()));
-            }
-            Exp value = parseRange(valueStart, valueEnd);
-            pos = valueEnd;
-            initializer = Optional.of(new Initializer(spanFrom(op.span(), value.span()), kind, value));
         }
         Token open = expectSymbol("{");
         Optional<Origin> origin = originAfter(open);
@@ -504,6 +496,33 @@ public final class ExplicitParser {
         }
         return new ClaferDecl(spanFrom(start, close), isAbstract, modifiers, groupCard, name, superName, ref, card,
                 abstractMultiplicity, initializer, elements, origin);
+    }
+
+    /**
+     * {@code = value}, {@code := each value} or {@code := together value},
+     * up to the clafer's opening brace.
+     */
+    private Initializer readInitializer() {
+        Token op = next();
+        InitKind kind = InitKind.FIXED;
+        if (op.text().equals(":=")) {
+            if (atWord("each")) {
+                kind = InitKind.EACH;
+            } else if (atWord("together")) {
+                kind = InitKind.TOGETHER;
+            } else {
+                throw error(peek(), "Expected 'each' or 'together' after ':=' but found " + show(peek()));
+            }
+            next();
+        }
+        int valueStart = pos;
+        int valueEnd = endOfValue();
+        if (valueEnd == valueStart) {
+            throw error(peek(), "Expected the value of the initializer but found " + show(peek()));
+        }
+        Exp value = parseRange(valueStart, valueEnd);
+        pos = valueEnd;
+        return new Initializer(spanFrom(op.span(), value.span()), kind, value);
     }
 
     /**
