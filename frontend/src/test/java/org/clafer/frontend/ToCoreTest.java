@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import static org.clafer.frontend.ExplicitConformanceTest.regressions;
 import static org.clafer.frontend.ExplicitConformanceTest.withoutOrigins;
 import static org.junit.Assert.assertEquals;
@@ -22,7 +23,8 @@ import org.junit.runners.Parameterized.Parameters;
  * {@code *.core.cfr.reg}):
  * <ul>
  * <li>check 5: {@code toCore} of the rich model is the core model, without
- * the provenance comments;</li>
+ * the provenance comments, and with the comments it names the same rich
+ * constructs, without their positions, which are those of the rich model;</li>
  * <li>check 6: {@code toCore} of the core model is the core model, and the
  * output of {@code toCore} has no rich node.</li>
  * </ul>
@@ -62,6 +64,26 @@ public class ToCoreTest {
         Ir.Model lowered = ToCore.toCore(parse(new File(regressions(), name + ".des.cfr.reg")));
         assertEquals(List.of(), Core.richNodes(lowered).stream().map(Core::describe).toList());
         assertEquals(withoutOrigins(Files.readString(core().toPath())), ExplicitPrinter.print(lowered, false));
+    }
+
+    /**
+     * The model with the constructs of its provenance comments, without their
+     * positions: {@code // -->, model.cfr:8:13} becomes {@code // -->}. The
+     * clock of {@code :=} is left out, since the rich model writes every clock
+     * and the model may have written none.
+     */
+    static String withoutPositions(String model) {
+        return Arrays.stream(model.split("\n", -1))
+                .map(l -> l.replaceFirst("( // [^\"]*), [^ ]*[0-9]+:[0-9]+$", "$1")
+                        .replaceFirst(" // := (each|together)$", " // :="))
+                .collect(Collectors.joining("\n"));
+    }
+
+    @Test
+    public void testRichToCoreOrigins() throws IOException {
+        assumeTrue(core().isFile());
+        Ir.Model lowered = ToCore.toCore(parse(new File(regressions(), name + ".des.cfr.reg")));
+        assertEquals(withoutPositions(Files.readString(core().toPath())), withoutPositions(ExplicitPrinter.print(lowered, true)));
     }
 
     @Test

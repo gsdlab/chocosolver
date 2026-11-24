@@ -345,7 +345,10 @@ public final class ToCore {
         Optional<Node> first = firstRichOperator(e);
         return first.flatMap(n -> origin(switch (n) {
             case Pattern p -> patternOp(p);
-            default -> "transition";
+            case Transition t -> t.guard().isPresent()
+                    ? (t.sync() ? "-[]->>" : "-[]->")
+                    : (t.sync() ? "-->>" : "-->");
+            default -> throw new IllegalStateException("not a pattern or a transition: " + n);
         }, position(n)));
     }
 
@@ -380,12 +383,17 @@ public final class ToCore {
         return Optional.empty();
     }
 
+    /**
+     * The keywords of a pattern as written, e.g., {@code must precede between and} for
+     * {@code s must precede p between q and r}.
+     */
     private static String patternOp(Pattern p) {
-        return p.kind().keyword() + switch (p.scope()) {
+        String kind = p.kind().arity() == 2 ? "must " + p.kind().keyword() : p.kind().keyword();
+        return kind + switch (p.scope()) {
             case GLOBALLY -> "";
             case BEFORE -> " before";
             case AFTER -> " after";
-            case BETWEEN -> " between";
+            case BETWEEN -> " between and";
             case AFTER_UNTIL -> " after until";
         };
     }
@@ -838,7 +846,7 @@ public final class ToCore {
                 for (int i = comparisons.size() - 2; i >= 0; i--) {
                     p = bin(span, BinaryOp.AND, comparisons.get(i), p);
                 }
-                out.add(new Constraint(span, p, origin("abstract multiplicity", span)));
+                out.add(new Constraint(span, p, origin("abstract " + bound, span)));
             }
         }
         return withElements(m, out);
