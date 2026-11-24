@@ -140,8 +140,15 @@ public final class ToCore {
      * Rewrites the expression bottom-up.
      */
     private static Exp transform(Exp e, Function<Exp, Exp> f) {
-        Function<Exp, Exp> t = x -> transform(x, f);
-        Exp rebuilt = switch (e) {
+        return f.apply(mapChildren(e, x -> transform(x, f)));
+    }
+
+    /**
+     * The expression with the function applied to each of its immediate
+     * subexpressions.
+     */
+    private static Exp mapChildren(Exp e, Function<Exp, Exp> t) {
+        return switch (e) {
             case Join x -> new Join(x.span(), t.apply(x.left()), t.apply(x.right()));
             case Dref x -> new Dref(x.span(), t.apply(x.left()));
             case ParentOf x -> new ParentOf(x.span(), t.apply(x.left()));
@@ -160,7 +167,6 @@ public final class ToCore {
             case Transition x -> new Transition(x.span(), x.sync(), t.apply(x.from()), x.guard().map(t), t.apply(x.to()));
             default -> e;
         };
-        return f.apply(rebuilt);
     }
 
     private static boolean hasTemporal(Exp e) {
@@ -794,24 +800,136 @@ public final class ToCore {
     }
 
     /**
-     * The anchors as guards on the birth or the death of the context
-     * instance: it exists now, and not in the previous state of its lifetime,
-     * or not in the next one.
+     * The anchors of a constraint as guards on the birth or the death of the
+     * context instance, as the source semantics reads them
+     * (kbak/clafer-semantics#200, {@code Formula.denote}).
      */
     private static Exp anchors(Exp exp, boolean topLevel) {
-        return transform(exp, e -> {
-            if (!(e instanceof Anchor a)) {
-                return e;
+        return signed(exp, true, topLevel);
+    }
+
+    /**
+     * The anchors of an expression in a position of the given sign: a
+     * negation goes into the anchor, so that {@code !(initially p)} is
+     * {@code initially !p}, which holds wherever the context is not born. A
+     * positive anchor is {@code birth => p}, a negative one
+     * {@code birth && p}, whose negation is {@code birth => !p}. The sign
+     * changes under {@code !}, on the left of {@code =>} and in the body of
+     * {@code no x : X |}; the operands of {@code <=>}, {@code xor} and
+     * {@code if then else} have both signs, so these are written out with
+     * {@code =>}, {@code &&} and {@code ||} when they have an anchor. The
+     * bodies of {@code one} and {@code lone} count their witnesses
+     * classically, and an {@code if then else} that is a value, not a
+     * formula, is a term: their anchors are positive guards, under classical
+     * negation.
+     */
+    private static Exp signed(Exp e, boolean positive, boolean topLevel) {
+        switch (e) {
+            case Anchor a -> {
+                Exp guard = a.initially() ? birth(a.span(), topLevel) : death(a.span(), topLevel);
+                return bin(a.span(), positive ? BinaryOp.IMPLIES : BinaryOp.AND, guard, signed(a.body(), positive, topLevel));
             }
-            SourceSpan span = a.span();
-            Exp self = topLevel ? new NameExp(span, "root") : new This(span);
-            if (a.initially()) {
-                return bin(span, BinaryOp.IMPLIES,
-                        new Unary(span, UnaryOp.NOT, tmp(span, TemporalOp.PREVIOUS, some(self))), a.body());
+            case Unary u when u.op() == UnaryOp.NOT ->
+                    { return new Unary(u.span(), u.op(), signed(u.arg(), !positive, topLevel)); }
+            case Binary b when b.op() == BinaryOp.IMPLIES && b.operands().size() == 2 ->
+                    { return bin(b.span(), b.op(), signed(b.operands().get(0), !positive, topLevel),
+                            signed(b.operands().get(1), positive, topLevel)); }
+            case Binary b when (b.op() == BinaryOp.IFF || b.op() == BinaryOp.XOR) && b.operands().size() == 2 && anchored(b) -> {
+                SourceSpan span = b.span();
+                Exp x = b.operands().get(0);
+                Exp y = b.operands().get(1);
+                return signed(b.op() == BinaryOp.IFF
+                        ? bin(span, BinaryOp.AND, bin(span, BinaryOp.IMPLIES, x, y), bin(span, BinaryOp.IMPLIES, y, x))
+                        : bin(span, BinaryOp.OR, bin(span, BinaryOp.AND, x, neg(span, y)), bin(span, BinaryOp.AND, neg(span, x), y)),
+                        positive, topLevel);
             }
-            return bin(span, BinaryOp.IMPLIES,
-                    bin(span, BinaryOp.AND, some(self), tmp(span, TemporalOp.X, no(self))), a.body());
+            case IfThenElse i when !formula(i) -> {
+                return classical(i, topLevel);
+            }
+            case IfThenElse i when anchored(i) -> {
+                SourceSpan span = i.span();
+                return signed(bin(span, BinaryOp.AND, bin(span, BinaryOp.IMPLIES, i.condition(), i.then()),
+                        bin(span, BinaryOp.IMPLIES, neg(span, i.condition()), i.otherwise())), positive, topLevel);
+            }
+            case Quantified q when q.quantifier() == Quantifier.NO ->
+                    { return new Quantified(q.span(), q.quantifier(), q.decls(), signed(q.body(), !positive, topLevel)); }
+            case Quantified q when q.quantifier() == Quantifier.ONE || q.quantifier() == Quantifier.LONE ->
+                    { return new Quantified(q.span(), q.quantifier(), q.decls(), classical(q.body(), topLevel)); }
+            default -> {
+                return mapChildren(e, x -> signed(x, positive, topLevel));
+            }
+        }
+    }
+
+    /**
+     * The anchors as positive guards, under classical negation: in the body
+     * of {@code one} and {@code lone}.
+     */
+    private static Exp classical(Exp exp, boolean topLevel) {
+        return transform(exp, e -> e instanceof Anchor a
+                ? bin(a.span(), BinaryOp.IMPLIES, a.initially() ? birth(a.span(), topLevel) : death(a.span(), topLevel), a.body())
+                : e);
+    }
+
+    /**
+     * The birth of the context instance: it exists now, and not in the
+     * previous state of its lifetime; the root, which exists in every state,
+     * is born at time zero.
+     */
+    private static Exp birth(SourceSpan span, boolean topLevel) {
+        Exp notPrevious = neg(span, tmp(span, TemporalOp.PREVIOUS, some(self(span, topLevel))));
+        return topLevel ? notPrevious : bin(span, BinaryOp.AND, some(self(span, topLevel)), notPrevious);
+    }
+
+    /**
+     * The death of the context instance: it exists now, and not in the next
+     * state.
+     */
+    private static Exp death(SourceSpan span, boolean topLevel) {
+        return bin(span, BinaryOp.AND, some(self(span, topLevel)), tmp(span, TemporalOp.X, no(self(span, topLevel))));
+    }
+
+    private static Exp self(SourceSpan span, boolean topLevel) {
+        return topLevel ? new NameExp(span, "root") : new This(span);
+    }
+
+    // !(some x) is no x, as the compiler writes it, so that the core compiles to itself
+    private static Exp neg(SourceSpan span, Exp e) {
+        Optional<Exp> set = someOf(e);
+        return set.isPresent() ? no(set.get()) : new Unary(span, UnaryOp.NOT, e);
+    }
+
+    /**
+     * Whether the expression is a formula, not a value: the rich model has no
+     * types, so this follows its form, as an {@code if then else} is a formula
+     * when its branches are.
+     */
+    private static boolean formula(Exp e) {
+        return switch (e) {
+            case Anchor a -> true;
+            case Temporal t -> true;
+            case Pattern p -> true;
+            case Transition t -> true;
+            case Quantified q -> true;
+            case QuantifiedSet q -> true;
+            case Connected c -> true;
+            case Unary u -> u.op() == UnaryOp.NOT;
+            case Binary b -> switch (b.op()) {
+                case AND, OR, IMPLIES, IFF, XOR, LT, LE, GT, GE, EQ, NE, IN, NOT_IN -> true;
+                default -> false;
+            };
+            case IfThenElse i -> formula(i.then()) || formula(i.otherwise());
+            default -> false;
+        };
+    }
+
+    private static boolean anchored(Exp e) {
+        boolean[] found = {false};
+        transform(e, x -> {
+            found[0] |= x instanceof Anchor;
+            return x;
         });
+        return found[0];
     }
 
     // ------------------------------------------------------------------
