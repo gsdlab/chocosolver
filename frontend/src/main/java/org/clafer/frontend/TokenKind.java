@@ -44,6 +44,34 @@ public enum TokenKind {
      */
     ERROR,
     /**
+     * A reserved word of the full language, e.g., {@code abstract},
+     * {@code some} or {@code X} ({@link ClaferLexer}): it cannot name a
+     * clafer. The explicit languages have none ({@link #WORD}).
+     */
+    KEYWORD,
+    /**
+     * An escape to a backend, {@code [alloy| ... |]} or
+     * {@code [choco| ... |]}, set aside like a comment ({@link ClaferLexer}).
+     */
+    ESCAPE,
+    /**
+     * The start of a block of indented lines, an empty span: the opening
+     * brace that {@link Layout} inserts.
+     */
+    INDENT,
+    /**
+     * The end of a block of indented lines, an empty span: the closing
+     * brace that {@link Layout} inserts.
+     */
+    DEDENT,
+    /**
+     * The separator that {@link Layout} inserts between two lines at the
+     * same indentation, an empty span, so that, e.g., a group cardinality
+     * at the start of a line is not the cardinality of the clafer on the line
+     * before.
+     */
+    SEPARATOR,
+    /**
      * The end of the input, an empty span after the last character.
      */
     EOF
