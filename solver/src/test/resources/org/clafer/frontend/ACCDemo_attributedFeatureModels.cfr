@@ -1,0 +1,57 @@
+// clafer/test/regression/ACCDemo_attributedFeatureModels.des.cfr.reg in the full syntax:
+// layout instead of braces, no inferred cards or group cards, explicit constraints
+abstract Feature
+  cost -> int
+
+abstract ComfortFeature : Feature
+  comfort -> int
+
+abstract FuelFeature : ComfortFeature
+  fuel -> int
+
+abstract Car
+  ABS : Feature ?
+    [this.cost.dref = 2]
+  CC : FuelFeature ?
+    [this.fuel.dref = 1]
+    [this.comfort.dref = 3]
+    [this.cost.dref = 4]
+    ACC : FuelFeature ?
+      [this.fuel.dref = 2]
+      [this.comfort.dref = 6]
+      [this.cost.dref = 3]
+      [some this.parent.parent.FCA]
+  xor Transmission
+    Automatic : FuelFeature
+      [this.fuel.dref = 2]
+      [this.comfort.dref = 2]
+      [this.cost.dref = 3]
+    Manual : FuelFeature
+      [this.fuel.dref = 0]
+      [this.comfort.dref = 1]
+      [this.cost.dref = 2]
+  FCA : FuelFeature ?
+    [this.fuel.dref = 2]
+    [this.comfort.dref = 4]
+    [this.cost.dref = 5]
+    xor Sensor
+      Radar : Feature
+        [this.cost.dref = 2]
+      Lidar : Feature
+        [this.cost.dref = 4]
+    xor Alert
+      Haptic : ComfortFeature
+        [this.comfort.dref = 4]
+        [this.cost.dref = 2]
+      Audible : ComfortFeature
+        [this.comfort.dref = 2]
+        [this.cost.dref = 1]
+  total_cost -> int = sum Feature.cost.dref
+  total_comfort -> int = sum ComfortFeature.comfort.dref
+  total_fuel -> int = sum FuelFeature.fuel.dref
+
+aCar : Car
+
+<< min aCar.total_cost.dref >>
+<< min aCar.total_fuel.dref >>
+<< max aCar.total_comfort.dref >>

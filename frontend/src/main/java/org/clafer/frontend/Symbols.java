@@ -354,7 +354,7 @@ public final class Symbols {
         }
     }
 
-    private static final Set<String> Primitives = Set.of("string", "int", "integer", "decimal", "double", "real");
+    static final Set<String> Primitives = Set.of("string", "int", "integer", "decimal", "double", "real");
     private static final Set<String> Specials = Set.of("this", "parent", "dref", "root", "children", "noclafer");
 
     /**
@@ -1291,7 +1291,7 @@ public final class Symbols {
      * The group card as the explicit form prints it: the clafer's, unless it
      * is {@code 0..*}, and then its super's.
      */
-    private static Interval printedGroupCard(ClaferSymbol c) {
+    static Interval printedGroupCard(ClaferSymbol c) {
         Set<ClaferSymbol> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         for (ClaferSymbol s = c; s != null && visited.add(s); s = s.superClafer().orElse(null)) {
             if (!s.groupCard().interval().equals(Interval.Any)) {

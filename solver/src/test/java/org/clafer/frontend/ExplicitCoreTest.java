@@ -101,7 +101,7 @@ public class ExplicitCoreTest {
     /**
      * The subs of each abstract clafer that has some, in order, by name.
      */
-    private static Map<String, List<String>> subs(AstModel model) {
+    static Map<String, List<String>> subs(AstModel model) {
         Map<String, List<String>> subs = new TreeMap<>();
         for (AstClafer clafer : AstUtil.getClafers(model)) {
             if (clafer instanceof AstAbstractClafer abstractClafer && !abstractClafer.getSubs().isEmpty()) {
@@ -114,7 +114,7 @@ public class ExplicitCoreTest {
     /**
      * The first instances, or the error, as text.
      */
-    private static List<String> solve(AstModel model, Scope scope, Objective[] objectives, Assertion[] assertions,
+    static List<String> solve(AstModel model, Scope scope, Objective[] objectives, Assertion[] assertions,
             ClaferOption option) {
         List<String> result = new ArrayList<>();
         try {
