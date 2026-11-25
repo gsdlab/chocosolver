@@ -106,8 +106,7 @@ public record ModelFiles(List<ModelFile> files, ModelOptions options, List<Strin
         void visit(List<String> stackKeys, List<String> stackNames, String name) {
             String importer = stackNames.get(0);
             if (isUrl(name)) {
-                throw new ImportError(ModelOptions.inFile(importer, "the import " + name
-                        + " is a URL, which the Java frontend does not read yet"));
+                throw new ImportError(ModelOptions.inFile(importer, "the import " + name + UrlImport));
             }
             if (!name.endsWith(".cfr")) {
                 throw new ImportError(ModelOptions.inFile(importer, "the import " + name + " is not a .cfr file"));
@@ -156,7 +155,23 @@ public record ModelFiles(List<ModelFile> files, ModelOptions options, List<Strin
         }
     }
 
-    private static boolean isUrl(String name) {
+    /**
+     * The end of the error of an import of a URL.
+     */
+    private static final String UrlImport = " is a URL, which the Java frontend does not read yet";
+
+    /**
+     * @return whether the model could not be read because it imports a URL,
+     * which the compiler reads and the Java frontend does not
+     */
+    public boolean importsUrl() {
+        return errors.stream().anyMatch(e -> e.endsWith(UrlImport));
+    }
+
+    /**
+     * @return whether an import names a URL
+     */
+    public static boolean isUrl(String name) {
         return name.startsWith("http://") || name.startsWith("https://");
     }
 

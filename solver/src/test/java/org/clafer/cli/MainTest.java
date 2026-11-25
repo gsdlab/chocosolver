@@ -48,6 +48,43 @@ public class MainTest {
         return new Run(process.exitValue(), output);
     }
 
+    // runs chocosolver with a stub clafer, alone on the path: it records its arguments in the file
+    // calls next to it and, with js, writes the model's .js file and exits with 0, otherwise 1
+    private static Run chocosolverWithStub(Path stubDir, String js, String... args)
+            throws IOException, InterruptedException {
+        Path stub = stubDir.resolve("clafer");
+        Files.writeString(stub, "#!/bin/bash\n"
+                + "echo \"$@\" >> \"${0%/*}/calls\"\n"
+                + "f=\"${@: -1}\"\n"
+                + "if [ -n \"$STUB_JS\" ]; then printf '%s' \"$STUB_JS\" > \"${f%.cfr}.js\"; exit 0; fi\n"
+                + "echo 'stub: the model has errors'; exit 1\n");
+        stub.toFile().setExecutable(true);
+        List<String> command = new ArrayList<>(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-cp", System.getProperty("java.class.path"),
+                Main.class.getName()));
+        command.addAll(List.of(args));
+        ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
+        builder.environment().put("PATH", stubDir.toString());
+        if (js != null)
+            builder.environment().put("STUB_JS", js);
+        Process process = builder.start();
+        String output = new String(process.getInputStream().readAllBytes());
+        assertTrue("chocosolver did not end", process.waitFor(60, TimeUnit.SECONDS));
+        return new Run(process.exitValue(), output);
+    }
+
+    private static String calls(Path stubDir) throws IOException {
+        Path calls = stubDir.resolve("calls");
+        return Files.exists(calls) ? Files.readString(calls) : "";
+    }
+
+    private static File cfr(Path dir, String name, String text) throws IOException {
+        Path file = dir.resolve(name);
+        Files.writeString(file, text);
+        return file.toFile();
+    }
+
     private static File model(String text) throws IOException {
         File file = Files.createTempFile("model", ".js").toFile();
         file.deleteOnExit();
@@ -144,5 +181,118 @@ public class MainTest {
         Run run = chocosolver("--file", file.getPath(), "-v");
         assertEquals(run.output(), 1, run.exitCode());
         assertTrue(run.output(), run.output().contains("Unhandled compilation error occured"));
+    }
+
+    // a .cfr model is read by the Java frontend: the compiler is not run, and no .js is written
+    @Test
+    public void testJavaFrontend() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n  b ?\n[some A.b]\n");
+        Run run = chocosolverWithStub(dir, null, "--file", model.getPath(), "-n", "2");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("Compiling the Clafer model...\n"));
+        assertTrue(run.output(), run.output().contains("A \n  b \n"));
+        assertTrue(run.output(), run.output().contains("Generated 1 instance(s) within the scope"));
+        assertEquals("", calls(dir));
+        assertFalse(new File(dir.toFile(), "model.js").exists());
+    }
+
+    // the errors of a model are the Java frontend's, at their positions, if the compiler rejects it too
+    @Test
+    public void testJavaFrontendErrors() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n  b -> integer\n[b = c]\n");
+        Run run = chocosolverWithStub(dir, null, "--file", model.getPath());
+        assertEquals(run.output(), 1, run.exitCode());
+        assertTrue(run.output(), run.output().contains(model.getPath() + ":3:6: Name resolver: 'c' not found"));
+        assertTrue(run.output(), run.output().contains("Clafer compilation failed. Aborting..."));
+        assertFalse(run.output(), run.output().contains("stub"));
+        assertTrue(calls(dir), calls(dir).endsWith(model.getPath() + "\n"));
+    }
+
+    // a temporal model: the Java frontend's message at its temporal construct
+    @Test
+    public void testTemporalModel() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "//# OPTIONS --tl=3\nA ?\n[always some A]\n");
+        Run run = chocosolverWithStub(dir, null, "--file", model.getPath());
+        assertEquals(run.output(), 1, run.exitCode());
+        assertTrue(run.output(), run.output().contains(model.getPath()
+                + ":3:2: Chocosolver does not solve temporal models"));
+    }
+
+    // a model that the Java frontend rejects and the compiler compiles: the compiler's output, with a note
+    @Test
+    public void testFallbackOnRejection() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n  b -> integer\n[b = c]\n");
+        Run run = chocosolverWithStub(dir, MODEL, "--file", model.getPath(), "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("The Java frontend rejected the model, which the Haskell"
+                + " compiler (clafer) compiles"));
+        assertTrue(run.output(), run.output().contains(model.getPath() + ":3:6: Name resolver: 'c' not found"));
+        assertTrue(run.output(), run.output().contains("age"));
+    }
+
+    // --haskell-frontend: the compiler's output, with the imports of the command line
+    @Test
+    public void testHaskellFrontend() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n");
+        Run run = chocosolverWithStub(dir, MODEL, "--file", model.getPath(), "-n", "1", "--haskell-frontend",
+                "--import", "lib.cfr");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("age"));
+        assertEquals("-k -m choco --import=lib.cfr " + model.getPath() + "\n", calls(dir));
+        // the compiler's errors, as before the Java frontend
+        run = chocosolverWithStub(dir, null, "--file", model.getPath(), "--haskell-frontend");
+        assertEquals(run.output(), 1, run.exitCode());
+        assertTrue(run.output(), run.output().contains("stub: the model has errors\nClafer compilation failed."));
+    }
+
+    // a [choco| |] escape is JavaScript, which only the compiler's output runs
+    @Test
+    public void testChocoEscape() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n[choco|// a comment|]\n");
+        Run run = chocosolverWithStub(dir, MODEL, "--file", model.getPath(), "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("has a [choco| |] escape"));
+        assertTrue(run.output(), run.output().contains("age"));
+    }
+
+    // the web tools' restrictions of the imports apply only to a model with imports
+    @Test
+    public void testImportRestrictions() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        cfr(dir, "lib.cfr", "abstract L\n");
+        File plain = cfr(dir, "plain.cfr", "A\n");
+        Run run = chocosolverWithStub(dir, MODEL, "--public-imports", "--import-root=" + dir, "--file",
+                plain.getPath(), "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertEquals("", calls(dir));
+        assertFalse(run.output(), run.output().contains("age"));
+        File imports = cfr(dir, "imports.cfr", "//# OPTIONS --import=lib.cfr\nA : L\n");
+        run = chocosolverWithStub(dir, MODEL, "--public-imports", "--import-root=" + dir, "--import-base",
+                "https://example.org/m.cfr", "--file", imports.getPath(), "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("has imports, which --import-root restricts"));
+        assertEquals("-k -m choco --import-root=" + dir + " --public-imports --import-base=https://example.org/m.cfr "
+                + imports.getPath() + "\n", calls(dir));
+    }
+
+    // an import of a URL, in the model or on the command line
+    @Test
+    public void testUrlImports() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "//# OPTIONS --import=https://example.org/lib.cfr\nA\n");
+        Run run = chocosolverWithStub(dir, MODEL, "--file", model.getPath(), "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("The model imports a URL"));
+        File plain = cfr(dir, "plain.cfr", "A\n");
+        run = chocosolverWithStub(dir, MODEL, "--file", plain.getPath(), "-n", "1", "--import",
+                "http://example.org/lib.cfr");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("The model imports a URL (--import)"));
     }
 }

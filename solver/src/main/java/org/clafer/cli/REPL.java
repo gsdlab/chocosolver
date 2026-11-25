@@ -35,7 +35,7 @@ public class REPL {
       System.out.println("'n'ext                              Generate the next instance.");
       System.out.println("<enter>                             Generate the next instance.");
       System.out.println("'p'rettify                          Toggle prettify on/off.");
-      System.out.println("'r'eload                            Reload the model from the same <file-name.js> file.");
+      System.out.println("'r'eload                            Reload the model from its file: a .cfr file is compiled again.");
       System.out.println("'u'nsatCore                         Compute the set of contradicting constraints if any.");
       System.out.println("min'U'nsat                          Compute the minimal UnSAT core and a near-miss example.");
       System.out.println("'S'etGlobalScope <value>            Set the global scope to the <value> .");
@@ -226,6 +226,11 @@ public class REPL {
             else if (command.equals(commandReloadS) || command.equals(commandReloadL)) {// reloading
                 try {
                     javascriptFile = Utils.readModel(inputFile, options);
+                }
+                catch(Frontend.ModelException | IllegalArgumentException e) {
+                    // the errors of the model, with their positions
+                    System.out.println(e.getMessage());
+                    javascriptFile = null;
                 }
                 catch(Exception e) {
                     System.out.println("Unhandled compilation error occured. Please report this problem.");

@@ -3,8 +3,6 @@ package org.clafer.cli;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -27,6 +25,12 @@ public class Main
                 accepts( "decimal-digits", "Specify the number of fractional digits of decimals (overrides the model's)." )
                     .withRequiredArg().ofType( Integer.class );
                 accepts( "explicit", "The .cfr model is an explicit model (as 'clafer -m clafer' prints it): read it directly, without the Clafer compiler. A model whose first line is '//# OPTIONS --explicit' is one without this option." );
+                accepts( "haskell-frontend", "Compile the .cfr model with the Haskell compiler (clafer -m choco), as before chocosolver 0.6.0, rather than with the Java frontend. Without it, the Haskell compiler compiles only the models that the Java frontend cannot (imports of URLs, restricted imports, [choco| |] escapes) or rejects." );
+                accepts( "import-root", "Allow only local imports inside DIR (repeatable), as clafer's --import-root; a model with imports is then compiled by the Haskell compiler." )
+                    .withRequiredArg().describedAs( "DIR" );
+                accepts( "public-imports", "Allow only URL imports from public addresses, as clafer's --public-imports; a model with imports is then compiled by the Haskell compiler." );
+                accepts( "import-base", "The URL from which the model's text was read, as clafer's --import-base; a model with imports is then compiled by the Haskell compiler." )
+                    .withRequiredArg().describedAs( "URL" );
                 accepts( "file", "Input file in .cfr or .js format" ).withRequiredArg().ofType( File.class )
                     .describedAs( "Clafer model file (.cfr), explicit or not, or Clafer Javascript file (.js)." );
                 accepts( "help", "Show help.").forHelp();
@@ -102,41 +106,11 @@ public class Main
         }
 
         String fileName = inputFile.toString();
-        // If a .cfr file is given, compile it first and change the input file to the resulting .js file,
-        // unless it is an explicit model, which is read directly
+        // a .cfr file that is not an explicit model is compiled first, by the Java frontend
+        // or, as its fallback, by the Haskell compiler (see Frontend)
         boolean explicit = Utils.isExplicitModel(inputFile, options);
-        if (fileName.endsWith(".cfr") && !explicit) {
+        if (fileName.endsWith(".cfr") && !explicit)
             System.out.println("Compiling the Clafer model...");
-            String jsFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".js";
-            new File(jsFileName).delete();
-            // compile the file; clafer's output (its errors) is shown only if there is no .js file
-            String compilerOutput;
-            int exitValue;
-            try {
-                List<String> command = new ArrayList<>(List.of("clafer", "-k", "-m", "choco"));
-                for (Object importedFile : options.valuesOf("import"))
-                    command.add("--import=" + importedFile);
-                command.add(fileName);
-                Process compilerProcess = new ProcessBuilder(command).redirectErrorStream(true).start();
-                compilerOutput = new String(compilerProcess.getInputStream().readAllBytes());
-                exitValue = compilerProcess.waitFor();
-            } catch (Exception e) {
-                System.out.println("Could not run the Clafer compiler (clafer): " + e.getMessage());
-                System.exit(1);
-                return;
-            }
-            // clafer exits with 0 also when the model has no Choco output (e.g., temporal operators)
-            if (exitValue != 0 || !new File(jsFileName).exists()) {
-                System.out.println(compilerOutput.strip());
-                System.out.println("Clafer compilation failed. Aborting...");
-                System.exit(1);
-            }
-
-            // change the inputFile to the resulting .js file
-            fileName = jsFileName;
-            inputFile = new File(fileName);
-        }
-
 
         PrintStream outStream = System.out;
 
@@ -157,6 +131,12 @@ public class Main
             if (options.has( "v"))
                 System.out.println("=========== Parsing+Typechecking " + fileName + "  =============");
             javascriptFile = Utils.readModel(inputFile, options);
+        }
+        catch(Frontend.ModelException e) {
+            // the errors of a .cfr model, with their positions
+            System.out.println(e.getMessage());
+            System.exit(1);
+            return;
         }
         catch(IllegalArgumentException e) {
             if (!explicit)

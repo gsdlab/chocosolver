@@ -46,16 +46,21 @@ public class Utils {
     }
 
     /**
-     * Reads a model: an explicit model with {@link ToAst}, otherwise
-     * a .js file. An explicit model starts from the default scope (its scopes
-     * are in its scope file, see {@link #resolveScopes(File, JavascriptFile, OptionSet)}).
+     * Reads a model: an explicit model with {@link ToAst}, another .cfr
+     * model with {@link Frontend}, otherwise a .js file. An explicit model
+     * starts from the default scope (its scopes are in its scope file, see
+     * {@link #resolveScopes(File, JavascriptFile, OptionSet)}).
      *
      * @throws IllegalArgumentException with the diagnostics, if the explicit
      * model has errors
+     * @throws Frontend.ModelException with the errors, if the .cfr model has
+     * errors
      */
     public static JavascriptFile readModel(File file, OptionSet options) throws Exception {
         if (!isExplicitModel(file, options))
-            return Javascript.readModel(file);
+            return file.getName().endsWith(".cfr")
+                    ? Frontend.read(file, options, System.out)
+                    : Javascript.readModel(file);
         ToAst.Result parsed = ToAst.parse(Files.readString(file.toPath()));
         if (!parsed.diagnostics().isEmpty())
             throw new IllegalArgumentException(parsed.diagnostics().stream()

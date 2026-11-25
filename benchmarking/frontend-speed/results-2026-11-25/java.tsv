@@ -1,0 +1,327 @@
+chocosolver/benchmarking/issue-46/bubbles.cfr	ok	5.08	4.30	4.20
+chocosolver/benchmarking/issue-46/ClaferMooVizAbstractState5.cfr	ok	8.15	8.07	4.39
+chocosolver/benchmarking/issue-46/ClaferMooVizAbstractState.cfr	ok	7.15	6.92	3.62
+chocosolver/benchmarking/issue-46/injective.cfr	ok	0.58	0.57	1.61
+chocosolver/presentation/Animal.cfr	ok	0.59	0.58	1.43
+chocosolver/solver/src/test/resources/failing/gi29-subset-nested-abstracts.cfr	ok	0.57	0.55	1.43
+chocosolver/solver/src/test/resources/failing/gi30-parent-of-nested-abstract.cfr	ok	0.65	0.64	1.41
+chocosolver/solver/src/test/resources/failing/gi31-constraints-not-inherited.cfr	ok	0.62	0.58	1.30
+chocosolver/solver/src/test/resources/org/clafer/frontend/ACCDemo_attributedFeatureModels.cfr	ok	2.63	2.52	1.23
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/BasicCT.cfr	ok	8.18	8.03	1.75
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/BasicDN.cfr	ok	3.87	3.81	2.24
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/BasicFAA.cfr	ok	8.88	8.45	1.94
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/BasicPT.cfr	ok	3.59	3.49	1.39
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/Car.cfr	ok	1.90	1.85	1.05
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/DoorLocksCT.cfr	ok	13.41	11.83	2.10
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/DoorLocksDN.cfr	ok	4.24	4.04	1.51
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/DoorLocksFAA.cfr	ok	14.44	13.61	1.69
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/DoorLocksFM.cfr	ok	1.34	1.31	0.98
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/DoorLocksPT.cfr	ok	5.79	5.59	1.41
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/DoorLocksSys.cfr	ok	44.52	38.45	2.60
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryCT.cfr	ok	7.17	6.94	1.52
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryDN.cfr	ok	1.84	1.80	0.96
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryFAA.cfr	ok	10.39	10.16	1.47
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryPT.cfr	ok	3.57	3.52	1.06
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/Reference_Model.cfr	ok	1.02	1.00	0.76
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/RemoteKeyAccessDN.cfr	ok	1.12	1.02	0.83
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/RemoteKeyAccessFAA.cfr	ok	6.76	6.48	1.21
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/classes_gen/DoorLocks/CentralDoorLocks/RemoteKeyAccessPT.cfr	ok	3.12	3.09	0.97
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/BasicCT.cfr	ok	3.14	3.10	0.90
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/BasicDN.cfr	ok	1.88	1.86	0.82
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/BasicFAA.cfr	ok	5.73	5.65	1.06
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/BasicPT.cfr	ok	3.29	2.79	0.90
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/Car.cfr	ok	1.23	1.18	0.70
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/DoorLocksCT.cfr	ok	9.18	9.05	1.24
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/DoorLocksDN.cfr	ok	2.83	2.80	0.94
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/DoorLocksFAA.cfr	ok	11.85	11.77	1.37
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/DoorLocksFM.cfr	ok	1.11	1.05	0.68
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/DoorLocksPT.cfr	ok	4.63	4.54	1.04
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/DoorLocksSys.cfr	ok	36.90	35.66	2.01
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryCT.cfr	ok	5.99	5.95	1.02
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryDN.cfr	ok	1.54	1.53	0.74
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryFAA.cfr	ok	10.02	9.87	1.36
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/PassiveKeyEntryPT.cfr	ok	3.49	3.47	0.90
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/Reference_Model.cfr	ok	0.93	0.89	0.67
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/RemoteKeyAccessDN.cfr	ok	1.00	0.97	0.66
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/RemoteKeyAccessFAA.cfr	ok	6.24	6.15	1.07
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/DoorLocks/source_gen/DoorLocks/CentralDoorLocks/RemoteKeyAccessPT.cfr	ok	3.00	2.99	0.87
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/Environment/classes_gen/Environment/Car/Car.cfr	ok	1.08	1.08	0.64
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/Environment/classes_gen/Environment/Car/EAST_ADL.cfr	ok	0.86	0.85	0.64
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/Environment/source_gen/Environment/Car/Car.cfr	ok	1.09	1.08	0.65
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/Environment/source_gen/Environment/Car/EAST_ADL.cfr	ok	0.88	0.86	0.62
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/DriverDoor/Car.cfr	ok	2.16	2.14	0.79
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/DriverDoor/DriverWinSys.cfr	ok	21.83	20.83	2.02
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/DriverDoor/DriverWinSysFAA.cfr	ok	4.32	3.95	1.19
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/DriverDoor/DriverWinSysFM.cfr	ok	1.38	1.36	0.74
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/DriverDoor/DriverWinSysHA.cfr	ok	14.00	13.52	1.58
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/DriverDoor/Reference_Model.cfr	ok	1.23	1.23	0.68
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/Car.cfr	ok	1.04	1.02	0.64
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/DriverWinSys.cfr	ok	9.48	9.41	1.83
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/FrontPassWinSys.cfr	ok	13.40	13.29	1.44
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/Reference_Model.cfr	ok	0.94	0.93	0.62
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/Test_WinSysPT.cfr	ok	4.09	4.03	0.85
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/WinSysCT.cfr	ok	2.55	2.54	0.70
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/WinSysDN.cfr	ok	1.28	1.26	0.74
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/WinSysDpl.cfr	ok	8.10	8.04	1.08
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/WinSysFAA.cfr	ok	2.22	2.20	0.78
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/WinSysFM.cfr	ok	1.00	0.99	0.62
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/WinSysHA.cfr	ok	4.92	4.91	0.87
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/classes_gen/PowerWindow/TwoDoor/WinSysPT.cfr	ok	3.56	3.56	0.83
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/DriverDoor/Car.cfr	ok	2.02	2.00	0.76
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/DriverDoor/DriverWinSys.cfr	ok	20.86	20.53	1.78
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/DriverDoor/DriverWinSysFAA.cfr	ok	3.19	3.18	0.86
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/DriverDoor/DriverWinSysFM.cfr	ok	1.27	1.27	0.69
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/DriverDoor/DriverWinSysHA.cfr	ok	13.36	13.30	1.54
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/DriverDoor/Reference_Model.cfr	ok	1.25	1.22	0.68
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/Car.cfr	ok	1.04	1.03	0.58
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/DriverWinSys.cfr	ok	9.62	9.49	1.09
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/FrontPassWinSys.cfr	ok	12.93	12.79	1.21
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/Reference_Model.cfr	ok	0.90	0.89	0.56
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/Test_WinSysPT.cfr	ok	4.00	3.98	0.80
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/WinSysCT.cfr	ok	2.66	2.57	0.69
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/WinSysDN.cfr	ok	1.28	1.28	0.60
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/WinSysDpl.cfr	ok	8.37	8.12	1.05
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/WinSysFAA.cfr	ok	2.18	2.17	0.72
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/WinSysFM.cfr	ok	1.00	1.00	0.59
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/WinSysHA.cfr	ok	5.23	5.15	0.86
+ClaferCaseStudies/MPS/Automotive/BodyDomain/solutions/PowerWindow/source_gen/PowerWindow/TwoDoor/WinSysPT.cfr	ok	3.73	3.72	0.82
+ClaferCaseStudies/PlainClafer/Automotive/BodyDomain/DoorLocks/doorLocks.cfr	ok	68.78	65.44	3.32
+ClaferCaseStudies/PlainClafer/Automotive/BodyDomain/PowerWindow/driverPowerWindow.cfr	ok	29.36	29.18	1.91
+ClaferCaseStudies/PlainClafer/Automotive/BodyDomain/PowerWindow/powerWindow.cfr	ok	41.85	41.72	2.16
+ClaferCaseStudies/PlainClafer/PreviousWork/MurashkinThesis/final_paper_version_driver_opt.cfr	ok	11.47	11.42	1.51
+ClaferCaseStudies/PlainClafer/PreviousWork/MurashkinThesis/final_paper_version_two_window_opt.cfr	ok	24.57	24.08	2.05
+ClaferCaseStudies/PlainClafer/PreviousWork/MurashkinThesis/final_presentation_version.cfr	ok	6.87	6.77	1.19
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/AADLToClafer/AADL_Complete.cfr	ok	79.55	77.60	1.58
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/CaseStudy2.DataCenterResourceAllocation/optimization_isap.cfr	ok	0.87	0.87	0.57
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/CaseStudy2.DataCenterResourceAllocation/optimization_ssap.cfr	ok	0.48	0.47	0.49
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/CaseStudy2.DataCenterResourceAllocation/optimization_tsap.cfr	ok	0.78	0.77	0.54
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/CaseStudy2.DataCenterResourceAllocation/optimization_wsap.cfr	ok	0.48	0.47	0.51
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/CaseStudy.Architecture/first_draft.cfr	ok	1.81	1.79	0.61
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/CaseStudy.Architecture/second_draft.cfr	ok	1.84	1.82	0.66
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/Drafts/constraints.cfr	rejected: ClaferCaseStudies/PlainClafer/PreviousWork/Other/Drafts/constraints.cfr:1:4: Name resolver: 'services' not found within paths:	0.06	0.05	-
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/Drafts/model1.cfr	ok	0.70	0.66	0.53
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/Drafts/model2.cfr	ok	0.63	0.62	0.51
+ClaferCaseStudies/PlainClafer/PreviousWork/Other/Drafts/model3.cfr	ok	7.12	6.01	0.55
+clafer-positive/abstract_extends_abstract_integer_reference.cfr	ok	0.08	0.07	0.36
+clafer-positive/abstract_multiplicity.cfr	ok	0.37	0.36	0.47
+clafer-positive/abstract_reference_clafer.cfr	ok	0.28	0.26	0.41
+clafer-positive/ACCDemo_attributedFeatureModels.cfr	ok	0.94	0.92	0.55
+clafer-positive/ACCDemo_featureModels.cfr	ok	0.19	0.18	0.41
+clafer-positive/ACCDemo_fullClafer.cfr	ok	0.31	0.30	0.45
+clafer-positive/accesscontrol_Intro.cfr	ok	0.17	0.16	0.39
+clafer-positive/afm_check.cfr	ok	0.09	0.09	0.37
+clafer-positive/afm_check_with_inheritance.cfr	ok	0.07	0.07	0.35
+clafer-positive/ancestor_in_reference_constraint.cfr	ok	0.24	0.24	0.42
+clafer-positive/arithmetic.cfr	ok	0.17	0.17	0.39
+clafer-positive/assertionsAndScopes.cfr	ok	0.18	0.15	0.40
+clafer-positive/BMM_model.cfr	ok	2.67	2.62	0.78
+clafer-positive/books_tutorial.cfr	ok	0.80	0.76	0.52
+clafer-positive/cardinality_on_abstract.cfr	ok	0.10	0.10	0.39
+clafer-positive/check_unique_ref_names_with_inheritance.cfr	ok	0.18	0.17	0.40
+clafer-positive/children_via_reference_to_reference.cfr	ok	0.16	0.15	0.38
+clafer-positive/ClaferTools_CommandLineArguments.cfr	ok	0.91	0.90	0.53
+clafer-positive/ClaferToolsDemo_Adding_Quality.cfr	ok	1.28	1.24	0.58
+clafer-positive/ClaferToolsDemo_Existing_Android_Phones.cfr	ok	0.37	0.36	0.46
+clafer-positive/ClaferToolsDemo_Variant_Derivation.cfr	ok	0.33	0.33	0.45
+clafer-positive/ClaferTools_ToolingArchitecture.cfr	ok	1.12	1.11	0.54
+clafer-positive/ClaferWiki-Specific_Help.cfr	ok	0.15	0.15	0.39
+clafer-positive/comments_and_html_directives.cfr	ok	0.10	0.10	0.35
+clafer-positive/compare_reference_targets.cfr	ok	0.46	0.45	0.46
+clafer-positive/constraint_on_unextended_abstract.cfr	ok	0.13	0.13	0.39
+clafer-positive/constraints.cfr	ok	0.33	0.33	0.47
+clafer-positive/cvl_printer_example.cfr	ok	0.27	0.26	0.43
+clafer-positive/decimals.cfr	ok	1.09	0.94	0.58
+clafer-positive/deprecated.cfr	ok	0.20	0.19	0.42
+clafer-positive/dref_in_disjoint_quantifier.cfr	ok	0.17	0.15	0.41
+clafer-positive/duplicate_constraints.cfr	ok	0.14	0.13	0.59
+clafer-positive/EAST-ADL-PowerWindow.cfr	ok	0.29	0.26	0.46
+clafer-positive/eCos_model.cfr	ok	0.53	0.52	0.52
+clafer-positive/EDM_Intro.cfr	ok	0.83	0.82	0.58
+clafer-positive/EDMPoster_Intro.cfr	ok	0.56	0.56	0.53
+clafer-positive/empty_fragments.cfr	ok	0.03	0.03	0.34
+clafer-positive/empty_model.cfr	ok	0.03	0.03	0.34
+clafer-positive/enforcingInverseReferences.cfr	ok	0.23	0.22	0.41
+clafer-positive/escapes.cfr	escape	0.21	0.21	0.42
+clafer-positive/ESC_FMCSA571.126-model.cfr	ok	0.97	0.95	0.61
+clafer-positive/explicit_dref_navigation.cfr	ok	0.55	0.54	0.51
+clafer-positive/extends_nested_abstract_in_context.cfr	ok	0.08	0.08	0.38
+clafer-positive/gi49-setting-references-with-a-union.cfr	ok	1.50	1.44	0.45
+clafer-positive/gi57-root-keyword.cfr	ok	0.15	0.15	0.38
+clafer-positive/gi67-extending-nested-abstract.cfr	ok	0.17	0.12	0.40
+clafer-positive/gi78-extending-nested-abstract.cfr	ok	0.11	0.11	0.39
+clafer-positive/gi84-parent-top-level-abstract.cfr	ok	0.17	0.15	0.40
+clafer-positive/gi86-clafer-cannot-extend-itself.cfr	ok	0.22	0.21	0.38
+clafer-positive/gi89-ref-to-constant.cfr	ok	0.38	0.36	0.72
+clafer-positive/graph_dot_keywords.cfr	ok	0.24	0.24	0.72
+clafer-positive/group_cardinality_after_clafer.cfr	ok	0.19	0.18	0.59
+clafer-positive/group_cardinality_counts_child_instances.cfr	ok	0.06	0.06	0.36
+clafer-positive/groupCardInheritance2.cfr	ok	0.20	0.19	0.42
+clafer-positive/groupCardInheritance.cfr	ok	0.18	0.17	0.41
+clafer-positive/group_children_optionality.cfr	ok	0.22	0.20	0.41
+clafer-positive/i10_this_in_integer_reference.cfr	ok	0.09	0.09	0.37
+clafer-positive/if_then_else.cfr	ok	0.20	0.19	0.41
+clafer-positive/if_then_else_with_references.cfr	ok	0.46	0.45	0.44
+clafer-positive/implicit_and_explicit_this.cfr	ok	0.14	0.13	0.38
+clafer-positive/implicit_dref_in_nested_constraint.cfr	ok	0.11	0.10	0.37
+clafer-positive/implicit_dref_in_union.cfr	ok	0.45	0.45	0.67
+clafer-positive/inherited_reference_not_shared.cfr	ok	0.44	0.42	0.44
+clafer-positive/initialization_of_multiple_references.cfr	ok	0.23	0.23	0.41
+clafer-positive/initializerClocks.cfr	ok	0.15	0.15	0.42
+clafer-positive/initialValueStatic.cfr	ok	0.18	0.18	0.45
+clafer-positive/integer_references_in_nested_subclafers.cfr	ok	0.10	0.10	0.38
+clafer-positive/inverse_references.cfr	ok	0.72	0.70	0.53
+clafer-positive/layout.cfr	ok	0.04	0.04	0.34
+clafer-positive/leftAssocDeref.cfr	ok	0.34	0.34	0.41
+clafer-positive/let_binding.cfr	ok	0.33	0.29	0.43
+clafer-positive/liftingNestedConstraints.cfr	ok	0.17	0.16	0.40
+clafer-positive/Linux_model.cfr	ok	0.63	0.61	0.50
+clafer-positive/manual_transitive_closure.cfr	ok	0.32	0.32	0.42
+clafer-positive/maxMinArithmetic.cfr	ok	1.59	1.55	0.44
+clafer-positive/mergeExpAndSetExpAlloy.cfr	ok	0.41	0.39	0.50
+clafer-positive/mergeExpAndSetExp.cfr	rejected: clafer-positive/mergeExpAndSetExp.cfr:12:24: Chocosolver does not solve real, nor does any backend	0.81	0.66	-
+clafer-positive/minAndMax.cfr	ok	0.14	0.13	0.40
+clafer-positive/multi_objective_deprecated_syntax.cfr	ok	0.60	0.59	0.50
+clafer-positive/multi_objective_five_objectives.cfr	ok	0.85	0.84	0.55
+clafer-positive/mutually_recursive_abstract_clafers.cfr	ok	0.09	0.09	0.37
+clafer-positive/navAndDeref.cfr	ok	0.49	0.48	0.42
+clafer-positive/NECSIS-Workshop_Modeling_Quality_4.cfr	ok	1.16	1.14	0.56
+clafer-positive/NECSIS-Workshop_Modeling_Variability_7.cfr	ok	0.25	0.24	0.42
+clafer-positive/negative.cfr	ok	0.09	0.09	0.37
+clafer-positive/nested_assertions.cfr	ok	0.18	0.17	0.46
+clafer-positive/nested_clafer_extends_enclosing_abstract.cfr	ok	0.11	0.11	0.39
+clafer-positive/nested-ifthenelse.cfr	ok	0.14	0.14	0.39
+clafer-positive/NestedInheritanceAndReference2.cfr	ok	0.36	0.35	0.44
+clafer-positive/nestedInheritanceWithReference.cfr	ok	0.34	0.33	0.48
+clafer-positive/nested_quantifiers_with_membership.cfr	ok	0.18	0.18	0.42
+clafer-positive/noAndNot.cfr	ok	0.11	0.11	0.39
+clafer-positive/noclafer.cfr	ok	1.09	0.65	0.58
+clafer-positive/objectivesMinMax.cfr	ok	0.23	0.23	0.45
+clafer-positive/oclBench_b1.cfr	ok	1.72	1.69	0.75
+clafer-positive/oclBench_b3.cfr	ok	1.25	1.23	0.60
+clafer-positive/optionalClaferInitializer.cfr	ok	0.09	0.09	0.40
+clafer-positive/or_group_cardinality.cfr	ok	0.06	0.06	0.37
+clafer-positive/parent_navigation.cfr	ok	0.13	0.13	0.38
+clafer-positive/parent_of_top_level.cfr	ok	0.52	0.46	0.52
+clafer-positive/paths.cfr	ok	0.51	0.50	0.46
+clafer-positive/path_super.cfr	ok	0.40	0.39	0.49
+clafer-positive/personRelatives.cfr	ok	0.64	0.63	0.52
+clafer-positive/person_tutorial.cfr	ok	0.60	0.60	0.52
+clafer-positive/primitiveTypesAndCoersions.cfr	rejected: clafer-positive/primitiveTypesAndCoersions.cfr:5:6: Chocosolver does not solve real, nor does any backend	0.31	0.29	-
+clafer-positive/product.cfr	ok	0.17	0.17	0.43
+clafer-positive/reals.cfr	rejected: clafer-positive/reals.cfr:1:9: Chocosolver does not solve real, nor does any backend	0.11	0.11	-
+clafer-positive/redefinition.cfr	ok	0.24	0.24	0.43
+clafer-positive/references-in-bound-identifiers.cfr	ok	0.13	0.13	0.40
+clafer-positive/references_to_same_object.cfr	ok	0.20	0.19	0.43
+clafer-positive/reference_to_unextended_abstract.cfr	ok	0.05	0.05	0.37
+clafer-positive/refine_reference_to_later_clafer.cfr	ok	0.10	0.10	0.40
+clafer-positive/reminder-modulo_division.cfr	ok	0.15	0.15	0.41
+clafer-positive/resolution.cfr	ok	0.11	0.11	0.39
+clafer-positive/resolve_name_in_ancestor.cfr	ok	0.12	0.12	0.38
+clafer-positive/same_child_name_in_super_and_sub.cfr	ok	0.06	0.06	0.36
+clafer-positive/scope_at_least_lower_cardinality.cfr	ok	0.06	0.06	0.37
+clafer-positive/scope_from_cardinality_constraints.cfr	ok	0.13	0.12	0.40
+clafer-positive/scope_from_cardinality_constraints_nested.cfr	ok	0.17	0.14	0.40
+clafer-positive/scope_from_group_cardinality.cfr	ok	0.06	0.06	0.38
+clafer-positive/scopes.cfr	ok	0.18	0.17	0.40
+clafer-positive/Scotiabank_Mortgages.cfr	ok	0.33	0.32	0.47
+clafer-positive/set_and_bag_references.cfr	ok	0.06	0.06	0.36
+clafer-positive/set_reference_keys.cfr	ok	0.16	0.15	0.43
+clafer-positive/simpleConstraint.cfr	ok	0.09	0.09	0.53
+clafer-positive/some_quantifier_with_declaration.cfr	ok	0.12	0.12	0.39
+clafer-positive/stop_following_references.cfr	ok	0.13	0.13	0.39
+clafer-positive/string_equality.cfr	ok	0.14	0.14	0.39
+clafer-positive/string_equality_in_inherited_references.cfr	ok	0.16	0.16	0.40
+clafer-positive/subtyping-primitive-types.cfr	ok	0.27	0.26	0.47
+clafer-positive/sum_of_bag_reference.cfr	ok	0.09	0.09	0.37
+clafer-positive/sum_of_union_of_bags.cfr	ok	0.29	0.29	0.44
+clafer-positive/sum_over_inherited_references.cfr	ok	0.16	0.16	0.41
+clafer-positive/telematics.cfr	ok	0.60	0.59	0.50
+clafer-positive/Telematics_PLA.cfr	ok	0.55	0.53	0.51
+clafer-positive/test_neg_typesystem.cfr	ok	0.12	0.12	0.39
+clafer-positive/this_not_required.cfr	ok	0.16	0.16	0.40
+clafer-positive/tmp_absent_reference.cfr	rejected: clafer-positive/tmp_absent_reference.cfr:7:7: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.15	0.13	-
+clafer-positive/tmp_abstract_multiplicity.cfr	rejected: clafer-positive/tmp_abstract_multiplicity.cfr:9:3: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.23	0.21	-
+clafer-positive/tmp_after01.cfr	rejected: clafer-positive/tmp_after01.cfr:6:4: Chocosolver does not solve temporal models: never is a behavioral pattern; Alloy solves them (claferIG)	0.27	0.24	-
+clafer-positive/tmp_afteruntil01.cfr	rejected: clafer-positive/tmp_afteruntil01.cfr:8:18: Chocosolver does not solve temporal models: always is a behavioral pattern; Alloy solves them (claferIG)	0.15	0.15	-
+clafer-positive/tmp_anchor_signs.cfr	rejected: clafer-positive/tmp_anchor_signs.cfr:9:5: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.33	0.31	-
+clafer-positive/tmp_before01.cfr	rejected: clafer-positive/tmp_before01.cfr:8:4: Chocosolver does not solve temporal models: sometime is a behavioral pattern; Alloy solves them (claferIG)	0.13	0.12	-
+clafer-positive/tmp_betweenand01.cfr	rejected: clafer-positive/tmp_betweenand01.cfr:3:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.19	0.18	-
+clafer-positive/tmp_clafertransitions01.cfr	rejected: clafer-positive/tmp_clafertransitions01.cfr:5:17: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.16	0.15	-
+clafer-positive/tmp_clafertransitions02.cfr	rejected: clafer-positive/tmp_clafertransitions02.cfr:5:5: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.16	0.16	-
+clafer-positive/tmp_combinedEGX01.cfr	rejected: clafer-positive/tmp_combinedEGX01.cfr:5:10: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.07	0.07	-
+clafer-positive/tmp_combinedEGX02.cfr	rejected: clafer-positive/tmp_combinedEGX02.cfr:2:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.10	0.10	-
+clafer-positive/tmp_DefaultGlobal.cfr	rejected: clafer-positive/tmp_DefaultGlobal.cfr:11:8: Chocosolver does not solve temporal models: never is a behavioral pattern; Alloy solves them (claferIG)	0.10	0.10	-
+clafer-positive/tmp_enum01.cfr	rejected: clafer-positive/tmp_enum01.cfr:13:7: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.14	0.14	-
+clafer-positive/tmp_eventually01.cfr	rejected: clafer-positive/tmp_eventually01.cfr:3:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_eventually02.cfr	rejected: clafer-positive/tmp_eventually02.cfr:3:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.07	0.07	-
+clafer-positive/tmp_eventually03.cfr	rejected: clafer-positive/tmp_eventually03.cfr:4:10: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.08	0.07	-
+clafer-positive/tmp_eventually04.cfr	rejected: clafer-positive/tmp_eventually04.cfr:6:15: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.10	0.10	-
+clafer-positive/tmp_final01.cfr	rejected: clafer-positive/tmp_final01.cfr:7:3: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.05	0.05	-
+clafer-positive/tmp_final02.cfr	rejected: clafer-positive/tmp_final02.cfr:7:3: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.05	0.05	-
+clafer-positive/tmp_final_inherited_reference.cfr	rejected: clafer-positive/tmp_final_inherited_reference.cfr:13:9: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.51	0.50	-
+clafer-positive/tmp_finally01.cfr	rejected: clafer-positive/tmp_finally01.cfr:8:4: Chocosolver does not solve temporal models: finally is a temporal operator; Alloy solves them (claferIG)	0.07	0.07	-
+clafer-positive/tmp_finally02.cfr	rejected: clafer-positive/tmp_finally02.cfr:7:3: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.08	0.07	-
+clafer-positive/tmp_Global00.cfr	rejected: clafer-positive/tmp_Global00.cfr:6:10: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)	0.09	0.09	-
+clafer-positive/tmp_Global01.cfr	rejected: clafer-positive/tmp_Global01.cfr:6:3: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)	0.10	0.10	-
+clafer-positive/tmp_Global02.cfr	rejected: clafer-positive/tmp_Global02.cfr:6:3: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_Global03.cfr	rejected: clafer-positive/tmp_Global03.cfr:6:3: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.07	0.06	-
+clafer-positive/tmp_Global04.cfr	rejected: clafer-positive/tmp_Global04.cfr:6:3: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.07	0.06	-
+clafer-positive/tmp_Global05.cfr	rejected: clafer-positive/tmp_Global05.cfr:6:4: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_guardedtransitions01.cfr	rejected: clafer-positive/tmp_guardedtransitions01.cfr:7:5: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.26	0.24	-
+clafer-positive/tmp_initializerClocks.cfr	rejected: clafer-positive/tmp_initializerClocks.cfr:12:3: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.18	0.17	-
+clafer-positive/tmp_initially01.cfr	rejected: clafer-positive/tmp_initially01.cfr:6:4: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_initially02.cfr	rejected: clafer-positive/tmp_initially02.cfr:5:3: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.04	0.04	-
+clafer-positive/tmp_initialValue01.cfr	rejected: clafer-positive/tmp_initialValue01.cfr:6:3: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.08	0.08	-
+clafer-positive/tmp_initialValue02.cfr	rejected: clafer-positive/tmp_initialValue02.cfr:5:3: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.07	0.07	-
+clafer-positive/tmp_initialValue03.cfr	rejected: clafer-positive/tmp_initialValue03.cfr:6:3: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.11	0.10	-
+clafer-positive/tmp_initialValue04.cfr	rejected: clafer-positive/tmp_initialValue04.cfr:7:1: Chocosolver does not solve temporal models: finalref is a temporal modifier; Alloy solves them (claferIG)	0.13	0.13	-
+clafer-positive/tmp_initialValue05.cfr	rejected: clafer-positive/tmp_initialValue05.cfr:7:3: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.12	0.12	-
+clafer-positive/tmp_initialValue06.cfr	rejected: clafer-positive/tmp_initialValue06.cfr:11:7: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.18	0.17	-
+clafer-positive/tmp_initialValue07.cfr	rejected: clafer-positive/tmp_initialValue07.cfr:9:24: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.12	0.12	-
+clafer-positive/tmp_liftingNestedConstraints.cfr	rejected: clafer-positive/tmp_liftingNestedConstraints.cfr:5:11: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)	0.13	0.13	-
+clafer-positive/tmp_negated_obligations.cfr	rejected: clafer-positive/tmp_negated_obligations.cfr:8:9: Chocosolver does not solve temporal models: F is a temporal operator; Alloy solves them (claferIG)	0.17	0.16	-
+clafer-positive/tmp_nested_assertions.cfr	rejected: clafer-positive/tmp_nested_assertions.cfr:4:5: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.13	0.12	-
+clafer-positive/tmp_next01.cfr	rejected: clafer-positive/tmp_next01.cfr:6:4: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_next02.cfr	rejected: clafer-positive/tmp_next02.cfr:6:4: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.05	0.05	-
+clafer-positive/tmp_next03.cfr	rejected: clafer-positive/tmp_next03.cfr:6:4: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_next04.cfr	rejected: clafer-positive/tmp_next04.cfr:6:4: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_next05.cfr	rejected: clafer-positive/tmp_next05.cfr:6:4: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_obligation_outlives_instance.cfr	rejected: clafer-positive/tmp_obligation_outlives_instance.cfr:6:5: Chocosolver does not solve temporal models: X is a temporal operator; Alloy solves them (claferIG)	0.14	0.13	-
+clafer-positive/tmp_parent_across_lifetimes.cfr	rejected: clafer-positive/tmp_parent_across_lifetimes.cfr:6:3: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.14	0.14	-
+clafer-positive/tmp_past01.cfr	rejected: clafer-positive/tmp_past01.cfr:9:3: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)	0.21	0.21	-
+clafer-positive/tmp_past02.cfr	rejected: clafer-positive/tmp_past02.cfr:11:22: Chocosolver does not solve temporal models: previous is a temporal operator; Alloy solves them (claferIG)	0.14	0.14	-
+clafer-positive/tmp_refined_reference.cfr	rejected: clafer-positive/tmp_refined_reference.cfr:7:3: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)	0.10	0.10	-
+clafer-positive/tmp_scope_identities.cfr	rejected: clafer-positive/tmp_scope_identities.cfr:5:3: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_set_reference_keys.cfr	rejected: clafer-positive/tmp_set_reference_keys.cfr:10:3: Chocosolver does not solve temporal models: G is a temporal operator; Alloy solves them (claferIG)	0.14	0.13	-
+clafer-positive/tmp_TLSHandshakeProtocol_distributed.cfr	rejected: clafer-positive/tmp_TLSHandshakeProtocol_distributed.cfr:27:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	3.08	2.97	-
+clafer-positive/tmp_TrafficLight1.cfr	rejected: clafer-positive/tmp_TrafficLight1.cfr:4:9: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.22	0.22	-
+clafer-positive/tmp_TrafficLight1_cycle.cfr	rejected: clafer-positive/tmp_TrafficLight1.cfr:4:9: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.40	0.39	-
+clafer-positive/tmp_TrafficLight1_t1.cfr	rejected: clafer-positive/tmp_TrafficLight1.cfr:4:9: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.39	0.35	-
+clafer-positive/tmp_TrafficLight1_t2.cfr	rejected: clafer-positive/tmp_TrafficLight1.cfr:4:9: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.36	0.35	-
+clafer-positive/tmp_TrafficLight1_t3.cfr	rejected: clafer-positive/tmp_TrafficLight1.cfr:4:9: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.34	0.34	-
+clafer-positive/tmp_TrafficLight2.cfr	rejected: clafer-positive/tmp_TrafficLight2.cfr:8:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.28	0.27	-
+clafer-positive/tmp_TrafficLight2_EU.cfr	rejected: clafer-positive/tmp_TrafficLight2.cfr:8:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.44	0.44	-
+clafer-positive/tmp_TrafficLight2_noEU.cfr	rejected: clafer-positive/tmp_TrafficLight2.cfr:8:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.40	0.39	-
+clafer-positive/tmp_TrafficLight3.cfr	rejected: clafer-positive/tmp_TrafficLight3.cfr:20:5: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.31	0.31	-
+clafer-positive/tmp_TrafficLight3_police.cfr	rejected: clafer-positive/tmp_TrafficLight3.cfr:20:5: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.50	0.49	-
+clafer-positive/tmp_TrafficLight5.cfr	ok	0.07	0.07	0.36
+clafer-positive/tmp_TrafficLightH.cfr	rejected: clafer-positive/tmp_TrafficLightH.cfr:8:9: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.27	0.27	-
+clafer-positive/tmp_trafficLight_history.cfr	rejected: clafer-positive/tmp_trafficLight_history.cfr:11:4: Chocosolver does not solve temporal models: initially is a temporal operator; Alloy solves them (claferIG)	0.14	0.14	-
+clafer-positive/tmp_TrafficLightH_resume.cfr	rejected: clafer-positive/tmp_TrafficLightH.cfr:8:9: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.39	0.39	-
+clafer-positive/tmp_transitionconstraint01.cfr	rejected: clafer-positive/tmp_transitionconstraint01.cfr:7:4: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.07	0.06	-
+clafer-positive/tmp_transitionconstraint02.cfr	rejected: clafer-positive/tmp_transitionconstraint02.cfr:7:5: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_transitionconstraint04.cfr	rejected: clafer-positive/tmp_transitionconstraint04.cfr:7:6: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.07	0.07	-
+clafer-positive/tmp_transitionconstraintguard01.cfr	rejected: clafer-positive/tmp_transitionconstraintguard01.cfr:8:8: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.09	0.07	-
+clafer-positive/tmp_transitionconstraintguard02.cfr	rejected: clafer-positive/tmp_transitionconstraintguard02.cfr:8:9: Chocosolver does not solve temporal models: a transition is temporal; Alloy solves them (claferIG)	0.07	0.07	-
+clafer-positive/tmp_transition_in_source_state.cfr	rejected: clafer-positive/tmp_transition_in_source_state.cfr:7:1: Chocosolver does not solve temporal models: final is a temporal modifier; Alloy solves them (claferIG)	0.10	0.10	-
+clafer-positive/tmp_transition_replaced_machine.cfr	rejected: clafer-positive/tmp_transition_replaced_machine.cfr:7:3: Chocosolver does not solve temporal models: initial is a temporal modifier; Alloy solves them (claferIG)	0.14	0.14	-
+clafer-positive/tmp_U01.cfr	rejected: clafer-positive/tmp_U01.cfr:7:4: Chocosolver does not solve temporal models: U is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_until01.cfr	rejected: clafer-positive/tmp_until01.cfr:7:4: Chocosolver does not solve temporal models: U is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_W01.cfr	rejected: clafer-positive/tmp_W01.cfr:7:4: Chocosolver does not solve temporal models: W is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/tmp_weakuntil01.cfr	rejected: clafer-positive/tmp_weakuntil01.cfr:7:4: Chocosolver does not solve temporal models: W is a temporal operator; Alloy solves them (claferIG)	0.06	0.06	-
+clafer-positive/top_level_constraints_with_relational_joins.cfr	ok	0.24	0.24	0.43
+clafer-positive/Tutorial_Intro.cfr	ok	0.65	0.63	0.52
+clafer-positive/types_of_this_and_parent.cfr	ok	0.08	0.08	0.36
+clafer-positive/umlcd_model.cfr	ok	7.93	6.27	0.75
+clafer-positive/unary_minus_alloy.cfr	ok	0.10	0.10	0.39
+clafer-positive/unique_names_for_same_names.cfr	ok	0.09	0.09	0.36

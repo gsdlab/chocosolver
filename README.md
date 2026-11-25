@@ -108,16 +108,31 @@ Option                                  Description
 --file <File: Clafer model file (.cfr), Input file in .cfr or .js format.
   explicit or not, or Clafer Javascript
   file (.js)>
+--haskell-frontend                      Compile the .cfr model with the Haskell compiler (clafer
+                                          -m choco), as before chocosolver 0.6.0, rather than with
+                                          the Java frontend. Without it, the Haskell compiler
+                                          compiles only the models that the Java frontend cannot
+                                          (imports of URLs, restricted imports, [choco| |]
+                                          escapes) or rejects.
 --help                                  Show help.
 --import <Clafer file or URL>           Compile the .cfr model together with the given Clafer
                                           file or URL, relative to the current directory
                                           (repeatable); a model also imports files with
                                           --import in its //# OPTIONS directive.
+--import-base <URL>                     The URL from which the model's text was read, as
+                                          clafer's --import-base; a model with imports is then
+                                          compiled by the Haskell compiler.
+--import-root <DIR>                     Allow only local imports inside DIR (repeatable), as
+                                          clafer's --import-root; a model with imports is then
+                                          compiled by the Haskell compiler.
 --maxint <Integer>                      Specify maximum integer value.
 --minint <Integer>                      Specify minimum integer value.
 --moo                                   Run in multi-objective optimization mode.
 -n <Integer>                            Specify the maximum number of instances.
 --output <File: text file>              Output instances to the given file.
+--public-imports                        Allow only URL imports from public addresses, as
+                                          clafer's --public-imports; a model with imports is then
+                                          compiled by the Haskell compiler.
 --prettify                              Use simple and pretty output format (not formal).
 --repl                                  Run in REPL (interactive) mode.
 --scope <Integer>                       Override the default global scope value.
@@ -138,8 +153,14 @@ The CLI supports four modes of operation:
 
 The last mode is selected when no `-v` and `--repl` are given and the model does not contain optimization objectives.
 
-If the `.cfr` file is given, the CLI will first call the Clafer compiler using `clafer -k -m choco model.cfr`,
-which will produce `model.js`.
+A `.cfr` file is compiled by the Java frontend (chocosolver 0.6.0), in the same JVM, without writing a `.js` file: it reads the model and its imports, resolves it and computes its scopes as the Clafer compiler does, so it gives the same instances as `model.js`, and the compiler's errors at their positions, e.g., `model.cfr:3:6: Name resolver: 'c' not found ...`. The REPL's `reload` compiles the `.cfr` file again.
+The Clafer compiler (`clafer -k -m choco model.cfr`, which writes `model.js`) compiles the model instead with `--haskell-frontend`, and when the Java frontend cannot take it, saying why:
+* the model imports a URL;
+* the model has imports and `--import-root`, `--public-imports` or `--import-base` restricts them;
+* the model has a `[choco| |]` escape, which is JavaScript;
+* the Java frontend rejects the model: if the compiler compiles it, chocosolver solves the compiler's output and prints the Java frontend's errors, to be reported; otherwise they are the model's errors.
+
+chocosolver does not solve temporal models, nor `real` and `double`; the Java frontend reports each, e.g., `model.cfr:3:2: Chocosolver does not solve temporal models: ...`.
 
 An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7), by the frontend module (`frontend/`, see [Clafer's rich and core explicit models](https://github.com/gsdlab/clafer/blob/master/doc/rich-and-core-explicit.md)): chocosolver solves the static explicit models, the rich one, `clafer -m clafer --meta-data model.cfr`, and the core, `clafer -m clafer --core --meta-data model.cfr`. It lowers the rich model to the core as the compiler does (`ToCore`).
 It is a Clafer model with nothing left implicit, as `clafer -m clafer --meta-data model.cfr` writes it to `model.des.cfr`, with every scope in `model.des.cfr-scope`: every name is a UID, every card and group card, `this`, `parent` and `dref` are written out, and nesting is in braces.
