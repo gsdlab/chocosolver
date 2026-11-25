@@ -34,6 +34,16 @@ public final class SyntaxPrinter {
         return render(printer.docs);
     }
 
+    /**
+     * @param exp an expression
+     * @return the text that {@code printTree} prints for it
+     */
+    public static String print(Exp exp) {
+        SyntaxPrinter printer = new SyntaxPrinter();
+        printer.exp(0, exp);
+        return render(printer.docs);
+    }
+
     private void doc(String s) {
         docs.add(s);
     }

@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.clafer.frontend.Symbols.ClaferSymbol;
 import org.clafer.frontend.Symbols.Interval;
 import org.clafer.frontend.Symbols.RefModifier;
@@ -20,28 +18,17 @@ import org.clafer.frontend.Syntax.Ident;
 import org.clafer.frontend.Syntax.Literal;
 
 /**
- * Step 9b: the explicit IR of a model in the full syntax whose constraints are
- * already explicit. The clafers are the {@link Symbols}: their UIDs, supers,
- * references, cards, group cards, modifiers and initializers, with the
- * layout, the braces and the defaults gone. The constraints, objectives,
- * assertions and initial values are copied as written, since resolving names
- * and inserting {@code this}, {@code parent} and {@code dref} is step 10:
- * <ul>
- * <li>{@code this}, {@code noclafer}, and {@code .dref} and {@code .parent}
- * after a navigation become their nodes;</li>
- * <li>every other name is a quantifier's local, the UID of a clafer, or the
- * name of exactly one clafer, which becomes its UID; at the start of a
- * navigation, it is a top-level clafer or an enumeration's literal, since
- * the compiler resolves a nested one in its context;</li>
- * <li>{@code sum} and {@code product} take {@code x.dref}, and a clafer
- * with a primitive reference is compared or computed with through its
- * {@code dref}.</li>
- * </ul>
- * Anything else, such as a bare {@code parent} or {@code let}, is a
- * diagnostic that it needs step 10. As in the compiler, the constraints of a
- * reference to a set expression come first in its clafer, a nested assertion
- * is quantified over the instances of its clafer ({@code all this_ : A.b |}),
- * and the objectives and assertions are collected in pre-order.
+ * The explicit IR of a model in the full syntax, as the compiler gives it
+ * ({@code clafer -m clafer}), and its scopes. The clafers are the
+ * {@link Symbols}: their UIDs, supers, references, cards, group cards,
+ * modifiers and initializers, with the layout, the braces and the defaults
+ * gone. The constraints, objectives, assertions, initial values and
+ * transitions are resolved by the {@link Resolver}, and the scopes are the
+ * compiler's ({@link ScopeAnalysis}). As in the compiler, the constraints of
+ * a reference to a set expression come first in its clafer, a nested
+ * assertion is quantified over the instances of its clafer
+ * ({@code all this_ : A.b |}), and the objectives and assertions are
+ * collected in pre-order.
  * <p>
  * Every rich explicit model is such a model, so it gives its own IR back.
  */
@@ -53,38 +40,101 @@ public final class ToIr {
     /**
      * @param model the explicit IR, or an empty model if the model has
      * errors before this pass
-     * @param diagnostics the errors of the parser, the symbols and this pass
+     * @param diagnostics the errors of the files, the parser, the checks, the
+     * symbols and this pass; an error without a position is at 1:1
+     * @param errors the errors without a position, as the compiler gives
+     * them: of reading the files, and of the checks of the whole model
+     * ({@link ModelChecks}), e.g., clafers named after keywords
+     * @param scopes the scopes of the explicit model's scope file, if it has
+     * no errors
+     * @param files the files of the model, whose lines the diagnostics are in
      */
-    public record Result(Ir.Model model, List<Diagnostic> diagnostics) {
+    public record Result(Ir.Model model, List<Diagnostic> diagnostics, List<String> errors, Optional<Scopes> scopes,
+            ModelFiles files) {
+
+        /**
+         * @return the errors without a position if there are any, else the
+         * diagnostics, each at its position in its file
+         */
+        public List<String> messages() {
+            return errors.isEmpty() ? diagnostics.stream().map(files::format).toList() : errors;
+        }
     }
 
-    private static final Pattern OptionsLine = Pattern.compile("(?m)^//#\\s*OPTIONS\\b(.*)$");
-    private static final Pattern TraceLength = Pattern.compile("--tl[= ](\\d+)");
-    private static final Pattern DecimalDigits = Pattern.compile("--decimal-digits[= ](\\d+)");
+    private static Result failed(List<Diagnostic> diagnostics, ModelFiles files) {
+        return new Result(empty(), List.copyOf(diagnostics), List.of(), Optional.empty(), files);
+    }
 
     /**
-     * Parses a model, finds its symbols, and builds its explicit IR.
+     * The result of an error without a position.
+     */
+    private static Result failed(String error, ModelFiles files) {
+        return new Result(empty(), List.of(new Diagnostic(SourceSpan.at(1, 1), error)), List.of(error),
+                Optional.empty(), files);
+    }
+
+    /**
+     * Parses a model in one file, without reading its imports, finds its
+     * symbols, and builds its explicit IR.
      *
      * @param source the text of a model
      * @return its IR and the errors
      */
     public static Result toIr(String source) {
-        ClaferParser.Result parsed = ClaferParser.parse(source);
-        if (!parsed.diagnostics().isEmpty()) {
-            return new Result(empty(), parsed.diagnostics());
-        }
-        Symbols.Result symbols = Symbols.analyze(parsed.model());
-        if (!symbols.diagnostics().isEmpty()) {
-            return new Result(empty(), symbols.diagnostics());
-        }
-        Matcher digits = DecimalDigits.matcher(optionsLine(source));
-        return toIr(parsed.model(), symbols, options(source),
-                digits.find() ? Optional.of(Integer.parseInt(digits.group(1))) : Optional.empty());
+        return toIr(ModelFiles.of("", source));
     }
 
-    private static String optionsLine(String source) {
-        Matcher m = OptionsLine.matcher(source);
-        return m.find() ? m.group(1) : "";
+    /**
+     * Reads a model and its imports, and builds its explicit IR.
+     *
+     * @param path the model's file
+     */
+    public static Result read(String path) {
+        return toIr(ModelFiles.read(path, List.of()));
+    }
+
+    /**
+     * Builds the explicit IR of the files of a model: their concatenation,
+     * with their options combined.
+     */
+    public static Result toIr(ModelFiles files) {
+        if (!files.errors().isEmpty()) {
+            return new Result(empty(), files.errors().stream().map(e -> new Diagnostic(SourceSpan.at(1, 1), e))
+                    .toList(), files.errors(), Optional.empty(), files);
+        }
+        String source = files.text();
+        ClaferParser.Result parsed = ClaferParser.parse(source);
+        if (!parsed.diagnostics().isEmpty()) {
+            return failed(parsed.diagnostics(), files);
+        }
+        // the compiler's checks before the names are resolved, in its order
+        ModelOptions o = files.options();
+        Syntax.Model model = parsed.model();
+        Optional<String> keywords = ModelChecks.keywordNames(model);
+        if (keywords.isPresent()) {
+            return failed(keywords.get(), files);
+        }
+        List<Diagnostic> clockless = o.explicit() ? ModelChecks.clocklessInitializers(model) : List.of();
+        if (!clockless.isEmpty()) {
+            return failed(clockless, files);
+        }
+        List<Diagnostic> bounds = ModelChecks.initializerBounds(model);
+        if (!bounds.isEmpty()) {
+            return failed(bounds, files);
+        }
+        Optional<String> duplicates = o.checkDuplicates() ? ModelChecks.duplicateNames(model) : Optional.empty();
+        if (duplicates.isPresent()) {
+            return failed(duplicates.get(), files);
+        }
+        Optional<Diagnostic> nonUid = o.skipResolver() ? ModelChecks.nonUidName(model) : Optional.empty();
+        if (nonUid.isPresent()) {
+            return failed(List.of(nonUid.get()), files);
+        }
+        Symbols.Result symbols = Symbols.analyze(model);
+        if (!symbols.diagnostics().isEmpty()) {
+            return failed(symbols.diagnostics(), files);
+        }
+        return toIr(model, symbols, o, files);
     }
 
     private static Ir.Model empty() {
@@ -97,14 +147,8 @@ public final class ToIr {
      * form keeps: {@code --core} and the trace length.
      */
     static Ir.Options options(String source) {
-        Matcher m = OptionsLine.matcher(source);
-        if (!m.find()) {
-            return Ir.Options.Rich;
-        }
-        String line = m.group(1);
-        boolean core = Pattern.compile("(^|\\s)--core(\\s|$)").matcher(line).find();
-        Matcher tl = TraceLength.matcher(line);
-        return new Ir.Options(core, tl.find() ? OptionalInt.of(Integer.parseInt(tl.group(1))) : OptionalInt.empty());
+        ModelOptions o = ModelOptions.of(source);
+        return new Ir.Options(o.core(), o.traceLength());
     }
 
     /**
@@ -123,11 +167,16 @@ public final class ToIr {
      */
     public static Result toIr(Syntax.Model model, Symbols.Result symbols, Ir.Options options,
             Optional<Integer> decimalDigits) {
-        Resolver resolver = new Resolver(symbols, model, decimalDigits);
-        // a temporal model has a trace length, 10 unless given, as in the compiler
-        if (resolver.isDynamic() && options.traceLength().isEmpty()) {
-            options = new Ir.Options(options.core(), OptionalInt.of(10));
-        }
+        ModelOptions o = new ModelOptions(options.core(), options.traceLength(), java.util.OptionalLong.empty(),
+                java.util.OptionalLong.empty(), decimalDigits, true, List.of(), Set.of());
+        return toIr(model, symbols, o, ModelFiles.of("", ""));
+    }
+
+    private static Result toIr(Syntax.Model model, Symbols.Result symbols, ModelOptions o, ModelFiles files) {
+        Resolver resolver = new Resolver(symbols, model, o.decimalDigits());
+        // a temporal model has a trace length, 10 unless given, as in the compiler; a static one has none
+        Ir.Options options = new Ir.Options(o.core(), resolver.isDynamic()
+                ? OptionalInt.of(o.traceLength().orElse(10)) : OptionalInt.empty());
         Builder builder = new Builder(symbols, resolver);
         List<Ir.Element> elements = new ArrayList<>();
         for (Syntax.Declaration d : model.declarations()) {
@@ -145,11 +194,85 @@ public final class ToIr {
         }
         List<Diagnostic> diagnostics = new ArrayList<>(builder.diagnostics);
         diagnostics.addAll(builder.resolver.diagnostics);
+        // the compiler's checks after the names are resolved, in its order
+        if (diagnostics.isEmpty()) {
+            diagnostics.addAll(resolver.initialValueErrors);
+        }
+        Ir.Model ir = new Ir.Model(model.span(), options, elements, builder.objectives, builder.assertions);
+        if (diagnostics.isEmpty() && o.explicit() && o.core()) {
+            diagnostics.addAll(Core.richInCore(ir));
+        }
+        List<String> errors = List.of();
+        if (diagnostics.isEmpty() && o.checkAfm()) {
+            Optional<String> afm = ModelChecks.notAttributedFeatureModel(model, symbols);
+            if (afm.isPresent()) {
+                errors = List.of(afm.get());
+                diagnostics.add(new Diagnostic(SourceSpan.at(1, 1), afm.get()));
+            }
+        }
+        Optional<Scopes> scopes = Optional.empty();
+        if (diagnostics.isEmpty()) {
+            try {
+                scopes = Optional.of(scopes(model, resolver, elements, o));
+            } catch (ScopeAnalysis.Failure e) {
+                diagnostics.add(new Diagnostic(model.span(), e.getMessage()));
+            }
+        }
         diagnostics.sort((a, b) -> a.span().line() != b.span().line()
                 ? Integer.compare(a.span().line(), b.span().line())
                 : Integer.compare(a.span().column(), b.span().column()));
-        return new Result(new Ir.Model(model.span(), options, elements, builder.objectives, builder.assertions),
-                List.copyOf(diagnostics));
+        return new Result(ir, List.copyOf(diagnostics), errors, scopes, files);
+    }
+
+    /**
+     * The scopes of the scope file: every clafer's, 1 unless the analysis
+     * gives another, and the ranges ({@code ChocoModel.chocoModel}).
+     */
+    private static Scopes scopes(Syntax.Model model, Resolver resolver, List<Ir.Element> elements, ModelOptions o) {
+        Map<String, Long> analysis = ScopeAnalysis.scopes(resolver, elements, o.simpleScopes());
+        Map<String, Long> clafers = new java.util.TreeMap<>();
+        for (String uid : uids(elements, new ArrayList<>())) {
+            clafers.put(uid, analysis.getOrDefault(uid, 1L));
+        }
+        long intLow = -128;
+        long intHigh = 127;
+        if (o.minInt().isPresent() || o.maxInt().isPresent()) {
+            intLow = o.minInt().orElse(-128);
+            intHigh = o.maxInt().orElse(127);
+        }
+        int stringLength = 16;
+        boolean[] decimals = {false};
+        int[] longest = {16};
+        Resolver.forEachExp(model, e -> {
+            if (e instanceof Literal l && l.kind() == Syntax.LiteralKind.Str) {
+                longest[0] = Math.max(longest[0], l.text().codePointCount(0, l.text().length()));
+            }
+            if (e instanceof Literal l && l.kind() == Syntax.LiteralKind.Real) {
+                decimals[0] = true;
+            }
+        });
+        stringLength = longest[0];
+        boolean usesDecimals = decimals[0] || resolver.refersToDecimal();
+        long decimalDigits = usesDecimals || o.decimalDigits().isPresent() ? resolver.decimalScale() : 0;
+        return new Scopes(java.util.Collections.unmodifiableMap(clafers), intLow, intHigh, stringLength, decimalDigits);
+    }
+
+    private static List<String> uids(List<Ir.Element> elements, List<String> out) {
+        for (Ir.Element e : elements) {
+            switch (e) {
+                case Ir.EnumDecl en -> {
+                    out.add(en.name().text());
+                    en.literals().forEach(l -> out.add(l.text()));
+                }
+                case Ir.ClaferDecl c -> {
+                    out.add(c.name().text());
+                    uids(c.elements(), out);
+                }
+                default -> {
+                }
+            }
+        }
+        return out;
     }
 
     private static final class Builder {

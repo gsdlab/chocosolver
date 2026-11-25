@@ -461,6 +461,8 @@ final class Resolver {
 
     private final Map<String, C> uidMap = new HashMap<>();
     private final Map<ClaferSymbol, C> bySymbol = new IdentityHashMap<>();
+    // the clafers of the model, without the primitive ones, whose names a clafer may have
+    private final Map<String, C> modelClafers = new HashMap<>();
     private final List<C> topLevel = new ArrayList<>();
     private final List<Node> aClafers;
     private final List<Node> cClafers;
@@ -469,6 +471,18 @@ final class Resolver {
     private final long decimalScale;
     private final Map<C, Env> elementEnvs = new IdentityHashMap<>();
     final List<Diagnostic> diagnostics = new ArrayList<>();
+    /**
+     * The constraints, assertions and transitions after {@code ResolverRoot},
+     * the compiler's {@code IEConstraint}s, which the scope analysis reads.
+     */
+    final List<P> constraints = new ArrayList<>();
+    /**
+     * The errors of the per-instance initializers of the abstract clafers
+     * whose values may have more than one element
+     * ({@code InitializerChecks.unsupportedInitialValues}), which the
+     * compiler gives only for a model without other errors.
+     */
+    final List<Diagnostic> initialValueErrors = new ArrayList<>();
 
     Resolver(Symbols.Result symbols, Syntax.Model model, Optional<Integer> decimalDigits) {
         root = prim(RootIdent, null);
@@ -486,6 +500,7 @@ final class Resolver {
             C c = new C(s.uid(), transIdent(s.name()), parent, s.isAbstract(),
                     s.superClafer().map(ClaferSymbol::uid).orElse(null), s.referenceIds, s, s.card());
             uidMap.putIfAbsent(c.uid, c);
+            modelClafers.putIfAbsent(c.uid, c);
             bySymbol.put(s, c);
         }
         for (ClaferSymbol s : symbols.all()) {
@@ -514,6 +529,21 @@ final class Resolver {
         return dynamic;
     }
 
+    /**
+     * @return the number of fractional digits of decimals:
+     * {@code --decimal-digits}, or the most of a decimal literal
+     */
+    long decimalScale() {
+        return decimalScale;
+    }
+
+    /**
+     * @return whether a clafer refers to decimals ({@code -> decimal})
+     */
+    boolean refersToDecimal() {
+        return uidMap.values().stream().anyMatch(c -> c.symbol != null && c.refIds.contains("decimal"));
+    }
+
     private C prim(String uid, String superUid) {
         C c = new C(uid, uid, "", false, superUid, List.of(), null, Interval.One);
         c.refTyped = true;
@@ -529,7 +559,14 @@ final class Resolver {
         return s == null ? root : bySymbol.get(s);
     }
 
-    private C find(String uid) {
+    /**
+     * @return the clafer of the model with the UID, not a primitive one
+     */
+    C clafer(String uid) {
+        return modelClafers.get(uid);
+    }
+
+    C find(String uid) {
         return uidMap.get(uid);
     }
 
@@ -703,7 +740,10 @@ final class Resolver {
     // The desugarer (Desugarer.hs)
     // ======================================================================
     P desugarExp(Syntax.Exp x) {
-        return pexp(x.span(), desugarExpPrime(x));
+        // a qualified name A\b is at its last name, as in the compiler
+        SourceSpan span = x instanceof Syntax.ClaferId c ? c.name().path().get(c.name().path().size() - 1).span()
+                : x.span();
+        return pexp(span, desugarExpPrime(x));
     }
 
     private E desugarExpPrime(Syntax.Exp x) {
@@ -2091,8 +2131,17 @@ final class Resolver {
                 throw new Abort(typed.span(), "A constraint requires an expression of type 'TBoolean' but got '"
                         + showType(typed) + "'");
             }
-            return gen(root(c, typed, true));
+            return gen(constraintAfterRoot(root(c, typed, true)));
         });
+    }
+
+    /**
+     * Keeps a constraint, an assertion or a transition as the compiler's IR
+     * has it after {@code ResolverRoot}, for the scope analysis.
+     */
+    private P constraintAfterRoot(P rooted) {
+        constraints.add(rooted);
+        return rooted;
     }
 
     /**
@@ -2128,9 +2177,171 @@ final class Resolver {
                 throw new Abort(typed.span(), "An initializer requires a value of the type of its reference, but got '"
                         + showType(typed) + "'");
             }
+            P initial = ((Fun) typed.exp()).args().get(1);
+            if (c.isAbstract && clafer.initializer().equals(Optional.of(Ir.InitKind.EACH)) && !atMostOne(initial)) {
+                initialValueErrors.add(new Diagnostic(initial.span(), "The initializer ':=' of the abstract clafer "
+                        + c.ident + " gives each instance of " + c.ident + " its initial value, which must have at"
+                        + " most one element, but that could not be established for '" + written(initial)
+                        + "' from the declarations (literals, clafers with at most one instance, and the operators"
+                        + " that keep one element). To initialize all the instances of " + c.ident
+                        + " together, write ':= together': abstract " + c.ident + " -> ... := together ..."));
+            }
             P rooted = root(context == root ? null : context, typed, true);
             return gen(((Fun) rooted.exp()).args().get(1));
         });
+    }
+
+    // ------------------------------------------------------------------
+    // The values with at most one element (InitializerChecks.atMostOne)
+    // ------------------------------------------------------------------
+    /**
+     * Whether the value has at most one element, established from the
+     * declarations and from the operators that keep one element, without the
+     * constraints ({@code InitializerChecks.atMostOne}).
+     */
+    private boolean atMostOne(P p) {
+        return switch (p.exp()) {
+            case IntE i -> true;
+            case DecimalE d -> true;
+            case DoubleE d -> true;
+            case StrE s -> true;
+            case Id i when i.id().equals("this") || i.id().equals("parent") -> true;
+            case Id i when i.bind() == Bind.GLOBAL -> {
+                C c = i.bound() == null ? null : find(i.bound());
+                yield c != null && c.isTopLevel() && single(c);
+            }
+            case Fun f when f.args().size() == 1 -> switch (f.op()) {
+                case "#", "sum", "product", "max", "min" -> true;
+                case "-" -> atMostOne(f.args().get(0));
+                default -> false;
+            };
+            case Fun f when f.args().size() == 2 -> {
+                P a = f.args().get(0);
+                P b = f.args().get(1);
+                yield switch (f.op()) {
+                    case "." -> atMostOne(a) && step(b);
+                    case "++" -> atMostOne(a) && atMostOne(b) && written(a).equals(written(b));
+                    case "**" -> atMostOne(a) || atMostOne(b);
+                    case "--" -> atMostOne(a);
+                    case "+", "-", "*", "/", "%" -> atMostOne(a) && atMostOne(b);
+                    default -> false;
+                };
+            }
+            case Fun f when f.args().size() == 3 && f.op().equals("ifthenelse") ->
+                atMostOne(f.args().get(1)) && atMostOne(f.args().get(2));
+            default -> false;
+        };
+    }
+
+    /**
+     * A navigation step from at most one instance to at most one instance.
+     */
+    private boolean step(P p) {
+        if (p.exp() instanceof Id i) {
+            if (i.id().equals("dref") || i.id().equals("parent")) {
+                return true;
+            }
+            if (i.bind() == Bind.GLOBAL) {
+                C c = i.bound() == null ? null : find(i.bound());
+                return c != null && single(c);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * At most one instance under each parent.
+     */
+    private static boolean single(C c) {
+        return !c.isAbstract && (c.card.high() == 0 || c.card.high() == 1);
+    }
+
+    /**
+     * An expression as the compiler writes it in a message: as
+     * {@code printTree} prints it, without the spaces around {@code .} and
+     * {@code ..} ({@code InitializerChecks.written}).
+     */
+    static String written(P p) {
+        return SyntaxPrinter.print(sugar(p)).replace(" . ", ".").replace(" .. ", "..");
+    }
+
+    /**
+     * An expression in the syntax ({@code Desugarer.sugarExp}).
+     */
+    private static Syntax.Exp sugar(P p) {
+        SourceSpan s = p.span();
+        return switch (p.exp()) {
+            case Id i -> {
+                List<Syntax.Ident> path = new ArrayList<>();
+                if (!i.mod().isEmpty()) {
+                    path.add(new Syntax.Ident(s, i.mod()));
+                }
+                path.add(new Syntax.Ident(s, i.id()));
+                yield new Syntax.ClaferId(s, new Syntax.Name(s, path));
+            }
+            case IntE i -> new Syntax.Literal(s, Syntax.LiteralKind.Int, Long.toString(i.value()));
+            case DoubleE d -> new Syntax.Literal(s, Syntax.LiteralKind.Double, Double.toString(d.value()));
+            case DecimalE d -> new Syntax.Literal(s, Syntax.LiteralKind.Real, d.text());
+            case StrE t -> new Syntax.Literal(s, Syntax.LiteralKind.Str, t.text());
+            case Fun f when f.op().equals("ifthenelse") && f.args().size() == 3 ->
+                new Syntax.IfThenElse(s, sugar(f.args().get(0)), sugar(f.args().get(1)), sugar(f.args().get(2)));
+            case Fun f when f.args().size() == 1 -> {
+                Syntax.Exp a = sugar(f.args().get(0));
+                yield switch (f.op()) {
+                    case "initially" -> new Syntax.Anchor(s, true, a);
+                    case "finally" -> new Syntax.Anchor(s, false, a);
+                    default -> new Syntax.Unary(s, sugarUnOp(f.op()), a);
+                };
+            }
+            case Fun f when f.args().size() == 2 ->
+                new Syntax.Binary(s, sugarBinOp(f.op()), sugar(f.args().get(0)), sugar(f.args().get(1)));
+            case Q q when q.decls().isEmpty() -> new Syntax.QuantExp(s, sugarQuant(q.quant()), sugar(q.body()));
+            case Q q when q.decls().size() == 1 -> {
+                D d = q.decls().get(0);
+                List<Syntax.Ident> locals = d.locals().stream().map(l -> new Syntax.Ident(s, l)).toList();
+                yield new Syntax.Quantified(s, sugarQuant(q.quant()), d.disj(),
+                        new Syntax.Decl(s, locals, sugar(d.body())), sugar(q.body()));
+            }
+            default -> throw new IllegalArgumentException("Desugarer.sugarExp': invalid argument: " + p.exp());
+        };
+    }
+
+    private static Syntax.UnaryOp sugarUnOp(String op) {
+        return switch (op) {
+            case "!" -> Syntax.UnaryOp.Neg;
+            case "#" -> Syntax.UnaryOp.Card;
+            case "-" -> Syntax.UnaryOp.Minus;
+            case "max" -> Syntax.UnaryOp.GMax;
+            case "min" -> Syntax.UnaryOp.GMin;
+            case "sum" -> Syntax.UnaryOp.Sum;
+            case "product" -> Syntax.UnaryOp.Product;
+            case "F" -> Syntax.UnaryOp.LtlF;
+            case "G" -> Syntax.UnaryOp.LtlG;
+            case "X" -> Syntax.UnaryOp.LtlX;
+            case "previous" -> Syntax.UnaryOp.Previous;
+            case "once" -> Syntax.UnaryOp.Once;
+            case "historically" -> Syntax.UnaryOp.Historically;
+            default -> throw new IllegalArgumentException(op + "is not an op");
+        };
+    }
+
+    private static Syntax.BinaryOp sugarBinOp(String op) {
+        for (Syntax.BinaryOp b : Syntax.BinaryOp.values()) {
+            if (b.syntax().equals(op)) {
+                return b;
+            }
+        }
+        throw new IllegalArgumentException(op + "is not an op");
+    }
+
+    private static Syntax.Quant sugarQuant(Ir.Quantifier q) {
+        return switch (q) {
+            case ALL -> Syntax.Quant.All;
+            case SOME -> Syntax.Quant.Some;
+            case NO -> Syntax.Quant.No;
+            case LONE -> Syntax.Quant.Lone;
+            case ONE -> Syntax.Quant.One;
+        };
     }
 
     /**
@@ -2149,7 +2360,7 @@ final class Resolver {
                 throw new Abort(typed.span(), "A constraint requires an expression of type 'TBoolean' but got '"
                         + showType(typed) + "'");
             }
-            return gen(root(c, typed, true));
+            return gen(constraintAfterRoot(root(c, typed, true)));
         });
     }
 
@@ -2311,7 +2522,7 @@ final class Resolver {
     /**
      * Applies the function to every expression of the model.
      */
-    private static void forEachExp(Syntax.Model model, java.util.function.Consumer<Syntax.Exp> f) {
+    static void forEachExp(Syntax.Model model, java.util.function.Consumer<Syntax.Exp> f) {
         for (Syntax.Declaration d : model.declarations()) {
             if (d instanceof Syntax.Element e) {
                 forEachExp(e, f);

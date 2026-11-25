@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +18,7 @@ import org.junit.runners.Parameterized.Parameters;
 /**
  * Check 4: the frontend on each positive model {@code P.cfr} of a Clafer
  * checkout next to chocosolver, or at {@code -Dclafer.dir}, prints the rich
- * explicit model that the compiler gives,
+ * explicit model that the compiler gives, with the files it imports,
  * {@code test/regression/P.des.cfr.reg}, without its provenance comments:
  * parsing, symbols, and the names and types of every expression
  * ({@link Resolver}).
@@ -57,10 +56,8 @@ public class ResolverConformanceTest {
 
     @Test
     public void testExplicitModel() throws IOException {
-        String source = Files.readString(model.toPath(), StandardCharsets.UTF_8);
-        assumeFalse("Imports are step 11", source.contains("--import"));
-        ToIr.Result result = ToIr.toIr(source);
-        assertEquals(List.of(), result.diagnostics().stream().map(Diagnostic::toString).toList());
+        ToIr.Result result = ToIr.read(model.getPath());
+        assertEquals(List.of(), result.messages());
         String expected = ExplicitConformanceTest.withoutOrigins(Files.readString(explicit.toPath(), StandardCharsets.UTF_8));
         assertEquals(expected, ExplicitPrinter.print(result.model(), false));
     }
