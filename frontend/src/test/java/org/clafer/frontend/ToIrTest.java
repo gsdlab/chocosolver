@@ -114,23 +114,36 @@ public class ToIrTest {
     }
 
     /**
-     * What the compiler resolves, and this pass does not.
+     * The constraints of each line of a clafer's elements, as the compiler
+     * prints them.
+     */
+    private static List<String> constraints(String source) {
+        ToIr.Result result = ToIr.toIr(source);
+        assertEquals(List.of(), result.diagnostics().stream().map(Diagnostic::toString).toList());
+        return ExplicitPrinter.print(result.model(), false).lines().filter(l -> l.contains("[")).map(String::strip)
+                .toList();
+    }
+
+    /**
+     * The names and types of constraints resolved as the compiler resolves
+     * them ({@code clafer -m clafer}): the value of a reference, a nested
+     * clafer from {@code this}, a name made unique, a let, a bare parent, sum,
+     * the conjunction of a constraint's expressions, a path, and an unknown
+     * name.
      */
     @Test
-    public void testNeedsResolution() {
+    public void testResolution() {
         String model = "abstract Fe\n  cost -> int\nGr : Fe\n  x\n  y\n    x\n";
-        assertEquals(List.of("7:2: The value of cost without .dref (name and type resolution, step 10)"),
-                errors(model + "[Gr.cost = 2]\n"));
-        assertEquals(List.of("7:9: The nested clafer y without a path from this or the top level"
-                + " (name and type resolution, step 10)"), errors(model + "  [some y]\n"));
-        assertEquals(List.of("7:9: The name x is not unique, and not a UID (name and type resolution, step 10)"),
-                errors(model + "  [this.x]\n"));
-        assertEquals(List.of("7:4: let is not lowered yet (name and type resolution, step 10)"),
-                errors(model + "  [let v = 1 in v = 1]\n"));
-        assertEquals(List.of("7:4: A bare parent (name and type resolution, step 10)"), errors(model + "  [parent]\n"));
-        assertEquals(List.of("7:4: sum without .dref (name and type resolution, step 10)"),
-                errors(model + "  [sum Fe.cost > 1]\n"));
-        assertEquals(List.of("7:9: No clafer has the name or UID z (name and type resolution, step 10)"),
+        assertEquals(List.of("[Gr.cost.dref = 2]"), constraints(model + "[Gr.cost = 2]\n"));
+        assertEquals(List.of("[some this.y]"), constraints(model + "  [some y]\n"));
+        assertEquals(List.of("[some this.Gr__x]"), constraints(model + "  [this.x]\n"));
+        assertEquals(List.of("[1 = 1]"), constraints(model + "  [let v = 1 in v = 1]\n"));
+        assertEquals(List.of("[0 < 1]"), constraints(model + "  [parent]\n"));
+        assertEquals(List.of("[(sum Fe.cost.dref) > 1]"), constraints(model + "  [sum Fe.cost > 1]\n"));
+        assertEquals(List.of("[((Gr.cost.dref + 1) = 3) && (some this.Gr__x)]"),
+                constraints(model + "  [Gr.cost.dref + 1 = 3 x]\n"));
+        assertEquals(List.of("[some this.y.y__x]"), constraints(model + "  [ y.x ]\n"));
+        assertEquals(List.of("7:9: Name resolver: 'z' not found within paths:Gr\nin context of '\"Gr\"'"),
                 errors(model + "  [this.z]\n"));
     }
 }
