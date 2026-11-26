@@ -1,9 +1,9 @@
 #!/bin/sh
-# claferg: the Clafer generator, instance generation and optimization with Choco, and the traces of a
+# clafersg: the Clafer generator, instance generation and optimization with Choco, and the traces of a
 # temporal model with Alloy (chocosolver.jar, next to this script, which works through symlinks).
 # chocosolver is its old name, a symlink to it.
 dir="$(dirname "$(readlink -f "$0")")"
-# the MiniSat prover built with optimization, if it is installed next to claferg, as for claferIG;
+# the MiniSat prover built with optimization, if it is installed next to clafersg, as for claferIG;
 # otherwise Alloy uses its own build, which is much slower
 case "$(uname -s)" in
     Darwin) prover="$dir/lib/libminisatprover.dylib" ;;

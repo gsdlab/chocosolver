@@ -685,7 +685,7 @@ public final class AlloyBackend implements Backend {
                 solve();
             }
             case "u", "unsatCore" -> {
-                // claferg's header, with the constraints of claferIG's unsat core, as 'n' lists them
+                // clafersg's header, with the constraints of claferIG's unsat core, as 'n' lists them
                 io.out().println("UNSAT Core command:");
                 List<Constraint> core = present(findRemovable(session.unsatCore()));
                 if (core.isEmpty()) {

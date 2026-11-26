@@ -13,7 +13,7 @@ import org.clafer.ig.ClaferModel.Clafer;
 
 /**
  * The one loop of the solutions, whatever the backend: claferIG's
- * {@code CommandLine.hs}, with claferg's commands. A solution is an instance
+ * {@code CommandLine.hs}, with clafersg's commands. A solution is an instance
  * (Choco) or a trace (Alloy). The loop keeps the solutions shown, the most
  * recent first, and their views: the full view or the diff view
  * ({@code d}), the saved files ({@code e}), the Graphviz graph
@@ -53,7 +53,7 @@ public final class Repl {
         Displayer displayer;
 
         /**
-         * Shows a solution that a backend's command found, e.g., claferg's
+         * Shows a solution that a backend's command found, e.g., clafersg's
          * {@code x} and {@code z}, which becomes the most recent one.
          */
         public void display(Backend.Shown shown) {

@@ -20,7 +20,7 @@ import org.clafer.ig.Repl;
 import org.clafer.ig.SolutionView;
 
 /**
- * A temporal model, whose solutions are traces: claferg solves it with Alloy
+ * A temporal model, whose solutions are traces: clafersg solves it with Alloy
  * 6 in the JVM, as claferIG does, in the REPL ({@code --repl}) or by
  * printing the traces (up to {@code -n}).
  */

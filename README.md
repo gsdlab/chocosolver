@@ -83,8 +83,8 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 ```
 
 The CLI is installed to `solver/target/chocosolver-0.6.0-jar-with-dependencies.jar`;
-however, in the Clafer Tools binary distribution it is called `chocosolver.jar`, with its launcher `claferg`, the Clafer generator
-(`chocosolver`, its old name, is a symlink to `claferg`, so existing scripts and tools keep working). The language server is `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, called `clafer-ls.jar` there.
+however, in the Clafer Tools binary distribution it is called `chocosolver.jar`, with its launcher `clafersg`, the Clafer generator
+(`chocosolver`, its old name, is a symlink to `clafersg`, so existing scripts and tools keep working). The language server is `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, called `clafer-ls.jar` there.
 
 You can deploy the files the same way as in Clafer Tools binary distribution by executing
 
@@ -103,7 +103,7 @@ Development versions from branches `develop` should work well together but this 
 
 # Getting started with the CLI
 
-For usage instructions, start the CLI using the command `claferg --help` (or `chocosolver --help`, its old name), or
+For usage instructions, start the CLI using the command `clafersg --help` (or `chocosolver --help`, its old name), or
 
 ```sh
 java -jar chocosolver.jar --help

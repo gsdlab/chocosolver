@@ -30,8 +30,8 @@ import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 
 /**
- * claferg's REPL for a static model: the Choco backend of the one solution
- * loop ({@link Repl}), with claferg's commands and messages, and the
+ * clafersg's REPL for a static model: the Choco backend of the one solution
+ * loop ({@link Repl}), with clafersg's commands and messages, and the
  * instances as chocosolver prints them.
  */
 public class REPL {
@@ -188,7 +188,7 @@ public class REPL {
 
         @Override
         public void check(Repl.Io io, Integer line, Repl.Displayer display) {
-            io.out().println("The command 'check' is not available for static models yet: run claferg with -v"
+            io.out().println("The command 'check' is not available for static models yet: run clafersg with -v"
                     + " to check the assertions.");
         }
 
@@ -264,7 +264,7 @@ public class REPL {
             String command = commandParts[0];
             switch (command) {
                 case "n", "next" -> {
-                    // claferg's next ignores the arguments
+                    // clafersg's next ignores the arguments
                     Shown shown = next(io);
                     if (shown != null) {
                         context.display(shown);

@@ -111,8 +111,8 @@ public class MainTest {
     // a wrong command line is one line and a pointer to --help, not a Java stack trace
     private static void assertUsageError(Run run, String message) {
         assertEquals(run.output(), 1, run.exitCode());
-        assertTrue(run.output(), run.output().startsWith("claferg: " + message + "\n"));
-        assertTrue(run.output(), run.output().contains("Run claferg --help to see the options."));
+        assertTrue(run.output(), run.output().startsWith("clafersg: " + message + "\n"));
+        assertTrue(run.output(), run.output().contains("Run clafersg --help to see the options."));
         assertFalse(run.output(), run.output().contains("Exception"));
         assertFalse(run.output(), run.output().contains("\tat "));
     }
@@ -254,7 +254,7 @@ public class MainTest {
         assertTrue(run.output(), run.output().contains("The command 'x' is for static models, which Choco solves."));
     }
 
-    // the REPL of a static model: claferg's, with the views of the loop
+    // the REPL of a static model: clafersg's, with the views of the loop
     @Test
     public void testStaticRepl() throws Exception {
         Path dir = Files.createTempDirectory("cfr");
