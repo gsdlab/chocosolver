@@ -265,7 +265,7 @@ public final class ClaferCommand {
             return 0;
         }
         if (cli.version()) {
-            out.println(version() + " (Java frontend; the other modes are forwarded to clafer)");
+            out.println(version());
             return 0;
         }
         if (!cli.modes().isEmpty() && !cli.modes().equals(List.of("clafer"))) {
