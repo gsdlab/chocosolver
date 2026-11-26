@@ -91,4 +91,84 @@ public class NamesConformanceTest {
         System.out.println("NamesConformanceTest: " + models + " models, " + uses + " names, " + checked
                 + " definitions checked");
     }
+
+    /**
+     * Renames each clafer of each model without imports, applies the edits,
+     * and compiles the result: it has no errors, and its names resolve as
+     * before, to clafers of the same new names.
+     */
+    @Test
+    public void renamingEveryClaferKeepsTheModel() throws Exception {
+        int renames = 0;
+        List<String> failures = new ArrayList<>();
+        for (Path model : models()) {
+            String path = model.toAbsolutePath().normalize().toString();
+            String text = Files.readString(model);
+            ModelFiles files = ModelFiles.read(path, List.of());
+            if (files.files().size() != 1) {
+                continue;
+            }
+            ToIr.Result r = ToIr.toIr(files);
+            if (r.names().clafers().isEmpty() || !r.diagnostics().isEmpty()) {
+                continue;
+            }
+            String uri = Path.of(path).toUri().toString();
+            Analysis a = Analysis.of(uri, path, text, p -> Optional.empty());
+            java.util.Set<String> renamed = new java.util.HashSet<>();
+            for (ClaferSymbol c : r.names().clafers()) {
+                // one clafer of each name; a clafer use takes its super's name
+                if (!renamed.add(c.name()) || c.declaration() instanceof org.clafer.frontend.Syntax.ClaferUse) {
+                    continue;
+                }
+                Position at = a.positions().toLsp(c.nameSpan().line(), c.nameSpan().column());
+                Optional<Location> d = a.index().definition(at);
+                if (d.isEmpty()) {
+                    failures.add(model.getFileName() + " " + c.uid() + ": no declaration");
+                    continue;
+                }
+                String newName = "zq" + c.name().replace("'", "");
+                if (r.names().clafers().stream().anyMatch(x -> x.name().equals(newName))) {
+                    continue;
+                }
+                renames++;
+                List<Location> edits = a.index().renameOccurrences(d.get());
+                String after = apply(a.positions(), text, edits, newName);
+                ToIr.Result r2 = ToIr.toIr(ModelFiles.of(path, after));
+                if (!r2.diagnostics().isEmpty()) {
+                    failures.add(model.getFileName() + " " + c.uid() + " to " + newName + ": " + r2.diagnostics().get(0));
+                    continue;
+                }
+                // the same names resolve, in the same order, to the clafers of the same names, renamed
+                List<String> before = r.names().uses().values().stream()
+                        .map(x -> x == c || (x.declaration() instanceof org.clafer.frontend.Syntax.ClaferUse
+                                && x.superClafer().orElse(null) == c) ? newName : x.name()).toList();
+                List<String> now = r2.names().uses().values().stream().map(ClaferSymbol::name).toList();
+                if (!before.equals(now)) {
+                    failures.add(model.getFileName() + " " + c.uid() + " to " + newName + ": " + before + " vs " + now);
+                }
+            }
+        }
+        assertEquals(String.join("\n", failures), 0, failures.size());
+        assertTrue("renames " + renames, renames > 1000);
+        System.out.println("NamesConformanceTest: " + renames + " renames");
+    }
+
+    private static String apply(Positions p, String text, List<Location> edits, String newName) {
+        List<Location> sorted = new ArrayList<>(edits);
+        sorted.sort(java.util.Comparator.comparing((Location l) -> l.getRange().getStart().getLine())
+                .thenComparing(l -> l.getRange().getStart().getCharacter()).reversed());
+        StringBuilder sb = new StringBuilder(text);
+        for (Location l : sorted) {
+            sb.replace(offset(p, l.getRange().getStart()), offset(p, l.getRange().getEnd()), newName);
+        }
+        return sb.toString();
+    }
+
+    private static int offset(Positions p, Position pos) {
+        int o = 0;
+        for (int i = 0; i < pos.getLine(); i++) {
+            o += p.line(i).length() + 1;
+        }
+        return o + pos.getCharacter();
+    }
 }

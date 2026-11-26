@@ -2,13 +2,32 @@ package org.clafer.lsp;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.IntConsumer;
+import org.clafer.frontend.Names;
+import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionList;
+import org.eclipse.lsp4j.CompletionOptions;
+import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DefinitionParams;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.PrepareRenameDefaultBehavior;
+import org.eclipse.lsp4j.PrepareRenameParams;
+import org.eclipse.lsp4j.PrepareRenameResult;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.RenameOptions;
+import org.eclipse.lsp4j.RenameParams;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.WorkspaceEdit;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import org.eclipse.lsp4j.jsonrpc.messages.Either3;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
@@ -61,7 +80,11 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
     /**
      * An open document: its text and its latest analysis.
      */
-    private record Document(String uri, String path, String text, Analysis analysis) {
+    private record Document(String uri, String path, String text, Analysis analysis, Index known) {
+
+        Document(String uri, String path, String text) {
+            this(uri, path, text, null, null);
+        }
     }
 
     /**
@@ -85,6 +108,8 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
         capabilities.setDefinitionProvider(true);
         capabilities.setHoverProvider(true);
         capabilities.setReferencesProvider(true);
+        capabilities.setCompletionProvider(new CompletionOptions(false, List.of(".")));
+        capabilities.setRenameProvider(new RenameOptions(true));
         String version = Optional.ofNullable(ClaferLanguageServer.class.getPackage().getImplementationVersion())
                 .orElse("0.6.0");
         return CompletableFuture.completedFuture(
@@ -117,7 +142,7 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
         @Override
         public void didOpen(DidOpenTextDocumentParams params) {
             String uri = params.getTextDocument().getUri();
-            documents.put(uri, new Document(uri, path(uri), params.getTextDocument().getText(), null));
+            documents.put(uri, new Document(uri, path(uri), params.getTextDocument().getText()));
             analyzeAll();
         }
 
@@ -135,7 +160,7 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
                     text = change.getText();
                 }
             }
-            documents.put(uri, new Document(uri, d.path(), text, null));
+            documents.put(uri, new Document(uri, d.path(), text, null, d.known()));
             analyzeAll();
         }
 
@@ -173,8 +198,10 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
         @Override
         public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
             boolean withDeclaration = params.getContext() == null || params.getContext().isIncludeDeclaration();
-            List<Location> found = index(params.getTextDocument().getUri())
-                    .map(i -> i.references(params.getPosition(), withDeclaration)).orElse(List.of());
+            Optional<Index> index = index(params.getTextDocument().getUri());
+            Optional<Location> declaration = index.flatMap(i -> i.definition(params.getPosition()));
+            List<Location> found = declaration.map(d -> everywhere(d, withDeclaration))
+                    .orElse(index.map(i -> i.references(params.getPosition(), withDeclaration)).orElse(List.of()));
             return CompletableFuture.completedFuture(found);
         }
 
@@ -187,6 +214,45 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
                 return h;
             })).orElse(null);
             return CompletableFuture.completedFuture(hover);
+        }
+
+        @Override
+        public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
+            Document d = documents.get(params.getTextDocument().getUri());
+            List<CompletionItem> items = new ArrayList<>();
+            if (d != null && d.analysis() != null) {
+                for (Index.Completion c : d.analysis().index().completion(params.getPosition(), d.known())) {
+                    CompletionItem item = new CompletionItem(c.label());
+                    item.setKind(c.kind());
+                    item.setDetail(c.detail());
+                    item.setSortText(c.rank() + c.label());
+                    items.add(item);
+                }
+            }
+            return CompletableFuture.completedFuture(Either.forLeft(items));
+        }
+
+        @Override
+        public CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> prepareRename(
+                PrepareRenameParams params) {
+            Optional<Index> index = index(params.getTextDocument().getUri());
+            Position p = params.getPosition();
+            if (index.isEmpty() || index.get().renameTarget(p).isEmpty()) {
+                return CompletableFuture.completedFuture(null);
+            }
+            Range range = index.get().rangeAt(p).orElseThrow();
+            return CompletableFuture.completedFuture(
+                    Either3.forSecond(new PrepareRenameResult(range, index.get().nameAt(p).orElse(""))));
+        }
+
+        @Override
+        public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
+            try {
+                return CompletableFuture.completedFuture(renameAt(params.getTextDocument().getUri(),
+                        params.getPosition(), params.getNewName()));
+            } catch (ResponseErrorException e) {
+                return CompletableFuture.failedFuture(e);
+            }
         }
     };
 
@@ -203,6 +269,70 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
         }
     };
 
+    /**
+     * @return every name in the models of the open documents that refers to
+     * what is declared at a location, each once, the model of each document
+     * in its order
+     */
+    private List<Location> everywhere(Location declaration, boolean withDeclaration) {
+        List<Location> all = new ArrayList<>();
+        for (Document d : documents.values()) {
+            if (d.analysis() == null) {
+                continue;
+            }
+            for (Location l : d.analysis().index().occurrencesOf(declaration, withDeclaration)) {
+                if (all.stream().noneMatch(x -> Index.sameLocation(x, l))) {
+                    all.add(l);
+                }
+            }
+        }
+        return all;
+    }
+
+    /**
+     * The edits that rename a clafer or a local, in every file of the models
+     * of the open documents.
+     */
+    private WorkspaceEdit renameAt(String uri, Position position, String newName) {
+        Index index = index(uri).orElseThrow(() -> refused("The document is not open"));
+        Location declaration = index.renameTarget(position)
+                .orElseThrow(() -> refused("Only the names of clafers and of locals can be renamed"));
+        if (!Names.isClaferName(newName)) {
+            throw refused("'" + newName + "' cannot be the name of a clafer or a local");
+        }
+        if (!index.isLocalAt(position)) {
+            for (Document d : documents.values()) {
+                if (d.analysis() != null && d.analysis().index().occurrencesOf(declaration, true).size() > 0
+                        && !d.analysis().diagnostics().isEmpty()) {
+                    throw refused("Fix the errors of " + d.uri() + " first: the names of a model with errors are"
+                            + " not all known");
+                }
+            }
+        }
+        if (index.nameTaken(position, newName)) {
+            throw refused("The name '" + newName + "' is taken: renaming to it could change what names mean");
+        }
+        Map<String, List<TextEdit>> changes = new LinkedHashMap<>();
+        List<Location> all = new ArrayList<>();
+        for (Document d : documents.values()) {
+            if (d.analysis() != null) {
+                for (Location l : d.analysis().index().renameOccurrences(declaration)) {
+                    if (all.stream().noneMatch(x -> Index.sameLocation(x, l))) {
+                        all.add(l);
+                    }
+                }
+            }
+        }
+        for (Location l : all) {
+            changes.computeIfAbsent(l.getUri(), k -> new ArrayList<>()).add(new TextEdit(l.getRange(), newName));
+        }
+        return new WorkspaceEdit(changes);
+    }
+
+    private static ResponseErrorException refused(String message) {
+        return new ResponseErrorException(new ResponseError(ResponseErrorCode.InvalidParams, message, null));
+    }
+
     private Optional<Index> index(String uri) {
         Document d = documents.get(uri);
         return d == null || d.analysis() == null ? Optional.empty() : Optional.of(d.analysis().index());
@@ -214,7 +344,9 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
     private void analyzeAll() {
         for (Document d : List.copyOf(documents.values())) {
             Analysis a = Analysis.of(d.uri(), d.path(), d.text(), this::openText);
-            documents.put(d.uri(), new Document(d.uri(), d.path(), d.text(), a));
+            // the latest index whose model had its clafers, for completion while the model is broken
+            Index known = a.index().hasClafers() || d.known() == null ? a.index() : d.known();
+            documents.put(d.uri(), new Document(d.uri(), d.path(), d.text(), a, known));
             publish(d.uri(), a.diagnostics());
         }
     }

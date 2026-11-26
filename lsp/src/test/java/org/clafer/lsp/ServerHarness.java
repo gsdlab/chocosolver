@@ -165,6 +165,29 @@ final class ServerHarness implements AutoCloseable {
         return h == null ? null : h.getContents().getRight().getValue();
     }
 
+    List<org.eclipse.lsp4j.CompletionItem> completion(String uri, int line, int character) throws Exception {
+        return server.getTextDocumentService().completion(new org.eclipse.lsp4j.CompletionParams(
+                new TextDocumentIdentifier(uri), new org.eclipse.lsp4j.Position(line, character)))
+                .get(10, TimeUnit.SECONDS).getLeft();
+    }
+
+    /**
+     * @return the prepared rename's range and placeholder, or null if the
+     * name cannot be renamed
+     */
+    org.eclipse.lsp4j.PrepareRenameResult prepareRename(String uri, int line, int character) throws Exception {
+        var r = server.getTextDocumentService().prepareRename(new org.eclipse.lsp4j.PrepareRenameParams(
+                new TextDocumentIdentifier(uri), new org.eclipse.lsp4j.Position(line, character)))
+                .get(10, TimeUnit.SECONDS);
+        return r == null ? null : r.getSecond();
+    }
+
+    org.eclipse.lsp4j.WorkspaceEdit rename(String uri, int line, int character, String newName) throws Exception {
+        return server.getTextDocumentService().rename(new org.eclipse.lsp4j.RenameParams(
+                new TextDocumentIdentifier(uri), new org.eclipse.lsp4j.Position(line, character), newName))
+                .get(10, TimeUnit.SECONDS);
+    }
+
     @Override
     public void close() throws Exception {
         toServer.close();
