@@ -49,6 +49,18 @@
             <artifactId>clafer-frontend</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- Alloy's core jar bundles the classes of slf4j-api 1.7: the jar with the dependencies keeps
+             the first copy of a class, which this one, before Alloy's, makes 2.0.20's -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- the Alloy backend of a temporal model's solutions -->
+        <dependency>
+            <groupId>org.clafer</groupId>
+            <artifactId>clafer-alloy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.choco-solver</groupId>
             <artifactId>choco-solver</artifactId>

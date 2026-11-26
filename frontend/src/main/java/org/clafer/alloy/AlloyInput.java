@@ -68,8 +68,14 @@ final class AlloyInput {
         }
     }
 
+    /**
+     * @param names the Alloy name of each clafer of the core, by UID
+     * @param strings each string literal's integer, in the order of first
+     * occurrence
+     */
     record Input(IClafer root, Set<String> statics, Set<String> staticRefs, Set<String> literals,
-            List<Map.Entry<String, Long>> scopes, int traceLength) {
+            List<Map.Entry<String, Long>> scopes, int traceLength, Map<String, String> names,
+            Map<String, Integer> strings) {
     }
 
     /**
@@ -129,7 +135,7 @@ final class AlloyInput {
             }
         });
         return new Input(root, rename(statics, in), rename(staticRefs, in), rename(literals, in), scopeList,
-                traceLength);
+                traceLength, names, in.strings);
     }
 
     private static Set<String> rename(Set<String> uids, AlloyInput in) {
@@ -258,6 +264,50 @@ final class AlloyInput {
                 return x;
             });
         }
+    }
+
+    /**
+     * The largest integer in the model, as claferIG's
+     * {@code findNecessaryBitwidth} finds it: the absolute values of its
+     * integer literals and the upper bounds of the cardinalities of its
+     * clafers.
+     */
+    static long maxInModel(Model m) {
+        List<Exp> exps = new ArrayList<>();
+        long[] max = {0};
+        maxCards(m.elements(), exps, max);
+        m.objectives().forEach(o -> exps.add(o.exp()));
+        m.assertions().forEach(a -> exps.add(a.exp()));
+        for (Exp e : exps) {
+            maxInts(e, max);
+        }
+        return max[0];
+    }
+
+    private static void maxCards(List<Element> elements, List<Exp> exps, long[] max) {
+        for (Element e : elements) {
+            switch (e) {
+                case Constraint k -> exps.add(k.exp());
+                case RootBlock b -> b.constraints().forEach(k -> exps.add(k.exp()));
+                case ClaferDecl c -> {
+                    max[0] = Math.max(max[0], c.card().high());
+                    c.initializer().ifPresent(i -> exps.add(i.value()));
+                    maxCards(c.elements(), exps, max);
+                }
+                default -> {
+                }
+            }
+        }
+    }
+
+    private static void maxInts(Exp e, long[] max) {
+        if (e instanceof Ir.IntLit i) {
+            max[0] = Math.max(max[0], Math.abs(i.value()));
+        }
+        mapChildren(e, x -> {
+            maxInts(x, max);
+            return x;
+        });
     }
 
     // ----------------------------------------------------------------------

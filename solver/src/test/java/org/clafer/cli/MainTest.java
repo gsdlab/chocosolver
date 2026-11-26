@@ -74,6 +74,22 @@ public class MainTest {
         return new Run(process.exitValue(), output);
     }
 
+    // runs chocosolver with the arguments in a new JVM, with the input on its standard input
+    private static Run chocosolverWithInput(String input, String... args) throws IOException, InterruptedException {
+        List<String> command = new ArrayList<>(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "--enable-native-access=ALL-UNNAMED", "-cp", System.getProperty("java.class.path"),
+                Main.class.getName()));
+        command.addAll(List.of(args));
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        try (var in = process.getOutputStream()) {
+            in.write(input.getBytes());
+        }
+        String output = new String(process.getInputStream().readAllBytes());
+        assertTrue("chocosolver did not end", process.waitFor(60, TimeUnit.SECONDS));
+        return new Run(process.exitValue(), output);
+    }
+
     private static String calls(Path stubDir) throws IOException {
         Path calls = stubDir.resolve("calls");
         return Files.exists(calls) ? Files.readString(calls) : "";
@@ -211,14 +227,50 @@ public class MainTest {
     }
 
     // a temporal model: the Java frontend's message at its temporal construct
+    // a temporal model: its traces, which Alloy finds
     @Test
     public void testTemporalModel() throws Exception {
         Path dir = Files.createTempDirectory("cfr");
         File model = cfr(dir, "model.cfr", "//# OPTIONS --tl=3\nA ?\n[always some A]\n");
-        Run run = chocosolverWithStub(dir, null, "--file", model.getPath());
-        assertEquals(run.output(), 1, run.exitCode());
-        assertTrue(run.output(), run.output().contains(model.getPath()
-                + ":3:2: Chocosolver does not solve temporal models"));
+        Run run = chocosolverWithStub(dir, null, "--file", model.getPath(), "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("=== Trace 1 Begin ===\n\n--- State 0 ---\nA\n"));
+        assertTrue(run.output(), run.output().contains("Generated 1 trace(s)"));
+        assertEquals(run.output(), "", calls(dir));
+    }
+
+    // the REPL of a temporal model: claferIG's, with Alloy
+    @Test
+    public void testTemporalRepl() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "//# OPTIONS --tl=3\nA ?\n[always some A]\n");
+        Run run = chocosolverWithInput("n\nscope\nfork 1\nx A\nq\n", "--file", model.getPath(), "--repl");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().startsWith("Compiling the Clafer model...\n"
+                + "Type 'h' for the list of available REPL commands\n\n=== Trace 1 Begin ===\n"));
+        assertTrue(run.output(), run.output().contains("claferIG> Global scope = 1\n  A scope = 1\n"));
+        assertTrue(run.output(), run.output().contains("No other trace has the states of the last trace before"
+                + " state 1."));
+        assertTrue(run.output(), run.output().contains("The command 'x' is for static models, which Choco solves."));
+    }
+
+    // the REPL of a static model: claferg's, with the views of the loop
+    @Test
+    public void testStaticRepl() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n  b -> integer\n  [b > 2]\n");
+        Run run = chocosolverWithInput("minimize b\nd\nn\nf b\ntl 3\nfoo\nq\n", "--file", model.getPath(),
+                "--repl");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("Type 'help' for the list of available REPL commands\n\n"
+                + "=== Instance 1 Begin ===\n\n"));
+        // minimi'z'e, also by its name
+        assertTrue(run.output(), run.output().matches("(?s).*Minimize: minimize b\n\n=== Instance 2 Begin ===\n\n"
+                + "A \n  b -> int = 3 \n.*"));
+        assertTrue(run.output(), run.output().contains("Each next instance or state is shown as its changes"));
+        assertTrue(run.output(), run.output().contains("The command 'tl' is for temporal models, which Alloy"
+                + " solves."));
+        assertTrue(run.output(), run.output().contains("Unhandled command: foo"));
     }
 
     // a model that the Java frontend rejects and the compiler compiles: the compiler's output, with a note

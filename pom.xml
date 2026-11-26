@@ -13,6 +13,7 @@
 
     <modules>
         <module>frontend</module>
+        <module>alloy</module>
         <module>solver</module>
         <module>lsp</module>
     </modules>

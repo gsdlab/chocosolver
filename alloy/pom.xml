@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.clafer</groupId>
+        <artifactId>chocosolver-parent</artifactId>
+        <version>0.6.0</version>
+    </parent>
+
+    <artifactId>clafer-alloy</artifactId>
+    <packaging>jar</packaging>
+
+    <name>clafer-alloy</name>
+    <description>The Alloy 6 backend of Clafer: the traces of a temporal model, from the Alloy code of the frontend's port of the compiler's AlloyLtl generator, solved by Alloy 6.2.0 in the same JVM, as claferIG solves them.</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.clafer</groupId>
+            <artifactId>clafer-frontend</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- the parser, the compiler API and the translation to Pardinus (with SAT4J) -->
+        <dependency>
+            <groupId>org.alloytools</groupId>
+            <artifactId>org.alloytools.alloy.core</artifactId>
+            <version>6.2.0</version>
+        </dependency>
+        <!-- the native solvers: minisat, and minisat.prover for the unsat cores; the prover of claferIG's
+             optimized build, when it is given in alloy.native.lib.minisatprover, until
+             AlloyTools/org.alloytools.alloy#352 is fixed by #353 -->
+        <dependency>
+            <groupId>org.alloytools</groupId>
+            <artifactId>org.alloytools.pardinus.native</artifactId>
+            <version>6.2.0</version>
+        </dependency>
+    </dependencies>
+</project>

@@ -188,6 +188,13 @@ public final class ClaferParser {
         return new SourceSpan(start.span().line(), start.span().column(), end.span().endLine(), end.span().endColumn());
     }
 
+    // a prefix operator's expression ends with its operand, as the compiler's spans do: the parentheses
+    // around the operand, e.g., of !(F error), are not in its span
+    private static SourceSpan prefix(Token op, Node operand) {
+        return new SourceSpan(op.span().line(), op.span().column(), operand.span().endLine(),
+                operand.span().endColumn());
+    }
+
     private static SourceSpan join(Node a, Node b) {
         return new SourceSpan(a.span().line(), a.span().column(), b.span().endLine(), b.span().endColumn());
     }
@@ -778,7 +785,7 @@ public final class ClaferParser {
         if (t.kind() == TokenKind.KEYWORD && TemporalPrefix.containsKey(t.text())) {
             pos++;
             Exp e = exp10();
-            return new Unary(from(t), TemporalPrefix.get(t.text()), e);
+            return new Unary(prefix(t, e), TemporalPrefix.get(t.text()), e);
         }
         return exp11();
     }
@@ -788,7 +795,7 @@ public final class ClaferParser {
         if (is(t, "!")) {
             pos++;
             Exp e = exp11();
-            return new Unary(from(t), UnaryOp.Neg, e);
+            return new Unary(prefix(t, e), UnaryOp.Neg, e);
         }
         return exp15();
     }
@@ -852,7 +859,7 @@ public final class ClaferParser {
         if (is(t, "max") || is(t, "min")) {
             pos++;
             Exp e = exp20();
-            return new Unary(from(t), t.text().equals("max") ? UnaryOp.GMax : UnaryOp.GMin, e);
+            return new Unary(prefix(t, e), t.text().equals("max") ? UnaryOp.GMax : UnaryOp.GMin, e);
         }
         return exp20();
     }
@@ -864,7 +871,7 @@ public final class ClaferParser {
         if (op != null) {
             pos++;
             Exp e = exp21();
-            return new Unary(from(t), op, e);
+            return new Unary(prefix(t, e), op, e);
         }
         return exp21();
     }

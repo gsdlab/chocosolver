@@ -1,14 +1,17 @@
 package org.clafer.cli;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Optional;
 import java.util.Properties;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.clafer.compiler.ClaferSearchStrategy;
+import org.clafer.frontend.ToIr;
 import org.clafer.javascript.JavascriptFile;
 
 public class Main
@@ -109,7 +112,10 @@ public class Main
         // a .cfr file that is not an explicit model is compiled first, by the Java frontend
         // or, as its fallback, by the Haskell compiler (see Frontend)
         boolean explicit = Utils.isExplicitModel(inputFile, options);
-        if (fileName.endsWith(".cfr") && !explicit)
+        // a temporal model's solutions are traces, which Alloy finds
+        Optional<ToIr.Result> temporal = options.has("v") ? Optional.empty() : Temporal.read(inputFile, options);
+        // the REPL of a temporal model says it, as claferIG's
+        if (fileName.endsWith(".cfr") && !explicit && !(temporal.isPresent() && options.has("repl")))
             System.out.println("Compiling the Clafer model...");
 
         PrintStream outStream = System.out;
@@ -123,6 +129,14 @@ public class Main
         if (!inputFile.exists())
         {
             throw new Exception("File does not exist: " + inputFile.getPath());
+        }
+
+        if (temporal.isPresent()) {
+            if (options.has("repl"))
+                Temporal.runREPL(inputFile, temporal.get(), options);
+            else
+                Temporal.runNormal(inputFile, temporal.get(), options, outStream);
+            return;
         }
 
         // run the different modes

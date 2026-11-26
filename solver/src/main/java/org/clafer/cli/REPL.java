@@ -4,9 +4,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.UnaryOperator;
 import joptsimple.OptionSet;
 import org.clafer.ast.AstClafer;
 import org.clafer.ast.AstModel;
@@ -17,537 +19,524 @@ import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearch;
 import org.clafer.compiler.ClaferSearchStrategy;
 import org.clafer.compiler.ClaferUnsat;
+import org.clafer.ig.Backend;
+import org.clafer.ig.ClaferModel;
+import org.clafer.ig.Repl;
+import org.clafer.ig.Solution;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.javascript.JavascriptFile;
 import org.clafer.objective.Objective;
 import org.clafer.scope.Scope;
 
+/**
+ * claferg's REPL for a static model: the Choco backend of the one solution
+ * loop ({@link Repl}), with claferg's commands and messages, and the
+ * instances as chocosolver prints them.
+ */
 public class REPL {
-    private static int instanceID = 0; // id of an instance generated previously
-
-    private static String prompt(BufferedReader br) throws IOException {
-        System.out.print("\nClaferChocoIG> ");
-        return br.readLine().trim();
-    }
-    public static void printHelp() {
-      System.out.println("'h'elp                              Print the REPL commands.");
-      System.out.println("'n'ext                              Generate the next instance.");
-      System.out.println("<enter>                             Generate the next instance.");
-      System.out.println("'p'rettify                          Toggle prettify on/off.");
-      System.out.println("'r'eload                            Reload the model from its file: a .cfr file is compiled again.");
-      System.out.println("'u'nsatCore                         Compute the set of contradicting constraints if any.");
-      System.out.println("min'U'nsat                          Compute the minimal UnSAT core and a near-miss example.");
-      System.out.println("'S'etGlobalScope <value>            Set the global scope to the <value> .");
-      System.out.println("'s'etScope <claferUID> <value>      Set the scope of the given clafer to the <value>.");
-      System.out.println("'I'ncGlobalScope <value?>           Increase the global scope by <value> or 1 by default.");
-      System.out.println("'i'ncScope <claferUID> <value?>     Increase the scope of the given clafer by the <value>  or 1 by default.");
-      System.out.println("sa'v'eScopes                        Save the currect scopes to a .cfr-scope file.");
-      System.out.println("'m'axInt <value>                    Set the largest allowed integer to <value>.");
-      System.out.println("ma`x`imize <claferUID>              Find a solution where <claferUID>.dref is maximal.");
-      System.out.println("minimiz'e' <claferUID>              Find a solution where <claferUID>.dref is minimal.");
-      System.out.println("sta't's                             Display statistics about the current search.");
-      System.out.println("'O'ptions                           Display the current solver options.");
-      System.out.println("strate'g'y <smaller|larger|random>  Set search strategy to prefer smaller, prefer larger, or random.");
-      System.out.println("'o'ptimizations                     Toggle optimizations basic/full.");
-      System.out.println("symmetry'B'reaking                  Toggle symmetry breaking basic/full.");
-      System.out.println("'q'uit                              Exit the REPL sesssion.");
-    }
-    public static String commandHelpL             = "help";
-    public static String commandHelpS             = "h";
-    public static String commandNextL             = "next";
-    public static String commandNextS             = "n";
-    public static String commandNext              = "";
-    public static String commandPrettifyL         = "prettify";
-    public static String commandPrettifyS         = "p";
-    public static String commandReloadL           = "reload";
-    public static String commandReloadS           = "r";
-    public static String commandUnsatCoreL        = "unsatCore";
-    public static String commandUnsatCoreS        = "u";
-    public static String commandMinUnsatL         = "minUnsat";
-    public static String commandMinUnsatS         = "U";
-    public static String commandSetGlobalScopeL   = "SetGlobalScope";
-    public static String commandSetGlobalScopeS   = "S";
-    public static String commandSetScopeL         = "setScope";
-    public static String commandSetScopeS         = "s";
-    public static String commandIncGlobalScopeL   = "IncGlobalScope";
-    public static String commandIncGlobalScopeS   = "I";
-    public static String commandIncScopeL         = "incScope";
-    public static String commandIncScopeS         = "i";
-    public static String commandSaveScopesL       = "saveScopes";
-    public static String commandSaveScopesS       = "v";
-    public static String commandMaxIntL           = "maxInt";
-    public static String commandMaxIntS           = "m";
-    public static String commandMaximizeL         = "maximize";
-    public static String commandMaximizeS         = "x";
-    public static String commandMinimizeL         = "maximize";
-    public static String commandMinimizeS         = "z";
-    public static String commandStatsL            = "stats";
-    public static String commandStatsS            = "t";
-    public static String commandOptionsL          = "Options";
-    public static String commandOptionsS          = "O";
-    public static String commandOptimizationsL    = "optimizations";
-    public static String commandOptimizationsS    = "o";
-    public static String commandSymmetryBreakingL = "symmetryBreaking";
-    public static String commandSymmetryBreakingS = "B";
-    public static String commandStrategyL         = "strategy";
-    public static String commandStrategyS         = "g";
-    public static String commandQuitL             = "quit";
-    public static String commandQuitS             = "q";
 
     public static void runREPL(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws Exception {
-        // the model's scope file, e.g., model.cfr-scope for model.js, model.des.cfr-scope for model.des.cfr
-        String path = inputFile.getAbsolutePath();
-        String scopesFile = path.substring(0, path.lastIndexOf('.')) + ".cfr-scope";
-
-        Scope scope = Utils.resolveScopes(inputFile, javascriptFile, options);
-
-        ClaferOption compilerOption = javascriptFile.getOption();
-        if (options.has("search"))
-            compilerOption = compilerOption.setStrategy((ClaferSearchStrategy) options.valueOf("search"));
-
-        AstModel model = javascriptFile.getModel();
-        Objective[] objectives = javascriptFile.getObjectives();
-        ClaferSearch solver = null;
-        if (objectives.length == 0)
-              solver = ClaferCompiler.compile(model, scope, compilerOption);
-            else
-              solver = ClaferCompiler.compile(model, scope, objectives, compilerOption);
-
-        boolean prettify = options.has("prettify");
-        boolean addTypes = options.has("addtypes");
-
-        System.out.println("Type 'help' for the list of available REPL commands");
-        if (solver != null)
-            nextInstance(solver, prettify, addTypes);
-
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String s = "";
-
-        /* ****************************************
-        |            Main REPL loop               |
-        **************************************** */
-        while(true) {
-            s = prompt(br);
-
-            if (s.equals(commandQuitS) || s.equals(commandQuitL))
-               break;
-
-            if (s.equals(commandPrettifyS) || s.equals(commandPrettifyL)) {
-                prettify = ! prettify;
-                System.out.println("Prettify: " + (prettify ? "On" : "Off"));
-                continue;
-            }
-
-            if (s.equals(commandStatsL)) {
-                System.out.println(solver.getInternalSolver().getMeasures().toString());
-                continue;
-            }
-
-            if (s.equals(commandOptionsS) || s.equals(commandOptionsL)) {
-                String strategy = (compilerOption.getStrategy() == ClaferSearchStrategy.PreferSmallerInstances)
-                                  ? "smaller"
-                                  : ((compilerOption.getStrategy() == ClaferSearchStrategy.PreferLargerInstances)
-                                      ? "larger" : "random"
-                                    );
-
-                System.out.println
-                ( "Options:"
-                + "\n strate'g'y:         "
-                + strategy
-                + "\n symmetry'B'reaking: "
-                + (compilerOption.isBasicSymmetryBreaking() ? "basic" : "")
-                + (compilerOption.isFullSymmetryBreaking() ? "full" : "")
-                + "\n 'o'ptimizations:    "
-                + (compilerOption.isBasicOptimizations() ? "basic" : "")
-                + (compilerOption.isFullOptimizations() ? "full" : "")
-                + "\n 'm'axInt            "
-                + (scope.getIntHigh())
-                + "\n global'S'cope       "
-                + (scope.getDefaultScope())
-                );
-                continue;
-            }
-
-            if (s.equals(commandOptimizationsS) || s.equals(commandOptimizationsL)) {
-                if (compilerOption.isBasicOptimizations()) {
-                  compilerOption = compilerOption.fullOptimizations();
-                  System.out.println("Optimizations: full");
-                }
-                else  {
-                  compilerOption = compilerOption.basicOptimizations();
-                  System.out.println("Optimizations: basic");
-                }
-                continue;
-            }
-
-            if (s.equals(commandSymmetryBreakingS) || s.equals(commandSymmetryBreakingL)) {
-                if (compilerOption.isBasicSymmetryBreaking()) {
-                  compilerOption = compilerOption.fullSymmetryBreaking();
-                  System.out.println("Symmetry breaking: full");
-                }
-                else  {
-                  compilerOption = compilerOption.basicSymmetryBreaking();
-                  System.out.println("Symmetry breaking: basic");
-                }
-                continue;
-            }
-
-
-            String commandParts[] = s.split(" ");
-            if (s.equals(commandNext) || commandParts.length == 0) { // next instance
-                if (solver == null)
-                    solver = compileModel(model, scope, objectives, compilerOption);
-                nextInstance(solver, prettify, addTypes);
-                continue;
-            }
-
-            String command = commandParts[0];
-
-            if (command.equals(commandNextS) || command.equals(commandNextL)) // next instance
-            {
-                if (solver == null)
-                    solver = compileModel(model, scope, objectives, compilerOption);
-
-                nextInstance(solver, prettify, addTypes);
-            }
-            else if (command.equals(commandMinUnsatS) || command.equals(commandMinUnsatL)) { // unsat
-                System.out.println("Min UNSAT command:");
-                ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
-                // Print the Min-Unsat and near-miss example.
-                printUnsat(unsat.minUnsat());
-            }
-            else if (command.equals(commandUnsatCoreS) || command.equals(commandUnsatCoreL)) {// min unsat
-                System.out.println("UNSAT Core command:");
-                ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
-                // Print the Min-Unsat and near-miss example.
-                printUnsat(unsat.unsatCore());
-            }
-            else if (command.equals(commandReloadS) || command.equals(commandReloadL)) {// reloading
-                try {
-                    javascriptFile = Utils.readModel(inputFile, options);
-                }
-                catch(Frontend.ModelException | IllegalArgumentException e) {
-                    // the errors of the model, with their positions
-                    System.out.println(e.getMessage());
-                    javascriptFile = null;
-                }
-                catch(Exception e) {
-                    System.out.println("Unhandled compilation error occured. Please report this problem.");
-                    System.out.println(e.getMessage());
-                    javascriptFile = null;
-                }
-
-                if (javascriptFile != null) {
-                    model = javascriptFile.getModel();
-                    scope = Utils.resolveScopes(inputFile, javascriptFile, options);
-                    objectives = javascriptFile.getObjectives();
-
-                    solver = compileModel(model, scope, objectives, compilerOption);
-                    if (solver == null)
-                        System.out.println("Could not reload");
-                    else
-                        System.out.println("Reloaded");
-                }
-                else
-                    System.out.println("Could not reload");
-
-            }
-            else if (command.equals(commandSetGlobalScopeS) || command.equals(commandSetGlobalScopeL)) {
-                System.out.println("Set global scope: " + s);
-
-                if (commandParts.length != 2) {
-                    System.out.println("The format of the command is: '" + commandSetGlobalScopeS + " <integer>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-
-                int scopeValue;
-
-                try {
-                    scopeValue = Integer.parseInt(commandParts[1]);
-                }
-                catch(Exception e) {
-                    System.out.println("The scope has to be an integer number. Given '" + commandParts[1] + "'");
-                    continue;
-                }
-
-                scope = scope.toBuilder().defaultScope(scopeValue).toScope();
-                solver = compileModel(model, scope, objectives, compilerOption);
-
-                if (solver != null)
-                    System.out.println("Model is ready after the scope change");
-            }
-            else if (command.equals(commandIncGlobalScopeS) || command.equals(commandIncGlobalScopeL)) {
-                System.out.println("Increase global scope: " + s);
-
-                if (commandParts.length > 2) {
-                    System.out.println("The format of the command is: '" + commandIncGlobalScopeS + " <integer?>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-
-                int scopeValue = 1; // default increase by 1
-
-                if (commandParts.length == 2) {
-                  try {
-                      scopeValue = Integer.parseInt(commandParts[1]);
-                  }
-                  catch(Exception e) {
-                      System.out.println("The scope has to be an integer number. Given '" + commandParts[1] + "'");
-                      continue;
-                  }
-                }
-
-                scope = scope.toBuilder().adjustDefaultScope(scopeValue).toScope();
-                solver = compileModel(model, scope, objectives, compilerOption);
-
-                if (solver != null)
-                    System.out.println("Model is ready after the scope change");
-            }
-            else if (command.equals(commandMaxIntS) || command.equals(commandMaxIntL)) {
-                System.out.println("Max Integer: " + s);
-
-                if (commandParts.length != 2) {
-                    System.out.println("The format of the command is: '" + commandMaxIntS + " <integer>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-
-                int scopeHigh;
-
-                try {
-                    scopeHigh = Integer.parseInt(commandParts[1]);
-                }
-                catch(Exception e) {
-                    System.out.println("Expected integer numbers. Given '" + commandParts[1] + "' '" + commandParts[2] + "'");
-                    continue;
-                }
-
-                int scopeLow = -(scopeHigh + 1);
-                scope = scope.toBuilder().intLow(scopeLow).intHigh(scopeHigh).toScope();
-                solver = compileModel(model, scope, objectives, compilerOption);
-
-                if (solver != null)
-                    System.out.println("Model is ready after the scope change");
-
-            }
-            else if (command.equals(commandMaximizeS) || command.equals(commandMaximizeL)) {
-                System.out.println("Maximize: " + s);
-
-                if (commandParts.length != 2) {
-                    System.out.println("The format of the command is: '" + commandMaximizeS + " <claferUID>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-
-                String claferName = commandParts[1];
-                AstClafer clafer = Utils.getModelChildByName(model, claferName);
-                if (clafer == null) {
-                    System.out.println("The clafer is not found: '" + claferName + "'");
-                    continue;
-                }
-
-                if (!clafer.hasRef()) {
-                    System.out.println("Cannot maximize " + clafer + " because it is not a reference.");
-                    continue;
-                }
-                solver = ClaferCompiler.compile(model, scope, Objective.maximize(sum(global(clafer))));
-
-                nextInstance(solver, prettify, addTypes);
-            }
-            else if (command.equals(commandMinimizeS) || command.equals(commandMinimizeL)) {
-                System.out.println("Minimize: " + s);
-
-                if (commandParts.length != 2) {
-                    System.out.println("The format of the command is: '" + commandMinimizeS + " <claferUID>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-
-                String claferName = commandParts[1];
-                AstClafer clafer = Utils.getModelChildByName(model, claferName);
-                if (clafer == null) {
-                    System.out.println("The clafer is not found: '" + claferName + "'");
-                    continue;
-                }
-
-                if (!clafer.hasRef()) {
-                    System.out.println("Cannot maximize " + clafer + " because it is not a reference.");
-                    continue;
-                }
-                solver = ClaferCompiler.compile(model, scope, Objective.minimize(sum(global(clafer))));
-
-                nextInstance(solver, prettify, addTypes);
-            }
-            else if (command.equals(commandSaveScopesS) || command.equals(commandSaveScopesL)) { // getting list of scopes
-                List<ClaferNameScopePair> claferScopePairs = new ArrayList<ClaferNameScopePair>();
-
-                List<AstClafer> allClafers = Utils.getAllModelClafers(model);
-
-                for (AstClafer curClafer: allClafers) {
-                    int curScope;
-
-                    try {
-                        curScope = scope.getScope(curClafer);
-                    }
-                    catch(Exception e) {
-                        curScope = 0;
-                    }
-
-                    claferScopePairs.add(new ClaferNameScopePair(curClafer.getName(), curScope));
-                }
-
-                Collections.sort(claferScopePairs);
-
-                Utils.produceScopeFile(claferScopePairs, scopesFile);
-            }
-            else if (command.equals(commandSetScopeS) || command.equals(commandSetScopeL)) {
-                System.out.println("Set individual scope: " + s);
-
-                if (commandParts.length != 3) {
-                    System.out.println("The format of the command is: '" + commandSetScopeS + " <claferUID> <integer>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-
-                int claferScopeValue;
-
-                try {
-                    claferScopeValue = Integer.parseInt(commandParts[2]);
-                }
-                catch(Exception e) {
-                    System.out.println("The scope has to be an integer number. Given '" + commandParts[2] + "'");
-                    continue;
-                }
-
-                String claferName = commandParts[1];
-                AstClafer clafer = Utils.getModelChildByName(model, claferName);
-                if (clafer == null) {
-                    System.out.println("The clafer is not found: '" + claferName + "'");
-                    continue;
-                }
-
-                scope = scope.toBuilder().setScope(clafer, claferScopeValue).toScope();
-                solver = compileModel(model, scope, objectives, compilerOption);
-
-                if (solver != null)
-                    System.out.println("Model is ready after the scope change");
-
-            }
-            else if (command.equals(commandIncScopeS) || command.equals(commandIncScopeL)) {
-                System.out.println("Increase individual scope: " + s);
-
-                if (commandParts.length < 2 || commandParts.length > 3) {
-                    System.out.println("The format of the command is: '" + commandIncScopeS + " <claferUID> <integer?>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-
-                int claferScopeValue = 1;  // Default increase by 1
-                if (commandParts.length == 3) {
-                  try {
-                      claferScopeValue = Integer.parseInt(commandParts[2]);
-                  }
-                  catch(Exception e) {
-                      System.out.println("The scope has to be an integer number. Given '" + commandParts[2] + "'");
-                      continue;
-                  }
-                }
-
-                String claferName = commandParts[1];
-                AstClafer clafer = Utils.getModelChildByName(model, claferName);
-                if (clafer == null) {
-                    System.out.println("The clafer is not found: '" + claferName + "'");
-                    continue;
-                }
-
-                scope = scope.toBuilder().adjustScope(clafer, claferScopeValue).toScope();
-                solver = compileModel(model, scope, objectives, compilerOption);
-
-                if (solver != null)
-                    System.out.println("Model is ready after the scope change");
-            }
-            else if (command.equals(commandStrategyS) || command.equals(commandStrategyL)) {
-                if (commandParts.length != 2 ||
-                    (!"smaller".equals(commandParts[1]) &&
-                     !"larger".equals(commandParts[1]) &&
-                     !"random".equals(commandParts[1]))) {
-                    System.out.println("The format of the command is: '" + commandStrategyS + " <smaller|larger|random>'");
-                    System.out.println("Given: '" + s + "'");
-                    continue;
-                }
-                switch (commandParts[1]) {
-                  case "smaller":
-                    compilerOption = compilerOption.setStrategy(ClaferSearchStrategy.PreferSmallerInstances);
-                    System.out.println("Search strategy: smaller");
-                    break;
-                  case "larger":
-                    compilerOption = compilerOption.setStrategy(ClaferSearchStrategy.PreferLargerInstances);
-                    System.out.println("Search strategy: larger");
-                    break;
-                  case "random":
-                    System.out.println("Search strategy: random");
-                    compilerOption = compilerOption.setStrategy(ClaferSearchStrategy.Random);
-                    break;
-                }
-                continue;
-            }
-
-
-            else if (command.equals(commandHelpS) || command.equals(commandHelpL)) {
-                printHelp();
-            }
-            else
-                System.out.println("Unhandled command: " + s);
-        }
+        ChocoBackend backend = new ChocoBackend(inputFile, javascriptFile, options);
+        new Repl(backend, new Repl.Io(new BufferedReader(new InputStreamReader(System.in)), System.out, System.err),
+                false).run();
     }
 
-    private static void nextInstance(ClaferSearch solver, boolean prettify, boolean addTypes) throws IOException {
-        if (solver == null) {
-            System.out.println("Could not start the instantiation");
-            return;
+    public static void printHelp() {
+        System.out.print(ChocoBackend.Help);
+    }
+
+    /**
+     * The Choco backend.
+     */
+    static final class ChocoBackend implements Backend {
+
+        static final String Help = """
+                'h'elp                              Print the REPL commands.
+                'n'ext                              Generate the next instance.
+                <enter>                             Generate the next instance.
+                'p'rettify                          Toggle prettify on/off.
+                'r'eload                            Reload the model from its file: a .cfr file is compiled again.
+                'u'nsatCore                         Compute the set of contradicting constraints if any.
+                min'U'nsat                          Compute the minimal UnSAT core and a near-miss example.
+                'S'etGlobalScope <value>            Set the global scope to the <value> .
+                's'etScope <claferUID> <value>      Set the scope of the given clafer to the <value>.
+                'I'ncGlobalScope <value?>           Increase the global scope by <value> or 1 by default.
+                'i'ncScope <claferUID> <value?>     Increase the scope of the given clafer by the <value>  or 1 by default.
+                sa'v'eScopes                        Save the currect scopes to a .cfr-scope file.
+                'scope'                             Print the global scope and the scope of each clafer.
+                'm'axInt <value>                    Set the largest allowed integer to <value>.
+                ma`x`imize <claferUID>              Find a solution where <claferUID>.dref is maximal.
+                minimi'z'e <claferUID>              Find a solution where <claferUID>.dref is minimal.
+                sta't's                             Display statistics about the current search.
+                'O'ptions                           Display the current solver options.
+                strate'g'y <smaller|larger|random>  Set search strategy to prefer smaller, prefer larger, or random.
+                'o'ptimizations                     Toggle optimizations basic/full.
+                symmetry'B'reaking                  Toggle symmetry breaking basic/full.
+                'd'iff                              Show each next instance as its changes from the previous one, or in full.
+                sav'e'                              Save the instances shown so far to <model file name>.<number>.data.
+                'dot'                               Save the most recent instance as a Graphviz graph.
+                'f'ind <name>                       Print the clafer with the given name of the most recent instance.
+                'q'uit                              Exit the REPL sesssion.
+                """;
+
+        private final File inputFile;
+        private final OptionSet options;
+        private final String scopesFile;
+        private JavascriptFile javascriptFile;
+        private Scope scope;
+        private ClaferOption compilerOption;
+        private AstModel model;
+        private Objective[] objectives;
+        private ClaferSearch solver;
+        private boolean prettify;
+        private final boolean addTypes;
+        private int instanceID = 0; // id of an instance generated previously
+
+        ChocoBackend(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws IOException {
+            this.inputFile = inputFile;
+            this.javascriptFile = javascriptFile;
+            this.options = options;
+            // the model's scope file, e.g., model.cfr-scope for model.js, model.des.cfr-scope for model.des.cfr
+            String path = inputFile.getAbsolutePath();
+            this.scopesFile = path.substring(0, path.lastIndexOf('.')) + ".cfr-scope";
+            this.scope = Utils.resolveScopes(inputFile, javascriptFile, options);
+            ClaferOption option = javascriptFile.getOption();
+            if (options.has("search")) {
+                option = option.setStrategy((ClaferSearchStrategy) options.valueOf("search"));
+            }
+            this.compilerOption = option;
+            this.model = javascriptFile.getModel();
+            this.objectives = javascriptFile.getObjectives();
+            this.prettify = options.has("prettify");
+            this.addTypes = options.has("addtypes");
         }
 
-        if (solver.find()) {
-            instanceID++;
-            System.out.println("\n=== Instance " + instanceID + " Begin ===\n");
+        @Override
+        public boolean isDynamic() {
+            return false;
+        }
 
+        @Override
+        public String prompt() {
+            return "\nClaferChocoIG> ";
+        }
+
+        @Override
+        public String help() {
+            return Help;
+        }
+
+        @Override
+        public void start(Repl.Io io) {
+            solver = objectives.length == 0
+                    ? ClaferCompiler.compile(model, scope, compilerOption)
+                    : ClaferCompiler.compile(model, scope, objectives, compilerOption);
+            io.out().println("Type 'help' for the list of available REPL commands");
+        }
+
+        @Override
+        public Shown next(Repl.Io io) throws IOException {
+            if (solver == null) {
+                solver = compileModel(io);
+            }
+            return nextInstance(io);
+        }
+
+        private Shown nextInstance(Repl.Io io) throws IOException {
+            if (solver == null) {
+                io.out().println("Could not start the instantiation");
+                return null;
+            }
+            if (!solver.find()) {
+                io.out().println("No more instances found. Consider increasing scopes.");
+                return null;
+            }
             InstanceModel instance = solver.instance();
-
-            if (prettify)
-                instance.print(System.out, addTypes);
-            else
-                for (InstanceClafer c : instance.getTopClafers())
-                    Utils.printClafer(c, System.out);
-            System.out.println("\n--- Instance " + (instanceID) + " End ---\n");
+            StringBuilder text = new StringBuilder();
+            if (prettify) {
+                instance.print(text, addTypes);
+            } else {
+                for (InstanceClafer c : instance.getTopClafers()) {
+                    Utils.printClafer(c, text);
+                }
+            }
+            return new Shown(new Solution.Instance(tree(instance), text.toString()), null);
         }
-        else
-            System.out.println("No more instances found. Consider increasing scopes.");
-    }
 
-    private static ClaferSearch compileModel(AstModel model, Scope scope, Objective[] objectives, ClaferOption compilerOption) {
-        ClaferSearch solver;
-        instanceID = 0; // reset instance ID
-        try {
-            if (objectives.length == 0)
-              solver = ClaferCompiler.compile(model, scope, compilerOption);
-            else
-              solver = ClaferCompiler.compile(model, scope, objectives, compilerOption);
+        @Override
+        public String show(int n, Shown shown) {
+            return "\n=== Instance " + n + " Begin ===\n\n" + ((Solution.Instance) shown.solution()).text()
+                    + "\n--- Instance " + n + " End ---\n\n";
         }
-        catch (Exception e) {
-            solver = null;
-            System.out.println("Message: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return solver;
-    }
 
-    // The result of an unsat command is null when removing constraints cannot make the model satisfiable
-    private static void printUnsat(Object unsat) {
-        System.out.println(unsat == null
-                ? "No constraints to report: the model is unsatisfiable without them. Check the cardinalities or increase the scopes."
-                : unsat);
+        @Override
+        public int number(Repl.Context context) {
+            return ++instanceID;
+        }
+
+        @Override
+        public Shown fork(Repl.Io io, int state) {
+            return null;
+        }
+
+        @Override
+        public Shown nextConfiguration(Repl.Io io) {
+            io.out().println("The command 'config' is not available for static models yet.");
+            return null;
+        }
+
+        @Override
+        public void check(Repl.Io io, Integer line, Repl.Displayer display) {
+            io.out().println("The command 'check' is not available for static models yet: run claferg with -v"
+                    + " to check the assertions.");
+        }
+
+        @Override
+        public UnaryOperator<String> names() {
+            return uid -> uid;
+        }
+
+        @Override
+        public String modelFileName() {
+            return inputFile.getName();
+        }
+
+        @Override
+        public void quit() {
+        }
+
+        @Override
+        public void unknown(Repl.Io io, String input) {
+            io.out().println("Unhandled command: " + input.trim());
+        }
+
+        private ClaferSearch compileModel(Repl.Io io) {
+            ClaferSearch s;
+            instanceID = 0; // reset instance ID
+            try {
+                s = objectives.length == 0
+                        ? ClaferCompiler.compile(model, scope, compilerOption)
+                        : ClaferCompiler.compile(model, scope, objectives, compilerOption);
+            } catch (Exception e) {
+                s = null;
+                io.out().println("Message: " + e.getMessage());
+                e.printStackTrace(io.err());
+            }
+            return s;
+        }
+
+        // The result of an unsat command is null when removing constraints cannot make the model satisfiable
+        private static void printUnsat(Repl.Io io, Object unsat) {
+            io.out().println(unsat == null
+                    ? "No constraints to report: the model is unsatisfiable without them. Check the cardinalities or increase the scopes."
+                    : unsat);
+        }
+
+        private void recompiled(Repl.Io io) {
+            solver = compileModel(io);
+            if (solver != null) {
+                io.out().println("Model is ready after the scope change");
+            }
+        }
+
+        private Integer integer(Repl.Io io, String value) {
+            try {
+                return Integer.parseInt(value);
+            } catch (Exception e) {
+                io.out().println("The scope has to be an integer number. Given '" + value + "'");
+                return null;
+            }
+        }
+
+        private AstClafer clafer(Repl.Io io, String claferName) {
+            AstClafer clafer = Utils.getModelChildByName(model, claferName);
+            if (clafer == null) {
+                io.out().println("The clafer is not found: '" + claferName + "'");
+            }
+            return clafer;
+        }
+
+        @Override
+        public boolean command(Repl.Io io, String s, List<String> words, Repl.Context context) throws Exception {
+            s = s.trim();
+            String[] commandParts = s.split(" ");
+            String command = commandParts[0];
+            switch (command) {
+                case "n", "next" -> {
+                    // claferg's next ignores the arguments
+                    Shown shown = next(io);
+                    if (shown != null) {
+                        context.display(shown);
+                    }
+                }
+                case "p", "prettify" -> {
+                    prettify = !prettify;
+                    io.out().println("Prettify: " + (prettify ? "On" : "Off"));
+                }
+                case "t", "stats" -> io.out().println(solver.getInternalSolver().getMeasures().toString());
+                case "O", "Options" -> {
+                    String strategy = (compilerOption.getStrategy() == ClaferSearchStrategy.PreferSmallerInstances)
+                            ? "smaller"
+                            : ((compilerOption.getStrategy() == ClaferSearchStrategy.PreferLargerInstances)
+                            ? "larger" : "random");
+                    io.out().println("Options:"
+                            + "\n strate'g'y:         " + strategy
+                            + "\n symmetry'B'reaking: "
+                            + (compilerOption.isBasicSymmetryBreaking() ? "basic" : "")
+                            + (compilerOption.isFullSymmetryBreaking() ? "full" : "")
+                            + "\n 'o'ptimizations:    "
+                            + (compilerOption.isBasicOptimizations() ? "basic" : "")
+                            + (compilerOption.isFullOptimizations() ? "full" : "")
+                            + "\n 'm'axInt            " + (scope.getIntHigh())
+                            + "\n global'S'cope       " + (scope.getDefaultScope()));
+                }
+                case "o", "optimizations" -> {
+                    if (compilerOption.isBasicOptimizations()) {
+                        compilerOption = compilerOption.fullOptimizations();
+                        io.out().println("Optimizations: full");
+                    } else {
+                        compilerOption = compilerOption.basicOptimizations();
+                        io.out().println("Optimizations: basic");
+                    }
+                }
+                case "B", "symmetryBreaking" -> {
+                    if (compilerOption.isBasicSymmetryBreaking()) {
+                        compilerOption = compilerOption.fullSymmetryBreaking();
+                        io.out().println("Symmetry breaking: full");
+                    } else {
+                        compilerOption = compilerOption.basicSymmetryBreaking();
+                        io.out().println("Symmetry breaking: basic");
+                    }
+                }
+                case "U", "minUnsat" -> {
+                    io.out().println("Min UNSAT command:");
+                    ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
+                    // Print the Min-Unsat and near-miss example.
+                    printUnsat(io, unsat.minUnsat());
+                }
+                case "u", "unsatCore" -> {
+                    io.out().println("UNSAT Core command:");
+                    ClaferUnsat unsat = ClaferCompiler.compileUnsat(model, scope);
+                    printUnsat(io, unsat.unsatCore());
+                }
+                case "r", "reload" -> reload(io);
+                case "S", "SetGlobalScope" -> {
+                    io.out().println("Set global scope: " + s);
+                    if (commandParts.length != 2) {
+                        io.out().println("The format of the command is: 'S <integer>'");
+                        io.out().println("Given: '" + s + "'");
+                        return true;
+                    }
+                    Integer scopeValue = integer(io, commandParts[1]);
+                    if (scopeValue != null) {
+                        scope = scope.toBuilder().defaultScope(scopeValue).toScope();
+                        recompiled(io);
+                    }
+                }
+                case "I", "IncGlobalScope" -> {
+                    io.out().println("Increase global scope: " + s);
+                    if (commandParts.length > 2) {
+                        io.out().println("The format of the command is: 'I <integer?>'");
+                        io.out().println("Given: '" + s + "'");
+                        return true;
+                    }
+                    Integer scopeValue = commandParts.length == 2 ? integer(io, commandParts[1]) : Integer.valueOf(1);
+                    if (scopeValue != null) {
+                        scope = scope.toBuilder().adjustDefaultScope(scopeValue).toScope();
+                        recompiled(io);
+                    }
+                }
+                case "m", "maxInt", "maxint" -> {
+                    io.out().println("Max Integer: " + s);
+                    if (commandParts.length != 2) {
+                        io.out().println("The format of the command is: 'm <integer>'");
+                        io.out().println("Given: '" + s + "'");
+                        return true;
+                    }
+                    int scopeHigh;
+                    try {
+                        scopeHigh = Integer.parseInt(commandParts[1]);
+                    } catch (Exception e) {
+                        io.out().println("Expected an integer number. Given '" + commandParts[1] + "'");
+                        return true;
+                    }
+                    int scopeLow = -(scopeHigh + 1);
+                    scope = scope.toBuilder().intLow(scopeLow).intHigh(scopeHigh).toScope();
+                    recompiled(io);
+                }
+                case "x", "maximize", "z", "minimize" -> {
+                    boolean maximize = command.equals("x") || command.equals("maximize");
+                    io.out().println((maximize ? "Maximize: " : "Minimize: ") + s);
+                    if (commandParts.length != 2) {
+                        io.out().println("The format of the command is: '" + (maximize ? "x" : "z") + " <claferUID>'");
+                        io.out().println("Given: '" + s + "'");
+                        return true;
+                    }
+                    AstClafer clafer = clafer(io, commandParts[1]);
+                    if (clafer == null) {
+                        return true;
+                    }
+                    if (!clafer.hasRef()) {
+                        io.out().println("Cannot " + (maximize ? "maximize " : "minimize ") + clafer
+                                + " because it is not a reference.");
+                        return true;
+                    }
+                    solver = ClaferCompiler.compile(model, scope, maximize
+                            ? Objective.maximize(sum(global(clafer))) : Objective.minimize(sum(global(clafer))));
+                    // shown by the loop as the next instance
+                    Shown shown = nextInstance(io);
+                    if (shown != null) {
+                        context.display(shown);
+                    }
+                }
+                case "v", "saveScopes" -> {
+                    List<ClaferNameScopePair> claferScopePairs = new ArrayList<>();
+                    for (AstClafer curClafer : Utils.getAllModelClafers(model)) {
+                        int curScope;
+                        try {
+                            curScope = scope.getScope(curClafer);
+                        } catch (Exception e) {
+                            curScope = 0;
+                        }
+                        claferScopePairs.add(new ClaferNameScopePair(curClafer.getName(), curScope));
+                    }
+                    Collections.sort(claferScopePairs);
+                    Utils.produceScopeFile(claferScopePairs, scopesFile);
+                }
+                case "scope" -> {
+                    io.out().println("Global scope = " + scope.getDefaultScope());
+                    for (AstClafer c : Utils.getAllModelClafers(model)) {
+                        int curScope;
+                        try {
+                            curScope = scope.getScope(c);
+                        } catch (Exception e) {
+                            curScope = 0;
+                        }
+                        io.out().println("  " + c.getName() + " scope = " + curScope);
+                    }
+                }
+                case "s", "setScope" -> {
+                    io.out().println("Set individual scope: " + s);
+                    if (commandParts.length != 3) {
+                        io.out().println("The format of the command is: 's <claferUID> <integer>'");
+                        io.out().println("Given: '" + s + "'");
+                        return true;
+                    }
+                    Integer claferScopeValue = integer(io, commandParts[2]);
+                    if (claferScopeValue == null) {
+                        return true;
+                    }
+                    AstClafer clafer = clafer(io, commandParts[1]);
+                    if (clafer != null) {
+                        scope = scope.toBuilder().setScope(clafer, claferScopeValue).toScope();
+                        recompiled(io);
+                    }
+                }
+                case "i", "incScope" -> {
+                    io.out().println("Increase individual scope: " + s);
+                    if (commandParts.length < 2 || commandParts.length > 3) {
+                        io.out().println("The format of the command is: 'i <claferUID> <integer?>'");
+                        io.out().println("Given: '" + s + "'");
+                        return true;
+                    }
+                    Integer claferScopeValue = commandParts.length == 3 ? integer(io, commandParts[2])
+                            : Integer.valueOf(1);
+                    if (claferScopeValue == null) {
+                        return true;
+                    }
+                    AstClafer clafer = clafer(io, commandParts[1]);
+                    if (clafer != null) {
+                        scope = scope.toBuilder().adjustScope(clafer, claferScopeValue).toScope();
+                        recompiled(io);
+                    }
+                }
+                case "g", "strategy" -> {
+                    if (commandParts.length != 2 || (!"smaller".equals(commandParts[1])
+                            && !"larger".equals(commandParts[1]) && !"random".equals(commandParts[1]))) {
+                        io.out().println("The format of the command is: 'g <smaller|larger|random>'");
+                        io.out().println("Given: '" + s + "'");
+                        return true;
+                    }
+                    switch (commandParts[1]) {
+                        case "smaller" -> {
+                            compilerOption = compilerOption.setStrategy(ClaferSearchStrategy.PreferSmallerInstances);
+                            io.out().println("Search strategy: smaller");
+                        }
+                        case "larger" -> {
+                            compilerOption = compilerOption.setStrategy(ClaferSearchStrategy.PreferLargerInstances);
+                            io.out().println("Search strategy: larger");
+                        }
+                        default -> {
+                            io.out().println("Search strategy: random");
+                            compilerOption = compilerOption.setStrategy(ClaferSearchStrategy.Random);
+                        }
+                    }
+                }
+                case "b", "bitwidth", "tl", "a", "alloyModel", "c", "claferModel", "loadScopes", "setUnsatCoreMinimization" ->
+                    io.out().println("The command '" + command + "' is for temporal models, which Alloy solves.");
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private void reload(Repl.Io io) throws IOException {
+            try {
+                javascriptFile = Utils.readModel(inputFile, options);
+            } catch (Frontend.ModelException | IllegalArgumentException e) {
+                // the errors of the model, with their positions
+                io.out().println(e.getMessage());
+                javascriptFile = null;
+            } catch (Exception e) {
+                io.out().println("Unhandled compilation error occured. Please report this problem.");
+                io.out().println(e.getMessage());
+                javascriptFile = null;
+            }
+            if (javascriptFile != null) {
+                model = javascriptFile.getModel();
+                scope = Utils.resolveScopes(inputFile, javascriptFile, options);
+                objectives = javascriptFile.getObjectives();
+                solver = compileModel(io);
+                io.out().println(solver == null ? "Could not reload" : "Reloaded");
+            } else {
+                io.out().println("Could not reload");
+            }
+        }
+
+        /**
+         * The instance as the loop's tree: each clafer named as chocosolver
+         * prints it.
+         */
+        private static ClaferModel tree(InstanceModel instance) {
+            List<ClaferModel.Clafer> top = new ArrayList<>();
+            for (InstanceClafer c : instance.getTopClafers()) {
+                top.add(tree(c));
+            }
+            return new ClaferModel(top);
+        }
+
+        private static String name(InstanceClafer c) {
+            return c.getType().getName() + Utils.countSuffix(c.getId());
+        }
+
+        private static ClaferModel.Clafer tree(InstanceClafer c) {
+            ClaferModel.Value value = null;
+            if (c.hasRef()) {
+                Object ref = c.getRef();
+                value = switch (ref) {
+                    case InstanceClafer r -> new ClaferModel.AliasValue(new ClaferModel.Id(name(r), 0));
+                    case Integer i -> new ClaferModel.IntValue(i);
+                    case BigDecimal d -> new ClaferModel.StringValue(d.toPlainString());
+                    default -> new ClaferModel.StringValue(ref.toString());
+                };
+            }
+            List<ClaferModel.Clafer> children = new ArrayList<>();
+            for (InstanceClafer child : c.getChildren()) {
+                children.add(tree(child));
+            }
+            return new ClaferModel.Clafer(new ClaferModel.Id(name(c), 0), c.getType().getName(), value, children);
+        }
     }
 }
-
