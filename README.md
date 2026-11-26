@@ -31,8 +31,20 @@ Binary distributions of the release 0.5.4 of Clafer Tools can be downloaded from
 
 ### Integration with text editors:
 
-* VS Code: [clafer-vscode](https://github.com/gsdlab/clafer-vscode).
+* VS Code: [clafer-vscode](https://github.com/gsdlab/clafer-vscode), which runs the language server below.
 * Sublime Text 4: [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
+
+### The language server
+
+`clafer-ls` (`clafer-ls.jar`, in the binary distribution next to `chocosolver.jar`) is the Clafer language server, for any editor with a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) client. It speaks JSON-RPC on stdin and stdout (`clafer-ls`, or `java -jar clafer-ls.jar`; `--stdio` is accepted). With the Java frontend, it checks the open `.cfr` documents and the files they import on every edit, and gives:
+
+* the errors, at their characters (UTF-16), an error in an imported file also on the first line of the model,
+* the outline (document symbols), also of a model with errors,
+* go to definition, find references and hover, of clafers and of the locals of quantifiers and `let`,
+* completion of the names in scope, and after a `.` of the children of a path,
+* rename of a clafer or a local, refused for a name that is reserved or already taken.
+
+It is the module `lsp/` (the artifact `clafer-language-server`), built on [Eclipse LSP4J](https://github.com/eclipse-lsp4j/lsp4j); `mvn package` writes `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, and `make install` copies it as `clafer-ls.jar`, with the launcher `clafer-ls`.
 
 ### Installation from the source code
 
@@ -71,7 +83,7 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 ```
 
 The CLI is installed to `solver/target/chocosolver-0.6.0-jar-with-dependencies.jar`;
-however, in the Clafer Tools binary distribution it is called `chocosolver.jar`.
+however, in the Clafer Tools binary distribution it is called `chocosolver.jar`. The language server is `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, called `clafer-ls.jar` there.
 
 You can deploy the files the same way as in Clafer Tools binary distribution by executing
 
