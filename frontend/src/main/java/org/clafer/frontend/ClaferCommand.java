@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,9 +18,14 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import org.clafer.alloy.AlloyGenerator;
 
 /**
- * {@code claferc}: the Clafer compiler's {@code clafer -m clafer} in Java. It
+ * {@code claferc}: the Clafer compiler's {@code clafer -m clafer} and
+ * {@code clafer -m alloy} in Java. With {@code -m alloy}, the default, it
+ * prints the Alloy 6 model ({@code P.als}) of the port of the compiler's
+ * temporal generator ({@link AlloyGenerator}), for static and temporal models
+ * alike. With {@code -m clafer} it
  * prints the rich explicit model ({@code P.des.cfr}) or, with {@code --core},
  * the explicit core model ({@code P.core.cfr}, with {@code --record-provenance}
  * its provenance comments), and with {@code --meta-data} the explicit model's
@@ -27,7 +33,8 @@ import java.util.function.Function;
  * file names, statistics and errors.
  * <p>
  * Everything else is forwarded to {@code clafer} on the path, with the same
- * arguments: the other modes ({@code -m alloy}, the default, {@code -m choco},
+ * arguments: a model that the Alloy generator does not translate (e.g., with a
+ * decimal or an {@code [alloy| |]} escape), the other modes ({@code -m choco},
  * {@code json}, {@code html}, {@code graph}, {@code cvlgraph}), the options
  * that the Java side does not implement (e.g., {@code -i}, {@code -v},
  * {@code -c}, {@code --check-afm}, {@code -l}), and any argument that it
@@ -268,7 +275,7 @@ public final class ClaferCommand {
             out.println(version());
             return 0;
         }
-        if (!cli.modes().isEmpty() && !cli.modes().equals(List.of("clafer"))) {
+        if (!cli.modes().isEmpty() && !isOwnMode(cli.modes())) {
             return forward(args, "the mode " + String.join(", ", cli.modes()));
         }
         String file = cli.files().isEmpty() ? "" : cli.files().get(0);
@@ -320,8 +327,16 @@ public final class ClaferCommand {
         if (modes.isEmpty()) {
             modes = fileModes.isEmpty() ? List.of("alloy") : fileModes;
         }
-        if (!modes.equals(List.of("clafer"))) {
+        if (!isOwnMode(modes)) {
             return forward(args, "the mode " + String.join(", ", modes));
+        }
+        boolean alloy = modes.equals(List.of("alloy"));
+        if (alloy && ClaferLexer.lex(files.text()).others().stream()
+                .anyMatch(t -> t.kind() == TokenKind.ESCAPE && t.text().startsWith("[alloy|"))) {
+            return forward(args, "an [alloy| |] escape");
+        }
+        if (alloy && metaData) {
+            return forward(args, "--meta-data with -m alloy");
         }
         if (noLayout && !explicit) {
             return forward(args, "-l");
@@ -364,6 +379,9 @@ public final class ClaferCommand {
             return 1;
         }
         Ir.Model model = result.model();
+        if (alloy) {
+            return alloy(args, result, files, options, console, noStats, file);
+        }
         ModelFiles theFiles = files;
         String code;
         if (options.core()) {
@@ -397,6 +415,92 @@ public final class ClaferCommand {
         }
         out.flush();
         return 0;
+    }
+
+    private static boolean isOwnMode(List<String> modes) {
+        return modes.equals(List.of("clafer")) || modes.equals(List.of("alloy"));
+    }
+
+    /**
+     * {@code -m alloy}: the Alloy 6 code of the port of the compiler's
+     * {@code AlloyLtl.hs}, for every model, static or temporal, with the
+     * statistics as a comment; a model with a construct that the port does
+     * not translate is forwarded to {@code clafer}.
+     */
+    private int alloy(List<String> args, ToIr.Result result, ModelFiles files, ModelOptions options,
+            boolean console, boolean noStats, String file) {
+        boolean keepUnused = options.others().contains("-k") || options.others().contains("--keep-unused")
+                || args.contains("-k") || args.contains("--keep-unused");
+        String code;
+        try {
+            code = AlloyGenerator.generate(result.model(), result.scopes().orElseThrow().clafers(),
+                    options.traceLength().orElse(10), keepUnused, false);
+        } catch (AlloyGenerator.UnsupportedModel e) {
+            return forward(args, e.getMessage() + ", which the Alloy generator does not translate");
+        }
+        String stats = "";
+        if (!noStats) {
+            Syntax.Model source = ClaferParser.parse(files.text()).model();
+            stats = Statistics.of(result) + largeScopes(result, files)
+                    + Warnings.of(result, source, options.skipResolver());
+            out.print(stats + "\n");
+            code = "/*\n" + stats + "*/\n" + code;
+        }
+        String base = dropExtension(file.isEmpty() ? "" : ModelFiles.localName(file));
+        try {
+            if (console) {
+                out.print(code + "\n");
+            } else {
+                write(base + ".als", code);
+            }
+        } catch (IOException e) {
+            return error(e.getMessage());
+        }
+        out.flush();
+        return 0;
+    }
+
+    /**
+     * The warnings of the compiler about the large scopes of references in
+     * the Alloy output ({@code showLargeScopes} of
+     * {@code largeReferenceScopes}): a reference with an unbounded
+     * multiplicity to a clafer, whose scope is above 100.
+     */
+    static String largeScopes(ToIr.Result result, ModelFiles files) {
+        Map<String, Long> scopes = result.scopes().orElseThrow().clafers();
+        Map<String, String> names = new HashMap<>();
+        for (Symbols.ClaferSymbol c : result.names().clafers()) {
+            names.put(c.uid(), c.name());
+        }
+        StringBuilder out = new StringBuilder();
+        largeScopes(result.model().elements(), scopes, names, files, out);
+        return out.toString();
+    }
+
+    private static void largeScopes(List<Ir.Element> elements, Map<String, Long> scopes, Map<String, String> names,
+            ModelFiles files, StringBuilder out) {
+        for (Ir.Element e : elements) {
+            if (!(e instanceof Ir.ClaferDecl c)) {
+                continue;
+            }
+            String uid = c.name().text();
+            long scope = scopes.getOrDefault(uid, 1L);
+            if (c.card().isUnbounded() && c.ref().isPresent() && names.containsKey(c.ref().get().target().text())
+                    && scope > 100) {
+                String target = c.ref().get().target().text();
+                String name = names.getOrDefault(uid, uid);
+                String refText = name + " -> " + names.get(target);
+                ModelFiles.Position p = files.position(c.span().line());
+                out.append("Warning: ").append(p.path()).append(':').append(p.line()).append(':')
+                        .append(c.span().column()).append(": the scope of ").append(refText).append(' ')
+                        .append(c.card()).append(" is ").append(scope).append(", since ").append(name)
+                        .append(" may point to all ").append(scopes.getOrDefault(target, 1L)).append(' ')
+                        .append(names.get(target)).append(" in each of its parents. If fewer suffice, give it an")
+                        .append(" upper bound, e.g., ").append(refText).append(' ').append(c.card().low())
+                        .append("..10, to make the instance generation faster.\n");
+            }
+            largeScopes(c.elements(), scopes, names, files, out);
+        }
     }
 
     private static void write(String path, String text) throws IOException {
@@ -536,10 +640,12 @@ public final class ClaferCommand {
     private static final String Help = """
             claferc [OPTIONS] [FILE]
 
-            The Clafer compiler's 'clafer -m clafer' in Java: the explicit models of a Clafer model.
+            The Clafer compiler's 'clafer -m clafer' and 'clafer -m alloy' in Java.
 
-              -m clafer               The explicit model, written to FILE.des.cfr (the default mode,
-                                      alloy, and the other modes are forwarded to clafer).
+              -m alloy                The Alloy 6 model, static or temporal, written to FILE.als (the
+                                      default mode; a model with a construct that it does not translate
+                                      and the other modes are forwarded to clafer).
+              -m clafer               The explicit model, written to FILE.des.cfr.
                  --core               The explicit core model, written to FILE.core.cfr.
                  --record-provenance  With --core, the provenance comments of the lowered constructs.
                  --meta-data          The explicit model's scope file (FILE.des.cfr-scope or
@@ -557,8 +663,9 @@ public final class ClaferCommand {
                  --import-root=DIR    Allow only local imports inside DIR. Can be repeated.
                  --public-imports     Allow only URL imports from public addresses.
                  --import-base=URL    The URL from which the model's text was read.
-              -k --keep-unused, --timeout-analysis=INT
-                                      Accepted; they change nothing in the explicit models.
+              -k --keep-unused        Keep the abstract clafers that nothing needs in the Alloy model.
+                 --timeout-analysis=INT
+                                      Accepted; it changes nothing.
 
             Any other mode or option is forwarded to clafer on the path, with the same arguments.
             """;

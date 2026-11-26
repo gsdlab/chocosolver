@@ -87,7 +87,7 @@ public class ClaferCommandTest {
     public void testVersionHasTheBuildDate() {
         Run r = run("--version");
         assertEquals(0, r.code());
-        assertTrue(r.out(), r.out().matches("claferc v\\d+\\.\\d+\\.\\d+\\.\\d{4}-\\d{2}-\\d{2} \\(Java frontend; the other modes are forwarded to clafer\\)\n"));
+        assertTrue(r.out(), r.out().matches("claferc v\\d+\\.\\d+\\.\\d+\\.\\d{4}-\\d{2}-\\d{2}\n"));
         assertEquals(r, run("-V"));
     }
 
@@ -142,12 +142,15 @@ public class ClaferCommandTest {
     public void testForwarded() throws IOException {
         String m = model("f.cfr", "A\n");
         List<List<String>> forwarded = new ArrayList<>();
-        for (String mode : List.of("json", "html", "graph", "cvlgraph", "alloy", "choco")) {
+        for (String mode : List.of("json", "html", "graph", "cvlgraph", "choco")) {
             forwarded.add(List.of("-m", mode, m));
         }
         forwarded.add(List.of("-m", "clafer", "-m", "html", m));
-        // the default mode, alloy
-        forwarded.add(List.of(m));
+        forwarded.add(List.of("-m", "alloy", "-m", "alloyltl", m));
+        // what the Alloy generator does not translate: an escape, the product operator
+        String escape = model("e.cfr", "A\n[alloy| fact {} |]\n");
+        forwarded.add(List.of("-m", "alloy", escape));
+        forwarded.add(List.of(model("p.cfr", "x -> integer 2..2\n<< maximize product x >>\n")));
         // the options that the Java side does not implement, and those it does not know
         for (String option : List.of("-i", "-v", "--validate", "--tooldir=.", "-c", "--check-afm", "-l", "--nl",
                 "-a", "--self-contained", "--add-graph", "--sr", "--add-comments", "-e", "--unknown", "-x",
@@ -169,6 +172,22 @@ public class ClaferCommandTest {
         assertEquals(new Run(1, "\nError...\n" + imports + ": the import " + m
                 + " is outside the folders from which files can be imported\n"),
                 run("-m", "clafer", "--import-root=" + folder.getRoot() + "/none", "--public-imports", imports));
+    }
+
+    @Test
+    public void testAlloy() throws IOException {
+        // -m alloy, the default mode: the temporal generator, for a static model too
+        String m = model("a.cfr", "A ?\n");
+        Run r = run(m);
+        assertEquals(0, r.code());
+        String als = Files.readString(new File(folder.getRoot(), "a.als").toPath(), StandardCharsets.UTF_8);
+        assertTrue(als, als.startsWith("/*\nAll clafers: 1 |"));
+        assertTrue(als, als.contains("run show for 1 but 10 steps\n"));
+        assertTrue(r.out(), r.out().startsWith("All clafers: 1 |"));
+        // an [alloy| inside a comment is not an escape
+        String c = model("c.cfr", "// [alloy| |]\nA\n");
+        assertEquals(0, run("-m", "alloy", c).code());
+        assertTrue(new File(folder.getRoot(), "c.als").isFile());
     }
 
     @Test
