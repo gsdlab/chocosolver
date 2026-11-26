@@ -44,7 +44,7 @@ import org.clafer.frontend.Ir.*;
  * The core is a fixpoint: {@code toCore} of a core model is the model.
  * <p>
  * The provenance of the lowered clafers and constraints names the rich
- * construct and its position in the rich model, with the given file name. The
+ * construct and its position, in the rich model or in the files of the source. The
  * rich model writes the clock of every {@code :=}, so the origin of a lowered
  * {@code :=} is {@code := each} or {@code := together}, where the compiler,
  * from the source, writes {@code :=} for one without a written clock.
@@ -52,11 +52,13 @@ import org.clafer.frontend.Ir.*;
 public final class ToCore {
 
     private final boolean temporal;
-    private final String file;
+    private final Function<SourceSpan, Position> position;
+    private final Set<SourceSpan> clocklessValues;
 
-    private ToCore(boolean temporal, String file) {
+    private ToCore(boolean temporal, Function<SourceSpan, Position> position, Set<SourceSpan> clocklessValues) {
         this.temporal = temporal;
-        this.file = file;
+        this.position = position;
+        this.clocklessValues = clocklessValues;
     }
 
     /**
@@ -65,7 +67,24 @@ public final class ToCore {
      * @return its explicit core model
      */
     public static Model toCore(Model model, String file) {
-        ToCore lowering = new ToCore(model.options().traceLength().isPresent(), file);
+        return toCore(model, span -> new Position(file, span.line(), span.column()), Set.of());
+    }
+
+    /**
+     * The lowering of a model compiled from its source, whose provenance
+     * names the positions in the source's files, as {@code clafer -m clafer
+     * --core --record-provenance P.cfr} does.
+     *
+     * @param model a rich explicit model
+     * @param position the position of a span in its file, for the provenance
+     * @param clocklessValues the spans of the values of the {@code :=}
+     * written without a clock, whose provenance is {@code :=}, as the
+     * compiler writes it
+     * @return its explicit core model
+     */
+    public static Model toCore(Model model, Function<SourceSpan, Position> position,
+            Set<SourceSpan> clocklessValues) {
+        ToCore lowering = new ToCore(model.options().traceLength().isPresent(), position, clocklessValues);
         Model m = model;
         Set<String> taken = taken(m);
         m = lowering.lowerInitializers(m, taken);
@@ -147,7 +166,7 @@ public final class ToCore {
      * The expression with the function applied to each of its immediate
      * subexpressions.
      */
-    private static Exp mapChildren(Exp e, Function<Exp, Exp> t) {
+    static Exp mapChildren(Exp e, Function<Exp, Exp> t) {
         return switch (e) {
             case Join x -> new Join(x.span(), t.apply(x.left()), t.apply(x.right()));
             case Dref x -> new Dref(x.span(), t.apply(x.left()));
@@ -174,7 +193,7 @@ public final class ToCore {
     }
 
     private Optional<Origin> origin(String construct, SourceSpan span) {
-        return Optional.of(new Origin(construct, Optional.of(new Position(file, span.line(), span.column()))));
+        return Optional.of(new Origin(construct, Optional.of(position.apply(span))));
     }
 
     // ------------------------------------------------------------------
@@ -259,8 +278,8 @@ public final class ToCore {
                 Initializer init = c.initializer().get();
                 String construct = switch (init.kind()) {
                     case FIXED -> "=";
-                    case EACH -> ":= each";
-                    case TOGETHER -> ":= together";
+                    case EACH -> clocklessValues.contains(init.span()) ? ":=" : ":= each";
+                    case TOGETHER -> clocklessValues.contains(init.span()) ? ":=" : ":= together";
                 };
                 Optional<Origin> origin = origin(construct, c.span());
                 boolean lowered = !temporal || init.kind() != InitKind.EACH || hasTemporal(init.value());

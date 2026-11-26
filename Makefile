@@ -22,6 +22,8 @@ install:
 	cp -f solver/target/chocosolver-0.6.0-jar-with-dependencies.jar $(to)/chocosolver.jar
 	cp -f lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar $(to)/clafer-ls.jar
 	cp -f lsp/clafer-ls $(to)/clafer-ls
+	cp -f frontend/target/clafer-frontend-0.6.0.jar $(to)/claferc.jar
+	cp -f frontend/claferc $(to)/claferc
 
 snapshotInstall:
 	mkdir -p $(to)

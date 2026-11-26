@@ -13,4 +13,22 @@
 
     <name>clafer-frontend</name>
     <description>The rich and the core explicit languages of Clafer: their IR, lexer, parser and printer, which print what the Clafer compiler prints (clafer -m clafer, --core). No dependencies.</description>
+
+    <build>
+        <plugins>
+            <!-- the jar runs as claferc, the Java clafer -m clafer -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.clafer.frontend.ClaferCommand</mainClass>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

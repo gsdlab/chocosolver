@@ -138,7 +138,7 @@ public record ModelOptions(boolean core, OptionalInt traceLength, OptionalLong m
      * The arguments of the line, split at spaces outside double quotes
      * ({@code SplitJoin.splitArgs}).
      */
-    private static List<String> splitArgs(String line) {
+    static List<String> splitArgs(String line) {
         List<String> out = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         boolean quoted = false;
