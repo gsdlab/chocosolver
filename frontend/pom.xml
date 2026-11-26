@@ -12,22 +12,45 @@
     <packaging>jar</packaging>
 
     <name>clafer-frontend</name>
-    <description>The rich and the core explicit languages of Clafer: their IR, lexer, parser and printer, which print what the Clafer compiler prints (clafer -m clafer, --core). No dependencies.</description>
+    <description>The rich and the core explicit languages of Clafer: their IR, lexer, parser and printer, which print what the Clafer compiler prints (clafer -m clafer, --core). Its one dependency is OkHttp, for the imports of URLs.</description>
+
+    <dependencies>
+        <!-- the imports of URLs (Http); okhttp-jvm, the artifact for Maven, with okio-jvm and kotlin-stdlib -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp-jvm</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
-            <!-- the jar runs as claferc, the Java clafer -m clafer -->
             <plugin>
+                <!-- a runnable jar with its dependencies, installed as claferc.jar with the launcher claferc,
+                     the Java clafer -m clafer -->
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.clafer.frontend.ClaferCommand</mainClass>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                        </manifest>
-                    </archive>
-                </configuration>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.8.0</version>
+                <executions>
+                    <execution>
+                        <id>claferc</id>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>org.clafer.frontend.ClaferCommand</mainClass>
+                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

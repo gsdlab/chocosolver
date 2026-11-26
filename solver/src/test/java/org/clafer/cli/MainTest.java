@@ -261,38 +261,101 @@ public class MainTest {
         assertTrue(run.output(), run.output().contains("age"));
     }
 
-    // the web tools' restrictions of the imports apply only to a model with imports
-    @Test
-    public void testImportRestrictions() throws Exception {
-        Path dir = Files.createTempDirectory("cfr");
-        cfr(dir, "lib.cfr", "abstract L\n");
-        File plain = cfr(dir, "plain.cfr", "A\n");
-        Run run = chocosolverWithStub(dir, MODEL, "--public-imports", "--import-root=" + dir, "--file",
-                plain.getPath(), "-n", "1");
-        assertEquals(run.output(), 0, run.exitCode());
-        assertEquals("", calls(dir));
-        assertFalse(run.output(), run.output().contains("age"));
-        File imports = cfr(dir, "imports.cfr", "//# OPTIONS --import=lib.cfr\nA : L\n");
-        run = chocosolverWithStub(dir, MODEL, "--public-imports", "--import-root=" + dir, "--import-base",
-                "https://example.org/m.cfr", "--file", imports.getPath(), "-n", "1");
-        assertEquals(run.output(), 0, run.exitCode());
-        assertTrue(run.output(), run.output().contains("has imports, which --import-root restricts"));
-        assertEquals("-k -m choco --import-root=" + dir + " --public-imports --import-base=https://example.org/m.cfr "
-                + imports.getPath() + "\n", calls(dir));
+    // serves the files of the map on 127.0.0.1, at /m/NAME; the others are 404
+    private static com.sun.net.httpserver.HttpServer serve(java.util.Map<String, String> files) throws IOException {
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+                new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/m/", exchange -> {
+            String text = files.get(exchange.getRequestURI().getPath().substring("/m/".length()));
+            if (text == null) {
+                exchange.sendResponseHeaders(404, -1);
+            } else {
+                byte[] body = text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "text/plain");
+                exchange.sendResponseHeaders(200, body.length);
+                exchange.getResponseBody().write(body);
+            }
+            exchange.close();
+        });
+        server.start();
+        return server;
     }
 
-    // an import of a URL, in the model or on the command line
+    private static String base(com.sun.net.httpserver.HttpServer server) {
+        return "http://127.0.0.1:" + server.getAddress().getPort() + "/m/";
+    }
+
+    private static final String Lib = "abstract L\n  age -> integer\n  [ age = 10 ]\n";
+
+    // the web tools' restrictions of the imports, as the compiler has them, in the Java frontend
+    @Test
+    public void testImportRestrictions() throws Exception {
+        com.sun.net.httpserver.HttpServer server = serve(java.util.Map.of("lib.cfr", Lib));
+        try {
+            Path dir = Files.createTempDirectory("cfr");
+            Files.createDirectory(dir.resolve("models"));
+            cfr(dir, "lib.cfr", Lib);
+            File inside = cfr(dir.resolve("models"), "inside.cfr", "A : L\n");
+            File imports = cfr(dir.resolve("models"), "imports.cfr", "//# OPTIONS --import=../lib.cfr\nA : L\n");
+            // inside the root
+            Run run = chocosolverWithStub(dir, null, "--import-root=" + dir, "--file", imports.getPath(), "-n", "1");
+            assertEquals(run.output(), 0, run.exitCode());
+            assertTrue(run.output(), run.output().contains("10"));
+            // outside it: the compiler's error, which the stub compiler does not undo
+            run = chocosolverWithStub(dir, null, "--import-root=" + dir.resolve("models"), "--file",
+                    imports.getPath(), "-n", "1");
+            assertEquals(run.output(), 1, run.exitCode());
+            assertTrue(run.output(), run.output().contains(imports.getPath() + ": the import " + dir
+                    + "/models/../lib.cfr is outside the folders from which files can be imported"));
+            // the model's imports relative to the URL of --import-base, from which only URLs can be imported
+            run = chocosolverWithStub(dir, null, "--import-base", base(server) + "inside.cfr", "--file",
+                    imports.getPath(), "-n", "1");
+            assertEquals(run.output(), 1, run.exitCode());
+            assertTrue(run.output(), run.output().contains("cannot read " + base(server).replace("/m/", "/lib.cfr")
+                    + ": HTTP 404 Not Found"));
+            File relative = cfr(dir.resolve("models"), "relative.cfr", "//# OPTIONS --import=lib.cfr\nA : L\n");
+            run = chocosolverWithStub(dir, null, "--import-base", base(server) + "inside.cfr", "--file",
+                    relative.getPath(), "-n", "1");
+            assertEquals(run.output(), 0, run.exitCode());
+            assertTrue(run.output(), run.output().contains("10"));
+            // only public addresses, which 127.0.0.1 is not
+            run = chocosolverWithStub(dir, null, "--public-imports", "--import", base(server) + "lib.cfr", "--file",
+                    inside.getPath(), "-n", "1");
+            assertEquals(run.output(), 1, run.exitCode());
+            assertTrue(run.output(), run.output().contains("cannot read " + base(server) + "lib.cfr: the host"
+                    + " 127.0.0.1 has no public address"));
+            assertEquals("-k -m choco --import-root=" + dir.resolve("models") + " " + imports.getPath() + "\n"
+                    + "-k -m choco --import-base=" + base(server) + "inside.cfr " + imports.getPath() + "\n"
+                    + "-k -m choco --import=" + base(server) + "lib.cfr --public-imports " + inside.getPath()
+                    + "\n", calls(dir));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    // an import of a URL, in the model or on the command line, read by the Java frontend
     @Test
     public void testUrlImports() throws Exception {
-        Path dir = Files.createTempDirectory("cfr");
-        File model = cfr(dir, "model.cfr", "//# OPTIONS --import=https://example.org/lib.cfr\nA\n");
-        Run run = chocosolverWithStub(dir, MODEL, "--file", model.getPath(), "-n", "1");
-        assertEquals(run.output(), 0, run.exitCode());
-        assertTrue(run.output(), run.output().contains("The model imports a URL"));
-        File plain = cfr(dir, "plain.cfr", "A\n");
-        run = chocosolverWithStub(dir, MODEL, "--file", plain.getPath(), "-n", "1", "--import",
-                "http://example.org/lib.cfr");
-        assertEquals(run.output(), 0, run.exitCode());
-        assertTrue(run.output(), run.output().contains("The model imports a URL (--import)"));
+        com.sun.net.httpserver.HttpServer server = serve(java.util.Map.of("lib.cfr", Lib));
+        try {
+            Path dir = Files.createTempDirectory("cfr");
+            File model = cfr(dir, "model.cfr", "//# OPTIONS --import=" + base(server) + "lib.cfr\nA : L\n");
+            Run run = chocosolverWithStub(dir, null, "--file", model.getPath(), "-n", "1");
+            assertEquals(run.output(), 0, run.exitCode());
+            assertTrue(run.output(), run.output().contains("10"));
+            File plain = cfr(dir, "plain.cfr", "A : L\n");
+            run = chocosolverWithStub(dir, null, "--file", plain.getPath(), "-n", "1", "--import",
+                    base(server) + "lib.cfr");
+            assertEquals(run.output(), 0, run.exitCode());
+            assertTrue(run.output(), run.output().contains("10"));
+            assertEquals("", calls(dir));
+            run = chocosolverWithStub(dir, null, "--file", plain.getPath(), "-n", "1", "--import",
+                    base(server) + "none.cfr");
+            assertEquals(run.output(), 1, run.exitCode());
+            assertTrue(run.output(), run.output().contains(plain.getPath() + ": cannot read " + base(server)
+                    + "none.cfr: HTTP 404 Not Found"));
+        } finally {
+            server.stop(0);
+        }
     }
 }

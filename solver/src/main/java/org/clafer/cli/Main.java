@@ -25,11 +25,11 @@ public class Main
                 accepts( "decimal-digits", "Specify the number of fractional digits of decimals (overrides the model's)." )
                     .withRequiredArg().ofType( Integer.class );
                 accepts( "explicit", "The .cfr model is an explicit model (as 'clafer -m clafer' prints it): read it directly, without the Clafer compiler. A model whose first line is '//# OPTIONS --explicit' is one without this option." );
-                accepts( "haskell-frontend", "Compile the .cfr model with the Haskell compiler (clafer -m choco), as before chocosolver 0.6.0, rather than with the Java frontend. Without it, the Haskell compiler compiles only the models that the Java frontend cannot (imports of URLs, restricted imports, [choco| |] escapes) or rejects." );
-                accepts( "import-root", "Allow only local imports inside DIR (repeatable), as clafer's --import-root; a model with imports is then compiled by the Haskell compiler." )
+                accepts( "haskell-frontend", "Compile the .cfr model with the Haskell compiler (clafer -m choco), as before chocosolver 0.6.0, rather than with the Java frontend. Without it, the Haskell compiler compiles only the models that the Java frontend cannot ([choco| |] escapes) or rejects." );
+                accepts( "import-root", "Allow only local imports inside DIR (repeatable), as clafer's --import-root." )
                     .withRequiredArg().describedAs( "DIR" );
-                accepts( "public-imports", "Allow only URL imports from public addresses, as clafer's --public-imports; a model with imports is then compiled by the Haskell compiler." );
-                accepts( "import-base", "The URL from which the model's text was read, as clafer's --import-base; a model with imports is then compiled by the Haskell compiler." )
+                accepts( "public-imports", "Allow only URL imports from public addresses, as clafer's --public-imports." );
+                accepts( "import-base", "The URL from which the model's text was read, as clafer's --import-base." )
                     .withRequiredArg().describedAs( "URL" );
                 accepts( "file", "Input file in .cfr or .js format" ).withRequiredArg().ofType( File.class )
                     .describedAs( "Clafer model file (.cfr), explicit or not, or Clafer Javascript file (.js)." );

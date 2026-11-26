@@ -11,7 +11,6 @@ import joptsimple.OptionSet;
 import org.clafer.ast.ToAst;
 import org.clafer.compiler.ClaferOption;
 import org.clafer.frontend.ModelFiles;
-import org.clafer.frontend.ModelOptions;
 import org.clafer.frontend.ToIr;
 import org.clafer.javascript.Javascript;
 import org.clafer.javascript.JavascriptFile;
@@ -27,16 +26,16 @@ import org.clafer.scope.ScopeFile;
  * The Haskell compiler reads the model when:
  * <ul>
  * <li>{@code --haskell-frontend} is given;</li>
- * <li>the model imports a URL, which the Java frontend does not read;</li>
- * <li>the model has imports and {@code --import-root},
- * {@code --public-imports} or {@code --import-base} restricts them, which only
- * the compiler implements;</li>
  * <li>the model has a {@code [choco| |]} escape, which is JavaScript;</li>
  * <li>the Java frontend reports errors or fails: if the compiler compiles the
  * model, chocosolver solves its output and says that the Java frontend
  * rejected the model; otherwise the Java frontend's errors are the
  * model's.</li>
  * </ul>
+ * The imports are read as the compiler reads them, URLs included, with the
+ * restrictions of {@code --import-root}, {@code --public-imports} and
+ * {@code --import-base} ({@link ModelFiles.ImportOptions}).
+ * <p>
  * The model's scopes are those of its explicit model's scope file
  * ({@link org.clafer.frontend.Scopes}), as the compiler writes them with
  * {@code -m clafer --meta-data}.
@@ -59,18 +58,6 @@ public final class Frontend {
     }
 
     /**
-     * A model that imports a URL, which the Java frontend does not read.
-     */
-    private static final class UrlImportException extends ModelException {
-
-        private static final long serialVersionUID = 1L;
-
-        UrlImportException(String message) {
-            super(message);
-        }
-    }
-
-    /**
      * Reads a {@code .cfr} model with the Java frontend, without a fallback.
      *
      * @param file the model
@@ -80,10 +67,22 @@ public final class Frontend {
      * position in its file
      */
     public static JavascriptFile readWithJava(File file, List<String> imports) throws ModelException {
-        ModelFiles files = ModelFiles.read(file.getPath(), imports);
-        if (files.importsUrl()) {
-            throw new UrlImportException("imports a URL, which the Java frontend does not read");
-        }
+        return readWithJava(file, imports, ModelFiles.ImportOptions.Default);
+    }
+
+    /**
+     * Reads a {@code .cfr} model with the Java frontend, without a fallback.
+     *
+     * @param file the model
+     * @param imports the imports of the command line
+     * @param restrictions the restrictions of the imports
+     * @return the model, with the scopes of its explicit model's scope file
+     * @throws ModelException with the errors of the model, each at its
+     * position in its file
+     */
+    public static JavascriptFile readWithJava(File file, List<String> imports, ModelFiles.ImportOptions restrictions)
+            throws ModelException {
+        ModelFiles files = ModelFiles.read(file.getPath(), imports, p -> Optional.empty(), restrictions);
         ToIr.Result ir = ToIr.toIr(files);
         List<String> errors = ir.messages();
         if (errors.isEmpty()) {
@@ -99,12 +98,6 @@ public final class Frontend {
         }
         throw new ModelException(String.join("\n", errors));
     }
-
-    /**
-     * The options of the command line that restrict the imports, which the
-     * compiler implements and the Java frontend does not.
-     */
-    private static final List<String> ImportRestrictions = List.of("import-root", "public-imports", "import-base");
 
     /**
      * Reads a {@code .cfr} model.
@@ -124,17 +117,14 @@ public final class Frontend {
         if (options.has("haskell-frontend")) {
             return haskell(file, options);
         }
-        Optional<String> unsupported = unsupported(file, options, imports);
+        Optional<String> unsupported = unsupported(file);
         if (unsupported.isPresent()) {
             out.println("The model " + unsupported.get() + ": compiling it with the Haskell compiler (clafer)");
             return haskell(file, options);
         }
         List<String> errors;
         try {
-            return readWithJava(file, imports);
-        } catch (UrlImportException e) {
-            out.println("The model " + e.getMessage() + ": compiling it with the Haskell compiler (clafer)");
-            return haskell(file, options);
+            return readWithJava(file, imports, restrictions(options));
         } catch (ModelException e) {
             errors = List.of(e.getMessage());
         } catch (RuntimeException e) {
@@ -159,23 +149,25 @@ public final class Frontend {
     /**
      * Why the Java frontend cannot read the model, if it cannot.
      */
-    private static Optional<String> unsupported(File file, OptionSet options, List<String> imports)
-            throws IOException {
-        if (imports.stream().anyMatch(ModelFiles::isUrl)) {
-            return Optional.of("imports a URL (--import), which the Java frontend does not read");
-        }
+    private static Optional<String> unsupported(File file) throws IOException {
         String text = Files.readString(file.toPath());
-        boolean hasImports = !imports.isEmpty() || !ModelOptions.of(text).imports().isEmpty();
-        for (String restriction : ImportRestrictions) {
-            if (hasImports && options.has(restriction)) {
-                return Optional.of("has imports, which --" + restriction
-                        + " restricts, as only the Haskell compiler does");
-            }
-        }
         if (text.contains("[choco|")) {
             return Optional.of("has a [choco| |] escape, whose JavaScript the Java frontend does not run");
         }
         return Optional.empty();
+    }
+
+    /**
+     * The restrictions of the imports of the command line.
+     */
+    static ModelFiles.ImportOptions restrictions(OptionSet options) {
+        List<String> roots = new ArrayList<>();
+        for (Object root : options.valuesOf("import-root")) {
+            roots.add(root.toString());
+        }
+        Optional<String> base = options.has("import-base")
+                ? Optional.of(options.valueOf("import-base").toString()) : Optional.empty();
+        return new ModelFiles.ImportOptions(roots, options.has("public-imports"), base, true);
     }
 
     /**

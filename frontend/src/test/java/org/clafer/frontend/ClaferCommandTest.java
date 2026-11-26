@@ -142,11 +142,10 @@ public class ClaferCommandTest {
         forwarded.add(List.of(m));
         // the options that the Java side does not implement, and those it does not know
         for (String option : List.of("-i", "-v", "--validate", "--tooldir=.", "-c", "--check-afm", "-l", "--nl",
-                "-a", "--self-contained", "--add-graph", "--sr", "--add-comments", "-e", "--import-root=.",
-                "--public-imports", "--import-base=http://localhost/", "--unknown", "-x", "--ss=other")) {
+                "-a", "--self-contained", "--add-graph", "--sr", "--add-comments", "-e", "--unknown", "-x",
+                "--ss=other")) {
             forwarded.add(List.of("-m", "clafer", option, m));
         }
-        forwarded.add(List.of("-m", "clafer", "--import=http://localhost/a.cfr", m));
         forwarded.add(List.of("-m", "clafer", m, m));
         for (List<String> args : forwarded) {
             assertEquals(args.toString(), new Run(3, "clafer " + String.join(" ", args) + "\n"),
@@ -157,8 +156,11 @@ public class ClaferCommandTest {
         assertEquals(new Run(3, "clafer " + json + "\n"), run(json));
         assertEquals(0, run("-m", "clafer", "-s", json).code());
         assertTrue(new File(folder.getRoot(), "g.des.cfr").isFile());
-        String url = model("u.cfr", "//# OPTIONS --import=http://localhost/a.cfr\nA\n");
-        assertEquals(new Run(3, "clafer -m clafer " + url + "\n"), run("-m", "clafer", url));
+        // the restrictions of the imports are read: the import is outside the root
+        String imports = model("r.cfr", "//# OPTIONS --import=f.cfr\nB\n");
+        assertEquals(new Run(1, "\nError...\n" + imports + ": the import " + m
+                + " is outside the folders from which files can be imported\n"),
+                run("-m", "clafer", "--import-root=" + folder.getRoot() + "/none", "--public-imports", imports));
     }
 
     @Test

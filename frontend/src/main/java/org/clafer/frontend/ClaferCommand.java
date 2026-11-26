@@ -30,8 +30,8 @@ import java.util.function.Function;
  * arguments: the other modes ({@code -m alloy}, the default, {@code -m choco},
  * {@code json}, {@code html}, {@code graph}, {@code cvlgraph}), the options
  * that the Java side does not implement (e.g., {@code -i}, {@code -v},
- * {@code -c}, {@code --check-afm}, {@code -l}), the imports of URLs and the
- * restrictions of imports, and any argument that it does not read, so that
+ * {@code -c}, {@code --check-afm}, {@code -l}), and any argument that it
+ * does not read, so that
  * the compiler gives its own message for it. The executable is
  * {@code -Dclafer.executable}, {@code clafer} by default.
  */
@@ -76,7 +76,8 @@ public final class ClaferCommand {
             boolean provenance, boolean noStats, boolean metaData, boolean noLayout, boolean checks,
             OptionalInt traceLength, Optional<Boolean> simpleScopes, OptionalLong minInt, OptionalLong maxInt,
             Optional<Integer> decimalDigits, List<String> imports, List<String> files, boolean help,
-            boolean version, Optional<String> forward) {
+            boolean version, List<String> importRoots, boolean publicImports, Optional<String> importBase,
+            Optional<String> forward) {
     }
 
     /**
@@ -90,7 +91,7 @@ public final class ClaferCommand {
             Map.entry("--record-provenance", "provenance"),
             Map.entry("--keep-unused", "k"), Map.entry("-k", "k"),
             Map.entry("--no-stats", "s"), Map.entry("-s", "s"),
-            Map.entry("--meta-data", "meta"),
+            Map.entry("--meta-data", "meta"), Map.entry("--public-imports", "public"),
             Map.entry("--no-layout", "l"), Map.entry("-l", "l"),
             Map.entry("--check-duplicates", "c"), Map.entry("-c", "c"),
             Map.entry("--check-afm", "afm"), Map.entry("--afm", "afm"),
@@ -106,6 +107,7 @@ public final class ClaferCommand {
             Map.entry("--ss", "ss"), Map.entry("--scope-strategy", "ss"),
             Map.entry("--minint", "minint"), Map.entry("--maxint", "maxint"),
             Map.entry("--decimal-digits", "digits"), Map.entry("--import", "import"),
+            Map.entry("--import-root", "root"), Map.entry("--import-base", "base"),
             Map.entry("--timeout-analysis", "timeout"));
 
     /**
@@ -125,6 +127,8 @@ public final class ClaferCommand {
         Optional<Integer> digits = Optional.empty();
         List<String> imports = new ArrayList<>();
         List<String> files = new ArrayList<>();
+        List<String> roots = new ArrayList<>();
+        Optional<String> base = Optional.empty();
         Optional<String> forward = Optional.empty();
         boolean onlyFiles = false;
         for (int i = 0; i < args.size() && forward.isEmpty(); i++) {
@@ -203,6 +207,8 @@ public final class ClaferCommand {
                             }
                         }
                         case "timeout" -> Integer.parseInt(value);
+                        case "root" -> roots.add(value);
+                        case "base" -> base = Optional.of(value);
                         case "c", "afm" -> {
                             if (inFile) {
                                 flags.add(key);
@@ -224,7 +230,7 @@ public final class ClaferCommand {
                 flags.contains("core"), flags.contains("provenance"), flags.contains("s"), flags.contains("meta"),
                 flags.contains("l"), flags.contains("c") || flags.contains("afm"), tl, simple, minInt, maxInt,
                 digits, List.copyOf(imports), List.copyOf(files), flags.contains("help"), flags.contains("version"),
-                forward);
+                List.copyOf(roots), flags.contains("public"), base, forward);
     }
 
     /**
@@ -265,12 +271,8 @@ public final class ClaferCommand {
         if (!cli.modes().isEmpty() && !cli.modes().equals(List.of("clafer"))) {
             return forward(args, "the mode " + String.join(", ", cli.modes()));
         }
-        // the model's location, for the imports of URLs, which the compiler reads
         String file = cli.files().isEmpty() ? "" : cli.files().get(0);
-        if (ModelFiles.isUrl(file) || cli.imports().stream().anyMatch(ModelFiles::isUrl)) {
-            return forward(args, "an import of a URL");
-        }
-        String name = file.isEmpty() ? "<stdin>" : file;
+        String name = file.isEmpty() ? ModelFiles.Stdin : file;
         Optional<String> stdin = Optional.empty();
         if (file.isEmpty()) {
             try {
@@ -281,10 +283,8 @@ public final class ClaferCommand {
         }
         Optional<String> stdinText = stdin;
         ModelFiles files = ModelFiles.read(name, cli.imports(),
-                p -> p.equals(name) ? stdinText : Optional.empty());
-        if (files.importsUrl()) {
-            return forward(args, "an import of a URL");
-        }
+                p -> file.isEmpty() && p.equals(name) ? stdinText : Optional.empty(),
+                new ModelFiles.ImportOptions(cli.importRoots(), cli.publicImports(), cli.importBase(), true));
         if (!files.errors().isEmpty()) {
             return error(files.errors().get(0));
         }
@@ -380,7 +380,7 @@ public final class ClaferCommand {
             Syntax.Model source = ClaferParser.parse(files.text()).model();
             out.print(Statistics.of(result) + Warnings.of(result, source, options.skipResolver()) + "\n");
         }
-        String base = dropExtension(root.path().equals("<stdin>") ? "" : file);
+        String base = dropExtension(file.isEmpty() ? "" : ModelFiles.localName(file));
         String extension = options.core() ? "core.cfr" : "des.cfr";
         try {
             if (console) {
@@ -544,7 +544,11 @@ public final class ClaferCommand {
                  --tl=INT             The trace length.
                  --minint=INT, --maxint=INT, --decimal-digits=INT
                                       The ranges of the scope file.
-                 --import=FILE        Compile the model with the model in FILE. Can be repeated.
+                 --import=FILE        Compile the model with the model in FILE (a path or an http/https
+                                      URL). Can be repeated. FILE may also be a URL.
+                 --import-root=DIR    Allow only local imports inside DIR. Can be repeated.
+                 --public-imports     Allow only URL imports from public addresses.
+                 --import-base=URL    The URL from which the model's text was read.
               -k --keep-unused, --timeout-analysis=INT
                                       Accepted; they change nothing in the explicit models.
 

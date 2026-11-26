@@ -124,27 +124,23 @@ Option                                  Description
                                           -m choco), as before chocosolver 0.6.0, rather than with
                                           the Java frontend. Without it, the Haskell compiler
                                           compiles only the models that the Java frontend cannot
-                                          (imports of URLs, restricted imports, [choco| |]
-                                          escapes) or rejects.
+                                          ([choco| |] escapes) or rejects.
 --help                                  Show help.
 --import <Clafer file or URL>           Compile the .cfr model together with the given Clafer
                                           file or URL, relative to the current directory
                                           (repeatable); a model also imports files with
                                           --import in its //# OPTIONS directive.
 --import-base <URL>                     The URL from which the model's text was read, as
-                                          clafer's --import-base; a model with imports is then
-                                          compiled by the Haskell compiler.
+                                          clafer's --import-base.
 --import-root <DIR>                     Allow only local imports inside DIR (repeatable), as
-                                          clafer's --import-root; a model with imports is then
-                                          compiled by the Haskell compiler.
+                                          clafer's --import-root.
 --maxint <Integer>                      Specify maximum integer value.
 --minint <Integer>                      Specify minimum integer value.
 --moo                                   Run in multi-objective optimization mode.
 -n <Integer>                            Specify the maximum number of instances.
 --output <File: text file>              Output instances to the given file.
 --public-imports                        Allow only URL imports from public addresses, as
-                                          clafer's --public-imports; a model with imports is then
-                                          compiled by the Haskell compiler.
+                                          clafer's --public-imports.
 --prettify                              Use simple and pretty output format (not formal).
 --repl                                  Run in REPL (interactive) mode.
 --scope <Integer>                       Override the default global scope value.
