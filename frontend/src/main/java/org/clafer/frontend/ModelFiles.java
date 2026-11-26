@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * The files of a model: the model and the files it imports, transitively,
@@ -58,7 +60,22 @@ public record ModelFiles(List<ModelFile> files, ModelOptions options, List<Strin
      * relative to the working folder, which come first
      */
     public static ModelFiles read(String path, List<String> commandLineImports) {
-        Reader reader = new Reader();
+        return read(path, commandLineImports, p -> Optional.empty());
+    }
+
+    /**
+     * Reads a model and the files it imports, taking the text of a file from
+     * {@code open} where it has one, e.g., a document open in an editor, and
+     * from disk otherwise.
+     *
+     * @param path the model's file, as the messages show it
+     * @param commandLineImports the imports given on the command line
+     * @param open the text of a file, by its path as the model names it, if
+     * it is not to be read from disk
+     */
+    public static ModelFiles read(String path, List<String> commandLineImports,
+            Function<String, Optional<String>> open) {
+        Reader reader = new Reader(open);
         try {
             String rootKey = key(path);
             String text = withNewline(reader.fetch("", path));
@@ -98,6 +115,11 @@ public record ModelFiles(List<ModelFile> files, ModelOptions options, List<Strin
         final List<ModelFile> files = new ArrayList<>();
         final List<String> paths = new ArrayList<>();
         final List<ModelOptions> options = new ArrayList<>();
+        final Function<String, Optional<String>> open;
+
+        Reader(Function<String, Optional<String>> open) {
+            this.open = open;
+        }
 
         /**
          * Reads an import and its imports, unless it was read; the stack has
@@ -143,6 +165,10 @@ public record ModelFiles(List<ModelFile> files, ModelOptions options, List<Strin
         }
 
         String fetch(String importer, String path) {
+            Optional<String> text = open.apply(path);
+            if (text.isPresent()) {
+                return text.get();
+            }
             Path p = Path.of(path);
             if (!Files.isRegularFile(p)) {
                 throw new ImportError(ModelOptions.inFile(importer, "the file " + path + " does not exist"));

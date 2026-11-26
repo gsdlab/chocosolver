@@ -20,6 +20,8 @@ install:
 	mkdir -p $(to)
 	cp -f README.md $(to)/chocosolver-README.md
 	cp -f solver/target/chocosolver-0.6.0-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar $(to)/clafer-ls.jar
+	cp -f lsp/clafer-ls $(to)/clafer-ls
 
 snapshotInstall:
 	mkdir -p $(to)
