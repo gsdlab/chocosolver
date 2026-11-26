@@ -14,6 +14,13 @@
     <name>clafer-frontend</name>
     <description>The rich and the core explicit languages of Clafer: their IR, lexer, parser and printer, which print what the Clafer compiler prints (clafer -m clafer, --core). Its one dependency is OkHttp, for the imports of URLs.</description>
 
+    <properties>
+        <!-- the build date that the version option of claferc prints, in UTC: the day of the build, or the day of
+             SOURCE_DATE_EPOCH, which the Makefile and the Dockerfiles pass as -Dbuild.date -->
+        <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+        <build.date>${maven.build.timestamp}</build.date>
+    </properties>
+
     <dependencies>
         <!-- the imports of URLs (Http); okhttp-jvm, the artifact for Maven, with okio-jvm and kotlin-stdlib -->
         <dependency>
@@ -24,6 +31,13 @@
     </dependencies>
 
     <build>
+        <!-- version.properties gets the version of the pom and the build date -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <!-- a runnable jar with its dependencies, installed as claferc.jar with the launcher claferc,

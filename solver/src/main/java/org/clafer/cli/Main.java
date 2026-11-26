@@ -58,8 +58,8 @@ public class Main
      * Reports a wrong command line, e.g., an unknown option, without a stack trace, and exits with 1.
      */
     private static void usageError(String message) {
-        System.err.println("chocosolver: " + message);
-        System.err.println("Run chocosolver --help to see the options.");
+        System.err.println("claferg: " + message);
+        System.err.println("Run claferg --help to see the options.");
         System.exit(1);
     }
 

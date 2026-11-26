@@ -1,0 +1,4 @@
+#!/bin/sh
+# claferg: the Clafer generator, instance generation and optimization with Choco (chocosolver.jar,
+# next to this script, which works through symlinks). chocosolver is its old name, a symlink to it.
+exec java -jar "$(dirname "$(readlink -f "$0")")/chocosolver.jar" "$@"

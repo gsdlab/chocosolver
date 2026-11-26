@@ -84,6 +84,14 @@ public class ClaferCommandTest {
     }
 
     @Test
+    public void testVersionHasTheBuildDate() {
+        Run r = run("--version");
+        assertEquals(0, r.code());
+        assertTrue(r.out(), r.out().matches("claferc v\\d+\\.\\d+\\.\\d+\\.\\d{4}-\\d{2}-\\d{2} \\(Java frontend; the other modes are forwarded to clafer\\)\n"));
+        assertEquals(r, run("-V"));
+    }
+
+    @Test
     public void testConsoleAndStdin() throws IOException {
         String explicit = "//# OPTIONS --explicit\n0..* A 0..1 {}\n";
         String m = model("m.cfr", "A ?\n");

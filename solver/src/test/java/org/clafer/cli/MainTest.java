@@ -95,8 +95,8 @@ public class MainTest {
     // a wrong command line is one line and a pointer to --help, not a Java stack trace
     private static void assertUsageError(Run run, String message) {
         assertEquals(run.output(), 1, run.exitCode());
-        assertTrue(run.output(), run.output().startsWith("chocosolver: " + message + "\n"));
-        assertTrue(run.output(), run.output().contains("Run chocosolver --help to see the options."));
+        assertTrue(run.output(), run.output().startsWith("claferg: " + message + "\n"));
+        assertTrue(run.output(), run.output().contains("Run claferg --help to see the options."));
         assertFalse(run.output(), run.output().contains("Exception"));
         assertFalse(run.output(), run.output().contains("\tat "));
     }

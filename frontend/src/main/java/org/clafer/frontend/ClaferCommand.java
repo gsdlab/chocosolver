@@ -265,7 +265,7 @@ public final class ClaferCommand {
             return 0;
         }
         if (cli.version()) {
-            out.println("Clafer " + version() + " (Java frontend; the other modes are forwarded to clafer)");
+            out.println(version() + " (Java frontend; the other modes are forwarded to clafer)");
             return 0;
         }
         if (!cli.modes().isEmpty() && !cli.modes().equals(List.of("clafer"))) {
@@ -519,10 +519,18 @@ public final class ClaferCommand {
         }
     }
 
-    private static String version() {
-        Package p = ClaferCommand.class.getPackage();
-        String v = p == null ? null : p.getImplementationVersion();
-        return v == null ? "0.6.0" : v;
+    /**
+     * @return the name, the version and the build date, as the other Clafer
+     * tools print them: {@code claferc v0.6.0.2026-11-26}
+     */
+    static String version() {
+        java.util.Properties p = new java.util.Properties();
+        try (java.io.InputStream in = ClaferCommand.class.getResourceAsStream("version.properties")) {
+            p.load(in);
+        } catch (java.io.IOException | NullPointerException e) {
+            return "claferc vunknown";
+        }
+        return "claferc v" + p.getProperty("version") + "." + p.getProperty("releasedate");
     }
 
     private static final String Help = """

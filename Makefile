@@ -1,4 +1,4 @@
-# the build date that chocosolver --version prints: the day of SOURCE_DATE_EPOCH if it is set,
+# the build date that claferg --version prints: the day of SOURCE_DATE_EPOCH if it is set,
 # e.g. to the release date, otherwise the day of the build (solver/pom.xml)
 BUILD_DATE := $(if $(SOURCE_DATE_EPOCH),-Dbuild.date=$(shell date -u -d @$(SOURCE_DATE_EPOCH) +%F))
 
@@ -20,6 +20,8 @@ install:
 	mkdir -p $(to)
 	cp -f README.md $(to)/chocosolver-README.md
 	cp -f solver/target/chocosolver-0.6.0-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f solver/claferg $(to)/claferg
+	ln -sf claferg $(to)/chocosolver
 	cp -f lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar $(to)/clafer-ls.jar
 	cp -f lsp/clafer-ls $(to)/clafer-ls
 	cp -f frontend/target/clafer-frontend-0.6.0-jar-with-dependencies.jar $(to)/claferc.jar
