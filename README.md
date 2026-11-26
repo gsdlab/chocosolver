@@ -36,7 +36,7 @@ Binary distributions of the release 0.5.4 of Clafer Tools can be downloaded from
 
 ### The language server
 
-`clafer-ls` (`clafer-ls.jar`, in the binary distribution next to `chocosolver.jar`) is the Clafer language server, for any editor with a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) client. It speaks JSON-RPC on stdin and stdout (`clafer-ls`, or `java -jar clafer-ls.jar`; `--stdio` is accepted). With the Java frontend, it checks the open `.cfr` documents and the files they import on every edit, and gives:
+`clafer-ls` (`clafer-ls.jar`, in the binary distribution next to `clafersg.jar`) is the Clafer language server, for any editor with a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) client. It speaks JSON-RPC on stdin and stdout (`clafer-ls`, or `java -jar clafer-ls.jar`; `--stdio` is accepted). With the Java frontend, it checks the open `.cfr` documents and the files they import on every edit, and gives:
 
 * the errors, at their characters (UTF-16), an error in an imported file also on the first line of the model,
 * the outline (document symbols), also of a model with errors,
@@ -77,14 +77,14 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 ```xml
 <dependency>
     <groupId>org.clafer</groupId>
-    <artifactId>chocosolver</artifactId>
+    <artifactId>clafersg</artifactId>
     <version>0.6.0</version>
 </dependency>
 ```
 
-The CLI is installed to `solver/target/chocosolver-0.6.0-jar-with-dependencies.jar`;
-however, in the Clafer Tools binary distribution it is called `chocosolver.jar`, with its launcher `clafersg`, the Clafer generator
-(`chocosolver`, its old name, is a symlink to `clafersg`, so existing scripts and tools keep working). The language server is `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, called `clafer-ls.jar` there.
+The CLI is installed to `solver/target/clafersg-0.6.0-jar-with-dependencies.jar`;
+however, in the Clafer Tools binary distribution it is called `clafersg.jar`, with its launcher `clafersg`, the Clafer solution generator
+(`chocosolver`, its old name, is deprecated: Clafer Tools 0.6.0 no longer installs it, nor `chocosolver.jar`). The language server is `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, called `clafer-ls.jar` there.
 
 You can deploy the files the same way as in Clafer Tools binary distribution by executing
 
@@ -103,10 +103,10 @@ Development versions from branches `develop` should work well together but this 
 
 # Getting started with the CLI
 
-For usage instructions, start the CLI using the command `clafersg --help` (or `chocosolver --help`, its old name), or
+For usage instructions, start the CLI using the command `clafersg --help`, or
 
 ```sh
-java -jar chocosolver.jar --help
+java -jar clafersg.jar --help
 
 Option                                  Description
 ------                                  -----------
@@ -169,7 +169,8 @@ The Clafer compiler (`clafer -k -m choco model.cfr`, which writes `model.js`) co
 * the model has a `[choco| |]` escape, which is JavaScript;
 * the Java frontend rejects the model: if the compiler compiles it, chocosolver solves the compiler's output and prints the Java frontend's errors, to be reported; otherwise they are the model's errors.
 
-chocosolver does not solve temporal models, nor `real` and `double`; the Java frontend reports each, e.g., `model.cfr:3:2: Chocosolver does not solve temporal models: ...`.
+Choco does not solve temporal models: `clafersg` solves them with Alloy 6.2.0, in the same JVM, as claferIG does (the module `alloy/`). It prints the traces, up to `-n`, and `clafersg --repl` on a temporal model is claferIG's REPL, with its traces, unsat cores, near-misses and `check`, `fork`, `config` and `tl`. On a static model, the REPL also has claferIG's `d`, `e`, `f`, `dot` and `scope`.
+clafersg does not solve `real` and `double`; the Java frontend reports each at its position.
 
 An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7), by the frontend module (`frontend/`, see [Clafer's rich and core explicit models](https://github.com/gsdlab/clafer/blob/master/doc/rich-and-core-explicit.md)): chocosolver solves the static explicit models, the rich one, `clafer -m clafer --meta-data model.cfr`, and the core, `clafer -m clafer --core --meta-data model.cfr`. It lowers the rich model to the core as the compiler does (`ToCore`).
 It is a Clafer model with nothing left implicit, as `clafer -m clafer --meta-data model.cfr` writes it to `model.des.cfr`, with every scope in `model.des.cfr-scope`: every name is a UID, every card and group card, `this`, `parent` and `dref` are written out, and nesting is in braces.
@@ -259,7 +260,7 @@ The CLI is case sensitive, that is, `i` is for `incScope` command, whereas, `I` 
 
 In general, the CLI classes are good examples of using the API:
 
-* [Main.java](solver/src/main/java/org/clafer/cli/Main.java) - this is the main class of the `chocosolver.jar`.
+* [Main.java](solver/src/main/java/org/clafer/cli/Main.java) - this is the main class of `clafersg.jar`.
 * [Validate.java](solver/src/main/java/org/clafer/cli/Validate.java) - checks assertions (run with `-v`).
 * [REPL.java](solver/src/main/java/org/clafer/cli/REPL.java) - read, eval, print loop (interactive interface, run with `--repl`).
 * [Normal.java](solver/src/main/java/org/clafer/cli/Normal.java) - runs batch instance generation or multi-objective optimization up to the given limit of instances (provided using `-n`) or unlimited (by default).
@@ -420,7 +421,7 @@ public static void main(String[] args) {
 
 ## Configuring as a Web Tool Backend
 
-The configuration is done in the `<host-tool-path>/Server/Backends/backends.json` file, where `<host-tool-path>` is a path to the web-based tool (`ClaferIDE`, etc.) you want to configure to use `chocosolver` as a backend.
+The configuration is done in the `<host-tool-path>/Server/Backends/backends.json` file, where `<host-tool-path>` is a path to the web-based tool (`ClaferIDE`, etc.) you want to configure to use `clafersg` as a backend.
 
 * An example configuration for [ClaferIDE](https://github.com/gsdlab/ClaferIDE):
 
@@ -433,8 +434,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "An instance generator and multi-objective optimizer based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--repl", "--prettify"],
-            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--file=$filepath$", "--repl", "--prettify"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--version"],
             "scope_options": {
                 "set_default_scope" : {"command": "SetGlobalScope $value$\n", "label": "Default:", "argument": "--scope=$value$", "default_value": 1},
                 "set_individual_scope": {"command": "setScope $clafer$ $value$\n"},
@@ -468,8 +469,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "A multi-objective optimizer based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--moo"],
-            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--file=$filepath$", "--moo"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--version"],
             "optimization_options": {
                 "set_int_scope" : {"label": "Max. integer:", "argument": "--maxint=$value$", "default_value": 127},
                 "set_default_scope" : {"label": "Default scopes:", "argument": "--scope=$value$", "default_value": 25}
@@ -490,8 +491,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "An instance generator based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--repl"],
-            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--file=$filepath$", "--repl"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--version"],
             "scope_options": {
                 "set_default_scope" : {"command": "SetGlobalScope $value$\n"},
                 "set_individual_scope": {"command": "setScope $clafer$ $value$\n"},

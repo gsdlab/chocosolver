@@ -4,7 +4,7 @@
 
     <parent>
         <groupId>org.clafer</groupId>
-        <artifactId>chocosolver-parent</artifactId>
+        <artifactId>org.clafer</artifactId>
         <version>0.6.0</version>
     </parent>
 

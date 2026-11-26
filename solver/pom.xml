@@ -5,19 +5,19 @@
 
     <parent>
         <groupId>org.clafer</groupId>
-        <artifactId>chocosolver-parent</artifactId>
+        <artifactId>org.clafer</artifactId>
         <version>0.6.0</version>
     </parent>
 
-    <artifactId>chocosolver</artifactId>
+    <artifactId>clafersg</artifactId>
     <packaging>jar</packaging>
 
-    <name>chocosolver</name>
+    <name>clafersg</name>
     <url>http://github.com/gsdlab/chocosolver</url>
     <description>A backend for Clafer based on the Choco 6 constraint programming library.</description>
 
     <properties>
-        <!-- the build date that the version option of chocosolver prints, in UTC: the day of the build, or the
+        <!-- the build date that the version option of clafersg prints, in UTC: the day of the build, or the
              day of SOURCE_DATE_EPOCH, which the Makefile and the Dockerfiles pass as -Dbuild.date -->
         <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
         <build.date>${maven.build.timestamp}</build.date>

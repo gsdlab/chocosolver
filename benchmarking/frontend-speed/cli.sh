@@ -8,7 +8,7 @@ set -u
 WORK=$1; shift
 RUNS=${RUNS:-3}
 CHOCO=$(cd "$(dirname "$0")/../.." && pwd)
-J=$CHOCO/solver/target/chocosolver-0.6.0-jar-with-dependencies.jar
+J=$CHOCO/solver/target/clafersg-0.6.0-jar-with-dependencies.jar
 ms() { echo $(( $(date +%s%N) / 1000000 )); }
 for m in "$@"; do
   for path in java haskell; do

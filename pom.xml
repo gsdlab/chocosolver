@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.clafer</groupId>
-    <artifactId>chocosolver-parent</artifactId>
+    <artifactId>org.clafer</artifactId>
     <version>0.6.0</version>
     <packaging>pom</packaging>
 
-    <name>chocosolver-parent</name>
+    <name>org.clafer</name>
     <url>http://github.com/gsdlab/chocosolver</url>
-    <description>The Clafer frontend for the explicit languages, and chocosolver, the Choco 6 backend for Clafer.</description>
+    <description>The Java implementation of Clafer: the frontend (claferc), the language server (clafer-ls), the Alloy 6 backend, and clafersg, the Clafer solution generator with Choco 6 and Alloy 6.</description>
 
     <modules>
         <module>frontend</module>

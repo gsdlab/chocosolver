@@ -22,7 +22,7 @@ CLAFER_RUNS=${CLAFER_RUNS:-3}
 TIMEOUT=${TIMEOUT:-900}
 CHOCO=$(cd "$(dirname "$0")/../.." && pwd)
 TOP=$(dirname "$CHOCO")
-CP=$CHOCO/solver/target/test-classes:$CHOCO/solver/target/chocosolver-0.6.0-jar-with-dependencies.jar
+CP=$CHOCO/solver/target/test-classes:$CHOCO/solver/target/clafersg-0.6.0-jar-with-dependencies.jar
 test -f "$CHOCO/solver/target/test-classes/org/clafer/benchmark/FrontendBenchmark.class" || {
   echo "Run mvn install in $CHOCO first"; exit 2; }
 command -v clafer > /dev/null || { echo "clafer is not on the path"; exit 2; }

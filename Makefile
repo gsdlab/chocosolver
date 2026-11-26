@@ -18,10 +18,9 @@ clean:
 
 install:
 	mkdir -p $(to)
-	cp -f README.md $(to)/chocosolver-README.md
-	cp -f solver/target/chocosolver-0.6.0-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f README.md $(to)/clafersg-README.md
+	cp -f solver/target/clafersg-0.6.0-jar-with-dependencies.jar $(to)/clafersg.jar
 	cp -f solver/clafersg $(to)/clafersg
-	ln -sf clafersg $(to)/chocosolver
 	cp -f lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar $(to)/clafer-ls.jar
 	cp -f lsp/clafer-ls $(to)/clafer-ls
 	cp -f frontend/target/clafer-frontend-0.6.0-jar-with-dependencies.jar $(to)/claferc.jar
@@ -29,5 +28,5 @@ install:
 
 snapshotInstall:
 	mkdir -p $(to)
-	cp -f README.md $(to)/chocosolver-README.md
-	cp -f solver/target/chocosolver-0.6.0-SNAPSHOT-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f README.md $(to)/clafersg-README.md
+	cp -f solver/target/clafersg-0.6.0-SNAPSHOT-jar-with-dependencies.jar $(to)/clafersg.jar
