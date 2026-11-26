@@ -110,10 +110,8 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
         capabilities.setReferencesProvider(true);
         capabilities.setCompletionProvider(new CompletionOptions(false, List.of(".")));
         capabilities.setRenameProvider(new RenameOptions(true));
-        String version = Optional.ofNullable(ClaferLanguageServer.class.getPackage().getImplementationVersion())
-                .orElse("0.6.0");
         return CompletableFuture.completedFuture(
-                new InitializeResult(capabilities, new ServerInfo("clafer-ls", version)));
+                new InitializeResult(capabilities, new ServerInfo("clafer-ls", Main.number())));
     }
 
     @Override

@@ -56,6 +56,7 @@ public class ClaferLanguageServerTest {
         assertEquals(TextDocumentSyncKind.Full, r.getCapabilities().getTextDocumentSync().getLeft());
         assertTrue(r.getCapabilities().getDocumentSymbolProvider().getLeft());
         assertEquals("clafer-ls", r.getServerInfo().getName());
+        assertTrue(r.getServerInfo().getVersion(), r.getServerInfo().getVersion().matches("\\d+\\.\\d+\\.\\d+\\.\\d{4}-\\d{2}-\\d{2}"));
     }
 
     @Test

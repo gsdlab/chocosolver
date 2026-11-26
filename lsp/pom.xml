@@ -14,6 +14,13 @@
     <name>clafer-language-server</name>
     <description>The Clafer language server (LSP), on the Java frontend: JSON-RPC over stdio, for every editor.</description>
 
+    <properties>
+        <!-- the build date that the version option of clafer-ls prints, in UTC: the day of the build, or the day of
+             SOURCE_DATE_EPOCH, which the Makefile and the Dockerfiles pass as -Dbuild.date -->
+        <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+        <build.date>${maven.build.timestamp}</build.date>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.clafer</groupId>
@@ -28,6 +35,13 @@
     </dependencies>
 
     <build>
+        <!-- version.properties gets the version of the pom and the build date -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <!-- a runnable jar with its dependencies, installed as clafer-ls.jar with the launcher clafer-ls -->

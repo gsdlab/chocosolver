@@ -15,11 +15,32 @@ public final class Main {
     private Main() {
     }
 
+    /**
+     * @return the name, the version and the build date, as the other Clafer
+     * tools print them: {@code clafer-ls v0.6.0.2026-11-26}
+     */
+    static String version() {
+        return "clafer-ls v" + number();
+    }
+
+    /**
+     * @return the version and the build date, {@code 0.6.0.2026-11-26}, from
+     * the version.properties that Maven fills in
+     */
+    static String number() {
+        java.util.Properties p = new java.util.Properties();
+        try (java.io.InputStream in = Main.class.getResourceAsStream("version.properties")) {
+            p.load(in);
+        } catch (java.io.IOException | NullPointerException e) {
+            return "unknown";
+        }
+        return p.getProperty("version") + "." + p.getProperty("releasedate");
+    }
+
     public static void main(String[] args) throws InterruptedException {
         for (String a : args) {
             if (a.equals("--version")) {
-                String v = Main.class.getPackage().getImplementationVersion();
-                System.out.println("clafer-ls " + (v == null ? "0.6.0" : v));
+                System.out.println(version());
                 return;
             }
             if (a.equals("--help") || a.equals("-h")) {
