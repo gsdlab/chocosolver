@@ -7,6 +7,7 @@ import java.util.function.Function;
 import org.clafer.frontend.ClaferParser;
 import org.clafer.frontend.Diagnostic;
 import org.clafer.frontend.ModelFiles;
+import org.clafer.frontend.Names;
 import org.clafer.frontend.SourceSpan;
 import org.clafer.frontend.ToIr;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -24,9 +25,10 @@ import org.eclipse.lsp4j.Range;
  * parse errors; what was read around the errors
  * @param diagnostics the LSP diagnostics of the model of the document, its
  * imports included
+ * @param index the names of the model and what they refer to
  */
 public record Analysis(String text, Positions positions, ClaferParser.Result parsed,
-        List<org.eclipse.lsp4j.Diagnostic> diagnostics) {
+        List<org.eclipse.lsp4j.Diagnostic> diagnostics, Index index) {
 
     /**
      * The name of the server in the diagnostics.
@@ -36,13 +38,14 @@ public record Analysis(String text, Positions positions, ClaferParser.Result par
     /**
      * Analyzes a document.
      *
+     * @param uri the document's URI
      * @param path the document's file, absolute, or a name if it has no file
      * @param text the document's text
      * @param open the text of the open documents, by the path that a model
      * names them with; the files that are not open are read from disk
      * @return the analysis
      */
-    public static Analysis of(String path, String text, Function<String, Optional<String>> open) {
+    public static Analysis of(String uri, String path, String text, Function<String, Optional<String>> open) {
         Positions positions = new Positions(text);
         ClaferParser.Result parsed = ClaferParser.parse(text);
         Function<String, Optional<String>> withThis = p -> p.equals(path) ? Optional.of(text) : open.apply(p);
@@ -62,7 +65,10 @@ public record Analysis(String text, Positions positions, ClaferParser.Result par
                 diagnostics.add(toLsp(d, files, path, positions));
             }
         }
-        return new Analysis(text, positions, parsed, List.copyOf(diagnostics));
+        Index index = new Index(uri, path, positions, parsed.model(),
+                files.errors().isEmpty() ? Optional.of(files) : Optional.empty(),
+                result == null ? Names.None : result.names());
+        return new Analysis(text, positions, parsed, List.copyOf(diagnostics), index);
     }
 
     /**

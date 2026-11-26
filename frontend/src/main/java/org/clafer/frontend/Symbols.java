@@ -263,6 +263,14 @@ public final class Symbols {
             return parent == null;
         }
 
+        /**
+         * @return the super as written, if it is a clafer: not a primitive
+         * super, which is a reference, nor {@code : clafer}
+         */
+        Optional<Exp> superExp() {
+            return superExp;
+        }
+
         public Optional<ClaferSymbol> superClafer() {
             return Optional.ofNullable(superClafer);
         }

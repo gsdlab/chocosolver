@@ -142,6 +142,29 @@ final class ServerHarness implements AutoCloseable {
         return symbols.stream().map(Either::getRight).toList();
     }
 
+    List<? extends org.eclipse.lsp4j.Location> definition(String uri, int line, int character) throws Exception {
+        return server.getTextDocumentService().definition(new org.eclipse.lsp4j.DefinitionParams(
+                new TextDocumentIdentifier(uri), new org.eclipse.lsp4j.Position(line, character)))
+                .get(10, TimeUnit.SECONDS).getLeft();
+    }
+
+    List<? extends org.eclipse.lsp4j.Location> references(String uri, int line, int character, boolean declaration)
+            throws Exception {
+        return server.getTextDocumentService().references(new org.eclipse.lsp4j.ReferenceParams(
+                new TextDocumentIdentifier(uri), new org.eclipse.lsp4j.Position(line, character),
+                new org.eclipse.lsp4j.ReferenceContext(declaration))).get(10, TimeUnit.SECONDS);
+    }
+
+    /**
+     * @return the hover's Markdown, or null if there is none
+     */
+    String hover(String uri, int line, int character) throws Exception {
+        org.eclipse.lsp4j.Hover h = server.getTextDocumentService().hover(new org.eclipse.lsp4j.HoverParams(
+                new TextDocumentIdentifier(uri), new org.eclipse.lsp4j.Position(line, character)))
+                .get(10, TimeUnit.SECONDS);
+        return h == null ? null : h.getContents().getRight().getValue();
+    }
+
     @Override
     public void close() throws Exception {
         toServer.close();

@@ -8,7 +8,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.IntConsumer;
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.HoverParams;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.LocationLink;
+import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.MarkupKind;
+import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
@@ -74,6 +82,9 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
         ServerCapabilities capabilities = new ServerCapabilities();
         capabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
         capabilities.setDocumentSymbolProvider(true);
+        capabilities.setDefinitionProvider(true);
+        capabilities.setHoverProvider(true);
+        capabilities.setReferencesProvider(true);
         String version = Optional.ofNullable(ClaferLanguageServer.class.getPackage().getImplementationVersion())
                 .orElse("0.6.0");
         return CompletableFuture.completedFuture(
@@ -150,6 +161,33 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
                             .toList();
             return CompletableFuture.completedFuture(symbols);
         }
+
+        @Override
+        public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
+                DefinitionParams params) {
+            List<Location> found = index(params.getTextDocument().getUri())
+                    .flatMap(i -> i.definition(params.getPosition())).map(List::of).orElse(List.of());
+            return CompletableFuture.completedFuture(Either.forLeft(found));
+        }
+
+        @Override
+        public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
+            boolean withDeclaration = params.getContext() == null || params.getContext().isIncludeDeclaration();
+            List<Location> found = index(params.getTextDocument().getUri())
+                    .map(i -> i.references(params.getPosition(), withDeclaration)).orElse(List.of());
+            return CompletableFuture.completedFuture(found);
+        }
+
+        @Override
+        public CompletableFuture<Hover> hover(HoverParams params) {
+            Optional<Index> index = index(params.getTextDocument().getUri());
+            Hover hover = index.flatMap(i -> i.hover(params.getPosition()).map(text -> {
+                Hover h = new Hover(new MarkupContent(MarkupKind.MARKDOWN, text));
+                i.rangeAt(params.getPosition()).ifPresent(h::setRange);
+                return h;
+            })).orElse(null);
+            return CompletableFuture.completedFuture(hover);
+        }
     };
 
     private final WorkspaceService workspace = new WorkspaceService() {
@@ -165,12 +203,17 @@ public final class ClaferLanguageServer implements LanguageServer, LanguageClien
         }
     };
 
+    private Optional<Index> index(String uri) {
+        Document d = documents.get(uri);
+        return d == null || d.analysis() == null ? Optional.empty() : Optional.of(d.analysis().index());
+    }
+
     /**
      * Analyzes every open document again, and publishes its diagnostics.
      */
     private void analyzeAll() {
         for (Document d : List.copyOf(documents.values())) {
-            Analysis a = Analysis.of(d.path(), d.text(), this::openText);
+            Analysis a = Analysis.of(d.uri(), d.path(), d.text(), this::openText);
             documents.put(d.uri(), new Document(d.uri(), d.path(), d.text(), a));
             publish(d.uri(), a.diagnostics());
         }

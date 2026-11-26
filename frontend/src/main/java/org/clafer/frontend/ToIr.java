@@ -48,9 +48,11 @@ public final class ToIr {
      * @param scopes the scopes of the explicit model's scope file, if it has
      * no errors
      * @param files the files of the model, whose lines the diagnostics are in
+     * @param names what the names refer to, for the language server, or
+     * {@link Names#None} if the model has errors before the resolver
      */
     public record Result(Ir.Model model, List<Diagnostic> diagnostics, List<String> errors, Optional<Scopes> scopes,
-            ModelFiles files) {
+            ModelFiles files, Names names) {
 
         /**
          * @return the errors without a position if there are any, else the
@@ -62,7 +64,7 @@ public final class ToIr {
     }
 
     private static Result failed(List<Diagnostic> diagnostics, ModelFiles files) {
-        return new Result(empty(), List.copyOf(diagnostics), List.of(), Optional.empty(), files);
+        return new Result(empty(), List.copyOf(diagnostics), List.of(), Optional.empty(), files, Names.None);
     }
 
     /**
@@ -70,7 +72,7 @@ public final class ToIr {
      */
     private static Result failed(String error, ModelFiles files) {
         return new Result(empty(), List.of(new Diagnostic(SourceSpan.at(1, 1), error)), List.of(error),
-                Optional.empty(), files);
+                Optional.empty(), files, Names.None);
     }
 
     /**
@@ -100,7 +102,7 @@ public final class ToIr {
     public static Result toIr(ModelFiles files) {
         if (!files.errors().isEmpty()) {
             return new Result(empty(), files.errors().stream().map(e -> new Diagnostic(SourceSpan.at(1, 1), e))
-                    .toList(), files.errors(), Optional.empty(), files);
+                    .toList(), files.errors(), Optional.empty(), files, Names.None);
         }
         String source = files.text();
         ClaferParser.Result parsed = ClaferParser.parse(source);
@@ -221,7 +223,7 @@ public final class ToIr {
         diagnostics.sort((a, b) -> a.span().line() != b.span().line()
                 ? Integer.compare(a.span().line(), b.span().line())
                 : Integer.compare(a.span().column(), b.span().column()));
-        return new Result(ir, List.copyOf(diagnostics), errors, scopes, files);
+        return new Result(ir, List.copyOf(diagnostics), errors, scopes, files, Names.of(symbols, resolver.nameUses));
     }
 
     /**

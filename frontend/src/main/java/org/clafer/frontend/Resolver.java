@@ -1198,14 +1198,36 @@ final class Resolver {
             }
             if (isFirst) {
                 Resolution r = resolveName(pos, env, id);
+                recordUse(pos, r);
                 Nav n = mkPath(pos, env, r);
                 return new Nav(pexp0.withExp(n.pexp().exp()), derefPath(id, n.path()));
             }
             Resolution r = env.resPath().isEmpty() ? resolveTopLevelName(pos, env, id) : resolveImmName(pos, env, id);
+            recordUse(pos, r);
             Nav n = mkPathPrime(pos, i.mod(), r);
             return new Nav(pexp0.withExp(n.pexp().exp()), derefPath(id, n.path()));
         }
         throw new Abort(pos, "Cannot resolve nav of " + showExp(x));
+    }
+
+    /**
+     * The clafer that each written name resolves to, by the span of the name,
+     * for the language server: the names of clafers, not the special names,
+     * the primitive types or the locals.
+     */
+    final Map<SourceSpan, ClaferSymbol> nameUses = new java.util.LinkedHashMap<>();
+
+    private void recordUse(SourceSpan pos, Resolution r) {
+        switch (r.how()) {
+            case Subclafers, Ancestor, Reference, TargetChild, AbsClafer, TopClafer -> {
+                C c = uidMap.get(r.id());
+                if (c != null && c.symbol != null) {
+                    nameUses.put(pos, c.symbol);
+                }
+            }
+            default -> {
+            }
+        }
     }
 
     private static boolean isSingleInstance(P p) {
