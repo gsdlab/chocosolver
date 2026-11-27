@@ -105,9 +105,18 @@ public final class SolutionView {
     /**
      * The Graphviz graph of a solution in the diff view, which keeps large
      * traces readable: the first state in full, and each next state as its
-     * changes from the previous one.
+     * changes from the previous one; an instance as its changes from the
+     * previous instance, as {@link #showSolutionDiff} shows it.
+     *
+     * @param previous the solution shown before, or null
      */
-    public static String solutionDiffDot(UnaryOperator<String> names, Solution solution) {
+    public static String solutionDiffDot(UnaryOperator<String> names, Solution previous, Solution solution) {
+        if (solution instanceof Solution.Instance i) {
+            // as its text: compared with the previous instance by its structure
+            return graphWith(List.of(previous instanceof Solution.Instance p
+                    ? showChanges(structureDiff(names, p.model(), i.model()))
+                    : appears(i.model())), solution);
+        }
         if (solution instanceof Solution.Trace t) {
             List<String> labels = new ArrayList<>();
             labels.add(appears(t.states().get(0)));

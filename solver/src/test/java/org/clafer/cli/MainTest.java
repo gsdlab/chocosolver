@@ -76,12 +76,19 @@ public class MainTest {
 
     // runs chocosolver with the arguments in a new JVM, with the input on its standard input
     private static Run chocosolverWithInput(String input, String... args) throws IOException, InterruptedException {
+        return chocosolverWithInput(null, input, args);
+    }
+
+    // ... in the given working directory, e.g., where the REPL saves its files
+    private static Run chocosolverWithInput(Path dir, String input, String... args)
+            throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                 "--enable-native-access=ALL-UNNAMED", "-cp", System.getProperty("java.class.path"),
                 Main.class.getName()));
         command.addAll(List.of(args));
-        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        Process process = new ProcessBuilder(command).directory(dir == null ? null : dir.toFile())
+                .redirectErrorStream(true).start();
         try (var in = process.getOutputStream()) {
             in.write(input.getBytes());
         }
@@ -271,6 +278,31 @@ public class MainTest {
         assertTrue(run.output(), run.output().contains("The command 'tl' is for temporal models, which Alloy"
                 + " solves."));
         assertTrue(run.output(), run.output().contains("Unhandled command: foo"));
+    }
+
+    // --diff: the REPL shows each next instance as its changes, and its graph too
+    @Test
+    public void testStaticReplDiff() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n  xor B\n    C\n    D\n");
+        Run run = chocosolverWithInput(dir, "n\ndot\nq\n", "--file", model.getPath(), "--repl", "--prettify", "--diff");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("=== Instance 1 Begin ===\n\n+ A\n"));
+        assertTrue(run.output(), run.output().matches("(?s).*=== Instance 2 Begin ===\n\n-     [CD]\n\\+     [CD]\n.*"));
+        String dot = Files.readString(dir.resolve("model.cfr.2.dot"));
+        assertTrue(dot, dot.matches("(?s).*instance \\[label=\"-     [CD]\\\\l\\+     [CD]\\\\l\"\\];.*"));
+    }
+
+    // a temporal model's REPL takes --diff, --scope and --maxint, as a static model's
+    @Test
+    public void testTemporalReplOptions() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "//# OPTIONS --tl=3\nA *\n[always some A]\n");
+        Run run = chocosolverWithInput("c\nq\n", "--file", model.getPath(), "--repl", "--diff", "--scope=3",
+                "--maxint=127");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("--- State 0 ---\n+ A"));
+        assertTrue(run.output(), run.output().contains("Integer range = -128..127 (bitwidth = 8)\nGlobal scope  = 3\n"));
     }
 
     // a model that the Java frontend rejects and the compiler compiles: the compiler's output, with a note

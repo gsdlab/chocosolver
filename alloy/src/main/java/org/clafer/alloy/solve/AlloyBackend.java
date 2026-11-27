@@ -194,6 +194,18 @@ public final class AlloyBackend implements Backend {
         globalScope = scope;
     }
 
+    /**
+     * Sets the global scope before the first solution, as {@code S} does
+     * without solving or printing, e.g., for clafersg's {@code --scope}.
+     */
+    public void setInitialGlobalScope(int value) {
+        int scope = Math.max(1, value);
+        setGlobalScope(scope);
+        if (scope > allowedMaxInt(bitwidth)) {
+            setBitwidth(requiredBitwidth(scope));
+        }
+    }
+
     private void setBitwidth(int bw) {
         bitwidth = bw;
         session.setBitwidth(bw);
@@ -472,7 +484,7 @@ public final class AlloyBackend implements Backend {
     /**
      * The bitwidth required to store the given integer.
      */
-    static int requiredBitwidth(long n) {
+    public static int requiredBitwidth(long n) {
         return (int) Math.ceil(Math.log(2.0 * n + 1) / Math.log(2));
     }
 

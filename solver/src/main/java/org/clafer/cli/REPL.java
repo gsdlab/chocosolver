@@ -39,7 +39,7 @@ public class REPL {
     public static void runREPL(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws Exception {
         ChocoBackend backend = new ChocoBackend(inputFile, javascriptFile, options);
         new Repl(backend, new Repl.Io(new BufferedReader(new InputStreamReader(System.in)), System.out, System.err),
-                false).run();
+                options.has("diff")).run();
     }
 
     public static void printHelp() {

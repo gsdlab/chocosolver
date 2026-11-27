@@ -236,6 +236,13 @@ public final class Repl {
         context.currentXml = shown.xml();
     }
 
+    // the solution shown before the most recent one, or null
+    private Solution previous() {
+        int unsaved = context.unsaved.size();
+        return unsaved >= 2 ? context.unsaved.get(1)
+                : context.saved.size() >= 2 - unsaved ? context.saved.get(1 - unsaved) : null;
+    }
+
     private Solution latest() {
         return !context.unsaved.isEmpty() ? context.unsaved.get(0)
                 : !context.saved.isEmpty() ? context.saved.get(0) : null;
@@ -262,7 +269,7 @@ public final class Repl {
         int count = context.unsaved.size() + context.saved.size();
         String saveName = backend.modelFileName() + "." + count + ".dot";
         Files.writeString(Path.of(saveName), context.diffView
-                ? SolutionView.solutionDiffDot(backend.names(), solution)
+                ? SolutionView.solutionDiffDot(backend.names(), previous(), solution)
                 : SolutionView.solutionDot(solution), StandardCharsets.UTF_8);
         io.out().println("Saved to " + saveName);
     }

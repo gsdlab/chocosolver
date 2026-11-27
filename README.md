@@ -116,6 +116,9 @@ Option                                  Description
                                           output (the default output always has them).
 --decimal-digits <Integer>              Specify the number of fractional digits of decimals
                                           (overrides the model's).
+--diff                                  In the REPL, show each next instance, or state of a trace,
+                                          as its changes from the previous one ('d' toggles it), as
+                                          claferIG's --diff.
 --explicit                              The .cfr model is an explicit model (as 'clafer -m
                                           clafer' prints it): read it directly, without the
                                           Clafer compiler. A model whose first line is '//#
@@ -171,7 +174,7 @@ The Clafer compiler (`clafer -k -m choco model.cfr`, which writes `model.js`) co
 * the model has a `[choco| |]` escape, which is JavaScript;
 * the Java frontend rejects the model: if the compiler compiles it, chocosolver solves the compiler's output and prints the Java frontend's errors, to be reported; otherwise they are the model's errors.
 
-Choco does not solve temporal models: `clafersg` solves them with Alloy 6.2.0, in the same JVM, as claferIG does (the module `alloy/`). It prints the traces, up to `-n`, and `clafersg --repl` on a temporal model is claferIG's REPL, with its traces, unsat cores, near-misses and `check`, `fork`, `config` and `tl`. On a static model, the REPL also has claferIG's `d`, `e`, `f`, `dot` and `scope`.
+Choco does not solve temporal models: `clafersg` solves them with Alloy 6.2.0, in the same JVM, as claferIG does (the module `alloy/`). It prints the traces, up to `-n`, and `clafersg --repl` on a temporal model is claferIG's REPL, with its traces, unsat cores, near-misses and `check`, `fork`, `config` and `tl`. On a static model, the REPL also has claferIG's `d`, `e`, `f`, `dot` and `scope`. `--diff` starts the REPL in the diff view, and a temporal model takes `--scope`, `--maxint` and `--minint` as a static one does.
 clafersg does not solve `real` and `double`; the Java frontend reports each at its position.
 
 An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7), by the frontend module (`frontend/`, see [Clafer's rich and core explicit models](https://github.com/gsdlab/clafer/blob/master/doc/rich-and-core-explicit.md)): chocosolver solves the static explicit models, the rich one, `clafer -m clafer --meta-data model.cfr`, and the core, `clafer -m clafer --core --meta-data model.cfr`. It lowers the rich model to the core as the compiler does (`ToCore`).

@@ -34,8 +34,13 @@ final class Temporal {
     private static final List<Logger> Quiet = List.of(Logger.getLogger("kodkod"), Logger.getLogger("edu.mit"),
             Logger.getLogger("org.alloytools"));
 
+    // Kodkod warns when it frees a native solver that was not freed before ("finalize called"), which
+    // is not a problem of the model: those warnings are dropped
+    private static final Logger NativeSolver = Logger.getLogger("kodkod.engine.satlab.NativeSolver");
+
     static {
         Quiet.forEach(l -> l.setLevel(Level.WARNING));
+        NativeSolver.setFilter(r -> r.getMessage() == null || !r.getMessage().contains("finalize called"));
     }
 
     /**
@@ -82,8 +87,21 @@ final class Temporal {
             }
             return ir;
         };
-        return new AlloyBackend(loader, file.getName(),
-                new AlloyBackend.Options(AlloyBackend.Options.Default.bitwidth(), false, options.has("addtypes")));
+        // the integer range of the command line (--maxint, --minint) raises the bitwidth, as the model's does
+        int bitwidth = AlloyBackend.Options.Default.bitwidth();
+        if (options.has("maxint")) {
+            bitwidth = Math.max(bitwidth, AlloyBackend.requiredBitwidth((int) options.valueOf("maxint")));
+        }
+        if (options.has("minint")) {
+            bitwidth = Math.max(bitwidth, AlloyBackend.requiredBitwidth(-(long) (int) options.valueOf("minint") - 1));
+        }
+        AlloyBackend backend = new AlloyBackend(loader, file.getName(),
+                new AlloyBackend.Options(bitwidth, false, options.has("addtypes")));
+        // --scope: the default scope of the clafers, as the REPL's 'S' sets it
+        if (options.has("scope")) {
+            backend.setInitialGlobalScope((int) options.valueOf("scope"));
+        }
+        return backend;
     }
 
     /**
@@ -92,7 +110,7 @@ final class Temporal {
     static void runREPL(File file, ToIr.Result ir, OptionSet options) throws Exception {
         new Repl(backend(file, ir, options), new Repl.Io(
                 new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)), System.out, System.err),
-                false).run();
+                options.has("diff")).run();
     }
 
     /**

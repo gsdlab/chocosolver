@@ -27,6 +27,7 @@ public class Main
                         .ofType( File.class ).describedAs("text file");
                 accepts( "decimal-digits", "Specify the number of fractional digits of decimals (overrides the model's)." )
                     .withRequiredArg().ofType( Integer.class );
+                accepts( "diff", "In the REPL, show each next instance, or state of a trace, as its changes from the previous one ('d' toggles it), as claferIG's --diff." );
                 accepts( "explicit", "The .cfr model is an explicit model (as 'clafer -m clafer' prints it): read it directly, without the Clafer compiler. A model whose first line is '//# OPTIONS --explicit' is one without this option." );
                 accepts( "haskell-frontend", "Compile the .cfr model with the Haskell compiler (clafer -m choco), as before chocosolver 0.6.0, rather than with the Java frontend. Without it, the Haskell compiler compiles only the models that the Java frontend cannot ([choco| |] escapes) or rejects." );
                 accepts( "import-root", "Allow only local imports inside DIR (repeatable), as clafer's --import-root." )
