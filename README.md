@@ -7,6 +7,8 @@
 An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 6.0.2 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
 
+The API documentation (javadoc) of all the Java tools of Clafer 0.6.0, `org.clafer` (clafersg, claferc and clafer-ls), is at [gsdlab.github.io/chocosolver](https://gsdlab.github.io/chocosolver/).
+
 The CLI is used by
 [ClaferIDE](https://github.com/gsdlab/ClaferIDE),
 [ClaferMooVisualizer](https://github.com/gsdlab/ClaferMooVisalizer), and [ClaferConfigurator](https://github.com/gsdlab/ClaferConfigurator).
@@ -258,6 +260,8 @@ The CLI is case sensitive, that is, `i` is for `incScope` command, whereas, `I` 
 
 ## Getting Started with the Java API
 
+The javadoc of the API is at [gsdlab.github.io/chocosolver](https://gsdlab.github.io/chocosolver/).
+
 In general, the CLI classes are good examples of using the API:
 
 * [Main.java](solver/src/main/java/org/clafer/cli/Main.java) - this is the main class of `clafersg.jar`.
@@ -277,7 +281,7 @@ Installation
         [this > 2]
 ```
 
-Below is an example of using the API to build the model above. [AstModel](http://gsdlab.github.io/chocosolver/org/clafer/ast/AstModel.html) represents the implicit "root" of the model.
+Below is an example of using the API to build the model above. [AstModel](https://gsdlab.github.io/chocosolver/org/clafer/ast/AstModel.html) represents the implicit "root" of the model.
 Every Clafer in the model is nested below it.
 
 ```java
@@ -301,7 +305,7 @@ public static void main(String[] args) {
 }
 ```
 
-The [Asts](http://gsdlab.github.io/chocosolver/org/clafer/ast/Asts.html) class provides all the functions required for building the model. See the previous link for a list of all the supported expressions. More examples of building models: [structure](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/SimpleStructureTest.java), [expressions](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/SimpleConstraintTest.java), [quantifiers](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/QuantifierTest.java), and [attributed feature models](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/FeatureModelTest.java#L229).
+The [Asts](https://gsdlab.github.io/chocosolver/org/clafer/ast/Asts.html) class provides all the functions required for building the model. See the previous link for a list of all the supported expressions. More examples of building models: [structure](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/SimpleStructureTest.java), [expressions](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/SimpleConstraintTest.java), [quantifiers](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/QuantifierTest.java), and [attributed feature models](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/FeatureModelTest.java#L229).
 
 ### Finding Instances
 
