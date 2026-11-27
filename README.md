@@ -2,10 +2,12 @@
 
 # chocosolver
 
-##### v0.5.8
+##### v0.6.0
 
 An instance generator and multi-objective optimizer backend for [Clafer](http://clafer.org) using the Choco 6.0.2 constraint programming library. There are two ways to use the project:
 programmatically via the Java API or via the command-line interface (CLI).
+
+The API documentation (javadoc) of all the Java tools of Clafer 0.6.0, `org.clafer` (clafersg, claferc and clafer-ls), is at [gsdlab.github.io/chocosolver](https://gsdlab.github.io/chocosolver/).
 
 The CLI is used by
 [ClaferIDE](https://github.com/gsdlab/ClaferIDE),
@@ -31,8 +33,20 @@ Binary distributions of the release 0.5.4 of Clafer Tools can be downloaded from
 
 ### Integration with text editors:
 
-* VS Code: [clafer-vscode](https://github.com/gsdlab/clafer-vscode).
+* VS Code: [clafer-vscode](https://github.com/gsdlab/clafer-vscode), which runs the language server below.
 * Sublime Text 4: [ClaferToolsST](https://github.com/gsdlab/ClaferToolsST).
+
+### The language server
+
+`clafer-ls` (`clafer-ls.jar`, in the binary distribution next to `clafersg.jar`) is the Clafer language server, for any editor with a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) client. It speaks JSON-RPC on stdin and stdout (`clafer-ls`, or `java -jar clafer-ls.jar`; `--stdio` is accepted). With the Java frontend, it checks the open `.cfr` documents and the files they import on every edit, and gives:
+
+* the errors, at their characters (UTF-16), an error in an imported file also on the first line of the model,
+* the outline (document symbols), also of a model with errors,
+* go to definition, find references and hover, of clafers and of the locals of quantifiers and `let`,
+* completion of the names in scope, and after a `.` of the children of a path,
+* rename of a clafer or a local, refused for a name that is reserved or already taken.
+
+It is the module `lsp/` (the artifact `clafer-language-server`), built on [Eclipse LSP4J](https://github.com/eclipse-lsp4j/lsp4j); `mvn package` writes `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, and `make install` copies it as `clafer-ls.jar`, with the launcher `clafer-ls`.
 
 ### Installation from the source code
 
@@ -65,13 +79,14 @@ Include the following XML snippet in your POM to use the API in your Maven proje
 ```xml
 <dependency>
     <groupId>org.clafer</groupId>
-    <artifactId>chocosolver</artifactId>
-    <version>0.5.8</version>
+    <artifactId>clafersg</artifactId>
+    <version>0.6.0</version>
 </dependency>
 ```
 
-The CLI is installed to `target/chocosolver-0.5.8-jar-with-dependencies.jar`;
-however, in the Clafer Tools binary distribution it is called `chocosolver.jar`.
+The CLI is installed to `solver/target/clafersg-0.6.0-jar-with-dependencies.jar`;
+however, in the Clafer Tools binary distribution it is called `clafersg.jar`, with its launcher `clafersg`, the Clafer solution generator
+(`chocosolver`, its old name, is deprecated: Clafer Tools 0.6.0 no longer installs it, nor `chocosolver.jar`). The language server is `lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar`, called `clafer-ls.jar` there.
 
 You can deploy the files the same way as in Clafer Tools binary distribution by executing
 
@@ -90,17 +105,27 @@ Development versions from branches `develop` should work well together but this 
 
 # Getting started with the CLI
 
-For usage instructions, start the CLI using the command
+For usage instructions, start the CLI using the command `clafersg --help`, or
 
 ```sh
-java -jar chocosolver.jar --help`
+java -jar clafersg.jar --help
 
 Option                                  Description
 ------                                  -----------
+--all [Integer: global scope]           Save the instances, or the traces of a temporal model,
+                                          to <model>.1.data, <model>.2.data, ... (at most -n of
+                                          them), as claferIG's --all: with the scopes of the
+                                          model's .cfr-scope file, if it exists, otherwise with the
+                                          given global scope (default: 1).
 --addtypes                              Add the super clafer of each clafer to the prettified
                                           output (the default output always has them).
 --decimal-digits <Integer>              Specify the number of fractional digits of decimals
                                           (overrides the model's).
+--diff                                  In the REPL, show each next instance, or state of a trace,
+                                          as its changes from the previous one ('d' toggles it), as
+                                          claferIG's --diff.
+--dot                                   Show the solutions as Graphviz graphs, and save them to
+                                          <model>.<n>.dot with --all, as claferIG's --dot.
 --explicit                              The .cfr model is an explicit model (as 'clafer -m
                                           clafer' prints it): read it directly, without the
                                           Clafer compiler. A model whose first line is '//#
@@ -108,23 +133,41 @@ Option                                  Description
 --file <File: Clafer model file (.cfr), Input file in .cfr or .js format.
   explicit or not, or Clafer Javascript
   file (.js)>
+--haskell-frontend                      Compile the .cfr model with the Haskell compiler (clafer
+                                          -m choco), as before chocosolver 0.6.0, rather than with
+                                          the Java frontend. Without it, the Haskell compiler
+                                          compiles only the models that the Java frontend cannot
+                                          ([choco| |] escapes) or rejects.
 --help                                  Show help.
 --import <Clafer file or URL>           Compile the .cfr model together with the given Clafer
                                           file or URL, relative to the current directory
                                           (repeatable); a model also imports files with
                                           --import in its //# OPTIONS directive.
+--import-base <URL>                     The URL from which the model's text was read, as
+                                          clafer's --import-base.
+--import-root <DIR>                     Allow only local imports inside DIR (repeatable), as
+                                          clafer's --import-root.
+-j, --json                              Show the solutions as JSON, one line for each, and save
+                                          them so with --all, as claferIG's --json (which implies
+                                          --useuids).
 --maxint <Integer>                      Specify maximum integer value.
 --minint <Integer>                      Specify minimum integer value.
 --moo                                   Run in multi-objective optimization mode.
 -n <Integer>                            Specify the maximum number of instances.
 --output <File: text file>              Output instances to the given file.
+--public-imports                        Allow only URL imports from public addresses, as
+                                          clafer's --public-imports.
 --prettify                              Use simple and pretty output format (not formal).
 --repl                                  Run in REPL (interactive) mode.
+--savedir <DIR>                         The directory under which --all saves the solutions, as
+                                          claferIG's --savedir.
 --scope <Integer>                       Override the default global scope value.
 --scope-file <File: scope file>         Read the scopes of clafers from the given .cfr-scope
                                           file (by default, from the model's .cfr-scope file,
                                           e.g., model.cfr-scope, if it exists).
 --search <ClaferSearchStrategy>         PreferSmallerInstances/PreferLargerInstances/Random.
+-u, --useuids                           Name the instances by the UIDs of their clafers and their
+                                          numbers (e.g., Car__name$1), as claferIG's --useuids.
 -v                                      Run in validation mode; checks all assertions.
 --version                               Display the tool version.
 ```
@@ -138,10 +181,19 @@ The CLI supports four modes of operation:
 
 The last mode is selected when no `-v` and `--repl` are given and the model does not contain optimization objectives.
 
-If the `.cfr` file is given, the CLI will first call the Clafer compiler using `clafer -k -m choco model.cfr`,
-which will produce `model.js`.
+A `.cfr` file is compiled by the Java frontend (chocosolver 0.6.0), in the same JVM, without writing a `.js` file: it reads the model and its imports, resolves it and computes its scopes as the Clafer compiler does, so it gives the same instances as `model.js`, and the compiler's errors at their positions, e.g., `model.cfr:3:6: Name resolver: 'c' not found ...`. The REPL's `reload` compiles the `.cfr` file again.
+The Clafer compiler (`clafer -k -m choco model.cfr`, which writes `model.js`) compiles the model instead with `--haskell-frontend`, and when the Java frontend cannot take it, saying why:
+* the model imports a URL;
+* the model has imports and `--import-root`, `--public-imports` or `--import-base` restricts them;
+* the model has a `[choco| |]` escape, which is JavaScript;
+* the Java frontend rejects the model: if the compiler compiles it, chocosolver solves the compiler's output and prints the Java frontend's errors, to be reported; otherwise they are the model's errors.
 
-An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7).
+Choco does not solve temporal models: `clafersg` solves them with Alloy 6.2.0, in the same JVM, as claferIG does (the module `alloy/`). It prints the traces, up to `-n`, and `clafersg --repl` on a temporal model is claferIG's REPL, with its traces, unsat cores, near-misses and `check`, `fork`, `config` and `tl`. On a static model, the REPL also has claferIG's `d`, `e`, `f`, `dot`, `scope` and `check`, which checks each assertion on its own within the scopes and shows a counterexample of each one that fails. `--diff` starts the REPL in the diff view, and a temporal model takes `--scope`, `--maxint` and `--minint` as a static one does.
+
+clafersg takes claferIG's `--useuids`, `--json`, `--all`, `--savedir` and `--dot`, for static and temporal models, with claferIG's names of the instances (`Car$1`, by the UID with `--useuids`: `Car__name$1`), its JSON (`ident`, `uid`, `super`, `reference`, `cardMin`, `cardMax`, `value` and `elements`; a trace's `states` and `loop`) and its files (`model.cfr.1.data`, ...). A trace is claferIG's, byte for byte, since Alloy finds it for both; the instances of a static model are Choco's, so their order and the order of the children may differ from claferIG's, which finds them with Alloy.
+clafersg does not solve `real` and `double`; the Java frontend reports each at its position.
+
+An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7), by the frontend module (`frontend/`, see [Clafer's rich and core explicit models](https://github.com/gsdlab/clafer/blob/master/doc/rich-and-core-explicit.md)): chocosolver solves the static explicit models, the rich one, `clafer -m clafer --meta-data model.cfr`, and the core, `clafer -m clafer --core --meta-data model.cfr`. It lowers the rich model to the core as the compiler does (`ToCore`).
 It is a Clafer model with nothing left implicit, as `clafer -m clafer --meta-data model.cfr` writes it to `model.des.cfr`, with every scope in `model.des.cfr-scope`: every name is a UID, every card and group card, `this`, `parent` and `dref` are written out, and nesting is in braces.
 Its first line, `//# OPTIONS --explicit`, marks it, for chocosolver and for the Clafer compiler (for which it means `-f -k -l --ss=none`), so the file can have any name; `--explicit` marks a model without that line.
 chocosolver gives the same instances for the explicit model and its scope file as for `model.cfr`, and reports the errors of an edited one with their positions, e.g., `model.des.cfr:3:5: ...`.
@@ -227,13 +279,15 @@ The CLI is case sensitive, that is, `i` is for `incScope` command, whereas, `I` 
 
 ## Getting Started with the Java API
 
+The javadoc of the API is at [gsdlab.github.io/chocosolver](https://gsdlab.github.io/chocosolver/).
+
 In general, the CLI classes are good examples of using the API:
 
-* [Main.java](src/main/java/org/clafer/cli/Main.java) - this is the main class of the `chocosolver.jar`.
-* [Validate.java](src/main/java/org/clafer/cli/Validate.java) - checks assertions (run with `-v`).
-* [REPL.java](src/main/java/org/clafer/cli/REPL.java) - read, eval, print loop (interactive interface, run with `--repl`).
-* [Normal.java](src/main/java/org/clafer/cli/Normal.java) - runs batch instance generation or multi-objective optimization up to the given limit of instances (provided using `-n`) or unlimited (by default).
-* [Util.java](src/main/java/org/clafer/cli/Util.java) - various shared utils.
+* [Main.java](solver/src/main/java/org/clafer/cli/Main.java) - this is the main class of `clafersg.jar`.
+* [Validate.java](solver/src/main/java/org/clafer/cli/Validate.java) - checks assertions (run with `-v`).
+* [REPL.java](solver/src/main/java/org/clafer/cli/REPL.java) - read, eval, print loop (interactive interface, run with `--repl`).
+* [Normal.java](solver/src/main/java/org/clafer/cli/Normal.java) - runs batch instance generation or multi-objective optimization up to the given limit of instances (provided using `-n`) or unlimited (by default).
+* [Util.java](solver/src/main/java/org/clafer/cli/Util.java) - various shared utils.
 
 Consider the following Clafer model.
 
@@ -246,7 +300,7 @@ Installation
         [this > 2]
 ```
 
-Below is an example of using the API to build the model above. [AstModel](http://gsdlab.github.io/chocosolver/org/clafer/ast/AstModel.html) represents the implicit "root" of the model.
+Below is an example of using the API to build the model above. [AstModel](https://gsdlab.github.io/chocosolver/org/clafer/ast/AstModel.html) represents the implicit "root" of the model.
 Every Clafer in the model is nested below it.
 
 ```java
@@ -270,7 +324,7 @@ public static void main(String[] args) {
 }
 ```
 
-The [Asts](http://gsdlab.github.io/chocosolver/org/clafer/ast/Asts.html) class provides all the functions required for building the model. See the previous link for a list of all the supported expressions. More examples of building models: [structure](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/SimpleStructureTest.java), [expressions](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/SimpleConstraintTest.java), [quantifiers](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/QuantifierTest.java), and [attributed feature models](https://github.com/gsdlab/chocosolver/blob/master/src/test/java/org/clafer/FeatureModelTest.java#L229).
+The [Asts](https://gsdlab.github.io/chocosolver/org/clafer/ast/Asts.html) class provides all the functions required for building the model. See the previous link for a list of all the supported expressions. More examples of building models: [structure](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/SimpleStructureTest.java), [expressions](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/SimpleConstraintTest.java), [quantifiers](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/QuantifierTest.java), and [attributed feature models](https://github.com/gsdlab/chocosolver/blob/master/solver/src/test/java/org/clafer/FeatureModelTest.java#L229).
 
 ### Finding Instances
 
@@ -390,7 +444,7 @@ public static void main(String[] args) {
 
 ## Configuring as a Web Tool Backend
 
-The configuration is done in the `<host-tool-path>/Server/Backends/backends.json` file, where `<host-tool-path>` is a path to the web-based tool (`ClaferIDE`, etc.) you want to configure to use `chocosolver` as a backend.
+The configuration is done in the `<host-tool-path>/Server/Backends/backends.json` file, where `<host-tool-path>` is a path to the web-based tool (`ClaferIDE`, etc.) you want to configure to use `clafersg` as a backend.
 
 * An example configuration for [ClaferIDE](https://github.com/gsdlab/ClaferIDE):
 
@@ -403,8 +457,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "An instance generator and multi-objective optimizer based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--repl", "--prettify"],
-            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--file=$filepath$", "--repl", "--prettify"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--version"],
             "scope_options": {
                 "set_default_scope" : {"command": "SetGlobalScope $value$\n", "label": "Default:", "argument": "--scope=$value$", "default_value": 1},
                 "set_individual_scope": {"command": "setScope $clafer$ $value$\n"},
@@ -438,8 +492,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "A multi-objective optimizer based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--moo"],
-            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--file=$filepath$", "--moo"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--version"],
             "optimization_options": {
                 "set_int_scope" : {"label": "Max. integer:", "argument": "--maxint=$value$", "default_value": 127},
                 "set_default_scope" : {"label": "Default scopes:", "argument": "--scope=$value$", "default_value": 25}
@@ -460,8 +514,8 @@ The configuration is done in the `<host-tool-path>/Server/Backends/backends.json
             "tooltip": "An instance generator based on Choco3 solver library",
             "accepted_format": "choco",
             "tool": "java",
-            "tool_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--file=$filepath$", "--repl"],
-            "tool_version_args": ["-jar", "/home/<user>/bin/chocosolver.jar", "--version"],
+            "tool_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--file=$filepath$", "--repl"],
+            "tool_version_args": ["-jar", "/home/<user>/bin/clafersg.jar", "--version"],
             "scope_options": {
                 "set_default_scope" : {"command": "SetGlobalScope $value$\n"},
                 "set_individual_scope": {"command": "setScope $clafer$ $value$\n"},

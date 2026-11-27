@@ -1,0 +1,4 @@
+#!/bin/sh
+# claferc: the Clafer compiler's -m clafer in Java; the other modes are forwarded to clafer. claferc.jar
+# is next to this script, which works through symlinks.
+exec java -jar "$(dirname "$(readlink -f "$0")")/claferc.jar" "$@"

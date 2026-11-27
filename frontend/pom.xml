@@ -1,0 +1,71 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.clafer</groupId>
+        <artifactId>org.clafer</artifactId>
+        <version>0.6.0</version>
+    </parent>
+
+    <artifactId>clafer-frontend</artifactId>
+    <packaging>jar</packaging>
+
+    <name>clafer-frontend</name>
+    <description>The rich and the core explicit languages of Clafer: their IR, lexer, parser and printer, which print what the Clafer compiler prints (clafer -m clafer, --core). Its one dependency is OkHttp, for the imports of URLs.</description>
+
+    <properties>
+        <!-- the build date that the version option of claferc prints, in UTC: the day of the build, or the day of
+             SOURCE_DATE_EPOCH, which the Makefile and the Dockerfiles pass as -Dbuild.date -->
+        <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+        <build.date>${maven.build.timestamp}</build.date>
+    </properties>
+
+    <dependencies>
+        <!-- the imports of URLs (Http); okhttp-jvm, the artifact for Maven, with okio-jvm and kotlin-stdlib -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp-jvm</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- version.properties gets the version of the pom and the build date -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <!-- a runnable jar with its dependencies, installed as claferc.jar with the launcher claferc,
+                     the Java clafer -m clafer -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.8.0</version>
+                <executions>
+                    <execution>
+                        <id>claferc</id>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>org.clafer.frontend.ClaferCommand</mainClass>
+                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

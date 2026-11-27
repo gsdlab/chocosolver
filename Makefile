@@ -1,5 +1,9 @@
+# the build date that clafersg --version prints: the day of SOURCE_DATE_EPOCH if it is set,
+# e.g. to the release date, otherwise the day of the build (solver/pom.xml)
+BUILD_DATE := $(if $(SOURCE_DATE_EPOCH),-Dbuild.date=$(shell date -u -d @$(SOURCE_DATE_EPOCH) +%F))
+
 all:
-	mvn install
+	mvn install $(BUILD_DATE)
 
 javadoc:
 	mvn javadoc:javadoc -Dlinksource=true
@@ -14,10 +18,15 @@ clean:
 
 install:
 	mkdir -p $(to)
-	cp -f README.md $(to)/chocosolver-README.md
-	cp -f target/chocosolver-0.5.8-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f README.md $(to)/clafersg-README.md
+	cp -f solver/target/clafersg-0.6.0-jar-with-dependencies.jar $(to)/clafersg.jar
+	cp -f solver/clafersg $(to)/clafersg
+	cp -f lsp/target/clafer-language-server-0.6.0-jar-with-dependencies.jar $(to)/clafer-ls.jar
+	cp -f lsp/clafer-ls $(to)/clafer-ls
+	cp -f frontend/target/clafer-frontend-0.6.0-jar-with-dependencies.jar $(to)/claferc.jar
+	cp -f frontend/claferc $(to)/claferc
 
 snapshotInstall:
 	mkdir -p $(to)
-	cp -f README.md $(to)/chocosolver-README.md
-	cp -f target/chocosolver-0.5.8-SNAPSHOT-jar-with-dependencies.jar $(to)/chocosolver.jar
+	cp -f README.md $(to)/clafersg-README.md
+	cp -f solver/target/clafersg-0.6.0-SNAPSHOT-jar-with-dependencies.jar $(to)/clafersg.jar

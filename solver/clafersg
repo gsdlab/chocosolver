@@ -1,0 +1,15 @@
+#!/bin/sh
+# clafersg: the Clafer generator, instance generation and optimization with Choco, and the traces of a
+# temporal model with Alloy (clafersg.jar, next to this script, which works through symlinks).
+dir="$(dirname "$(readlink -f "$0")")"
+# the MiniSat prover built with optimization, if it is installed next to clafersg, as for claferIG;
+# otherwise Alloy uses its own build, which is much slower
+case "$(uname -s)" in
+    Darwin) prover="$dir/lib/libminisatprover.dylib" ;;
+    *) prover="$dir/lib/libminisatprover.so" ;;
+esac
+if [ -f "$prover" ]; then
+    exec java --enable-native-access=ALL-UNNAMED "-Dalloy.native.lib.minisatprover=$prover" \
+        -jar "$dir/clafersg.jar" "$@"
+fi
+exec java --enable-native-access=ALL-UNNAMED -jar "$dir/clafersg.jar" "$@"

@@ -1,0 +1,4 @@
+#!/bin/sh
+# The Clafer language server: JSON-RPC over stdin and stdout. clafer-ls.jar is next to this script,
+# which works through symlinks.
+exec java -jar "$(dirname "$(readlink -f "$0")")/clafer-ls.jar" "$@"

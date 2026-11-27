@@ -1,0 +1,74 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.clafer</groupId>
+        <artifactId>org.clafer</artifactId>
+        <version>0.6.0</version>
+    </parent>
+
+    <artifactId>clafer-language-server</artifactId>
+    <packaging>jar</packaging>
+
+    <name>clafer-language-server</name>
+    <description>The Clafer language server (LSP), on the Java frontend: JSON-RPC over stdio, for every editor.</description>
+
+    <properties>
+        <!-- the build date that the version option of clafer-ls prints, in UTC: the day of the build, or the day of
+             SOURCE_DATE_EPOCH, which the Makefile and the Dockerfiles pass as -Dbuild.date -->
+        <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+        <build.date>${maven.build.timestamp}</build.date>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.clafer</groupId>
+            <artifactId>clafer-frontend</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.lsp4j</groupId>
+            <artifactId>org.eclipse.lsp4j</artifactId>
+            <version>0.24.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- version.properties gets the version of the pom and the build date -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <!-- a runnable jar with its dependencies, installed as clafer-ls.jar with the launcher clafer-ls -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.8.0</version>
+                <executions>
+                    <execution>
+                        <id>server</id>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>org.clafer.lsp.Main</mainClass>
+                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
