@@ -40,7 +40,8 @@ import org.clafer.alloy.AlloyGenerator;
  * {@code -c}, {@code --check-afm}, {@code -l}), and any argument that it
  * does not read, so that
  * the compiler gives its own message for it. The executable is
- * {@code -Dclafer.executable}, {@code clafer} by default.
+ * {@link ClaferExecutable#find()}: {@code -Dclafer.executable}, or {@code clafer} next to
+ * {@code claferc.jar}, or on the {@code PATH}.
  */
 public final class ClaferCommand {
 
@@ -62,7 +63,7 @@ public final class ClaferCommand {
     public static void main(String[] args) {
         PrintStream out = new PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out), false,
                 StandardCharsets.UTF_8);
-        int code = new ClaferCommand(System.in, out, System.getProperty("clafer.executable", "clafer"))
+        int code = new ClaferCommand(System.in, out, ClaferExecutable.find())
                 .run(List.of(args));
         out.flush();
         System.exit(code);

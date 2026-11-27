@@ -10,6 +10,7 @@ import java.util.Optional;
 import joptsimple.OptionSet;
 import org.clafer.ast.ToAst;
 import org.clafer.compiler.ClaferOption;
+import org.clafer.frontend.ClaferExecutable;
 import org.clafer.frontend.ModelFiles;
 import org.clafer.frontend.ToIr;
 import org.clafer.javascript.Javascript;
@@ -21,7 +22,9 @@ import org.clafer.scope.ScopeFile;
  * Reads a {@code .cfr} model that is not an explicit model: with the Java
  * frontend ({@link ToIr}, then {@link ToAst}) in this JVM, or, when the Java
  * frontend cannot take the model, with the Haskell compiler
- * ({@code clafer -k -m choco}), whose {@code .js} file is read with Rhino.
+ * ({@code clafer -k -m choco}), whose {@code .js} file is read with Rhino. The compiler is
+ * {@link ClaferExecutable#find()}: {@code clafer} next to {@code clafersg.jar}, as in Clafer
+ * Tools, or on the {@code PATH}.
  * <p>
  * The Haskell compiler reads the model when:
  * <ul>
@@ -181,7 +184,7 @@ public final class Frontend {
         String fileName = file.getPath();
         File jsFile = new File(fileName.substring(0, fileName.lastIndexOf('.')) + ".js");
         jsFile.delete();
-        List<String> command = new ArrayList<>(List.of("clafer", "-k", "-m", "choco"));
+        List<String> command = new ArrayList<>(List.of(ClaferExecutable.find(), "-k", "-m", "choco"));
         for (Object i : options.valuesOf("import")) {
             command.add("--import=" + i);
         }
