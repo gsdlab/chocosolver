@@ -22,12 +22,15 @@ public class Main
     static OptionParser optionParser() {
         return new OptionParser() {
             {
+                accepts( "all", "Save the instances, or the traces of a temporal model, to <model>.1.data, <model>.2.data, ... (at most -n of them), as claferIG's --all: with the scopes of the model's .cfr-scope file, if it exists, otherwise with the given global scope (default 1)." )
+                    .withOptionalArg().ofType( Integer.class ).defaultsTo( 1 ).describedAs( "global scope" );
                 accepts( "addtypes", "Add the super clafer of each clafer to the prettified output (the default output always has them)." );
                 accepts( "dataFile", "Text file to store time (in seconds) to find each instance.").withRequiredArg()
                         .ofType( File.class ).describedAs("text file");
                 accepts( "decimal-digits", "Specify the number of fractional digits of decimals (overrides the model's)." )
                     .withRequiredArg().ofType( Integer.class );
                 accepts( "diff", "In the REPL, show each next instance, or state of a trace, as its changes from the previous one ('d' toggles it), as claferIG's --diff." );
+                accepts( "dot", "Show the solutions as Graphviz graphs, and save them to <model>.<n>.dot with --all, as claferIG's --dot." );
                 accepts( "explicit", "The .cfr model is an explicit model (as 'clafer -m clafer' prints it): read it directly, without the Clafer compiler. A model whose first line is '//# OPTIONS --explicit' is one without this option." );
                 accepts( "haskell-frontend", "Compile the .cfr model with the Haskell compiler (clafer -m choco), as before chocosolver 0.6.0, rather than with the Java frontend. Without it, the Haskell compiler compiles only the models that the Java frontend cannot ([choco| |] escapes) or rejects." );
                 accepts( "import-root", "Allow only local imports inside DIR (repeatable), as clafer's --import-root." )
@@ -40,6 +43,7 @@ public class Main
                 accepts( "help", "Show help.").forHelp();
                 accepts( "import", "Compile the .cfr model together with the given Clafer file or URL, relative to the current directory (repeatable); a model also imports files with --import in its //# OPTIONS directive." )
                     .withRequiredArg().describedAs( "Clafer file or URL" );
+                acceptsAll( java.util.List.of( "json", "j" ), "Show the solutions as JSON, one line for each, and save them so with --all, as claferIG's --json (which implies --useuids)." );
                 accepts( "maxint", "Specify maximum integer value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "minint", "Specify minimum integer value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "moo", "Run in multi-objective optimization mode." );
@@ -50,8 +54,11 @@ public class Main
                 accepts( "repl", "Run in REPL (interactive) mode." );
                 accepts( "scope", "Override the default global scope value." ).withRequiredArg().ofType( Integer.class );
                 accepts( "scope-file", "Read the scopes of clafers from the given .cfr-scope file (by default, from the model's .cfr-scope file, e.g., model.cfr-scope, if it exists)." ).withRequiredArg().ofType( File.class ).describedAs( "scope file" );
+                accepts( "savedir", "The directory under which --all saves the solutions, as claferIG's --savedir." )
+                    .withRequiredArg().describedAs( "DIR" );
                 accepts( "search", "PreferSmallerInstances/PreferLargerInstances/Random" ).withRequiredArg().ofType( ClaferSearchStrategy.class );
                 accepts( "time", "Time how long it takes to find all instances (and print if it is turned on");
+                acceptsAll( java.util.List.of( "useuids", "u" ), "Name the instances by the UIDs of their clafers and their numbers (e.g., Car__name$1), as claferIG's --useuids." );
                 accepts( "v", "Run in validation mode; checks all assertions." );
                 accepts( "version", "Display the tool version" );
             }
@@ -133,7 +140,9 @@ public class Main
         }
 
         if (temporal.isPresent()) {
-            if (options.has("repl"))
+            if (options.has("all"))
+                All.runTemporal(inputFile, temporal.get(), options);
+            else if (options.has("repl"))
                 Temporal.runREPL(inputFile, temporal.get(), options);
             else
                 Temporal.runNormal(inputFile, temporal.get(), options, outStream);
@@ -170,6 +179,8 @@ public class Main
 
         if (options.has("v"))
             Validate.runValidate(inputFile, javascriptFile, options, outStream);
+        else if (options.has("all"))
+            All.runStatic(inputFile, javascriptFile, options);
         else if (options.has("repl"))
             REPL.runREPL(inputFile, javascriptFile, options);
         else

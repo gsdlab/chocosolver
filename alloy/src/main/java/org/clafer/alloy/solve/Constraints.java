@@ -124,8 +124,11 @@ public final class Constraints {
         return i;
     }
 
-    // the columns count a tab up to the next multiple of 8, as the compiler does
-    static List<String> text(ModelFiles files) {
+    /**
+     * The lines of the model's text, the columns counting a tab up to the
+     * next multiple of 8, as the compiler does.
+     */
+    public static List<String> text(ModelFiles files) {
         List<String> out = new ArrayList<>();
         String all = files.text();
         int start = 0;
@@ -144,7 +147,7 @@ public final class Constraints {
      * The information of a constraint: its text and position in the files of
      * the model.
      */
-    static ConstraintInfo constraintInfoOf(ModelFiles files, List<String> text, SourceSpan s) {
+    public static ConstraintInfo constraintInfoOf(ModelFiles files, List<String> text, SourceSpan s) {
         ModelFiles.Position p = files.position(s.line());
         String position = (p.path().isEmpty() ? "" : p.path() + ":") + p.line() + ":" + s.column();
         String last = line(text, s.endLine());

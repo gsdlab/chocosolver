@@ -305,6 +305,89 @@ public class MainTest {
         assertTrue(run.output(), run.output().contains("Integer range = -128..127 (bitwidth = 8)\nGlobal scope  = 3\n"));
     }
 
+    // check in the REPL of a static model: each assertion on its own, with a counterexample of each that
+    // fails, as the Alloy backend's check (claferIG's) prints them
+    @Test
+    public void testStaticReplCheck() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n  B ?\n\nassert [ A.B ]\nassert [ some A ]\n");
+        Run run = chocosolverWithInput(dir, "check\ncheck 5\ncheck 1\nq\n", "--file", "model.cfr", "--repl");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("ClaferChocoIG> Counterexample of: A.B (model.cfr:4:10)\n\n"
+                + "=== Instance 2 Begin ===\n\nA \n\n--- Instance 2 End ---\n\n"
+                + "No counterexample: some A (model.cfr:5:10)\n"
+                + "2 assertion(s) checked within the scopes: 1 with a counterexample.\n"));
+        assertTrue(run.output(), run.output().contains("ClaferChocoIG> No counterexample: some A (model.cfr:5:10)\n"
+                + "1 assertion(s) checked within the scopes: 0 with a counterexample.\n"));
+        assertTrue(run.output(), run.output().contains("The model has no assertion on line 1."));
+    }
+
+    // --useuids and --json, as claferIG's: the instances by the UIDs of their clafers, and as JSON
+    @Test
+    public void testStaticUseUidsAndJson() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "abstract P\n  name ?\nY : P\nA\n  name\n  r -> P\n  b -> integer\n"
+                + "  [b = 3]\n  [no Y.name]\n");
+        Run run = chocosolverWithInput("", "--file", model.getPath(), "--useuids", "--addtypes", "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("=== Instance 1 Begin ===\n\nY$1 : P\nA$1\n  A__name$1\n"
+                + "  r$1 -> Y$1\n  b$1 -> 3\n\n--- Instance 1 End ---\n"));
+        run = chocosolverWithInput("", "--file", model.getPath(), "--json", "-n", "1");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("Instantiating...\n"
+                + "{\"elements\":[{\"ident\":\"Y\",\"uid\":\"Y$1\",\"super\":\"P\",\"cardMin\":1,\"cardMax\":1,"
+                + "\"elements\":[]},{\"ident\":\"A\",\"uid\":\"A$1\",\"cardMin\":1,\"cardMax\":1,\"elements\":["
+                + "{\"ident\":\"name\",\"uid\":\"A__name$1\",\"cardMin\":1,\"cardMax\":1,\"elements\":[]},"
+                + "{\"ident\":\"r\",\"uid\":\"r$1\",\"reference\":\"P\",\"cardMin\":1,\"cardMax\":1,\"value\":\"Y$1\","
+                + "\"elements\":[]},"
+                + "{\"ident\":\"b\",\"uid\":\"b$1\",\"reference\":\"integer\",\"cardMin\":1,\"cardMax\":1,\"value\":3,"
+                + "\"elements\":[]}]}]}\nGenerated 1 instance(s) within the scope\n"));
+    }
+
+    // --all, as claferIG's: the instances saved to model.cfr.1.data, ..., at most -n of them, with the
+    // global scope of --all when the model has no .cfr-scope file; as JSON with --json, under --savedir
+    @Test
+    public void testStaticAll() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "A\n  B *\n  [#B <= 2]\n");
+        Run run = chocosolverWithInput("", "--file", model.getPath(), "--all=2", "-n", "2");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertTrue(run.output(), run.output().contains("Using the provided global scope as a `.cfr-scope` file"
+                + " does not exist. Use the command `saveScopes` to create one.\n"));
+        assertTrue(Files.exists(dir.resolve("model.cfr.1.data")));
+        assertTrue(Files.exists(dir.resolve("model.cfr.2.data")));
+        assertFalse(Files.exists(dir.resolve("model.cfr.3.data")));
+        // without -n, all the instances: the compiler's scope of B, 1, as claferIG's
+        run = chocosolverWithInput("", "--file", model.getPath(), "--all=2");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertEquals("A\n", Files.readString(dir.resolve("model.cfr.1.data")));
+        assertEquals("A\n  B\n", Files.readString(dir.resolve("model.cfr.2.data")));
+        assertFalse(Files.exists(dir.resolve("model.cfr.3.data")));
+        // the model's path as given, under --savedir, as claferIG's
+        run = chocosolverWithInput(dir, "", "--file", "model.cfr", "--all", "-n", "1", "--json", "--savedir",
+                "saved");
+        assertEquals(run.output(), 0, run.exitCode());
+        String json = Files.readString(dir.resolve("saved").resolve("model.cfr.1.data"));
+        assertTrue(json, json.startsWith("{\"elements\":[{\"ident\":\"A\",\"uid\":\"A$1\""));
+    }
+
+    // the traces of a temporal model with --all, --json and --useuids, as claferIG saves them
+    @Test
+    public void testTemporalAll() throws Exception {
+        Path dir = Files.createTempDirectory("cfr");
+        File model = cfr(dir, "model.cfr", "//# OPTIONS --tl=2\nA ?\n[initially A]\n[X !A]\n");
+        Run run = chocosolverWithInput("", "--file", model.getPath(), "--all", "-n", "1", "--json");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertEquals("{\"states\": [{\"elements\":[{\"ident\":\"A\",\"uid\":\"A$1\",\"cardMin\":0,\"cardMax\":1,"
+                + "\"elements\":[]}]}, {\"elements\":[]}], \"loop\": 1}",
+                Files.readString(dir.resolve("model.cfr.1.data")));
+        run = chocosolverWithInput("", "--file", model.getPath(), "--all", "-n", "1", "--useuids");
+        assertEquals(run.output(), 0, run.exitCode());
+        assertEquals("--- State 0 ---\nA$1\n\n--- State 1 ---\n\n--- Loop back to state 1 ---\n\n",
+                Files.readString(dir.resolve("model.cfr.1.data")));
+        assertFalse(Files.exists(dir.resolve("model.cfr.2.data")));
+    }
+
     // a model that the Java frontend rejects and the compiler compiles: the compiler's output, with a note
     @Test
     public void testFallbackOnRejection() throws Exception {

@@ -8,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.function.UnaryOperator;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.clafer.ig.ClaferModel;
@@ -16,9 +15,10 @@ import org.clafer.ig.ClaferModel.AliasValue;
 import org.clafer.ig.ClaferModel.Clafer;
 import org.clafer.ig.ClaferModel.Id;
 import org.clafer.ig.ClaferModel.IntValue;
-import org.clafer.ig.ClaferModel.StringValue;
 import org.clafer.ig.ClaferModel.Value;
 import org.clafer.ig.Solution;
+import org.clafer.ig.Sugarer;
+import org.clafer.ig.Sugarer.Naming;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -27,33 +27,9 @@ import org.xml.sax.SAXException;
 /**
  * A solution from Alloy's XML, as claferIG reads it: {@code Solution.hs}
  * (the sigs and fields of each state), {@code ClaferModel.hs} (the tree of
- * the clafers) and {@code Sugarer.hs} (the names of the instances).
+ * the clafers), named by {@link Sugarer}.
  */
 public final class AlloyXml {
-
-    /**
-     * What the names of the instances need of a clafer, by its Alloy name.
-     *
-     * @param ident its name
-     * @param superName the Alloy name of its super clafer, or null
-     * @param reference the primitive type of its own reference, e.g.,
-     * {@code string}, or null
-     */
-    public record ClaferInfo(String ident, String superName, String reference) {
-    }
-
-    /**
-     * How the instances are named.
-     *
-     * @param clafers the clafers by their Alloy names
-     * @param toUid the UID of a clafer by its Alloy name
-     * @param useUids the instances are named by the UIDs of their clafers
-     * @param addTypes each instance has the super clafer of its clafer
-     * @param strings the strings by their integers
-     */
-    public record Naming(Map<String, ClaferInfo> clafers, UnaryOperator<String> toUid, boolean useUids,
-            boolean addTypes, Map<Integer, String> strings) {
-    }
 
     private AlloyXml() {
     }
@@ -228,102 +204,6 @@ public final class AlloyXml {
     }
 
     // ----------------------------------------------------------------------
-    // Sugarer.hs
-    // ----------------------------------------------------------------------
-    /**
-     * The simple name of each instance and its number among the instances of
-     * that name, and how many instances each name has.
-     */
-    private static final class Census {
-
-        final Map<Id, Object[]> sample = new HashMap<>();
-        final Map<String, Integer> counts = new HashMap<>();
-
-        void poll(Naming naming, Id id) {
-            String name = claferName(naming, id.name());
-            int ordinal = counts.merge(name, 1, Integer::sum);
-            sample.put(id, new Object[]{ordinal, name});
-        }
-    }
-
-    private static String claferName(Naming naming, String alloyName) {
-        ClaferInfo info = naming.clafers().get(alloyName);
-        return info == null ? alloyName : info.ident();
-    }
-
-    /**
-     * Count the number of each clafer in the states of a trace: an instance
-     * that exists in several states is counted once, so it has the same name
-     * in each of them.
-     */
-    private static Census statesCensus(Naming naming, List<ClaferModel> states) {
-        Census census = new Census();
-        for (ClaferModel state : states) {
-            state.topLevel().forEach(c -> census(naming, c, census));
-        }
-        return census;
-    }
-
-    private static void census(Naming naming, Clafer c, Census census) {
-        c.children().forEach(x -> census(naming, x, census));
-        if (!census.sample.containsKey(c.id())) {
-            census.poll(naming, c.id());
-        }
-    }
-
-    private static ClaferModel sugar(Census census, Naming naming, ClaferModel model) {
-        return new ClaferModel(model.topLevel().stream().map(c -> sugarClafer(census, naming, c)).toList());
-    }
-
-    private static Clafer sugarClafer(Census census, Naming naming, Clafer c) {
-        return new Clafer(sugarId(census, naming, true, c.id()), c.uid(), sugarValue(census, naming, c),
-                c.children().stream().map(x -> sugarClafer(census, naming, x)).toList());
-    }
-
-    private static Value sugarValue(Census census, Naming naming, Clafer c) {
-        if (c.value() instanceof AliasValue a) {
-            return new AliasValue(sugarId(census, naming, false, a.alias()));
-        }
-        if (c.value() == null) {
-            return null;
-        }
-        ClaferInfo info = naming.clafers().get(c.id().name());
-        if (info == null) {
-            throw new IllegalStateException("IClafer not found:" + c.id().name());
-        }
-        if ("string".equals(info.reference()) && c.value() instanceof IntValue i) {
-            String s = naming.strings().get(i.value());
-            return new StringValue(s == null ? "\"<text " + i.value() + ">\"" : s);
-        }
-        return c.value();
-    }
-
-    private static Id sugarId(Census census, Naming naming, boolean addRefDecl, Id id) {
-        Object[] sample = census.sample.get(id);
-        if (sample == null) {
-            // an atom that is in no state of the trace, e.g., the literal of an enumeration
-            return new Id(naming.useUids() ? naming.toUid().apply(id.name()) : claferName(naming, id.name()), 0);
-        }
-        int ordinal = (Integer) sample[0];
-        String simpleName = (String) sample[1];
-        int count = census.counts.get(simpleName);
-        String ordinalDisplay = naming.useUids() || count > 1 ? "$" + ordinal : "";
-        String finalName = naming.useUids() ? naming.toUid().apply(id.name()) : simpleName;
-        String refDecl = "";
-        if (naming.addTypes() && addRefDecl) {
-            ClaferInfo info = naming.clafers().get(id.name());
-            if (info == null) {
-                throw new IllegalStateException("IClafer not found: " + id.name());
-            }
-            if (info.superName() != null) {
-                refDecl = " : " + (naming.useUids() ? naming.toUid().apply(info.superName())
-                        : claferName(naming, info.superName()));
-            }
-        }
-        return new Id(finalName + ordinalDisplay + refDecl, 0);
-    }
-
-    // ----------------------------------------------------------------------
     // ClaferIG.xmlToSolution
     // ----------------------------------------------------------------------
     /**
@@ -334,9 +214,7 @@ public final class AlloyXml {
         List<Element> instances = children(alloy, "instance");
         if (!dynamic) {
             ClaferModel model = buildClaferModel(parseInstance(instances.get(0)));
-            Census census = new Census();
-            model.topLevel().forEach(c -> census(naming, c, census));
-            return new Solution.Instance(sugar(census, naming, model));
+            return new Solution.Instance(Sugarer.sugarInstance(naming, model));
         }
         // the state to which its last state loops back: Alloy gives the length of the trace and of its loop
         int loopState = 0;
@@ -346,7 +224,6 @@ public final class AlloyXml {
                     - Integer.parseInt(instances.get(0).getAttribute("looplength"));
         }
         List<ClaferModel> states = instances.stream().map(i -> buildStateModel(parseInstance(i))).toList();
-        Census census = statesCensus(naming, states);
-        return new Solution.Trace(states.stream().map(s -> sugar(census, naming, s)).toList(), loopState);
+        return new Solution.Trace(Sugarer.sugarStates(naming, states), loopState);
     }
 }

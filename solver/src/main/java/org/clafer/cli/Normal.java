@@ -7,6 +7,9 @@ import org.clafer.compiler.ClaferCompiler;
 import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearch;
 import org.clafer.compiler.ClaferSearchStrategy;
+import org.clafer.ig.ClaferModel;
+import org.clafer.ig.JsonGenerator;
+import org.clafer.ig.Solution;
 import org.clafer.instance.InstanceClafer;
 import org.clafer.instance.InstanceModel;
 import org.clafer.javascript.JavascriptFile;
@@ -51,6 +54,9 @@ public class Normal {
         }
 
         double elapsedTime;
+        // claferIG's names (--useuids) and JSON (--json)
+        IgNames igNames = IgNames.wanted(options) ? IgNames.of(inputFile, javascriptFile, options) : null;
+        boolean json = options.has("json");
 
         long startTime = System.nanoTime();
 
@@ -68,8 +74,17 @@ public class Normal {
                 dataStream.println(elapsedTime + ", " + (index + 1));
             }
 
-            if (printOff) {
+            if (json) {
+                // one line of JSON for each instance, as claferIG's REPL shows it
                 ++index;
+                ClaferModel named = igNames.name(solver.instance());
+                outStream.println(JsonGenerator.solutionJSON(new Solution.Instance(named), igNames::info));
+            } else if (printOff) {
+                ++index;
+            } else if (igNames != null) {
+                outStream.println("=== Instance " + (++index) + " Begin ===\n");
+                outStream.print(igNames.name(solver.instance()));
+                outStream.println("\n--- Instance " + (index) + " End ---\n");
             } else {
                 outStream.println("=== Instance " + (++index) + " Begin ===\n");
                 InstanceModel instance = solver.instance();

@@ -112,6 +112,11 @@ java -jar clafersg.jar --help
 
 Option                                  Description
 ------                                  -----------
+--all [Integer: global scope]           Save the instances, or the traces of a temporal model,
+                                          to <model>.1.data, <model>.2.data, ... (at most -n of
+                                          them), as claferIG's --all: with the scopes of the
+                                          model's .cfr-scope file, if it exists, otherwise with the
+                                          given global scope (default: 1).
 --addtypes                              Add the super clafer of each clafer to the prettified
                                           output (the default output always has them).
 --decimal-digits <Integer>              Specify the number of fractional digits of decimals
@@ -119,6 +124,8 @@ Option                                  Description
 --diff                                  In the REPL, show each next instance, or state of a trace,
                                           as its changes from the previous one ('d' toggles it), as
                                           claferIG's --diff.
+--dot                                   Show the solutions as Graphviz graphs, and save them to
+                                          <model>.<n>.dot with --all, as claferIG's --dot.
 --explicit                              The .cfr model is an explicit model (as 'clafer -m
                                           clafer' prints it): read it directly, without the
                                           Clafer compiler. A model whose first line is '//#
@@ -140,6 +147,9 @@ Option                                  Description
                                           clafer's --import-base.
 --import-root <DIR>                     Allow only local imports inside DIR (repeatable), as
                                           clafer's --import-root.
+-j, --json                              Show the solutions as JSON, one line for each, and save
+                                          them so with --all, as claferIG's --json (which implies
+                                          --useuids).
 --maxint <Integer>                      Specify maximum integer value.
 --minint <Integer>                      Specify minimum integer value.
 --moo                                   Run in multi-objective optimization mode.
@@ -149,11 +159,15 @@ Option                                  Description
                                           clafer's --public-imports.
 --prettify                              Use simple and pretty output format (not formal).
 --repl                                  Run in REPL (interactive) mode.
+--savedir <DIR>                         The directory under which --all saves the solutions, as
+                                          claferIG's --savedir.
 --scope <Integer>                       Override the default global scope value.
 --scope-file <File: scope file>         Read the scopes of clafers from the given .cfr-scope
                                           file (by default, from the model's .cfr-scope file,
                                           e.g., model.cfr-scope, if it exists).
 --search <ClaferSearchStrategy>         PreferSmallerInstances/PreferLargerInstances/Random.
+-u, --useuids                           Name the instances by the UIDs of their clafers and their
+                                          numbers (e.g., Car__name$1), as claferIG's --useuids.
 -v                                      Run in validation mode; checks all assertions.
 --version                               Display the tool version.
 ```
@@ -174,7 +188,9 @@ The Clafer compiler (`clafer -k -m choco model.cfr`, which writes `model.js`) co
 * the model has a `[choco| |]` escape, which is JavaScript;
 * the Java frontend rejects the model: if the compiler compiles it, chocosolver solves the compiler's output and prints the Java frontend's errors, to be reported; otherwise they are the model's errors.
 
-Choco does not solve temporal models: `clafersg` solves them with Alloy 6.2.0, in the same JVM, as claferIG does (the module `alloy/`). It prints the traces, up to `-n`, and `clafersg --repl` on a temporal model is claferIG's REPL, with its traces, unsat cores, near-misses and `check`, `fork`, `config` and `tl`. On a static model, the REPL also has claferIG's `d`, `e`, `f`, `dot` and `scope`. `--diff` starts the REPL in the diff view, and a temporal model takes `--scope`, `--maxint` and `--minint` as a static one does.
+Choco does not solve temporal models: `clafersg` solves them with Alloy 6.2.0, in the same JVM, as claferIG does (the module `alloy/`). It prints the traces, up to `-n`, and `clafersg --repl` on a temporal model is claferIG's REPL, with its traces, unsat cores, near-misses and `check`, `fork`, `config` and `tl`. On a static model, the REPL also has claferIG's `d`, `e`, `f`, `dot`, `scope` and `check`, which checks each assertion on its own within the scopes and shows a counterexample of each one that fails. `--diff` starts the REPL in the diff view, and a temporal model takes `--scope`, `--maxint` and `--minint` as a static one does.
+
+clafersg takes claferIG's `--useuids`, `--json`, `--all`, `--savedir` and `--dot`, for static and temporal models, with claferIG's names of the instances (`Car$1`, by the UID with `--useuids`: `Car__name$1`), its JSON (`ident`, `uid`, `super`, `reference`, `cardMin`, `cardMax`, `value` and `elements`; a trace's `states` and `loop`) and its files (`model.cfr.1.data`, ...). A trace is claferIG's, byte for byte, since Alloy finds it for both; the instances of a static model are Choco's, so their order and the order of the children may differ from claferIG's, which finds them with Alloy.
 clafersg does not solve `real` and `double`; the Java frontend reports each at its position.
 
 An explicit model is read directly, without the Clafer compiler (chocosolver 0.5.7), by the frontend module (`frontend/`, see [Clafer's rich and core explicit models](https://github.com/gsdlab/clafer/blob/master/doc/rich-and-core-explicit.md)): chocosolver solves the static explicit models, the rich one, `clafer -m clafer --meta-data model.cfr`, and the core, `clafer -m clafer --core --meta-data model.cfr`. It lowers the rich model to the core as the compiler does (`ToCore`).

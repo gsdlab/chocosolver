@@ -28,9 +28,11 @@ import org.clafer.alloy.solve.Constraints.UserConstraint;
 import org.clafer.frontend.Symbols.ClaferSymbol;
 import org.clafer.frontend.ToIr;
 import org.clafer.ig.Backend;
+import org.clafer.ig.JsonGenerator;
 import org.clafer.ig.Repl;
 import org.clafer.ig.Solution;
 import org.clafer.ig.SolutionView;
+import org.clafer.ig.Sugarer;
 
 /**
  * The Alloy backend of the solution loop, for a temporal model: claferIG's
@@ -72,12 +74,13 @@ public final class AlloyBackend implements Backend {
     private ToIr.Result ir;
     private AlloyGenerator.Translation translation;
     private List<Constraint> constraints;
-    private AlloyXml.Naming naming;
+    private Sugarer.Naming naming;
     private Map<String, String> alloyNames;
     private Map<String, String> uids;
     private Map<String, ClaferInfo> claferInfos;
     private Set<String> emptySigs;
     private Map<String, List<String>> paths;
+    private Map<String, JsonGenerator.Info> jsonInfos;
     private int bitwidth;
     private boolean dynamic;
     // AlloyIGInterface's AlloyIGEnv
@@ -116,14 +119,14 @@ public final class AlloyBackend implements Backend {
         uids = new HashMap<>();
         alloyNames.forEach((u, a) -> uids.put(a, u));
         claferInfos = new HashMap<>();
-        Map<String, AlloyXml.ClaferInfo> namingInfos = new HashMap<>();
+        Map<String, Sugarer.ClaferInfo> namingInfos = new HashMap<>();
         paths = new LinkedHashMap<>();
         for (ClaferSymbol c : ir.names().clafers()) {
             String a = alloyName(c.uid());
             var card = c.card();
             claferInfos.put(a, new ClaferInfo(c.name(), new Constraints.Cardinality(card.low(), card.high())));
             String reference = c.reference().flatMap(r -> r.primitive()).orElse(null);
-            namingInfos.put(a, new AlloyXml.ClaferInfo(c.name(),
+            namingInfos.put(a, new Sugarer.ClaferInfo(c.name(),
                     c.superClafer().map(s -> alloyName(s.uid())).orElse(null), reference));
             List<String> path = new ArrayList<>();
             for (Optional<ClaferSymbol> p = Optional.of(c); p.isPresent(); p = p.get().parent()) {
@@ -131,7 +134,8 @@ public final class AlloyBackend implements Backend {
             }
             paths.put(c.uid(), path);
         }
-        naming = new AlloyXml.Naming(namingInfos, this::toUid, options.useUids(), options.addTypes(),
+        jsonInfos = JsonGenerator.infos(ir.names().clafers());
+        naming = new Sugarer.Naming(namingInfos, this::toUid, options.useUids(), options.addTypes(),
                 translation.strings());
         constraints = Constraints.parseConstraints(ir.files(), claferInfos, translation.mapping());
         emptySigs = new HashSet<>();
@@ -206,6 +210,34 @@ public final class AlloyBackend implements Backend {
         }
     }
 
+    /**
+     * The scopes of claferIG's {@code --all}: those of the model's
+     * {@code .cfr-scope} file, if it exists, whose largest global scope is
+     * the global scope; otherwise, the given global scope.
+     */
+    public void allScopes(Repl.Io io, int scope) throws Exception {
+        if (!Files.isRegularFile(scopeFile())) {
+            io.out().println("Using the provided global scope as a `.cfr-scope` file does not exist."
+                    + " Use the command `saveScopes` to create one.");
+            setGlobalScope(scope);
+            return;
+        }
+        Map<String, Integer> read = readScopeFile(Files.readString(scopeFile(), StandardCharsets.UTF_8));
+        int global = read.entrySet().stream().filter(e -> e.getKey().isEmpty()).mapToInt(Map.Entry::getValue)
+                .max().orElse(scope);
+        setGlobalScope(global);
+        for (Map.Entry<String, Integer> e : read.entrySet()) {
+            if (!e.getKey().isEmpty()) {
+                for (String uid : getUIDs(e.getKey())) {
+                    String sig = sigOfUID(uid);
+                    if (sigMap.containsKey(sig)) {
+                        setAlloyScope(e.getValue(), sig);
+                    }
+                }
+            }
+        }
+    }
+
     private void setBitwidth(int bw) {
         bitwidth = bw;
         session.setBitwidth(bw);
@@ -225,7 +257,7 @@ public final class AlloyBackend implements Backend {
 
     private String claferNameOfSig(String sig) {
         String name = sig.startsWith("this/") ? sig.substring(5) : sig;
-        AlloyXml.ClaferInfo info = naming.clafers().get(name);
+        Sugarer.ClaferInfo info = naming.clafers().get(name);
         return info == null ? name : info.ident();
     }
 
@@ -564,6 +596,11 @@ public final class AlloyBackend implements Backend {
     public UnaryOperator<String> names() {
         // the least-partially-qualified name is the UID, with dots for the compiler's ::
         return uid -> uid;
+    }
+
+    @Override
+    public JsonGenerator.Info jsonInfo(String uid) {
+        return jsonInfos.get(uid);
     }
 
     @Override

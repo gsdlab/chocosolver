@@ -16,6 +16,7 @@ import org.clafer.alloy.solve.AlloyBackend;
 import org.clafer.frontend.ModelFiles;
 import org.clafer.frontend.ToIr;
 import org.clafer.ig.Backend;
+import org.clafer.ig.JsonGenerator;
 import org.clafer.ig.Repl;
 import org.clafer.ig.SolutionView;
 
@@ -73,7 +74,7 @@ final class Temporal {
                 Frontend.restrictions(options)));
     }
 
-    private static AlloyBackend backend(File file, ToIr.Result first, OptionSet options) throws Exception {
+    static AlloyBackend backend(File file, ToIr.Result first, OptionSet options) throws Exception {
         boolean[] loaded = {false};
         // the first load is the model read already; 'r' reads it again
         AlloyBackend.Loader loader = () -> {
@@ -96,7 +97,9 @@ final class Temporal {
             bitwidth = Math.max(bitwidth, AlloyBackend.requiredBitwidth(-(long) (int) options.valueOf("minint") - 1));
         }
         AlloyBackend backend = new AlloyBackend(loader, file.getName(),
-                new AlloyBackend.Options(bitwidth, false, options.has("addtypes")));
+                // --json names the instances by their UIDs, as claferIG's
+                new AlloyBackend.Options(bitwidth, options.has("useuids") || options.has("json"),
+                        options.has("addtypes")));
         // --scope: the default scope of the clafers, as the REPL's 'S' sets it
         if (options.has("scope")) {
             backend.setInitialGlobalScope((int) options.valueOf("scope"));
@@ -110,7 +113,7 @@ final class Temporal {
     static void runREPL(File file, ToIr.Result ir, OptionSet options) throws Exception {
         new Repl(backend(file, ir, options), new Repl.Io(
                 new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)), System.out, System.err),
-                options.has("diff")).run();
+                options.has("diff"), REPL.view(options)).run();
     }
 
     /**
@@ -130,7 +133,10 @@ final class Temporal {
                     break;
                 }
                 index++;
-                if (!options.has("noprint")) {
+                if (options.has("json")) {
+                    // one line of JSON for each trace, as claferIG's REPL shows it
+                    out.println(JsonGenerator.solutionJSON(shown.solution(), backend::jsonInfo));
+                } else if (!options.has("noprint")) {
                     out.println(SolutionView.showSolution(index, shown.solution()));
                 }
             }

@@ -92,6 +92,12 @@ public interface Backend {
     UnaryOperator<String> names();
 
     /**
+     * @return what the JSON of a solution ({@code --json}) has of a clafer,
+     * by its UID, or null if the backend does not know it
+     */
+    JsonGenerator.Info jsonInfo(String uid);
+
+    /**
      * @return the name of the model's file, which names the saved files
      */
     String modelFileName();

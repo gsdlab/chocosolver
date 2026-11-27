@@ -82,8 +82,17 @@ public final class Repl {
         }
     }
 
+    /**
+     * How the solutions are shown, as claferIG's options choose it: as text,
+     * as JSON ({@code --json}) or as Graphviz graphs ({@code --dot}).
+     */
+    public enum View {
+        TEXT, JSON, DOT
+    }
+
     private final Backend backend;
     private final Io io;
+    private final View view;
     private final Context context = new Context();
 
     /**
@@ -91,8 +100,18 @@ public final class Repl {
      * ({@code --diff})
      */
     public Repl(Backend backend, Io io, boolean diffView) {
+        this(backend, io, diffView, View.TEXT);
+    }
+
+    /**
+     * @param diffView whether the solutions are shown as their changes
+     * ({@code --diff})
+     * @param view how the solutions are shown
+     */
+    public Repl(Backend backend, Io io, boolean diffView, View view) {
         this.backend = backend;
         this.io = io;
+        this.view = view;
         this.context.diffView = diffView;
         this.context.displayer = this::display;
     }
@@ -228,9 +247,15 @@ public final class Repl {
     public void display(Backend.Shown shown) {
         int n = backend.number(context);
         Solution previous = latest();
-        io.out().print(context.diffView
-                ? SolutionView.showSolutionDiff(backend.names(), n, previous, shown.solution()) + "\n"
-                : backend.show(n, shown));
+        io.out().print(switch (view) {
+            case JSON -> JsonGenerator.solutionJSON(shown.solution(), backend::jsonInfo) + "\n";
+            case DOT -> (context.diffView
+                    ? SolutionView.solutionDiffDot(backend.names(), previous, shown.solution())
+                    : SolutionView.solutionDot(shown.solution())) + "\n";
+            case TEXT -> context.diffView
+                    ? SolutionView.showSolutionDiff(backend.names(), n, previous, shown.solution()) + "\n"
+                    : backend.show(n, shown);
+        });
         io.out().flush();
         context.unsaved.add(0, shown.solution());
         context.currentXml = shown.xml();

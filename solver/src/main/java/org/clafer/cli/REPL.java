@@ -19,7 +19,14 @@ import org.clafer.compiler.ClaferOption;
 import org.clafer.compiler.ClaferSearch;
 import org.clafer.compiler.ClaferSearchStrategy;
 import org.clafer.compiler.ClaferUnsat;
+import java.util.Optional;
+import org.clafer.alloy.solve.Constraints;
+import org.clafer.assertion.Assertion;
+import org.clafer.compiler.ClaferAsserter;
+import org.clafer.frontend.ModelFiles;
+import org.clafer.frontend.ToIr;
 import org.clafer.ig.Backend;
+import org.clafer.ig.JsonGenerator;
 import org.clafer.ig.ClaferModel;
 import org.clafer.ig.Repl;
 import org.clafer.ig.Solution;
@@ -39,7 +46,15 @@ public class REPL {
     public static void runREPL(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws Exception {
         ChocoBackend backend = new ChocoBackend(inputFile, javascriptFile, options);
         new Repl(backend, new Repl.Io(new BufferedReader(new InputStreamReader(System.in)), System.out, System.err),
-                options.has("diff")).run();
+                options.has("diff"), view(options)).run();
+    }
+
+    /**
+     * How the solutions are shown: as JSON ({@code --json}), as Graphviz
+     * graphs ({@code --dot}) or as text, as claferIG's options choose it.
+     */
+    static Repl.View view(OptionSet options) {
+        return options.has("json") ? Repl.View.JSON : options.has("dot") ? Repl.View.DOT : Repl.View.TEXT;
     }
 
     public static void printHelp() {
@@ -77,6 +92,7 @@ public class REPL {
                 sav'e'                              Save the instances shown so far to <model file name>.<number>.data.
                 'dot'                               Save the most recent instance as a Graphviz graph.
                 'f'ind <name>                       Print the clafer with the given name of the most recent instance.
+                'check' <line?>                     Check the assertions (on the line) within the scopes, and show a counterexample of each one that fails.
                 'q'uit                              Exit the REPL sesssion.
                 """;
 
@@ -91,6 +107,8 @@ public class REPL {
         private ClaferSearch solver;
         private boolean prettify;
         private final boolean addTypes;
+        // claferIG's names of the instances (--useuids, --json), or null
+        private IgNames igNames;
         private int instanceID = 0; // id of an instance generated previously
 
         ChocoBackend(File inputFile, JavascriptFile javascriptFile, OptionSet options) throws IOException {
@@ -110,6 +128,7 @@ public class REPL {
             this.objectives = javascriptFile.getObjectives();
             this.prettify = options.has("prettify");
             this.addTypes = options.has("addtypes");
+            this.igNames = IgNames.wanted(options) ? IgNames.of(inputFile, javascriptFile, options) : null;
         }
 
         @Override
@@ -152,7 +171,16 @@ public class REPL {
                 io.out().println("No more instances found. Consider increasing scopes.");
                 return null;
             }
-            InstanceModel instance = solver.instance();
+            return shown(solver.instance());
+        }
+
+        // an instance as it is shown: with claferIG's names, if they are asked for, otherwise as chocosolver
+        // prints it
+        Shown shown(InstanceModel instance) throws IOException {
+            if (igNames != null) {
+                ClaferModel named = igNames.name(instance);
+                return new Shown(new Solution.Instance(named, named.toString()), null);
+            }
             StringBuilder text = new StringBuilder();
             if (prettify) {
                 instance.print(text, addTypes);
@@ -186,10 +214,63 @@ public class REPL {
             return null;
         }
 
+        /**
+         * Checks each assertion (on the line, if given) on its own within the
+         * scopes, as the Alloy backend does, and shows a counterexample of
+         * each one that fails.
+         */
         @Override
         public void check(Repl.Io io, Integer line, Repl.Displayer display) {
-            io.out().println("The command 'check' is not available for static models yet: run clafersg with -v"
-                    + " to check the assertions.");
+            if (javascriptFile == null) {
+                io.out().println("Could not start the instantiation");
+                return;
+            }
+            Optional<ModelFiles> files = IgNames.ir(inputFile, options).map(ToIr.Result::files);
+            List<String> text = files.map(Constraints::text).orElse(List.of());
+            List<Assertion> assertions = new ArrayList<>();
+            List<String> infos = new ArrayList<>();
+            for (Assertion a : javascriptFile.getAssertions()) {
+                Constraints.ConstraintInfo info = files.isPresent() && a.hasSpan()
+                        ? Constraints.constraintInfoOf(files.get(), text, a.getSpan()) : null;
+                if (line == null || info != null && info.isOnLine(line)) {
+                    assertions.add(a);
+                    infos.add(info != null ? info.toString() : "assert " + a.getExpr());
+                }
+            }
+            if (assertions.isEmpty()) {
+                io.out().println(line == null ? "The model has no assertions."
+                        : "The model has no assertion on line " + line + ".");
+                return;
+            }
+            int failed = 0;
+            for (int i = 0; i < assertions.size(); i++) {
+                ClaferAsserter asserter;
+                try {
+                    asserter = ClaferCompiler.compile(model, scope, new Assertion[]{assertions.get(i)},
+                            compilerOption);
+                } catch (Exception e) {
+                    io.out().println("Message: " + e.getMessage());
+                    return;
+                }
+                if (asserter.find()) {
+                    io.out().println("Counterexample of: " + infos.get(i));
+                    try {
+                        display.display(shown(asserter.instance()));
+                    } catch (IOException e) {
+                        throw new java.io.UncheckedIOException(e);
+                    }
+                    failed++;
+                } else {
+                    io.out().println("No counterexample: " + infos.get(i));
+                }
+            }
+            io.out().println(assertions.size() + " assertion(s) checked within the scopes: " + failed
+                    + " with a counterexample.");
+        }
+
+        @Override
+        public JsonGenerator.Info jsonInfo(String uid) {
+            return igNames == null ? null : igNames.info(uid);
         }
 
         @Override
@@ -498,6 +579,9 @@ public class REPL {
                 model = javascriptFile.getModel();
                 scope = Utils.resolveScopes(inputFile, javascriptFile, options);
                 objectives = javascriptFile.getObjectives();
+                if (igNames != null) {
+                    igNames = IgNames.of(inputFile, javascriptFile, options);
+                }
                 solver = compileModel(io);
                 io.out().println(solver == null ? "Could not reload" : "Reloaded");
             } else {
